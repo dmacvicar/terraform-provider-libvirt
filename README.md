@@ -33,6 +33,7 @@ Here is an example that will setup the following:
 provider "libvirt" {
     uri = ""
 }
+```
 
 ## Building from source
 
