@@ -1,0 +1,30 @@
+package libvirt
+
+import (
+	"log"
+	libvirt "gopkg.in/alexzorin/libvirt-go.v2"
+)
+
+type Config struct {
+	Uri string
+}
+
+type Client struct {
+	libvirt libvirt.VirConnection
+}
+
+func (c *Config) Client() (*Client, error) {
+	conn, err := libvirt.NewVirtConnection(c.Uri)
+
+	if err != nil {
+		return nil, err
+	}
+
+	client := &Client {
+		libvirt: conn,
+	}
+
+	log.Println("[INFO] Created libvirt client")
+
+	return client, nil
+}
