@@ -10,9 +10,27 @@ import (
 	libvirt "gopkg.in/alexzorin/libvirt-go.v2"
 )
 
-type domain struct {
+type defDomain struct {
 	XMLName xml.Name `xml:"domain"`
 	Name string `xml:"name"`
+	Type string `xml:"type,attr"`
+	Os defOs `xml:"os"`
+	Memory defMemory `xml:"memory"`
+}
+
+type defOs struct {
+	Type defOsType `xml:"type"`
+}
+
+type defOsType struct {
+	Arch string `xml:"arch,attr"`
+	Machine string `xml:"machine,attr"`
+	Name string `xml:"chardata"`
+}
+
+type defMemory struct {
+	Unit string `xml:"unit,attr"`
+	Amount uint `xml:"chardata"`
 }
 
 func resourceLibvirtDomain() *schema.Resource {
@@ -36,8 +54,20 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("The libvirt connection was nil.")
 	}
 
-	domainDef := domain{
+	domainDef := defDomain{
 		Name: d.Get("name").(string),
+		Type: "kvm",
+		Os: defOs{
+			defOsType{
+				Arch: "x86_64",
+				Machine: "pc-i440fx-2.4",
+				Name: "hvm",
+			},
+		},
+		Memory: defMemory{
+			Unit: "KiB",
+			Amount: 524288,
+		},
 	}
 
 	log.Printf("[INFO] Creating virtual machine")
