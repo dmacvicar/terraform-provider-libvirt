@@ -10,18 +10,17 @@ type Config struct {
 }
 
 type Client struct {
-	libvirt libvirt.VirConnection
+	libvirt *libvirt.VirConnection
 }
 
 func (c *Config) Client() (*Client, error) {
-	conn, err := libvirt.NewVirtConnection(c.Uri)
-
+	conn, err := libvirt.NewVirConnection(c.Uri)
 	if err != nil {
 		return nil, err
 	}
 
 	client := &Client {
-		libvirt: conn,
+		libvirt: &conn,
 	}
 
 	log.Println("[INFO] Created libvirt client")
