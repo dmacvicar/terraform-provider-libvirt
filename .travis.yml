@@ -1,0 +1,11 @@
+language: go
+
+go:
+  - 1.5
+
+install:
+  - go get github.com/mitchellh/gox
+  - go get
+  - gox
+  - find .
+  - go test ./...
