@@ -3,6 +3,10 @@ language: go
 go:
   - 1.5
 
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y libvirt-dev
+
 install:
   - go get github.com/mitchellh/gox
   - go get
