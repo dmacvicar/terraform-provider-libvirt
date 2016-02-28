@@ -31,8 +31,26 @@ Here is an example that will setup the following:
 (create this as libvirt.tf and run terraform commands from this directory):
 ```hcl
 provider "libvirt" {
-    uri = ""
+    uri = "qemu:///system"
 }
+```
+
+You can also set the URI in the LIBVIRT_DEFAULT_URI environment variable.
+
+Now, define a libvirt domain:
+
+```hcl
+resource "libvirt_domain" "terraform_test" {
+  name = "terraform_test"
+}
+```
+
+Now you can see the plan, apply it, and then destroy the infrastructure:
+
+```console
+$ terraform plan
+$ terraform apply
+$ terraform destroy
 ```
 
 ## Building from source
@@ -50,9 +68,21 @@ provider "libvirt" {
 2.  terraform plan
 3.  terraform apply
 
+## Running acceptance tests
+
+You need to define the LIBVIRT_DEFAULT_URI and TF_ACC variables:
+
+```console
+export LIBVIRT_DEFAULT_URI=qemu:///system
+export TF_ACC=1
+go test ./...
+```
+
 ## Author
 
 * Duncan Mac-Vicar P. <dmacvicar@suse.de>
+
+The structure and boilerplate is inspired from the [Softlayer](https://github.com/finn-no/terraform-provider-softlayer) and [Google](https://github.com/hashicorp/terraform/tree/master/builtin/providers/google) Terraform provider sources.
 
 ## License
 
