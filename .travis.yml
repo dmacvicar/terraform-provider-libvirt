@@ -9,7 +9,7 @@ before_install:
   - sudo apt-get install -y libvirt-dev
 
 install:
-  - go get
+  - go get ./...
   - go build .
   - find .
   - go test ./...
