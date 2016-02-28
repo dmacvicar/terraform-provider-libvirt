@@ -16,6 +16,7 @@ type defDomain struct {
 	Type string `xml:"type,attr"`
 	Os defOs `xml:"os"`
 	Memory defMemory `xml:"memory"`
+	VCpu defVCpu `xml:"vcpu"`
 }
 
 type defOs struct {
@@ -30,7 +31,12 @@ type defOsType struct {
 
 type defMemory struct {
 	Unit string `xml:"unit,attr"`
-	Amount uint `xml:"chardata"`
+	Amount int `xml:"chardata"`
+}
+
+type defVCpu struct {
+	Placement string `xml:"unit,attr"`
+	Amount int `xml:"chardata"`
 }
 
 func resourceLibvirtDomain() *schema.Resource {
@@ -43,6 +49,17 @@ func resourceLibvirtDomain() *schema.Resource {
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+			},
+			"vcpu": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			    Default: 1,
+			},
+
+			"memory": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+			    Default: 512,
 			},
 		},
 	}
@@ -65,8 +82,12 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			},
 		},
 		Memory: defMemory{
-			Unit: "KiB",
-			Amount: 524288,
+			Unit: "MiB",
+			Amount: d.Get("memory").(int),
+		},
+		VCpu: defVCpu{
+			Placement: "static",
+			Amount: d.Get("vcpu").(int),
 		},
 	}
 

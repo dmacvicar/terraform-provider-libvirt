@@ -24,4 +24,9 @@ resource "libvirt_domain" "default" {
 The following arguments are supported:
 
 * `name` - (Required) A unique name for the resource, required by libvirt.
-    Changing this forces a new resource to be created.
+   Changing this forces a new resource to be created.
+* `memory` - (Optional) The amount of memory in MiB. If not specified the domain will be
+   created with 512 MiB of memory
+   be used.
+* `vcpu` - (Optional) The amount of virtual CPUs. If not specified, a single CPU will be created.
+
