@@ -70,7 +70,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		},
 	}
 
-	log.Printf("[INFO] Creating virtual machine")
+	log.Printf("[INFO] Creating libvirt domain")
 
 	data, err := xml.Marshal(domainDef)
 	if err != nil {
@@ -88,7 +88,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 	d.SetId(fmt.Sprintf("%d", id))
 
-	log.Printf("[INFO] Virtual Machine ID: %s", d.Id())
+	log.Printf("[INFO] Domain ID: %s", d.Id())
 
 	return resourceLibvirtDomainRead(d, meta)
 }
