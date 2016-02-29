@@ -1,22 +1,22 @@
 package libvirt
 
 import (
+	"encoding/xml"
 	"fmt"
 	"log"
 	"strconv"
-	"encoding/xml"
 	//"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "gopkg.in/alexzorin/libvirt-go.v2"
 )
 
 type defDomain struct {
-	XMLName xml.Name `xml:"domain"`
-	Name string `xml:"name"`
-	Type string `xml:"type,attr"`
-	Os defOs `xml:"os"`
-	Memory defMemory `xml:"memory"`
-	VCpu defVCpu `xml:"vcpu"`
+	XMLName xml.Name  `xml:"domain"`
+	Name    string    `xml:"name"`
+	Type    string    `xml:"type,attr"`
+	Os      defOs     `xml:"os"`
+	Memory  defMemory `xml:"memory"`
+	VCpu    defVCpu   `xml:"vcpu"`
 }
 
 type defOs struct {
@@ -24,19 +24,19 @@ type defOs struct {
 }
 
 type defOsType struct {
-	Arch string `xml:"arch,attr"`
+	Arch    string `xml:"arch,attr"`
 	Machine string `xml:"machine,attr"`
-	Name string `xml:"chardata"`
+	Name    string `xml:"chardata"`
 }
 
 type defMemory struct {
-	Unit string `xml:"unit,attr"`
-	Amount int `xml:"chardata"`
+	Unit   string `xml:"unit,attr"`
+	Amount int    `xml:"chardata"`
 }
 
 type defVCpu struct {
 	Placement string `xml:"unit,attr"`
-	Amount int `xml:"chardata"`
+	Amount    int    `xml:"chardata"`
 }
 
 func resourceLibvirtDomain() *schema.Resource {
@@ -53,13 +53,12 @@ func resourceLibvirtDomain() *schema.Resource {
 			"vcpu": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-			    Default: 1,
+				Default:  1,
 			},
-
 			"memory": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-			    Default: 512,
+				Default:  512,
 			},
 		},
 	}
@@ -76,18 +75,18 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		Type: "kvm",
 		Os: defOs{
 			defOsType{
-				Arch: "x86_64",
+				Arch:    "x86_64",
 				Machine: "pc-i440fx-2.4",
-				Name: "hvm",
+				Name:    "hvm",
 			},
 		},
 		Memory: defMemory{
-			Unit: "MiB",
+			Unit:   "MiB",
 			Amount: d.Get("memory").(int),
 		},
 		VCpu: defVCpu{
 			Placement: "static",
-			Amount: d.Get("vcpu").(int),
+			Amount:    d.Get("vcpu").(int),
 		},
 	}
 
@@ -170,4 +169,3 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 
 	return nil
 }
-

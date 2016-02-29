@@ -2,19 +2,19 @@ package libvirt
 
 import (
 	"fmt"
-	"strconv"
-	"testing"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"gopkg.in/alexzorin/libvirt-go.v2"
+	"strconv"
+	"testing"
 )
 
 func TestAccLibvirtDomain_Basic(t *testing.T) {
 	var domain libvirt.VirDomain
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
@@ -37,8 +37,8 @@ func TestAccLibvirtDomain_Detailed(t *testing.T) {
 	var domain libvirt.VirDomain
 
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() { testAccPreCheck(t) },
-		Providers: testAccProviders,
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{

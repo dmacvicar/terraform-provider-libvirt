@@ -1,8 +1,8 @@
 package libvirt
 
 import (
-	"log"
 	libvirt "gopkg.in/alexzorin/libvirt-go.v2"
+	"log"
 )
 
 type Config struct {
@@ -19,7 +19,7 @@ func (c *Config) Client() (*Client, error) {
 		return nil, err
 	}
 
-	client := &Client {
+	client := &Client{
 		libvirt: &conn,
 	}
 
