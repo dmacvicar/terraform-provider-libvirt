@@ -91,7 +91,11 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		},
 	}
 
-	log.Printf("[INFO] Creating libvirt domain")
+	connectURI, err := virConn.GetURI()
+	if err != nil {
+		return fmt.Errorf("Error retrieving libvirt connection URI: %s", err)
+	}
+	log.Printf("[INFO] Creating libvirt domain at %s", connectURI)
 
 	data, err := xml.Marshal(domainDef)
 	if err != nil {
