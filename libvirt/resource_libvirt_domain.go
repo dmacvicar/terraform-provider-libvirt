@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 	//"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "gopkg.in/alexzorin/libvirt-go.v2"
@@ -114,6 +115,11 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	log.Printf("[INFO] Domain ID: %s", d.Id())
 
+	err = waitForDomainUp(domain)
+	if err != nil {
+		return fmt.Errorf("Error waiting for domain to reach RUNNING state: %s", err)
+	}
+
 	return resourceLibvirtDomainRead(d, meta)
 }
 
@@ -168,4 +174,28 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 	}
 
 	return nil
+}
+
+// wait for domain to be up and timeout after 5 minutes.
+func waitForDomainUp(domain libvirt.VirDomain) error {
+	start := time.Now()
+	for {
+		state, err := domain.GetState()
+		if err != nil {
+			return err
+		}
+
+		running := true
+		if state[0] != libvirt.VIR_DOMAIN_RUNNING {
+			running = false
+		}
+
+		if running {
+			return nil
+		}
+		time.Sleep(1 * time.Second)
+		if time.Since(start) > 5*time.Minute {
+			return fmt.Errorf("Domain didn't switch to state RUNNING in 5 minutes")
+		}
+	}
 }
