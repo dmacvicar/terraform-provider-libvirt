@@ -12,7 +12,6 @@ import (
 	libvirt "gopkg.in/alexzorin/libvirt-go.v2"
 )
 
-
 func resourceLibvirtDomain() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceLibvirtDomainCreate,
@@ -72,15 +71,15 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	// create the volume
 	rootVolumeDef := defVolume{}
-	rootVolumeDef.Name = "__terraform_" + d.Get("name").(string) + "-rootdisk";
-	rootVolumeDef.Target.Format.Type = "qcow2";
+	rootVolumeDef.Name = "__terraform_" + d.Get("name").(string) + "-rootdisk"
+	rootVolumeDef.Target.Format.Type = "qcow2"
 	// use the base image as backing store
-	rootVolumeDef.BackingStore.Format.Type = "qcow2";
+	rootVolumeDef.BackingStore.Format.Type = "qcow2"
 	baseVolPath, err := baseVol.GetPath()
 	if err != nil {
 		return fmt.Errorf("can't get name for base image '%s'", baseImage)
 	}
-	rootVolumeDef.BackingStore.Path = baseVolPath;
+	rootVolumeDef.BackingStore.Path = baseVolPath
 	rootVolumeDefXml, err := xml.Marshal(rootVolumeDef)
 	if err != nil {
 		return fmt.Errorf("Error serializing libvirt volume: %s", err)
@@ -94,19 +93,19 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	// create the disk
 	rootDisk := defDisk{}
-	rootDisk.Type = "volume";
-	rootDisk.Device = "disk";
-	rootDisk.Format.Type = "qcow2";
+	rootDisk.Type = "volume"
+	rootDisk.Device = "disk"
+	rootDisk.Format.Type = "qcow2"
 
 	rootVolumeName, err := rootVolume.GetName()
 	if err != nil {
 		return fmt.Errorf("Error retrieving volume name: %s", err)
 	}
 
-	rootDisk.Source.Volume = rootVolumeName;
-	rootDisk.Source.Pool = storagePool;
-	rootDisk.Target.Dev = "sda";
-	rootDisk.Target.Bus = "virtio";
+	rootDisk.Source.Volume = rootVolumeName
+	rootDisk.Source.Pool = storagePool
+	rootDisk.Target.Dev = "sda"
+	rootDisk.Target.Bus = "virtio"
 
 	domainDef := newDomainDef()
 	domainDef.Name = d.Get("name").(string)

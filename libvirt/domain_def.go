@@ -5,36 +5,35 @@ import (
 )
 
 type defVolume struct {
-	XMLName xml.Name  `xml:"volume"`
-	Name  string  `xml:"name"`
-	Target struct {
+	XMLName xml.Name `xml:"volume"`
+	Name    string   `xml:"name"`
+	Target  struct {
 		Format struct {
-			Type  string  `xml:"type,attr"`
+			Type string `xml:"type,attr"`
 		} `xml:"format"`
 	} `xml:"target"`
 	BackingStore struct {
-		Path string `xml:"path"`
+		Path   string `xml:"path"`
 		Format struct {
-			Type    string    `xml:"type,attr"`
+			Type string `xml:"type,attr"`
 		} `xml:"format"`
 	} `xml:"backingStore"`
 }
 
 type defDisk struct {
-	XMLName xml.Name  `xml:"disk"`
-	Type    string    `xml:"type,attr"`
-	Device  string    `xml:"device,attr"`
-	Format struct {
-		Type  string  `xml:"type,attr"`
-
+	XMLName xml.Name `xml:"disk"`
+	Type    string   `xml:"type,attr"`
+	Device  string   `xml:"device,attr"`
+	Format  struct {
+		Type string `xml:"type,attr"`
 	} `xml:"format"`
 	Source struct {
-		Pool string `xml:"pool,attr"`
+		Pool   string `xml:"pool,attr"`
 		Volume string `xml:"volume,attr"`
 	} `xml:"source"`
 	Target struct {
-		Dev  string  `xml:"dev,attr"`
-		Bus  string  `xml:"bus,attr"`
+		Dev string `xml:"dev,attr"`
+		Bus string `xml:"bus,attr"`
 	} `xml:"target"`
 }
 
@@ -47,9 +46,9 @@ type defDomain struct {
 	VCpu    defVCpu   `xml:"vcpu"`
 	Devices struct {
 		RootDisk defDisk `xml:"disk"`
-		Spice struct {
-			Type    string    `xml:"type,attr"`
-			Autoport  string    `xml:"autoport,attr"`
+		Spice    struct {
+			Type     string `xml:"type,attr"`
+			Autoport string `xml:"autoport,attr"`
 		} `xml:"graphics"`
 	} `xml:"devices"`
 }
@@ -77,14 +76,14 @@ type defVCpu struct {
 // Creates a domain definition with the defaults
 // the provider uses
 func newDomainDef() defDomain {
-		// libvirt domain definition
+	// libvirt domain definition
 	domainDef := defDomain{}
 	domainDef.Type = "kvm"
 
 	domainDef.Os = defOs{}
 	domainDef.Os.Type = defOsType{}
 	domainDef.Os.Type.Arch = "x86_64"
-    domainDef.Os.Type.Machine = "pc-i440fx-2.4"
+	domainDef.Os.Type.Machine = "pc-i440fx-2.4"
 	domainDef.Os.Type.Name = "hvm"
 
 	domainDef.Memory = defMemory{}
