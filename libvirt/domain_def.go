@@ -47,18 +47,11 @@ type defDomain struct {
 	VCpu    defVCpu   `xml:"vcpu"`
 	Devices struct {
 		RootDisk defDisk `xml:"disk"`
-	} `xml:"devices"`
-	Spice struct {
-		Type    string    `xml:"type,attr"`
-		Autoport    bool    `xml:"autoport,attr"`
-	} `xml:"graphics"`
-	ChannelSpice struct {
-		Type    string    `xml:"type,attr"`
-		Target struct {
+		Spice struct {
 			Type    string    `xml:"type,attr"`
-			Name    string    `xml:"name,attr"`
-		} `xml:"target"`
-	} `xml:"channel"`
+			Autoport  string    `xml:"autoport,attr"`
+		} `xml:"graphics"`
+	} `xml:"devices"`
 }
 
 type defOs struct {
@@ -102,8 +95,8 @@ func newDomainDef() defDomain {
 	domainDef.VCpu.Placement = "static"
 	domainDef.VCpu.Amount = 1
 
-	domainDef.Spice.Type = "spice"
-	domainDef.Spice.Autoport = true
-	domainDef.ChannelSpice.Type = "spicevmc"
+	domainDef.Devices.Spice.Type = "spice"
+	domainDef.Devices.Spice.Autoport = "yes"
+
 	return domainDef
 }
