@@ -12,71 +12,6 @@ import (
 	libvirt "gopkg.in/alexzorin/libvirt-go.v2"
 )
 
-type defVolume struct {
-	XMLName xml.Name  `xml:"volume"`
-	Name  string  `xml:"name"`
-	Target struct {
-		Format struct {
-			Type  string  `xml:"type,attr"`
-		} `xml:"format"`
-	} `xml:"target"`
-	BackingStore struct {
-		Path string `xml:"path"`
-		Format struct {
-			Type    string    `xml:"type,attr"`
-		} `xml:"format"`
-	} `xml:"backingStore"`
-}
-
-type defDisk struct {
-	XMLName xml.Name  `xml:"disk"`
-	Type    string    `xml:"type,attr"`
-	Device  string    `xml:"device,attr"`
-	Format struct {
-		Type  string  `xml:"type,attr"`
-
-	} `xml:"format"`
-	Source struct {
-		Pool string `xml:"pool,attr"`
-		Volume string `xml:"volume,attr"`
-	} `xml:"source"`
-	Target struct {
-		Dev  string  `xml:"dev,attr"`
-		Bus  string  `xml:"bus,attr"`
-	} `xml:"target"`
-}
-
-type defDomain struct {
-	XMLName xml.Name  `xml:"domain"`
-	Name    string    `xml:"name"`
-	Type    string    `xml:"type,attr"`
-	Os      defOs     `xml:"os"`
-	Memory  defMemory `xml:"memory"`
-	VCpu    defVCpu   `xml:"vcpu"`
-	Devices struct {
-		RootDisk defDisk `xml:"disk"`
-	} `xml:"devices"`
-}
-
-type defOs struct {
-	Type defOsType `xml:"type"`
-}
-
-type defOsType struct {
-	Arch    string `xml:"arch,attr"`
-	Machine string `xml:"machine,attr"`
-	Name    string `xml:"chardata"`
-}
-
-type defMemory struct {
-	Unit   string `xml:"unit,attr"`
-	Amount int    `xml:"chardata"`
-}
-
-type defVCpu struct {
-	Placement string `xml:"unit,attr"`
-	Amount    int    `xml:"chardata"`
-}
 
 func resourceLibvirtDomain() *schema.Resource {
 	return &schema.Resource{
@@ -173,27 +108,10 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	rootDisk.Target.Dev = "sda";
 	rootDisk.Target.Bus = "virtio";
 
-	// libvirt domain definition
-	domainDef := defDomain{
-		Name: d.Get("name").(string),
-		Type: "kvm",
-		Os: defOs{
-			defOsType{
-				Arch:    "x86_64",
-				Machine: "pc-i440fx-2.4",
-				Name:    "hvm",
-			},
-		},
-		Memory: defMemory{
-			Unit:   "MiB",
-			Amount: d.Get("memory").(int),
-		},
-		VCpu: defVCpu{
-			Placement: "static",
-			Amount:    d.Get("vcpu").(int),
-		},
-	}
-	// set the root disk
+	domainDef := newDomainDef()
+	domainDef.Name = d.Get("name").(string)
+	domainDef.Memory.Amount = d.Get("memory").(int)
+	domainDef.VCpu.Amount = d.Get("vcpu").(int)
 	domainDef.Devices.RootDisk = rootDisk
 
 	connectURI, err := virConn.GetURI()
