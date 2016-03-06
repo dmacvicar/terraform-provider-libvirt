@@ -97,7 +97,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf("'size' needs to be specified if no 'source' is given.")
 		}
 
-		volumeDef.Capacity.Unit = "MB"
 		volumeDef.Capacity.Amount = d.Get("size").(int)
 	}
 
