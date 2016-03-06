@@ -74,6 +74,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	rootVolumeDef.Name = "__terraform_" + d.Get("name").(string) + "-rootdisk"
 	rootVolumeDef.Target.Format.Type = "qcow2"
 	// use the base image as backing store
+	rootVolumeDef.BackingStore = new(defBackingStore)
 	rootVolumeDef.BackingStore.Format.Type = "qcow2"
 	baseVolPath, err := baseVol.GetPath()
 	if err != nil {

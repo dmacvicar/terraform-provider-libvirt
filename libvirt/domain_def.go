@@ -4,22 +4,6 @@ import (
 	"encoding/xml"
 )
 
-type defVolume struct {
-	XMLName xml.Name `xml:"volume"`
-	Name    string   `xml:"name"`
-	Target  struct {
-		Format struct {
-			Type string `xml:"type,attr"`
-		} `xml:"format"`
-	} `xml:"target"`
-	BackingStore struct {
-		Path   string `xml:"path"`
-		Format struct {
-			Type string `xml:"type,attr"`
-		} `xml:"format"`
-	} `xml:"backingStore"`
-}
-
 type defDisk struct {
 	XMLName xml.Name `xml:"disk"`
 	Type    string   `xml:"type,attr"`
