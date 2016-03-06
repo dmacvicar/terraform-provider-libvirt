@@ -35,7 +35,7 @@ func resourceLibvirtVolume() *schema.Resource {
 			"size": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-			    Default: -1,
+				Default:  -1,
 			},
 			"base_volume": &schema.Schema{
 				Type:     schema.TypeString,
@@ -56,7 +56,6 @@ func remoteImageSize(url string) (int, error) {
 	}
 	return length, nil
 }
-
 
 func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
@@ -139,7 +138,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		log.Printf("%d bytes uploaded\n", n)
 	}
 
-
 	return resourceLibvirtVolumeRead(d, meta)
 }
 
@@ -176,7 +174,6 @@ func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("Can't delete volume %s", d.Id())
 	}
-
 
 	return nil
 }

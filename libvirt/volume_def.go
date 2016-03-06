@@ -20,9 +20,9 @@ type defVolume struct {
 		} `xml:"format"`
 	} `xml:"target"`
 	Allocation int `xml:"allocation"`
-	Capacity struct {
-		Unit string `xml:"unit,attr"`
-		Amount int `xml:"chardata"`
+	Capacity   struct {
+		Unit   string `xml:"unit,attr"`
+		Amount int    `xml:"chardata"`
 	} `xml:"capacity"`
 	BackingStore *defBackingStore `xml:"backingStore,omitempty"`
 }
