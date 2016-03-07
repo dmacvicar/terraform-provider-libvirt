@@ -30,7 +30,6 @@ func volumeCommonSchema() map[string]*schema.Schema {
 		"size": &schema.Schema{
 			Type:     schema.TypeInt,
 			Optional: true,
-		Default:  -1,
 		},
 		"base_volume": &schema.Schema{
 			Type:     schema.TypeString,
@@ -67,10 +66,11 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("The libvirt connection was nil.")
 	}
 
-	poolName := d.Get("pool").(string)
-	if poolName == "" {
-		poolName = "default"
+	poolName := "default"
+	if _, ok := d.GetOk("pool"); ok {
+		poolName = d.Get("pool").(string)
 	}
+
 	pool, err := virConn.LookupStoragePoolByName(poolName)
 	if err != nil {
 		return fmt.Errorf("can't find storage pool '%s'", poolName)
@@ -80,15 +80,13 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	volumeDef.Name = d.Get("name").(string)
 
 	// an existing image was given, this mean we can't choose size
-	url := d.Get("source").(string)
-	if url != "" {
-
+	if url, ok := d.GetOk("source"); ok {
 		// source and size conflict
 		if d.Get("size").(int) != -1 {
 			return fmt.Errorf("'size' can't be specified when also 'source' is given (the size will be set to the size of the source image.")
 		}
 
-		size, err := remoteImageSize(url)
+		size, err := remoteImageSize(url.(string))
 		if err != nil {
 			return err
 		}
@@ -97,10 +95,9 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		volumeDef.Capacity.Amount = size
 
 	} else {
-		if d.Get("size").(int) == -1 {
+		if _, ok := d.GetOk("size"); !ok {
 			return fmt.Errorf("'size' needs to be specified if no 'source' is given.")
 		}
-
 		volumeDef.Capacity.Amount = d.Get("size").(int)
 	}
 
@@ -123,20 +120,20 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[INFO] Volume ID: %s", d.Id())
 
 	// upload source if present
-	if url != "" {
+	if url, ok := d.GetOk("source"); ok {
 		stream, err := libvirt.NewVirStream(virConn, 0)
 		defer stream.Close()
 
 		volume.Upload(stream, 0, uint64(volumeDef.Capacity.Amount), 0)
-		response, err := http.Get(url)
+		response, err := http.Get(url.(string))
 		defer response.Body.Close()
 		if err != nil {
-			return fmt.Errorf("Error while downloading %s: %s", url, err)
+			return fmt.Errorf("Error while downloading %s: %s", url.(string), err)
 		}
 
 		n, err := io.Copy(stream, response.Body)
 		if err != nil {
-			return fmt.Errorf("Error while downloading %s: %s", url, err)
+			return fmt.Errorf("Error while downloading %s: %s", url.(string), err)
 		}
 		log.Printf("%d bytes uploaded\n", n)
 	}
