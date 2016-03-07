@@ -12,36 +12,40 @@ import (
 	libvirt "gopkg.in/alexzorin/libvirt-go.v2"
 )
 
+func volumeCommonSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"name": &schema.Schema{
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"pool": &schema.Schema{
+			Type:     schema.TypeString,
+			Optional: true,
+		Default:  "default",
+		},
+		"source": &schema.Schema{
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+		"size": &schema.Schema{
+			Type:     schema.TypeInt,
+			Optional: true,
+		Default:  -1,
+		},
+		"base_volume": &schema.Schema{
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+	}
+}
+
 func resourceLibvirtVolume() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceLibvirtVolumeCreate,
 		Read:   resourceLibvirtVolumeRead,
 		Update: resourceLibvirtVolumeUpdate,
 		Delete: resourceLibvirtVolumeDelete,
-		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"pool": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "default",
-			},
-			"source": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"size": &schema.Schema{
-				Type:     schema.TypeInt,
-				Optional: true,
-				Default:  -1,
-			},
-			"base_volume": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-		},
+		Schema: volumeCommonSchema(),
 	}
 }
 
