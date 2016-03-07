@@ -101,6 +101,20 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		volumeDef.Capacity.Amount = d.Get("size").(int)
 	}
 
+	if baseVolumeId, ok := d.GetOk("base_volume"); ok {
+		volumeDef.BackingStore = new(defBackingStore)
+		volumeDef.BackingStore.Format.Type = "qcow2"
+		baseVolume, err := virConn.LookupStorageVolByKey(baseVolumeId.(string))
+		if err != nil {
+			return fmt.Errorf("Can't retrieve volume %s", baseVolumeId.(string))
+		}
+		baseVolPath, err := baseVolume.GetPath()
+		if err != nil {
+			return fmt.Errorf("can't get name for base image '%s'", baseVolumeId)
+		}
+		volumeDef.BackingStore.Path = baseVolPath
+	}
+
 	volumeDefXml, err := xml.Marshal(volumeDef)
 	if err != nil {
 		return fmt.Errorf("Error serializing libvirt volume: %s", err)
