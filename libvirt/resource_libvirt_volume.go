@@ -9,7 +9,8 @@ import (
 	"strconv"
 	//"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	libvirt "gopkg.in/alexzorin/libvirt-go.v2"
+	//libvirt "gopkg.in/alexzorin/libvirt-go.v2"
+	libvirt "github.com/dmacvicar/libvirt-go"
 )
 
 func volumeCommonSchema() map[string]*schema.Schema {
@@ -30,6 +31,7 @@ func volumeCommonSchema() map[string]*schema.Schema {
 		"size": &schema.Schema{
 			Type:     schema.TypeInt,
 			Optional: true,
+			Computed: true,
 		},
 		"base_volume": &schema.Schema{
 			Type:     schema.TypeString,
@@ -82,7 +84,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	// an existing image was given, this mean we can't choose size
 	if url, ok := d.GetOk("source"); ok {
 		// source and size conflict
-		if d.Get("size").(int) != -1 {
+		if _, ok := d.GetOk("size"); ok {
 			return fmt.Errorf("'size' can't be specified when also 'source' is given (the size will be set to the size of the source image.")
 		}
 
@@ -93,15 +95,21 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		log.Printf("Remote image is: %d bytes", size)
 		volumeDef.Capacity.Unit = "B"
 		volumeDef.Capacity.Amount = size
-
 	} else {
-		if _, ok := d.GetOk("size"); !ok {
-			return fmt.Errorf("'size' needs to be specified if no 'source' is given.")
+		_, noSize := d.GetOk("size")
+		_, noBaseVol := d.GetOk("base_volume")
+
+		if noSize && noBaseVol {
+			return fmt.Errorf("'size' needs to be specified if no 'source' or 'base_vol' is given.")
 		}
 		volumeDef.Capacity.Amount = d.Get("size").(int)
 	}
 
 	if baseVolumeId, ok := d.GetOk("base_volume"); ok {
+		if _, ok := d.GetOk("size"); ok {
+			return fmt.Errorf("'size' can't be specified when also 'base_volume' is given (the size will be set to the size of the backing image.")
+		}
+
 		volumeDef.BackingStore = new(defBackingStore)
 		volumeDef.BackingStore.Format.Type = "qcow2"
 		baseVolume, err := virConn.LookupStorageVolByKey(baseVolumeId.(string))

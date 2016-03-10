@@ -1,7 +1,8 @@
 package libvirt
 
 import (
-	libvirt "gopkg.in/alexzorin/libvirt-go.v2"
+	//libvirt "gopkg.in/alexzorin/libvirt-go.v2"
+	libvirt "github.com/dmacvicar/libvirt-go"
 	"log"
 )
 

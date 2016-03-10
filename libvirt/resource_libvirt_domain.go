@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 	"time"
 	//"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	libvirt "gopkg.in/alexzorin/libvirt-go.v2"
+	//libvirt "gopkg.in/alexzorin/libvirt-go.v2"
+	libvirt "github.com/dmacvicar/libvirt-go"
 )
 
 func resourceLibvirtDomain() *schema.Resource {
@@ -33,9 +33,13 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				Default:  512,
 			},
-			"base_image": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
+			"disk": &schema.Schema{
+				Type:     schema.TypeList,
+				Required: true,
+				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: diskCommonSchema(),
+				},
 			},
 		},
 	}
@@ -47,72 +51,41 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("The libvirt connection was nil.")
 	}
 
-	// setup base image and disks
-	baseImageSpec := d.Get("base_image").(string)
-	// if the base image was specifies as $pool/$name
-	components := strings.Split(baseImageSpec, "/")
-	storagePool := "default"
-	baseImage := ""
-	if len(components) > 1 {
-		storagePool = components[0]
-		baseImage = components[1]
-	} else {
-		baseImage = components[0]
-	}
+	disksCount := d.Get("disk.#").(int)
+	disks := make([]defDisk, 0, disksCount)
+	for i := 0; i < disksCount; i++ {
+		prefix := fmt.Sprintf("disk.%d", i)
+		disk := newDefDisk()
 
-	pool, err := virConn.LookupStoragePoolByName(storagePool)
-	if err != nil {
-		return fmt.Errorf("can't find storage pool '%s'", storagePool)
-	}
-	baseVol, err := pool.LookupStorageVolByName(baseImage)
-	if err != nil {
-		return fmt.Errorf("can't find image '%s' in pool '%s'", baseImage, storagePool)
-	}
+		volumeKey := d.Get(prefix + ".volume_id").(string)
+		diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
+		if err != nil {
+			return fmt.Errorf("Can't retrieve volume %s", volumeKey)
+		}
+		diskVolumeName, err := diskVolume.GetName()
+		if err != nil {
+			return fmt.Errorf("Error retrieving volume name: %s", err)
+		}
+		diskPool, err := diskVolume.LookupPoolByVolume()
+		if err != nil {
+			return fmt.Errorf("Error retrieving pool for volume: %s", err)
+		}
+		diskPoolName, err := diskPool.GetName()
+		if err != nil {
+			return fmt.Errorf("Error retrieving pool name: %s", err)
+		}
 
-	// create the volume
-	rootVolumeDef := defVolume{}
-	rootVolumeDef.Name = "__terraform_" + d.Get("name").(string) + "-rootdisk"
-	rootVolumeDef.Target.Format.Type = "qcow2"
-	// use the base image as backing store
-	rootVolumeDef.BackingStore = new(defBackingStore)
-	rootVolumeDef.BackingStore.Format.Type = "qcow2"
-	baseVolPath, err := baseVol.GetPath()
-	if err != nil {
-		return fmt.Errorf("can't get name for base image '%s'", baseImage)
-	}
-	rootVolumeDef.BackingStore.Path = baseVolPath
-	rootVolumeDefXml, err := xml.Marshal(rootVolumeDef)
-	if err != nil {
-		return fmt.Errorf("Error serializing libvirt volume: %s", err)
-	}
+		disk.Source.Volume = diskVolumeName
+	    disk.Source.Pool = diskPoolName
 
-	// create the volume
-	rootVolume, err := pool.StorageVolCreateXML(string(rootVolumeDefXml), 0)
-	if err != nil {
-		return fmt.Errorf("Error creating libvirt volume: %s", err)
+		disks = append(disks, disk)
 	}
-
-	// create the disk
-	rootDisk := defDisk{}
-	rootDisk.Type = "volume"
-	rootDisk.Device = "disk"
-	rootDisk.Format.Type = "qcow2"
-
-	rootVolumeName, err := rootVolume.GetName()
-	if err != nil {
-		return fmt.Errorf("Error retrieving volume name: %s", err)
-	}
-
-	rootDisk.Source.Volume = rootVolumeName
-	rootDisk.Source.Pool = storagePool
-	rootDisk.Target.Dev = "sda"
-	rootDisk.Target.Bus = "virtio"
 
 	domainDef := newDomainDef()
 	domainDef.Name = d.Get("name").(string)
 	domainDef.Memory.Amount = d.Get("memory").(int)
 	domainDef.VCpu.Amount = d.Get("vcpu").(int)
-	domainDef.Devices.RootDisk = rootDisk
+	domainDef.Devices.Disks = disks
 
 	connectURI, err := virConn.GetURI()
 	if err != nil {
