@@ -35,7 +35,8 @@ func resourceLibvirtDomain() *schema.Resource {
 			},
 			"disk": &schema.Schema{
 				Type:     schema.TypeList,
-				Required: true,
+				Optional: true,
+				Required: false,
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: diskCommonSchema(),
