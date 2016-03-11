@@ -22,7 +22,7 @@ type defDisk struct {
 	} `xml:"target"`
 }
 
-func diskCommonSchema() map[string]*schema.Schema{
+func diskCommonSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"volume_id": &schema.Schema{
 			Type:     schema.TypeString,

@@ -99,7 +99,7 @@ func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.VirStorage
 
 		_, err := virConn.LookupStorageVolByKey(rs.Primary.ID)
 		if err == nil {
- 			return fmt.Errorf("Volume still exists")
+			return fmt.Errorf("Volume still exists")
 
 		}
 
@@ -113,4 +113,3 @@ resource "libvirt_volume" "terraform-acceptance-test-1" {
     size = 1
 }
 `
-

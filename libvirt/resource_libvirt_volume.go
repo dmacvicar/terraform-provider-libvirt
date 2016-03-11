@@ -22,7 +22,7 @@ func volumeCommonSchema() map[string]*schema.Schema {
 		"pool": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: true,
-		Default:  "default",
+			Default:  "default",
 		},
 		"source": &schema.Schema{
 			Type:     schema.TypeString,

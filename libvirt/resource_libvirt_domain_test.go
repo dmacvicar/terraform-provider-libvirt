@@ -164,4 +164,3 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.VirDomain) resour
 		return nil
 	}
 }
-

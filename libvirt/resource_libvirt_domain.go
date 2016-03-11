@@ -77,7 +77,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 
 		disk.Source.Volume = diskVolumeName
-	    disk.Source.Pool = diskPoolName
+		disk.Source.Pool = diskPoolName
 
 		disks = append(disks, disk)
 	}
@@ -167,7 +167,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return fmt.Errorf("Error retrieving volume ke for disk: %s", err)
 		}
-
 
 		disk := map[string]interface{}{
 			"volume_id": virVolKey,
