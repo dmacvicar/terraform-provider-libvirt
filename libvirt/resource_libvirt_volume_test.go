@@ -84,6 +84,29 @@ func testAccCheckLibvirtVolumeExists(n string, volume *libvirt.VirStorageVol) re
 	}
 }
 
+func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.VirStorageVol) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No libvirt volume key ID is set")
+		}
+
+		_, err := virConn.LookupStorageVolByKey(rs.Primary.ID)
+		if err == nil {
+ 			return fmt.Errorf("Volume still exists")
+
+		}
+
+		return nil
+	}
+}
+
 const testAccCheckLibvirtVolumeConfig_basic = `
 resource "libvirt_volume" "terraform-acceptance-test-1" {
     name = "terraform-test"

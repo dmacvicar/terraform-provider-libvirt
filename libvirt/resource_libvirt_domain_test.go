@@ -6,12 +6,17 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 	//"gopkg.in/alexzorin/libvirt-go.v2"
 	libvirt "github.com/dmacvicar/libvirt-go"
+	"log"
 	"strconv"
 	"testing"
 )
 
 func TestAccLibvirtDomain_Basic(t *testing.T) {
 	var domain libvirt.VirDomain
+	var config = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain-1" {
+                    name = "terraform-test"
+            }`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -19,15 +24,15 @@ func TestAccLibvirtDomain_Basic(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccCheckLibvirtDomainConfig_basic,
+				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtDomainExists("libvirt_domain.terraform-acceptance-test-1", &domain),
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain-1", &domain),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.terraform-acceptance-test-1", "name", "terraform-test"),
+						"libvirt_domain.acceptance-test-domain-1", "name", "terraform-test"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.terraform-acceptance-test-1", "memory", "512"),
+						"libvirt_domain.acceptance-test-domain-1", "memory", "512"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.terraform-acceptance-test-1", "vcpu", "1"),
+						"libvirt_domain.acceptance-test-domain-1", "vcpu", "1"),
 				),
 			},
 		},
@@ -36,6 +41,12 @@ func TestAccLibvirtDomain_Basic(t *testing.T) {
 
 func TestAccLibvirtDomain_Detailed(t *testing.T) {
 	var domain libvirt.VirDomain
+	var config = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain-2" {
+                    name = "terraform-test"
+                    memory = 384
+                    vcpu = 2
+            }`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -43,15 +54,47 @@ func TestAccLibvirtDomain_Detailed(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccCheckLibvirtDomainConfig_detailed,
+				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtDomainExists("libvirt_domain.terraform-acceptance-test-2", &domain),
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain-2", &domain),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.terraform-acceptance-test-2", "name", "terraform-test"),
+						"libvirt_domain.acceptance-test-domain-2", "name", "terraform-test"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.terraform-acceptance-test-2", "memory", "384"),
+						"libvirt_domain.acceptance-test-domain-2", "memory", "384"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.terraform-acceptance-test-2", "vcpu", "2"),
+						"libvirt_domain.acceptance-test-domain-2", "vcpu", "2"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtDomain_Volume(t *testing.T) {
+	var domain libvirt.VirDomain
+	var volume libvirt.VirStorageVol
+
+	var configVolAttached = fmt.Sprintf(`
+            resource "libvirt_volume" "acceptance-test-volume" {
+                    name = "volume"
+            }
+
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+                    disk {
+                            volume_id = "${libvirt_volume.acceptance-test-volume.id}"
+                    }
+            }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: configVolAttached,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.acceptance-test-volume", &volume),
 				),
 			},
 		},
@@ -105,7 +148,7 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.VirDomain) resour
 			return err
 		}
 
-		fmt.Printf("The ID is %d", domainId)
+		log.Printf("The ID is %d", domainId)
 
 		realId, err := retrieveDomain.GetID()
 		if err != nil {
@@ -122,15 +165,3 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.VirDomain) resour
 	}
 }
 
-const testAccCheckLibvirtDomainConfig_basic = `
-resource "libvirt_domain" "terraform-acceptance-test-1" {
-    name = "terraform-test"
-}
-`
-const testAccCheckLibvirtDomainConfig_detailed = `
-resource "libvirt_domain" "terraform-acceptance-test-2" {
-    name = "terraform-test"
-    memory = 384
-    vcpu = 2
-}
-`
