@@ -136,12 +136,46 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
 
-	name, err := domain.GetName()
+	xmlDesc, err := domain.GetXMLDesc(0)
 	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt domain name: %s", err)
+		return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
 	}
-	d.Set("name", name)
 
+	domainDef := newDomainDef()
+	err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
+	if err != nil {
+		return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+	}
+
+	d.Set("name", domainDef.Name)
+	d.Set("vpu", domainDef.VCpu)
+	d.Set("memory", domainDef.Memory)
+
+	disks := make([]map[string]interface{}, 0)
+	for _, diskDef := range domainDef.Devices.Disks {
+		virPool, err := virConn.LookupStoragePoolByName(diskDef.Source.Pool)
+		if err != nil {
+			return fmt.Errorf("Error retrieving pool for disk: %s", err)
+		}
+
+		virVol, err := virPool.LookupStorageVolByName(diskDef.Source.Volume)
+		if err != nil {
+			return fmt.Errorf("Error retrieving volume for disk: %s", err)
+		}
+
+		virVolKey, err := virVol.GetKey()
+		if err != nil {
+			return fmt.Errorf("Error retrieving volume ke for disk: %s", err)
+		}
+
+
+		disk := map[string]interface{}{
+			"volume_id": virVolKey,
+		}
+		disks = append(disks, disk)
+	}
+
+	d.Set("disks", disks)
 	return nil
 }
 
