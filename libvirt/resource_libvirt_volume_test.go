@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"gopkg.in/alexzorin/libvirt-go.v2"
+	//"gopkg.in/alexzorin/libvirt-go.v2"
+	libvirt "github.com/dmacvicar/libvirt-go"
 	"testing"
 )
 
