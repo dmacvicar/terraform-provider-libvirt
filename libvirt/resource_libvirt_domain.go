@@ -165,8 +165,7 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
 
-	err = domain.Destroy()
-	if err != nil {
+	if err := domain.Destroy(); err != nil {
 		return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
 	}
 
