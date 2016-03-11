@@ -1,5 +1,5 @@
-terraform-provider-libvirt
-*.tf
-*.tfstate
-*.tfstate.backup
-*.test
+./terraform-provider-libvirt
+./*.tf
+./*.tfstate
+./*.tfstate.backup
+./*.test
