@@ -18,24 +18,29 @@ func volumeCommonSchema() map[string]*schema.Schema {
 		"name": &schema.Schema{
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 		},
 		"pool": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: true,
 			Default:  "default",
+			ForceNew: true,
 		},
 		"source": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: true,
+			ForceNew: true,
 		},
 		"size": &schema.Schema{
 			Type:     schema.TypeInt,
 			Optional: true,
 			Computed: true,
+			ForceNew: true,
 		},
 		"base_volume": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: true,
+			ForceNew: true,
 		},
 	}
 }
@@ -44,7 +49,6 @@ func resourceLibvirtVolume() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceLibvirtVolumeCreate,
 		Read:   resourceLibvirtVolumeRead,
-		Update: resourceLibvirtVolumeUpdate,
 		Delete: resourceLibvirtVolumeDelete,
 		Schema: volumeCommonSchema(),
 	}

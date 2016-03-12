@@ -14,22 +14,24 @@ func resourceLibvirtDomain() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceLibvirtDomainCreate,
 		Read:   resourceLibvirtDomainRead,
-		Update: resourceLibvirtDomainUpdate,
 		Delete: resourceLibvirtDomainDelete,
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			"vcpu": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  1,
+				ForceNew: true,
 			},
 			"memory": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  512,
+				ForceNew: true,
 			},
 			"disk": &schema.Schema{
 				Type:     schema.TypeList,
@@ -174,10 +176,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("disks", disks)
 	return nil
-}
-
-func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error {
-	return fmt.Errorf("Couldn't update libvirt domain")
 }
 
 func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error {
