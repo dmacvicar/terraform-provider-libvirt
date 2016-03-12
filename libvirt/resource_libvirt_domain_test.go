@@ -75,7 +75,7 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 
 	var configVolAttached = fmt.Sprintf(`
             resource "libvirt_volume" "acceptance-test-volume" {
-                    name = "volume"
+                    name = "terraform-test"
             }
 
             resource "libvirt_domain" "acceptance-test-domain" {
