@@ -184,16 +184,38 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("The libvirt connection was nil.")
 	}
 
-	_, err := virConn.LookupStorageVolByKey(d.Id())
+	volume, err := virConn.LookupStorageVolByKey(d.Id())
 	if err != nil {
 		return fmt.Errorf("Can't retrieve volume %s", d.Id())
 	}
+	defer volume.Free()
+
+	volName, err := volume.GetName()
+	if err != nil {
+		return fmt.Errorf("Error retrieving volume name: %s", err)
+	}
+
+	volPool, err := volume.LookupPoolByVolume()
+	if err != nil {
+		return fmt.Errorf("Error retrieving pool for volume: %s", err)
+	}
+	defer volPool.Free()
+
+	volPoolName, err := volPool.GetName()
+	if err != nil {
+		return fmt.Errorf("Error retrieving pool name: %s", err)
+	}
+
+	d.Set("pool", volPoolName)
+	d.Set("name", volName)
+
+	info, err := volume.GetInfo()
+	if err != nil {
+		return fmt.Errorf("Error retrieving volume name: %s", err)
+	}
+	d.Set("size", info.GetCapacityInBytes())
 
 	return nil
-}
-
-func resourceLibvirtVolumeUpdate(d *schema.ResourceData, meta interface{}) error {
-	return fmt.Errorf("Couldn't update libvirt domain")
 }
 
 func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error {
