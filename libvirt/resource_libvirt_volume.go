@@ -3,14 +3,12 @@ package libvirt
 import (
 	"encoding/xml"
 	"fmt"
+	libvirt "github.com/dmacvicar/libvirt-go"
+	"github.com/hashicorp/terraform/helper/schema"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
-	//"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/helper/schema"
-	//libvirt "gopkg.in/alexzorin/libvirt-go.v2"
-	libvirt "github.com/dmacvicar/libvirt-go"
 )
 
 func volumeCommonSchema() map[string]*schema.Schema {
