@@ -78,6 +78,18 @@ export TF_ACC=1
 go test ./...
 ```
 
+## Known Problems
+
+* There is a [bug in libvirt](https://bugzilla.redhat.com/show_bug.cgi?id=1293804) that seems to be causing
+  problems to unlink volumes. Tracked [here](https://github.com/dmacvicar/terraform-provider-libvirt/issues/6).
+
+  If you see something like:
+
+  ```console
+  cannot unlink file '/var/lib/libvirt/images/XXXXXXXXXXXX': Permission denied
+  ```
+  It is probably related.
+
 ## Author
 
 * Duncan Mac-Vicar P. <dmacvicar@suse.de>
