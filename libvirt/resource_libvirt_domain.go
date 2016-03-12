@@ -3,13 +3,11 @@ package libvirt
 import (
 	"encoding/xml"
 	"fmt"
+	libvirt "github.com/dmacvicar/libvirt-go"
+	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"strconv"
 	"time"
-	//"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/helper/schema"
-	//libvirt "gopkg.in/alexzorin/libvirt-go.v2"
-	libvirt "github.com/dmacvicar/libvirt-go"
 )
 
 func resourceLibvirtDomain() *schema.Resource {
