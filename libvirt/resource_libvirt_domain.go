@@ -202,6 +202,11 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
 	}
 
+	err = waitForDomainDestroyed(virConn, uint32(id))
+	if err != nil {
+		return fmt.Errorf("Error waiting for domain to be destroyed: %s", err)
+	}
+
 	return nil
 }
 
@@ -228,3 +233,21 @@ func waitForDomainUp(domain libvirt.VirDomain) error {
 		}
 	}
 }
+
+// wait for domain to be up and timeout after 5 minutes.
+func waitForDomainDestroyed(virConn *libvirt.VirConnection, id uint32) error {
+	start := time.Now()
+	for {
+		log.Printf("Waiting for domain %d to be destroyed", id)
+		_, err := virConn.LookupDomainById(uint32(id))
+		if err.(libvirt.VirError).Code == libvirt.VIR_ERR_NO_DOMAIN {
+			return nil
+		}
+
+		time.Sleep(1 * time.Second)
+		if time.Since(start) > 5*time.Minute {
+			return fmt.Errorf("Domain is still there after 5 minutes")
+		}
+	}
+}
+
