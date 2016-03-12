@@ -30,7 +30,7 @@ type defVolume struct {
 func newDefVolume() defVolume {
 	volumeDef := defVolume{}
 	volumeDef.Target.Format.Type = "qcow2"
-	volumeDef.Capacity.Unit = "GB"
+	volumeDef.Capacity.Unit = "bytes"
 	volumeDef.Capacity.Amount = 1
 	return volumeDef
 }
