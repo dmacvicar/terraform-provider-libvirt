@@ -88,18 +88,15 @@ func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.VirStorage
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+		key, err := volume.GetKey()
+		if err != nil {
+			return fmt.Errorf("Can't retrieve volume key: %s", err)
 		}
 
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No libvirt volume key ID is set")
-		}
-
-		_, err := virConn.LookupStorageVolByKey(rs.Primary.ID)
+		vol, err := virConn.LookupStorageVolByKey(key)
+		defer vol.Free()
 		if err == nil {
-			return fmt.Errorf("Volume still exists")
+			return fmt.Errorf("Volume '%s' still exists", key)
 
 		}
 

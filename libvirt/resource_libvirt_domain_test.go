@@ -85,6 +85,11 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
                     }
             }`)
 
+	var configVolDettached = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+            }`)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -95,6 +100,13 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
 					testAccCheckLibvirtVolumeExists("libvirt_volume.acceptance-test-volume", &volume),
+				),
+			},
+			resource.TestStep{
+				Config: configVolDettached,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtVolumeDoesNotExists("libvirt_volume.acceptance-test-volume", &volume),
 				),
 			},
 		},
