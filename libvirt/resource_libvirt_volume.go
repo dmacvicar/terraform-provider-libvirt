@@ -245,7 +245,7 @@ func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error
 
 	err = volume.Delete(0)
 	if err != nil {
-		return fmt.Errorf("Can't delete volume %s", d.Id())
+		return fmt.Errorf("Can't delete volume %s: %s", d.Id(), err)
 	}
 
 	return nil
