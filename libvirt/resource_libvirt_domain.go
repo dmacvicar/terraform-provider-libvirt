@@ -83,7 +83,10 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	domainDef := newDomainDef()
-	domainDef.Name = d.Get("name").(string)
+	if name, ok := d.GetOk("name"); ok {
+		domainDef.Name = name.(string)
+	}
+
 	domainDef.Memory.Amount = d.Get("memory").(int)
 	domainDef.VCpu.Amount = d.Get("vcpu").(int)
 	domainDef.Devices.Disks = disks

@@ -90,7 +90,10 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	volumeDef := newDefVolume()
-	volumeDef.Name = d.Get("name").(string)
+
+	if name, ok := d.GetOk("name"); ok {
+		volumeDef.Name = name.(string)
+	}
 
 	// an existing image was given, this mean we can't choose size
 	if url, ok := d.GetOk("source"); ok {
