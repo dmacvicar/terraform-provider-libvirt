@@ -81,6 +81,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("can't find storage pool '%s'", poolName)
 	}
+	defer pool.Free()
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
@@ -147,6 +148,8 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("Error creating libvirt volume: %s", err)
 	}
+	defer volume.Free()
+
 	// we use the key as the id
 	key, err := volume.GetKey()
 	if err != nil {
@@ -205,6 +208,7 @@ func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("Can't retrieve volume %s", d.Id())
 	}
+	defer volume.Free()
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
@@ -212,6 +216,7 @@ func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("Error retrieving pool for volume: %s", err)
 	}
+	defer volPool.Free()
 
 	err = volPool.Refresh(0)
 	if err != nil {

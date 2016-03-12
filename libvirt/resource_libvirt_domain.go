@@ -106,6 +106,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("Error crearing libvirt domain: %s", err)
 	}
+	defer domain.Free()
 
 	id, err := domain.GetID()
 	if err != nil {
@@ -138,6 +139,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
+	defer domain.Free()
 
 	xmlDesc, err := domain.GetXMLDesc(0)
 	if err != nil {
@@ -160,11 +162,13 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return fmt.Errorf("Error retrieving pool for disk: %s", err)
 		}
+		defer virPool.Free()
 
 		virVol, err := virPool.LookupStorageVolByName(diskDef.Source.Volume)
 		if err != nil {
 			return fmt.Errorf("Error retrieving volume for disk: %s", err)
 		}
+		defer virVol.Free()
 
 		virVolKey, err := virVol.GetKey()
 		if err != nil {
@@ -196,6 +200,7 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
+	defer domain.Free()
 
 	if err := domain.Destroy(); err != nil {
 		return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
