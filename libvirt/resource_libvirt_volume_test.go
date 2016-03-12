@@ -24,7 +24,7 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_volume.terraform-acceptance-test-1", "name", "terraform-test"),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-1", "size", "1"),
+						"libvirt_volume.terraform-acceptance-test-1", "size", "1073741824"),
 				),
 			},
 		},
@@ -110,6 +110,6 @@ func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.VirStorage
 const testAccCheckLibvirtVolumeConfig_basic = `
 resource "libvirt_volume" "terraform-acceptance-test-1" {
     name = "terraform-test"
-    size = 1
+    size =  1073741824
 }
 `
