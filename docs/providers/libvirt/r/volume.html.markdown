@@ -33,5 +33,5 @@ The following arguments are supported:
    libvirt. Only remote HTTP urls are supported for now.
 * `size` - (Optional) The size of the volume in bytes (if you don't like this, help fix [this issue](https://github.com/hashicorp/terraform/issues/3287).
    If `source` is specified, `size` will be set to the source image file size.
-
+* `base_volume_id` - (Optional) The backing volume (CoW) to use for this volume.
 

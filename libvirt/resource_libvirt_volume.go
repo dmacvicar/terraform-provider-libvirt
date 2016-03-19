@@ -35,7 +35,7 @@ func volumeCommonSchema() map[string]*schema.Schema {
 			Computed: true,
 			ForceNew: true,
 		},
-		"base_volume": &schema.Schema{
+		"base_volume_id": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
@@ -110,17 +110,17 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		volumeDef.Capacity.Amount = size
 	} else {
 		_, noSize := d.GetOk("size")
-		_, noBaseVol := d.GetOk("base_volume")
+		_, noBaseVol := d.GetOk("base_volume_id")
 
 		if noSize && noBaseVol {
-			return fmt.Errorf("'size' needs to be specified if no 'source' or 'base_vol' is given.")
+			return fmt.Errorf("'size' needs to be specified if no 'source' or 'base_volume_id' is given.")
 		}
 		volumeDef.Capacity.Amount = d.Get("size").(int)
 	}
 
-	if baseVolumeId, ok := d.GetOk("base_volume"); ok {
+	if baseVolumeId, ok := d.GetOk("base_volume_id"); ok {
 		if _, ok := d.GetOk("size"); ok {
-			return fmt.Errorf("'size' can't be specified when also 'base_volume' is given (the size will be set to the size of the backing image.")
+			return fmt.Errorf("'size' can't be specified when also 'base_volume_id' is given (the size will be set to the size of the backing image.")
 		}
 
 		volumeDef.BackingStore = new(defBackingStore)
