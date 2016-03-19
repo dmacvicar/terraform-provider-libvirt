@@ -42,6 +42,16 @@ func resourceLibvirtDomain() *schema.Resource {
 					Schema: diskCommonSchema(),
 				},
 			},
+			"network_interface": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Required: false,
+				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: networkInterfaceCommonSchema(),
+				},
+			},
+
 		},
 	}
 }
@@ -82,6 +92,22 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		disks = append(disks, disk)
 	}
 
+	netIfacesCount := d.Get("network_interface.#").(int)
+	netIfaces := make([]defNetworkInterface, 0, netIfacesCount)
+	for i := 0; i < netIfacesCount; i++ {
+		prefix := fmt.Sprintf("network_interface.%d", i)
+		netIface := newDefNetworkInterface()
+
+		if mac, ok := d.GetOk(prefix + ".mac"); ok {
+			netIface.Mac.Address = mac.(string)
+		}
+
+		if network, ok := d.GetOk(prefix + ".network"); ok {
+			netIface.Source.Network = network.(string)
+		}
+		netIfaces = append(netIfaces, netIface)
+	}
+
 	domainDef := newDomainDef()
 	if name, ok := d.GetOk("name"); ok {
 		domainDef.Name = name.(string)
@@ -90,6 +116,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	domainDef.Memory.Amount = d.Get("memory").(int)
 	domainDef.VCpu.Amount = d.Get("vcpu").(int)
 	domainDef.Devices.Disks = disks
+	domainDef.Devices.NetworkInterfaces = netIfaces
 
 	connectURI, err := virConn.GetURI()
 	if err != nil {
@@ -180,8 +207,18 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		}
 		disks = append(disks, disk)
 	}
-
 	d.Set("disks", disks)
+
+	netIfaces := make([]map[string]interface{}, 0)
+	for _, networkInterfaceDef := range domainDef.Devices.NetworkInterfaces {
+		netIface := map[string]interface{}{
+			"network": networkInterfaceDef.Source.Network,
+			"mac": networkInterfaceDef.Mac.Address,
+		}
+		netIfaces = append(netIfaces, netIface)
+	}
+	d.Set("network_interfaces", netIfaces)
+
 	return nil
 }
 

@@ -13,6 +13,7 @@ type defDomain struct {
 	VCpu    defVCpu   `xml:"vcpu"`
 	Devices struct {
 		Disks []defDisk `xml:"disk"`
+		NetworkInterfaces []defNetworkInterface `xml:"interface"`
 		Spice struct {
 			Type     string `xml:"type,attr"`
 			Autoport string `xml:"autoport,attr"`

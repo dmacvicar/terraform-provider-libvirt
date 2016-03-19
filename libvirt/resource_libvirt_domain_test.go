@@ -113,6 +113,47 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
+	var domain libvirt.VirDomain
+
+	var config = fmt.Sprintf(`
+            resource "libvirt_volume" "acceptance-test-volume" {
+                    name = "terraform-test"
+            }
+
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+                    network_interface = {
+                            network = "default"
+                    }
+                    network_interface = {
+                            mac = "52:54:00:a9:f5:17"
+                    }
+                    disk {
+                            volume_id = "${libvirt_volume.acceptance-test-volume.id}"
+                    }
+            }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "network_interface.0.network", "default"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "network_interface.1.mac", "52:54:00:a9:f5:17"),
+				),
+			},
+		},
+	})
+}
+
+
 func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 	virtConn := testAccProvider.Meta().(*Client).libvirt
 
