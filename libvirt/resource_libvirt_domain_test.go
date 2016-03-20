@@ -153,7 +153,6 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	})
 }
 
-
 func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 	virtConn := testAccProvider.Meta().(*Client).libvirt
 

@@ -21,7 +21,6 @@ type defVolume struct {
 		Permissions struct {
 			Mode int `xml:"mode,omitempty"`
 		} `xml:"permissions,omitempty"`
-
 	} `xml:"target"`
 	Allocation int `xml:"allocation"`
 	Capacity   struct {

@@ -12,9 +12,9 @@ type defDomain struct {
 	Memory  defMemory `xml:"memory"`
 	VCpu    defVCpu   `xml:"vcpu"`
 	Devices struct {
-		Disks []defDisk `xml:"disk"`
+		Disks             []defDisk             `xml:"disk"`
 		NetworkInterfaces []defNetworkInterface `xml:"interface"`
-		Spice struct {
+		Spice             struct {
 			Type     string `xml:"type,attr"`
 			Autoport string `xml:"autoport,attr"`
 		} `xml:"graphics"`

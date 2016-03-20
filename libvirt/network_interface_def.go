@@ -8,11 +8,11 @@ import (
 type defNetworkInterface struct {
 	XMLName xml.Name `xml:"interface"`
 	Type    string   `xml:"type,attr"`
-	Mac struct {
+	Mac     struct {
 		Address string `xml:"address,attr,omitempty"`
 	} `xml:"mac,omitempty"`
 	Source struct {
-		Network   string `xml:"network,attr"`
+		Network string `xml:"network,attr"`
 	} `xml:"source"`
 	Model struct {
 		Type string `xml:"type,attr"`

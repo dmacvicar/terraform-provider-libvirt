@@ -104,7 +104,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf("'base_volume_id' can't be specified when also 'source' is given (the size will be set to the size of the base image.")
 		}
 
-
 		size, err := remoteImageSize(url.(string))
 		if err != nil {
 			return err

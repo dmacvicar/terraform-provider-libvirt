@@ -51,7 +51,6 @@ func resourceLibvirtDomain() *schema.Resource {
 					Schema: networkInterfaceCommonSchema(),
 				},
 			},
-
 		},
 	}
 }
@@ -213,7 +212,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	for _, networkInterfaceDef := range domainDef.Devices.NetworkInterfaces {
 		netIface := map[string]interface{}{
 			"network": networkInterfaceDef.Source.Network,
-			"mac": networkInterfaceDef.Mac.Address,
+			"mac":     networkInterfaceDef.Mac.Address,
 		}
 		netIfaces = append(netIfaces, netIface)
 	}
@@ -291,4 +290,3 @@ func waitForDomainDestroyed(virConn *libvirt.VirConnection, id uint32) error {
 		}
 	}
 }
-
