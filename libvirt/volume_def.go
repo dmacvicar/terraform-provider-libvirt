@@ -18,6 +18,10 @@ type defVolume struct {
 		Format struct {
 			Type string `xml:"type,attr"`
 		} `xml:"format"`
+		Permissions struct {
+			Mode int `xml:"mode,omitempty"`
+		} `xml:"permissions,omitempty"`
+
 	} `xml:"target"`
 	Allocation int `xml:"allocation"`
 	Capacity   struct {
@@ -30,6 +34,7 @@ type defVolume struct {
 func newDefVolume() defVolume {
 	volumeDef := defVolume{}
 	volumeDef.Target.Format.Type = "qcow2"
+	volumeDef.Target.Permissions.Mode = 644
 	volumeDef.Capacity.Unit = "bytes"
 	volumeDef.Capacity.Amount = 1
 	return volumeDef
