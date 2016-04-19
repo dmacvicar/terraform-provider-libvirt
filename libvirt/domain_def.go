@@ -26,8 +26,8 @@ type defOs struct {
 }
 
 type defOsType struct {
-	Arch    string `xml:"arch,attr"`
-	Machine string `xml:"machine,attr"`
+	Arch    string `xml:"arch,attr,omitempty"`
+	Machine string `xml:"machine,attr,omitempty"`
 	Name    string `xml:"chardata"`
 }
 
@@ -50,8 +50,6 @@ func newDomainDef() defDomain {
 
 	domainDef.Os = defOs{}
 	domainDef.Os.Type = defOsType{}
-	domainDef.Os.Type.Arch = "x86_64"
-	domainDef.Os.Type.Machine = "pc-i440fx-2.4"
 	domainDef.Os.Type.Name = "hvm"
 
 	domainDef.Memory = defMemory{}
