@@ -7,7 +7,6 @@ import (
 	//"gopkg.in/alexzorin/libvirt-go.v2"
 	libvirt "github.com/dmacvicar/libvirt-go"
 	"log"
-	"strconv"
 	"testing"
 )
 
@@ -161,10 +160,8 @@ func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 			continue
 		}
 
-		domainId, _ := strconv.Atoi(rs.Primary.ID)
-
 		// Try to find the server
-		_, err := virtConn.LookupDomainById(uint32(domainId))
+		_, err := virtConn.LookupByUUIDString(rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf(
 				"Error waiting for domain (%s) to be destroyed: %s",
@@ -186,28 +183,22 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.VirDomain) resour
 			return fmt.Errorf("No libvirt domain ID is set")
 		}
 
-		domainId, err := strconv.Atoi(rs.Primary.ID)
-
-		if err != nil {
-			return err
-		}
-
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		retrieveDomain, err := virConn.LookupDomainById(uint32(domainId))
+		retrieveDomain, err := virConn.LookupByUUIDString(rs.Primary.ID)
 
 		if err != nil {
 			return err
 		}
 
-		log.Printf("The ID is %d", domainId)
+		log.Printf("The ID is %s", rs.Primary.ID)
 
-		realId, err := retrieveDomain.GetID()
+		realId, err := retrieveDomain.GetUUIDString()
 		if err != nil {
 			return err
 		}
 
-		if realId != uint(domainId) {
+		if realId != rs.Primary.ID {
 			return fmt.Errorf("Libvirt domain not found")
 		}
 

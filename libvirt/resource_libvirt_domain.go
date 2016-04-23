@@ -6,7 +6,6 @@ import (
 	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/schema"
 	"log"
-	"strconv"
 	"time"
 )
 
@@ -134,11 +133,11 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 	defer domain.Free()
 
-	id, err := domain.GetID()
+	id, err := domain.GetUUIDString()
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain id: %s", err)
 	}
-	d.SetId(fmt.Sprintf("%d", id))
+	d.SetId(id)
 
 	log.Printf("[INFO] Domain ID: %s", d.Id())
 
@@ -156,12 +155,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("The libvirt connection was nil.")
 	}
 
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return fmt.Errorf("Not a valid ID, must be an integer: %s", err)
-	}
-
-	domain, err := virConn.LookupDomainById(uint32(id))
+	domain, err := virConn.LookupByUUIDString(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
@@ -227,12 +221,7 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("The libvirt connection was nil.")
 	}
 
-	id, err := strconv.Atoi(d.Id())
-	if err != nil {
-		return fmt.Errorf("Not a valid ID, must be an integer: %s", err)
-	}
-
-	domain, err := virConn.LookupDomainById(uint32(id))
+	domain, err := virConn.LookupByUUIDString(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
@@ -242,7 +231,7 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
 	}
 
-	err = waitForDomainDestroyed(virConn, uint32(id))
+	err = waitForDomainDestroyed(virConn, d.Id())
 	if err != nil {
 		return fmt.Errorf("Error waiting for domain to be destroyed: %s", err)
 	}
@@ -275,11 +264,11 @@ func waitForDomainUp(domain libvirt.VirDomain) error {
 }
 
 // wait for domain to be up and timeout after 5 minutes.
-func waitForDomainDestroyed(virConn *libvirt.VirConnection, id uint32) error {
+func waitForDomainDestroyed(virConn *libvirt.VirConnection, uuid string) error {
 	start := time.Now()
 	for {
-		log.Printf("Waiting for domain %d to be destroyed", id)
-		_, err := virConn.LookupDomainById(uint32(id))
+		log.Printf("Waiting for domain %s to be destroyed", uuid)
+		_, err := virConn.LookupByUUIDString(uuid)
 		if err.(libvirt.VirError).Code == libvirt.VIR_ERR_NO_DOMAIN {
 			return nil
 		}
