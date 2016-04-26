@@ -9,8 +9,7 @@ before_install:
   - sudo apt-get install -y libvirt-dev
 
 install:
-  - go get ./...
-  - go get github.com/hashicorp/logutils
+  - go get -t ./...
   - go build .
   - find .
   - go test ./...
