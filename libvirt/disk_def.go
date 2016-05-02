@@ -2,6 +2,7 @@ package libvirt
 
 import (
 	"encoding/xml"
+        "strconv"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -32,13 +33,13 @@ func diskCommonSchema() map[string]*schema.Schema {
 	}
 }
 
-func newDefDisk() defDisk {
+func newDefDisk(targetdev int) defDisk {
 	disk := defDisk{}
 	disk.Type = "volume"
 	disk.Device = "disk"
 	disk.Format.Type = "qcow2"
 
-	disk.Target.Dev = "sda"
+	disk.Target.Dev = "sda" + strconv.Itoa(targetdev)
 	disk.Target.Bus = "virtio"
 
 	return disk
