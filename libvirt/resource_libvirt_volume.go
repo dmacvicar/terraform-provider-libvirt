@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func volumeCommonSchema() map[string]*schema.Schema {
@@ -83,10 +84,23 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	err = pool.Refresh(0)
-	if err != nil {
-		return fmt.Errorf("Error refreshing pool for volume: %s", err)
-	}
+       
+        try            := 0
+        maxTries       := 10
+        sleepTimeInSec := 2
+  
+        for try < maxTries  {
+		err = pool.Refresh(0)
+		if err != nil {
+			if try >= maxTries {
+				return fmt.Errorf("Error refreshing pool for volume: %s , try: %i", err, try )
+			} else {
+				time.Sleep( time.Duration(sleepTimeInSec) * time.Second )
+			}
+		} else {
+			break
+		}
+        }
 
 	volumeDef := newDefVolume()
 
