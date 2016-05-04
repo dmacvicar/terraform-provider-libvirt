@@ -112,6 +112,60 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
+	var domain libvirt.VirDomain
+	var volume libvirt.VirStorageVol
+
+	var configVolAttached = fmt.Sprintf(`
+            resource "libvirt_volume" "acceptance-test-volume1" {
+                    name = "terraform-test-vol1"
+            }
+
+            resource "libvirt_volume" "acceptance-test-volume2" {
+                    name = "terraform-test-vol2"
+            }
+
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test-domain"
+                    disk {
+                            volume_id = "${libvirt_volume.acceptance-test-volume1.id}"
+                    }
+
+                    disk {
+                            volume_id = "${libvirt_volume.acceptance-test-volume2.id}"
+                    }
+            }`)
+
+	var configVolDettached = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test-domain"
+            }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: configVolAttached,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.acceptance-test-volume1", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.acceptance-test-volume2", &volume),
+				),
+			},
+			resource.TestStep{
+				Config: configVolDettached,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtVolumeDoesNotExists("libvirt_volume.acceptance-test-volume1", &volume),
+					testAccCheckLibvirtVolumeDoesNotExists("libvirt_volume.acceptance-test-volume2", &volume),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	var domain libvirt.VirDomain
 
