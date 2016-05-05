@@ -241,10 +241,9 @@ func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error
 	}
 	defer volPool.Free()
 
-	err = volPool.Refresh(0)
-	if err != nil {
-		return fmt.Errorf("Error refreshing pool for volume: %s", err)
-	}
+	WaitForSuccess("Error refreshing pool for volume", func() error {
+		return volPool.Refresh(0)
+	})
 
 	// Workaround for redhat#1293804
 	// https://bugzilla.redhat.com/show_bug.cgi?id=1293804#c12
