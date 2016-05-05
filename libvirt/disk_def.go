@@ -37,8 +37,6 @@ func newDefDisk() defDisk {
 	disk.Type = "volume"
 	disk.Device = "disk"
 	disk.Format.Type = "qcow2"
-
-	disk.Target.Dev = "sda"
 	disk.Target.Bus = "virtio"
 
 	return disk

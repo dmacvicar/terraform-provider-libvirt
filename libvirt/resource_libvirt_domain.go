@@ -65,6 +65,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	for i := 0; i < disksCount; i++ {
 		prefix := fmt.Sprintf("disk.%d", i)
 		disk := newDefDisk()
+		disk.Target.Dev = fmt.Sprintf("sd%s", DiskLetterForIndex(i))
 
 		volumeKey := d.Get(prefix + ".volume_id").(string)
 		diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
