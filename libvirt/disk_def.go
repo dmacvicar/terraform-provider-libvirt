@@ -20,6 +20,11 @@ type defDisk struct {
 		Dev string `xml:"dev,attr"`
 		Bus string `xml:"bus,attr"`
 	} `xml:"target"`
+	Driver struct {
+        Name string `xml:"name,attr"`
+        Type string `xml:"type,attr"`
+    } `xml:"driver"`
+
 }
 
 func diskCommonSchema() map[string]*schema.Schema {
@@ -38,6 +43,9 @@ func newDefDisk() defDisk {
 	disk.Device = "disk"
 	disk.Format.Type = "qcow2"
 	disk.Target.Bus = "virtio"
+
+	disk.Driver.Name = "qemu"
+	disk.Driver.Type = "qcow2"
 
 	return disk
 }
