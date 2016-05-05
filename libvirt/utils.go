@@ -16,6 +16,5 @@ func DiskLetterForIndex(i int) string {
 		return fmt.Sprintf("%c", letter)
 	}
 
-	return fmt.Sprintf("%s%c", DiskLetterForIndex(q - 1), letter)
+	return fmt.Sprintf("%s%c", DiskLetterForIndex(q-1), letter)
 }
-

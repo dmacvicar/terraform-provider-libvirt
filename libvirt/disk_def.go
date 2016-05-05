@@ -21,10 +21,9 @@ type defDisk struct {
 		Bus string `xml:"bus,attr"`
 	} `xml:"target"`
 	Driver struct {
-        Name string `xml:"name,attr"`
-        Type string `xml:"type,attr"`
-    } `xml:"driver"`
-
+		Name string `xml:"name,attr"`
+		Type string `xml:"type,attr"`
+	} `xml:"driver"`
 }
 
 func diskCommonSchema() map[string]*schema.Schema {
