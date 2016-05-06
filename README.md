@@ -88,7 +88,7 @@ go test ./...
   ```console
   cannot unlink file '/var/lib/libvirt/images/XXXXXXXXXXXX': Permission denied
   ```
-  It is probably related.
+  It is probably related and fixed in libvirt 1.3.3 (already available in openSUSE Tumbleweed).
 
 ## Author
 
