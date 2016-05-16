@@ -153,7 +153,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+ 		return fmt.Errorf("The libvirt connection was nil.")
 	}
 
 	domain, err := virConn.LookupByUUIDString(d.Id())
@@ -203,16 +203,82 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("disks", disks)
 
+	// look interfaces with addresses
+	start := time.Now()
+	var ifacesWithAddr []libvirt.VirDomainInterface
+	for {
+		ifacesWithAddr, err = domain.ListAllInterfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+		if err != nil {
+			return fmt.Errorf("Error retrieving interface addresses: %s", err)
+		}
+
+		log.Printf("[DEBUG] %d interfaces defined. %d addresses available.", len(domainDef.Devices.NetworkInterfaces), len(ifacesWithAddr))
+
+		// wait for at least one address per interface
+		if len(ifacesWithAddr) >= len(domainDef.Devices.NetworkInterfaces) {
+			break
+		}
+
+		log.Printf("[DEBUG] waiting for addresses...")
+		time.Sleep(1 * time.Second)
+		if time.Since(start) > 5*time.Minute {
+			return fmt.Errorf("Timeout waiting for interface addresses")
+		}
+	}
+
 	netIfaces := make([]map[string]interface{}, 0)
 	for _, networkInterfaceDef := range domainDef.Devices.NetworkInterfaces {
+
+		if networkInterfaceDef.Type != "network" {
+			log.Printf("[DEBUG] ignoring interface of type '%s'", networkInterfaceDef.Type)
+			continue
+		}
+
 		netIface := map[string]interface{}{
 			"network": networkInterfaceDef.Source.Network,
 			"mac":     networkInterfaceDef.Mac.Address,
 		}
+
+		netIfaceAddrs := make([]map[string]interface{}, 0)
+		// look for an ip address and try to match it with the mac address
+		// not sure if using the target device name is a better idea here
+		for _, ifaceWithAddr := range ifacesWithAddr {
+			log.Printf("[DEBUG] Trying with: '%s': '%s' against '%s'\n", ifaceWithAddr.Hwaddr, ifaceWithAddr.Addrs[0].Addr, networkInterfaceDef.Mac.Address)
+			if ifaceWithAddr.Hwaddr == networkInterfaceDef.Mac.Address {
+				for _, addr := range(ifaceWithAddr.Addrs) {
+					netIfaceAddr := map[string]interface{}{
+						"type": func() string {
+							switch addr.Type {
+							case libvirt.VIR_IP_ADDR_TYPE_IPV4:
+								return "ipv4"
+							case libvirt.VIR_IP_ADDR_TYPE_IPV6:
+								return "ipv6"
+							default:
+								return "other"
+							}
+						}(),
+						"address": addr.Addr,
+						"prefix": addr.Prefix,
+					}
+					netIfaceAddrs = append(netIfaceAddrs, netIfaceAddr)
+				}
+			} else {
+				log.Printf("[DEBUG] Unmatched address: '%s': '%s'\n", ifaceWithAddr.Hwaddr, networkInterfaceDef.Mac.Address)
+			}
+		}
+
+		log.Printf("[DEBUG] %d addresses for %s\n", len(netIfaceAddrs), networkInterfaceDef.Mac.Address)
+		netIface["address"] = netIfaceAddrs
 		netIfaces = append(netIfaces, netIface)
 	}
-	d.Set("network_interfaces", netIfaces)
+	d.Set("network_interface", netIfaces)
 
+	if len(ifacesWithAddr) > 0 {
+		d.SetConnInfo(map[string]string{
+			"type":     "ssh",
+  		    "host":     ifacesWithAddr[0].Addrs[0].Addr,
+		})
+	}
 	return nil
 }
 
