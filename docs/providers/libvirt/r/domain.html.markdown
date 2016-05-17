@@ -46,7 +46,7 @@ resource "libvirt_volume" "leap" {
 
 resource "libvirt_volume" "mydisk" {
   name = "mydisk"
-  base_volume = "${libvirt_volume.mydisk.id}"
+  base_volume_id = "${libvirt_volume.leap.id}"
 }
 
 resource "libvirt_domain" "domain1" {
