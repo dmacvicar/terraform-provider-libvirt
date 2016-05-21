@@ -9,7 +9,7 @@ resource "libvirt_volume" "opensuse_leap" {
 
 resource "libvirt_volume" "volume" {
   name = "volume-${count.index}"
-  base_volume = "${libvirt_volume.opensuse_leap.id}"
+  base_volume_id = "${libvirt_volume.opensuse_leap.id}"
   count = 4
 }
 
