@@ -83,10 +83,9 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	err = pool.Refresh(0)
-	if err != nil {
-		return fmt.Errorf("Error refreshing pool for volume: %s", err)
-	}
+	WaitForSuccess("Error refreshing pool for volume", func() error {
+		return pool.Refresh(0)
+	})
 
 	volumeDef := newDefVolume()
 

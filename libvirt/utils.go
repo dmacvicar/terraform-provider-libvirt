@@ -3,6 +3,7 @@ package libvirt
 import (
 	"crypto/rand"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -29,6 +30,7 @@ func WaitForSuccess(errorMessage string, f func() error) error {
 		if err == nil {
 			return nil
 		}
+		log.Printf("[DEBUG] %s. Re-trying.\n", err)
 
 		time.Sleep(1 * time.Second)
 		if time.Since(start) > 5*time.Minute {
