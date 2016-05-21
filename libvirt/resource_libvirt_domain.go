@@ -158,7 +158,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
- 		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf("The libvirt connection was nil.")
 	}
 
 	domain, err := virConn.LookupByUUIDString(d.Id())
@@ -232,7 +232,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		// not sure if using the target device name is a better idea here
 		for _, ifaceWithAddr := range ifacesWithAddr {
 			if ifaceWithAddr.Hwaddr == networkInterfaceDef.Mac.Address {
-				for _, addr := range(ifaceWithAddr.Addrs) {
+				for _, addr := range ifaceWithAddr.Addrs {
 					netIfaceAddr := map[string]interface{}{
 						"type": func() string {
 							switch addr.Type {
@@ -245,7 +245,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 							}
 						}(),
 						"address": addr.Addr,
-						"prefix": addr.Prefix,
+						"prefix":  addr.Prefix,
 					}
 					netIfaceAddrs = append(netIfaceAddrs, netIfaceAddr)
 				}
@@ -260,8 +260,8 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	if len(ifacesWithAddr) > 0 {
 		d.SetConnInfo(map[string]string{
-			"type":     "ssh",
-  		    "host":     ifacesWithAddr[0].Addrs[0].Addr,
+			"type": "ssh",
+			"host": ifacesWithAddr[0].Addrs[0].Addr,
 		})
 	}
 	return nil
@@ -361,7 +361,7 @@ func waitForNetworkAddresses(d *schema.ResourceData, domain libvirt.VirDomain) e
 				return fmt.Errorf("Error retrieving interface addresses: %s", err)
 			}
 
-			for _, ifaceWithAddr := range(ifacesWithAddr) {
+			for _, ifaceWithAddr := range ifacesWithAddr {
 				// found
 				if mac == ifaceWithAddr.Hwaddr {
 					break waitLoop

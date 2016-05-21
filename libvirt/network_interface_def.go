@@ -57,10 +57,10 @@ func networkInterfaceCommonSchema() map[string]*schema.Schema {
 		"wait_for_lease": &schema.Schema{
 			Type:     schema.TypeBool,
 			Optional: true,
-		    Default: false,
+			Default:  false,
 			ForceNew: true,
 		},
-		"address":  &schema.Schema{
+		"address": &schema.Schema{
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,

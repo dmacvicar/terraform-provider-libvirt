@@ -39,15 +39,15 @@ func WaitForSuccess(errorMessage string, f func() error) error {
 
 func RandomMACAddress() (string, error) {
 	buf := make([]byte, 6)
-    _, err := rand.Read(buf)
-    if err != nil {
+	_, err := rand.Read(buf)
+	if err != nil {
 		return "", err
-    }
+	}
 
 	// set local bit and unicast
 	buf[0] = (buf[0] | 2) & 0xfe
-    // Set the local bit
-    buf[0] |= 2
+	// Set the local bit
+	buf[0] |= 2
 
 	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
 }
