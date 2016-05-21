@@ -54,6 +54,12 @@ func networkInterfaceCommonSchema() map[string]*schema.Schema {
 				return RandomMACAddress()
 			},
 		},
+		"wait_for_lease": &schema.Schema{
+			Type:     schema.TypeBool,
+			Optional: true,
+		    Default: false,
+			ForceNew: true,
+		},
 		"address":  &schema.Schema{
 			Type:     schema.TypeList,
 			Optional: true,
