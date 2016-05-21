@@ -147,6 +147,11 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error waiting for domain to reach RUNNING state: %s", err)
 	}
 
+	err = waitForNetworkAddresses(d, domain)
+	if err != nil {
+		return err
+	}
+
 	return resourceLibvirtDomainRead(d, meta)
 }
 
@@ -203,16 +208,62 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("disks", disks)
 
+	// look interfaces with addresses
+	ifacesWithAddr, err := domain.ListAllInterfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+	if err != nil {
+		return fmt.Errorf("Error retrieving interface addresses: %s", err)
+	}
+
 	netIfaces := make([]map[string]interface{}, 0)
 	for _, networkInterfaceDef := range domainDef.Devices.NetworkInterfaces {
+
+		if networkInterfaceDef.Type != "network" {
+			log.Printf("[DEBUG] ignoring interface of type '%s'", networkInterfaceDef.Type)
+			continue
+		}
+
 		netIface := map[string]interface{}{
 			"network": networkInterfaceDef.Source.Network,
 			"mac":     networkInterfaceDef.Mac.Address,
 		}
+
+		netIfaceAddrs := make([]map[string]interface{}, 0)
+		// look for an ip address and try to match it with the mac address
+		// not sure if using the target device name is a better idea here
+		for _, ifaceWithAddr := range ifacesWithAddr {
+			if ifaceWithAddr.Hwaddr == networkInterfaceDef.Mac.Address {
+				for _, addr := range ifaceWithAddr.Addrs {
+					netIfaceAddr := map[string]interface{}{
+						"type": func() string {
+							switch addr.Type {
+							case libvirt.VIR_IP_ADDR_TYPE_IPV4:
+								return "ipv4"
+							case libvirt.VIR_IP_ADDR_TYPE_IPV6:
+								return "ipv6"
+							default:
+								return "other"
+							}
+						}(),
+						"address": addr.Addr,
+						"prefix":  addr.Prefix,
+					}
+					netIfaceAddrs = append(netIfaceAddrs, netIfaceAddr)
+				}
+			}
+		}
+
+		log.Printf("[DEBUG] %d addresses for %s\n", len(netIfaceAddrs), networkInterfaceDef.Mac.Address)
+		netIface["address"] = netIfaceAddrs
 		netIfaces = append(netIfaces, netIface)
 	}
-	d.Set("network_interfaces", netIfaces)
+	d.Set("network_interface", netIfaces)
 
+	if len(ifacesWithAddr) > 0 {
+		d.SetConnInfo(map[string]string{
+			"type": "ssh",
+			"host": ifacesWithAddr[0].Addrs[0].Addr,
+		})
+	}
 	return nil
 }
 
@@ -279,4 +330,50 @@ func waitForDomainDestroyed(virConn *libvirt.VirConnection, uuid string) error {
 			return fmt.Errorf("Domain is still there after 5 minutes")
 		}
 	}
+}
+
+func waitForNetworkAddresses(d *schema.ResourceData, domain libvirt.VirDomain) error {
+	log.Printf("[DEBUG] waiting for network addresses.\n")
+	// wait for network interfaces with 'wait_for_lease' to get an address
+	netIfacesCount := d.Get("network_interface.#").(int)
+	for i := 0; i < netIfacesCount; i++ {
+		prefix := fmt.Sprintf("network_interface.%d", i)
+
+		if wait, ok := d.GetOk(prefix + ".wait_for_lease"); !ok || !wait.(bool) {
+			continue
+		}
+
+		var mac string
+		if v, ok := d.GetOk(prefix + ".mac"); !ok {
+			// we can't get the ip without a mac address
+			continue
+		} else {
+			mac = v.(string)
+		}
+		log.Printf("[DEBUG] waiting for network addresses on %s\n", mac)
+
+		// loop until address appear, with timeout
+		start := time.Now()
+	waitLoop:
+		for {
+			ifacesWithAddr, err := domain.ListAllInterfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+			if err != nil {
+				return fmt.Errorf("Error retrieving interface addresses: %s", err)
+			}
+
+			for _, ifaceWithAddr := range ifacesWithAddr {
+				// found
+				if mac == ifaceWithAddr.Hwaddr {
+					break waitLoop
+				}
+			}
+
+			time.Sleep(1 * time.Second)
+			if time.Since(start) > 5*time.Minute {
+				return fmt.Errorf("Timeout waiting for interface addresses")
+			}
+		}
+	}
+
+	return nil
 }
