@@ -350,12 +350,12 @@ func waitForNetworkAddresses(d *schema.ResourceData, domain libvirt.VirDomain) e
 		} else {
 			mac = v.(string)
 		}
-		log.Printf("[DEBUG] waiting for network addresses on %s\n", mac)
 
 		// loop until address appear, with timeout
 		start := time.Now()
 	waitLoop:
 		for {
+			log.Printf("[DEBUG] waiting for network address for interface with hwaddr: '%s'\n", mac)
 			ifacesWithAddr, err := domain.ListAllInterfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
 			if err != nil {
 				return fmt.Errorf("Error retrieving interface addresses: %s", err)
