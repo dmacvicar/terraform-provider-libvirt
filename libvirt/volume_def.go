@@ -25,7 +25,7 @@ type defVolume struct {
 	Allocation int `xml:"allocation"`
 	Capacity   struct {
 		Unit   string `xml:"unit,attr"`
-		Amount int    `xml:"chardata"`
+		Amount int64  `xml:"chardata"`
 	} `xml:"capacity"`
 	BackingStore *defBackingStore `xml:"backingStore,omitempty"`
 }

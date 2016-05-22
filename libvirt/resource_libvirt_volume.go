@@ -7,9 +7,105 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"io"
 	"log"
+	"os"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 )
+
+// network transparent image
+type image interface {
+	Size() (int64, error)
+	WriteToStream(*libvirt.VirStream) error
+	String() string
+}
+
+type localImage struct {
+	path string
+}
+
+func (i *localImage) String() string {
+	return i.path
+}
+
+func (i *localImage) Size() (int64, error) {
+	file, err := os.Open(i.path)
+	if err != nil {
+		return 0, err
+	}
+
+	fi, err := file.Stat()
+	if err != nil {
+		return 0, err
+	}
+	return fi.Size(), nil
+}
+
+func (i *localImage) WriteToStream(stream *libvirt.VirStream) error {
+	file, err := os.Open(i.path)
+	defer file.Close()
+	if err != nil {
+		return fmt.Errorf("Error while opening %s: %s", i.path, err)
+	}
+
+	n, err := io.Copy(stream, file)
+	if err != nil {
+		return fmt.Errorf("Error while reading %s: %s", i.path, err)
+	}
+	log.Printf("%d bytes uploaded\n", n)
+	return nil
+}
+
+type httpImage struct {
+	url *url.URL
+}
+
+func (i *httpImage) String() string {
+	return i.url.String()
+}
+
+func (i *httpImage) Size() (int64, error) {
+	response, err := http.Head(i.url.String())
+	if err != nil {
+		return 0, err
+	}
+	length, err := strconv.Atoi(response.Header.Get("Content-Length"))
+	if err != nil {
+		return 0, err
+	}
+	return int64(length), nil
+}
+
+func (i *httpImage) WriteToStream(stream *libvirt.VirStream) error {
+	response, err := http.Get(i.url.String())
+	defer response.Body.Close()
+	if err != nil {
+		return fmt.Errorf("Error while downloading %s: %s", i.url.String(), err)
+	}
+
+	n, err := io.Copy(stream, response.Body)
+	if err != nil {
+		return fmt.Errorf("Error while downloading %s: %s", i.url.String(), err)
+	}
+	log.Printf("%d bytes uploaded\n", n)
+	return nil
+}
+
+func newImage(source string) (image, error) {
+	url, err := url.Parse(source)
+	if err != nil {
+		return nil, fmt.Errorf("Can't parse source '%s' as url: %s", source, err)
+	}
+
+	if strings.HasPrefix(url.Scheme, "http") {
+		return &httpImage{url: url}, nil
+	} else if url.Scheme == "file" || url.Scheme == "" {
+		return &localImage{path: url.Path}, nil
+	}  else {
+		return nil, fmt.Errorf("Don't know how to read from '%s': %s", url.String(), err)
+	}
+}
 
 func volumeCommonSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -103,11 +199,17 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf("'base_volume_id' can't be specified when also 'source' is given (the size will be set to the size of the base image.")
 		}
 
-		size, err := remoteImageSize(url.(string))
+		img, err := newImage(url.(string))
 		if err != nil {
 			return err
 		}
-		log.Printf("Remote image is: %d bytes", size)
+
+		size, err := img.Size()
+		if err != nil {
+			return err
+		}
+		log.Printf("Image %s image is: %d bytes", img, size)
+
 		volumeDef.Capacity.Unit = "B"
 		volumeDef.Capacity.Amount = size
 	} else {
@@ -117,7 +219,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		if noSize && noBaseVol {
 			return fmt.Errorf("'size' needs to be specified if no 'source' or 'base_volume_id' is given.")
 		}
-		volumeDef.Capacity.Amount = d.Get("size").(int)
+		volumeDef.Capacity.Amount = int64(d.Get("size").(int))
 	}
 
 	if baseVolumeId, ok := d.GetOk("base_volume_id"); ok {
@@ -159,22 +261,23 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[INFO] Volume ID: %s", d.Id())
 
 	// upload source if present
-	if url, ok := d.GetOk("source"); ok {
+	if source, ok := d.GetOk("source"); ok {
 		stream, err := libvirt.NewVirStream(virConn, 0)
+		if err != nil {
+			return err
+		}
 		defer stream.Close()
 
-		volume.Upload(stream, 0, uint64(volumeDef.Capacity.Amount), 0)
-		response, err := http.Get(url.(string))
-		defer response.Body.Close()
+		img, err := newImage(source.(string))
 		if err != nil {
-			return fmt.Errorf("Error while downloading %s: %s", url.(string), err)
+			return err
 		}
 
-		n, err := io.Copy(stream, response.Body)
+		volume.Upload(stream, 0, uint64(volumeDef.Capacity.Amount), 0)
+		err = img.WriteToStream(stream)
 		if err != nil {
-			return fmt.Errorf("Error while downloading %s: %s", url.(string), err)
+			return err
 		}
-		log.Printf("%d bytes uploaded\n", n)
 	}
 
 	return resourceLibvirtVolumeRead(d, meta)
