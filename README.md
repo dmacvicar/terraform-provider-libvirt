@@ -7,6 +7,14 @@ This provider is still experimental/in development. To see what is left or plann
 This is a terraform provider that lets you provision
 servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraform.io/).
 
+## Requirements
+
+* libvirt 1.2.14 on the hypervisor
+
+The provider uses `` which was added in 1.2.14. Distributions like Ubuntu 14.04 LTS ship 1.2.2. If you need a stable server distribution with a recent libvirt version, try [openSUSE Leap](https://www.opensuse.org/).
+
+In the future, I may try to support older libvirt versions if I find a way to elegantely conditional compile the code and get the IP addresses with alternative methods.
+
 ## Installing
 
 [Copied from the Terraform documentation](https://www.terraform.io/docs/plugins/basics.html):
