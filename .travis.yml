@@ -6,7 +6,17 @@ go:
 
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y libvirt-dev
+  - sudo apt-get install -y wget
+  - sudo apt-get build-dep -y libvirt
+  - wget https://libvirt.org/sources/libvirt-1.2.14.tar.gz
+  - sudo mkdir -p /usr/src
+  - sudo tar xvzf libvirt-1.2.14.tar.gz -C /usr/src
+  - pushd /usr/src/libvirt-1.2.14
+  - sudo ./configure --prefix=/usr/
+  - sudo make
+  - sudo make install
+  - sudo libvirtd -d
+  - popd
 
 install:
   - go get -t ./...
