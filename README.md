@@ -9,7 +9,7 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 
 ## Requirements
 
-* libvirt 1.2.14 on the hypervisor
+* libvirt 1.2.14 or newer on the hypervisor
 
 The provider uses `virDomainInterfaceAddresses` which was added in 1.2.14. Distributions like Ubuntu 14.04 LTS ship 1.2.2. If you need a stable server distribution with a recent libvirt version, try [openSUSE Leap](https://www.opensuse.org/).
 
