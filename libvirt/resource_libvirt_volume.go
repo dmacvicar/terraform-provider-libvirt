@@ -7,9 +7,9 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"io"
 	"log"
-	"os"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -102,7 +102,7 @@ func newImage(source string) (image, error) {
 		return &httpImage{url: url}, nil
 	} else if url.Scheme == "file" || url.Scheme == "" {
 		return &localImage{path: url.Path}, nil
-	}  else {
+	} else {
 		return nil, fmt.Errorf("Don't know how to read from '%s': %s", url.String(), err)
 	}
 }
