@@ -354,7 +354,7 @@ func waitForDomainDestroyed(virConn *libvirt.VirConnection, uuid string) error {
 func waitForNetworkAddresses(ifaces []defNetworkInterface, domain libvirt.VirDomain) error {
 	log.Printf("[DEBUG] waiting for network addresses.\n")
 	// wait for network interfaces with 'wait_for_lease' to get an address
-	for _, iface := range(ifaces) {
+	for _, iface := range ifaces {
 		if !iface.waitForLease {
 			continue
 		}
