@@ -17,6 +17,7 @@ type defNetworkInterface struct {
 	Model struct {
 		Type string `xml:"type,attr"`
 	} `xml:"model"`
+	waitForLease bool
 }
 
 func networkAddressCommonSchema() map[string]*schema.Schema {
@@ -49,16 +50,12 @@ func networkInterfaceCommonSchema() map[string]*schema.Schema {
 		"mac": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: true,
+			Computed: true,
 			ForceNew: true,
-			DefaultFunc: func() (interface{}, error) {
-				return RandomMACAddress()
-			},
 		},
 		"wait_for_lease": &schema.Schema{
 			Type:     schema.TypeBool,
 			Optional: true,
-			Default:  false,
-			ForceNew: true,
 		},
 		"address": &schema.Schema{
 			Type:     schema.TypeList,
@@ -77,5 +74,6 @@ func newDefNetworkInterface() defNetworkInterface {
 	//iface.Mac.Address = "52:54:00:36:c0:65"
 	iface.Source.Network = "default"
 	iface.Model.Type = "virtio"
+	iface.waitForLease = false
 	return iface
 }
