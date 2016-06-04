@@ -139,7 +139,12 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error serializing libvirt domain: %s", err)
 	}
 
-	domain, err := virConn.DomainCreateXML(string(data), libvirt.VIR_DOMAIN_NONE)
+	domain, err := virConn.DomainDefineXML(string(data))
+	if err != nil {
+		return fmt.Errorf("Error defining libvirt domain: %s", err)
+	}
+
+	err = domain.Create()
 	if err != nil {
 		return fmt.Errorf("Error crearing libvirt domain: %s", err)
 	}
