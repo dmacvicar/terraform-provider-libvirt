@@ -227,7 +227,15 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	// look interfaces with addresses
 	ifacesWithAddr, err := domain.ListAllInterfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
 	if err != nil {
-		return fmt.Errorf("Error retrieving interface addresses: %s", err)
+		switch err.(type) {
+		default:
+			return fmt.Errorf("Error retrieving interface addresses: %s", err)
+		case libvirt.VirError:
+			virErr := err.(libvirt.VirError)
+			if virErr.Code != libvirt.VIR_ERR_OPERATION_INVALID || virErr.Domain != libvirt.VIR_FROM_QEMU {
+				return fmt.Errorf("Error retrieving interface addresses: %s", err)
+			}
+		}
 	}
 
 	netIfaces := make([]map[string]interface{}, 0)
@@ -303,13 +311,19 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 	}
 	defer domain.Free()
 
-	if err := domain.Destroy(); err != nil {
-		return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
+	state, err := domain.GetState()
+	if err != nil {
+		return fmt.Errorf("Couldn't get info about domain: %s", err)
 	}
 
-	err = waitForDomainDestroyed(virConn, d.Id())
-	if err != nil {
-		return fmt.Errorf("Error waiting for domain to be destroyed: %s", err)
+	if state[0] == libvirt.VIR_DOMAIN_RUNNING || state[0] == libvirt.VIR_DOMAIN_PAUSED {
+		if err := domain.Destroy(); err != nil {
+			return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
+		}
+	}
+
+	if err := domain.Undefine(); err != nil {
+		return fmt.Errorf("Couldn't undefine libvirt domain: %s", err)
 	}
 
 	return nil
@@ -335,23 +349,6 @@ func waitForDomainUp(domain libvirt.VirDomain) error {
 		time.Sleep(1 * time.Second)
 		if time.Since(start) > 5*time.Minute {
 			return fmt.Errorf("Domain didn't switch to state RUNNING in 5 minutes")
-		}
-	}
-}
-
-// wait for domain to be up and timeout after 5 minutes.
-func waitForDomainDestroyed(virConn *libvirt.VirConnection, uuid string) error {
-	start := time.Now()
-	for {
-		log.Printf("Waiting for domain %s to be destroyed", uuid)
-		_, err := virConn.LookupByUUIDString(uuid)
-		if err.(libvirt.VirError).Code == libvirt.VIR_ERR_NO_DOMAIN {
-			return nil
-		}
-
-		time.Sleep(1 * time.Second)
-		if time.Since(start) > 5*time.Minute {
-			return fmt.Errorf("Domain is still there after 5 minutes")
 		}
 	}
 }
