@@ -24,6 +24,7 @@ func resourceLibvirtDomain() *schema.Resource {
 		Delete: resourceLibvirtDomainDelete,
 		Update: resourceLibvirtDomainUpdate,
 		Exists: resourceLibvirtDomainExists,
+
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -242,6 +243,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	if virConn == nil {
 		return fmt.Errorf("The libvirt connection was nil.")
 	}
+
 	domain, err := virConn.LookupByUUIDString(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
