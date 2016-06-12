@@ -31,6 +31,12 @@ func resourceLibvirtDomain() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"metadata": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: false,
+				Optional: true,
+				ForceNew: false,
+			},
 			"vcpu": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
@@ -190,6 +196,12 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		netIfaces = append(netIfaces, netIface)
 	}
 
+	if metadata, ok := d.GetOk("metadata"); ok {
+		domainDef.Metadata.TerraformLibvirt.Xml = metadata.(string)
+	}
+
+	domainDef.Memory.Amount = d.Get("memory").(int)
+	domainDef.VCpu.Amount = d.Get("vcpu").(int)
 	domainDef.Devices.Disks = disks
 	domainDef.Devices.NetworkInterfaces = netIfaces
 
@@ -261,6 +273,25 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	if d.HasChange("metadata") {
+		//terraform-libvirt:user_data xmlns:terraform-libvirt="http://github.com/dmacvicar/terraform-provider-libvirt/"
+		metadata := defMetadata{}
+		metadata.TerraformLibvirt.Xml = d.Get("metadata").(string)
+		metadataToXml, err := xml.Marshal(metadata)
+		if err != nil {
+			return fmt.Errorf("Error serializing libvirt metadata: %s", err)
+		}
+
+		err = domain.SetMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+			string(metadataToXml),
+			"terraform-libvirt",
+			"http://github.com/dmacvicar/terraform-provider-libvirt/",
+			libvirt.VIR_DOMAIN_AFFECT_LIVE|libvirt.VIR_DOMAIN_AFFECT_CONFIG)
+		if err != nil {
+			return fmt.Errorf("Error changing domain metadata: %s", err)
+		}
+	}
+
 	return nil
 }
 
@@ -288,6 +319,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.Set("name", domainDef.Name)
+	d.Set("metadata", domainDef.Metadata.TerraformLibvirt.Xml)
 	d.Set("vpu", domainDef.VCpu)
 	d.Set("memory", domainDef.Memory)
 
