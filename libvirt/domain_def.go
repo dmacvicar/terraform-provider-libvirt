@@ -5,13 +5,15 @@ import (
 )
 
 type defDomain struct {
-	XMLName  xml.Name  `xml:"domain"`
-	Name     string    `xml:"name"`
-	Type     string    `xml:"type,attr"`
-	Os       defOs     `xml:"os"`
-	Memory   defMemory `xml:"memory"`
-	VCpu     defVCpu   `xml:"vcpu"`
-	Features struct {
+	XMLName     xml.Name  `xml:"domain"`
+	Name        string    `xml:"name"`
+	Title       string    `xml:"title"`
+	Description string    `xml:"description"`
+	Type        string    `xml:"type,attr"`
+	Os          defOs     `xml:"os"`
+	Memory      defMemory `xml:"memory"`
+	VCpu        defVCpu   `xml:"vcpu"`
+	Features    struct {
 		Acpi string `xml:"acpi"`
 		Apic string `xml:"apic"`
 		Pae  string `xml:"pae"`
