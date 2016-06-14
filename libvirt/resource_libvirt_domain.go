@@ -21,6 +21,18 @@ func resourceLibvirtDomain() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"title": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: false,
+				Optional: true,
+				ForceNew: false,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: false,
+				Optional: true,
+				ForceNew: false,
+			},
 			"vcpu": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
@@ -130,6 +142,14 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		domainDef.Name = name.(string)
 	}
 
+	if title, ok := d.GetOk("title"); ok {
+		domainDef.Title = title.(string)
+	}
+
+	if description, ok := d.GetOk("description"); ok {
+		domainDef.Description = description.(string)
+	}
+
 	domainDef.Memory.Amount = d.Get("memory").(int)
 	domainDef.VCpu.Amount = d.Get("vcpu").(int)
 	domainDef.Devices.Disks = disks
@@ -227,6 +247,8 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.Set("name", domainDef.Name)
+	d.Set("title", domainDef.Title)
+	d.Set("description", domainDef.Description)
 	d.Set("vpu", domainDef.VCpu)
 	d.Set("memory", domainDef.Memory)
 
