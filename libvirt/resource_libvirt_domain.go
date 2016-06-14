@@ -14,6 +14,7 @@ func resourceLibvirtDomain() *schema.Resource {
 		Create: resourceLibvirtDomainCreate,
 		Read:   resourceLibvirtDomainRead,
 		Delete: resourceLibvirtDomainDelete,
+		Update: resourceLibvirtDomainUpdate,
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -31,6 +32,12 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				Default:  512,
 				ForceNew: true,
+			},
+			"running": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+				ForceNew: false,
 			},
 			"disk": &schema.Schema{
 				Type:     schema.TypeList,
@@ -171,6 +178,31 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	return resourceLibvirtDomainRead(d, meta)
 }
 
+func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error {
+	virConn := meta.(*Client).libvirt
+	if virConn == nil {
+		return fmt.Errorf("The libvirt connection was nil.")
+	}
+
+	domain, err := virConn.LookupByUUIDString(d.Id())
+	if err != nil {
+		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
+	}
+	defer domain.Free()
+
+	running, err := isDomainRunning(domain)
+	if err != nil {
+		return err
+	}
+	if !running {
+		err = domain.Create()
+		if err != nil {
+			return fmt.Errorf("Error crearing libvirt domain: %s", err)
+		}
+	}
+
+	return nil
+}
 func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
@@ -197,6 +229,12 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", domainDef.Name)
 	d.Set("vpu", domainDef.VCpu)
 	d.Set("memory", domainDef.Memory)
+
+	running, err := isDomainRunning(domain)
+	if err != nil {
+		return err
+	}
+	d.Set("running", running)
 
 	disks := make([]map[string]interface{}, 0)
 	for _, diskDef := range domainDef.Devices.Disks {
@@ -392,4 +430,13 @@ func waitForNetworkAddresses(ifaces []defNetworkInterface, domain libvirt.VirDom
 	}
 
 	return nil
+}
+
+func isDomainRunning(domain libvirt.VirDomain) (bool, error) {
+	state, err := domain.GetState()
+	if err != nil {
+		return false, fmt.Errorf("Couldn't get state of domain: %s", err)
+	}
+
+	return state[0] == libvirt.VIR_DOMAIN_RUNNING, nil
 }
