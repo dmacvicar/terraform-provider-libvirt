@@ -136,6 +136,16 @@ func volumeCommonSchema() map[string]*schema.Schema {
 			Optional: true,
 			ForceNew: true,
 		},
+		"base_volume_pool": &schema.Schema{
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+		},
+		"base_volume_name": &schema.Schema{
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+		},
 	}
 }
 
@@ -196,7 +206,11 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf("'size' can't be specified when also 'source' is given (the size will be set to the size of the source image.")
 		}
 		if _, ok := d.GetOk("base_volume_id"); ok {
-			return fmt.Errorf("'base_volume_id' can't be specified when also 'source' is given (the size will be set to the size of the base image.")
+			return fmt.Errorf("'base_volume_id' can't be specified when also 'source' is given.")
+		}
+
+		if _, ok := d.GetOk("base_volume_name"); ok {
+			return fmt.Errorf("'base_volume_name' can't be specified when also 'source' is given.")
 		}
 
 		img, err := newImage(url.(string))
@@ -227,6 +241,10 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf("'size' can't be specified when also 'base_volume_id' is given (the size will be set to the size of the backing image.")
 		}
 
+		if _, ok := d.GetOk("base_volume_name"); ok {
+			return fmt.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given.")
+		}
+
 		volumeDef.BackingStore = new(defBackingStore)
 		volumeDef.BackingStore.Format.Type = "qcow2"
 		baseVolume, err := virConn.LookupStorageVolByKey(baseVolumeId.(string))
@@ -236,6 +254,34 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		baseVolPath, err := baseVolume.GetPath()
 		if err != nil {
 			return fmt.Errorf("can't get name for base image '%s'", baseVolumeId)
+		}
+		volumeDef.BackingStore.Path = baseVolPath
+	}
+
+	if baseVolumeName, ok := d.GetOk("base_volume_name"); ok {
+		if _, ok := d.GetOk("size"); ok {
+			return fmt.Errorf("'size' can't be specified when also 'base_volume_name' is given (the size will be set to the size of the backing image.")
+		}
+
+		baseVolumePool := pool
+		if _, ok := d.GetOk("base_volume_pool"); ok {
+			baseVolumePoolName := d.Get("base_volume_pool").(string)
+			baseVolumePool, err = virConn.LookupStoragePoolByName(baseVolumePoolName)
+			if err != nil {
+				return fmt.Errorf("can't find storage pool '%s'", baseVolumePoolName)
+			}
+			defer baseVolumePool.Free()
+		}
+
+		volumeDef.BackingStore = new(defBackingStore)
+		volumeDef.BackingStore.Format.Type = "qcow2"
+		baseVolume, err := baseVolumePool.LookupStorageVolByName(baseVolumeName.(string))
+		if err != nil {
+			return fmt.Errorf("Can't retrieve volume %s", baseVolumeName.(string))
+		}
+		baseVolPath, err := baseVolume.GetPath()
+		if err != nil {
+			return fmt.Errorf("can't get name for base image '%s'", baseVolumeName)
 		}
 		volumeDef.BackingStore.Path = baseVolPath
 	}
