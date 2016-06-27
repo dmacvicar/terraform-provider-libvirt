@@ -55,7 +55,7 @@ func resourceLibvirtDomain() *schema.Resource {
 				Default:  true,
 				ForceNew: false,
 			},
-			"cloud_init": &schema.Schema{
+			"cloudinit": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: false,
 				Optional: true,
@@ -137,7 +137,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		disks = append(disks, disk)
 	}
 
-	if cloudinit, ok := d.GetOk("cloud_init"); ok {
+	if cloudinit, ok := d.GetOk("cloudinit"); ok {
 		disk, err := newDiskForCloudInit(virConn, cloudinit.(string))
 		if err != nil {
 			return err
@@ -306,8 +306,8 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	if d.HasChange("cloud_init") {
-		cloudinit, err := newDiskForCloudInit(virConn, d.Get("cloud_init").(string))
+	if d.HasChange("cloudinit") {
+		cloudinit, err := newDiskForCloudInit(virConn, d.Get("cloudinit").(string))
 		if err != nil {
 			return err
 		}
