@@ -225,7 +225,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	err = domain.Create()
 	if err != nil {
-		return fmt.Errorf("Error crearing libvirt domain: %s", err)
+		return fmt.Errorf("Error creating libvirt domain: %s", err)
 	}
 	defer domain.Free()
 
@@ -269,7 +269,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	if !running {
 		err = domain.Create()
 		if err != nil {
-			return fmt.Errorf("Error crearing libvirt domain: %s", err)
+			return fmt.Errorf("Error creating libvirt domain: %s", err)
 		}
 	}
 
