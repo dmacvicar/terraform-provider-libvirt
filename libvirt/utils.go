@@ -1,10 +1,16 @@
 package libvirt
 
 import (
+	"bytes"
 	"crypto/rand"
+	"encoding/xml"
 	"fmt"
 	"log"
+	"net"
+	"strings"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 var diskLetters []rune = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -51,5 +57,33 @@ func RandomMACAddress() (string, error) {
 	// Set the local bit
 	buf[0] |= 2
 
-	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
+	mac := fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x",
+		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5])
+	return strings.ToUpper(mac), nil
+}
+
+// Calculates the first and last IP addresses in an IPNet
+func NetworkRange(network *net.IPNet) (net.IP, net.IP) {
+	netIP := network.IP.To4()
+	lastIP := net.IPv4(0, 0, 0, 0).To4()
+	if netIP == nil {
+		netIP = network.IP.To16()
+		lastIP = net.IPv6zero.To16()
+	}
+	firstIP := netIP.Mask(network.Mask)
+	for i := 0; i < len(lastIP); i++ {
+		lastIP[i] = netIP[i] | ^network.Mask[i]
+	}
+	return firstIP, lastIP
+}
+
+// return an indented XML
+func xmlMarshallIndented(b interface{}) (string, error) {
+	buf := new(bytes.Buffer)
+	enc := xml.NewEncoder(buf)
+	enc.Indent("  ", "    ")
+	if err := enc.Encode(b); err != nil {
+		fmt.Errorf("could not marshall this:\n%s", spew.Sdump(b))
+	}
+	return buf.String(), nil
 }

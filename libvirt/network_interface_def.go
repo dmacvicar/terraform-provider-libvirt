@@ -5,6 +5,14 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
+// An interface definition, as returned/understood by libvirt
+// (see https://libvirt.org/formatdomain.html#elementsNICS)
+//
+// Something like:
+//   <interface type='network'>
+//       <source network='default'/>
+//   </interface>
+//
 type defNetworkInterface struct {
 	XMLName xml.Name `xml:"interface"`
 	Type    string   `xml:"type,attr"`
@@ -20,31 +28,17 @@ type defNetworkInterface struct {
 	waitForLease bool
 }
 
-func networkAddressCommonSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"type": &schema.Schema{
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		"address": &schema.Schema{
-			Type:     schema.TypeString,
-			Optional: true,
-			Computed: true,
-		},
-		"prefix": &schema.Schema{
-			Type:     schema.TypeInt,
-			Optional: true,
-			Computed: true,
-		},
-	}
-}
-
 func networkInterfaceCommonSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"network": &schema.Schema{
+		"network_id": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: true,
+			ForceNew: true,
+		},
+		"hostname": &schema.Schema{
+			Type:     schema.TypeString,
+			Optional: true,
+			Computed: true,
 			ForceNew: true,
 		},
 		"mac": &schema.Schema{
@@ -58,12 +52,9 @@ func networkInterfaceCommonSchema() map[string]*schema.Schema {
 			Optional: true,
 		},
 		"address": &schema.Schema{
-			Type:     schema.TypeList,
+			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
-			Elem: &schema.Resource{
-				Schema: networkAddressCommonSchema(),
-			},
 		},
 	}
 }
