@@ -48,3 +48,16 @@ func newDefDisk() defDisk {
 
 	return disk
 }
+
+func newCDROM() defDisk {
+	disk := defDisk{}
+	disk.Type = "volume"
+	disk.Device = "cdrom"
+	disk.Target.Dev = "hda"
+	disk.Target.Bus = "ide"
+
+	disk.Driver.Name = "qemu"
+	disk.Driver.Type = "raw"
+
+	return disk
+}
