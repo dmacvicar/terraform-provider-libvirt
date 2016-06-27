@@ -45,6 +45,12 @@ func resourceLibvirtDomain() *schema.Resource {
 				Default:  true,
 				ForceNew: false,
 			},
+			"cloud_init": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: false,
+				Optional: true,
+				ForceNew: false,
+			},
 			"disk": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -74,7 +80,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	disksCount := d.Get("disk.#").(int)
-	disks := make([]defDisk, 0, disksCount)
+	var disks []defDisk
 	for i := 0; i < disksCount; i++ {
 		prefix := fmt.Sprintf("disk.%d", i)
 		disk := newDefDisk()
@@ -101,6 +107,14 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		disk.Source.Volume = diskVolumeName
 		disk.Source.Pool = diskPoolName
 
+		disks = append(disks, disk)
+	}
+
+	if cloudinit, ok := d.GetOk("cloud_init"); ok {
+		disk, err := newDiskForCloudInit(virConn, cloudinit.(string))
+		if err != nil {
+			return err
+		}
 		disks = append(disks, disk)
 	}
 
@@ -230,8 +244,28 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	if d.HasChange("cloud_init") {
+		cloudinit, err := newDiskForCloudInit(virConn, d.Get("cloud_init").(string))
+		if err != nil {
+			return err
+		}
+
+		data, err := xml.Marshal(cloudinit)
+		if err != nil {
+			return fmt.Errorf("Error serializing cloudinit disk: %s", err)
+		}
+
+		err = domain.UpdateDeviceFlags(
+			string(data),
+			libvirt.VIR_DOMAIN_AFFECT_CONFIG|libvirt.VIR_DOMAIN_AFFECT_CURRENT|libvirt.VIR_DOMAIN_AFFECT_LIVE)
+		if err != nil {
+			return fmt.Errorf("Error while changing the cloudinit volume: %s", err)
+		}
+	}
+
 	return nil
 }
+
 func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
@@ -469,4 +503,30 @@ func isDomainRunning(domain libvirt.VirDomain) (bool, error) {
 	}
 
 	return state[0] == libvirt.VIR_DOMAIN_RUNNING, nil
+}
+
+func newDiskForCloudInit(virConn *libvirt.VirConnection, volumeKey string) (defDisk, error) {
+	disk := newCDROM()
+
+	diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
+	if err != nil {
+		return disk, fmt.Errorf("Can't retrieve volume %s", volumeKey)
+	}
+	diskVolumeName, err := diskVolume.GetName()
+	if err != nil {
+		return disk, fmt.Errorf("Error retrieving volume name: %s", err)
+	}
+	diskPool, err := diskVolume.LookupPoolByVolume()
+	if err != nil {
+		return disk, fmt.Errorf("Error retrieving pool for volume: %s", err)
+	}
+	diskPoolName, err := diskPool.GetName()
+	if err != nil {
+		return disk, fmt.Errorf("Error retrieving pool name: %s", err)
+	}
+
+	disk.Source.Volume = diskVolumeName
+	disk.Source.Pool = diskPoolName
+
+	return disk, nil
 }

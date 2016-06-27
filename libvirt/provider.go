@@ -17,8 +17,9 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"libvirt_domain": resourceLibvirtDomain(),
-			"libvirt_volume": resourceLibvirtVolume(),
+			"libvirt_domain":         resourceLibvirtDomain(),
+			"libvirt_volume":         resourceLibvirtVolume(),
+			"libvirt_cloud_init_iso": resourceCloudInitISO(),
 		},
 
 		ConfigureFunc: providerConfigure,
