@@ -6,11 +6,11 @@ import (
 	"log"
 )
 
-func resourceCloudInitISO() *schema.Resource {
+func resourceCloudInit() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceCloudInitISOCreate,
-		Read:   resourceCloudInitISORead,
-		Delete: resourceCloudInitISODelete,
+		Create: resourceCloudInitCreate,
+		Read:   resourceCloudInitRead,
+		Delete: resourceCloudInitDelete,
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -37,7 +37,7 @@ func resourceCloudInitISO() *schema.Resource {
 	}
 }
 
-func resourceCloudInitISOCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf("The libvirt connection was nil.")
@@ -64,10 +64,10 @@ func resourceCloudInitISOCreate(d *schema.ResourceData, meta interface{}) error 
 	}
 	d.SetId(key)
 
-	return resourceCloudInitISORead(d, meta)
+	return resourceCloudInitRead(d, meta)
 }
 
-func resourceCloudInitISORead(d *schema.ResourceData, meta interface{}) error {
+func resourceCloudInitRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf("The libvirt connection was nil.")
@@ -89,7 +89,7 @@ func resourceCloudInitISORead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceCloudInitISODelete(d *schema.ResourceData, meta interface{}) error {
+func resourceCloudInitDelete(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf("The libvirt connection was nil.")
