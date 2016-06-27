@@ -58,9 +58,12 @@ func RandomMACAddress() (string, error) {
 	// Set the local bit
 	buf[0] |= 2
 
-	mac := fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x",
-		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5])
-	return strings.ToUpper(mac), nil
+	// avoid libvirt-reserved addresses
+	if buf[0] == 0xfe {
+		buf[0] = 0xee
+	}
+
+	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
 }
 
 // Calculates the first and last IP addresses in an IPNet
@@ -123,5 +126,4 @@ func RemoveVolume(virConn *libvirt.VirConnection, key string) error {
 	}
 
 	return nil
-
 }
