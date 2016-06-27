@@ -67,7 +67,13 @@ $ terraform destroy
 2.  [Set up Gopath](https://golang.org/doc/code.html)
 3.  `git clone` this repository into `$GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt`
 4.  Run `go get` to get dependencies
-5.  Run `go install` to build the binary. You will now find the
+5.  Switch the terraform project back to the stable version, otherwise you will get a `Incompatible API version with plugin. Plugin version: 1, Ours: 2` error at runtime:
+```
+cd $GOPATH/src/github.com/hashicorp/terraform
+git checkout v0.6.16
+cd $GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt
+```
+6.  Run `go install` to build the binary. You will now find the
     binary at `$GOPATH/bin/terraform-provider-libvirt`.
 
 ## Running
