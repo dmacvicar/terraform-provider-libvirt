@@ -35,6 +35,10 @@ The following arguments are supported:
   added to the final domain inside of the [metadata tag](https://libvirt.org/formatdomain.html#elementsMetadata).
   This can be used to integrate terraform into other tools by inspecting the
   the contents of the `terraform.tf` file.
+* `cloudinit` - (Optional) The `libvirt_cloudinit` disk that has to be used by
+  the domain. This is going to be attached as a CDROM ISO. Changing the
+  cloud-init won't cause the domain to be recreated, however the change will
+  have effect on the next reboot.
 
 The `disk` block supports:
 
