@@ -5,6 +5,7 @@ import (
 	"fmt"
 	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hooklift/iso9660"
+	"github.com/mitchellh/packer/common/uuid"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -42,7 +44,7 @@ func newCloudInitDef() defCloudInit {
 
 // Create a ISO file based on the contents of the CloudInit instance and
 // uploads it to the libVirt pool
-// Returns a string holding the ID of the volume
+// Returns a string holding terraform's internal ID of this resource
 func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.VirConnection) (string, error) {
 	iso, err := ci.createISO()
 	if err != nil {
@@ -114,7 +116,22 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.VirConnection) (string,
 		return "", fmt.Errorf("Error retrieving volume key: %s", err)
 	}
 
-	return key, nil
+	return ci.buildTerraformKey(key), nil
+}
+
+// create a unique ID for terraform use
+// The ID is made by the volume ID (the internal one used by libvirt)
+// joined by the ";" with a UUID
+func (ci *defCloudInit) buildTerraformKey(volumeKey string) string {
+	return fmt.Sprintf("%s;%s", volumeKey, uuid.TimeOrderedUUID())
+}
+
+func getCloudInitVolumeKeyFromTerraformID(id string) (string, error) {
+	s := strings.SplitN(id, ";", 2)
+	if len(s) != 2 {
+		return "", fmt.Errorf("%s is not a valid key", id)
+	}
+	return s[0], nil
 }
 
 // Create the ISO holding all the cloud-init data
@@ -188,8 +205,15 @@ func (ci *defCloudInit) createFiles() (string, error) {
 	return tmpDir, nil
 }
 
-func newCloudInitDefFromRemoteISO(virConn *libvirt.VirConnection, key string) (defCloudInit, error) {
+// Creates a new defCloudInit object starting from a ISO volume handled by
+// libvirt
+func newCloudInitDefFromRemoteISO(virConn *libvirt.VirConnection, id string) (defCloudInit, error) {
 	ci := defCloudInit{}
+
+	key, err := getVolumeKeyFromTerraformId(id)
+	if err != nil {
+		return ci, err
+	}
 
 	volume, err := virConn.LookupStorageVolByKey(key)
 	if err != nil {

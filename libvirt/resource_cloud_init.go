@@ -95,5 +95,10 @@ func resourceCloudInitDelete(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("The libvirt connection was nil.")
 	}
 
-	return RemoveVolume(virConn, d.Id())
+	key, err := getCloudInitVolumeKeyFromTerraformID(d.Id())
+	if err != nil {
+		return err
+	}
+
+	return RemoveVolume(virConn, key)
 }
