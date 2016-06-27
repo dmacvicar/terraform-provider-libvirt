@@ -62,11 +62,61 @@ resource "libvirt_domain" "domain1" {
   disk {
     volume_id = "${libvirt_volume.mydisk.id}"
   }
+
+  network_interface {
+    network_id = "${libvirt_network.net1.id}"
+    hostname = "master"
+    addresses = ["10.17.3.3"]
+    mac = "AA:BB:CC:11:22:22"
+    wait_for_lease = 1
+  }
 }
 ```
 
-The `network_interface` block supports:
+The `network_interface` specifies a network interface that can be connected either to
+a virtual network (the preferred method on hosts with dynamic / wireless networking
+configs) or directly to a LAN.
 
+When using a virtual network, users can specify:
+
+* `network_name` - (Optional) The name of an _existing_ network to attach this interface to.
+The network will _NOT_ be managed by the Terraform/libvirt provider.
+* `network_id` - (Optional) The ID of a network resource to attach this interface to.
+The network will be under the control of the Terraform/libvirt provider.
 * `mac` - (Optional) The specific MAC address to use for this interface.
-* `network` - (Optional) The network to attach this interface to.
-* `wait_for_lease`- (Optional) When creating the domain resource, wait until the network interface gets a DHCP lease from libvirt, so that the computed ip addresses will be available when the domain is up and the plan applied.
+* `addresses` - (Optional) An IP address for this domain in this network
+* `hostname` - (Optional) A hostname that will be assigned to this domain resource in this network.
+* `wait_for_lease`- (Optional) When creating the domain resource, wait until the network
+interface gets a DHCP lease from libvirt, so that the computed ip addresses will be available
+when the domain is up and the plan applied.
+
+When connecting to a LAN, users can specify a target device with:
+
+* `bridge` - Provides a bridge from the VM directly to the LAN. This assumes there is a bridge
+device on the host which has one or more of the hosts physical NICs enslaved. The guest VM
+will have an associated _tun_ device created and enslaved to the bridge. The IP range / network
+configuration is whatever is used on the LAN. This provides the guest VM full incoming &
+outgoing net access just like a physical machine.
+* `vepa` - All VMs' packets are sent to the external bridge. Packets whose destination is a
+VM on the same host as where the packet originates from are sent back to the host by the VEPA
+capable bridge (today's bridges are typically not VEPA capable).
+* `macvtap` - Packets whose destination is on the same host as where they originate from are
+directly delivered to the target macvtap device. Both origin and destination devices need to
+be in bridge mode for direct delivery. If either one of them is in vepa mode, a VEPA capable
+bridge is required.
+* `passthrough` - This feature attaches a virtual function of a SRIOV capable NIC directly to
+a VM without losing the migration capability. All packets are sent to the VF/IF of the
+configured network device. Depending on the capabilities of the device additional prerequisites
+or limitations may apply; for example, on Linux this requires kernel 2.6.38 or newer.
+
+Example of a `macvtap` interface:
+
+```
+resource "libvirt_domain" "my-domain" {
+  name = "master"
+  ...
+  network_interface {
+    macvtap = "eth0"
+  }
+}
+```
