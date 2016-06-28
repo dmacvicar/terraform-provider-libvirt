@@ -54,11 +54,23 @@ resource "libvirt_domain" "domain1" {
   disk {
     volume_id = "${libvirt_volume.mydisk.id}"
   }
+
+  network_interface {
+    network_id = "${libvirt_network.net1.id}"
+
+    hostname = "master"
+    address = "10.17.3.3"
+    mac = "AA:BB:CC:11:22:22"
+    wait_for_lease = 1
+  }
 }
 ```
 
 The `network_interface` block supports:
 
+* `network_name` - (Optional) The name of an _existing_ network to attach this interface to. The network will _NOT_ be managed by the Terraform/libvirt provider.
+* `network_id` - (Optional) The ID of a network resource to attach this interface to. The network will be under the control of the Terraform/libvirt provider.
 * `mac` - (Optional) The specific MAC address to use for this interface.
-* `network` - (Optional) The network to attach this interface to.
+* `ip` - (Optional) An IP address for this domain in this network
+* `hostname` - (Optional) A hostname that will be assigned to this domain resource in this network.
 * `wait_for_lease`- (Optional) When creating the domain resource, wait until the network interface gets a DHCP lease from libvirt, so that the computed ip addresses will be available when the domain is up and the plan applied.
