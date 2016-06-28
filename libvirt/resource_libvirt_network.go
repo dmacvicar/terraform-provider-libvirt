@@ -275,12 +275,24 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 	}
 	defer network.Free()
 
-	if err := network.Destroy(); err != nil {
-		return fmt.Errorf("When destroying libvirt network: %s", err)
+	active, err := network.IsActive()
+	if err != nil {
+		return fmt.Errorf("Couldn't determine if network is active: %s", err)
+	}
+	if !active {
+		// we have to restart an inactive network, otherwise it won't be
+		// possible to remove it.
+		if err := network.Create(); err != nil {
+			return fmt.Errorf("Cannot restart an inactive network %s", err)
+		}
 	}
 
 	if err := network.Destroy(); err != nil {
 		return fmt.Errorf("When destroying libvirt network: %s", err)
+	}
+
+	if err := network.Undefine(); err != nil {
+		return fmt.Errorf("Couldn't undefine libvirt network: %s", err)
 	}
 
 	stateConf := &resource.StateChangeConf{
