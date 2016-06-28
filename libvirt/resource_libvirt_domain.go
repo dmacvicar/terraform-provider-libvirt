@@ -161,7 +161,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			}
 		}
 
-		// this is not passes to libvirt, but used by waitForAddress
+		// this is not passed to libvirt, but used by waitForAddress
 		if waitForLease, ok := d.GetOk(prefix + ".wait_for_lease"); ok {
 			netIface.waitForLease = waitForLease.(bool)
 		}
