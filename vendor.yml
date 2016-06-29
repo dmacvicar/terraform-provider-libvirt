@@ -1,0 +1,4 @@
+vendors:
+- path: github.com/hashicorp/terraform
+  rev: v0.6.16
+
