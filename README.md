@@ -69,11 +69,11 @@ $ terraform destroy
 4.  Get the dependencies, either with `go get`
     1. Run `go get`
     2.  Switch the terraform project back to the stable version, otherwise you will get a `Incompatible API version with plugin. Plugin version: 1, Ours: 2` error at runtime:
-```
-cd $GOPATH/src/github.com/hashicorp/terraform
-git checkout v0.6.16
-cd $GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt
-```
+    ```
+    cd $GOPATH/src/github.com/hashicorp/terraform
+    git checkout v0.6.16
+    cd $GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt
+    ```
 5.  .. or alternatively install [govend](https://github.com/govend/govend) and:
     1. Run `govend`, which will scan dependencies and download them into vendor
     2. problematic dependencies, like terraform, will be automatically in the right version thanks to the `vendor.yml` file.
