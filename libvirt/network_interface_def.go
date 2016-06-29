@@ -45,6 +45,7 @@ func networkInterfaceCommonSchema() map[string]*schema.Schema {
 		"network": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: true,
+			Default:  "default",
 			ForceNew: true,
 		},
 		"mac": &schema.Schema{
