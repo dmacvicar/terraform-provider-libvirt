@@ -124,6 +124,9 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		prefix := fmt.Sprintf("network_interface.%d", i)
 		netIface := newDefNetworkInterface()
 
+		network, hasNetwork := d.GetOk(prefix + ".network")
+		bridge, hasBridge := d.GetOk(prefix + ".bridge")
+
 		if mac, ok := d.GetOk(prefix + ".mac"); ok {
 			netIface.Mac.Address = mac.(string)
 		} else {
@@ -135,13 +138,36 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 
 		// this is not passed to libvirt, but used by waitForAddress
-		if waitForLease, ok := d.GetOk(prefix + ".wait_for_lease"); ok {
-			netIface.waitForLease = waitForLease.(bool)
+		waitForLease, hasWaitForLease := d.GetOk(prefix + ".wait_for_lease")
+
+		// If neither bridge or network is confured let's assume the
+		// user wants to use the default libvirt network
+		if !hasBridge && !hasNetwork {
+			network = "default"
+			hasNetwork = true
 		}
 
-		if network, ok := d.GetOk(prefix + ".network"); ok {
+		if hasNetwork {
+			if hasBridge {
+				return fmt.Errorf("Cannot specify both 'bridge' and 'network'")
+			}
+
+			if hasWaitForLease {
+				netIface.waitForLease = waitForLease.(bool)
+			}
+
+			netIface.Type = "network"
 			netIface.Source.Network = network.(string)
+		} else if hasBridge {
+			if hasWaitForLease && waitForLease.(bool) {
+				return fmt.Errorf("Cannot use 'wait_for_lease' and bridge mode at the same time due to macvlan limitations")
+			}
+
+			netIface.Type = "direct"
+			netIface.Source.Mode = "bridge"
+			netIface.Source.Dev = bridge.(string)
 		}
+
 		netIfaces = append(netIfaces, netIface)
 	}
 
