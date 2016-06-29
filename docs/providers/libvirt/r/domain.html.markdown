@@ -31,7 +31,7 @@ The following arguments are supported:
 * `vcpu` - (Optional) The amount of virtual CPUs. If not specified, a single CPU will be created.
 * `disk` - (Optional) An array of one or more disks to attach to the domain. The `disk` object structure is documented below.
 * `network_interface` - (Optional) An array of one or more network interfaces to attach to the domain. The `network_interface` object structure is documented below.
-* `metadata` - (Optional) A string containing valid XML data. This is going to be
+* `metadata` - (Optional) A string containing arbitrary data. This is going to be
   added to the final domain inside of the [metadata tag](https://libvirt.org/formatdomain.html#elementsMetadata).
   This can be used to integrate terraform into other tools by inspecting the
   the contents of the `terraform.tf` file.
