@@ -12,7 +12,9 @@ type defNetworkInterface struct {
 		Address string `xml:"address,attr"`
 	} `xml:"mac"`
 	Source struct {
-		Network string `xml:"network,attr"`
+		Network string `xml:"network,attr,omitempty"`
+		Dev     string `xml:"dev,attr,omitempty"`
+		Mode    string `xml:"mode,attr,omitempty"`
 	} `xml:"source"`
 	Model struct {
 		Type string `xml:"type,attr"`
@@ -45,7 +47,6 @@ func networkInterfaceCommonSchema() map[string]*schema.Schema {
 		"network": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: true,
-			Default:  "default",
 			ForceNew: true,
 		},
 		"mac": &schema.Schema{
@@ -66,14 +67,17 @@ func networkInterfaceCommonSchema() map[string]*schema.Schema {
 				Schema: networkAddressCommonSchema(),
 			},
 		},
+		"bridge": &schema.Schema{
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+		},
 	}
 }
 
 func newDefNetworkInterface() defNetworkInterface {
 	iface := defNetworkInterface{}
-	iface.Type = "network"
 	//iface.Mac.Address = "52:54:00:36:c0:65"
-	iface.Source.Network = "default"
 	iface.Model.Type = "virtio"
 	iface.waitForLease = false
 	return iface
