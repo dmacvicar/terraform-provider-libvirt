@@ -31,6 +31,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 		Read:   resourceLibvirtNetworkRead,
 		Update: resourceLibvirtNetworkUpdate,
 		Delete: resourceLibvirtNetworkDelete,
+		Exists: resourceLibvirtNetworkExists,
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -63,6 +64,16 @@ func resourceLibvirtNetwork() *schema.Resource {
 			},
 		},
 	}
+}
+
+func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+	virConn := meta.(*Client).libvirt
+	if virConn == nil {
+		return false, fmt.Errorf("The libvirt connection was nil.")
+	}
+	network, err := virConn.LookupNetworkByUUIDString(d.Id())
+	defer network.Free()
+	return err == nil, err
 }
 
 func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) error {

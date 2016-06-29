@@ -18,6 +18,7 @@ func resourceLibvirtDomain() *schema.Resource {
 		Read:   resourceLibvirtDomainRead,
 		Delete: resourceLibvirtDomainDelete,
 		Update: resourceLibvirtDomainUpdate,
+		Exists: resourceLibvirtDomainExists,
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -62,6 +63,16 @@ func resourceLibvirtDomain() *schema.Resource {
 			},
 		},
 	}
+}
+
+func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+	virConn := meta.(*Client).libvirt
+	if virConn == nil {
+		return false, fmt.Errorf("The libvirt connection was nil.")
+	}
+	domain, err := virConn.LookupByUUIDString(d.Id())
+	defer domain.Free()
+	return err == nil, err
 }
 
 func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error {
