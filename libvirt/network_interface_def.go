@@ -2,6 +2,7 @@ package libvirt
 
 import (
 	"encoding/xml"
+
 	"github.com/hashicorp/terraform/helper/schema"
 )
 

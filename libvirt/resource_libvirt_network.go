@@ -3,12 +3,12 @@ package libvirt
 import (
 	"fmt"
 	"log"
+	"net"
 	"time"
 
 	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	"net"
 )
 
 // a libvirt network resource
@@ -166,7 +166,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 	d.SetId(id)
 
-	log.Printf("[INFO] Created network %s [%s]", networkDef.Name , d.Id())
+	log.Printf("[INFO] Created network %s [%s]", networkDef.Name, d.Id())
 
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{"BUILD"},
@@ -271,16 +271,16 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt network: %s", err)
+		return fmt.Errorf("When destroying libvirt network: error retrieving %s", err)
 	}
 	defer network.Free()
 
 	if err := network.Destroy(); err != nil {
-		return fmt.Errorf("Couldn't destroy libvirt network: %s", err)
+		return fmt.Errorf("When destroying libvirt network: %s", err)
 	}
 
 	if err := network.Destroy(); err != nil {
-		return fmt.Errorf("Couldn't destroy libvirt network: %s", err)
+		return fmt.Errorf("When destroying libvirt network: %s", err)
 	}
 
 	stateConf := &resource.StateChangeConf{

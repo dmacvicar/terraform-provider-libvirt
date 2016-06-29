@@ -8,9 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/schema"
 )
+
+func init() {
+	spew.Config.Indent = "\t"
+}
 
 func resourceLibvirtDomain() *schema.Resource {
 	return &schema.Resource{
@@ -237,7 +242,6 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	if virConn == nil {
 		return fmt.Errorf("The libvirt connection was nil.")
 	}
-
 	domain, err := virConn.LookupByUUIDString(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
@@ -257,6 +261,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 	return nil
 }
+
 func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
