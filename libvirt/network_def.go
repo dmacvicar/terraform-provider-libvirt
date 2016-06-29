@@ -3,6 +3,7 @@ package libvirt
 import (
 	"encoding/xml"
 	"fmt"
+	libvirt "github.com/dmacvicar/libvirt-go"
 )
 
 type defNetworkIpDhcpRange struct {
@@ -86,11 +87,36 @@ type defNetwork struct {
 	Dns     *defNetworkDns     `xml:"dns,omitempty"`
 }
 
+type NetworkHost struct {
+	XMLName xml.Name `xml:"host"`
+	Mac     string   `xml:"mac,attr,omitempty"`
+	Name    string   `xml:"name,attr,omitempty"`
+	IP      string   `xml:"ip,attr,omitempty"`
+}
+
+func getHostXMLDesc(ip, mac, name string) (string, error) {
+	host := NetworkHost{
+		Mac:  mac,
+		Name: name,
+		IP:   ip,
+	}
+
+	b, err := xml.Marshal(host)
+	if err != nil {
+		var virErr libvirt.VirError
+		virErr.Code = libvirt.VIR_ERR_XML_ERROR
+		virErr.Message = fmt.Sprintf("Invalid host entry definition: %s", err)
+
+		return "", virErr
+	}
+	return string(b), nil
+}
+
 // Check if the network has a DHCP server managed by libvirt
 func (net defNetwork) HasDHCP() bool {
 	if net.Forward != nil {
 		if net.Forward.Mode == "nat" {
-			return true			// TODO: all other modes
+			return true // TODO: all other modes
 		}
 	}
 	return false

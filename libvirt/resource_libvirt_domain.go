@@ -1,7 +1,6 @@
 package libvirt
 
 import (
-	"bytes"
 	"encoding/xml"
 	"fmt"
 	"log"
@@ -561,31 +560,24 @@ func isDomainRunning(domain libvirt.VirDomain) (bool, error) {
 	return state[0] == libvirt.VIR_DOMAIN_RUNNING, nil
 }
 
-func getHostXMLDesc(ip, mac, name string) string {
-	var b bytes.Buffer
-	b.WriteString("<host ")
-	if len(ip) > 0 {
-		b.WriteString(fmt.Sprintf(" ip=\"%s\"", ip))
-	}
-	if len(mac) > 0 {
-		b.WriteString(fmt.Sprintf(" mac=\"%s\"", mac))
-	}
-	if len(name) > 0 {
-		b.WriteString(fmt.Sprintf(" name=\"%s\"", name))
-	}
-	b.WriteString(" />")
-	return b.String()
-}
-
 // Adds a new static host to the network
 func addHost(n *libvirt.VirNetwork, ip, mac, name string) error {
-	return n.UpdateXMLDesc(getHostXMLDesc(ip, mac, name),
+	data, err := getHostXMLDesc(ip, mac, name)
+	if err != nil {
+		return err
+	}
+
+	return n.UpdateXMLDesc(data,
 		libvirt.VIR_NETWORK_UPDATE_COMMAND_ADD_LAST, libvirt.VIR_NETWORK_SECTION_IP_DHCP_HOST)
 }
 
 // Removes a static host from the network
 func removeHost(n *libvirt.VirNetwork, ip, mac, name string) error {
-	return n.UpdateXMLDesc(getHostXMLDesc(ip, mac, name),
+	data, err := getHostXMLDesc(ip, mac, name)
+	if err != nil {
+		return err
+	}
+	return n.UpdateXMLDesc(data,
 		libvirt.VIR_NETWORK_UPDATE_COMMAND_DELETE, libvirt.VIR_NETWORK_SECTION_IP_DHCP_HOST)
 }
 

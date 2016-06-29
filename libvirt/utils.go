@@ -8,7 +8,6 @@ import (
 	libvirt "github.com/dmacvicar/libvirt-go"
 	"log"
 	"net"
-	"strings"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
