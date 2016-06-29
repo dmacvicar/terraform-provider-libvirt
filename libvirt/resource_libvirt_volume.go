@@ -375,36 +375,5 @@ func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("The libvirt connection was nil.")
 	}
 
-	volume, err := virConn.LookupStorageVolByKey(d.Id())
-	if err != nil {
-		return fmt.Errorf("Can't retrieve volume %s", d.Id())
-	}
-	defer volume.Free()
-
-	// Refresh the pool of the volume so that libvirt knows it is
-	// not longer in use.
-	volPool, err := volume.LookupPoolByVolume()
-	if err != nil {
-		return fmt.Errorf("Error retrieving pool for volume: %s", err)
-	}
-	defer volPool.Free()
-
-	WaitForSuccess("Error refreshing pool for volume", func() error {
-		return volPool.Refresh(0)
-	})
-
-	// Workaround for redhat#1293804
-	// https://bugzilla.redhat.com/show_bug.cgi?id=1293804#c12
-	// Does not solve the problem but it makes it happen less often.
-	_, err = volume.GetXMLDesc(0)
-	if err != nil {
-		return fmt.Errorf("Can't retrieve volume %s XML desc: %s", d.Id(), err)
-	}
-
-	err = volume.Delete(0)
-	if err != nil {
-		return fmt.Errorf("Can't delete volume %s: %s", d.Id(), err)
-	}
-
-	return nil
+	return RemoveVolume(virConn, d.Id())
 }
