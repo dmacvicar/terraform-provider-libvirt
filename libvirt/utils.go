@@ -51,5 +51,10 @@ func RandomMACAddress() (string, error) {
 	// Set the local bit
 	buf[0] |= 2
 
+	// avoid libvirt-reserved addresses
+	if buf[0] == 0xfe {
+		buf[0] = 0xee
+	}
+
 	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
 }
