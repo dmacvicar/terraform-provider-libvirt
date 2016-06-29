@@ -2,7 +2,7 @@ dist: trusty
 language: go
 
 go:
-  - 1.5
+  - 1.6
 
 before_install:
   - sudo apt-get -qq update
@@ -17,9 +17,14 @@ before_install:
   - sudo make install
   - sudo libvirtd -d
   - popd
+  - go get -u github.com/govend/govend
+  - govend -v
 
 install:
-  - go get -t ./...
   - go build .
-  - find .
-  - go test ./...
+
+# override the custom test script, this would trigger
+# also the execution of the unit tests of the vendored
+# code
+script:
+  - go test ./libvirt
