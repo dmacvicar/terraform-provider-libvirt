@@ -11,6 +11,7 @@ type defDomain struct {
 	Os       defOs     `xml:"os"`
 	Memory   defMemory `xml:"memory"`
 	VCpu     defVCpu   `xml:"vcpu"`
+	Metadata defMetadata
 	Features struct {
 		Acpi string `xml:"acpi"`
 		Apic string `xml:"apic"`
@@ -24,6 +25,13 @@ type defDomain struct {
 			Autoport string `xml:"autoport,attr"`
 		} `xml:"graphics"`
 	} `xml:"devices"`
+}
+
+type defMetadata struct {
+	XMLName          xml.Name `xml:"metadata"`
+	TerraformLibvirt struct {
+		Xml string `xml:",cdata"`
+	} `xml:"http://github.com/dmacvicar/terraform-provider-libvirt/ user_data"`
 }
 
 type defOs struct {
