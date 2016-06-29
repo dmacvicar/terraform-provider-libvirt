@@ -210,7 +210,7 @@ func (ci *defCloudInit) createFiles() (string, error) {
 func newCloudInitDefFromRemoteISO(virConn *libvirt.VirConnection, id string) (defCloudInit, error) {
 	ci := defCloudInit{}
 
-	key, err := getVolumeKeyFromTerraformId(id)
+	key, err := getCloudInitVolumeKeyFromTerraformID(id)
 	if err != nil {
 		return ci, err
 	}
