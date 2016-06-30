@@ -226,9 +226,8 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if d.HasChange("metadata") {
-		//terraform-libvirt:user_data xmlns:terraform-libvirt="http://github.com/dmacvicar/terraform-provider-libvirt/"
 		metadata := defMetadata{}
-		metadata.TerraformLibvirt.Xml = d.Get("metadata").(string)
+		metadata.Xml = d.Get("metadata").(string)
 		metadataToXml, err := xml.Marshal(metadata)
 		if err != nil {
 			return fmt.Errorf("Error serializing libvirt metadata: %s", err)
