@@ -1,11 +1,14 @@
 package libvirt
 
 import (
-	"crypto/rand"
+	"bytes"
+	"encoding/xml"
 	"fmt"
-	libvirt "github.com/dmacvicar/libvirt-go"
 	"log"
 	"time"
+
+	libvirt "github.com/dmacvicar/libvirt-go"
+	"github.com/davecgh/go-spew/spew"
 )
 
 var diskLetters []rune = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -40,24 +43,15 @@ func WaitForSuccess(errorMessage string, f func() error) error {
 	}
 }
 
-func RandomMACAddress() (string, error) {
-	buf := make([]byte, 6)
-	_, err := rand.Read(buf)
-	if err != nil {
-		return "", err
+// return an indented XML
+func xmlMarshallIndented(b interface{}) (string, error) {
+	buf := new(bytes.Buffer)
+	enc := xml.NewEncoder(buf)
+	enc.Indent("  ", "    ")
+	if err := enc.Encode(b); err != nil {
+		fmt.Errorf("could not marshall this:\n%s", spew.Sdump(b))
 	}
-
-	// set local bit and unicast
-	buf[0] = (buf[0] | 2) & 0xfe
-	// Set the local bit
-	buf[0] |= 2
-
-	// avoid libvirt-reserved addresses
-	if buf[0] == 0xfe {
-		buf[0] = 0xee
-	}
-
-	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
+	return buf.String(), nil
 }
 
 // Remove the volume identified by `key` from libvirt
