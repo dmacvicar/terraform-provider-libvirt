@@ -534,57 +534,58 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		switch networkInterfaceDef.Type {
-		case "network": {
-			network, err := virConn.LookupNetworkByName(networkInterfaceDef.Source.Network)
-			if err != nil {
-				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network)
-			}
-			defer network.Free()
+		case "network":
+			{
+				network, err := virConn.LookupNetworkByName(networkInterfaceDef.Source.Network)
+				if err != nil {
+					return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network)
+				}
+				defer network.Free()
 
-			netIface["network_id"], err = network.GetUUIDString()
-			if err != nil {
-				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network)
-			}
+				netIface["network_id"], err = network.GetUUIDString()
+				if err != nil {
+					return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network)
+				}
 
-			networkDef, err := newDefNetworkfromLibvirt(&network)
-			if err != nil {
-				return err
-			}
+				networkDef, err := newDefNetworkfromLibvirt(&network)
+				if err != nil {
+					return err
+				}
 
-			netIface["network_name"] = networkInterfaceDef.Source.Network
+				netIface["network_name"] = networkInterfaceDef.Source.Network
 
-			// try to look for this MAC in the DHCP configuration for this VM
-			if networkDef.HasDHCP() {
+				// try to look for this MAC in the DHCP configuration for this VM
+				if networkDef.HasDHCP() {
 				hostnameSearch:
-				for _, ip := range networkDef.Ips {
-					if ip.Dhcp != nil {
-						for _, host := range ip.Dhcp.Hosts {
-							if strings.ToUpper(host.Mac) == netIface["mac"] {
-								log.Printf("[DEBUG] read: hostname for '%s': '%s'", netIface["mac"], host.Name)
-								netIface["hostname"] = host.Name
-								break hostnameSearch
+					for _, ip := range networkDef.Ips {
+						if ip.Dhcp != nil {
+							for _, host := range ip.Dhcp.Hosts {
+								if strings.ToUpper(host.Mac) == netIface["mac"] {
+									log.Printf("[DEBUG] read: hostname for '%s': '%s'", netIface["mac"], host.Name)
+									netIface["hostname"] = host.Name
+									break hostnameSearch
+								}
 							}
 						}
 					}
 				}
-			}
 
-			// look for an ip address and try to match it with the mac address
-			// not sure if using the target device name is a better idea here
-			addrs := make([]string, 0)
-			for _, ifaceWithAddr := range ifacesWithAddr {
-				if strings.ToUpper(ifaceWithAddr.Hwaddr) == netIface["mac"] {
-					for _, addr := range ifaceWithAddr.Addrs {
-						addrs = append(addrs, addr.Addr)
+				// look for an ip address and try to match it with the mac address
+				// not sure if using the target device name is a better idea here
+				addrs := make([]string, 0)
+				for _, ifaceWithAddr := range ifacesWithAddr {
+					if strings.ToUpper(ifaceWithAddr.Hwaddr) == netIface["mac"] {
+						for _, addr := range ifaceWithAddr.Addrs {
+							addrs = append(addrs, addr.Addr)
+						}
 					}
 				}
+				netIface["addresses"] = addrs
+				log.Printf("[DEBUG] read: addresses for '%s': %+v", netIface["mac"], addrs)
+
+				netIface["wait_for_lease"] = d.Get(prefix + ".wait_for_lease").(bool)
+
 			}
-			netIface["addresses"] = addrs
-			log.Printf("[DEBUG] read: addresses for '%s': %+v", netIface["mac"], addrs)
-
-			netIface["wait_for_lease"] = d.Get(prefix + ".wait_for_lease").(bool)
-
-		}
 		case "bridge":
 			netIface["bridge"] = networkInterfaceDef.Source.Bridge
 		case "direct":
