@@ -27,6 +27,17 @@ type defDomain struct {
 			Type     string `xml:"type,attr"`
 			Autoport string `xml:"autoport,attr"`
 		} `xml:"graphics"`
+		// QEMU guest agent channel
+		QemuGAChannel struct {
+			Type   string `xml:"type,attr"`
+			Source struct {
+				Mode string `xml:"mode,attr"`
+			} `xml:"source"`
+			Target struct {
+				Type string `xml:"type,attr"`
+				Name string `xml:"name,attr"`
+			} `xml:"target"`
+		} `xml:"channel"`
 	} `xml:"devices"`
 }
 
@@ -76,6 +87,11 @@ func newDomainDef() defDomain {
 
 	domainDef.Devices.Spice.Type = "spice"
 	domainDef.Devices.Spice.Autoport = "yes"
+
+	domainDef.Devices.QemuGAChannel.Type = "unix"
+	domainDef.Devices.QemuGAChannel.Source.Mode = "bind"
+	domainDef.Devices.QemuGAChannel.Target.Type = "virtio"
+	domainDef.Devices.QemuGAChannel.Target.Name = "org.qemu.guest_agent.0"
 
 	return domainDef
 }
