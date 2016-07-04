@@ -8,7 +8,6 @@ vendors:
 - path: github.com/davecgh/go-spew
   rev: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
 - path: github.com/dmacvicar/libvirt-go
-  rev: a231ab91a332d2f1f1b8c4e6815ea06c7ec1575a
 - path: github.com/go-ini/ini
   rev: 1cb3e99c372898b10bb07e8c8d80d2b554f30858
 - path: github.com/hashicorp/errwrap
