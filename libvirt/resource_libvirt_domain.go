@@ -692,7 +692,7 @@ func waitForNetworkAddresses(ifaces []defNetworkInterface, domain libvirt.VirDom
 	waitLoop:
 		for {
 			log.Printf("[DEBUG] waiting for network address for interface with hwaddr: '%s'\n", iface.Mac.Address)
-			ifacesWithAddr, err := domain.ListAllInterfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+			ifacesWithAddr, err := getDomainInterfaces(&domain)
 			if err != nil {
 				return fmt.Errorf("Error retrieving interface addresses: %s", err)
 			}
@@ -748,4 +748,37 @@ func newDiskForCloudInit(virConn *libvirt.VirConnection, volumeKey string) (defD
 	disk.Source.Pool = diskPoolName
 
 	return disk, nil
+}
+
+func getDomainInterfaces(domain *libvirt.VirDomain) ([]libvirt.VirDomainInterface, error) {
+
+	// get all the interfaces using the qemu-agent, this includes also
+	// interfaces that are not attached to networks managed by libvirt
+	// (eg. bridges, macvtap,...)
+	interfaces := getDomainInterfacesViaQemuAgent(domain, true)
+	if len(interfaces) > 0 {
+		// the agent will always return all the interfaces, both the
+		// ones managed by libvirt and the ones attached to bridge interfaces
+		// or macvtap. Hence it has the highest priority
+		return interfaces, nil
+	}
+
+	log.Print("[DEBUG] fetching networking interfaces using libvirt API")
+
+	// get all the interfaces attached to libvirt networks
+	interfaces, err := domain.ListAllInterfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+	if err != nil {
+		switch err.(type) {
+		default:
+			return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
+		case libvirt.VirError:
+			virErr := err.(libvirt.VirError)
+			if virErr.Code != libvirt.VIR_ERR_OPERATION_INVALID || virErr.Domain != libvirt.VIR_FROM_QEMU {
+				return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
+			}
+		}
+	}
+	log.Printf("[DEBUG] Interfaces %+v", interfaces)
+
+	return interfaces, nil
 }
