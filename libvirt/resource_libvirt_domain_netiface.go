@@ -32,7 +32,6 @@ func networkInterfaceCommonSchema() map[string]*schema.Schema {
 			Type:          schema.TypeString,
 			Optional:      true,
 			ForceNew:      true,
-			Computed:      true,
 		},
 		"passthrough": &schema.Schema{
 			Type:          schema.TypeString,

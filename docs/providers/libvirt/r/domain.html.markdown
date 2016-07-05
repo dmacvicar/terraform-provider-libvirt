@@ -41,6 +41,42 @@ The following arguments are supported:
   cloud-init won't cause the domain to be recreated, however the change will
   have effect on the next reboot.
 
+Some extra arguments are also provided for using UEFI images:
+
+* `firmware` - (Optional) The UEFI rom images for exercising UEFI secure boot in a qemu
+environment. Users should usually specify one of the standard _Open Virtual Machine
+Firmware_ (_OVMF_) images available for their distributions. The file will be opened
+read-only.
+* `nvram` - (Optional) the _nvram_ variables file corresponding to the firmware. When provided,
+this file must be writable and specific to this domain, as it will be updated when running
+the domain. However, `libvirt` can manage this automatically (and this is the recommended solution)
+if a mapping for the firmware to a _variables file_ exists in `/etc/libvirt/qemu.conf:nvram`.
+In that case, `libvirt` will copy that variables file into a file specific for this domain.
+
+So you should typically use the firmware as this,
+
+```
+
+resource "libvirt_domain" "my_machine" {
+  name = "my_machine"
+  firmware = "/usr/share/qemu/ovmf-x86_64-code.bin"
+  memory = "2048"
+
+  disk {
+    volume_id = "${libvirt_volume.volume.id}"
+  }
+  ...
+}
+```
+
+and `/etc/libvirt/qemu.conf` should contain:
+
+```
+nvram = [
+   "/usr/share/qemu/ovmf-x86_64-code.bin:/usr/share/qemu/ovmf-x86_64-vars.bin"
+]
+```
+
 The `disk` block supports:
 
 * `volume_id` - (Required) The volume id to use for this disk.
