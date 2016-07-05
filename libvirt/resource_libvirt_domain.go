@@ -238,8 +238,8 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 					// have a valid lease and then read the IP we have been assigned, so we can
 					// do the mapping
 					log.Printf("[DEBUG] Will wait for an IP for hostname '%s'...", hostname)
-					partialNetIfaces[mac] = pendingMapping{
-						mac:      mac,
+					partialNetIfaces[strings.ToUpper(mac)] = pendingMapping{
+						mac:      strings.ToUpper(mac),
 						hostname: hostname,
 						network:  &network,
 					}
