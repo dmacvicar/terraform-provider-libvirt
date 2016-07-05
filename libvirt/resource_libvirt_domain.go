@@ -168,9 +168,10 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		netIface.Model.Type = "virtio"
 
 		// calculate the MAC address
-		macI, ok := d.GetOk(prefix + ".mac")
-		mac := strings.ToUpper(macI.(string))
-		if !ok {
+		var mac string
+		if macI, ok := d.GetOk(prefix + ".mac"); ok {
+			mac = strings.ToUpper(macI.(string))
+		} else {
 			var err error
 			mac, err = RandomMACAddress()
 			if err != nil {
@@ -324,8 +325,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	for i := 0; i < netIfacesCount; i++ {
 		prefix := fmt.Sprintf("network_interface.%d", i)
 
-		macI := d.Get(prefix + ".mac")
-		mac := strings.ToUpper(macI.(string))
+		mac := strings.ToUpper(d.Get(prefix + ".mac").(string))
 
 		// if we were waiting for an IP address for this MAC, go ahead.
 		if pending, ok := partialNetIfaces[mac]; ok {
