@@ -47,23 +47,36 @@ type defMetadata struct {
 }
 
 type defOs struct {
-	Type defOsType `xml:"type"`
+	Type   defOsType  `xml:"type"`
+	Loader *defLoader `xml:"loader,omitempty"`
+	NvRam  *defNvRam  `xml:"nvram,omitempty"`
 }
 
 type defOsType struct {
 	Arch    string `xml:"arch,attr,omitempty"`
 	Machine string `xml:"machine,attr,omitempty"`
-	Name    string `xml:"chardata"`
+	Name    string `xml:",chardata"`
 }
 
 type defMemory struct {
 	Unit   string `xml:"unit,attr"`
-	Amount int    `xml:"chardata"`
+	Amount int    `xml:",chardata"`
 }
 
 type defVCpu struct {
 	Placement string `xml:"unit,attr"`
-	Amount    int    `xml:"chardata"`
+	Amount    int    `xml:",chardata"`
+}
+
+type defLoader struct {
+	ReadOnly string `xml:"readonly,attr,omitempty"`
+	Type     string `xml:"type,attr,omitempty"`
+	File     string `xml:",chardata"`
+}
+
+// <nvram>/var/lib/libvirt/qemu/nvram/sled12sp1_VARS.fd</nvram>
+type defNvRam struct {
+	File string `xml:",chardata"`
 }
 
 // Creates a domain definition with the defaults

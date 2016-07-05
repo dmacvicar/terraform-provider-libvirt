@@ -7,6 +7,7 @@ import (
 	"net"
 	"strings"
 	"time"
+	"os"
 
 	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/dmacvicar/libvirt-go"
@@ -46,6 +47,16 @@ func resourceLibvirtDomain() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  512,
+				ForceNew: true,
+			},
+			"firmware": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+			"nvram": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
 				ForceNew: true,
 			},
 			"running": &schema.Schema{
@@ -108,6 +119,28 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	if metadata, ok := d.GetOk("metadata"); ok {
 		domainDef.Metadata.TerraformLibvirt.Xml = metadata.(string)
+	}
+
+	if firmware, ok := d.GetOk("firmware"); ok {
+		firmwareFile := firmware.(string)
+		if _, err := os.Stat(firmwareFile); os.IsNotExist(err) {
+			return fmt.Errorf("Could not find firmware file '%s'.", firmwareFile)
+		}
+		domainDef.Os.Loader = &defLoader{
+			File:     firmwareFile,
+			ReadOnly: "yes",
+			Type:     "pflash",
+		}
+
+		if nvram, ok := d.GetOk("nvram"); ok {
+			nvramFile := nvram.(string)
+			if _, err := os.Stat(nvramFile); os.IsNotExist(err) {
+				return fmt.Errorf("Could not find nvram file '%s'.", nvramFile)
+			}
+			domainDef.Os.NvRam = &defNvRam{
+				File: nvramFile,
+			}
+		}
 	}
 
 	domainDef.Memory.Amount = d.Get("memory").(int)
@@ -467,6 +500,8 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
 	}
 
+	log.Printf("[DEBUG] read: obtained XML desc for domain:\n%s", xmlDesc)
+
 	domainDef := newDomainDef()
 	err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
 	if err != nil {
@@ -477,6 +512,8 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("metadata", domainDef.Metadata.TerraformLibvirt.Xml)
 	d.Set("vpu", domainDef.VCpu)
 	d.Set("memory", domainDef.Memory)
+	d.Set("firmware", domainDef.Os.Loader)
+	d.Set("nvram", domainDef.Os.NvRam)
 
 	running, err := isDomainRunning(domain)
 	if err != nil {
@@ -650,8 +687,15 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	if err := domain.Undefine(); err != nil {
-		return fmt.Errorf("Couldn't undefine libvirt domain: %s", err)
+	if err := domain.UndefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_NVRAM); err != nil {
+		if e := err.(libvirt.VirError); e.Code == libvirt.VIR_ERR_NO_SUPPORT || e.Code == libvirt.VIR_ERR_INVALID_ARG {
+			log.Printf("libvirt does not support undefine flags: will try again without flags")
+			if err := domain.Undefine(); err != nil {
+				return fmt.Errorf("Couldn't undefine libvirt domain: %s", err)
+			}
+		} else {
+			return fmt.Errorf("Couldn't undefine libvirt domain with flags: %s", err)
+		}
 	}
 
 	return nil
