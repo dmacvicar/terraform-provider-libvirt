@@ -82,6 +82,8 @@ func resourceLibvirtDomain() *schema.Resource {
 }
 
 func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+	log.Printf("[DEBUG] Check if resource libvirt_domain exists")
+
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return false, fmt.Errorf("The libvirt connection was nil.")
@@ -92,6 +94,8 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 }
 
 func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] Create resource libvirt_domain")
+
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf("The libvirt connection was nil.")
@@ -345,6 +349,8 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] Update resource libvirt_domain")
+
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf("The libvirt connection was nil.")
@@ -443,6 +449,8 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] Read resource libvirt_domain")
+
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf("The libvirt connection was nil.")
@@ -616,6 +624,8 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] Delete resource libvirt_domain")
+
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf("The libvirt connection was nil.")
