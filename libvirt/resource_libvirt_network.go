@@ -39,6 +39,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 		Read:   resourceLibvirtNetworkRead,
 		Delete: resourceLibvirtNetworkDelete,
 		Exists: resourceLibvirtNetworkExists,
+		Update: resourceLibvirtNetworkUpdate,
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -71,6 +72,12 @@ func resourceLibvirtNetwork() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"running": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+				ForceNew: false,
+			},
 		},
 	}
 }
@@ -83,6 +90,30 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
 	defer network.Free()
 	return err == nil, err
+}
+
+func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
+	virConn := meta.(*Client).libvirt
+	if virConn == nil {
+		return fmt.Errorf("The libvirt connection was nil.")
+	}
+	network, err := virConn.LookupNetworkByUUIDString(d.Id())
+	defer network.Free()
+
+	active, err := network.IsActive()
+	if err != nil {
+		return err
+	}
+
+	if !active {
+		log.Printf("[DEBUG] Activating network")
+		if err := network.Create(); err != nil {
+			return err
+		}
+		d.Set("running", true)
+	}
+
+	return nil
 }
 
 func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) error {
@@ -241,6 +272,12 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("name", networkDef.Name)
 	d.Set("domain", networkDef.Domain.Name)
 	d.Set("bridge", networkDef.Bridge.Name)
+
+	active, err := network.IsActive()
+	if err != nil {
+		return err
+	}
+	d.Set("running", active)
 
 	addresses := []string{}
 	for _, address := range networkDef.Ips {
