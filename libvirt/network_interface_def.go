@@ -19,11 +19,11 @@ type defNetworkInterface struct {
 		Address string `xml:"address,attr"`
 	} `xml:"mac"`
 	Source struct {
-		Network string `xml:"network,attr"`
-		Bridge  string `xml:"bridge,attr"`
-		Dev  string `xml:"dev,attr"`
-		Mode  string `xml:"mode,attr"`
-	       } `xml:"source"`
+		Network string `xml:"network,attr,omitempty"`
+		Bridge  string `xml:"bridge,attr,omitempty"`
+		Dev     string `xml:"dev,attr,omitempty"`
+		Mode    string `xml:"mode,attr"`
+	} `xml:"source"`
 	Model struct {
 		Type string `xml:"type,attr"`
 	} `xml:"model"`
