@@ -349,6 +349,14 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 			}
 			defer volPool.Free()
 
+			active, err := volPool.IsActive()
+			if err != nil {
+				return fmt.Errorf("Error retrieving status of pool %s for volume %s: %s", volPoolName, volId, err)
+			}
+			if active {
+				return fmt.Errorf("Can't retrieve volume %s", d.Id())
+			}
+
 			err = volPool.Create(0)
 			if err != nil {
 				return fmt.Errorf("Error starting pool %s: %s", volPoolName, err)
