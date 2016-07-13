@@ -338,36 +338,36 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	volume, err := virConn.LookupStorageVolByKey(d.Id())
 	if err != nil {
 		virErr := err.(libvirt.VirError)
-		if virErr.Code == libvirt.VIR_ERR_NO_STORAGE_VOL {
-			volId := d.Id()
-			volPoolName := d.Get("pool").(string)
-			log.Printf("[INFO] Volume %s not found, attempting to start pool %s", volId, volPoolName)
+		if virErr.Code != libvirt.VIR_ERR_NO_STORAGE_VOL {
+			return fmt.Errorf("Can't retrieve volume %s", d.Id())
+		}
 
-			volPool, err := virConn.LookupStoragePoolByName(volPoolName)
-			if err != nil {
-				return fmt.Errorf("Error retrieving pool %s for volume %s: %s", volPoolName, volId, err)
-			}
-			defer volPool.Free()
+		log.Printf("[INFO] Volume %s not found, attempting to start its pool")
 
-			active, err := volPool.IsActive()
-			if err != nil {
-				return fmt.Errorf("Error retrieving status of pool %s for volume %s: %s", volPoolName, volId, err)
-			}
-			if active {
-				return fmt.Errorf("Can't retrieve volume %s", d.Id())
-			}
+		volId := d.Id()
+		volPoolName := d.Get("pool").(string)
+		volPool, err := virConn.LookupStoragePoolByName(volPoolName)
+		if err != nil {
+			return fmt.Errorf("Error retrieving pool %s for volume %s: %s", volPoolName, volId, err)
+		}
+		defer volPool.Free()
 
-			err = volPool.Create(0)
-			if err != nil {
-				return fmt.Errorf("Error starting pool %s: %s", volPoolName, err)
-			}
+		active, err := volPool.IsActive()
+		if err != nil {
+			return fmt.Errorf("Error retrieving status of pool %s for volume %s: %s", volPoolName, volId, err)
+		}
+		if active {
+			return fmt.Errorf("Can't retrieve volume %s", d.Id())
+		}
 
-			// attempt a new lookup
-			volume, err = virConn.LookupStorageVolByKey(d.Id())
-			if err != nil {
-				return fmt.Errorf("Can't retrieve volume %s", d.Id())
-			}
-		} else {
+		err = volPool.Create(0)
+		if err != nil {
+			return fmt.Errorf("Error starting pool %s: %s", volPoolName, err)
+		}
+
+		// attempt a new lookup
+		volume, err = virConn.LookupStorageVolByKey(d.Id())
+		if err != nil {
 			return fmt.Errorf("Can't retrieve volume %s", d.Id())
 		}
 	}
