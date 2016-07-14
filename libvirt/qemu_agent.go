@@ -65,9 +65,11 @@ func getDomainInterfacesViaQemuAgent(domain *libvirt.VirDomain, wait4ipv4 bool) 
 				continue
 			}
 
-			libVirtAddr := libvirt.VirDomainIPAddress{}
-			libVirtAddr.Addr = addr.Address
-			libVirtAddr.Prefix = addr.Prefix
+			libVirtAddr := libvirt.VirDomainIPAddress{
+				Addr:   addr.Address,
+				Prefix: addr.Prefix,
+			}
+
 			switch strings.ToLower(addr.Type) {
 			case "ipv4":
 				libVirtAddr.Type = libvirt.VIR_IP_ADDR_TYPE_IPV4
