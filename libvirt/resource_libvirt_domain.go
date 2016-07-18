@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strings"
 	"time"
-	"os"
 
 	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/dmacvicar/libvirt-go"

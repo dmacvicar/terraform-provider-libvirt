@@ -7,8 +7,8 @@ import (
 	"log"
 	"time"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/davecgh/go-spew/spew"
+	libvirt "github.com/dmacvicar/libvirt-go"
 )
 
 var diskLetters []rune = []rune("abcdefghijklmnopqrstuvwxyz")

@@ -123,7 +123,7 @@ func newDefNetworkfromLibvirt(network *libvirt.VirNetwork) (defNetwork, error) {
 	if err != nil {
 		return defNetwork{}, fmt.Errorf("Error reading libvirt network XML description: %s", err)
 	}
-	return  networkDef, nil
+	return networkDef, nil
 }
 
 // Creates a network definition with the defaults the provider uses
