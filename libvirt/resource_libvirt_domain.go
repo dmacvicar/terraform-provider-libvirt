@@ -511,17 +511,23 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("disks", disks)
 
 	// look interfaces with addresses
-	ifacesWithAddr, err := domain.ListAllInterfaceAddresses(libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+	ifacesWithAddr, err := getDomainInterfaces(&domain)
 	if err != nil {
-		switch err.(type) {
-		default:
-			return fmt.Errorf("Error retrieving interface addresses: %s", err)
-		case libvirt.VirError:
-			virErr := err.(libvirt.VirError)
-			if virErr.Code != libvirt.VIR_ERR_OPERATION_INVALID || virErr.Domain != libvirt.VIR_FROM_QEMU {
-				return fmt.Errorf("Error retrieving interface addresses: %s", err)
+		return fmt.Errorf("Error retrieving interface addresses: %s", err)
+	}
+
+	addressesForMac := func(mac string) []string {
+		// look for an ip address and try to match it with the mac address
+		// not sure if using the target device name is a better idea here
+		addrs := make([]string, 0)
+		for _, ifaceWithAddr := range ifacesWithAddr {
+			if strings.ToUpper(ifaceWithAddr.Hwaddr) == mac {
+				for _, addr := range ifaceWithAddr.Addrs {
+					addrs = append(addrs, addr.Addr)
+				}
 			}
 		}
+		return addrs
 	}
 
 	netIfaces := make([]map[string]interface{}, 0)
@@ -529,6 +535,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		// we need it to read old values
 		prefix := fmt.Sprintf("network_interface.%d", i)
 
+		mac := strings.ToUpper(networkInterfaceDef.Mac.Address)
 		netIface := map[string]interface{}{
 			"network_id":     "",
 			"network_name":   "",
@@ -536,10 +543,14 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			"vepa":           "",
 			"macvtap":        "",
 			"passthrough":    "",
-			"mac":            strings.ToUpper(networkInterfaceDef.Mac.Address),
+			"mac":            mac,
 			"hostname":       "",
 			"wait_for_lease": false,
 		}
+
+		netIface["wait_for_lease"] = d.Get(prefix + ".wait_for_lease").(bool)
+		netIface["addresses"] = addressesForMac(mac)
+		log.Printf("[DEBUG] read: addresses for '%s': %+v", mac, netIface["addresses"])
 
 		switch networkInterfaceDef.Type {
 		case "network":
@@ -578,21 +589,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 					}
 				}
 
-				// look for an ip address and try to match it with the mac address
-				// not sure if using the target device name is a better idea here
-				addrs := make([]string, 0)
-				for _, ifaceWithAddr := range ifacesWithAddr {
-					if strings.ToUpper(ifaceWithAddr.Hwaddr) == netIface["mac"] {
-						for _, addr := range ifaceWithAddr.Addrs {
-							addrs = append(addrs, addr.Addr)
-						}
-					}
-				}
-				netIface["addresses"] = addrs
-				log.Printf("[DEBUG] read: addresses for '%s': %+v", netIface["mac"], addrs)
-
-				netIface["wait_for_lease"] = d.Get(prefix + ".wait_for_lease").(bool)
-
 			}
 		case "bridge":
 			netIface["bridge"] = networkInterfaceDef.Source.Bridge
@@ -608,7 +604,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				}
 			}
 		}
-
 		netIfaces = append(netIfaces, netIface)
 	}
 	log.Printf("[DEBUG] read: ifaces for '%s':\n%s", domainDef.Name, spew.Sdump(netIfaces))
@@ -788,7 +783,7 @@ func getDomainInterfaces(domain *libvirt.VirDomain) ([]libvirt.VirDomainInterfac
 			}
 		}
 	}
-	log.Printf("[DEBUG] Interfaces %+v", interfaces)
+	log.Printf("[DEBUG] Interfaces: %s", spew.Sdump(interfaces))
 
 	return interfaces, nil
 }
