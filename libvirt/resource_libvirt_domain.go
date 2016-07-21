@@ -151,7 +151,11 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if cloudinit, ok := d.GetOk("cloudinit"); ok {
-		disk, err := newDiskForCloudInit(virConn, cloudinit.(string))
+		cloudinitID, err := getCloudInitVolumeKeyFromTerraformID(cloudinit.(string))
+		if err != nil {
+			return err
+		}
+		disk, err := newDiskForCloudInit(virConn, cloudinitID)
 		if err != nil {
 			return err
 		}
