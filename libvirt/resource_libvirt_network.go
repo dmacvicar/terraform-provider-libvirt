@@ -143,9 +143,12 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	networkDef.Forward.Mode = strings.ToLower(d.Get("mode").(string))
 	if networkDef.Forward.Mode == netModeIsolated || networkDef.Forward.Mode == netModeNat || networkDef.Forward.Mode == netModeRoute {
 
-		// there is no mode when using an isolated network
 		if networkDef.Forward.Mode == netModeIsolated {
+			// there is no forwarding when using an isolated network
 			networkDef.Forward = nil
+		} else if networkDef.Forward.Mode == netModeRoute {
+			// there is no NAT when using a routed network
+			networkDef.Forward.Nat = nil
 		}
 
 		// some network modes require a DHCP/DNS server
@@ -202,7 +205,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			return fmt.Errorf("'bridge' must be provided when using the bridged network mode")
 		}
 	} else {
-		return fmt.Errorf("unsuppoorted network mode '%s'", networkDef.Forward.Mode)
+		return fmt.Errorf("unsupported network mode '%s'", networkDef.Forward.Mode)
 	}
 
 	// once we have the network defined, connect to libvirt and create it from the XML serialization
