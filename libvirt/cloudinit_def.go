@@ -3,10 +3,6 @@ package libvirt
 import (
 	"encoding/xml"
 	"fmt"
-	libvirt "github.com/dmacvicar/libvirt-go"
-	"github.com/hooklift/iso9660"
-	"github.com/mitchellh/packer/common/uuid"
-	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"log"
@@ -15,6 +11,11 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	libvirt "github.com/dmacvicar/libvirt-go"
+	"github.com/hooklift/iso9660"
+	"github.com/mitchellh/packer/common/uuid"
+	"gopkg.in/yaml.v2"
 )
 
 // names of the files expected by cloud-init
@@ -85,6 +86,7 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.VirConnection) (string,
 
 	volumeDef.Capacity.Unit = "B"
 	volumeDef.Capacity.Amount = size
+	volumeDef.Target.Format.Type = "raw"
 
 	volumeDefXml, err := xml.Marshal(volumeDef)
 	if err != nil {
