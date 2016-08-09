@@ -207,7 +207,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 			networkName, err := network.GetName()
 			if err != nil {
-				return fmt.Errorf("Error retrieving volume name: %s", err)
+				return fmt.Errorf("Error retrieving network name: %s", err)
 			}
 			networkDef, err := newDefNetworkfromLibvirt(&network)
 			if !networkDef.HasDHCP() {
@@ -218,7 +218,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			if hostnameI, ok := d.GetOk(prefix + ".hostname"); ok {
 				hostname = hostnameI.(string)
 			}
-			if addresses, ok := d.GetOk("addresses"); ok {
+			if addresses, ok := d.GetOk(prefix + ".addresses"); ok {
 				// some IP(s) provided
 				for _, addressI := range addresses.([]interface{}) {
 					address := addressI.(string)
