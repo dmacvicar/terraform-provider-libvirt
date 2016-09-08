@@ -96,7 +96,7 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.VirConnection) (string,
 	// create the volume
 	volume, err := pool.StorageVolCreateXML(string(volumeDefXml), 0)
 	if err != nil {
-		return "", fmt.Errorf("Error creating libvirt volume: %s", err)
+		return "", fmt.Errorf("Error creating libvirt volume for cloudinit device %s: %s", ci.Name, err)
 	}
 	defer volume.Free()
 
@@ -158,11 +158,8 @@ func (ci *defCloudInit) createISO() (string, error) {
 		filepath.Join(tmpDir, METADATA))
 
 	log.Print("About to execute cmd: %+v", cmd)
-	if err = cmd.Start(); err != nil {
+	if err = cmd.Run(); err != nil {
 		return "", fmt.Errorf("Error while starting the creation of CloudInit's ISO image: %s", err)
-	}
-	if err = cmd.Wait(); err != nil {
-		return "", fmt.Errorf("Error while creating CloudInit's ISO image: %s", err)
 	}
 	log.Print("ISO created at %s", isoDestination)
 

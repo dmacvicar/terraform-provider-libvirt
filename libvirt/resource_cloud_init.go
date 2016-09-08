@@ -38,6 +38,7 @@ func resourceCloudInit() *schema.Resource {
 }
 
 func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] creating cloudinit")
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf("The libvirt connection was nil.")
