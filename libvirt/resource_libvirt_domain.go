@@ -1069,6 +1069,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			}
 		case "bridge":
 			netIface["bridge"] = networkInterfaceDef.Source.Bridge
+			netIface["network_name"] = networkInterfaceDef.Source.Network
 		case "direct":
 			{
 				switch networkInterfaceDef.Source.Mode {
