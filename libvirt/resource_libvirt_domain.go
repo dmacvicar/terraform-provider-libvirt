@@ -96,6 +96,13 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Create resource libvirt_domain")
 
+	// Ensure partial mode to save some relevant keys
+	d.Partial(true)
+
+	// the domain ID must always be saved, otherwise it won't be possible to cleanup a domain
+	// if something bad happens at provisioning time
+	d.SetPartial("id")
+
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf("The libvirt connection was nil.")
