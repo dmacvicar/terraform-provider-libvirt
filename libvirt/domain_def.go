@@ -38,6 +38,12 @@ type defDomain struct {
 				Name string `xml:"name,attr"`
 			} `xml:"target"`
 		} `xml:"channel"`
+		Rng struct {
+			Model   string `xml:"model,attr"`
+			Backend struct {
+				Model string `xml:"model,attr"`
+			} `xml:"backend"`
+		} `xml:"rng"`
 	} `xml:"devices"`
 }
 
@@ -92,6 +98,9 @@ func newDomainDef() defDomain {
 	domainDef.Devices.QemuGAChannel.Source.Mode = "bind"
 	domainDef.Devices.QemuGAChannel.Target.Type = "virtio"
 	domainDef.Devices.QemuGAChannel.Target.Name = "org.qemu.guest_agent.0"
+
+	domainDef.Devices.Rng.Model = "virtio"
+	domainDef.Devices.Rng.Backend.Model = "random"
 
 	return domainDef
 }
