@@ -29,6 +29,7 @@ The following arguments are supported:
    created with 512 MiB of memory
    be used.
 * `vcpu` - (Optional) The amount of virtual CPUs. If not specified, a single CPU will be created.
+* `running` - (Optional) Use `false` to turn off the instance. If not specified, true is assumed and the instance, if stopped, will be started at next apply.
 * `disk` - (Optional) An array of one or more disks to attach to the domain. The `disk` object structure is documented below.
 * `network_interface` - (Optional) An array of one or more network interfaces to attach to the domain. The `network_interface` object structure is documented below.
 * `metadata` - (Optional) A string containing arbitrary data. This is going to be
