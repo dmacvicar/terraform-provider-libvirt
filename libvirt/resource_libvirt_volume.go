@@ -181,6 +181,9 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		poolName = d.Get("pool").(string)
 	}
 
+	PoolSync.AcquireLock(poolName)
+	defer PoolSync.ReleaseLock(poolName)
+
 	pool, err := virConn.LookupStoragePoolByName(poolName)
 	if err != nil {
 		return fmt.Errorf("can't find storage pool '%s'", poolName)

@@ -7,8 +7,8 @@ import (
 	"log"
 	"time"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/davecgh/go-spew/spew"
+	libvirt "github.com/dmacvicar/libvirt-go"
 )
 
 var diskLetters []rune = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -69,6 +69,14 @@ func RemoveVolume(virConn *libvirt.VirConnection, key string) error {
 		return fmt.Errorf("Error retrieving pool for volume: %s", err)
 	}
 	defer volPool.Free()
+
+	poolName, err := volPool.GetName()
+	if err != nil {
+		return fmt.Errorf("Error retrieving name of volume: %s", err)
+	}
+
+	PoolSync.AcquireLock(poolName)
+	defer PoolSync.ReleaseLock(poolName)
 
 	WaitForSuccess("Error refreshing pool for volume", func() error {
 		return volPool.Refresh(0)
