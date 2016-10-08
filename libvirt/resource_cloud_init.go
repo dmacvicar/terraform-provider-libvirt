@@ -25,7 +25,7 @@ func resourceCloudInit() *schema.Resource {
 			},
 			"local_hostname": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				ForceNew: true,
 			},
 			"ssh_authorized_key": &schema.Schema{
