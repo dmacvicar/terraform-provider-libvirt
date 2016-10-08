@@ -70,6 +70,14 @@ func RemoveVolume(virConn *libvirt.VirConnection, key string) error {
 	}
 	defer volPool.Free()
 
+	poolName, err := volPool.GetName()
+	if err != nil {
+		return fmt.Errorf("Error retrieving name of volume: %s", err)
+	}
+
+	PoolSync.AcquireLock(poolName)
+	defer PoolSync.ReleaseLock(poolName)
+
 	WaitForSuccess("Error refreshing pool for volume", func() error {
 		return volPool.Refresh(0)
 	})

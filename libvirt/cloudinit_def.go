@@ -58,6 +58,9 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.VirConnection) (string,
 	}
 	defer pool.Free()
 
+	PoolSync.AcquireLock(ci.PoolName)
+	defer PoolSync.ReleaseLock(ci.PoolName)
+
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
 	WaitForSuccess("Error refreshing pool for volume", func() error {
@@ -161,7 +164,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 	if err = cmd.Run(); err != nil {
 		return "", fmt.Errorf("Error while starting the creation of CloudInit's ISO image: %s", err)
 	}
-	log.Print("ISO created at %s", isoDestination)
+	log.Printf("ISO created at %s", isoDestination)
 
 	return isoDestination, nil
 }

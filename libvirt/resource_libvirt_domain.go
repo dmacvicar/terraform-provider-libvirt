@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
+var PoolSync = NewLibVirtPoolSync()
+
 func init() {
 	spew.Config.Indent = "\t"
 }
