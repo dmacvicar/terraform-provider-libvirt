@@ -26,7 +26,7 @@ type defCloudInit struct {
 	Name     string
 	PoolName string
 	Metadata struct {
-		LocalHostname string `yaml:"local-hostname"`
+		LocalHostname string `yaml:"local-hostname,omitempty"`
 		InstanceID    string `yaml:"instance-id"`
 	}
 	UserData struct {
