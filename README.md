@@ -20,10 +20,12 @@ In the future, I may try to support older libvirt versions if I find a way to el
 [Copied from the Terraform documentation](https://www.terraform.io/docs/plugins/basics.html):
 > To install a plugin, put the binary somewhere on your filesystem, then configure Terraform to be able to find it. The configuration where plugins are defined is ~/.terraformrc for Unix-like systems and %APPDATA%/terraform.rc for Windows.
 
-If you are using opensuse/SUSE distro, add the repo and download the package :
+If you are using opensuse/SUSE distro, add the repo and download the package (check the repo according your distro)
 
 ```console
-zypper addrepo http://download.opensuse.org/repositories/Virtualization:containers/openSUSE_Leap_42.1/Virtualization:containers.repo
+
+DISTRO=openSUSE_Leap_42.1
+zypper addrepo http://download.opensuse.org/repositories/Virtualization:containers/$DISTRO/Virtualization:containers.repo
 zypper refresh
 zypper install terraform-provider-libvirt
 
