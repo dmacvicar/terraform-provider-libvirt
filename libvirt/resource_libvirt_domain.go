@@ -109,13 +109,6 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Create resource libvirt_domain")
 
-	// Ensure partial mode to save some relevant keys
-	d.Partial(true)
-
-	// the domain ID must always be saved, otherwise it won't be possible to cleanup a domain
-	// if something bad happens at provisioning time
-	d.SetPartial("id")
-
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf("The libvirt connection was nil.")
@@ -350,6 +343,13 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 	d.SetId(id)
 
+	// the domain ID must always be saved, otherwise it won't be possible to cleanup a domain
+	// if something bad happens at provisioning time
+	d.Partial(true)
+	d.Set("id", id)
+	d.SetPartial("id")
+	d.Partial(false)
+
 	log.Printf("[INFO] Domain ID: %s", d.Id())
 
 	err = waitForDomainUp(domain)
@@ -418,6 +418,8 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	d.Partial(true)
+
 	if d.HasChange("metadata") {
 		metadata := defMetadata{}
 		metadata.Xml = d.Get("metadata").(string)
@@ -434,6 +436,8 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		if err != nil {
 			return fmt.Errorf("Error changing domain metadata: %s", err)
 		}
+
+		d.SetPartial("metadata")
 	}
 
 	if d.HasChange("cloudinit") {
@@ -453,6 +457,8 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		if err != nil {
 			return fmt.Errorf("Error while changing the cloudinit volume: %s", err)
 		}
+
+		d.SetPartial("cloudinit")
 	}
 
 	netIfacesCount := d.Get("network_interface.#").(int)
@@ -489,6 +495,8 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 			}
 		}
 	}
+
+	d.Partial(false)
 
 	// TODO
 	return nil

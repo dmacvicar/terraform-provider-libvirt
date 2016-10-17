@@ -307,6 +307,13 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error retrieving volume key: %s", err)
 	}
 	d.SetId(key)
+
+	// make sure we record the id even if the rest of this gets interrupted
+	d.Partial(true)
+	d.Set("id", key)
+	d.SetPartial("id")
+	d.Partial(false)
+
 	log.Printf("[INFO] Volume ID: %s", d.Id())
 
 	// upload source if present

@@ -100,6 +100,8 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
 	defer network.Free()
 
+	d.Partial(true)
+
 	active, err := network.IsActive()
 	if err != nil {
 		return err
@@ -111,7 +113,10 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 			return err
 		}
 		d.Set("running", true)
+		d.SetPartial("running")
 	}
+
+	d.Partial(false)
 
 	return nil
 }
@@ -236,6 +241,12 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error retrieving libvirt network id: %s", err)
 	}
 	d.SetId(id)
+
+	// make sure we record the id even if the rest of this gets interrupted
+	d.Partial(true)
+	d.Set("id", id)
+	d.SetPartial("id")
+	d.Partial(false)
 
 	log.Printf("[INFO] Created network %s [%s]", networkDef.Name, d.Id())
 
