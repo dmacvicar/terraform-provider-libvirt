@@ -65,6 +65,13 @@ func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.SetId(key)
 
+	// make sure we record the id even if the rest of this gets interrupted
+	d.Partial(true) // make sure we record the id even if the rest of this gets interrupted
+	d.Set("id", key)
+	d.SetPartial("id")
+	// TODO: at this point we have collected more things than the ID, so let's save as many things as we can
+	d.Partial(false)
+
 	return resourceCloudInitRead(d, meta)
 }
 
