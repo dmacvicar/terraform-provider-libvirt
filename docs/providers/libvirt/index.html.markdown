@@ -19,7 +19,7 @@ While libvirt can be used with several types of hypervisors, this provider focus
 ```
 # Configure the Libvirt provider
 provider "libvirt" {
-  uri = "qemu://system"
+  uri = "qemu:///system"
 }
 
 # Create a new domain
