@@ -181,6 +181,7 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
                             network_name = "default"
                     }
                     network_interface = {
+                            bridge = "br0"
                             mac = "52:54:00:a9:f5:17"
                     }
                     disk {
