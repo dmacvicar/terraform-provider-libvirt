@@ -80,9 +80,7 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 
             resource "libvirt_domain" "acceptance-test-domain" {
                     name = "terraform-test"
-                    disk {
-                            volume_id = "${libvirt_volume.acceptance-test-volume.id}"
-                    }
+                    volume_ids = ["${libvirt_volume.acceptance-test-volume.id}"]
             }`)
 
 	var configVolDettached = fmt.Sprintf(`
@@ -128,13 +126,10 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 
             resource "libvirt_domain" "acceptance-test-domain" {
                     name = "terraform-test-domain"
-                    disk {
-                            volume_id = "${libvirt_volume.acceptance-test-volume1.id}"
-                    }
-
-                    disk {
-                            volume_id = "${libvirt_volume.acceptance-test-volume2.id}"
-                    }
+                    volume_ids = [
+                      "${libvirt_volume.acceptance-test-volume1.id}",
+                      "${libvirt_volume.acceptance-test-volume2.id}"
+                    ]
             }`)
 
 	var configVolDettached = fmt.Sprintf(`
@@ -184,9 +179,7 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
                             bridge = "br0"
                             mac = "52:54:00:A9:F5:17"
                     }
-                    disk {
-                            volume_id = "${libvirt_volume.acceptance-test-volume.id}"
-                    }
+                    volume_ids = ["${libvirt_volume.acceptance-test-volume.id}"]
             }`)
 
 	resource.Test(t, resource.TestCase{
