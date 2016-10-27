@@ -182,7 +182,7 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
                     }
                     network_interface = {
                             bridge = "br0"
-                            mac = "52:54:00:a9:f5:17"
+                            mac = "52:54:00:A9:F5:17"
                     }
                     disk {
                             volume_id = "${libvirt_volume.acceptance-test-volume.id}"
@@ -201,7 +201,7 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "network_interface.0.network_name", "default"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "network_interface.1.mac", "52:54:00:a9:f5:17"),
+						"libvirt_domain.acceptance-test-domain", "network_interface.1.mac", "52:54:00:A9:F5:17"),
 				),
 			},
 		},
