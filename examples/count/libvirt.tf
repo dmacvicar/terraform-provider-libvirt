@@ -15,9 +15,6 @@ resource "libvirt_volume" "volume" {
 
 resource "libvirt_domain" "domain" {
   name = "domain-${count.index}"
-  disk {
-       volume_id = "${element(libvirt_volume.volume.*.id, count.index)}"
-  }
+  volume_ids = ["${element(libvirt_volume.volume.*.id, count.index)}"]
   count = 4
 }
-
