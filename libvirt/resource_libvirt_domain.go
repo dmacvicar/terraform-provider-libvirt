@@ -73,13 +73,13 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				ForceNew: false,
 			},
-			"disk": &schema.Schema{
+			"volume_ids": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
 				Required: false,
 				ForceNew: true,
-				Elem: &schema.Resource{
-					Schema: diskCommonSchema(),
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
 				},
 			},
 			"network_interface": &schema.Schema{
@@ -148,14 +148,14 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	domainDef.Memory.Amount = d.Get("memory").(int)
 	domainDef.VCpu.Amount = d.Get("vcpu").(int)
 
-	disksCount := d.Get("disk.#").(int)
+	disksCount := d.Get("volume_ids.#").(int)
 	var disks []defDisk
 	for i := 0; i < disksCount; i++ {
-		prefix := fmt.Sprintf("disk.%d", i)
 		disk := newDefDisk()
 		disk.Target.Dev = fmt.Sprintf("vd%s", DiskLetterForIndex(i))
 
-		volumeKey := d.Get(prefix + ".volume_id").(string)
+		prefix := fmt.Sprintf("volume_ids.%d", i)
+		volumeKey := d.Get(prefix).(string)
 		diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
 		if err != nil {
 			return fmt.Errorf("Can't retrieve volume %s", volumeKey)
@@ -542,7 +542,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("running", running)
 
-	disks := make([]map[string]interface{}, 0)
+	disks := make([]string, 0)
 	for _, diskDef := range domainDef.Devices.Disks {
 		virPool, err := virConn.LookupStoragePoolByName(diskDef.Source.Pool)
 		if err != nil {
@@ -561,12 +561,9 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("Error retrieving volume for disk: %s", err)
 		}
 
-		disk := map[string]interface{}{
-			"volume_id": virVolKey,
-		}
-		disks = append(disks, disk)
+		disks = append(disks, virVolKey)
 	}
-	d.Set("disks", disks)
+	d.Set("volume_ids", disks)
 
 	// look interfaces with addresses
 	ifacesWithAddr, err := getDomainInterfaces(&domain)

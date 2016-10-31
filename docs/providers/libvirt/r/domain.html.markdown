@@ -30,7 +30,7 @@ The following arguments are supported:
    be used.
 * `vcpu` - (Optional) The amount of virtual CPUs. If not specified, a single CPU will be created.
 * `running` - (Optional) Use `false` to turn off the instance. If not specified, true is assumed and the instance, if stopped, will be started at next apply.
-* `disk` - (Optional) An array of one or more disks to attach to the domain. The `disk` object structure is documented below.
+* `volume_ids` - (Optional) An array of one or more volume IDs to attach to the domain
 * `network_interface` - (Optional) An array of one or more network interfaces to attach to the domain. The `network_interface` object structure is documented below.
 * `metadata` - (Optional) A string containing arbitrary data. This is going to be
   added to the final domain inside of the [metadata tag](https://libvirt.org/formatdomain.html#elementsMetadata).
@@ -62,9 +62,7 @@ resource "libvirt_domain" "my_machine" {
   firmware = "/usr/share/qemu/ovmf-x86_64-code.bin"
   memory = "2048"
 
-  disk {
-    volume_id = "${libvirt_volume.volume.id}"
-  }
+  volume_ids = ["${libvirt_volume.volume.id}"]
   ...
 }
 ```
@@ -76,10 +74,6 @@ nvram = [
    "/usr/share/qemu/ovmf-x86_64-code.bin:/usr/share/qemu/ovmf-x86_64-vars.bin"
 ]
 ```
-
-The `disk` block supports:
-
-* `volume_id` - (Required) The volume id to use for this disk.
 
 If you have a volume with a template image, create a second volume using the image as the backing volume, and then use the new volume as the volume for the disk. This way the image will not be modified.
 
@@ -96,9 +90,7 @@ resource "libvirt_volume" "mydisk" {
 
 resource "libvirt_domain" "domain1" {
   name = "domain1"
-  disk {
-    volume_id = "${libvirt_volume.mydisk.id}"
-  }
+  volume_ids = ["${libvirt_volume.mydisk.id}"]
 
   network_interface {
     network_id = "${libvirt_network.net1.id}"
