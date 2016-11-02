@@ -78,8 +78,8 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				Required: false,
 				ForceNew: true,
-				Elem: &schema.Resource{
-					Schema: diskCommonSchema(),
+				Elem: &schema.Schema{
+					Type: schema.TypeMap,
 				},
 			},
 			"network_interface": &schema.Schema{
@@ -151,11 +151,12 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	disksCount := d.Get("disk.#").(int)
 	var disks []defDisk
 	for i := 0; i < disksCount; i++ {
-		prefix := fmt.Sprintf("disk.%d", i)
 		disk := newDefDisk()
 		disk.Target.Dev = fmt.Sprintf("vd%s", DiskLetterForIndex(i))
 
-		volumeKey := d.Get(prefix + ".volume_id").(string)
+		diskKey := fmt.Sprintf("disk.%d", i)
+		diskMap := d.Get(diskKey).(map[string]interface{})
+		volumeKey := diskMap["volume_id"].(string)
 		diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
 		if err != nil {
 			return fmt.Errorf("Can't retrieve volume %s", volumeKey)

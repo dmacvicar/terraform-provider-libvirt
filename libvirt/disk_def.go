@@ -2,7 +2,6 @@ package libvirt
 
 import (
 	"encoding/xml"
-	"github.com/hashicorp/terraform/helper/schema"
 )
 
 type defDisk struct {
@@ -24,16 +23,6 @@ type defDisk struct {
 		Name string `xml:"name,attr"`
 		Type string `xml:"type,attr"`
 	} `xml:"driver"`
-}
-
-func diskCommonSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"volume_id": &schema.Schema{
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-	}
 }
 
 func newDefDisk() defDisk {
