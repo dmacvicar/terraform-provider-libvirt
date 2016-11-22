@@ -23,9 +23,11 @@ type defDomain struct {
 	Devices struct {
 		Disks             []defDisk             `xml:"disk"`
 		NetworkInterfaces []defNetworkInterface `xml:"interface"`
-		Spice             struct {
-			Type     string `xml:"type,attr"`
-			Autoport string `xml:"autoport,attr"`
+		Graphics struct {
+			Type   string `xml:"type,attr"`
+			Listen struct {
+				Type string `xml:"type,attr"`
+			} `xml:"listen"`
 		} `xml:"graphics"`
 		// QEMU guest agent channel
 		QemuGAChannel struct {
@@ -104,8 +106,8 @@ func newDomainDef() defDomain {
 	domainDef.VCpu.Placement = "static"
 	domainDef.VCpu.Amount = 1
 
-	domainDef.Devices.Spice.Type = "spice"
-	domainDef.Devices.Spice.Autoport = "yes"
+	domainDef.Devices.Graphics.Type = "spice"
+	domainDef.Devices.Graphics.Listen.Type = "none"
 
 	domainDef.Devices.QemuGAChannel.Type = "unix"
 	domainDef.Devices.QemuGAChannel.Source.Mode = "bind"
