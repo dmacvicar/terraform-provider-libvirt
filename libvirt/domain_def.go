@@ -24,8 +24,9 @@ type defDomain struct {
 		Disks             []defDisk             `xml:"disk"`
 		NetworkInterfaces []defNetworkInterface `xml:"interface"`
 		Graphics struct {
-			Type   string `xml:"type,attr"`
-			Listen struct {
+			Type     string `xml:"type,attr"`
+			Autoport string `xml:"autoport,attr"`
+			Listen   struct {
 				Type string `xml:"type,attr"`
 			} `xml:"listen"`
 		} `xml:"graphics"`
@@ -107,6 +108,7 @@ func newDomainDef() defDomain {
 	domainDef.VCpu.Amount = 1
 
 	domainDef.Devices.Graphics.Type = "spice"
+	domainDef.Devices.Graphics.Autoport = "yes"
 	domainDef.Devices.Graphics.Listen.Type = "none"
 
 	domainDef.Devices.QemuGAChannel.Type = "unix"
