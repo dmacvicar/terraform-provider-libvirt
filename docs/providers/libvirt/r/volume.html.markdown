@@ -36,3 +36,7 @@ The following arguments are supported:
 * `base_volume_id` - (Optional) The backing volume (CoW) to use for this volume.
 * `base_volume_name` - (Optional) The name of the backing volume (CoW) to use for this volume. Note well: when `base_volume_pool` is not specified the volume is going to be searched inside of `pool`.
 * `base_volume_pool` - (Optional) The name of the pool containing the volume defined by `base_volume_name`.
+
+## Attributes Reference
+
+* `id` - a unique identifier for the resource

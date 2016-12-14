@@ -196,3 +196,8 @@ resource "libvirt_domain" "my-domain" {
 **Warning:** the [Qemu guest agent](http://wiki.libvirt.org/page/Qemu_guest_agent)
 must be installed and running inside of the domain in order to discover the IP
 addresses of all the network interfaces attached to a LAN.
+
+## Attributes Reference
+
+* `id` - a unique identifier for the resource
+* `network_interface.<N>.addresses.<M>` - M-th IP address assigned to the N-th network interface
