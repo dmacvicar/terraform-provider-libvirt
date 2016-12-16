@@ -1,8 +1,8 @@
 # Terraform provider for libvirt
 
-![experimental](https://img.shields.io/badge/stability%3F-experimental-orange.svg) [![Build Status](https://travis-ci.org/dmacvicar/terraform-provider-libvirt.svg?branch=master)](https://travis-ci.org/dmacvicar/terraform-provider-libvirt)
+![alpha](https://img.shields.io/badge/stability%3F-beta-yellow.svg) [![Build Status](https://travis-ci.org/dmacvicar/terraform-provider-libvirt.svg?branch=master)](https://travis-ci.org/dmacvicar/terraform-provider-libvirt)
 
-This provider is still experimental/in development. To see what is left or planned, see the [issues list](https://github.com/dmacvicar/terraform-provider-libvirt/issues).
+This provider is still being actively developed. To see what is left or planned, see the [issues list](https://github.com/dmacvicar/terraform-provider-libvirt/issues).
 
 This is a terraform provider that lets you provision
 servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraform.io/).
