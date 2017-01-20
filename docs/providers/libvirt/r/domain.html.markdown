@@ -43,7 +43,29 @@ The following arguments are supported:
 
 The following extra argument is provided for CoreOS images:
 
-* `coreos_ignition` - (Optional) The name of a CoreOS Ignition file.
+* `coreos_ignition` - (Optional) This can be set to the name of an existing ignition
+file or alternatively can be set to the rendered value of a Terraform ignition provider object.
+
+An example where a Terraform ignition provider object is used:
+```
+# Systemd unit resource containing the unit definition
+resource "ignition_systemd_unit" "example" {
+  name = "example.service"
+  content = "[Service]\nType=oneshot\nExecStart=/usr/bin/echo Hello World\n\n[Install]\nWantedBy=multi-user.target"
+}
+
+# Ignition config include the previous defined systemd unit resource
+resource "ignition_config" "example" {
+  systemd = [
+      "${ignition_systemd_unit.example.id}",
+  ]
+}
+
+resource "libvirt_domain" "my_machine" {
+  coreos_ignition = "${ignition_config.example.rendered}"
+  ...
+}
+```
 
 Note that to make use of Ignition files with CoreOS the host must be running
 QEMU v2.6 or greater.

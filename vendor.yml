@@ -23,7 +23,7 @@ vendors:
 - path: github.com/hashicorp/logutils
   rev: 0dc08b1671f34c4250ce212759ebd880f743d883
 - path: github.com/hashicorp/terraform
-  rev: v0.8.0
+  rev: v0.8.5
 - path: github.com/hooklift/assert
   rev: c7786599453421cddf9aa8a3a7b537f567d1ac1b
 - path: github.com/hooklift/iso9660

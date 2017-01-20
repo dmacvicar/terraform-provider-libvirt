@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"log"
@@ -9,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"crypto/sha256"
+	"encoding/hex"
 	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -18,6 +21,11 @@ var PoolSync = NewLibVirtPoolSync()
 
 func init() {
 	spew.Config.Indent = "\t"
+}
+
+func hash(s string) string {
+	sha := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(sha[:])
 }
 
 func resourceLibvirtDomain() *schema.Resource {
@@ -145,12 +153,38 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
-		ignitionFile := ignition.(string)
-		if _, err := os.Stat(ignitionFile); os.IsNotExist(err) {
-			return fmt.Errorf("Could not find ignition file '%s'", ignitionFile)
+		var file bool
+		file = true
+		ignitionString := ignition.(string)
+		if _, err := os.Stat(ignitionString); err != nil {
+			var js map[string]interface{}
+			if err_conf := json.Unmarshal([]byte(ignitionString), &js); err_conf != nil {
+				return fmt.Errorf("coreos_ignition parameter is neither a file "+
+					"nor a valid json object %s", ignition)
+			}
+			log.Printf("[DEBUG] about to set file to false")
+			file = false
 		}
+		log.Printf("[DEBUG] file %s", file)
 		var fw_cfg []defCmd
-		ign_str := fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionFile)
+		var ign_str string
+		if !file {
+			ignitionHash := hash(ignitionString)
+			tempFileName := fmt.Sprint("/tmp/", ignitionHash, ".ign")
+			tempFile, err := os.Create(tempFileName)
+			defer tempFile.Close()
+			if err != nil {
+				return fmt.Errorf("Cannot create temporary ignition file %s", tempFileName)
+			}
+			if _, err := tempFile.WriteString(ignitionString); err != nil {
+				return fmt.Errorf("Cannot write Ignition object to temporary "+
+					"ignition file %s", tempFileName)
+			}
+			domainDef.Metadata.TerraformLibvirt.IgnitionFile = tempFileName
+			ign_str = fmt.Sprintf("name=opt/com.coreos/config,file=%s", tempFileName)
+		} else if file {
+			ign_str = fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionString)
+		}
 		fw_cfg = append(fw_cfg, defCmd{"-fw_cfg"})
 		fw_cfg = append(fw_cfg, defCmd{ign_str})
 		domainDef.CmdLine.Cmd = fw_cfg
@@ -197,12 +231,14 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	if consoleCount, ok := d.GetOk("console.#"); ok {
 		var consoles []defConsole
-		for i :=0; i < consoleCount.(int); i++ {
+		for i := 0; i < consoleCount.(int); i++ {
 			console := defConsole{}
 			consolePrefix := fmt.Sprintf("console.%d", i)
 			console.Type = d.Get(consolePrefix + ".type").(string)
-			console.Source.Path = d.Get(consolePrefix + ".source_path").(string)
 			console.Target.Port = d.Get(consolePrefix + ".target_port").(string)
+			if source_path, ok := d.GetOk(consolePrefix + ".source_path"); ok {
+				console.Source.Path = source_path.(string)
+			}
 			if target_type, ok := d.GetOk(consolePrefix + ".target_type"); ok {
 				console.Target.Type = target_type.(string)
 			}
@@ -755,6 +791,25 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
 	defer domain.Free()
+
+	xmlDesc, err := domain.GetXMLDesc(0)
+	if err != nil {
+		return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+	}
+
+	domainDef := newDomainDef()
+	err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
+	if err != nil {
+		return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+	}
+
+	if ignitionFile := domainDef.Metadata.TerraformLibvirt.IgnitionFile; ignitionFile != "" {
+		log.Printf("[DEBUG] deleting ignition file")
+		err = os.Remove(ignitionFile)
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("Error removing Ignition file %s: %s", ignitionFile, err)
+		}
+	}
 
 	state, err := domain.GetState()
 	if err != nil {
