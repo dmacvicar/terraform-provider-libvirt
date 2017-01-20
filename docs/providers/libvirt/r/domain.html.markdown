@@ -41,6 +41,13 @@ The following arguments are supported:
   cloud-init won't cause the domain to be recreated, however the change will
   have effect on the next reboot.
 
+The following extra argument is provided for CoreOS images:
+
+* `coreos_ignition` - (Optional) The name of a CoreOS Ignition file.
+
+Note that to make use of Ignition files with CoreOS the host must be running
+QEMU v2.6 or greater.
+
 Some extra arguments are also provided for using UEFI images:
 
 * `firmware` - (Optional) The UEFI rom images for exercising UEFI secure boot in a qemu
@@ -145,6 +152,7 @@ resource "libvirt_domain" "my_machine" {
 }
 ```
 
+
 The `network_interface` specifies a network interface that can be connected either to
 a virtual network (the preferred method on hosts with dynamic / wireless networking
 configs) or directly to a LAN.
@@ -196,6 +204,51 @@ resource "libvirt_domain" "my-domain" {
 **Warning:** the [Qemu guest agent](http://wiki.libvirt.org/page/Qemu_guest_agent)
 must be installed and running inside of the domain in order to discover the IP
 addresses of all the network interfaces attached to a LAN.
+
+The optional `graphics` block allows you to override the default graphics settings.  The
+block supports:
+
+* `type` - the type of graphics emulation (default is "spice")
+* `autoport` - defaults to "yes"
+* `listen_type` - "listen type", defaults to "none"
+
+On occasion we have found it necessary to set a `type` of "vnc" and a `listen_type` of "address"
+with certain builds of QEMU.
+
+The `graphics` block will look as follows:
+```
+resource "libvirt_domain" "my_machine" {
+  ...
+  graphics {
+    type = "vnc"
+    listen_type = "address"
+  }
+}
+```
+
+The optional `console` block allows you to define a console for the domain.  The block
+looks as follows:
+```
+resource "libvirt_domain" "my_machine" {
+  ...
+  console {
+    type = "pty"
+    target_port = "0"
+    target_type = <"serial" or "virtio">
+    source_path = "/dev/pts/4"
+  }
+}
+```
+
+Note the following:
+* You can repeat the `console` block to create more than one console, in the same way
+that you can repeat `disk` blocks (see above)
+* The `target_type` is optional for the first console
+* All subsequent `console` blocks must specify a `target_type` of `virtio`
+* The `source_path` is optional for all consoles
+
+See [libvirt Domain XML Console element](https://libvirt.org/formatdomain.html#elementsConsole)
+for more information.
 
 ## Attributes Reference
 
