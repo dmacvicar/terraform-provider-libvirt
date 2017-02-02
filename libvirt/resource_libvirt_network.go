@@ -78,6 +78,32 @@ func resourceLibvirtNetwork() *schema.Resource {
 				Default:  true,
 				ForceNew: false,
 			},
+			"dns_forwarder": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Required: false,
+				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: dnsForwarderSchema(),
+				},
+			},
+		},
+	}
+}
+
+func dnsForwarderSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"address": &schema.Schema{
+			Type:     schema.TypeString,
+			Optional: true,
+			Required: false,
+			ForceNew: true,
+		},
+		"domain": &schema.Schema{
+			Type:     schema.TypeString,
+			Optional: true,
+			Required: false,
+			ForceNew: true,
 		},
 	}
 }
@@ -205,6 +231,27 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			}
 			networkDef.Ips = ipsPtrsLst
 		}
+
+		if dns_forward_count, ok := d.GetOk("dns_forwarder.#"); ok {
+			var dns defNetworkDns
+			for i := 0; i < dns_forward_count.(int); i++ {
+				forward := defDnsForwarder{}
+				forwardPrefix := fmt.Sprintf("dns_forwarder.%d", i)
+				if address, ok := d.GetOk(forwardPrefix + ".address"); ok {
+					ip := net.ParseIP(address.(string))
+					if ip == nil {
+						return fmt.Errorf("Could not parse address '%s'", address)
+					}
+					forward.Address = ip.String()
+				}
+				if domain, ok := d.GetOk(forwardPrefix + ".domain"); ok {
+					forward.Domain = domain.(string)
+				}
+				dns.Forwarder = append(dns.Forwarder, &forward)
+			}
+			networkDef.Dns = &dns
+		}
+
 	} else if networkDef.Forward.Mode == netModeBridge {
 		if bridgeName == "" {
 			return fmt.Errorf("'bridge' must be provided when using the bridged network mode")

@@ -69,13 +69,18 @@ type defNetworkForward struct {
 }
 
 type defNetworkDns struct {
-	Host []*struct {
-		Ip       string   `xml:"ip,attr"`
-		HostName []string `xml:"hostname"`
-	} `xml:"host,omitempty"`
-	Forwarder []*struct {
-		Address string `xml:"addr,attr"`
-	} `xml:"forwarder,omitempty"`
+	Host      []*defDnsHost      `xml:"host,omitempty"`
+	Forwarder []*defDnsForwarder `xml:"forwarder,omitempty"`
+}
+
+type defDnsHost struct {
+	Ip       string   `xml:"ip,attr"`
+	HostName []string `xml:"hostname"`
+}
+
+type defDnsForwarder struct {
+	Domain  string `xml:"domain,attr,omitempty"`
+	Address string `xml:"addr,attr,omitempty"`
 }
 
 // network definition in XML, compatible with what libvirt expects
