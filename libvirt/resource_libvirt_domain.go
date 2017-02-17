@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"log"
@@ -9,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"crypto/sha256"
+	"encoding/hex"
 	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -18,6 +21,11 @@ var PoolSync = NewLibVirtPoolSync()
 
 func init() {
 	spew.Config.Indent = "\t"
+}
+
+func hash(s string) string {
+	sha := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(sha[:])
 }
 
 func resourceLibvirtDomain() *schema.Resource {
@@ -73,6 +81,13 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				ForceNew: false,
 			},
+			"coreos_ignition": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: false,
+				Optional: true,
+				ForceNew: false,
+				Default:  "",
+			},
 			"disk": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -88,6 +103,19 @@ func resourceLibvirtDomain() *schema.Resource {
 				Required: false,
 				Elem: &schema.Resource{
 					Schema: networkInterfaceCommonSchema(),
+				},
+			},
+			"graphics": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+				Required: false,
+			},
+			"console": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Required: false,
+				Elem: &schema.Resource{
+					Schema: consoleSchema(),
 				},
 			},
 		},
@@ -115,12 +143,65 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	domainDef := newDomainDef()
+
 	if name, ok := d.GetOk("name"); ok {
 		domainDef.Name = name.(string)
 	}
 
 	if metadata, ok := d.GetOk("metadata"); ok {
 		domainDef.Metadata.TerraformLibvirt.Xml = metadata.(string)
+	}
+
+	if ignition, ok := d.GetOk("coreos_ignition"); ok {
+		var file bool
+		file = true
+		ignitionString := ignition.(string)
+		if _, err := os.Stat(ignitionString); err != nil {
+			var js map[string]interface{}
+			if err_conf := json.Unmarshal([]byte(ignitionString), &js); err_conf != nil {
+				return fmt.Errorf("coreos_ignition parameter is neither a file "+
+					"nor a valid json object %s", ignition)
+			}
+			log.Printf("[DEBUG] about to set file to false")
+			file = false
+		}
+		log.Printf("[DEBUG] file %s", file)
+		var fw_cfg []defCmd
+		var ign_str string
+		if !file {
+			ignitionHash := hash(ignitionString)
+			tempFileName := fmt.Sprint("/tmp/", ignitionHash, ".ign")
+			tempFile, err := os.Create(tempFileName)
+			defer tempFile.Close()
+			if err != nil {
+				return fmt.Errorf("Cannot create temporary ignition file %s", tempFileName)
+			}
+			if _, err := tempFile.WriteString(ignitionString); err != nil {
+				return fmt.Errorf("Cannot write Ignition object to temporary "+
+					"ignition file %s", tempFileName)
+			}
+			domainDef.Metadata.TerraformLibvirt.IgnitionFile = tempFileName
+			ign_str = fmt.Sprintf("name=opt/com.coreos/config,file=%s", tempFileName)
+		} else if file {
+			ign_str = fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionString)
+		}
+		fw_cfg = append(fw_cfg, defCmd{"-fw_cfg"})
+		fw_cfg = append(fw_cfg, defCmd{ign_str})
+		domainDef.CmdLine.Cmd = fw_cfg
+		domainDef.Xmlns = "http://libvirt.org/schemas/domain/qemu/1.0"
+	}
+
+	if graphics, ok := d.GetOk("graphics"); ok {
+		graphics_map := graphics.(map[string]interface{})
+		if graphics_type, ok := graphics_map["type"]; ok {
+			domainDef.Devices.Graphics.Type = graphics_type.(string)
+		}
+		if autoport, ok := graphics_map["autoport"]; ok {
+			domainDef.Devices.Graphics.Type = autoport.(string)
+		}
+		if listen_type, ok := graphics_map["listen_type"]; ok {
+			domainDef.Devices.Graphics.Listen.Type = listen_type.(string)
+		}
 	}
 
 	if firmware, ok := d.GetOk("firmware"); ok {
@@ -147,6 +228,24 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	domainDef.Memory.Amount = d.Get("memory").(int)
 	domainDef.VCpu.Amount = d.Get("vcpu").(int)
+
+	if consoleCount, ok := d.GetOk("console.#"); ok {
+		var consoles []defConsole
+		for i := 0; i < consoleCount.(int); i++ {
+			console := defConsole{}
+			consolePrefix := fmt.Sprintf("console.%d", i)
+			console.Type = d.Get(consolePrefix + ".type").(string)
+			console.Target.Port = d.Get(consolePrefix + ".target_port").(string)
+			if source_path, ok := d.GetOk(consolePrefix + ".source_path"); ok {
+				console.Source.Path = source_path.(string)
+			}
+			if target_type, ok := d.GetOk(consolePrefix + ".target_type"); ok {
+				console.Target.Type = target_type.(string)
+			}
+			consoles = append(consoles, console)
+		}
+		domainDef.Devices.Console = consoles
+	}
 
 	disksCount := d.Get("disk.#").(int)
 	var disks []defDisk
@@ -692,6 +791,25 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
 	defer domain.Free()
+
+	xmlDesc, err := domain.GetXMLDesc(0)
+	if err != nil {
+		return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+	}
+
+	domainDef := newDomainDef()
+	err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
+	if err != nil {
+		return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+	}
+
+	if ignitionFile := domainDef.Metadata.TerraformLibvirt.IgnitionFile; ignitionFile != "" {
+		log.Printf("[DEBUG] deleting ignition file")
+		err = os.Remove(ignitionFile)
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("Error removing Ignition file %s: %s", ignitionFile, err)
+		}
+	}
 
 	state, err := domain.GetState()
 	if err != nil {
