@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	//"gopkg.in/alexzorin/libvirt-go.v2"
+	"encoding/xml"
 	libvirt "github.com/dmacvicar/libvirt-go"
 )
 
@@ -208,6 +209,44 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
+	var domain libvirt.VirDomain
+
+	var config = fmt.Sprintf(`
+	    resource "ignition_systemd_unit" "acceptance-test-systemd" {
+    		name = "example.service"
+    		content = "[Service]\nType=oneshot\nExecStart=/usr/bin/echo Hello World\n\n[Install]\nWantedBy=multi-user.target"
+	    }
+
+	    resource "ignition_config" "acceptance-test-config" {
+    		systemd = [
+        		"${ignition_systemd_unit.acceptance-test-systemd.id}",
+    		]
+	    }
+
+	    resource "libvirt_domain" "acceptance-test-domain" {
+		name = "terraform-test-domain"
+		coreos_ignition = "${ignition_config.acceptance-test-config.rendered}"
+	    }
+	`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckIgnitionFileNameExists(&domain),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 	virtConn := testAccProvider.Meta().(*Client).libvirt
 
@@ -260,6 +299,41 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.VirDomain) resour
 
 		*domain = retrieveDomain
 
+		return nil
+	}
+}
+
+func testAccCheckIgnitionFileNameExists(domain *libvirt.VirDomain) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		var ignStr string
+		for _, rs := range s.RootModule().Resources {
+			if rs.Type != "libvirt_domain" {
+				continue
+			}
+			ignStr = rs.Primary.Attributes["coreos_ignition"]
+		}
+
+		xmlDesc, err := domain.GetXMLDesc(0)
+		if err != nil {
+			return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+		}
+
+		domainDef := newDomainDef()
+		err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
+		if err != nil {
+			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+		}
+
+		ignitionFile := domainDef.Metadata.TerraformLibvirt.IgnitionFile
+		if ignitionFile == "" {
+			return fmt.Errorf("No ignition file meta-data")
+		}
+
+		hashStr := hash(ignStr)
+		hashFile := fmt.Sprint("/tmp/", hashStr, ".ign")
+		if ignitionFile != hashFile {
+			return fmt.Errorf("Igntion file metadata incorrect %s %s", ignitionFile, hashFile)
+		}
 		return nil
 	}
 }

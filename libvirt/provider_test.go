@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
+	ignition "github.com/hashicorp/terraform/builtin/providers/ignition"
 )
 
 var testAccProviders map[string]terraform.ResourceProvider
@@ -15,6 +16,7 @@ func init() {
 	testAccProvider = Provider().(*schema.Provider)
 	testAccProviders = map[string]terraform.ResourceProvider{
 		"libvirt": testAccProvider,
+		"ignition": ignition.Provider(),
 	}
 }
 
