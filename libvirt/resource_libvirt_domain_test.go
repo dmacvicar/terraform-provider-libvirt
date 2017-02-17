@@ -226,7 +226,9 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 
 	    resource "libvirt_domain" "acceptance-test-domain" {
 		name = "terraform-test-domain"
-		coreos_ignition = "${ignition_config.acceptance-test-config.rendered}"
+		coreos_ignition {
+		        content = "${ignition_config.acceptance-test-config.rendered}"
+		}
 	    }
 	`)
 
@@ -310,7 +312,7 @@ func testAccCheckIgnitionFileNameExists(domain *libvirt.VirDomain) resource.Test
 			if rs.Type != "libvirt_domain" {
 				continue
 			}
-			ignStr = rs.Primary.Attributes["coreos_ignition"]
+			ignStr = rs.Primary.Attributes["coreos_ignition.content"]
 		}
 
 		xmlDesc, err := domain.GetXMLDesc(0)

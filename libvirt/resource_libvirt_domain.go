@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"path"
 
 	"crypto/sha256"
 	"encoding/hex"
@@ -82,11 +83,10 @@ func resourceLibvirtDomain() *schema.Resource {
 				ForceNew: false,
 			},
 			"coreos_ignition": &schema.Schema{
-				Type:     schema.TypeString,
+				Type:     schema.TypeMap,
 				Required: false,
 				Optional: true,
-				ForceNew: false,
-				Default:  "",
+				ForceNew: true,
 			},
 			"disk": &schema.Schema{
 				Type:     schema.TypeList,
@@ -155,22 +155,29 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
 		var file bool
 		file = true
-		ignitionString := ignition.(string)
+		ignitionMap := ignition.(map[string]interface{})
+		ignitionString, ok := ignitionMap["content"].(string)
+		if !ok {
+			return fmt.Errorf("'coreos_ignition' specified but no 'content' present")
+		}
 		if _, err := os.Stat(ignitionString); err != nil {
 			var js map[string]interface{}
 			if err_conf := json.Unmarshal([]byte(ignitionString), &js); err_conf != nil {
-				return fmt.Errorf("coreos_ignition parameter is neither a file "+
-					"nor a valid json object %s", ignition)
+				return fmt.Errorf("coreos_ignition 'content' is neither a file "+
+					"nor a valid json object %s", ignitionString)
 			}
-			log.Printf("[DEBUG] about to set file to false")
 			file = false
 		}
-		log.Printf("[DEBUG] file %s", file)
 		var fw_cfg []defCmd
 		var ign_str string
 		if !file {
+			var ignitionFileLoc string
+			ignitionFileLoc, ok := ignitionMap["generated_ignition_file_dir"].(string)
+			if !ok {
+				ignitionFileLoc = "/tmp"
+			}
 			ignitionHash := hash(ignitionString)
-			tempFileName := fmt.Sprint("/tmp/", ignitionHash, ".ign")
+			tempFileName := path.Join(ignitionFileLoc, fmt.Sprint(ignitionHash, ".ign"))
 			tempFile, err := os.Create(tempFileName)
 			defer tempFile.Close()
 			if err != nil {
