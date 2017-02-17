@@ -48,7 +48,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 			},
 			"domain": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				ForceNew: true,
 			},
 			"mode": &schema.Schema{ // can be "none", "nat" (default), "route", "bridge"
@@ -209,6 +209,8 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		if bridgeName == "" {
 			return fmt.Errorf("'bridge' must be provided when using the bridged network mode")
 		}
+		// Bridges cannot forward
+		networkDef.Forward = nil
 	} else {
 		return fmt.Errorf("unsupported network mode '%s'", networkDef.Forward.Mode)
 	}
@@ -284,8 +286,12 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	d.Set("name", networkDef.Name)
-	d.Set("domain", networkDef.Domain.Name)
 	d.Set("bridge", networkDef.Bridge.Name)
+
+	// Domain as won't be present for bridged networks
+	if (networkDef.Domain != nil) {
+		d.Set("domain", networkDef.Domain.Name)
+	}
 
 	active, err := network.IsActive()
 	if err != nil {
