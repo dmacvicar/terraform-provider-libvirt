@@ -48,8 +48,8 @@ The following arguments are supported:
 * `name` - (Required) A unique name for the resource, required by libvirt.
    Changing this forces a new resource to be created.
 * `domain` - The domain used by the DNS server.
-* `addresses` - A list of (0 or 1) ipv4 and (0 or 1) ipv6 ranges for being
-   served by the DHCP server.
+* `addresses` - A list of (0 or 1) ipv4 and (0 or 1) ipv6 subnets in CIDR notation
+   format for being served by the DHCP server. Address of subnet should be used.
 * `mode` -  One of:
     - `none`: the guests can talk to each other and the host OS, but cannot reach
     any other machines on the LAN.
