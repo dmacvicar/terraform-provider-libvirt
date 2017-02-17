@@ -30,7 +30,7 @@ const (
 //    addresses = ["10.17.3.0/24"]
 // }
 //
-// "addresses" can contain (0 or 1) ipv4 and (0 or 1) ipv6 ranges
+// "addresses" can contain (0 or 1) ipv4 and (0 or 1) ipv6 subnets
 // "mode" can be one of: "nat" (default), "isolated"
 //
 func resourceLibvirtNetwork() *schema.Resource {
