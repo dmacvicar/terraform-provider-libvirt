@@ -32,5 +32,9 @@ The following arguments are supported:
   the domain.
 * `ssh_authorized_key` - (Optional) A public ssh key that will be accepted by
   the `root` user.
+* `user_data` - (Optional) Raw cloud-init user data. This content will
+be merged automatically with the values specified in other arguments
+(like `local_hostname`, `ssh_authorized_key`, etc), but they cannot be
+specified in both places at the same time.
 
 Any change of the above fields will cause a new resource to be created.
