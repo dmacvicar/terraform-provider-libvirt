@@ -29,7 +29,8 @@ type defCloudInit struct {
 		LocalHostname string `yaml:"local-hostname,omitempty"`
 		InstanceID    string `yaml:"instance-id"`
 	}
-	UserData struct {
+	UserDataRaw string `yaml:"user_data"`
+	UserData    struct {
 		SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 	}
 }
@@ -182,11 +183,20 @@ func (ci *defCloudInit) createFiles() (string, error) {
 	}
 
 	// Create files required by ISO file
-	ud, err := yaml.Marshal(&ci.UserData)
-	if err != nil {
-		return "", fmt.Errorf("Error dumping cloudinit's user data: %s", err)
+	userdata := ""
+	if len(ci.UserDataRaw) > 0 {
+		userdata = ci.UserDataRaw
+	} else {
+		userdata = "#cloud-config\n"
 	}
-	userdata := fmt.Sprintf("#cloud-config\n%s", string(ud))
+
+	// append the extra user data flags
+	if userdata_extra, err := yaml.Marshal(&ci.UserData); err != nil {
+		return "", fmt.Errorf("Error dumping cloudinit's user data: %s", err)
+	} else {
+		userdata = fmt.Sprintf("%s\n%s", userdata, string(userdata_extra))
+	}
+
 	if err = ioutil.WriteFile(
 		filepath.Join(tmpDir, USERDATA),
 		[]byte(userdata),
