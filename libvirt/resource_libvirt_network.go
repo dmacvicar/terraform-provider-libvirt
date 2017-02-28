@@ -87,6 +87,12 @@ func resourceLibvirtNetwork() *schema.Resource {
 					Schema: dnsForwarderSchema(),
 				},
 			},
+			"dhcp": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -219,13 +225,15 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 				start[len(start)-1]++ // then skip the .1
 				end[len(end)-1]--     // and skip the .255 (for broadcast)
 
-				dni.Dhcp = &defNetworkIpDhcp{
-					Ranges: []*defNetworkIpDhcpRange{
-						&defNetworkIpDhcpRange{
-							Start: start.String(),
-							End:   end.String(),
+				if d.Get("dhcp").(bool) {
+					dni.Dhcp = &defNetworkIpDhcp{
+						Ranges: []*defNetworkIpDhcpRange{
+							&defNetworkIpDhcpRange{
+								Start: start.String(),
+								End:   end.String(),
+							},
 						},
-					},
+					}
 				}
 				ipsPtrsLst = append(ipsPtrsLst, &dni)
 			}
