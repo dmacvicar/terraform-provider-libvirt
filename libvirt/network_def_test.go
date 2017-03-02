@@ -91,3 +91,15 @@ func TestNetworkDefUnmarshall(t *testing.T) {
 		t.Logf("Marshalled:\n%s", bs)
 	}
 }
+
+func TestBrokenNetworkDefUnmarshall(t *testing.T) {
+	// Try unmarshalling some broken xml
+	text := `
+		<network>
+	`
+
+	_, err := newDefNetworkFromXML(text)
+	if err == nil {
+		t.Error("Unmarshal was supposed to fail")
+	}
+}

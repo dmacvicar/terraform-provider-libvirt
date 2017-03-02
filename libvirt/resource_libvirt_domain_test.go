@@ -236,7 +236,7 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: config,
+				Config:             config,
 				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -335,5 +335,14 @@ func testAccCheckIgnitionFileNameExists(domain *libvirt.VirDomain) resource.Test
 			return fmt.Errorf("Igntion file metadata incorrect %s %s", ignitionFile, hashFile)
 		}
 		return nil
+	}
+}
+
+func TestHash(t *testing.T) {
+	actual := hash("this is a test")
+	expected := "2e99758548972a8e8822ad47fa1017ff72f06f3ff6a016851f45c398732bc50c"
+
+	if actual != expected {
+		t.Errorf("Expected %s, got %s", expected, actual)
 	}
 }
