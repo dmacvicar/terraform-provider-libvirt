@@ -21,6 +21,7 @@ func Provider() terraform.ResourceProvider {
 			"libvirt_volume":    resourceLibvirtVolume(),
 			"libvirt_network":   resourceLibvirtNetwork(),
 			"libvirt_cloudinit": resourceCloudInit(),
+			"libvirt_ignition":  resourceIgnition(),
 		},
 
 		ConfigureFunc: providerConfigure,

@@ -1,11 +1,11 @@
 package libvirt
 
 import (
-	"encoding/xml"
 	"fmt"
 	"log"
 	"testing"
 
+	"encoding/xml"
 	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
@@ -281,6 +281,7 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 
 func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 	var domain libvirt.VirDomain
+	var volume libvirt.VirStorageVol
 
 	var config = fmt.Sprintf(`
 	    resource "ignition_systemd_unit" "acceptance-test-systemd" {
@@ -294,9 +295,14 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
     		]
 	    }
 
+	    resource "libvirt_ignition" "ignition" {
+	    	name = "ignition"
+	    	content = "${ignition_config.acceptance-test-config.rendered}"
+	    }
+
 	    resource "libvirt_domain" "acceptance-test-domain" {
 		name = "terraform-test-domain"
-		coreos_ignition = "${ignition_config.acceptance-test-config.rendered}"
+		coreos_ignition = "${libvirt_ignition.ignition.id}"
 	    }
 	`)
 
@@ -305,12 +311,12 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
-				Config:             config,
-				ExpectNonEmptyPlan: true,
+			{
+				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
-					testAccCheckIgnitionFileNameExists(&domain),
+					testAccCheckIgnitionVolumeExists("libvirt_ignition.ignition", &volume),
+					testAccCheckIgnitionXML(&domain, &volume),
 				),
 			},
 		},
@@ -373,20 +379,19 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.VirDomain) resour
 	}
 }
 
-func testAccCheckIgnitionFileNameExists(domain *libvirt.VirDomain) resource.TestCheckFunc {
+func testAccCheckIgnitionXML(domain *libvirt.VirDomain, volume *libvirt.VirStorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		var ignStr string
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != "libvirt_domain" {
-				continue
-			}
-			ignStr = rs.Primary.Attributes["coreos_ignition"]
-		}
-
+		var cmdLine []defCmd
 		xmlDesc, err := domain.GetXMLDesc(0)
 		if err != nil {
 			return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
 		}
+
+		ignitionKey, err := volume.GetKey()
+		if err != nil {
+			return err
+		}
+		ignStr := fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionKey)
 
 		domainDef := newDomainDef()
 		err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
@@ -394,15 +399,11 @@ func testAccCheckIgnitionFileNameExists(domain *libvirt.VirDomain) resource.Test
 			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
 		}
 
-		ignitionFile := domainDef.Metadata.TerraformLibvirt.IgnitionFile
-		if ignitionFile == "" {
-			return fmt.Errorf("No ignition file meta-data")
-		}
-
-		hashStr := hash(ignStr)
-		hashFile := fmt.Sprint("/tmp/", hashStr, ".ign")
-		if ignitionFile != hashFile {
-			return fmt.Errorf("Igntion file metadata incorrect %s %s", ignitionFile, hashFile)
+		cmdLine = domainDef.CmdLine.Cmd
+		for i, cmd := range cmdLine {
+			if i == 1 && cmd.Value != ignStr {
+				return fmt.Errorf("libvirt domain fw_cfg XML is incorrect %s", cmd.Value)
+			}
 		}
 		return nil
 	}

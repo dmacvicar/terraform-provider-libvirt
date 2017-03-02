@@ -63,7 +63,6 @@ type defGraphics struct {
 type defMetadata struct {
 	XMLName      xml.Name `xml:"http://github.com/dmacvicar/terraform-provider-libvirt/ user_data"`
 	Xml          string   `xml:",cdata"`
-	IgnitionFile string   `xml:",ignition_file,omitempty"`
 }
 
 type defOs struct {
