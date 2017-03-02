@@ -17,6 +17,7 @@ before_install:
   - sudo make install
   - sudo libvirtd -d
   - popd
+  - go get github.com/mattn/goveralls
   - go get -u github.com/govend/govend
   - govend -v
 
@@ -28,3 +29,4 @@ install:
 # code
 script:
   - go test ./libvirt
+  - $HOME/gopath/bin/goveralls -service=travis-ci
