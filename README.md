@@ -31,18 +31,6 @@ zypper install terraform-provider-libvirt
 
 ```
 
-
-
-The binary should be renamed to terraform-provider-libvirt
-
-You should update your .terraformrc and refer to the binary:
-
-```hcl
-providers {
-  libvirt = "/path/to/terraform-provider-libvirt"
-}
-```
-
 ## Using the provider
 
 Here is an example that will setup the following:
