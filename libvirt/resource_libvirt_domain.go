@@ -593,6 +593,8 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				continue
 			}
 
+			networkXMLDesc, err := network.GetXMLDesc(0)
+			log.Printf("[DEBUG] network def xml in create: %s", networkXMLDesc)
 			hostname := domainDef.Name
 			if hostnameI, ok := d.GetOk(prefix + ".hostname"); ok {
 				hostname = hostnameI.(string)
@@ -605,7 +607,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 					if ip == nil {
 						return fmt.Errorf("Could not parse addresses '%s'", address)
 					}
-
 					log.Printf("[INFO] Adding IP/MAC/host=%s/%s/%s to %s", ip.String(), mac, hostname, networkName)
 					if err := updateOrAddHost(network, ip.String(), mac, hostname); err != nil {
 						return err
@@ -711,7 +712,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[INFO] Domain ID: %s", d.Id())
 
 	if len(waitForLeases) > 0 {
-		err = domainWaitForLeases(domain, waitForLeases, d.Timeout(schema.TimeoutCreate))
+		err = domainWaitForLeases(domain, waitForLeases, d.Timeout(schema.TimeoutCreate), domainDef, virConn)
 		if err != nil {
 			return err
 		}
@@ -986,8 +987,8 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("filesystems", filesystems)
 
-	// look interfaces with addresses
-	ifacesWithAddr, err := domainGetIfacesInfo(*domain)
+	// lookup interfaces with addresses
+	ifacesWithAddr, err := domainGetIfacesInfo(*domain, domainDef, virConn)
 	if err != nil {
 		return fmt.Errorf("Error retrieving interface addresses: %s", err)
 	}
