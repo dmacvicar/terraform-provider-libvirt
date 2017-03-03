@@ -21,8 +21,10 @@ const domWaitLeaseDone = "all-addresses-obtained"
 
 var errDomainInvalidState = errors.New("invalid state for domain")
 
-func domainWaitForLeases(domain *libvirt.Domain, waitForLeases map[libvirtxml.DomainInterface]struct{}, timeout time.Duration) error {
+func domainWaitForLeases(domain *libvirt.Domain, waitForLeases map[libvirtxml.DomainInterface]struct{},
+	timeout time.Duration, domainDef libvirtxml.Domain, virConn *libvirt.Connect) error {
 	waitFunc := func() (interface{}, string, error) {
+
 		state, err := domainGetState(*domain)
 		if err != nil {
 			return false, "", err
@@ -40,7 +42,7 @@ func domainWaitForLeases(domain *libvirt.Domain, waitForLeases map[libvirtxml.Do
 
 		// check we have IPs for all the interfaces we are waiting for
 		for iface := range waitForLeases {
-			found, ignore, err := domainIfaceHasAddress(*domain, iface)
+			found, ignore, err := domainIfaceHasAddress(*domain, iface, domainDef, virConn)
 			if err != nil {
 				return false, "", err
 			}
@@ -72,7 +74,8 @@ func domainWaitForLeases(domain *libvirt.Domain, waitForLeases map[libvirtxml.Do
 	return err
 }
 
-func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterface) (found bool, ignore bool, err error) {
+func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterface,
+	domainDef libvirtxml.Domain, virConn *libvirt.Connect) (found bool, ignore bool, err error) {
 
 	mac := strings.ToUpper(iface.MAC.Address)
 	if mac == "" {
@@ -82,7 +85,7 @@ func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterfa
 	}
 
 	log.Printf("[DEBUG] waiting for network address for iface=%s\n", mac)
-	ifacesWithAddr, err := domainGetIfacesInfo(domain)
+	ifacesWithAddr, err := domainGetIfacesInfo(domain, domainDef, virConn)
 	if err != nil {
 		return false, false, fmt.Errorf("Error retrieving interface addresses: %s", err)
 	}
@@ -140,7 +143,8 @@ func domainIsRunning(domain libvirt.Domain) (bool, error) {
 	return state == libvirt.DOMAIN_RUNNING, nil
 }
 
-func domainGetIfacesInfo(domain libvirt.Domain) ([]libvirt.DomainInterface, error) {
+func domainGetIfacesInfo(domain libvirt.Domain, domainDef libvirtxml.Domain,
+	virConn *libvirt.Connect) ([]libvirt.DomainInterface, error) {
 
 	_, found := os.LookupEnv(skipQemuEnvVar)
 	if found {
@@ -157,6 +161,12 @@ func domainGetIfacesInfo(domain libvirt.Domain) ([]libvirt.DomainInterface, erro
 			// or macvtap. Hence it has the highest priority
 			return interfaces, nil
 		}
+	}
+
+	log.Print("[DEBUG] getting domain addresses from networks")
+	interfaces := getDomainInterfacesFromNetworks(domainDef, virConn)
+	if len(interfaces) > 0 {
+		return interfaces, nil
 	}
 
 	// get all the interfaces attached to libvirt networks
@@ -176,4 +186,57 @@ func domainGetIfacesInfo(domain libvirt.Domain) ([]libvirt.DomainInterface, erro
 	log.Printf("[DEBUG] Interfaces info obtained with libvirt API:\n%s\n", spew.Sdump(interfaces))
 
 	return interfaces, nil
+}
+
+func getDomainInterfacesFromNetworks(domain libvirtxml.Domain,
+	virConn *libvirt.Connect) []libvirt.DomainInterface {
+
+	var ifacesList []libvirt.DomainInterface
+	var networkNames []string
+	var macAddresses []string
+
+	for _, networkInterface := range domain.Devices.Interfaces {
+		networkNames = append(networkNames, networkInterface.Source.Network)
+		macAddresses = append(macAddresses, strings.ToUpper(networkInterface.MAC.Address))
+	}
+
+	networkMacAddresses := make(map[string]map[string][]string)
+	for _, networkName := range networkNames {
+		network, err := virConn.LookupNetworkByName(networkName)
+		if err != nil {
+			log.Printf("[ERROR] Error retrieving libvirt network: %s", err)
+			return ifacesList
+		}
+		defer network.Free()
+
+		networkDef, err := newDefNetworkfromLibvirt(network)
+		macAddresses := make(map[string][]string)
+		for _, ips := range networkDef.IPs {
+			for _, dhcpHost := range ips.DHCP.Hosts {
+				macAddresses[dhcpHost.MAC] = append(macAddresses[dhcpHost.MAC], dhcpHost.IP)
+			}
+		}
+		networkMacAddresses[networkName] = macAddresses
+	}
+
+	for name, networkMacAddress := range networkMacAddresses {
+		for mac, ips := range networkMacAddress {
+			for _, domMac := range macAddresses {
+				if mac == domMac {
+					virDom := libvirt.DomainInterface{}
+					virDom.Name = name
+					virDom.Hwaddr = mac
+					for _, ip := range ips {
+						virDomIP := libvirt.DomainIPAddress{}
+						virDomIP.Addr = ip
+						virDom.Addrs = append(virDom.Addrs, virDomIP)
+					}
+					ifacesList = append(ifacesList, virDom)
+				}
+			}
+		}
+	}
+
+	log.Printf("[DEBUG] Interfaces: %s", spew.Sdump(ifacesList))
+	return ifacesList
 }

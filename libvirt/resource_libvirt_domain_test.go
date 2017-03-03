@@ -335,6 +335,65 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
+	var domain libvirt.Domain
+	var network libvirt.Network
+
+	var configWithDomain = fmt.Sprintf(`
+	    resource "libvirt_network" "acceptance-test-network" {
+		    name = "acceptance-test-network"
+		    mode = "nat"
+		    domain = "acceptance-test-network-local"
+		    addresses = ["192.0.0.0/24"]
+	    }
+
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+                    network_interface {
+                            network_id = "${libvirt_network.acceptance-test-network.id}"
+                            hostname = "terraform-test"
+                            addresses = ["192.0.0.2"]
+                    }
+            }`)
+
+	var configWithoutDomain = fmt.Sprintf(`
+	    resource "libvirt_network" "acceptance-test-network" {
+		    name = "acceptance-test-network"
+		    mode = "nat"
+		    domain = "acceptance-test-network-local"
+		    addresses = ["192.0.0.0/24"]
+	    }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: configWithDomain,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtNetworkExists("libvirt_network.acceptance-test-network", &network),
+				),
+			},
+			resource.TestStep{
+				Config: configWithoutDomain,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDestroyLeavesIPs("libvirt_network.acceptance-test-network",
+						"192.0.0.2", &network),
+				),
+			},
+			resource.TestStep{
+				Config:             configWithDomain,
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_Graphics(t *testing.T) {
 	var domain libvirt.Domain
 
@@ -717,6 +776,38 @@ func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.Tes
 	}
 }
 
+func testAccCheckLibvirtDestroyLeavesIPs(n string, ip string, network *libvirt.Network) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No libvirt network ID is set")
+		}
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		retrieveNetwork, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
+
+		if err != nil {
+			return err
+		}
+
+		networkDef, err := newDefNetworkfromLibvirt(retrieveNetwork)
+
+		for _, ips := range networkDef.IPs {
+			for _, dhcpHost := range ips.DHCP.Hosts {
+				if dhcpHost.IP == ip {
+					return nil
+				}
+			}
+		}
+		return fmt.Errorf("Hostname with ip '%s' does not have a dhcp entry in network", ip)
+	}
+}
+
 func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel *libvirt.StorageVol, initrd *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		xmlDesc, err := domain.GetXMLDesc(0)
@@ -922,4 +1013,40 @@ func TestAccLibvirtDomain_ArchType(t *testing.T) {
 			},
 		},
 	})
+}
+
+func testAccCheckLibvirtNetworkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No libvirt network ID is set")
+		}
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		retrieveNetwork, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
+
+		if err != nil {
+			return err
+		}
+
+		log.Printf("The ID is %s", rs.Primary.ID)
+
+		realID, err := retrieveNetwork.GetUUIDString()
+		if err != nil {
+			return err
+		}
+
+		if realID != rs.Primary.ID {
+			return fmt.Errorf("Libvirt network not found")
+		}
+
+		network = retrieveNetwork
+
+		return nil
+	}
 }
