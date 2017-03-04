@@ -13,13 +13,15 @@ type QemuAgentInterfacesResponse struct {
 }
 
 type QemuAgentInterface struct {
-	Name        string `json:"name"`
-	Hwaddr      string `json:"hardware-address"`
-	IpAddresses []struct {
-		Type    string `json:"ip-address-type"`
-		Address string `json:"ip-address"`
-		Prefix  uint   `json:"prefix"`
-	} `json:"ip-addresses"`
+	Name        string                        `json:"name"`
+	Hwaddr      string                        `json:"hardware-address"`
+	IpAddresses []QemuAgentInterfaceIpAddress `json:"ip-addresses"`
+}
+
+type QemuAgentInterfaceIpAddress struct {
+	Type    string `json:"ip-address-type"`
+	Address string `json:"ip-address"`
+	Prefix  uint   `json:"prefix"`
 }
 
 // Retrieve all the interfaces attached to a domain and their addresses. Only
@@ -27,7 +29,7 @@ type QemuAgentInterface struct {
 // When wait4ipv4 is turned on the code will not report interfaces that don't
 // have a ipv4 address set. This is useful when a domain gets the ipv6 address
 // before the ipv4 one.
-func getDomainInterfacesViaQemuAgent(domain *libvirt.VirDomain, wait4ipv4 bool) []libvirt.VirDomainInterface {
+func getDomainInterfacesViaQemuAgent(domain LibVirtDomain, wait4ipv4 bool) []libvirt.VirDomainInterface {
 	log.Print("[DEBUG] get network interfaces using qemu agent")
 
 	var interfaces []libvirt.VirDomainInterface
@@ -54,9 +56,9 @@ func getDomainInterfacesViaQemuAgent(domain *libvirt.VirDomain, wait4ipv4 bool) 
 			continue
 		}
 
-		libVirtIface := libvirt.VirDomainInterface{}
-		libVirtIface.Name = iface.Name
-		libVirtIface.Hwaddr = iface.Hwaddr
+		libVirtIface := libvirt.VirDomainInterface{
+			Name:   iface.Name,
+			Hwaddr: iface.Hwaddr}
 
 		ipv4Assigned := false
 		for _, addr := range iface.IpAddresses {
@@ -78,6 +80,7 @@ func getDomainInterfacesViaQemuAgent(domain *libvirt.VirDomain, wait4ipv4 bool) 
 				libVirtAddr.Type = libvirt.VIR_IP_ADDR_TYPE_IPV6
 			default:
 				log.Printf("[ERROR] Cannot handle unknown address type %s", addr.Type)
+				continue
 			}
 			libVirtIface.Addrs = append(libVirtIface.Addrs, libVirtAddr)
 		}
