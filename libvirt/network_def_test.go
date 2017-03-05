@@ -3,6 +3,7 @@ package libvirt
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
@@ -101,5 +102,77 @@ func TestBrokenNetworkDefUnmarshall(t *testing.T) {
 	_, err := newDefNetworkFromXML(text)
 	if err == nil {
 		t.Error("Unmarshal was supposed to fail")
+	}
+}
+
+func TestHasDHCPNoForwardSet(t *testing.T) {
+	net := defNetwork{}
+
+	if net.HasDHCP() {
+		t.Error("Expected to not have forward enabled")
+	}
+}
+
+func TestHasDHCPForwardSet(t *testing.T) {
+	createNet := func(mode string) defNetwork {
+		return defNetwork{
+			Forward: &defNetworkForward{
+				Mode: mode,
+			},
+		}
+	}
+
+	for _, mode := range []string{"nat", "route", ""} {
+		net := createNet(mode)
+		if !net.HasDHCP() {
+			t.Errorf(
+				"Expected to have forward enabled with forward set to be '%s'",
+				mode)
+		}
+	}
+}
+
+func TestNetworkFromLibvirtError(t *testing.T) {
+	net := LibVirtNetworkMock{
+		GetXMLDescError: errors.New("boom"),
+	}
+
+	_, err := newDefNetworkfromLibvirt(net)
+	if err == nil {
+		t.Error("Expected error")
+	}
+}
+
+func TestNetworkFromLibvirtWrongResponse(t *testing.T) {
+	net := LibVirtNetworkMock{
+		GetXMLDescReply: "wrong xml",
+	}
+
+	_, err := newDefNetworkfromLibvirt(net)
+	if err == nil {
+		t.Error("Expected error")
+	}
+}
+
+func TestNetworkFromLibvirt(t *testing.T) {
+	net := LibVirtNetworkMock{
+		GetXMLDescReply: `
+		<network>
+		  <name>default</name>
+		  <forward mode='nat'>
+		    <nat>
+		      <port start='1024' end='65535'/>
+		    </nat>
+		  </forward>
+		</network>`,
+	}
+
+	dn, err := newDefNetworkfromLibvirt(net)
+	if err != nil {
+		t.Errorf("Unexpected error %v", err)
+	}
+
+	if dn.Forward.Mode != "nat" {
+		t.Errorf("Wrong forward mode: %s", dn.Forward.Mode)
 	}
 }

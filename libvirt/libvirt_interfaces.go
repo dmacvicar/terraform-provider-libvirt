@@ -5,3 +5,7 @@ package libvirt
 type LibVirtDomain interface {
 	QemuAgentCommand(cmd string, timeout int, flags uint32) string
 }
+
+type LibVirtNetwork interface {
+	GetXMLDesc(flags uint32) (string, error)
+}
