@@ -3,8 +3,6 @@ package libvirt
 import (
 	"encoding/xml"
 	"fmt"
-
-	libvirt "github.com/dmacvicar/libvirt-go"
 )
 
 type defNetworkIpDhcpRange struct {
@@ -118,7 +116,7 @@ func newDefNetworkFromXML(s string) (defNetwork, error) {
 	return networkDef, nil
 }
 
-func newDefNetworkfromLibvirt(network *libvirt.VirNetwork) (defNetwork, error) {
+func newDefNetworkfromLibvirt(network LibVirtNetwork) (defNetwork, error) {
 	networkXmlDesc, err := network.GetXMLDesc(0)
 	if err != nil {
 		return defNetwork{}, fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
