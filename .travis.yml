@@ -5,18 +5,15 @@ go:
   - 1.7
 
 before_install:
+  - sudo add-apt-repository -y cloud-archive:mitaka
   - sudo apt-get -qq update
-  - sudo apt-get install -y wget
-  - sudo apt-get build-dep -y libvirt
-  - wget https://libvirt.org/sources/libvirt-1.2.14.tar.gz
-  - sudo mkdir -p /usr/src
-  - sudo tar xvzf libvirt-1.2.14.tar.gz -C /usr/src
-  - pushd /usr/src/libvirt-1.2.14
-  - sudo ./configure --prefix=/usr/
-  - sudo make
-  - sudo make install
-  - sudo libvirtd -d
-  - popd
+  - sudo apt-get install -y qemu libvirt-bin libvirt-dev
+  - sudo usermod -a -G libvirtd $USER
+  - echo -e "<pool type='dir'>\n<name>default</name>\n<target>\n<path>/pool-default</path>\n</target>\n</pool>" > pool.xml
+  - sudo mkdir /pool-default
+  - sudo chmod a+rwx /pool-default
+  - sudo virsh pool-define pool.xml
+  - sudo virsh pool-start default
   - go get github.com/mattn/goveralls
   - go get -u github.com/govend/govend
   - govend -v
@@ -27,6 +24,12 @@ install:
 # override the custom test script, this would trigger
 # also the execution of the unit tests of the vendored
 # code
+env:
+  global:
+    - TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE=qemu
+    - TF_ACC=true
+    - LIBVIRT_DEFAULT_URI="qemu:///system"
+
 script:
-  - go test ./libvirt
-  - $HOME/gopath/bin/goveralls -service=travis-ci
+  - sg libvirtd -c "go test -v ./libvirt"
+  - sg libvirtd -c "$HOME/gopath/bin/goveralls -v -service=travis-ci"
