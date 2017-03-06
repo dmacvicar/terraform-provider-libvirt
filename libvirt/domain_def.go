@@ -144,4 +144,3 @@ func newDomainDef() defDomain {
 
 	return domainDef
 }
-

@@ -3,8 +3,6 @@ package libvirt
 import (
 	"encoding/xml"
 	"fmt"
-	libvirt "github.com/dmacvicar/libvirt-go"
-	"github.com/hashicorp/terraform/helper/schema"
 	"io"
 	"log"
 	"net/http"
@@ -12,6 +10,9 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	libvirt "github.com/dmacvicar/libvirt-go"
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 // network transparent image

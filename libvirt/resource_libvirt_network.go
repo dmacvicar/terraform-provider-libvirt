@@ -336,7 +336,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("bridge", networkDef.Bridge.Name)
 
 	// Domain as won't be present for bridged networks
-	if (networkDef.Domain != nil) {
+	if networkDef.Domain != nil {
 		d.Set("domain", networkDef.Domain.Name)
 	}
 

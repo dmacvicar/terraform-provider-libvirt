@@ -1,9 +1,9 @@
 package libvirt
 
 import (
-	//libvirt "gopkg.in/alexzorin/libvirt-go.v2"
-	libvirt "github.com/dmacvicar/libvirt-go"
 	"log"
+
+	libvirt "github.com/dmacvicar/libvirt-go"
 )
 
 type Config struct {

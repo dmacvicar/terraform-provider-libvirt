@@ -1,15 +1,14 @@
 package libvirt
 
 import (
+	"encoding/xml"
 	"fmt"
 	"log"
 	"testing"
 
+	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	//"gopkg.in/alexzorin/libvirt-go.v2"
-	"encoding/xml"
-	libvirt "github.com/dmacvicar/libvirt-go"
 )
 
 func TestAccLibvirtDomain_Basic(t *testing.T) {

@@ -1,6 +1,8 @@
 package libvirt
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -10,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"crypto/sha256"
-	"encoding/hex"
 	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/schema"

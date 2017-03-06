@@ -2,11 +2,11 @@ package libvirt
 
 import (
 	"fmt"
+	"testing"
+
+	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	//"gopkg.in/alexzorin/libvirt-go.v2"
-	libvirt "github.com/dmacvicar/libvirt-go"
-	"testing"
 )
 
 func TestAccLibvirtVolume_Basic(t *testing.T) {
