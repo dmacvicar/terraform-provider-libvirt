@@ -2,6 +2,7 @@ package libvirt
 
 import (
 	"encoding/xml"
+	"os"
 )
 
 type defDomain struct {
@@ -115,7 +116,11 @@ type defConsole struct {
 func newDomainDef() defDomain {
 	// libvirt domain definition
 	domainDef := defDomain{}
-	domainDef.Type = "kvm"
+	if v := os.Getenv("TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE"); v != "" {
+		domainDef.Type = v
+	} else {
+		domainDef.Type = "kvm"
+	}
 	domainDef.Xmlns = ""
 
 	domainDef.Os = defOs{}
