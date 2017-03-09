@@ -208,6 +208,44 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_Graphics(t *testing.T) {
+	var domain libvirt.VirDomain
+
+	var config = fmt.Sprintf(`
+            resource "libvirt_volume" "acceptance-test-graphics" {
+                    name = "terraform-test"
+            }
+
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+                    graphics {
+                            type = "spice"
+                            autoport = "yes"
+                            listen_type = "none"
+                    }
+            }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "graphics.type", "spice"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "graphics.autoport", "yes"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "graphics.listen_type", "none"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 	var domain libvirt.VirDomain
 
