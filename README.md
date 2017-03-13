@@ -31,18 +31,6 @@ zypper install terraform-provider-libvirt
 
 ```
 
-
-
-The binary should be renamed to terraform-provider-libvirt
-
-You should update your .terraformrc and refer to the binary:
-
-```hcl
-providers {
-  libvirt = "/path/to/terraform-provider-libvirt"
-}
-```
-
 ## Using the provider
 
 Here is an example that will setup the following:
@@ -76,21 +64,19 @@ $ terraform destroy
 
 ## Building from source
 
-1.  [Install Go](https://golang.org/doc/install) on your machine
-2.  [Set up Gopath](https://golang.org/doc/code.html)
-3.  `git clone` this repository into `$GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt`
-4.  Get the dependencies, either with `go get`
-    1. Run `go get`
-    2.  Switch the terraform project back to the stable version, otherwise you will get a `Incompatible API version with plugin. Plugin version: 1, Ours: 2` error at runtime:
+1.  ``` go get -u github.com/dmacvicar/terraform-provider-libvirt ```
+    Install ```libvirt-devel``` package, if you get ``` fatal error: libvirt/libvirt.h: No such file or directory```
+
+2.  Switch the terraform project back to the stable version, otherwise you will get a `Incompatible API version with plugin. Plugin version: 1, Ours: 2` error at runtime:
     ```
     cd $GOPATH/src/github.com/hashicorp/terraform
     git checkout v0.6.16
     cd $GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt
     ```
-5.  .. or alternatively install [govend](https://github.com/govend/govend) and:
+3.  .. or alternatively install [govend](https://github.com/govend/govend) and:
     1. Run `govend`, which will scan dependencies and download them into vendor
     2. problematic dependencies, like terraform, will be automatically in the right version thanks to the `vendor.yml` file.
-6.  Run `go install` to build the binary. You will now find the
+4.  Run `go install` to build the binary. You will now find the
     binary at `$GOPATH/bin/terraform-provider-libvirt`.
 
 ## Running
