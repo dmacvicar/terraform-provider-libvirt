@@ -379,7 +379,7 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 		// attempt a new lookup
 		volume, err = virConn.LookupStorageVolByKey(d.Id())
 		if err != nil {
-			return fmt.Errorf("Can't retrieve volume %s", d.Id())
+			return fmt.Errorf("Second attempt: Can't retrieve volume %s", d.Id())
 		}
 	}
 	defer volume.Free()
