@@ -6,107 +6,11 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
-	"os"
 	"strconv"
-	"strings"
 
 	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/schema"
 )
-
-// network transparent image
-type image interface {
-	Size() (int64, error)
-	WriteToStream(*libvirt.VirStream) error
-	String() string
-}
-
-type localImage struct {
-	path string
-}
-
-func (i *localImage) String() string {
-	return i.path
-}
-
-func (i *localImage) Size() (int64, error) {
-	file, err := os.Open(i.path)
-	if err != nil {
-		return 0, err
-	}
-
-	fi, err := file.Stat()
-	if err != nil {
-		return 0, err
-	}
-	return fi.Size(), nil
-}
-
-func (i *localImage) WriteToStream(stream *libvirt.VirStream) error {
-	file, err := os.Open(i.path)
-	defer file.Close()
-	if err != nil {
-		return fmt.Errorf("Error while opening %s: %s", i.path, err)
-	}
-
-	n, err := io.Copy(stream, file)
-	if err != nil {
-		return fmt.Errorf("Error while reading %s: %s", i.path, err)
-	}
-	log.Printf("%d bytes uploaded\n", n)
-	return nil
-}
-
-type httpImage struct {
-	url *url.URL
-}
-
-func (i *httpImage) String() string {
-	return i.url.String()
-}
-
-func (i *httpImage) Size() (int64, error) {
-	response, err := http.Head(i.url.String())
-	if err != nil {
-		return 0, err
-	}
-	length, err := strconv.Atoi(response.Header.Get("Content-Length"))
-	if err != nil {
-		return 0, err
-	}
-	return int64(length), nil
-}
-
-func (i *httpImage) WriteToStream(stream *libvirt.VirStream) error {
-	response, err := http.Get(i.url.String())
-	defer response.Body.Close()
-	if err != nil {
-		return fmt.Errorf("Error while downloading %s: %s", i.url.String(), err)
-	}
-
-	n, err := io.Copy(stream, response.Body)
-	if err != nil {
-		return fmt.Errorf("Error while downloading %s: %s", i.url.String(), err)
-	}
-	log.Printf("%d bytes uploaded\n", n)
-	return nil
-}
-
-func newImage(source string) (image, error) {
-	url, err := url.Parse(source)
-	if err != nil {
-		return nil, fmt.Errorf("Can't parse source '%s' as url: %s", source, err)
-	}
-
-	if strings.HasPrefix(url.Scheme, "http") {
-		return &httpImage{url: url}, nil
-	} else if url.Scheme == "file" || url.Scheme == "" {
-		return &localImage{path: url.Path}, nil
-	} else {
-		return nil, fmt.Errorf("Don't know how to read from '%s': %s", url.String(), err)
-	}
-}
 
 func volumeCommonSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -203,8 +107,13 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		volumeDef.Name = name.(string)
 	}
 
-	// an existing image was given, this mean we can't choose size
-	if url, ok := d.GetOk("source"); ok {
+	var (
+		img    image
+		volume *libvirt.VirStorageVol = nil
+	)
+
+	// an source image was given, this mean we can't choose size
+	if source, ok := d.GetOk("source"); ok {
 		// source and size conflict
 		if _, ok := d.GetOk("size"); ok {
 			return fmt.Errorf("'size' can't be specified when also 'source' is given (the size will be set to the size of the source image.")
@@ -217,19 +126,31 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf("'base_volume_name' can't be specified when also 'source' is given.")
 		}
 
-		img, err := newImage(url.(string))
-		if err != nil {
+		// Check if we already have this image in the pool
+		if len(volumeDef.Name) > 0 {
+			if v, err := pool.LookupStorageVolByName(volumeDef.Name); err != nil {
+				log.Printf("Could not find image %s in pool %s", volumeDef.Name, poolName)
+			} else {
+				volume = &v
+				volumeDef, err = newDefVolumeFromLibvirt(volume)
+				if err != nil {
+					return fmt.Errorf("could not get a volume definition from XML for %s: %s.", volumeDef.Name, err)
+				}
+			}
+		}
+
+		if img, err = newImage(source.(string)); err != nil {
 			return err
 		}
 
-		size, err := img.Size()
-		if err != nil {
+		// update the image in the description, even if the file has not changed
+		if size, err := img.Size(); err != nil {
 			return err
+		} else {
+			log.Printf("Image %s image is: %d bytes", img, size)
+			volumeDef.Capacity.Unit = "B"
+			volumeDef.Capacity.Amount = size
 		}
-		log.Printf("Image %s image is: %d bytes", img, size)
-
-		volumeDef.Capacity.Unit = "B"
-		volumeDef.Capacity.Amount = size
 	} else {
 		_, noSize := d.GetOk("size")
 		_, noBaseVol := d.GetOk("base_volume_id")
@@ -237,7 +158,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		if noSize && noBaseVol {
 			return fmt.Errorf("'size' needs to be specified if no 'source' or 'base_volume_id' is given.")
 		}
-		volumeDef.Capacity.Amount = int64(d.Get("size").(int))
+		volumeDef.Capacity.Amount = uint64(d.Get("size").(int))
 	}
 
 	if baseVolumeId, ok := d.GetOk("base_volume_id"); ok {
@@ -249,6 +170,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given.")
 		}
 
+		volume = nil
 		volumeDef.BackingStore = new(defBackingStore)
 		volumeDef.BackingStore.Format.Type = "qcow2"
 		baseVolume, err := virConn.LookupStorageVolByKey(baseVolumeId.(string))
@@ -267,6 +189,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf("'size' can't be specified when also 'base_volume_name' is given (the size will be set to the size of the backing image.")
 		}
 
+		volume = nil
 		baseVolumePool := pool
 		if _, ok := d.GetOk("base_volume_pool"); ok {
 			baseVolumePoolName := d.Get("base_volume_pool").(string)
@@ -290,17 +213,20 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		volumeDef.BackingStore.Path = baseVolPath
 	}
 
-	volumeDefXml, err := xml.Marshal(volumeDef)
-	if err != nil {
-		return fmt.Errorf("Error serializing libvirt volume: %s", err)
-	}
+	if volume == nil {
+		volumeDefXml, err := xml.Marshal(volumeDef)
+		if err != nil {
+			return fmt.Errorf("Error serializing libvirt volume: %s", err)
+		}
 
-	// create the volume
-	volume, err := pool.StorageVolCreateXML(string(volumeDefXml), 0)
-	if err != nil {
-		return fmt.Errorf("Error creating libvirt volume: %s", err)
+		// create the volume
+		v, err := pool.StorageVolCreateXML(string(volumeDefXml), 0)
+		if err != nil {
+			return fmt.Errorf("Error creating libvirt volume: %s", err)
+		}
+		volume = &v
+		defer volume.Free()
 	}
-	defer volume.Free()
 
 	// we use the key as the id
 	key, err := volume.GetKey()
@@ -318,20 +244,25 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[INFO] Volume ID: %s", d.Id())
 
 	// upload source if present
-	if source, ok := d.GetOk("source"); ok {
-		stream, err := libvirt.NewVirStream(virConn, 0)
-		if err != nil {
-			return err
-		}
-		defer stream.Close()
+	if _, ok := d.GetOk("source"); ok {
+		copier := func(src io.Reader) error {
+			stream, err := libvirt.NewVirStream(virConn, 0)
+			if err != nil {
+				return err
+			}
+			defer stream.Close()
 
-		img, err := newImage(source.(string))
-		if err != nil {
-			return err
+			volume.Upload(stream, 0, volumeDef.Capacity.Amount, 0)
+
+			n, err := io.Copy(stream, src)
+			if err != nil {
+				return fmt.Errorf("Error while downloading %s: %s", img.String(), err)
+			}
+			log.Printf("%d bytes uploaded\n", n)
+			return nil
 		}
 
-		volume.Upload(stream, 0, uint64(volumeDef.Capacity.Amount), 0)
-		err = img.WriteToStream(stream)
+		err = img.Import(copier, volumeDef)
 		if err != nil {
 			return err
 		}
