@@ -248,6 +248,10 @@ resource "libvirt_domain" "my_machine" {
 }
 ```
 
+Note the following:
+* The `graphics` block is ignored for the architectures `s390x` and `ppc64`.
+
+
 The optional `console` block allows you to define a console for the domain.  The block
 looks as follows:
 ```

@@ -191,16 +191,25 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		domainDef.Xmlns = "http://libvirt.org/schemas/domain/qemu/1.0"
 	}
 
-	if graphics, ok := d.GetOk("graphics"); ok {
-		graphics_map := graphics.(map[string]interface{})
-		if graphics_type, ok := graphics_map["type"]; ok {
-			domainDef.Devices.Graphics.Type = graphics_type.(string)
-		}
-		if autoport, ok := graphics_map["autoport"]; ok {
-			domainDef.Devices.Graphics.Type = autoport.(string)
-		}
-		if listen_type, ok := graphics_map["listen_type"]; ok {
-			domainDef.Devices.Graphics.Listen.Type = listen_type.(string)
+	arch, err := getHostArchitecture(virConn)
+	if err != nil {
+		return fmt.Errorf("Error retrieving host architecture: %s", err)
+	}
+
+	if arch == "s390x" || arch == "ppc64" {
+		domainDef.Devices.Graphics = nil
+	} else {
+		if graphics, ok := d.GetOk("graphics"); ok {
+			graphics_map := graphics.(map[string]interface{})
+			if graphics_type, ok := graphics_map["type"]; ok {
+				domainDef.Devices.Graphics.Type = graphics_type.(string)
+			}
+			if autoport, ok := graphics_map["autoport"]; ok {
+				domainDef.Devices.Graphics.Autoport = autoport.(string)
+			}
+			if listen_type, ok := graphics_map["listen_type"]; ok {
+				domainDef.Devices.Graphics.Listen.Type = listen_type.(string)
+			}
 		}
 	}
 
