@@ -109,6 +109,10 @@ nvram = [
 The `disk` block supports:
 
 * `volume_id` - (Required) The volume id to use for this disk.
+* `scsi` - (Optional) Use a scsi controller for this disk.  The controller
+model is set to `virtio-scsi`
+* `wwn` - (Optional) Specify a WWN to use for the disk if the disk is using
+a scsi controller, if not specified then a random wwn is generated for the disk
 
 If you have a volume with a template image, create a second volume using the image as the backing volume, and then use the new volume as the volume for the disk. This way the image will not be modified.
 
@@ -127,6 +131,7 @@ resource "libvirt_domain" "domain1" {
   name = "domain1"
   disk {
     volume_id = "${libvirt_volume.mydisk.id}"
+    scsi = "yes"
   }
 
   network_interface {

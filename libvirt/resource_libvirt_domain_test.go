@@ -167,6 +167,39 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
+	var domain libvirt.VirDomain
+	var configScsi = fmt.Sprintf(`
+            resource "libvirt_volume" "acceptance-test-volume1" {
+                    name = "terraform-test-vol1"
+            }
+
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test-domain"
+                    disk {
+                            volume_id = "${libvirt_volume.acceptance-test-volume1.id}"
+                            scsi = "yes"
+                            wwn = "000000123456789a"
+                    }
+            }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: configScsi,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtScsiDisk("000000123456789a", &domain),
+				),
+			},
+		},
+	})
+
+}
+
 func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	var domain libvirt.VirDomain
 
@@ -381,5 +414,31 @@ func TestHash(t *testing.T) {
 
 	if actual != expected {
 		t.Errorf("Expected %s, got %s", expected, actual)
+	}
+}
+
+func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.VirDomain) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		xmlDesc, err := domain.GetXMLDesc(0)
+		if err != nil {
+			return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+		}
+
+		domainDef := newDomainDef()
+		err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
+		if err != nil {
+			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+		}
+
+		disks := domainDef.Devices.Disks
+		for _, disk := range disks {
+			if diskBus := disk.Target.Bus; diskBus != "scsi" {
+				return fmt.Errorf("Disk bus is not scsi")
+			}
+			if wwn := disk.Wwn; wwn != n {
+				return fmt.Errorf("Disk wwn %s is not equal to %s", wwn, n)
+			}
+		}
+		return nil
 	}
 }
