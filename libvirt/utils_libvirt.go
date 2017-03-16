@@ -20,6 +20,20 @@ func getHostXMLDesc(ip, mac, name string) string {
 	return xml
 }
 
+// addDHCPRange adds a DHCP range to the network
+func addDHCPRange(n *libvirt.VirNetwork, start, end string) error {
+	dr := defNetworkIpDhcpRange{
+		Start: start,
+		End:   end,
+	}
+	xml, err := xmlMarshallIndented(dr)
+	if err != nil {
+		panic("could not marshall dhcp range")
+	}
+	log.Printf("Adding dhcp range with XML:\n%s", xml)
+	return n.UpdateXMLDesc(xml, libvirt.VIR_NETWORK_UPDATE_COMMAND_ADD_FIRST, libvirt.VIR_NETWORK_SECTION_IP_DHCP_RANGE)
+}
+
 // Adds a new static host to the network
 func addHost(n *libvirt.VirNetwork, ip, mac, name string) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)

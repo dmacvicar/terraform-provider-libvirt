@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -18,6 +19,7 @@ import (
 )
 
 var PoolSync = NewLibVirtPoolSync()
+var dhcpMutex = &sync.Mutex{}
 
 func init() {
 	spew.Config.Indent = "\t"
@@ -359,10 +361,23 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			}
 
 			hostname := domainDef.Name
+			hostnameSet := false
 			if hostnameI, ok := d.GetOk(prefix + ".hostname"); ok {
 				hostname = hostnameI.(string)
+				hostnameSet = true
 			}
-			if addresses, ok := d.GetOk(prefix + ".addresses"); ok {
+			var addresses interface{}
+			addressesSet := false
+			if a, ok := d.GetOk(prefix + ".addresses"); ok {
+				addresses = a
+				addressesSet = true
+			}
+			if hostnameSet || addressesSet {
+				if err := enableDHCP(&network); err != nil {
+					return err
+				}
+			}
+			if addressesSet {
 				// some IP(s) provided
 				for _, addressI := range addresses.([]interface{}) {
 					address := addressI.(string)
@@ -378,9 +393,10 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				}
 			} else {
 				// no IPs provided: if the hostname has been provided, wait until we get an IP
-				if len(hostname) > 0 {
+				if hostnameSet {
 					if !netIface.waitForLease {
-						return fmt.Errorf("Cannot map '%s': we are not waiting for lease and no IP has been provided", hostname)
+						return fmt.Errorf("Cannot map hostname '%s': we are not waiting for lease"+
+							" and no IP has been provided", hostname)
 					}
 					// the resource specifies a hostname but not an IP, so we must wait until we
 					// have a valid lease and then read the IP we have been assigned, so we can
@@ -500,6 +516,35 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	return nil
+}
+
+// enableDHCP enables DHCP services on a given libvirt network
+func enableDHCP(network *libvirt.VirNetwork) error {
+	// mutex required due to concurrent access of the network definition
+	// (adding the same DHCP range twice causes an error while creating the libvirt domain)
+	dhcpMutex.Lock()
+	defer dhcpMutex.Unlock()
+	networkDef, err := newDefNetworkfromLibvirt(network)
+	if err != nil {
+		return err
+	}
+	for _, ip := range networkDef.Ips {
+		if ip.Dhcp == nil {
+			ipNet, err := GetIPNet(ip.Address, ip.Prefix)
+			if err != nil {
+				return err
+			}
+			start, end := NetworkRange(ipNet)
+
+			// skip the network, gateway, and broadcast addresses
+			start[len(start)-1] = start[len(start)-1] + 2
+			end[len(end)-1]--
+			if err := addDHCPRange(network, start.String(), end.String()); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
