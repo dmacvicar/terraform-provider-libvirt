@@ -23,6 +23,7 @@ type defDomain struct {
 		Pae  string `xml:"pae"`
 	} `xml:"features"`
 	Devices struct {
+		Controller        []defController       `xml:"controller,omitempty"`
 		Disks             []defDisk             `xml:"disk"`
 		NetworkInterfaces []defNetworkInterface `xml:"interface"`
 		Console           []defConsole          `xml:"console"`
@@ -100,6 +101,11 @@ type defLoader struct {
 // <nvram>/var/lib/libvirt/qemu/nvram/sled12sp1_VARS.fd</nvram>
 type defNvRam struct {
 	File string `xml:",chardata"`
+}
+
+type defController struct {
+	Type  string `xml:"type,attr,omitempty"`
+	Model string `xml:"model,attr,omitempty"`
 }
 
 type defConsole struct {

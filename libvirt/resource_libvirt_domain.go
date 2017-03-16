@@ -258,6 +258,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	disksCount := d.Get("disk.#").(int)
 	var disks []defDisk
+	var scsiDisk bool = false
 	for i := 0; i < disksCount; i++ {
 		disk := newDefDisk()
 		disk.Target.Dev = fmt.Sprintf("vd%s", DiskLetterForIndex(i))
@@ -265,6 +266,15 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		diskKey := fmt.Sprintf("disk.%d", i)
 		diskMap := d.Get(diskKey).(map[string]interface{})
 		volumeKey := diskMap["volume_id"].(string)
+		if _, ok := diskMap["scsi"].(string); ok {
+			disk.Target.Bus = "scsi"
+			scsiDisk = true
+			if wwn, ok := diskMap["wwn"].(string); ok {
+				disk.Wwn = wwn
+			} else {
+				disk.Wwn = randomWWN(10)
+			}
+		}
 		diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
 		if err != nil {
 			return fmt.Errorf("Can't retrieve volume %s", volumeKey)
@@ -286,6 +296,12 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		disk.Source.Pool = diskPoolName
 
 		disks = append(disks, disk)
+	}
+
+	log.Printf("[DEBUG] scsiDisk: %s", scsiDisk)
+	if scsiDisk {
+		controller := defController{Type:"scsi", Model:"virtio-scsi"}
+		domainDef.Devices.Controller = append(domainDef.Devices.Controller, controller)
 	}
 
 	type pendingMapping struct {

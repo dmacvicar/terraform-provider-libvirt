@@ -2,12 +2,17 @@ package libvirt
 
 import (
 	"encoding/xml"
+	"math/rand"
+	"time"
 )
+
+const OUI = "05abcd"
 
 type defDisk struct {
 	XMLName xml.Name `xml:"disk"`
 	Type    string   `xml:"type,attr"`
 	Device  string   `xml:"device,attr"`
+	Wwn     string   `xml:"wwn,omitempty"`
 	Format  struct {
 		Type string `xml:"type,attr"`
 	} `xml:"format"`
@@ -49,4 +54,14 @@ func newCDROM() defDisk {
 	disk.Driver.Type = "raw"
 
 	return disk
+}
+
+func randomWWN(strlen int) string {
+	const chars = "abcdef0123456789"
+	rand.Seed(time.Now().UTC().UnixNano())
+	result := make([]byte, strlen)
+	for i := 0; i < strlen; i++ {
+		result[i] = chars[rand.Intn(len(chars))]
+	}
+	return OUI + string(result)
 }
