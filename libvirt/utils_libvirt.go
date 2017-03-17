@@ -21,7 +21,7 @@ func getHostXMLDesc(ip, mac, name string) string {
 }
 
 // addDHCPRange adds a DHCP range to the network
-func addDHCPRange(n *libvirt.VirNetwork, start, end string) error {
+func addDHCPRange(n LibVirtNetwork, start, end string) error {
 	dr := defNetworkIpDhcpRange{
 		Start: start,
 		End:   end,

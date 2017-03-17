@@ -2,6 +2,7 @@ package libvirt
 
 import (
 	"encoding/xml"
+	"errors"
 	"testing"
 )
 
@@ -28,5 +29,23 @@ func TestGetHostXMLDesc(t *testing.T) {
 
 	if dd.Name != name {
 		t.Errorf("expected name %s, got %s", name, dd.Name)
+	}
+}
+
+func TestAddDHCPRange(t *testing.T) {
+	network := &LibVirtNetworkMock{
+		UpdateXMLDescError: nil,
+	}
+	if err := addDHCPRange(network, "10.0.0.2", "10.0.0.254"); err != nil {
+		t.Errorf("error %v", err)
+	}
+}
+
+func TestAddDHCPRangeError(t *testing.T) {
+	network := &LibVirtNetworkMock{
+		UpdateXMLDescError: errors.New("boom"),
+	}
+	if err := addDHCPRange(network, "invalid", "cidr"); err == nil {
+		t.Error("Expected error")
 	}
 }

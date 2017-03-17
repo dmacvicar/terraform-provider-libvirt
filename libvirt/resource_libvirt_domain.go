@@ -519,35 +519,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-// enableDHCP enables DHCP services on a given libvirt network
-func enableDHCP(network *libvirt.VirNetwork) error {
-	// mutex required due to concurrent access of the network definition
-	// (adding the same DHCP range twice causes an error while creating the libvirt domain)
-	dhcpMutex.Lock()
-	defer dhcpMutex.Unlock()
-	networkDef, err := newDefNetworkfromLibvirt(network)
-	if err != nil {
-		return err
-	}
-	for _, ip := range networkDef.Ips {
-		if ip.Dhcp == nil {
-			ipNet, err := GetIPNet(ip.Address, ip.Prefix)
-			if err != nil {
-				return err
-			}
-			start, end := NetworkRange(ipNet)
-
-			// skip the network, gateway, and broadcast addresses
-			start[len(start)-1] = start[len(start)-1] + 2
-			end[len(end)-1]--
-			if err := addDHCPRange(network, start.String(), end.String()); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Update resource libvirt_domain")
 
