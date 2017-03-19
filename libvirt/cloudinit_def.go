@@ -14,6 +14,7 @@ import (
 
 	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hooklift/iso9660"
+	"github.com/imdario/mergo"
 	"github.com/mitchellh/packer/common/uuid"
 	"gopkg.in/yaml.v2"
 )
@@ -21,6 +22,10 @@ import (
 // names of the files expected by cloud-init
 const USERDATA string = "user-data"
 const METADATA string = "meta-data"
+
+type UserDataStruct struct {
+	SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
+}
 
 type defCloudInit struct {
 	Name     string
@@ -30,9 +35,7 @@ type defCloudInit struct {
 		InstanceID    string `yaml:"instance-id"`
 	}
 	UserDataRaw string `yaml:"user_data"`
-	UserData    struct {
-		SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
-	}
+	UserData    UserDataStruct
 }
 
 // Creates a new cloudinit with the defaults
@@ -183,19 +186,11 @@ func (ci *defCloudInit) createFiles() (string, error) {
 	}
 
 	// Create files required by ISO file
-	userdata := ""
-	if len(ci.UserDataRaw) > 0 {
-		userdata = ci.UserDataRaw
-	} else {
-		userdata = "#cloud-config\n"
+	mergedUserData, err := mergeUserDataIntoUserDataRaw(ci.UserData, ci.UserDataRaw)
+	if err != nil {
+		return "", fmt.Errorf("Error merging UserData with UserDataRaw: %v", err)
 	}
-
-	// append the extra user data flags
-	if userdata_extra, err := yaml.Marshal(&ci.UserData); err != nil {
-		return "", fmt.Errorf("Error dumping cloudinit's user data: %s", err)
-	} else {
-		userdata = fmt.Sprintf("%s\n%s", userdata, string(userdata_extra))
-	}
+	userdata := fmt.Sprintf("#cloud-config\n%s", mergedUserData)
 
 	if err = ioutil.WriteFile(
 		filepath.Join(tmpDir, USERDATA),
@@ -337,4 +332,42 @@ func downloadISO(virConn *libvirt.VirConnection, volume libvirt.VirStorageVol) (
 	log.Printf("%d bytes downloaded", n)
 
 	return file, nil
+}
+
+// Convert a UserData instance to a map with string as key and interface as value
+func convertUserDataToMap(data UserDataStruct) (map[string]interface{}, error) {
+	userDataMap := make(map[string]interface{})
+
+	// This is required to get the right names expected by cloud-init
+	// For example: SSHKeys -> ssh_authorized_keys
+	tmp, err := yaml.Marshal(&data)
+	if err != nil {
+		return userDataMap, err
+	}
+
+	err = yaml.Unmarshal([]byte(tmp), &userDataMap)
+	return userDataMap, err
+}
+
+func mergeUserDataIntoUserDataRaw(userData UserDataStruct, userDataRaw string) (string, error) {
+	userDataMap, err := convertUserDataToMap(userData)
+	if err != nil {
+		return "", err
+	}
+
+	userDataRawMap := make(map[string]interface{})
+	if err = yaml.Unmarshal([]byte(userDataRaw), &userDataRawMap); err != nil {
+		return "", err
+	}
+
+	if err = mergo.Merge(&userDataRawMap, userDataMap); err != nil {
+		return "", err
+	}
+
+	out, err := yaml.Marshal(userDataRawMap)
+	if err != nil {
+		return "", err
+	}
+
+	return string(out[:]), nil
 }
