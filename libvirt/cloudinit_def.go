@@ -23,7 +23,7 @@ import (
 const USERDATA string = "user-data"
 const METADATA string = "meta-data"
 
-type UserDataStruct struct {
+type CloudInitUserData struct {
 	SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }
 
@@ -35,7 +35,7 @@ type defCloudInit struct {
 		InstanceID    string `yaml:"instance-id"`
 	}
 	UserDataRaw string `yaml:"user_data"`
-	UserData    UserDataStruct
+	UserData    CloudInitUserData
 }
 
 // Creates a new cloudinit with the defaults
@@ -335,7 +335,7 @@ func downloadISO(virConn *libvirt.VirConnection, volume libvirt.VirStorageVol) (
 }
 
 // Convert a UserData instance to a map with string as key and interface as value
-func convertUserDataToMap(data UserDataStruct) (map[string]interface{}, error) {
+func convertUserDataToMap(data CloudInitUserData) (map[string]interface{}, error) {
 	userDataMap := make(map[string]interface{})
 
 	// This is required to get the right names expected by cloud-init
@@ -349,7 +349,7 @@ func convertUserDataToMap(data UserDataStruct) (map[string]interface{}, error) {
 	return userDataMap, err
 }
 
-func mergeUserDataIntoUserDataRaw(userData UserDataStruct, userDataRaw string) (string, error) {
+func mergeUserDataIntoUserDataRaw(userData CloudInitUserData, userDataRaw string) (string, error) {
 	userDataMap, err := convertUserDataToMap(userData)
 	if err != nil {
 		return "", err

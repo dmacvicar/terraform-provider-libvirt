@@ -69,7 +69,7 @@ func TestCreateISONoExteralTool(t *testing.T) {
 }
 
 func TestConvertUserDataToMapPreservesCloudInitNames(t *testing.T) {
-	ud := UserDataStruct{
+	ud := CloudInitUserData{
 		SSHAuthorizedKeys: []string{"key1"},
 	}
 
@@ -85,7 +85,7 @@ func TestConvertUserDataToMapPreservesCloudInitNames(t *testing.T) {
 }
 
 func TestMergeEmptyUserDataIntoUserDataRaw(t *testing.T) {
-	ud := UserDataStruct{}
+	ud := CloudInitUserData{}
 
 	var userDataRaw = `
 new-key: new-value-set-by-extra
@@ -114,7 +114,7 @@ ssh_authorized_keys:
 }
 
 func TestMergeUserDataIntoEmptyUserDataRaw(t *testing.T) {
-	ud := UserDataStruct{
+	ud := CloudInitUserData{
 		SSHAuthorizedKeys: []string{"key1"},
 	}
 	var userDataRaw string
@@ -137,7 +137,7 @@ func TestMergeUserDataIntoEmptyUserDataRaw(t *testing.T) {
 
 func TestMergeUserDataIntoUserDataRawGivesPrecedenceToRawData(t *testing.T) {
 	ud_key := "user-data-key"
-	ud := UserDataStruct{
+	ud := CloudInitUserData{
 		SSHAuthorizedKeys: []string{ud_key},
 	}
 
