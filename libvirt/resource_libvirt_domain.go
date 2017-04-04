@@ -13,8 +13,14 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/dmacvicar/libvirt-go"
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 )
+
+type DomainMeta struct {
+	domain *libvirt.VirDomain
+	ifaces chan defNetworkInterface
+}
 
 var PoolSync = NewLibVirtPoolSync()
 
@@ -34,6 +40,9 @@ func resourceLibvirtDomain() *schema.Resource {
 		Delete: resourceLibvirtDomainDelete,
 		Update: resourceLibvirtDomainUpdate,
 		Exists: resourceLibvirtDomainExists,
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(5 * time.Minute),
+		},
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -272,7 +281,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	log.Printf("[DEBUG] scsiDisk: %s", scsiDisk)
 	if scsiDisk {
-		controller := defController{Type:"scsi", Model:"virtio-scsi"}
+		controller := defController{Type: "scsi", Model: "virtio-scsi"}
 		domainDef.Devices.Controller = append(domainDef.Devices.Controller, controller)
 	}
 
@@ -449,12 +458,26 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	log.Printf("[INFO] Domain ID: %s", d.Id())
 
-	err = waitForDomainUp(domain)
-	if err != nil {
-		return fmt.Errorf("Error waiting for domain to reach RUNNING state: %s", err)
+	domainMeta := DomainMeta{
+		&domain,
+		make(chan defNetworkInterface, len(netIfaces)),
 	}
 
-	err = waitForNetworkAddresses(netIfaces, domain)
+	// populate interface channels
+	for _, iface := range netIfaces {
+		domainMeta.ifaces <- iface
+	}
+
+	stateConf := &resource.StateChangeConf{
+		Pending:    []string{"blocked"},
+		Target:     []string{"running"},
+		Refresh:    resourceLibvirtDomainStateRefreshFunc(d, &domainMeta),
+		Timeout:    d.Timeout(schema.TimeoutCreate),
+		MinTimeout: 10 * time.Second,
+		Delay:      10 * time.Second,
+	}
+
+	_, err = stateConf.WaitForState()
 	if err != nil {
 		return err
 	}
@@ -825,72 +848,102 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-// wait for domain to be up and timeout after 5 minutes.
-func waitForDomainUp(domain libvirt.VirDomain) error {
-	start := time.Now()
-	for {
-		state, err := domain.GetState()
+func resourceLibvirtDomainStateRefreshFunc(
+	d *schema.ResourceData, meta interface{}) resource.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		domain := meta.(*DomainMeta).domain
+
+		state, err := getDomainState(*domain)
 		if err != nil {
-			return err
+			return nil, "", err
 		}
 
-		running := true
-		if state[0] != libvirt.VIR_DOMAIN_RUNNING {
-			running = false
+		if state == "running" {
+			// domain and interface(s) are up, we're done
+			if len(meta.(*DomainMeta).ifaces) == 0 {
+				return meta, state, nil
+			}
+
+			// set state to "blocked" since we still have interfaces to check
+			state = "blocked"
+
+			iface := <-meta.(*DomainMeta).ifaces
+			found, ignore, err := hasNetworkAddress(iface, *domain)
+			if err != nil {
+				return nil, "", err
+			}
+
+			if found {
+				return meta, state, nil
+			} else if !found && !ignore {
+				// re-add the interface and deal with it later
+				meta.(*DomainMeta).ifaces <- iface
+			}
 		}
 
-		if running {
-			return nil
-		}
-		time.Sleep(1 * time.Second)
-		if time.Since(start) > 5*time.Minute {
-			return fmt.Errorf("Domain didn't switch to state RUNNING in 5 minutes")
-		}
+		return meta, state, nil
 	}
 }
 
-func waitForNetworkAddresses(ifaces []defNetworkInterface, domain libvirt.VirDomain) error {
-	log.Printf("[DEBUG] waiting for network addresses.\n")
-	// wait for network interfaces with 'wait_for_lease' to get an address
-	for _, iface := range ifaces {
-		if !iface.waitForLease {
-			continue
-		}
+func hasNetworkAddress(iface defNetworkInterface,
+	domain libvirt.VirDomain) (found bool, ignore bool, err error) {
 
-		mac := strings.ToUpper(iface.Mac.Address)
-		if mac == "" {
-			log.Printf("[DEBUG] Can't wait without a mac address.\n")
-			// we can't get the ip without a mac address
-			continue
-		}
+	if !iface.waitForLease {
+		return false, true, nil
+	}
 
-		// loop until address appear, with timeout
-		start := time.Now()
+	mac := strings.ToUpper(iface.Mac.Address)
+	if mac == "" {
+		log.Printf("[DEBUG] Can't wait without a mac address.\n")
+		// we can't get the ip without a mac address
+		return false, true, nil
+	}
 
-	waitLoop:
-		for {
-			log.Printf("[DEBUG] waiting for network address for interface with hwaddr: '%s'\n", iface.Mac.Address)
-			ifacesWithAddr, err := getDomainInterfaces(&domain)
-			if err != nil {
-				return fmt.Errorf("Error retrieving interface addresses: %s", err)
-			}
-			log.Printf("[DEBUG] ifaces with addresses: %+v\n", ifacesWithAddr)
+	log.Printf("[DEBUG] waiting for network address for interface with hwaddr: '%s'\n", iface.Mac.Address)
+	ifacesWithAddr, err := getDomainInterfaces(&domain)
+	if err != nil {
+		return false, false, fmt.Errorf("Error retrieving interface addresses: %s", err)
+	}
+	log.Printf("[DEBUG] ifaces with addresses: %+v\n", ifacesWithAddr)
 
-			for _, ifaceWithAddr := range ifacesWithAddr {
-				// found
-				if mac == strings.ToUpper(ifaceWithAddr.Hwaddr) {
-					break waitLoop
-				}
-			}
-
-			time.Sleep(1 * time.Second)
-			if time.Since(start) > 5*time.Minute {
-				return fmt.Errorf("Timeout waiting for interface addresses")
-			}
+	for _, ifaceWithAddr := range ifacesWithAddr {
+		// found
+		if mac == strings.ToUpper(ifaceWithAddr.Hwaddr) {
+			return true, false, nil
 		}
 	}
 
-	return nil
+	return false, false, nil
+}
+
+func getDomainState(domain libvirt.VirDomain) (string, error) {
+	state, err := domain.GetState()
+	if err != nil {
+		return "", err
+	}
+
+	var stateStr string
+
+	switch state[0] {
+	case libvirt.VIR_DOMAIN_NOSTATE:
+		stateStr = "nostate"
+	case libvirt.VIR_DOMAIN_RUNNING:
+		stateStr = "running"
+	case libvirt.VIR_DOMAIN_BLOCKED:
+		stateStr = "blocked"
+	case libvirt.VIR_DOMAIN_PAUSED:
+		stateStr = "paused"
+	case libvirt.VIR_DOMAIN_SHUTDOWN:
+		stateStr = "shutdown"
+	case libvirt.VIR_DOMAIN_CRASHED:
+		stateStr = "crashed"
+	case libvirt.VIR_DOMAIN_PMSUSPENDED:
+		stateStr = "pmsuspended"
+	case libvirt.VIR_DOMAIN_SHUTOFF:
+		stateStr = "shutoff"
+	}
+
+	return stateStr, nil
 }
 
 func isDomainRunning(domain libvirt.VirDomain) (bool, error) {
