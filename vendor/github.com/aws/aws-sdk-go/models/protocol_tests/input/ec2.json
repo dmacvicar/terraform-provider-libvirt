@@ -369,7 +369,7 @@
         "members": {
           "Token": {
             "shape": "StringType",
-              "idempotencyToken": true
+			"idempotencyToken": true
           }
         }
       },
@@ -383,15 +383,19 @@
           "input": {
             "shape": "InputShape"
           },
+          "http": {
+            "method": "POST",
+            "requestUri": "/path"
+          },
           "name": "OperationName"
         },
         "params": {
           "Token": "abc123"
         },
         "serialized": {
-          "uri": "/",
+          "uri": "/path",
           "headers": {},
-          "body": "Action=OperationName&Version=2014-01-01&Token=abc123"
+          "body": "Token=abc123"
         }
       },
       {
@@ -399,14 +403,18 @@
           "input": {
             "shape": "InputShape"
           },
+          "http": {
+            "method": "POST",
+            "requestUri": "/path"
+          },
           "name": "OperationName"
         },
         "params": {
         },
         "serialized": {
-          "uri": "/",
+          "uri": "/path",
           "headers": {},
-          "body": "Action=OperationName&Version=2014-01-01&Token=00000000-0000-4000-8000-000000000000"
+          "body": "Token=00000000-0000-4000-8000-000000000000"
         }
       }
     ]

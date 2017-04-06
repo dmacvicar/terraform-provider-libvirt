@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 type QemuAgentInterfacesResponse struct {
@@ -29,15 +29,18 @@ type QemuAgentInterfaceIpAddress struct {
 // When wait4ipv4 is turned on the code will not report interfaces that don't
 // have a ipv4 address set. This is useful when a domain gets the ipv6 address
 // before the ipv4 one.
-func getDomainInterfacesViaQemuAgent(domain LibVirtDomain, wait4ipv4 bool) []libvirt.VirDomainInterface {
+func getDomainInterfacesViaQemuAgent(domain LibVirtDomain, wait4ipv4 bool) []libvirt.DomainInterface {
 	log.Print("[DEBUG] get network interfaces using qemu agent")
 
-	var interfaces []libvirt.VirDomainInterface
+	var interfaces []libvirt.DomainInterface
 
-	result := domain.QemuAgentCommand(
+	result, err := domain.QemuAgentCommand(
 		"{\"execute\":\"guest-network-get-interfaces\"}",
-		libvirt.VIR_DOMAIN_QEMU_AGENT_COMMAND_DEFAULT,
+		libvirt.DOMAIN_QEMU_AGENT_COMMAND_DEFAULT,
 		0)
+	if err != nil {
+		return interfaces
+	}
 
 	log.Printf("[DEBUG] qemu-agent response: %s", result)
 
@@ -56,7 +59,7 @@ func getDomainInterfacesViaQemuAgent(domain LibVirtDomain, wait4ipv4 bool) []lib
 			continue
 		}
 
-		libVirtIface := libvirt.VirDomainInterface{
+		libVirtIface := libvirt.DomainInterface{
 			Name:   iface.Name,
 			Hwaddr: iface.Hwaddr}
 
@@ -67,17 +70,17 @@ func getDomainInterfacesViaQemuAgent(domain LibVirtDomain, wait4ipv4 bool) []lib
 				continue
 			}
 
-			libVirtAddr := libvirt.VirDomainIPAddress{
+			libVirtAddr := libvirt.DomainIPAddress{
 				Addr:   addr.Address,
 				Prefix: addr.Prefix,
 			}
 
 			switch strings.ToLower(addr.Type) {
 			case "ipv4":
-				libVirtAddr.Type = libvirt.VIR_IP_ADDR_TYPE_IPV4
+				libVirtAddr.Type = int(libvirt.IP_ADDR_TYPE_IPV4)
 				ipv4Assigned = true
 			case "ipv6":
-				libVirtAddr.Type = libvirt.VIR_IP_ADDR_TYPE_IPV6
+				libVirtAddr.Type = int(libvirt.IP_ADDR_TYPE_IPV6)
 			default:
 				log.Printf("[ERROR] Cannot handle unknown address type %s", addr.Type)
 				continue

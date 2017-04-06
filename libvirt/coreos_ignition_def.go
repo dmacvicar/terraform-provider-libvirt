@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
+	libvirt "github.com/libvirt/libvirt-go"
 	"github.com/mitchellh/packer/common/uuid"
 )
 
@@ -31,7 +31,7 @@ func newIgnitionDef() defIgnition {
 // Create a ISO file based on the contents of the CloudInit instance and
 // uploads it to the libVirt pool
 // Returns a string holding terraform's internal ID of this resource
-func (ign *defIgnition) CreateAndUpload(virConn *libvirt.VirConnection) (string, error) {
+func (ign *defIgnition) CreateAndUpload(virConn *libvirt.Connect) (string, error) {
 	pool, err := virConn.LookupStoragePoolByName(ign.PoolName)
 	if err != nil {
 		return "", fmt.Errorf("can't find storage pool '%s'", ign.PoolName)
@@ -158,7 +158,7 @@ func (ign *defIgnition) createFile() (string, error) {
 }
 
 // Creates a new defIgnition object from provided id
-func newIgnitionDefFromRemoteVol(virConn *libvirt.VirConnection, id string) (defIgnition, error) {
+func newIgnitionDefFromRemoteVol(virConn *libvirt.Connect, id string) (defIgnition, error) {
 	ign := defIgnition{}
 
 	key, err := getIgnitionVolumeKeyFromTerraformID(id)

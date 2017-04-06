@@ -1,14 +1,12 @@
 {
-  "version":"2.0",
   "metadata":{
-    "uid":"support-2013-04-15",
     "apiVersion":"2013-04-15",
     "endpointPrefix":"support",
     "jsonVersion":"1.1",
-    "protocol":"json",
     "serviceFullName":"AWS Support",
     "signatureVersion":"v4",
-    "targetPrefix":"AWSSupport_20130415"
+    "targetPrefix":"AWSSupport_20130415",
+    "protocol":"json"
   },
   "operations":{
     "AddAttachmentsToSet":{
@@ -20,11 +18,27 @@
       "input":{"shape":"AddAttachmentsToSetRequest"},
       "output":{"shape":"AddAttachmentsToSetResponse"},
       "errors":[
-        {"shape":"InternalServerError"},
-        {"shape":"AttachmentSetIdNotFound"},
-        {"shape":"AttachmentSetExpired"},
-        {"shape":"AttachmentSetSizeLimitExceeded"},
-        {"shape":"AttachmentLimitExceeded"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"AttachmentSetIdNotFound",
+          "exception":true
+        },
+        {
+          "shape":"AttachmentSetExpired",
+          "exception":true
+        },
+        {
+          "shape":"AttachmentSetSizeLimitExceeded",
+          "exception":true
+        },
+        {
+          "shape":"AttachmentLimitExceeded",
+          "exception":true
+        }
       ]
     },
     "AddCommunicationToCase":{
@@ -36,10 +50,23 @@
       "input":{"shape":"AddCommunicationToCaseRequest"},
       "output":{"shape":"AddCommunicationToCaseResponse"},
       "errors":[
-        {"shape":"InternalServerError"},
-        {"shape":"CaseIdNotFound"},
-        {"shape":"AttachmentSetIdNotFound"},
-        {"shape":"AttachmentSetExpired"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"CaseIdNotFound",
+          "exception":true
+        },
+        {
+          "shape":"AttachmentSetIdNotFound",
+          "exception":true
+        },
+        {
+          "shape":"AttachmentSetExpired",
+          "exception":true
+        }
       ]
     },
     "CreateCase":{
@@ -51,10 +78,23 @@
       "input":{"shape":"CreateCaseRequest"},
       "output":{"shape":"CreateCaseResponse"},
       "errors":[
-        {"shape":"InternalServerError"},
-        {"shape":"CaseCreationLimitExceeded"},
-        {"shape":"AttachmentSetIdNotFound"},
-        {"shape":"AttachmentSetExpired"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"CaseCreationLimitExceeded",
+          "exception":true
+        },
+        {
+          "shape":"AttachmentSetIdNotFound",
+          "exception":true
+        },
+        {
+          "shape":"AttachmentSetExpired",
+          "exception":true
+        }
       ]
     },
     "DescribeAttachment":{
@@ -66,9 +106,19 @@
       "input":{"shape":"DescribeAttachmentRequest"},
       "output":{"shape":"DescribeAttachmentResponse"},
       "errors":[
-        {"shape":"InternalServerError"},
-        {"shape":"DescribeAttachmentLimitExceeded"},
-        {"shape":"AttachmentIdNotFound"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"DescribeAttachmentLimitExceeded",
+          "exception":true
+        },
+        {
+          "shape":"AttachmentIdNotFound",
+          "exception":true
+        }
       ]
     },
     "DescribeCases":{
@@ -80,8 +130,15 @@
       "input":{"shape":"DescribeCasesRequest"},
       "output":{"shape":"DescribeCasesResponse"},
       "errors":[
-        {"shape":"InternalServerError"},
-        {"shape":"CaseIdNotFound"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"CaseIdNotFound",
+          "exception":true
+        }
       ]
     },
     "DescribeCommunications":{
@@ -93,8 +150,15 @@
       "input":{"shape":"DescribeCommunicationsRequest"},
       "output":{"shape":"DescribeCommunicationsResponse"},
       "errors":[
-        {"shape":"InternalServerError"},
-        {"shape":"CaseIdNotFound"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"CaseIdNotFound",
+          "exception":true
+        }
       ]
     },
     "DescribeServices":{
@@ -106,7 +170,11 @@
       "input":{"shape":"DescribeServicesRequest"},
       "output":{"shape":"DescribeServicesResponse"},
       "errors":[
-        {"shape":"InternalServerError"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "DescribeSeverityLevels":{
@@ -118,7 +186,11 @@
       "input":{"shape":"DescribeSeverityLevelsRequest"},
       "output":{"shape":"DescribeSeverityLevelsResponse"},
       "errors":[
-        {"shape":"InternalServerError"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "DescribeTrustedAdvisorCheckRefreshStatuses":{
@@ -130,7 +202,11 @@
       "input":{"shape":"DescribeTrustedAdvisorCheckRefreshStatusesRequest"},
       "output":{"shape":"DescribeTrustedAdvisorCheckRefreshStatusesResponse"},
       "errors":[
-        {"shape":"InternalServerError"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "DescribeTrustedAdvisorCheckResult":{
@@ -142,7 +218,11 @@
       "input":{"shape":"DescribeTrustedAdvisorCheckResultRequest"},
       "output":{"shape":"DescribeTrustedAdvisorCheckResultResponse"},
       "errors":[
-        {"shape":"InternalServerError"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "DescribeTrustedAdvisorCheckSummaries":{
@@ -154,7 +234,11 @@
       "input":{"shape":"DescribeTrustedAdvisorCheckSummariesRequest"},
       "output":{"shape":"DescribeTrustedAdvisorCheckSummariesResponse"},
       "errors":[
-        {"shape":"InternalServerError"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "DescribeTrustedAdvisorChecks":{
@@ -166,7 +250,11 @@
       "input":{"shape":"DescribeTrustedAdvisorChecksRequest"},
       "output":{"shape":"DescribeTrustedAdvisorChecksResponse"},
       "errors":[
-        {"shape":"InternalServerError"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "RefreshTrustedAdvisorCheck":{
@@ -178,7 +266,11 @@
       "input":{"shape":"RefreshTrustedAdvisorCheckRequest"},
       "output":{"shape":"RefreshTrustedAdvisorCheckResponse"},
       "errors":[
-        {"shape":"InternalServerError"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "ResolveCase":{
@@ -190,8 +282,15 @@
       "input":{"shape":"ResolveCaseRequest"},
       "output":{"shape":"ResolveCaseResponse"},
       "errors":[
-        {"shape":"InternalServerError"},
-        {"shape":"CaseIdNotFound"}
+        {
+          "shape":"InternalServerError",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"CaseIdNotFound",
+          "exception":true
+        }
       ]
     }
   },
@@ -317,8 +416,8 @@
     "CaseIdList":{
       "type":"list",
       "member":{"shape":"CaseId"},
-      "max":100,
-      "min":0
+      "min":0,
+      "max":100
     },
     "CaseIdNotFound":{
       "type":"structure",
@@ -348,9 +447,7 @@
     "CcEmailAddress":{"type":"string"},
     "CcEmailAddressList":{
       "type":"list",
-      "member":{"shape":"CcEmailAddress"},
-      "max":10,
-      "min":0
+      "member":{"shape":"CcEmailAddress"}
     },
     "Communication":{
       "type":"structure",
@@ -362,11 +459,7 @@
         "attachmentSet":{"shape":"AttachmentSet"}
       }
     },
-    "CommunicationBody":{
-      "type":"string",
-      "max":8000,
-      "min":1
-    },
+    "CommunicationBody":{"type":"string"},
     "CommunicationList":{
       "type":"list",
       "member":{"shape":"Communication"}
@@ -556,8 +649,8 @@
     "Long":{"type":"long"},
     "MaxResults":{
       "type":"integer",
-      "max":100,
-      "min":10
+      "min":10,
+      "max":100
     },
     "NextToken":{"type":"string"},
     "RecentCaseCommunications":{
@@ -603,12 +696,15 @@
         "categories":{"shape":"CategoryList"}
       }
     },
-    "ServiceCode":{"type":"string"},
+    "ServiceCode":{
+      "type":"string",
+      "pattern":"[0-9a-z\\-_]+"
+    },
     "ServiceCodeList":{
       "type":"list",
       "member":{"shape":"ServiceCode"},
-      "max":100,
-      "min":0
+      "min":0,
+      "max":100
     },
     "ServiceList":{
       "type":"list",
@@ -738,6 +834,7 @@
       "type":"structure",
       "required":[
         "status",
+        "region",
         "resourceId",
         "metadata"
       ],

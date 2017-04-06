@@ -8,9 +8,71 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/aws/aws-sdk-go/private/model/api"
+	"github.com/stretchr/testify/assert"
 )
+
+// findMember searches the shape for the member with the matching key name.
+func findMember(shape *api.Shape, key string) string {
+	for actualKey := range shape.MemberRefs {
+		if strings.ToLower(key) == strings.ToLower(actualKey) {
+			return actualKey
+		}
+	}
+	return ""
+}
+
+// GenerateAssertions builds assertions for a shape based on its type.
+//
+// The shape's recursive values also will have assertions generated for them.
+func GenerateAssertions(out interface{}, shape *api.Shape, prefix string) string {
+	switch t := out.(type) {
+	case map[string]interface{}:
+		keys := SortedKeys(t)
+
+		code := ""
+		if shape.Type == "map" {
+			for _, k := range keys {
+				v := t[k]
+				s := shape.ValueRef.Shape
+				code += GenerateAssertions(v, s, prefix+"[\""+k+"\"]")
+			}
+		} else {
+			for _, k := range keys {
+				v := t[k]
+				m := findMember(shape, k)
+				s := shape.MemberRefs[m].Shape
+				code += GenerateAssertions(v, s, prefix+"."+m+"")
+			}
+		}
+		return code
+	case []interface{}:
+		code := ""
+		for i, v := range t {
+			s := shape.MemberRef.Shape
+			code += GenerateAssertions(v, s, prefix+"["+strconv.Itoa(i)+"]")
+		}
+		return code
+	default:
+		switch shape.Type {
+		case "timestamp":
+			return fmt.Sprintf("assert.Equal(t, time.Unix(%#v, 0).UTC().String(), %s.String())\n", out, prefix)
+		case "blob":
+			return fmt.Sprintf("assert.Equal(t, %#v, string(%s))\n", out, prefix)
+		case "integer", "long":
+			return fmt.Sprintf("assert.Equal(t, int64(%#v), *%s)\n", out, prefix)
+		default:
+			if !reflect.ValueOf(out).IsValid() {
+				return fmt.Sprintf("assert.Nil(t, %s)\n", prefix)
+			}
+			return fmt.Sprintf("assert.Equal(t, %#v, *%s)\n", out, prefix)
+		}
+	}
+}
 
 // Match is a testing helper to test for testing error by comparing expected
 // with a regular expression.
@@ -33,14 +95,12 @@ func AssertURL(t *testing.T, expect, actual string, msgAndArgs ...interface{}) b
 		return false
 	}
 
-	equal(t, expectURL.Host, actualURL.Host, msgAndArgs...)
-	equal(t, expectURL.Scheme, actualURL.Scheme, msgAndArgs...)
-	equal(t, expectURL.Path, actualURL.Path, msgAndArgs...)
+	assert.Equal(t, expectURL.Host, actualURL.Host, msgAndArgs...)
+	assert.Equal(t, expectURL.Scheme, actualURL.Scheme, msgAndArgs...)
+	assert.Equal(t, expectURL.Path, actualURL.Path, msgAndArgs...)
 
 	return AssertQuery(t, expectURL.Query().Encode(), actualURL.Query().Encode(), msgAndArgs...)
 }
-
-var queryMapKey = regexp.MustCompile("(.*?)\\.[0-9]+\\.key")
 
 // AssertQuery verifies the expect HTTP query string matches the actual.
 func AssertQuery(t *testing.T, expect, actual string, msgAndArgs ...interface{}) bool {
@@ -49,46 +109,22 @@ func AssertQuery(t *testing.T, expect, actual string, msgAndArgs ...interface{})
 		t.Errorf(errMsg("unable to parse expected Query", err, msgAndArgs))
 		return false
 	}
-	actualQ, err := url.ParseQuery(actual)
+	actualQ, err := url.ParseQuery(expect)
 	if err != nil {
 		t.Errorf(errMsg("unable to parse actual Query", err, msgAndArgs))
 		return false
 	}
 
 	// Make sure the keys are the same
-	if !equal(t, queryValueKeys(expectQ), queryValueKeys(actualQ), msgAndArgs...) {
+	if !assert.Equal(t, queryValueKeys(expectQ), queryValueKeys(actualQ), msgAndArgs...) {
 		return false
-	}
-
-	keys := map[string][]string{}
-	for key, v := range expectQ {
-		if queryMapKey.Match([]byte(key)) {
-			submatch := queryMapKey.FindStringSubmatch(key)
-			keys[submatch[1]] = append(keys[submatch[1]], v...)
-		}
-	}
-
-	for k, v := range keys {
-		// clear all keys that have prefix
-		for key := range expectQ {
-			if strings.HasPrefix(key, k) {
-				delete(expectQ, key)
-			}
-		}
-
-		sort.Strings(v)
-		for i, value := range v {
-			expectQ[fmt.Sprintf("%s.%d.key", k, i+1)] = []string{value}
-		}
 	}
 
 	for k, expectQVals := range expectQ {
 		sort.Strings(expectQVals)
 		actualQVals := actualQ[k]
 		sort.Strings(actualQVals)
-		if !equal(t, expectQVals, actualQVals, msgAndArgs...) {
-			return false
-		}
+		assert.Equal(t, expectQVals, actualQVals, msgAndArgs...)
 	}
 
 	return true
@@ -108,7 +144,7 @@ func AssertJSON(t *testing.T, expect, actual string, msgAndArgs ...interface{}) 
 		return false
 	}
 
-	return equal(t, expectVal, actualVal, msgAndArgs...)
+	return assert.Equal(t, expectVal, actualVal, msgAndArgs...)
 }
 
 // AssertXML verifies that the expect xml string matches the actual.
@@ -122,39 +158,7 @@ func AssertXML(t *testing.T, expect, actual string, container interface{}, msgAn
 	if err := xml.Unmarshal([]byte(actual), &actualVal); err != nil {
 		t.Errorf(errMsg("unable to parse actual XML", err, msgAndArgs...))
 	}
-	return equal(t, expectVal, actualVal, msgAndArgs...)
-}
-
-// objectsAreEqual determines if two objects are considered equal.
-//
-// This function does no assertion of any kind.
-//
-// Based on github.com/stretchr/testify/assert.ObjectsAreEqual
-// Copied locally to prevent non-test build dependencies on testify
-func objectsAreEqual(expected, actual interface{}) bool {
-	if expected == nil || actual == nil {
-		return expected == actual
-	}
-
-	return reflect.DeepEqual(expected, actual)
-}
-
-// Equal asserts that two objects are equal.
-//
-//    assert.Equal(t, 123, 123, "123 and 123 should be equal")
-//
-// Returns whether the assertion was successful (true) or not (false).
-//
-// Based on github.com/stretchr/testify/assert.Equal
-// Copied locally to prevent non-test build dependencies on testify
-func equal(t *testing.T, expected, actual interface{}, msgAndArgs ...interface{}) bool {
-	if !objectsAreEqual(expected, actual) {
-		t.Errorf("Not Equal:\n\t%#v (expected)\n\t%#v (actual), %s",
-			expected, actual, messageFromMsgAndArgs(msgAndArgs))
-		return false
-	}
-
-	return true
+	return assert.Equal(t, expectVal, actualVal, msgAndArgs...)
 }
 
 func errMsg(baseMsg string, err error, msgAndArgs ...interface{}) string {
@@ -165,8 +169,6 @@ func errMsg(baseMsg string, err error, msgAndArgs ...interface{}) string {
 	return fmt.Sprintf("%s%s, %v", message, baseMsg, err)
 }
 
-// Based on github.com/stretchr/testify/assert.messageFromMsgAndArgs
-// Copied locally to prevent non-test build dependencies on testify
 func messageFromMsgAndArgs(msgAndArgs []interface{}) string {
 	if len(msgAndArgs) == 0 || msgAndArgs == nil {
 		return ""

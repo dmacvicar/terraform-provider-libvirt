@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	libvirt "github.com/dmacvicar/libvirt-go"
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 var diskLetters []rune = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -58,7 +58,7 @@ func xmlMarshallIndented(b interface{}) (string, error) {
 }
 
 // Remove the volume identified by `key` from libvirt
-func RemoveVolume(virConn *libvirt.VirConnection, key string) error {
+func RemoveVolume(virConn *libvirt.Connect, key string) error {
 	volume, err := virConn.LookupStorageVolByKey(key)
 	if err != nil {
 		return fmt.Errorf("Can't retrieve volume %s", key)

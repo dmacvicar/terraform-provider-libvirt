@@ -1,18 +1,18 @@
 package libvirt
 
 import (
+	"encoding/xml"
 	"fmt"
 	"log"
 	"testing"
 
-	"encoding/xml"
-	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 func TestAccLibvirtDomain_Basic(t *testing.T) {
-	var domain libvirt.VirDomain
+	var domain libvirt.Domain
 	var config = fmt.Sprintf(`
             resource "libvirt_domain" "acceptance-test-domain-1" {
                     name = "terraform-test"
@@ -40,7 +40,7 @@ func TestAccLibvirtDomain_Basic(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Detailed(t *testing.T) {
-	var domain libvirt.VirDomain
+	var domain libvirt.Domain
 	var config = fmt.Sprintf(`
             resource "libvirt_domain" "acceptance-test-domain-2" {
                     name = "terraform-test"
@@ -70,8 +70,8 @@ func TestAccLibvirtDomain_Detailed(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Volume(t *testing.T) {
-	var domain libvirt.VirDomain
-	var volume libvirt.VirStorageVol
+	var domain libvirt.Domain
+	var volume libvirt.StorageVol
 
 	var configVolAttached = fmt.Sprintf(`
             resource "libvirt_volume" "acceptance-test-volume" {
@@ -114,8 +114,8 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
-	var domain libvirt.VirDomain
-	var volume libvirt.VirStorageVol
+	var domain libvirt.Domain
+	var volume libvirt.StorageVol
 
 	var configVolAttached = fmt.Sprintf(`
             resource "libvirt_volume" "acceptance-test-volume1" {
@@ -168,7 +168,7 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
-	var domain libvirt.VirDomain
+	var domain libvirt.Domain
 	var configScsi = fmt.Sprintf(`
             resource "libvirt_volume" "acceptance-test-volume1" {
                     name = "terraform-test-vol1"
@@ -201,7 +201,7 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
-	var domain libvirt.VirDomain
+	var domain libvirt.Domain
 
 	var config = fmt.Sprintf(`
             resource "libvirt_volume" "acceptance-test-volume" {
@@ -242,7 +242,7 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Graphics(t *testing.T) {
-	var domain libvirt.VirDomain
+	var domain libvirt.Domain
 
 	var config = fmt.Sprintf(`
             resource "libvirt_volume" "acceptance-test-graphics" {
@@ -280,8 +280,8 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
-	var domain libvirt.VirDomain
-	var volume libvirt.VirStorageVol
+	var domain libvirt.Domain
+	var volume libvirt.StorageVol
 
 	var config = fmt.Sprintf(`
 	    resource "ignition_systemd_unit" "acceptance-test-systemd" {
@@ -332,7 +332,7 @@ func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 		}
 
 		// Try to find the server
-		_, err := virtConn.LookupByUUIDString(rs.Primary.ID)
+		_, err := virtConn.LookupDomainByUUIDString(rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf(
 				"Error waiting for domain (%s) to be destroyed: %s",
@@ -343,7 +343,7 @@ func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckLibvirtDomainExists(n string, domain *libvirt.VirDomain) resource.TestCheckFunc {
+func testAccCheckLibvirtDomainExists(n string, domain *libvirt.Domain) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -356,7 +356,7 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.VirDomain) resour
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		retrieveDomain, err := virConn.LookupByUUIDString(rs.Primary.ID)
+		retrieveDomain, err := virConn.LookupDomainByUUIDString(rs.Primary.ID)
 
 		if err != nil {
 			return err
@@ -373,13 +373,13 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.VirDomain) resour
 			return fmt.Errorf("Libvirt domain not found")
 		}
 
-		*domain = retrieveDomain
+		*domain = *retrieveDomain
 
 		return nil
 	}
 }
 
-func testAccCheckIgnitionXML(domain *libvirt.VirDomain, volume *libvirt.VirStorageVol) resource.TestCheckFunc {
+func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		var cmdLine []defCmd
 		xmlDesc, err := domain.GetXMLDesc(0)
@@ -418,7 +418,7 @@ func TestHash(t *testing.T) {
 	}
 }
 
-func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.VirDomain) resource.TestCheckFunc {
+func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		xmlDesc, err := domain.GetXMLDesc(0)
 		if err != nil {

@@ -42,8 +42,8 @@
           "argument": "Clusters[].ClusterStatus"
         },
         {
-          "expected": "modifying",
-          "matcher": "pathAny",
+          "expected": "pathAny",
+          "matcher": "pathList",
           "state": "failure",
           "argument": "Clusters[].ClusterStatus"
         }

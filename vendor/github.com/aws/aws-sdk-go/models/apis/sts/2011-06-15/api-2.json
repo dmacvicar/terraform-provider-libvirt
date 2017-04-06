@@ -8,7 +8,6 @@
     "serviceAbbreviation":"AWS STS",
     "serviceFullName":"AWS Security Token Service",
     "signatureVersion":"v4",
-    "uid":"sts-2011-06-15",
     "xmlNamespace":"https://sts.amazonaws.com/doc/2011-06-15/"
   },
   "operations":{
@@ -84,18 +83,6 @@
       "errors":[
         {"shape":"InvalidAuthorizationMessageException"}
       ]
-    },
-    "GetCallerIdentity":{
-      "name":"GetCallerIdentity",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"GetCallerIdentityRequest"},
-      "output":{
-        "shape":"GetCallerIdentityResponse",
-        "resultWrapper":"GetCallerIdentityResult"
-      }
     },
     "GetFederationToken":{
       "name":"GetFederationToken",
@@ -273,19 +260,6 @@
         "Arn":{"shape":"arnType"}
       }
     },
-    "GetCallerIdentityRequest":{
-      "type":"structure",
-      "members":{
-      }
-    },
-    "GetCallerIdentityResponse":{
-      "type":"structure",
-      "members":{
-        "UserId":{"shape":"userIdType"},
-        "Account":{"shape":"accountType"},
-        "Arn":{"shape":"arnType"}
-      }
-    },
     "GetFederationTokenRequest":{
       "type":"structure",
       "required":["Name"],
@@ -412,21 +386,19 @@
     "SubjectType":{"type":"string"},
     "accessKeyIdType":{
       "type":"string",
-      "max":128,
+      "max":32,
       "min":16,
       "pattern":"[\\w]*"
     },
     "accessKeySecretType":{"type":"string"},
-    "accountType":{"type":"string"},
     "arnType":{
       "type":"string",
       "max":2048,
-      "min":20,
-      "pattern":"[\\u0009\\u000A\\u000D\\u0020-\\u007E\\u0085\\u00A0-\\uD7FF\\uE000-\\uFFFD\\u10000-\\u10FFFF]+"
+      "min":20
     },
     "assumedRoleIdType":{
       "type":"string",
-      "max":193,
+      "max":96,
       "min":2,
       "pattern":"[\\w+=,.@:-]*"
     },
@@ -456,7 +428,7 @@
     },
     "federatedIdType":{
       "type":"string",
-      "max":193,
+      "max":96,
       "min":2,
       "pattern":"[\\w+=,.@\\:-]*"
     },
@@ -506,7 +478,6 @@
       "max":2048,
       "min":4
     },
-    "userIdType":{"type":"string"},
     "userNameType":{
       "type":"string",
       "max":32,

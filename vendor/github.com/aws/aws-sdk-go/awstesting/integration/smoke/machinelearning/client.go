@@ -1,16 +1,14 @@
-// +build integration
-
 //Package machinelearning provides gucumber integration tests support.
 package machinelearning
 
 import (
 	"github.com/aws/aws-sdk-go/awstesting/integration/smoke"
 	"github.com/aws/aws-sdk-go/service/machinelearning"
-	"github.com/gucumber/gucumber"
+	. "github.com/lsegal/gucumber"
 )
 
 func init() {
-	gucumber.Before("@machinelearning", func() {
-		gucumber.World["client"] = machinelearning.New(smoke.Session)
+	Before("@machinelearning", func() {
+		World["client"] = machinelearning.New(smoke.Session)
 	})
 }

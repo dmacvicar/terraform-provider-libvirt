@@ -488,7 +488,7 @@
         "members": {
           "Token": {
             "shape": "StringType",
-              "idempotencyToken": true
+			"idempotencyToken": true
           }
         }
       },
@@ -503,7 +503,8 @@
             "shape": "InputShape"
           },
           "http": {
-            "method": "POST"
+            "method": "POST",
+            "requestUri": "/path"
           },
           "name": "OperationName"
         },
@@ -511,7 +512,7 @@
           "Token": "abc123"
         },
         "serialized": {
-          "uri": "/",
+          "uri": "/path",
           "headers": {},
           "body": "{\"Token\": \"abc123\"}"
         }
@@ -522,14 +523,15 @@
             "shape": "InputShape"
           },
           "http": {
-            "method": "POST"
+            "method": "POST",
+            "requestUri": "/path"
           },
           "name": "OperationName"
         },
         "params": {
         },
         "serialized": {
-          "uri": "/",
+          "uri": "/path",
           "headers": {},
           "body": "{\"Token\": \"00000000-0000-4000-8000-000000000000\"}"
         }

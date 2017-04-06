@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/schema"
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 func volumeCommonSchema() map[string]*schema.Schema {
@@ -108,7 +108,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	var (
 		img    image
-		volume *libvirt.VirStorageVol = nil
+		volume *libvirt.StorageVol = nil
 	)
 
 	// an source image was given, this mean we can't choose size
@@ -130,7 +130,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			if v, err := pool.LookupStorageVolByName(volumeDef.Name); err != nil {
 				log.Printf("Could not find image %s in pool %s", volumeDef.Name, poolName)
 			} else {
-				volume = &v
+				volume = v
 				volumeDef, err = newDefVolumeFromLibvirt(volume)
 				if err != nil {
 					return fmt.Errorf("could not get a volume definition from XML for %s: %s.", volumeDef.Name, err)
@@ -223,7 +223,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		if err != nil {
 			return fmt.Errorf("Error creating libvirt volume: %s", err)
 		}
-		volume = &v
+		volume = v
 		defer volume.Free()
 	}
 
@@ -244,7 +244,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	// upload source if present
 	if _, ok := d.GetOk("source"); ok {
-		err = img.Import(newCopier(virConn, *volume, volumeDef.Capacity.Amount), volumeDef)
+		err = img.Import(newCopier(virConn, volume, volumeDef.Capacity.Amount), volumeDef)
 		if err != nil {
 			return fmt.Errorf("Error while uploading source %s: %s", img.String(), err)
 		}
@@ -261,8 +261,8 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 
 	volume, err := virConn.LookupStorageVolByKey(d.Id())
 	if err != nil {
-		virErr := err.(libvirt.VirError)
-		if virErr.Code != libvirt.VIR_ERR_NO_STORAGE_VOL {
+		virErr := err.(libvirt.Error)
+		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
 			return fmt.Errorf("Can't retrieve volume %s", d.Id())
 		}
 
@@ -320,7 +320,7 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Error retrieving volume name: %s", err)
 	}
-	d.Set("size", info.GetCapacityInBytes())
+	d.Set("size", info.Capacity)
 
 	return nil
 }

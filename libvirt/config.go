@@ -3,7 +3,7 @@ package libvirt
 import (
 	"log"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 type Config struct {
@@ -11,17 +11,17 @@ type Config struct {
 }
 
 type Client struct {
-	libvirt *libvirt.VirConnection
+	libvirt *libvirt.Connect
 }
 
 func (c *Config) Client() (*Client, error) {
-	conn, err := libvirt.NewVirConnection(c.Uri)
+	conn, err := libvirt.NewConnect(c.Uri)
 	if err != nil {
 		return nil, err
 	}
 
 	client := &Client{
-		libvirt: &conn,
+		libvirt: conn,
 	}
 
 	log.Println("[INFO] Created libvirt client")

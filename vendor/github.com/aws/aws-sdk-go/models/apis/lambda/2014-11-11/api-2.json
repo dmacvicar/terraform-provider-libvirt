@@ -1,6 +1,5 @@
 {
   "metadata":{
-    "uid":"lambda-2014-11-11",
     "apiVersion":"2014-11-11",
     "endpointPrefix":"lambda",
     "serviceFullName":"AWS Lambda",

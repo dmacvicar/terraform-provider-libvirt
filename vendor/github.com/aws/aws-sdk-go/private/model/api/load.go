@@ -1,10 +1,7 @@
-// +build codegen
-
 package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -33,9 +30,7 @@ func (a *API) Attach(filename string) {
 	if err != nil {
 		panic(err)
 	}
-	if err := json.NewDecoder(f).Decode(a); err != nil {
-		panic(fmt.Errorf("failed to decode %s, err: %v", filename, err))
-	}
+	json.NewDecoder(f).Decode(a)
 }
 
 // AttachString will unmarshal a raw JSON string, and setup the
@@ -50,7 +45,6 @@ func (a *API) AttachString(str string) {
 
 // Setup initializes the API.
 func (a *API) Setup() {
-	a.setMetadataEndpointsKey()
 	a.writeShapeNames()
 	a.resolveReferences()
 	a.fixStutterNames()
@@ -64,10 +58,6 @@ func (a *API) Setup() {
 
 	if !a.NoRemoveUnusedShapes {
 		a.removeUnusedShapes()
-	}
-
-	if !a.NoValidataShapeMethods {
-		a.addShapeValidations()
 	}
 
 	a.initialized = true

@@ -7,8 +7,7 @@
     "serviceFullName":"AWS Data Pipeline",
     "signatureVersion":"v4",
     "targetPrefix":"DataPipeline",
-    "protocol":"json",
-    "uid":"datapipeline-2012-10-29"
+    "protocol":"json"
   },
   "operations":{
     "ActivatePipeline":{

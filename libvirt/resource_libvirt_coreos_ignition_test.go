@@ -6,11 +6,11 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	libvirt "github.com/dmacvicar/libvirt-go"
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 func TestAccLibvirtIgnition_Basic(t *testing.T) {
-	var volume libvirt.VirStorageVol
+	var volume libvirt.StorageVol
 	var config = fmt.Sprintf(`
 	    resource "ignition_systemd_unit" "acceptance-test-systemd" {
     		name = "example.service"
@@ -48,7 +48,7 @@ func TestAccLibvirtIgnition_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckIgnitionVolumeExists(n string, volume *libvirt.VirStorageVol) resource.TestCheckFunc {
+func testAccCheckIgnitionVolumeExists(n string, volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
@@ -81,7 +81,7 @@ func testAccCheckIgnitionVolumeExists(n string, volume *libvirt.VirStorageVol) r
 			return fmt.Errorf("Resource ID and volume key does not match")
 		}
 
-		*volume = retrievedVol
+		*volume = *retrievedVol
 		return nil
 	}
 }

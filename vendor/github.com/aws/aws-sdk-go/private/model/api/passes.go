@@ -1,5 +1,3 @@
-// +build codegen
-
 package api
 
 import (
@@ -54,12 +52,6 @@ func (a *API) resolveReferences() {
 
 		resolver.resolveReference(&o.InputRef)
 		resolver.resolveReference(&o.OutputRef)
-
-		// Resolve references for errors also
-		for i := range o.ErrorRefs {
-			resolver.resolveReference(&o.ErrorRefs[i])
-			o.ErrorRefs[i].Shape.IsError = true
-		}
 	}
 }
 
@@ -70,14 +62,6 @@ type referenceResolver struct {
 	visited map[*ShapeRef]bool
 }
 
-var jsonvalueShape = &Shape{
-	ShapeName: "JSONValue",
-	Type:      "jsonvalue",
-	ValueRef: ShapeRef{
-		JSONValue: true,
-	},
-}
-
 // resolveReference updates a shape reference to reference the API and
 // its shape definition. All other nested references are also resolved.
 func (r *referenceResolver) resolveReference(ref *ShapeRef) {
@@ -86,11 +70,6 @@ func (r *referenceResolver) resolveReference(ref *ShapeRef) {
 	}
 
 	if shape, ok := r.API.Shapes[ref.ShapeName]; ok {
-		if ref.JSONValue {
-			ref.ShapeName = "JSONValue"
-			r.API.Shapes[ref.ShapeName] = jsonvalueShape
-		}
-
 		ref.API = r.API   // resolve reference back to API
 		ref.Shape = shape // resolve shape reference
 
@@ -121,28 +100,18 @@ func (r *referenceResolver) resolveShape(shape *Shape) {
 // exportable variant. The shapes are also updated to include notations
 // if they are Input or Outputs.
 func (a *API) renameToplevelShapes() {
-	for _, v := range a.OperationList() {
+	for _, v := range a.Operations {
 		if v.HasInput() {
 			name := v.ExportedName + "Input"
-			switch {
-			case a.Shapes[name] == nil:
-				if service, ok := shamelist[a.name]; ok {
-					if check, ok := service[v.Name]; ok && check.input {
-						break
-					}
-				}
+			switch n := len(v.InputRef.Shape.refs); {
+			case n == 1 && a.Shapes[name] == nil:
 				v.InputRef.Shape.Rename(name)
 			}
 		}
 		if v.HasOutput() {
 			name := v.ExportedName + "Output"
-			switch {
-			case a.Shapes[name] == nil:
-				if service, ok := shamelist[a.name]; ok {
-					if check, ok := service[v.Name]; ok && check.output {
-						break
-					}
-				}
+			switch n := len(v.OutputRef.Shape.refs); {
+			case n == 1 && a.Shapes[name] == nil:
 				v.OutputRef.Shape.Rename(name)
 			}
 		}
@@ -282,25 +251,5 @@ func (a *API) removeUnusedShapes() {
 		if len(s.refs) == 0 {
 			delete(a.Shapes, n)
 		}
-	}
-}
-
-// Represents the service package name to EndpointsID mapping
-var custEndpointsKey = map[string]string{
-	"applicationautoscaling": "application-autoscaling",
-}
-
-// Sents the EndpointsID field of Metadata  with the value of the
-// EndpointPrefix if EndpointsID is not set. Also adds
-// customizations for services if EndpointPrefix is not a valid key.
-func (a *API) setMetadataEndpointsKey() {
-	if len(a.Metadata.EndpointsID) != 0 {
-		return
-	}
-
-	if v, ok := custEndpointsKey[a.PackageName()]; ok {
-		a.Metadata.EndpointsID = v
-	} else {
-		a.Metadata.EndpointsID = a.Metadata.EndpointPrefix
 	}
 }

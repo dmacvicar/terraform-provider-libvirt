@@ -61,8 +61,8 @@ type defGraphics struct {
 }
 
 type defMetadata struct {
-	XMLName      xml.Name `xml:"http://github.com/dmacvicar/terraform-provider-libvirt/ user_data"`
-	Xml          string   `xml:",cdata"`
+	XMLName xml.Name `xml:"http://github.com/dmacvicar/terraform-provider-libvirt/ user_data"`
+	Xml     string   `xml:",cdata"`
 }
 
 type defOs struct {

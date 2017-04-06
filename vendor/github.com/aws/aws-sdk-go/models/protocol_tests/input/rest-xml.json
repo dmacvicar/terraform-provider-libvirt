@@ -723,56 +723,6 @@
     ]
   },
   {
-    "description": "Querystring list of strings",
-    "metadata": {
-      "protocol": "rest-xml",
-      "apiVersion": "2014-01-01"
-    },
-    "shapes": {
-      "InputShape": {
-        "type": "structure",
-        "members": {
-          "Items": {
-            "shape": "StringList",
-            "location": "querystring",
-            "locationName": "item"
-          }
-        }
-      },
-      "StringList": {
-        "type": "list",
-        "member": {
-          "shape": "String"
-        }
-      },
-      "String": {
-        "type": "string"
-      }
-    },
-    "cases": [
-      {
-        "given": {
-          "http": {
-            "method": "GET",
-            "requestUri": "/path"
-          },
-          "input": {
-            "shape": "InputShape"
-          },
-          "name": "OperationName"
-        },
-        "params": {
-          "Items": ["value1", "value2"]
-        },
-        "serialized": {
-          "body": "",
-          "uri": "/path?item=value1&item=value2",
-          "headers": {}
-        }
-      }
-    ]
-  },
-  {
     "description": "String to string maps in querystring",
     "metadata": {
       "protocol": "rest-xml",
@@ -898,70 +848,7 @@
       }
     ]
   },
-  {
-    "description": "Boolean in querystring",
-    "metadata": {
-      "protocol": "rest-xml",
-      "apiVersion": "2014-01-01"
-    },
-    "shapes": {
-      "InputShape": {
-        "type": "structure",
-        "members": {
-          "BoolQuery": {
-            "shape": "BoolType",
-            "location": "querystring",
-            "locationName": "bool-query"
-          }
-        }
-      },
-      "BoolType": {
-        "type": "boolean"
-      }
-    },
-    "cases": [
-      {
-        "given": {
-          "http": {
-            "method": "GET",
-            "requestUri": "/path"
-          },
-          "input": {
-            "shape": "InputShape"
-          },
-          "name": "OperationName"
-        },
-        "params": {
-          "BoolQuery": true
-        },
-        "serialized": {
-          "body": "",
-          "uri": "/path?bool-query=true",
-          "headers": {}
-        }
-      },
-      {
-        "given": {
-          "http": {
-            "method": "GET",
-            "requestUri": "/path"
-          },
-          "input": {
-            "shape": "InputShape"
-          },
-          "name": "OperationName"
-        },
-        "params": {
-          "BoolQuery": false
-        },
-        "serialized": {
-          "body": "",
-          "uri": "/path?bool-query=false",
-          "headers": {}
-        }
-      }
-    ]
-  },
+
   {
     "description": "String payload",
     "metadata": {
@@ -975,8 +862,7 @@
           "foo": {
             "shape": "FooShape"
           }
-        },
-        "payload": "foo"
+        }
       },
       "FooShape": {
         "type": "string"
@@ -990,7 +876,8 @@
             "requestUri": "/"
           },
           "input": {
-            "shape": "InputShape"
+            "shape": "InputShape",
+            "payload": "foo"
           },
           "name": "OperationName"
         },
@@ -1018,8 +905,7 @@
           "foo": {
             "shape": "FooShape"
           }
-        },
-        "payload": "foo"
+        }
       },
       "FooShape": {
         "type": "blob"
@@ -1033,7 +919,8 @@
             "requestUri": "/"
           },
           "input": {
-            "shape": "InputShape"
+            "shape": "InputShape",
+            "payload": "foo"
           },
           "name": "OperationName"
         },
@@ -1053,7 +940,8 @@
             "requestUri": "/"
           },
           "input": {
-            "shape": "InputShape"
+            "shape": "InputShape",
+            "payload": "foo"
           },
           "name": "OperationName"
         },
@@ -1080,8 +968,7 @@
           "foo": {
             "shape": "FooShape"
           }
-        },
-        "payload": "foo"
+        }
       },
       "FooShape": {
         "locationName": "foo",
@@ -1104,7 +991,8 @@
             "requestUri": "/"
           },
           "input": {
-            "shape": "InputShape"
+            "shape": "InputShape",
+            "payload": "foo"
           },
           "name": "OperationName"
         },
@@ -1126,7 +1014,8 @@
             "requestUri": "/"
           },
           "input": {
-            "shape": "InputShape"
+            "shape": "InputShape",
+            "payload": "foo"
           },
           "name": "OperationName"
         },
@@ -1144,7 +1033,8 @@
             "requestUri": "/"
           },
           "input": {
-            "shape": "InputShape"
+            "shape": "InputShape",
+            "payload": "foo"
           },
           "name": "OperationName"
         },
@@ -1164,7 +1054,8 @@
             "requestUri": "/"
           },
           "input": {
-            "shape": "InputShape"
+            "shape": "InputShape",
+            "payload": "foo"
           },
           "name": "OperationName"
         },
@@ -1192,8 +1083,7 @@
           "Grant": {
             "shape": "Grant"
           }
-        },
-        "payload": "Grant"
+        }
       },
       "Grant": {
         "type": "structure",
@@ -1236,7 +1126,8 @@
             "requestUri": "/"
           },
           "input": {
-            "shape": "InputShape"
+            "shape": "InputShape",
+            "payload": "Grant"
           },
           "name": "OperationName"
         },
@@ -1643,7 +1534,7 @@
         "members": {
           "Token": {
             "shape": "StringType",
-              "idempotencyToken": true
+			"idempotencyToken": true
           }
         }
       },
@@ -1669,7 +1560,7 @@
         "serialized": {
           "uri": "/path",
           "headers": {},
-          "body": "<InputShape><Token>abc123</Token></InputShape>"
+          "body": "<Token>abc123</Token>"
         }
       },
       {
@@ -1688,7 +1579,7 @@
         "serialized": {
           "uri": "/path",
           "headers": {},
-          "body": "<InputShape><Token>00000000-0000-4000-8000-000000000000</Token></InputShape>"
+          "body": "<Token>00000000-0000-4000-8000-000000000000</Token>"
         }
       }
     ]

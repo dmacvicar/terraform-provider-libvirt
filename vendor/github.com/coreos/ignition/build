@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -eu
+
+NAME="ignition"
+ORG_PATH="github.com/coreos"
+REPO_PATH="${ORG_PATH}/${NAME}"
+VERSION=$(git describe --dirty)
+GLDFLAGS="-X github.com/coreos/ignition/internal/version.Raw=${VERSION}"
+
+if [ ! -h gopath/src/${REPO_PATH} ]; then
+	mkdir -p gopath/src/${ORG_PATH}
+	ln -s ../../../.. gopath/src/${REPO_PATH} || exit 255
+fi
+
+eval $(go env)
+
+export GOBIN=${PWD}/bin/${GOARCH}
+export GOPATH=${PWD}/gopath
+export CGO_ENABLED=1
+
+echo "Building ${NAME}..."
+go build -ldflags "${GLDFLAGS}" -o ${GOBIN}/${NAME} ${REPO_PATH}/internal

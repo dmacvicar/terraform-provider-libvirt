@@ -1,56 +1,47 @@
-// +build codegen
-
-// Command gen-endpoints parses a JSON description of the AWS endpoint
+// Command aws-gen-goendpoints parses a JSON description of the AWS endpoint
 // discovery logic and generates a Go file which returns an endpoint.
 //
 //     aws-gen-goendpoints apis/_endpoints.json aws/endpoints_map.go
 package main
 
 import (
-	"flag"
-	"fmt"
+	"encoding/json"
 	"os"
 
-	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/aws/aws-sdk-go/private/model"
 )
 
 // Generates the endpoints from json description
 //
-// Args:
-//  -model The definition file to use
-//  -out The output file to generate
+// CLI Args:
+//  [0] This file's execution path
+//  [1] The definition file to use
+//  [2] The output file to generate
 func main() {
-	var modelName, outName string
-	flag.StringVar(&modelName, "model", "", "Endpoints definition model")
-	flag.StringVar(&outName, "out", "", "File to write generated endpoints to.")
-	flag.Parse()
-
-	if len(modelName) == 0 || len(outName) == 0 {
-		exitErrorf("model and out both required.")
-	}
-
-	modelFile, err := os.Open(modelName)
+	in, err := os.Open(os.Args[1])
 	if err != nil {
-		exitErrorf("failed to open model definition, %v.", err)
+		panic(err)
 	}
-	defer modelFile.Close()
+	defer in.Close()
 
-	outFile, err := os.Create(outName)
-	if err != nil {
-		exitErrorf("failed to open out file, %v.", err)
-	}
-	defer func() {
-		if err := outFile.Close(); err != nil {
-			exitErrorf("failed to successfully write %q file, %v", outName, err)
+	var endpoints struct {
+		Version   int
+		Endpoints map[string]struct {
+			Endpoint      string
+			SigningRegion string
 		}
-	}()
-
-	if err := endpoints.CodeGenModel(modelFile, outFile); err != nil {
-		exitErrorf("failed to codegen model, %v", err)
 	}
-}
+	if err = json.NewDecoder(in).Decode(&endpoints); err != nil {
+		panic(err)
+	}
 
-func exitErrorf(msg string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, msg+"\n", args...)
-	os.Exit(1)
+	out, err := os.Create(os.Args[2])
+	if err != nil {
+		panic(err)
+	}
+	defer out.Close()
+
+	if err := model.GenerateEndpoints(endpoints, out); err != nil {
+		panic(err)
+	}
 }

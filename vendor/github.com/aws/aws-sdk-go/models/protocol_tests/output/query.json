@@ -757,7 +757,6 @@
       {
         "given": {
           "output": {
-            "resultWrapper": "OperationNameResult",
             "shape": "OutputShape"
           },
           "name": "OperationName"
@@ -768,7 +767,7 @@
         "response": {
           "status_code": 200,
           "headers": {},
-          "body": "<OperationNameResponse><OperationNameResult><Foo/></OperationNameResult><ResponseMetadata><RequestId>requestid</RequestId></ResponseMetadata></OperationNameResponse>"
+          "body": "<OperationNameResponse><Foo/><RequestId>requestid</RequestId></OperationNameResponse>"
         }
       }
     ]

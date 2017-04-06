@@ -12,7 +12,6 @@ func init() {
 	spew.Config.Indent = "\t"
 }
 
-
 func TestVolumeUnmarshal(t *testing.T) {
 	xmlDesc := `
 	<volume type='file'>

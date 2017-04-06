@@ -8,7 +8,6 @@
     "serviceAbbreviation":"IAM",
     "serviceFullName":"AWS Identity and Access Management",
     "signatureVersion":"v4",
-    "uid":"iam-2010-05-08",
     "xmlNamespace":"https://iam.amazonaws.com/doc/2010-05-08/"
   },
   "operations":{
@@ -37,7 +36,6 @@
         {"shape":"NoSuchEntityException"},
         {"shape":"EntityAlreadyExistsException"},
         {"shape":"LimitExceededException"},
-        {"shape":"UnmodifiableEntityException"},
         {"shape":"ServiceFailureException"}
       ]
     },
@@ -79,7 +77,6 @@
         {"shape":"NoSuchEntityException"},
         {"shape":"LimitExceededException"},
         {"shape":"InvalidInputException"},
-        {"shape":"UnmodifiableEntityException"},
         {"shape":"ServiceFailureException"}
       ]
     },
@@ -266,7 +263,6 @@
       },
       "errors":[
         {"shape":"LimitExceededException"},
-        {"shape":"InvalidInputException"},
         {"shape":"EntityAlreadyExistsException"},
         {"shape":"MalformedPolicyDocumentException"},
         {"shape":"ServiceFailureException"}
@@ -288,41 +284,6 @@
         {"shape":"EntityAlreadyExistsException"},
         {"shape":"LimitExceededException"},
         {"shape":"ServiceFailureException"}
-      ]
-    },
-    "CreateServiceLinkedRole":{
-      "name":"CreateServiceLinkedRole",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"CreateServiceLinkedRoleRequest"},
-      "output":{
-        "shape":"CreateServiceLinkedRoleResponse",
-        "resultWrapper":"CreateServiceLinkedRoleResult"
-      },
-      "errors":[
-        {"shape":"InvalidInputException"},
-        {"shape":"LimitExceededException"},
-        {"shape":"NoSuchEntityException"},
-        {"shape":"ServiceFailureException"}
-      ]
-    },
-    "CreateServiceSpecificCredential":{
-      "name":"CreateServiceSpecificCredential",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"CreateServiceSpecificCredentialRequest"},
-      "output":{
-        "shape":"CreateServiceSpecificCredentialResponse",
-        "resultWrapper":"CreateServiceSpecificCredentialResult"
-      },
-      "errors":[
-        {"shape":"LimitExceededException"},
-        {"shape":"NoSuchEntityException"},
-        {"shape":"ServiceNotSupportedException"}
       ]
     },
     "CreateUser":{
@@ -521,7 +482,6 @@
         {"shape":"NoSuchEntityException"},
         {"shape":"DeleteConflictException"},
         {"shape":"LimitExceededException"},
-        {"shape":"UnmodifiableEntityException"},
         {"shape":"ServiceFailureException"}
       ]
     },
@@ -535,7 +495,6 @@
       "errors":[
         {"shape":"NoSuchEntityException"},
         {"shape":"LimitExceededException"},
-        {"shape":"UnmodifiableEntityException"},
         {"shape":"ServiceFailureException"}
       ]
     },
@@ -576,17 +535,6 @@
         {"shape":"DeleteConflictException"},
         {"shape":"LimitExceededException"},
         {"shape":"ServiceFailureException"}
-      ]
-    },
-    "DeleteServiceSpecificCredential":{
-      "name":"DeleteServiceSpecificCredential",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"DeleteServiceSpecificCredentialRequest"},
-      "errors":[
-        {"shape":"NoSuchEntityException"}
       ]
     },
     "DeleteSigningCertificate":{
@@ -668,7 +616,6 @@
         {"shape":"NoSuchEntityException"},
         {"shape":"LimitExceededException"},
         {"shape":"InvalidInputException"},
-        {"shape":"UnmodifiableEntityException"},
         {"shape":"ServiceFailureException"}
       ]
     },
@@ -1368,22 +1315,6 @@
         {"shape":"ServiceFailureException"}
       ]
     },
-    "ListServiceSpecificCredentials":{
-      "name":"ListServiceSpecificCredentials",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"ListServiceSpecificCredentialsRequest"},
-      "output":{
-        "shape":"ListServiceSpecificCredentialsResponse",
-        "resultWrapper":"ListServiceSpecificCredentialsResult"
-      },
-      "errors":[
-        {"shape":"NoSuchEntityException"},
-        {"shape":"ServiceNotSupportedException"}
-      ]
-    },
     "ListSigningCertificates":{
       "name":"ListSigningCertificates",
       "http":{
@@ -1468,7 +1399,6 @@
         {"shape":"LimitExceededException"},
         {"shape":"MalformedPolicyDocumentException"},
         {"shape":"NoSuchEntityException"},
-        {"shape":"UnmodifiableEntityException"},
         {"shape":"ServiceFailureException"}
       ]
     },
@@ -1509,7 +1439,6 @@
       "errors":[
         {"shape":"NoSuchEntityException"},
         {"shape":"LimitExceededException"},
-        {"shape":"UnmodifiableEntityException"},
         {"shape":"ServiceFailureException"}
       ]
     },
@@ -1524,21 +1453,6 @@
         {"shape":"NoSuchEntityException"},
         {"shape":"LimitExceededException"},
         {"shape":"ServiceFailureException"}
-      ]
-    },
-    "ResetServiceSpecificCredential":{
-      "name":"ResetServiceSpecificCredential",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"ResetServiceSpecificCredentialRequest"},
-      "output":{
-        "shape":"ResetServiceSpecificCredentialResponse",
-        "resultWrapper":"ResetServiceSpecificCredentialResult"
-      },
-      "errors":[
-        {"shape":"NoSuchEntityException"}
       ]
     },
     "ResyncMFADevice":{
@@ -1640,7 +1554,6 @@
         {"shape":"NoSuchEntityException"},
         {"shape":"MalformedPolicyDocumentException"},
         {"shape":"LimitExceededException"},
-        {"shape":"UnmodifiableEntityException"},
         {"shape":"ServiceFailureException"}
       ]
     },
@@ -1686,23 +1599,6 @@
         {"shape":"ServiceFailureException"}
       ]
     },
-    "UpdateRoleDescription":{
-      "name":"UpdateRoleDescription",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"UpdateRoleDescriptionRequest"},
-      "output":{
-        "shape":"UpdateRoleDescriptionResponse",
-        "resultWrapper":"UpdateRoleDescriptionResult"
-      },
-      "errors":[
-        {"shape":"NoSuchEntityException"},
-        {"shape":"UnmodifiableEntityException"},
-        {"shape":"ServiceFailureException"}
-      ]
-    },
     "UpdateSAMLProvider":{
       "name":"UpdateSAMLProvider",
       "http":{
@@ -1744,17 +1640,6 @@
         {"shape":"EntityAlreadyExistsException"},
         {"shape":"LimitExceededException"},
         {"shape":"ServiceFailureException"}
-      ]
-    },
-    "UpdateServiceSpecificCredential":{
-      "name":"UpdateServiceSpecificCredential",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"UpdateServiceSpecificCredentialRequest"},
-      "errors":[
-        {"shape":"NoSuchEntityException"}
       ]
     },
     "UpdateSigningCertificate":{
@@ -2158,8 +2043,7 @@
       "members":{
         "Path":{"shape":"pathType"},
         "RoleName":{"shape":"roleNameType"},
-        "AssumeRolePolicyDocument":{"shape":"policyDocumentType"},
-        "Description":{"shape":"roleDescriptionType"}
+        "AssumeRolePolicyDocument":{"shape":"policyDocumentType"}
       }
     },
     "CreateRoleResponse":{
@@ -2184,38 +2068,6 @@
       "type":"structure",
       "members":{
         "SAMLProviderArn":{"shape":"arnType"}
-      }
-    },
-    "CreateServiceLinkedRoleRequest":{
-      "type":"structure",
-      "required":["AWSServiceName"],
-      "members":{
-        "AWSServiceName":{"shape":"groupNameType"},
-        "Description":{"shape":"roleDescriptionType"},
-        "CustomSuffix":{"shape":"customSuffixType"}
-      }
-    },
-    "CreateServiceLinkedRoleResponse":{
-      "type":"structure",
-      "members":{
-        "Role":{"shape":"Role"}
-      }
-    },
-    "CreateServiceSpecificCredentialRequest":{
-      "type":"structure",
-      "required":[
-        "UserName",
-        "ServiceName"
-      ],
-      "members":{
-        "UserName":{"shape":"userNameType"},
-        "ServiceName":{"shape":"serviceName"}
-      }
-    },
-    "CreateServiceSpecificCredentialResponse":{
-      "type":"structure",
-      "members":{
-        "ServiceSpecificCredential":{"shape":"ServiceSpecificCredential"}
       }
     },
     "CreateUserRequest":{
@@ -2421,14 +2273,6 @@
         "ServerCertificateName":{"shape":"serverCertificateNameType"}
       }
     },
-    "DeleteServiceSpecificCredentialRequest":{
-      "type":"structure",
-      "required":["ServiceSpecificCredentialId"],
-      "members":{
-        "UserName":{"shape":"userNameType"},
-        "ServiceSpecificCredentialId":{"shape":"serviceSpecificCredentialId"}
-      }
-    },
     "DeleteSigningCertificateRequest":{
       "type":"structure",
       "required":["CertificateId"],
@@ -2590,7 +2434,6 @@
         "EvalDecision":{"shape":"PolicyEvaluationDecisionType"},
         "MatchedStatements":{"shape":"StatementListType"},
         "MissingContextValues":{"shape":"ContextKeyNamesResultListType"},
-        "OrganizationsDecisionDetail":{"shape":"OrganizationsDecisionDetail"},
         "EvalDecisionDetails":{"shape":"EvalDecisionDetailsType"},
         "ResourceSpecificResults":{"shape":"ResourceSpecificResultListType"}
       }
@@ -3395,19 +3238,6 @@
         "Marker":{"shape":"markerType"}
       }
     },
-    "ListServiceSpecificCredentialsRequest":{
-      "type":"structure",
-      "members":{
-        "UserName":{"shape":"userNameType"},
-        "ServiceName":{"shape":"serviceName"}
-      }
-    },
-    "ListServiceSpecificCredentialsResponse":{
-      "type":"structure",
-      "members":{
-        "ServiceSpecificCredentials":{"shape":"ServiceSpecificCredentialsListType"}
-      }
-    },
     "ListSigningCertificatesRequest":{
       "type":"structure",
       "members":{
@@ -3573,12 +3403,6 @@
       "max":255,
       "min":1
     },
-    "OrganizationsDecisionDetail":{
-      "type":"structure",
-      "members":{
-        "AllowedByOrganizations":{"shape":"booleanType"}
-      }
-    },
     "PasswordPolicy":{
       "type":"structure",
       "members":{
@@ -3650,8 +3474,7 @@
     "PolicyGroup":{
       "type":"structure",
       "members":{
-        "GroupName":{"shape":"groupNameType"},
-        "GroupId":{"shape":"idType"}
+        "GroupName":{"shape":"groupNameType"}
       }
     },
     "PolicyGroupListType":{
@@ -3662,8 +3485,7 @@
     "PolicyRole":{
       "type":"structure",
       "members":{
-        "RoleName":{"shape":"roleNameType"},
-        "RoleId":{"shape":"idType"}
+        "RoleName":{"shape":"roleNameType"}
       }
     },
     "PolicyRoleListType":{
@@ -3685,8 +3507,7 @@
     "PolicyUser":{
       "type":"structure",
       "members":{
-        "UserName":{"shape":"userNameType"},
-        "UserId":{"shape":"idType"}
+        "UserName":{"shape":"userNameType"}
       }
     },
     "PolicyUserListType":{
@@ -3795,20 +3616,6 @@
         "COMPLETE"
       ]
     },
-    "ResetServiceSpecificCredentialRequest":{
-      "type":"structure",
-      "required":["ServiceSpecificCredentialId"],
-      "members":{
-        "UserName":{"shape":"userNameType"},
-        "ServiceSpecificCredentialId":{"shape":"serviceSpecificCredentialId"}
-      }
-    },
-    "ResetServiceSpecificCredentialResponse":{
-      "type":"structure",
-      "members":{
-        "ServiceSpecificCredential":{"shape":"ServiceSpecificCredential"}
-      }
-    },
     "ResourceHandlingOptionType":{
       "type":"string",
       "max":64,
@@ -3871,8 +3678,7 @@
         "RoleId":{"shape":"idType"},
         "Arn":{"shape":"arnType"},
         "CreateDate":{"shape":"dateType"},
-        "AssumeRolePolicyDocument":{"shape":"policyDocumentType"},
-        "Description":{"shape":"roleDescriptionType"}
+        "AssumeRolePolicyDocument":{"shape":"policyDocumentType"}
       }
     },
     "RoleDetail":{
@@ -3989,62 +3795,6 @@
       },
       "exception":true
     },
-    "ServiceNotSupportedException":{
-      "type":"structure",
-      "members":{
-        "message":{"shape":"serviceNotSupportedMessage"}
-      },
-      "error":{
-        "code":"NotSupportedService",
-        "httpStatusCode":404,
-        "senderFault":true
-      },
-      "exception":true
-    },
-    "ServiceSpecificCredential":{
-      "type":"structure",
-      "required":[
-        "CreateDate",
-        "ServiceName",
-        "ServiceUserName",
-        "ServicePassword",
-        "ServiceSpecificCredentialId",
-        "UserName",
-        "Status"
-      ],
-      "members":{
-        "CreateDate":{"shape":"dateType"},
-        "ServiceName":{"shape":"serviceName"},
-        "ServiceUserName":{"shape":"serviceUserName"},
-        "ServicePassword":{"shape":"servicePassword"},
-        "ServiceSpecificCredentialId":{"shape":"serviceSpecificCredentialId"},
-        "UserName":{"shape":"userNameType"},
-        "Status":{"shape":"statusType"}
-      }
-    },
-    "ServiceSpecificCredentialMetadata":{
-      "type":"structure",
-      "required":[
-        "UserName",
-        "Status",
-        "ServiceUserName",
-        "CreateDate",
-        "ServiceSpecificCredentialId",
-        "ServiceName"
-      ],
-      "members":{
-        "UserName":{"shape":"userNameType"},
-        "Status":{"shape":"statusType"},
-        "ServiceUserName":{"shape":"serviceUserName"},
-        "CreateDate":{"shape":"dateType"},
-        "ServiceSpecificCredentialId":{"shape":"serviceSpecificCredentialId"},
-        "ServiceName":{"shape":"serviceName"}
-      }
-    },
-    "ServiceSpecificCredentialsListType":{
-      "type":"list",
-      "member":{"shape":"ServiceSpecificCredentialMetadata"}
-    },
     "SetDefaultPolicyVersionRequest":{
       "type":"structure",
       "required":[
@@ -4136,18 +3886,6 @@
       "type":"list",
       "member":{"shape":"Statement"}
     },
-    "UnmodifiableEntityException":{
-      "type":"structure",
-      "members":{
-        "message":{"shape":"unmodifiableEntityMessage"}
-      },
-      "error":{
-        "code":"UnmodifiableEntity",
-        "httpStatusCode":400,
-        "senderFault":true
-      },
-      "exception":true
-    },
     "UnrecognizedPublicKeyEncodingException":{
       "type":"structure",
       "members":{
@@ -4226,23 +3964,6 @@
         "ThumbprintList":{"shape":"thumbprintListType"}
       }
     },
-    "UpdateRoleDescriptionRequest":{
-      "type":"structure",
-      "required":[
-        "RoleName",
-        "Description"
-      ],
-      "members":{
-        "RoleName":{"shape":"roleNameType"},
-        "Description":{"shape":"roleDescriptionType"}
-      }
-    },
-    "UpdateRoleDescriptionResponse":{
-      "type":"structure",
-      "members":{
-        "Role":{"shape":"Role"}
-      }
-    },
     "UpdateSAMLProviderRequest":{
       "type":"structure",
       "required":[
@@ -4280,18 +4001,6 @@
         "ServerCertificateName":{"shape":"serverCertificateNameType"},
         "NewPath":{"shape":"pathType"},
         "NewServerCertificateName":{"shape":"serverCertificateNameType"}
-      }
-    },
-    "UpdateServiceSpecificCredentialRequest":{
-      "type":"structure",
-      "required":[
-        "ServiceSpecificCredentialId",
-        "Status"
-      ],
-      "members":{
-        "UserName":{"shape":"userNameType"},
-        "ServiceSpecificCredentialId":{"shape":"serviceSpecificCredentialId"},
-        "Status":{"shape":"statusType"}
       }
     },
     "UpdateSigningCertificateRequest":{
@@ -4412,7 +4121,7 @@
     },
     "accessKeyIdType":{
       "type":"string",
-      "max":128,
+      "max":32,
       "min":16,
       "pattern":"[\\w]+"
     },
@@ -4497,12 +4206,6 @@
     "credentialReportExpiredExceptionMessage":{"type":"string"},
     "credentialReportNotPresentExceptionMessage":{"type":"string"},
     "credentialReportNotReadyExceptionMessage":{"type":"string"},
-    "customSuffixType":{
-      "type":"string",
-      "max":64,
-      "min":1,
-      "pattern":"[\\w+=,.@-]+"
-    },
     "dateType":{"type":"timestamp"},
     "deleteConflictMessage":{"type":"string"},
     "duplicateCertificateMessage":{"type":"string"},
@@ -4546,7 +4249,7 @@
     },
     "idType":{
       "type":"string",
-      "max":128,
+      "max":32,
       "min":16,
       "pattern":"[\\w]+"
     },
@@ -4696,11 +4399,6 @@
       "min":1,
       "pattern":"[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+"
     },
-    "roleDescriptionType":{
-      "type":"string",
-      "max":1000,
-      "pattern":"[\\p{L}\\p{M}\\p{Z}\\p{S}\\p{N}\\p{P}]*"
-    },
     "roleDetailListType":{
       "type":"list",
       "member":{"shape":"RoleDetail"}
@@ -4732,24 +4430,6 @@
       "pattern":"[\\w+=,.@-]+"
     },
     "serviceFailureExceptionMessage":{"type":"string"},
-    "serviceName":{"type":"string"},
-    "serviceNotSupportedMessage":{"type":"string"},
-    "servicePassword":{
-      "type":"string",
-      "sensitive":true
-    },
-    "serviceSpecificCredentialId":{
-      "type":"string",
-      "max":128,
-      "min":20,
-      "pattern":"[\\w]+"
-    },
-    "serviceUserName":{
-      "type":"string",
-      "max":200,
-      "min":17,
-      "pattern":"[\\w+=,.@-]+"
-    },
     "statusType":{
       "type":"string",
       "enum":[
@@ -4803,7 +4483,6 @@
       "max":40,
       "min":40
     },
-    "unmodifiableEntityMessage":{"type":"string"},
     "unrecognizedPublicKeyEncodingMessage":{"type":"string"},
     "userDetailListType":{
       "type":"list",

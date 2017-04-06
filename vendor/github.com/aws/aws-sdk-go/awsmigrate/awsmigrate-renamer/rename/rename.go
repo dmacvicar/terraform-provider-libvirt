@@ -1,4 +1,4 @@
-// +build go1.5,deprecated
+// +build go1.5
 
 package rename
 

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 func testAccCheckLibvirtVolumeDestroy(s *terraform.State) error {
@@ -28,7 +28,7 @@ func testAccCheckLibvirtVolumeDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckLibvirtVolumeExists(n string, volume *libvirt.VirStorageVol) resource.TestCheckFunc {
+func testAccCheckLibvirtVolumeExists(n string, volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
@@ -56,13 +56,13 @@ func testAccCheckLibvirtVolumeExists(n string, volume *libvirt.VirStorageVol) re
 			return fmt.Errorf("Resource ID and volume key does not match")
 		}
 
-		*volume = retrievedVol
+		*volume = *retrievedVol
 
 		return nil
 	}
 }
 
-func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.VirStorageVol) resource.TestCheckFunc {
+func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
@@ -72,10 +72,9 @@ func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.VirStorage
 		}
 
 		vol, err := virConn.LookupStorageVolByKey(key)
-		defer vol.Free()
 		if err == nil {
+			vol.Free()
 			return fmt.Errorf("Volume '%s' still exists", key)
-
 		}
 
 		return nil
@@ -83,7 +82,7 @@ func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.VirStorage
 }
 
 func TestAccLibvirtVolume_Basic(t *testing.T) {
-	var volume libvirt.VirStorageVol
+	var volume libvirt.StorageVol
 
 	const testAccCheckLibvirtVolumeConfig_basic = `
 		resource "libvirt_volume" "terraform-acceptance-test-1" {
@@ -111,7 +110,7 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 }
 
 func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
-	var volume libvirt.VirStorageVol
+	var volume libvirt.StorageVol
 
 	fws := fileWebServer{}
 	if err := fws.Start(); err != nil {
