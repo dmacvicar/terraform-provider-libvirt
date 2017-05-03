@@ -15,8 +15,6 @@ before_install:
   - sudo virsh pool-define pool.xml
   - sudo virsh pool-start default
   - go get github.com/mattn/goveralls
-  - go get -u github.com/govend/govend
-  - govend -v
 
 install:
   - go build .
