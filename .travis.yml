@@ -2,7 +2,7 @@ dist: trusty
 language: go
 
 go:
-  - 1.7
+  - 1.8
 
 before_install:
   - sudo add-apt-repository -y cloud-archive:mitaka
