@@ -8,4 +8,5 @@ type LibVirtDomain interface {
 
 type LibVirtNetwork interface {
 	GetXMLDesc(flags uint32) (string, error)
+	UpdateXMLDesc(xmldesc string, command, section int) error
 }

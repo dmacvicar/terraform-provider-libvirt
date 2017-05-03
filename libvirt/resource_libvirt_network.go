@@ -183,7 +183,9 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		}
 
 		// some network modes require a DHCP/DNS server
-		// set the addresses for DHCP
+		// set the IP address and prefix required for DHCP
+		// Note: DHCP services aren't enabled until a domain is
+		// created with a specific address or hostname
 		if addresses, ok := d.GetOk("addresses"); ok {
 			ipsPtrsLst := []*defNetworkIp{}
 			for _, addressI := range addresses.([]interface{}) {
@@ -204,7 +206,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 
 				// we should calculate the range served by DHCP. For example, for
 				// 192.168.121.0/24 we will serve 192.168.121.2 - 192.168.121.254
-				start, end := NetworkRange(ipNet)
+				start, _ := NetworkRange(ipNet)
 
 				// skip the .0, (for the network),
 				start[len(start)-1]++
@@ -214,18 +216,6 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 					Address: start.String(),
 					Prefix:  ones,
 					Family:  family,
-				}
-
-				start[len(start)-1]++ // then skip the .1
-				end[len(end)-1]--     // and skip the .255 (for broadcast)
-
-				dni.Dhcp = &defNetworkIpDhcp{
-					Ranges: []*defNetworkIpDhcpRange{
-						&defNetworkIpDhcpRange{
-							Start: start.String(),
-							End:   end.String(),
-						},
-					},
 				}
 				ipsPtrsLst = append(ipsPtrsLst, &dni)
 			}
@@ -347,20 +337,13 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("running", active)
 
 	addresses := []string{}
-	for _, address := range networkDef.Ips {
-		// we get the host interface IP (ie, 10.10.8.1) but we want the network CIDR (ie, 10.10.8.0/24)
-		// so we need some transformations...
-		addr := net.ParseIP(address.Address)
-		if addr == nil {
-			return fmt.Errorf("Error parsing IP '%s': %s", address, err)
+	for _, ip := range networkDef.Ips {
+		// extract the CIDR notation using the address and prefix
+		ipNet, err := GetIPNet(ip.Address, ip.Prefix)
+		if err != nil {
+			return err
 		}
-		bits := net.IPv6len * 8
-		if addr.To4() != nil {
-			bits = net.IPv4len * 8
-		}
-		mask := net.CIDRMask(address.Prefix, bits)
-		network := addr.Mask(mask)
-		addresses = append(addresses, fmt.Sprintf("%s/%d", network, address.Prefix))
+		addresses = append(addresses, ipNet.String())
 	}
 	if len(addresses) > 0 {
 		d.Set("addresses", addresses)
@@ -444,4 +427,33 @@ func waitForNetworkDestroyed(virConn *libvirt.VirConnection, uuid string) resour
 		defer network.Free()
 		return virConn, "ACTIVE", err
 	}
+}
+
+// enableDHCP enables DHCP services on a given libvirt network
+func enableDHCP(network LibVirtNetwork) error {
+	// mutex required due to concurrent access of the network definition
+	// (adding the same DHCP range twice causes an error while creating the libvirt domain)
+	dhcpMutex.Lock()
+	defer dhcpMutex.Unlock()
+	networkDef, err := newDefNetworkfromLibvirt(network)
+	if err != nil {
+		return err
+	}
+	for _, ip := range networkDef.Ips {
+		if ip.Dhcp == nil {
+			ipNet, err := GetIPNet(ip.Address, ip.Prefix)
+			if err != nil {
+				return err
+			}
+			start, end := NetworkRange(ipNet)
+
+			// skip the network, gateway, and broadcast addresses
+			start[len(start)-1] = start[len(start)-1] + 2
+			end[len(end)-1]--
+			if err := addDHCPRange(network, start.String(), end.String()); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

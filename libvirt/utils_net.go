@@ -56,3 +56,13 @@ func NetworkRange(network *net.IPNet) (net.IP, net.IP) {
 	}
 	return firstIP, lastIP
 }
+
+// GetIPNet takes an IP address and prefix length and returns a pointer to the corresponding IPNet
+func GetIPNet(address string, prefixLen int) (*net.IPNet, error) {
+	cidr := fmt.Sprintf("%s/%d", address, prefixLen)
+	_, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing CIDR '%s': %s", cidr, err)
+	}
+	return ipNet, nil
+}

@@ -133,7 +133,7 @@ func TestHasDHCPForwardSet(t *testing.T) {
 }
 
 func TestNetworkFromLibvirtError(t *testing.T) {
-	net := LibVirtNetworkMock{
+	net := &LibVirtNetworkMock{
 		GetXMLDescError: errors.New("boom"),
 	}
 
@@ -144,7 +144,7 @@ func TestNetworkFromLibvirtError(t *testing.T) {
 }
 
 func TestNetworkFromLibvirtWrongResponse(t *testing.T) {
-	net := LibVirtNetworkMock{
+	net := &LibVirtNetworkMock{
 		GetXMLDescReply: "wrong xml",
 	}
 
@@ -155,7 +155,7 @@ func TestNetworkFromLibvirtWrongResponse(t *testing.T) {
 }
 
 func TestNetworkFromLibvirt(t *testing.T) {
-	net := LibVirtNetworkMock{
+	net := &LibVirtNetworkMock{
 		GetXMLDescReply: `
 		<network>
 		  <name>default</name>

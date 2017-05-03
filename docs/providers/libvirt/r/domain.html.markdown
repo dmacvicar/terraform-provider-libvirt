@@ -191,8 +191,10 @@ The network will _NOT_ be managed by the Terraform/libvirt provider.
 * `network_id` - (Optional) The ID of a network resource to attach this interface to.
 The network will be under the control of the Terraform/libvirt provider.
 * `mac` - (Optional) The specific MAC address to use for this interface.
-* `addresses` - (Optional) An IP address for this domain in this network
+* `addresses` - (Optional) An IP address for this domain in this network. If specified,
+this will enable DHCP services on this network (when applicable).
 * `hostname` - (Optional) A hostname that will be assigned to this domain resource in this network.
+If specified, this will enable DHCP services on this network (when applicable).
 * `wait_for_lease`- (Optional) When creating the domain resource, wait until the network
 interface gets a DHCP lease from libvirt, so that the computed ip addresses will be available
 when the domain is up and the plan applied.
