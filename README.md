@@ -20,6 +20,21 @@ In the future, I may try to support older libvirt versions if I find a way to el
 [Copied from the Terraform documentation](https://www.terraform.io/docs/plugins/basics.html):
 > To install a plugin, put the binary somewhere on your filesystem, then configure Terraform to be able to find it. The configuration where plugins are defined is ~/.terraformrc for Unix-like systems and %APPDATA%/terraform.rc for Windows.
 
+This method should work on most systems:
+```
+# Find terraform is.
+# You may want to put all providers in the folder where terraform is.
+which terraform
+# But this example will use /usr/local/bin/ because this is where terraform should b$
+go get github.com/dmacvicar/terraform-provider-libvirt
+mv $GOPATH/bin/terraform-provider-libvirt /usr/local/bin/
+```
+Then add to your `.terraformrc`
+```
+providers {
+  "libvirt" = "/usr/local/bin/terraform-provider-libvirt"
+}
+```
 If you are using opensuse/SUSE distro, add the repo and download the package (check the repo according your distro)
 
 ```console
