@@ -260,21 +260,12 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		if err != nil {
 			return fmt.Errorf("Can't retrieve volume %s", volumeKey)
 		}
-		diskVolumeName, err := diskVolume.GetName()
+		diskVolumeFile, err := diskVolume.GetPath()
 		if err != nil {
-			return fmt.Errorf("Error retrieving volume name: %s", err)
-		}
-		diskPool, err := diskVolume.LookupPoolByVolume()
-		if err != nil {
-			return fmt.Errorf("Error retrieving pool for volume: %s", err)
-		}
-		diskPoolName, err := diskPool.GetName()
-		if err != nil {
-			return fmt.Errorf("Error retrieving pool name: %s", err)
+			return fmt.Errorf("Error retrieving volume file: %s", err)
 		}
 
-		disk.Source.Volume = diskVolumeName
-		disk.Source.Pool = diskPoolName
+		disk.Source.File = diskVolumeFile
 
 		disks = append(disks, disk)
 	}
@@ -664,17 +655,23 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	disks := make([]map[string]interface{}, 0)
 	for _, diskDef := range domainDef.Devices.Disks {
-		virPool, err := virConn.LookupStoragePoolByName(diskDef.Source.Pool)
-		if err != nil {
-			return fmt.Errorf("Error retrieving pool for disk: %s", err)
-		}
-		defer virPool.Free()
+		var virVol libvirt.VirStorageVol
+		if len(diskDef.Source.File) > 0 {
+			virVol, err = virConn.LookupStorageVolByPath(diskDef.Source.File)
+		} else {
+			virPool, err := virConn.LookupStoragePoolByName(diskDef.Source.Pool)
+			if err != nil {
+				return fmt.Errorf("Error retrieving pool for disk: %s", err)
+			}
+			defer virPool.Free()
 
-		virVol, err := virPool.LookupStorageVolByName(diskDef.Source.Volume)
+			virVol, err = virPool.LookupStorageVolByName(diskDef.Source.Volume)
+		}
+		defer virVol.Free()
+
 		if err != nil {
 			return fmt.Errorf("Error retrieving volume for disk: %s", err)
 		}
-		defer virVol.Free()
 
 		virVolKey, err := virVol.GetKey()
 		if err != nil {
@@ -964,21 +961,12 @@ func newDiskForCloudInit(virConn *libvirt.VirConnection, volumeKey string) (defD
 	if err != nil {
 		return disk, fmt.Errorf("Can't retrieve volume %s", volumeKey)
 	}
-	diskVolumeName, err := diskVolume.GetName()
+	diskVolumeFile, err := diskVolume.GetPath()
 	if err != nil {
-		return disk, fmt.Errorf("Error retrieving volume name: %s", err)
-	}
-	diskPool, err := diskVolume.LookupPoolByVolume()
-	if err != nil {
-		return disk, fmt.Errorf("Error retrieving pool for volume: %s", err)
-	}
-	diskPoolName, err := diskPool.GetName()
-	if err != nil {
-		return disk, fmt.Errorf("Error retrieving pool name: %s", err)
+		return disk, fmt.Errorf("Error retrieving volume file: %s", err)
 	}
 
-	disk.Source.Volume = diskVolumeName
-	disk.Source.Pool = diskPoolName
+	disk.Source.File = diskVolumeFile
 
 	return disk, nil
 }

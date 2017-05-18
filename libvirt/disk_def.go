@@ -17,8 +17,10 @@ type defDisk struct {
 		Type string `xml:"type,attr"`
 	} `xml:"format"`
 	Source struct {
-		Pool   string `xml:"pool,attr"`
-		Volume string `xml:"volume,attr"`
+		File   string `xml:"file,attr,omitempty"`
+		// retain Pool/Volume for compatibility with existing tfstate
+		Pool   string `xml:"pool,attr,omitempty"`
+		Volume string `xml:"volume,attr,omitempty"`
 	} `xml:"source"`
 	Target struct {
 		Dev string `xml:"dev,attr"`
@@ -32,7 +34,7 @@ type defDisk struct {
 
 func newDefDisk() defDisk {
 	disk := defDisk{}
-	disk.Type = "volume"
+	disk.Type = "file"
 	disk.Device = "disk"
 	disk.Format.Type = "qcow2"
 	disk.Target.Bus = "virtio"
@@ -45,7 +47,7 @@ func newDefDisk() defDisk {
 
 func newCDROM() defDisk {
 	disk := defDisk{}
-	disk.Type = "volume"
+	disk.Type = "file"
 	disk.Device = "cdrom"
 	disk.Target.Dev = "hda"
 	disk.Target.Bus = "ide"
