@@ -3,7 +3,6 @@ package libvirt
 import (
 	"encoding/xml"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -245,26 +244,9 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	// upload source if present
 	if _, ok := d.GetOk("source"); ok {
-		copier := func(src io.Reader) error {
-			stream, err := libvirt.NewVirStream(virConn, 0)
-			if err != nil {
-				return err
-			}
-			defer stream.Close()
-
-			volume.Upload(stream, 0, volumeDef.Capacity.Amount, 0)
-
-			n, err := io.Copy(stream, src)
-			if err != nil {
-				return fmt.Errorf("Error while downloading %s: %s", img.String(), err)
-			}
-			log.Printf("%d bytes uploaded\n", n)
-			return nil
-		}
-
-		err = img.Import(copier, volumeDef)
+		err = img.Import(newCopier(virConn, *volume, volumeDef.Capacity.Amount), volumeDef)
 		if err != nil {
-			return err
+			return fmt.Errorf("Error while uploading source %s: %s", img.String(), err)
 		}
 	}
 
