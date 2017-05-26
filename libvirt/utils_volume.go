@@ -76,8 +76,21 @@ func (i *httpImage) Size() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	if response.StatusCode != 200 {
+		return 0,
+			fmt.Errorf(
+				"Error accessing remote resource: %s - %s",
+				i.url.String(),
+				response.Status)
+	}
+
 	length, err := strconv.Atoi(response.Header.Get("Content-Length"))
 	if err != nil {
+		err = fmt.Errorf(
+			"Error while getting Content-Length of \"%s\": %s - got %s",
+			i.url.String(),
+			err,
+			response.Header.Get("Content-Length"))
 		return 0, err
 	}
 	return uint64(length), nil
