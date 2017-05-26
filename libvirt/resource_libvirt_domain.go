@@ -1,10 +1,9 @@
 package libvirt
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
 	"encoding/xml"
+	"encoding/hex"
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"net"
@@ -83,9 +82,8 @@ func resourceLibvirtDomain() *schema.Resource {
 			},
 			"coreos_ignition": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: false,
 				Optional: true,
-				ForceNew: false,
+				ForceNew: true,
 				Default:  "",
 			},
 			"disk": &schema.Schema{
@@ -153,38 +151,12 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
-		var file bool
-		file = true
-		ignitionString := ignition.(string)
-		if _, err := os.Stat(ignitionString); err != nil {
-			var js map[string]interface{}
-			if err_conf := json.Unmarshal([]byte(ignitionString), &js); err_conf != nil {
-				return fmt.Errorf("coreos_ignition parameter is neither a file "+
-					"nor a valid json object %s", ignition)
-			}
-			log.Printf("[DEBUG] about to set file to false")
-			file = false
-		}
-		log.Printf("[DEBUG] file %s", file)
 		var fw_cfg []defCmd
-		var ign_str string
-		if !file {
-			ignitionHash := hash(ignitionString)
-			tempFileName := fmt.Sprint("/tmp/", ignitionHash, ".ign")
-			tempFile, err := os.Create(tempFileName)
-			defer tempFile.Close()
-			if err != nil {
-				return fmt.Errorf("Cannot create temporary ignition file %s", tempFileName)
-			}
-			if _, err := tempFile.WriteString(ignitionString); err != nil {
-				return fmt.Errorf("Cannot write Ignition object to temporary "+
-					"ignition file %s", tempFileName)
-			}
-			domainDef.Metadata.TerraformLibvirt.IgnitionFile = tempFileName
-			ign_str = fmt.Sprintf("name=opt/com.coreos/config,file=%s", tempFileName)
-		} else if file {
-			ign_str = fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionString)
+		ignitionKey, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
+		if err != nil {
+			return err
 		}
+		ign_str := fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionKey)
 		fw_cfg = append(fw_cfg, defCmd{"-fw_cfg"})
 		fw_cfg = append(fw_cfg, defCmd{ign_str})
 		domainDef.CmdLine.Cmd = fw_cfg
@@ -826,14 +798,6 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 	err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
 	if err != nil {
 		return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
-	}
-
-	if ignitionFile := domainDef.Metadata.TerraformLibvirt.IgnitionFile; ignitionFile != "" {
-		log.Printf("[DEBUG] deleting ignition file")
-		err = os.Remove(ignitionFile)
-		if err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("Error removing Ignition file %s: %s", ignitionFile, err)
-		}
 	}
 
 	state, err := domain.GetState()

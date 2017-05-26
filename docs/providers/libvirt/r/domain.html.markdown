@@ -41,10 +41,9 @@ The following arguments are supported:
   cloud-init won't cause the domain to be recreated, however the change will
   have effect on the next reboot.
 
-The following extra argument is provided for CoreOS images:
-
-* `coreos_ignition` - (Optional) This can be set to the name of an existing ignition
-file or alternatively can be set to the rendered value of a Terraform ignition provider object.
+There is an optional `coreos_ignition` parameter:
+* `coreos_ignition` (Optional) The `libvirt_ignition` resource that is to be used by
+  the CoreOS domain.
 
 An example where a Terraform ignition provider object is used:
 ```
@@ -61,8 +60,13 @@ resource "ignition_config" "example" {
   ]
 }
 
+resource "libvirt_ignition" "ignition" {
+  name = "ignition"
+  content = "${ignition_config.example.rendered}"
+}
+
 resource "libvirt_domain" "my_machine" {
-  coreos_ignition = "${ignition_config.example.rendered}"
+  coreos_ignition = "${libvirt_ignition.ignition.id}"
   ...
 }
 ```
