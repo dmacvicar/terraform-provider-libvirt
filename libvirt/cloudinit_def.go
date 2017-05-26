@@ -108,14 +108,24 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.VirConnection) (string,
 	defer volume.Free()
 
 	// upload ISO file
-	stream, err := libvirt.NewVirStream(virConn, 0)
-	if err != nil {
-		return "", err
-	}
-	defer stream.Close()
+	copier := func(src io.Reader) error {
+		stream, err := libvirt.NewVirStream(virConn, 0)
+		if err != nil {
+			return err
+		}
+		defer stream.Close()
 
-	volume.Upload(stream, 0, uint64(volumeDef.Capacity.Amount), 0)
-	err = img.WriteToStream(stream)
+		volume.Upload(stream, 0, uint64(size), 0)
+
+		n, err := io.Copy(stream, src)
+		if err != nil {
+			return fmt.Errorf("Error while downloading %s: %s", img.String(), err)
+		}
+		log.Printf("%d bytes uploaded\n", n)
+		return nil
+	}
+
+	err = img.Import(copier, volumeDef)
 	if err != nil {
 		return "", err
 	}

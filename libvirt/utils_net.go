@@ -1,9 +1,14 @@
 package libvirt
 
 import (
-	"crypto/rand"
 	"fmt"
+	"io/ioutil"
+	"math/rand"
 	"net"
+	"net/http"
+	"os"
+	"path"
+	"time"
 )
 
 const (
@@ -31,6 +36,14 @@ func RandomMACAddress() (string, error) {
 		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
 }
 
+func RandomPort() int {
+	const minPort = 1024
+	const maxPort = 65535
+
+	rand.Seed(time.Now().Unix())
+	return rand.Intn(maxPort-minPort) + minPort
+}
+
 func FreeNetworkInterface(basename string) (string, error) {
 	for i := 0; i < maxIfaceNum; i++ {
 		ifaceName := fmt.Sprintf("%s%d", basename, i)
@@ -55,4 +68,54 @@ func NetworkRange(network *net.IPNet) (net.IP, net.IP) {
 		lastIP[i] = netIP[i] | ^network.Mask[i]
 	}
 	return firstIP, lastIP
+}
+
+// a HTTP server that serves files in a directory, used mostly for testing
+type fileWebServer struct {
+	Dir  string
+	Port int
+	Url  string
+
+	server *http.Server
+}
+
+func (fws *fileWebServer) Start() error {
+	dir, err := ioutil.TempDir(fws.Dir, "")
+	if err != nil {
+		return err
+	}
+
+	fws.Dir = dir
+	fws.Port = RandomPort()
+	fws.Url = fmt.Sprintf("http://127.0.0.1:%d", fws.Port)
+
+	handler := http.NewServeMux()
+	handler.Handle("/", http.FileServer(http.Dir(dir)))
+	fws.server = &http.Server{Addr: fmt.Sprintf(":%d", fws.Port), Handler: handler}
+	ln, err := net.Listen("tcp", fws.server.Addr)
+	if err != nil {
+		return err
+	}
+	go fws.server.Serve(ln)
+	return nil
+}
+
+// Adds a file (with some content) in the directory served by the fileWebServer
+func (fws *fileWebServer) AddFile(content []byte) (string, *os.File, error) {
+	tmpfile, err := ioutil.TempFile(fws.Dir, "file-")
+	if err != nil {
+		return "", nil, err
+	}
+
+	if len(content) > 0 {
+		if _, err := tmpfile.Write(content); err != nil {
+			return "", nil, err
+		}
+	}
+
+	return fmt.Sprintf("%s/%s", fws.Url, path.Base(tmpfile.Name())), tmpfile, nil
+}
+
+func (fws *fileWebServer) Stop() {
+	os.RemoveAll(fws.Dir)
 }
