@@ -1,0 +1,25 @@
+env:
+    - USER=travis
+
+sudo: false
+
+language: go
+
+go:
+  - 1.7.4
+  - 1.8
+
+install:
+  - make deps
+
+script:
+  - GOMAXPROCS=2 make ci
+
+branches:
+  only:
+    - master
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - go: 1.4.3
