@@ -19,6 +19,9 @@ sending data across the network, caching values locally (de-dup), and so on.
 
   * Optionally specify a custom hash function to optimize for speed, collision
     avoidance for your data set, etc.
+  
+  * Optionally hash the output of `.String()` on structs that implement fmt.Stringer,
+    allowing effective hashing of time.Time
 
 ## Installation
 

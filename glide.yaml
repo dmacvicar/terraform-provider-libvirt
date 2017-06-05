@@ -1,0 +1,19 @@
+package: github.com/dmacvicar/terraform-provider-libvirt
+import:
+- package: github.com/davecgh/go-spew
+  subpackages:
+  - spew
+- package: github.com/dmacvicar/libvirt-go
+- package: github.com/hashicorp/terraform
+  version: v0.9.4
+  subpackages:
+  - helper/resource
+  - helper/schema
+  - plugin
+  - terraform
+- package: github.com/hooklift/iso9660
+- package: github.com/imdario/mergo
+- package: github.com/mitchellh/packer
+  subpackages:
+  - common/uuid
+- package: gopkg.in/yaml.v2
