@@ -237,7 +237,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 		diskKey := fmt.Sprintf("disk.%d", i)
 		diskMap := d.Get(diskKey).(map[string]interface{})
-		volumeKey := diskMap["volume_id"].(string)
 		if _, ok := diskMap["scsi"].(string); ok {
 			disk.Target.Bus = "scsi"
 			scsiDisk = true
@@ -247,25 +246,31 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				disk.Wwn = randomWWN(10)
 			}
 		}
-		diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
-		if err != nil {
-			return fmt.Errorf("Can't retrieve volume %s", volumeKey)
-		}
-		diskVolumeName, err := diskVolume.GetName()
-		if err != nil {
-			return fmt.Errorf("Error retrieving volume name: %s", err)
-		}
-		diskPool, err := diskVolume.LookupPoolByVolume()
-		if err != nil {
-			return fmt.Errorf("Error retrieving pool for volume: %s", err)
-		}
-		diskPoolName, err := diskPool.GetName()
-		if err != nil {
-			return fmt.Errorf("Error retrieving pool name: %s", err)
-		}
+		if diskMap["source_pool"].(string) && diskMap["source_volume"].(string) {
+			disk.Source.Volume = diskMap["source_volume"].(string)
+			disk.Source.Pool = diskMap["source_pool"].(string)
+		} else {
+			volumeKey := diskMap["volume_id"].(string)
+			diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
+			if err != nil {
+				return fmt.Errorf("Can't retrieve volume %s", volumeKey)
+			}
+			diskVolumeName, err := diskVolume.GetName()
+			if err != nil {
+				return fmt.Errorf("Error retrieving volume name: %s", err)
+			}
+			diskPool, err := diskVolume.LookupPoolByVolume()
+			if err != nil {
+				return fmt.Errorf("Error retrieving pool for volume: %s", err)
+			}
+			diskPoolName, err := diskPool.GetName()
+			if err != nil {
+				return fmt.Errorf("Error retrieving pool name: %s", err)
+			}
 
-		disk.Source.Volume = diskVolumeName
-		disk.Source.Pool = diskPoolName
+			disk.Source.Volume = diskVolumeName
+			disk.Source.Pool = diskPoolName
+		}
 
 		disks = append(disks, disk)
 	}
