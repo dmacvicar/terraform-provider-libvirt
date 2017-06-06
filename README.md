@@ -64,7 +64,7 @@ $ terraform destroy
 
 ## Building from source
 
-This project uses [vndr](https://github.com/lk4d4/vndr) to vendor all its
+This project uses [glide](https://github.com/Masterminds/glide) to vendor all its
 dependencies.
 
 Run `go install` to build the binary. You will now find the binary at
