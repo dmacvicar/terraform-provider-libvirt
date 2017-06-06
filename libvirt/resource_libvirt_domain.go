@@ -366,9 +366,10 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				}
 			} else {
 				// no IPs provided: if the hostname has been provided, wait until we get an IP
-				if len(hostname) > 0 {
+				if _, ok := d.GetOk(prefix + ".hostname"); ok {
 					if !netIface.waitForLease {
-						return fmt.Errorf("Cannot map '%s': we are not waiting for lease and no IP has been provided", hostname)
+						return fmt.Errorf("Cannot map hostname '%s': we are not waiting for lease"+
+							" and no IP has been provided", hostname)
 					}
 					// the resource specifies a hostname but not an IP, so we must wait until we
 					// have a valid lease and then read the IP we have been assigned, so we can
