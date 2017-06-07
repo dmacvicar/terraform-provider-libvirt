@@ -1,9 +1,9 @@
 package libvirt
 
 import (
-	"encoding/xml"
-	"encoding/hex"
 	"crypto/sha256"
+	"encoding/hex"
+	"encoding/xml"
 	"fmt"
 	"log"
 	"net"
@@ -941,6 +941,8 @@ func getDomainState(domain libvirt.VirDomain) (string, error) {
 		stateStr = "pmsuspended"
 	case libvirt.VIR_DOMAIN_SHUTOFF:
 		stateStr = "shutoff"
+	default:
+		stateStr = fmt.Sprintf("unknown: %v", state[0])
 	}
 
 	return stateStr, nil
