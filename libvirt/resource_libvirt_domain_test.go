@@ -323,6 +323,34 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_Cpu(t *testing.T) {
+	var domain libvirt.VirDomain
+
+	var config = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+                    cpu {
+                            mode = "host-passthrough"
+                    }
+            }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "cpu.mode", "host-passthrough"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 	virtConn := testAccProvider.Meta().(*Client).libvirt
 

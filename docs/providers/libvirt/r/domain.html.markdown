@@ -40,6 +40,7 @@ The following arguments are supported:
   the domain. This is going to be attached as a CDROM ISO. Changing the
   cloud-init won't cause the domain to be recreated, however the change will
   have effect on the next reboot.
+* `cpu` - (Optional) Configures CPU mode.
 
 There is an optional `coreos_ignition` parameter:
 * `coreos_ignition` (Optional) The `libvirt_ignition` resource that is to be used by
@@ -284,6 +285,16 @@ that you can repeat `disk` blocks (see above)
 
 See [libvirt Domain XML Console element](https://libvirt.org/formatdomain.html#elementsConsole)
 for more information.
+
+The optional `cpu` block allows to configure CPU mode. Example:
+```
+resource "libvirt_domain" "my_machine" {
+  ...
+  cpu {
+    mode = "host-passthrough"
+  }
+}
+```
 
 ## Attributes Reference
 

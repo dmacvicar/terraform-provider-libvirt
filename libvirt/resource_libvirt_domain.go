@@ -125,6 +125,12 @@ func resourceLibvirtDomain() *schema.Resource {
 					Schema: consoleSchema(),
 				},
 			},
+			"cpu": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+				Required: false,
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -191,6 +197,13 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			if listen_type, ok := graphics_map["listen_type"]; ok {
 				domainDef.Devices.Graphics.Listen.Type = listen_type.(string)
 			}
+		}
+	}
+
+	if cpu, ok := d.GetOk("cpu"); ok {
+		cpu_map := cpu.(map[string]interface{})
+		if cpu_mode, ok := cpu_map["mode"]; ok {
+			domainDef.Cpu.Mode = cpu_mode.(string)
 		}
 	}
 
@@ -646,6 +659,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("memory", domainDef.Memory)
 	d.Set("firmware", domainDef.Os.Loader)
 	d.Set("nvram", domainDef.Os.NvRam)
+	d.Set("cpu", domainDef.Cpu)
 
 	running, err := isDomainRunning(domain)
 	if err != nil {
