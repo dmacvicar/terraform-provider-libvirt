@@ -330,7 +330,7 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
             resource "libvirt_domain" "acceptance-test-domain" {
                     name = "terraform-test"
                     cpu {
-                            mode = "host-passthrough"
+                            mode = "custom"
                     }
             }`)
 
@@ -344,7 +344,7 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "cpu.mode", "host-passthrough"),
+						"libvirt_domain.acceptance-test-domain", "cpu.mode", "custom"),
 				),
 			},
 		},
