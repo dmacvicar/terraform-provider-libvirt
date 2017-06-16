@@ -50,6 +50,9 @@ type defDomain struct {
 		XMLName xml.Name `xml:"qemu:commandline"`
 		Cmd     []defCmd `xml:"qemu:arg"`
 	}
+	Cpu struct {
+		Mode string `xml:"mode,attr,omitempty"`
+	} `xml:"cpu,omitempty"`
 }
 
 type defGraphics struct {
