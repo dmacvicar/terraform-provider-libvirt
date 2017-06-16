@@ -324,7 +324,7 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Cpu(t *testing.T) {
-	var domain libvirt.VirDomain
+	var domain libvirt.Domain
 
 	var config = fmt.Sprintf(`
             resource "libvirt_domain" "acceptance-test-domain" {
