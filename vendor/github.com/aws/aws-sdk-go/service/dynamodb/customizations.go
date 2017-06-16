@@ -26,27 +26,16 @@ func (d retryer) RetryRules(r *request.Request) time.Duration {
 
 func init() {
 	initClient = func(c *client.Client) {
-		if c.Config.Retryer == nil {
-			// Only override the retryer with a custom one if the config
-			// does not already contain a retryer
-			setCustomRetryer(c)
+		r := retryer{}
+		if c.Config.MaxRetries == nil || aws.IntValue(c.Config.MaxRetries) == aws.UseServiceDefaultRetries {
+			r.NumMaxRetries = 10
+		} else {
+			r.NumMaxRetries = *c.Config.MaxRetries
 		}
+		c.Retryer = r
 
 		c.Handlers.Build.PushBack(disableCompression)
 		c.Handlers.Unmarshal.PushFront(validateCRC32)
-	}
-}
-
-func setCustomRetryer(c *client.Client) {
-	maxRetries := aws.IntValue(c.Config.MaxRetries)
-	if c.Config.MaxRetries == nil || maxRetries == aws.UseServiceDefaultRetries {
-		maxRetries = 10
-	}
-
-	c.Retryer = retryer{
-		DefaultRetryer: client.DefaultRetryer{
-			NumMaxRetries: maxRetries,
-		},
 	}
 }
 

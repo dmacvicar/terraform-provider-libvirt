@@ -2,8 +2,8 @@ package libvirt
 
 import (
 	"fmt"
-	"log"
 	"github.com/hashicorp/terraform/helper/schema"
+	"log"
 )
 
 func resourceIgnition() *schema.Resource {

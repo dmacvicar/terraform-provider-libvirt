@@ -3,7 +3,6 @@ package simpledb
 import (
 	"encoding/xml"
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -23,7 +22,6 @@ type xmlErrorResponse struct {
 
 func unmarshalError(r *request.Request) {
 	defer r.HTTPResponse.Body.Close()
-	defer io.Copy(ioutil.Discard, r.HTTPResponse.Body)
 
 	if r.HTTPResponse.ContentLength == int64(0) {
 		// No body, use status code to generate an awserr.Error

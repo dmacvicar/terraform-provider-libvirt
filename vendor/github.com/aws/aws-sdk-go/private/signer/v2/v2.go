@@ -40,18 +40,12 @@ type signer struct {
 	signature    string
 }
 
-// SignRequestHandler is a named request handler the SDK will use to sign
-// service client request with using the V4 signature.
-var SignRequestHandler = request.NamedHandler{
-	Name: "v2.SignRequestHandler", Fn: SignSDKRequest,
-}
-
-// SignSDKRequest requests with signature version 2.
+// Sign requests with signature version 2.
 //
 // Will sign the requests with the service config's Credentials object
 // Signing is skipped if the credentials is the credentials.AnonymousCredentials
 // object.
-func SignSDKRequest(req *request.Request) {
+func Sign(req *request.Request) {
 	// If the request does not need to be signed ignore the signing of the
 	// request if the AnonymousCredentials object is used.
 	if req.Config.Credentials == credentials.AnonymousCredentials {

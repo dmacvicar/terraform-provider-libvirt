@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hooklift/iso9660"
 	"github.com/imdario/mergo"
+	libvirt "github.com/libvirt/libvirt-go"
 	"github.com/mitchellh/packer/common/uuid"
 	"gopkg.in/yaml.v2"
 )
@@ -50,7 +50,7 @@ func newCloudInitDef() defCloudInit {
 // Create a ISO file based on the contents of the CloudInit instance and
 // uploads it to the libVirt pool
 // Returns a string holding terraform's internal ID of this resource
-func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.VirConnection) (string, error) {
+func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.Connect) (string, error) {
 	iso, err := ci.createISO()
 	if err != nil {
 		return "", err
@@ -207,7 +207,7 @@ func (ci *defCloudInit) createFiles() (string, error) {
 
 // Creates a new defCloudInit object starting from a ISO volume handled by
 // libvirt
-func newCloudInitDefFromRemoteISO(virConn *libvirt.VirConnection, id string) (defCloudInit, error) {
+func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloudInit, error) {
 	ci := defCloudInit{}
 
 	key, err := getCloudInitVolumeKeyFromTerraformID(id)
@@ -237,7 +237,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.VirConnection, id string) (de
 		return ci, fmt.Errorf("Error retrieving pool name: %s", err)
 	}
 
-	file, err := downloadISO(virConn, volume)
+	file, err := downloadISO(virConn, *volume)
 	if file != nil {
 		defer os.Remove(file.Name())
 		defer file.Close()
@@ -295,7 +295,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.VirConnection, id string) (de
 // Downloads the ISO identified by `key` to a local tmp file.
 // Returns a pointer to the ISO file. Note well: you have to close this file
 // pointer when you are done.
-func downloadISO(virConn *libvirt.VirConnection, volume libvirt.VirStorageVol) (*os.File, error) {
+func downloadISO(virConn *libvirt.Connect, volume libvirt.StorageVol) (*os.File, error) {
 	// get Volume info (required to get size later)
 	info, err := volume.GetInfo()
 	if err != nil {
@@ -309,15 +309,17 @@ func downloadISO(virConn *libvirt.VirConnection, volume libvirt.VirStorageVol) (
 	}
 
 	// download ISO file
-	stream, err := libvirt.NewVirStream(virConn, 0)
+	stream, err := virConn.NewStream(0)
 	if err != nil {
 		return file, err
 	}
-	defer stream.Close()
+	defer stream.Finish()
 
-	volume.Download(stream, 0, info.GetCapacityInBytes(), 0)
+	volume.Download(stream, 0, info.Capacity, 0)
 
-	n, err := io.Copy(file, stream)
+	sio := NewStreamIO(*stream)
+
+	n, err := io.Copy(file, sio)
 	if err != nil {
 		return file, fmt.Errorf("Error while copying remote volume to local disk: %s", err)
 	}

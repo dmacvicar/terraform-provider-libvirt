@@ -15,7 +15,6 @@
 package ini
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
 	"testing"
@@ -57,13 +56,6 @@ func Test_Key(t *testing.T) {
 			keys := cfg.Section("features").Keys()
 			for i, k := range keys {
 				So(k.Name(), ShouldEqual, fmt.Sprintf("#%d", i+1))
-			}
-		})
-
-		Convey("Get parent-keys that are available to the child section", func() {
-			parentKeys := cfg.Section("package.sub").ParentKeys()
-			for _, k := range parentKeys {
-				So(k.Name(), ShouldEqual, "CLONE_URL")
 			}
 		})
 
@@ -142,27 +134,15 @@ func Test_Key(t *testing.T) {
 					So(sec.Key("BOOL_404").MustBool(true), ShouldBeTrue)
 					So(sec.Key("FLOAT64_404").MustFloat64(2.5), ShouldEqual, 2.5)
 					So(sec.Key("INT_404").MustInt(15), ShouldEqual, 15)
-					So(sec.Key("INT64_404").MustInt64(15), ShouldEqual, 15)
+					So(sec.Key("INT_404").MustInt64(15), ShouldEqual, 15)
 					So(sec.Key("UINT_404").MustUint(6), ShouldEqual, 6)
-					So(sec.Key("UINT64_404").MustUint64(6), ShouldEqual, 6)
+					So(sec.Key("UINT_404").MustUint64(6), ShouldEqual, 6)
 
 					t, err := time.Parse(time.RFC3339, "2014-01-01T20:17:05Z")
 					So(err, ShouldBeNil)
 					So(sec.Key("TIME_404").MustTime(t).String(), ShouldEqual, t.String())
 
 					So(sec.Key("DURATION_404").MustDuration(dur).Seconds(), ShouldEqual, dur.Seconds())
-
-					Convey("Must should set default as key value", func() {
-						So(sec.Key("STRING_404").String(), ShouldEqual, "404")
-						So(sec.Key("BOOL_404").String(), ShouldEqual, "true")
-						So(sec.Key("FLOAT64_404").String(), ShouldEqual, "2.5")
-						So(sec.Key("INT_404").String(), ShouldEqual, "15")
-						So(sec.Key("INT64_404").String(), ShouldEqual, "15")
-						So(sec.Key("UINT_404").String(), ShouldEqual, "6")
-						So(sec.Key("UINT64_404").String(), ShouldEqual, "6")
-						So(sec.Key("TIME_404").String(), ShouldEqual, "2014-01-01T20:17:05Z")
-						So(sec.Key("DURATION_404").String(), ShouldEqual, "2h45m0s")
-					})
 				})
 			})
 		})
@@ -437,41 +417,6 @@ key2= ; comment`
 		cfg, err := Load([]byte(_conf))
 		So(err, ShouldBeNil)
 		So(cfg.Section("").Key("key1").Value(), ShouldBeEmpty)
-	})
-}
-
-const _CONF_GIT_CONFIG = `
-[remote "origin"]
-        url = https://github.com/Antergone/test1.git
-        url = https://github.com/Antergone/test2.git
-`
-
-func Test_Key_Shadows(t *testing.T) {
-	Convey("Shadows keys", t, func() {
-		Convey("Disable shadows", func() {
-			cfg, err := Load([]byte(_CONF_GIT_CONFIG))
-			So(err, ShouldBeNil)
-			So(cfg.Section(`remote "origin"`).Key("url").String(), ShouldEqual, "https://github.com/Antergone/test2.git")
-		})
-
-		Convey("Enable shadows", func() {
-			cfg, err := ShadowLoad([]byte(_CONF_GIT_CONFIG))
-			So(err, ShouldBeNil)
-			So(cfg.Section(`remote "origin"`).Key("url").String(), ShouldEqual, "https://github.com/Antergone/test1.git")
-			So(strings.Join(cfg.Section(`remote "origin"`).Key("url").ValueWithShadows(), " "), ShouldEqual,
-				"https://github.com/Antergone/test1.git https://github.com/Antergone/test2.git")
-
-			Convey("Save with shadows", func() {
-				var buf bytes.Buffer
-				_, err := cfg.WriteTo(&buf)
-				So(err, ShouldBeNil)
-				So(buf.String(), ShouldEqual, `[remote "origin"]
-url = https://github.com/Antergone/test1.git
-url = https://github.com/Antergone/test2.git
-
-`)
-			})
-		})
 	})
 }
 

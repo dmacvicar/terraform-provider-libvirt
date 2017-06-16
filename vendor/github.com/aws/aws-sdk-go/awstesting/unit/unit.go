@@ -8,6 +8,6 @@ import (
 )
 
 // Session is a shared session for unit tests to use.
-var Session = session.Must(session.NewSession(aws.NewConfig().
+var Session = session.New(aws.NewConfig().
 	WithCredentials(credentials.NewStaticCredentials("AKID", "SECRET", "SESSION")).
-	WithRegion("mock-region")))
+	WithRegion("mock-region"))

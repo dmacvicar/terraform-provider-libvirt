@@ -3,12 +3,11 @@
   "metadata":{
     "apiVersion":"2012-11-05",
     "endpointPrefix":"sqs",
-    "protocol":"query",
     "serviceAbbreviation":"Amazon SQS",
     "serviceFullName":"Amazon Simple Queue Service",
     "signatureVersion":"v4",
-    "uid":"sqs-2012-11-05",
-    "xmlNamespace":"http://queue.amazonaws.com/doc/2012-11-05/"
+    "xmlNamespace":"http://queue.amazonaws.com/doc/2012-11-05/",
+    "protocol":"query"
   },
   "operations":{
     "AddPermission":{
@@ -19,7 +18,15 @@
       },
       "input":{"shape":"AddPermissionRequest"},
       "errors":[
-        {"shape":"OverLimit"}
+        {
+          "shape":"OverLimit",
+          "error":{
+            "code":"OverLimit",
+            "httpStatusCode":403,
+            "senderFault":true
+          },
+          "exception":true
+        }
       ]
     },
     "ChangeMessageVisibility":{
@@ -30,8 +37,19 @@
       },
       "input":{"shape":"ChangeMessageVisibilityRequest"},
       "errors":[
-        {"shape":"MessageNotInflight"},
-        {"shape":"ReceiptHandleIsInvalid"}
+        {
+          "shape":"MessageNotInflight",
+          "error":{
+            "code":"AWS.SimpleQueueService.MessageNotInflight",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"ReceiptHandleIsInvalid",
+          "exception":true
+        }
       ]
     },
     "ChangeMessageVisibilityBatch":{
@@ -46,10 +64,42 @@
         "resultWrapper":"ChangeMessageVisibilityBatchResult"
       },
       "errors":[
-        {"shape":"TooManyEntriesInBatchRequest"},
-        {"shape":"EmptyBatchRequest"},
-        {"shape":"BatchEntryIdsNotDistinct"},
-        {"shape":"InvalidBatchEntryId"}
+        {
+          "shape":"TooManyEntriesInBatchRequest",
+          "error":{
+            "code":"AWS.SimpleQueueService.TooManyEntriesInBatchRequest",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"EmptyBatchRequest",
+          "error":{
+            "code":"AWS.SimpleQueueService.EmptyBatchRequest",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"BatchEntryIdsNotDistinct",
+          "error":{
+            "code":"AWS.SimpleQueueService.BatchEntryIdsNotDistinct",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"InvalidBatchEntryId",
+          "error":{
+            "code":"AWS.SimpleQueueService.InvalidBatchEntryId",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        }
       ]
     },
     "CreateQueue":{
@@ -64,8 +114,24 @@
         "resultWrapper":"CreateQueueResult"
       },
       "errors":[
-        {"shape":"QueueDeletedRecently"},
-        {"shape":"QueueNameExists"}
+        {
+          "shape":"QueueDeletedRecently",
+          "error":{
+            "code":"AWS.SimpleQueueService.QueueDeletedRecently",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"QueueNameExists",
+          "error":{
+            "code":"QueueAlreadyExists",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        }
       ]
     },
     "DeleteMessage":{
@@ -76,8 +142,14 @@
       },
       "input":{"shape":"DeleteMessageRequest"},
       "errors":[
-        {"shape":"InvalidIdFormat"},
-        {"shape":"ReceiptHandleIsInvalid"}
+        {
+          "shape":"InvalidIdFormat",
+          "exception":true
+        },
+        {
+          "shape":"ReceiptHandleIsInvalid",
+          "exception":true
+        }
       ]
     },
     "DeleteMessageBatch":{
@@ -92,10 +164,42 @@
         "resultWrapper":"DeleteMessageBatchResult"
       },
       "errors":[
-        {"shape":"TooManyEntriesInBatchRequest"},
-        {"shape":"EmptyBatchRequest"},
-        {"shape":"BatchEntryIdsNotDistinct"},
-        {"shape":"InvalidBatchEntryId"}
+        {
+          "shape":"TooManyEntriesInBatchRequest",
+          "error":{
+            "code":"AWS.SimpleQueueService.TooManyEntriesInBatchRequest",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"EmptyBatchRequest",
+          "error":{
+            "code":"AWS.SimpleQueueService.EmptyBatchRequest",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"BatchEntryIdsNotDistinct",
+          "error":{
+            "code":"AWS.SimpleQueueService.BatchEntryIdsNotDistinct",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"InvalidBatchEntryId",
+          "error":{
+            "code":"AWS.SimpleQueueService.InvalidBatchEntryId",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        }
       ]
     },
     "DeleteQueue":{
@@ -118,7 +222,10 @@
         "resultWrapper":"GetQueueAttributesResult"
       },
       "errors":[
-        {"shape":"InvalidAttributeName"}
+        {
+          "shape":"InvalidAttributeName",
+          "exception":true
+        }
       ]
     },
     "GetQueueUrl":{
@@ -133,7 +240,15 @@
         "resultWrapper":"GetQueueUrlResult"
       },
       "errors":[
-        {"shape":"QueueDoesNotExist"}
+        {
+          "shape":"QueueDoesNotExist",
+          "error":{
+            "code":"AWS.SimpleQueueService.NonExistentQueue",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        }
       ]
     },
     "ListDeadLetterSourceQueues":{
@@ -148,7 +263,15 @@
         "resultWrapper":"ListDeadLetterSourceQueuesResult"
       },
       "errors":[
-        {"shape":"QueueDoesNotExist"}
+        {
+          "shape":"QueueDoesNotExist",
+          "error":{
+            "code":"AWS.SimpleQueueService.NonExistentQueue",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        }
       ]
     },
     "ListQueues":{
@@ -171,8 +294,24 @@
       },
       "input":{"shape":"PurgeQueueRequest"},
       "errors":[
-        {"shape":"QueueDoesNotExist"},
-        {"shape":"PurgeQueueInProgress"}
+        {
+          "shape":"QueueDoesNotExist",
+          "error":{
+            "code":"AWS.SimpleQueueService.NonExistentQueue",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"PurgeQueueInProgress",
+          "error":{
+            "code":"AWS.SimpleQueueService.PurgeQueueInProgress",
+            "httpStatusCode":403,
+            "senderFault":true
+          },
+          "exception":true
+        }
       ]
     },
     "ReceiveMessage":{
@@ -187,7 +326,15 @@
         "resultWrapper":"ReceiveMessageResult"
       },
       "errors":[
-        {"shape":"OverLimit"}
+        {
+          "shape":"OverLimit",
+          "error":{
+            "code":"OverLimit",
+            "httpStatusCode":403,
+            "senderFault":true
+          },
+          "exception":true
+        }
       ]
     },
     "RemovePermission":{
@@ -210,8 +357,19 @@
         "resultWrapper":"SendMessageResult"
       },
       "errors":[
-        {"shape":"InvalidMessageContents"},
-        {"shape":"UnsupportedOperation"}
+        {
+          "shape":"InvalidMessageContents",
+          "exception":true
+        },
+        {
+          "shape":"UnsupportedOperation",
+          "error":{
+            "code":"AWS.SimpleQueueService.UnsupportedOperation",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        }
       ]
     },
     "SendMessageBatch":{
@@ -226,12 +384,60 @@
         "resultWrapper":"SendMessageBatchResult"
       },
       "errors":[
-        {"shape":"TooManyEntriesInBatchRequest"},
-        {"shape":"EmptyBatchRequest"},
-        {"shape":"BatchEntryIdsNotDistinct"},
-        {"shape":"BatchRequestTooLong"},
-        {"shape":"InvalidBatchEntryId"},
-        {"shape":"UnsupportedOperation"}
+        {
+          "shape":"TooManyEntriesInBatchRequest",
+          "error":{
+            "code":"AWS.SimpleQueueService.TooManyEntriesInBatchRequest",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"EmptyBatchRequest",
+          "error":{
+            "code":"AWS.SimpleQueueService.EmptyBatchRequest",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"BatchEntryIdsNotDistinct",
+          "error":{
+            "code":"AWS.SimpleQueueService.BatchEntryIdsNotDistinct",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"BatchRequestTooLong",
+          "error":{
+            "code":"AWS.SimpleQueueService.BatchRequestTooLong",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"InvalidBatchEntryId",
+          "error":{
+            "code":"AWS.SimpleQueueService.InvalidBatchEntryId",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        },
+        {
+          "shape":"UnsupportedOperation",
+          "error":{
+            "code":"AWS.SimpleQueueService.UnsupportedOperation",
+            "httpStatusCode":400,
+            "senderFault":true
+          },
+          "exception":true
+        }
       ]
     },
     "SetQueueAttributes":{
@@ -242,7 +448,10 @@
       },
       "input":{"shape":"SetQueueAttributesRequest"},
       "errors":[
-        {"shape":"InvalidAttributeName"}
+        {
+          "shape":"InvalidAttributeName",
+          "exception":true
+        }
       ]
     }
   },
@@ -277,6 +486,19 @@
         "AWSAccountIds":{"shape":"AWSAccountIdList"},
         "Actions":{"shape":"ActionNameList"}
       }
+    },
+    "AttributeMap":{
+      "type":"map",
+      "key":{
+        "shape":"QueueAttributeName",
+        "locationName":"Name"
+      },
+      "value":{
+        "shape":"String",
+        "locationName":"Value"
+      },
+      "flattened":true,
+      "locationName":"Attribute"
     },
     "AttributeNameList":{
       "type":"list",
@@ -415,7 +637,7 @@
       "members":{
         "QueueName":{"shape":"String"},
         "Attributes":{
-          "shape":"QueueAttributeMap",
+          "shape":"AttributeMap",
           "locationName":"Attribute"
         }
       }
@@ -523,7 +745,7 @@
       "type":"structure",
       "members":{
         "Attributes":{
-          "shape":"QueueAttributeMap",
+          "shape":"AttributeMap",
           "locationName":"Attribute"
         }
       }
@@ -606,15 +828,27 @@
         "MD5OfBody":{"shape":"String"},
         "Body":{"shape":"String"},
         "Attributes":{
-          "shape":"MessageSystemAttributeMap",
+          "shape":"AttributeMap",
           "locationName":"Attribute"
         },
         "MD5OfMessageAttributes":{"shape":"String"},
         "MessageAttributes":{
-          "shape":"MessageBodyAttributeMap",
+          "shape":"MessageAttributeMap",
           "locationName":"MessageAttribute"
         }
       }
+    },
+    "MessageAttributeMap":{
+      "type":"map",
+      "key":{
+        "shape":"String",
+        "locationName":"Name"
+      },
+      "value":{
+        "shape":"MessageAttributeValue",
+        "locationName":"Value"
+      },
+      "flattened":true
     },
     "MessageAttributeName":{"type":"string"},
     "MessageAttributeNameList":{
@@ -644,18 +878,6 @@
         "DataType":{"shape":"String"}
       }
     },
-    "MessageBodyAttributeMap":{
-      "type":"map",
-      "key":{
-        "shape":"String",
-        "locationName":"Name"
-      },
-      "value":{
-        "shape":"MessageAttributeValue",
-        "locationName":"Value"
-      },
-      "flattened":true
-    },
     "MessageList":{
       "type":"list",
       "member":{
@@ -674,31 +896,6 @@
         "senderFault":true
       },
       "exception":true
-    },
-    "MessageSystemAttributeMap":{
-      "type":"map",
-      "key":{
-        "shape":"MessageSystemAttributeName",
-        "locationName":"Name"
-      },
-      "value":{
-        "shape":"String",
-        "locationName":"Value"
-      },
-      "flattened":true,
-      "locationName":"Attribute"
-    },
-    "MessageSystemAttributeName":{
-      "type":"string",
-      "enum":[
-        "SenderId",
-        "SentTimestamp",
-        "ApproximateReceiveCount",
-        "ApproximateFirstReceiveTimestamp",
-        "SequenceNumber",
-        "MessageDeduplicationId",
-        "MessageGroupId"
-      ]
     },
     "OverLimit":{
       "type":"structure",
@@ -729,23 +926,9 @@
         "QueueUrl":{"shape":"String"}
       }
     },
-    "QueueAttributeMap":{
-      "type":"map",
-      "key":{
-        "shape":"QueueAttributeName",
-        "locationName":"Name"
-      },
-      "value":{
-        "shape":"String",
-        "locationName":"Value"
-      },
-      "flattened":true,
-      "locationName":"Attribute"
-    },
     "QueueAttributeName":{
       "type":"string",
       "enum":[
-        "All",
         "Policy",
         "VisibilityTimeout",
         "MaximumMessageSize",
@@ -758,11 +941,7 @@
         "ApproximateNumberOfMessagesDelayed",
         "DelaySeconds",
         "ReceiveMessageWaitTimeSeconds",
-        "RedrivePolicy",
-        "FifoQueue",
-        "ContentBasedDeduplication",
-        "KmsMasterKeyId",
-        "KmsDataKeyReusePeriodSeconds"
+        "RedrivePolicy"
       ]
     },
     "QueueDeletedRecently":{
@@ -821,8 +1000,7 @@
         "MessageAttributeNames":{"shape":"MessageAttributeNameList"},
         "MaxNumberOfMessages":{"shape":"Integer"},
         "VisibilityTimeout":{"shape":"Integer"},
-        "WaitTimeSeconds":{"shape":"Integer"},
-        "ReceiveRequestAttemptId":{"shape":"String"}
+        "WaitTimeSeconds":{"shape":"Integer"}
       }
     },
     "ReceiveMessageResult":{
@@ -864,11 +1042,9 @@
         "MessageBody":{"shape":"String"},
         "DelaySeconds":{"shape":"Integer"},
         "MessageAttributes":{
-          "shape":"MessageBodyAttributeMap",
+          "shape":"MessageAttributeMap",
           "locationName":"MessageAttribute"
-        },
-        "MessageDeduplicationId":{"shape":"String"},
-        "MessageGroupId":{"shape":"String"}
+        }
       }
     },
     "SendMessageBatchRequestEntryList":{
@@ -901,8 +1077,7 @@
         "Id":{"shape":"String"},
         "MessageId":{"shape":"String"},
         "MD5OfMessageBody":{"shape":"String"},
-        "MD5OfMessageAttributes":{"shape":"String"},
-        "SequenceNumber":{"shape":"String"}
+        "MD5OfMessageAttributes":{"shape":"String"}
       }
     },
     "SendMessageBatchResultEntryList":{
@@ -924,11 +1099,9 @@
         "MessageBody":{"shape":"String"},
         "DelaySeconds":{"shape":"Integer"},
         "MessageAttributes":{
-          "shape":"MessageBodyAttributeMap",
+          "shape":"MessageAttributeMap",
           "locationName":"MessageAttribute"
-        },
-        "MessageDeduplicationId":{"shape":"String"},
-        "MessageGroupId":{"shape":"String"}
+        }
       }
     },
     "SendMessageResult":{
@@ -936,8 +1109,7 @@
       "members":{
         "MD5OfMessageBody":{"shape":"String"},
         "MD5OfMessageAttributes":{"shape":"String"},
-        "MessageId":{"shape":"String"},
-        "SequenceNumber":{"shape":"String"}
+        "MessageId":{"shape":"String"}
       }
     },
     "SetQueueAttributesRequest":{
@@ -949,7 +1121,7 @@
       "members":{
         "QueueUrl":{"shape":"String"},
         "Attributes":{
-          "shape":"QueueAttributeMap",
+          "shape":"AttributeMap",
           "locationName":"Attribute"
         }
       }

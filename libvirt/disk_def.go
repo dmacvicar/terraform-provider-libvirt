@@ -17,7 +17,7 @@ type defDisk struct {
 		Type string `xml:"type,attr"`
 	} `xml:"format"`
 	Source struct {
-		File   string `xml:"file,attr,omitempty"`
+		File string `xml:"file,attr,omitempty"`
 		// retain Pool/Volume for compatibility with existing tfstate
 		Pool   string `xml:"pool,attr,omitempty"`
 		Volume string `xml:"volume,attr,omitempty"`

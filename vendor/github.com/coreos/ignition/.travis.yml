@@ -1,0 +1,45 @@
+sudo: required
+dist: trusty
+
+language: go
+go_import_path: github.com/coreos/ignition
+
+go:
+  - 1.7
+  - 1.8
+
+env:
+  global:
+   - GO15VENDOREXPERIMENT=1
+  matrix:
+   - TARGET=amd64
+   - TARGET=arm64 GIMME_ARCH=arm64 GIMME_CGO_ENABLED=1
+
+addons:
+  apt:
+    packages:
+    # install cross compilers for cgo support.
+    - gcc-aarch64-linux-gnu
+    - libc6-dev-arm64-cross
+    - libblkid-dev
+
+install:
+  # since libblkid-dev:arm64 cannot be installed, spoof it
+  -     if [ "${TARGET}" == "arm64" ]; then
+                echo "void blkid_new_probe_from_filename(void) {}" >> stub.c;
+                echo "void blkid_do_probe(void) {}"                >> stub.c;
+                echo "void blkid_probe_has_value(void) {}"         >> stub.c;
+                echo "void blkid_probe_lookup_value(void) {}"      >> stub.c;
+                echo "void blkid_free_probe(void) {}"              >> stub.c;
+                aarch64-linux-gnu-gcc-4.8 -c -o stub.o stub.c;
+                aarch64-linux-gnu-gcc-ar-4.8 cq libblkid.a stub.o;
+        fi
+
+script:
+  -     if [ "${TARGET}" == "amd64" ]; then
+                GOARCH="${TARGET}" ./test;
+        elif [ "${TARGET}" == "arm64" ]; then
+                export CGO_LDFLAGS="-L ${PWD}";
+                GOARCH="${TARGET}" ./build;
+                file "bin/${TARGET}/ignition" | egrep 'aarch64';
+        fi

@@ -1,0 +1,8 @@
+# If you manipulate the contents of vendor/, amend this accordingly.
+# pkg                                                  version
+github.com/ajeddeloh/go-json                           73d058cf8437a1989030afe571eeab9f90eebbbd
+github.com/coreos/go-semver                            294930c1e79c64e7dbe360054274fdad492c8cf5
+github.com/vincent-petithory/dataurl                   9a301d65acbb728fcc3ace14f45f511a4cfeea9c
+go4.org/errorutil                                      03efcb870d84809319ea509714dd6d19a1498483
+github.com/coreos/go-systemd/unit                      7c9533367ef925dc1078d75e5b7141e10da2c4e8
+github.com/stretchr/testify                            4d4bfba8f1d1027c4fdbe371823030df51419987

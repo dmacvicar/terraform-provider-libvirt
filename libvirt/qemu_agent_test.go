@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 func TestGetDomainInterfacesViaQemuAgentInvalidResponse(t *testing.T) {
@@ -183,7 +183,7 @@ func TestGetDomainInterfacesViaQemuAgent(t *testing.T) {
 	for _, addr := range interfaces[0].Addrs {
 		var expected string
 
-		if addr.Type == libvirt.VIR_IP_ADDR_TYPE_IPV4 {
+		if addr.Type == int(libvirt.IP_ADDR_TYPE_IPV4) {
 			expected = ipv4Addr
 		} else {
 			expected = ipv6Addr

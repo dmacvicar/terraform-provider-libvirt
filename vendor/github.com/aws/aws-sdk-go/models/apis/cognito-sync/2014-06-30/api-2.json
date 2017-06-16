@@ -6,8 +6,7 @@
     "jsonVersion":"1.1",
     "serviceFullName":"Amazon Cognito Sync",
     "signatureVersion":"v4",
-    "protocol":"rest-json",
-    "uid":"cognito-sync-2014-06-30"
+    "protocol":"rest-json"
   },
   "operations":{
     "BulkPublish":{
@@ -1323,13 +1322,13 @@
     "IdentityId":{
       "type":"string",
       "min":1,
-      "max":55,
+      "max":50,
       "pattern":"[\\w-]+:[0-9a-f-]+"
     },
     "IdentityPoolId":{
       "type":"string",
       "min":1,
-      "max":55,
+      "max":50,
       "pattern":"[\\w-]+:[0-9a-f-]+"
     },
     "IdentityPoolUsage":{

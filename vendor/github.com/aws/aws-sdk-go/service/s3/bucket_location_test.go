@@ -34,57 +34,9 @@ func TestGetBucketLocation(t *testing.T) {
 		resp, err := s.GetBucketLocation(&s3.GetBucketLocationInput{Bucket: aws.String("bucket")})
 		assert.NoError(t, err)
 		if test.loc == "" {
-			if v := resp.LocationConstraint; v != nil {
-				t.Errorf("expect location constraint to be nil, got %s", *v)
-			}
+			assert.Nil(t, resp.LocationConstraint)
 		} else {
-			if e, a := test.loc, *resp.LocationConstraint; e != a {
-				t.Errorf("expect %s location constraint, got %v", e, a)
-			}
-		}
-	}
-}
-
-func TestNormalizeBucketLocation(t *testing.T) {
-	cases := []struct {
-		In, Out string
-	}{
-		{"", "us-east-1"},
-		{"EU", "eu-west-1"},
-		{"us-east-1", "us-east-1"},
-		{"something", "something"},
-	}
-
-	for i, c := range cases {
-		actual := s3.NormalizeBucketLocation(c.In)
-		if e, a := c.Out, actual; e != a {
-			t.Errorf("%d, expect %s bucket location, got %s", i, e, a)
-		}
-	}
-}
-
-func TestWithNormalizeBucketLocation(t *testing.T) {
-	req := &request.Request{}
-	req.ApplyOptions(s3.WithNormalizeBucketLocation)
-
-	cases := []struct {
-		In, Out string
-	}{
-		{"", "us-east-1"},
-		{"EU", "eu-west-1"},
-		{"us-east-1", "us-east-1"},
-		{"something", "something"},
-	}
-
-	for i, c := range cases {
-		req.Data = &s3.GetBucketLocationOutput{
-			LocationConstraint: aws.String(c.In),
-		}
-		req.Handlers.Unmarshal.Run(req)
-
-		v := req.Data.(*s3.GetBucketLocationOutput).LocationConstraint
-		if e, a := c.Out, aws.StringValue(v); e != a {
-			t.Errorf("%d, expect %s bucket location, got %s", i, e, a)
+			assert.Equal(t, test.loc, *resp.LocationConstraint)
 		}
 	}
 }
@@ -95,18 +47,11 @@ func TestPopulateLocationConstraint(t *testing.T) {
 		Bucket: aws.String("bucket"),
 	}
 	req, _ := s.CreateBucketRequest(in)
-	if err := req.Build(); err != nil {
-		t.Fatalf("expect no error, got %v", err)
-	}
-
+	err := req.Build()
+	assert.NoError(t, err)
 	v, _ := awsutil.ValuesAtPath(req.Params, "CreateBucketConfiguration.LocationConstraint")
-	if e, a := "mock-region", *(v[0].(*string)); e != a {
-		t.Errorf("expect %s location constraint, got %s", e, a)
-	}
-	if v := in.CreateBucketConfiguration; v != nil {
-		// don't modify original params
-		t.Errorf("expect create bucket Configuration to be nil, got %s", *v)
-	}
+	assert.Equal(t, "mock-region", *(v[0].(*string)))
+	assert.Nil(t, in.CreateBucketConfiguration) // don't modify original params
 }
 
 func TestNoPopulateLocationConstraintIfProvided(t *testing.T) {
@@ -115,13 +60,10 @@ func TestNoPopulateLocationConstraintIfProvided(t *testing.T) {
 		Bucket: aws.String("bucket"),
 		CreateBucketConfiguration: &s3.CreateBucketConfiguration{},
 	})
-	if err := req.Build(); err != nil {
-		t.Fatalf("expect no error, got %v", err)
-	}
+	err := req.Build()
+	assert.NoError(t, err)
 	v, _ := awsutil.ValuesAtPath(req.Params, "CreateBucketConfiguration.LocationConstraint")
-	if v := len(v); v != 0 {
-		t.Errorf("expect no values, got %d", v)
-	}
+	assert.Equal(t, 0, len(v))
 }
 
 func TestNoPopulateLocationConstraintIfClassic(t *testing.T) {
@@ -129,11 +71,8 @@ func TestNoPopulateLocationConstraintIfClassic(t *testing.T) {
 	req, _ := s.CreateBucketRequest(&s3.CreateBucketInput{
 		Bucket: aws.String("bucket"),
 	})
-	if err := req.Build(); err != nil {
-		t.Fatalf("expect no error, got %v", err)
-	}
+	err := req.Build()
+	assert.NoError(t, err)
 	v, _ := awsutil.ValuesAtPath(req.Params, "CreateBucketConfiguration.LocationConstraint")
-	if v := len(v); v != 0 {
-		t.Errorf("expect no values, got %d", v)
-	}
+	assert.Equal(t, 0, len(v))
 }

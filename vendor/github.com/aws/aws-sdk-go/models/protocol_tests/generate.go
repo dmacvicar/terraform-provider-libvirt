@@ -1,5 +1,3 @@
-// +build codegen
-
 package main
 
 import (
@@ -9,29 +7,21 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"text/template"
 
+	"github.com/aws/aws-sdk-go/awstesting"
 	"github.com/aws/aws-sdk-go/private/model/api"
 	"github.com/aws/aws-sdk-go/private/util"
-)
-
-// TestSuiteTypeInput input test
-// TestSuiteTypeInput output test
-const (
-	TestSuiteTypeInput = iota
-	TestSuiteTypeOutput
 )
 
 type testSuite struct {
 	*api.API
 	Description string
 	Cases       []testCase
-	Type        uint
 	title       string
 }
 
@@ -48,7 +38,6 @@ type testExpectation struct {
 	Body       string
 	URI        string
 	Headers    map[string]string
-	JSONValues map[string]string
 	StatusCode uint `json:"status_code"`
 }
 
@@ -64,8 +53,6 @@ var _ = util.Trim("")
 var _ = url.Values{}
 var _ = io.EOF
 var _ = aws.String
-var _ = fmt.Println
-var _ = reflect.Value{}
 
 func init() {
 	protocol.RandReader = &awstesting.ZeroReader{}
@@ -84,17 +71,15 @@ var extraImports = []string{
 	"bytes",
 	"encoding/json",
 	"encoding/xml",
-	"fmt",
 	"io",
 	"io/ioutil",
 	"net/http",
 	"testing",
 	"time",
-	"reflect",
 	"net/url",
 	"",
 	"github.com/aws/aws-sdk-go/awstesting",
-	"github.com/aws/aws-sdk-go/awstesting/unit",
+	"github.com/aws/aws-sdk-go/aws/session",
 	"github.com/aws/aws-sdk-go/private/protocol",
 	"github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil",
 	"github.com/aws/aws-sdk-go/private/util",
@@ -130,12 +115,10 @@ func (t *testSuite) TestSuite() string {
 
 var tplInputTestCase = template.Must(template.New("inputcase").Parse(`
 func Test{{ .OpName }}(t *testing.T) {
-	svc := New{{ .TestCase.TestSuite.API.StructName }}(unit.Session, &aws.Config{Endpoint: aws.String("https://test")})
-	{{ if ne .ParamsString "" }}input := {{ .ParamsString }}
-	{{ range $k, $v := .JSONValues -}}
-	input.{{ $k }} = {{ $v }} 
-	{{ end -}}
-	req, _ := svc.{{ .TestCase.Given.ExportedName }}Request(input){{ else }}req, _ := svc.{{ .TestCase.Given.ExportedName }}Request(nil){{ end }}
+	sess := session.New()
+	svc := New{{ .TestCase.TestSuite.API.StructName }}(sess, &aws.Config{Endpoint: aws.String("https://test")})
+	input := {{ .ParamsString }}
+	req, _ := svc.{{ .TestCase.Given.ExportedName }}Request(input)
 	r := req.HTTPRequest
 
 	// build request
@@ -157,7 +140,6 @@ func Test{{ .OpName }}(t *testing.T) {
 
 type tplInputTestCaseData struct {
 	TestCase             *testCase
-	JSONValues           map[string]string
 	OpName, ParamsString string
 }
 
@@ -205,7 +187,8 @@ func (t tplInputTestCaseData) BodyAssertions() string {
 
 var tplOutputTestCase = template.Must(template.New("outputcase").Parse(`
 func Test{{ .OpName }}(t *testing.T) {
-	svc := New{{ .TestCase.TestSuite.API.StructName }}(unit.Session, &aws.Config{Endpoint: aws.String("https://test")})
+	sess := session.New()
+	svc := New{{ .TestCase.TestSuite.API.StructName }}(sess, &aws.Config{Endpoint: aws.String("https://test")})
 
 	buf := bytes.NewReader([]byte({{ .Body }}))
 	req, out := svc.{{ .TestCase.Given.ExportedName }}Request(nil)
@@ -236,7 +219,7 @@ func (i *testCase) TestCase(idx int) string {
 
 	opName := i.TestSuite.API.StructName() + i.TestSuite.title + "Case" + strconv.Itoa(idx+1)
 
-	if i.TestSuite.Type == TestSuiteTypeInput { // input test
+	if i.Params != nil { // input test
 		// query test should sort body as form encoded values
 		switch i.TestSuite.API.Metadata.Protocol {
 		case "query", "ec2":
@@ -248,40 +231,21 @@ func (i *testCase) TestCase(idx int) string {
 			i.InputTest.Body = strings.Replace(i.InputTest.Body, " ", "", -1)
 		}
 
-		jsonValues := buildJSONValues(i.Given.InputRef.Shape)
-		var params interface{}
-		if m, ok := i.Params.(map[string]interface{}); ok {
-			paramsMap := map[string]interface{}{}
-			for k, v := range m {
-				if _, ok := jsonValues[k]; !ok {
-					paramsMap[k] = v
-				} else {
-					if i.InputTest.JSONValues == nil {
-						i.InputTest.JSONValues = map[string]string{}
-					}
-					i.InputTest.JSONValues[k] = serializeJSONValue(v.(map[string]interface{}))
-				}
-			}
-			params = paramsMap
-		} else {
-			params = i.Params
-		}
 		input := tplInputTestCaseData{
 			TestCase:     i,
 			OpName:       strings.ToUpper(opName[0:1]) + opName[1:],
-			ParamsString: api.ParamsStructFromJSON(params, i.Given.InputRef.Shape, false),
-			JSONValues:   i.InputTest.JSONValues,
+			ParamsString: awstesting.ParamsStructFromJSON(i.Params, i.Given.InputRef.Shape, false),
 		}
 
 		if err := tplInputTestCase.Execute(&buf, input); err != nil {
 			panic(err)
 		}
-	} else if i.TestSuite.Type == TestSuiteTypeOutput {
+	} else {
 		output := tplOutputTestCaseData{
 			TestCase:   i,
 			Body:       fmt.Sprintf("%q", i.OutputTest.Body),
 			OpName:     strings.ToUpper(opName[0:1]) + opName[1:],
-			Assertions: GenerateAssertions(i.Data, i.Given.OutputRef.Shape, "out"),
+			Assertions: awstesting.GenerateAssertions(i.Data, i.Given.OutputRef.Shape, "out"),
 		}
 
 		if err := tplOutputTestCase.Execute(&buf, output); err != nil {
@@ -290,43 +254,6 @@ func (i *testCase) TestCase(idx int) string {
 	}
 
 	return buf.String()
-}
-
-func serializeJSONValue(m map[string]interface{}) string {
-	str := "aws.JSONValue"
-	str += walkMap(m)
-	return str
-}
-
-func walkMap(m map[string]interface{}) string {
-	str := "{"
-	for k, v := range m {
-		str += fmt.Sprintf("%q:", k)
-		switch v.(type) {
-		case bool:
-			str += fmt.Sprintf("%b,\n", v.(bool))
-		case string:
-			str += fmt.Sprintf("%q,\n", v.(string))
-		case int:
-			str += fmt.Sprintf("%d,\n", v.(int))
-		case float64:
-			str += fmt.Sprintf("%f,\n", v.(float64))
-		case map[string]interface{}:
-			str += walkMap(v.(map[string]interface{}))
-		}
-	}
-	str += "}"
-	return str
-}
-
-func buildJSONValues(shape *api.Shape) map[string]struct{} {
-	keys := map[string]struct{}{}
-	for key, field := range shape.MemberRefs {
-		if field.JSONValue {
-			keys[key] = struct{}{}
-		}
-	}
-	return keys
 }
 
 // generateTestSuite generates a protocol test suite for a given configuration
@@ -363,7 +290,6 @@ func generateTestSuite(filename string) string {
 			suite.API.Operations[c.Given.ExportedName] = c.Given
 		}
 
-		suite.Type = getType(inout)
 		suite.API.NoInitMethods = true       // don't generate init methods
 		suite.API.NoStringerMethods = true   // don't generate stringer methods
 		suite.API.NoConstServiceNames = true // don't generate service names
@@ -403,80 +329,6 @@ func generateTestSuite(filename string) string {
 	}
 
 	return buf.String() + innerBuf.String()
-}
-
-// findMember searches the shape for the member with the matching key name.
-func findMember(shape *api.Shape, key string) string {
-	for actualKey := range shape.MemberRefs {
-		if strings.ToLower(key) == strings.ToLower(actualKey) {
-			return actualKey
-		}
-	}
-	return ""
-}
-
-// GenerateAssertions builds assertions for a shape based on its type.
-//
-// The shape's recursive values also will have assertions generated for them.
-func GenerateAssertions(out interface{}, shape *api.Shape, prefix string) string {
-	if shape == nil {
-		return ""
-	}
-	switch t := out.(type) {
-	case map[string]interface{}:
-		keys := util.SortedKeys(t)
-
-		code := ""
-		if shape.Type == "map" {
-			for _, k := range keys {
-				v := t[k]
-				s := shape.ValueRef.Shape
-				code += GenerateAssertions(v, s, prefix+"[\""+k+"\"]")
-			}
-		} else if shape.Type == "jsonvalue" {
-			code += fmt.Sprintf("reflect.DeepEqual(%s, map[string]interface{}%s)", prefix, walkMap(out.(map[string]interface{})))
-		} else {
-			for _, k := range keys {
-				v := t[k]
-				m := findMember(shape, k)
-				s := shape.MemberRefs[m].Shape
-				code += GenerateAssertions(v, s, prefix+"."+m+"")
-			}
-		}
-		return code
-	case []interface{}:
-		code := ""
-		for i, v := range t {
-			s := shape.MemberRef.Shape
-			code += GenerateAssertions(v, s, prefix+"["+strconv.Itoa(i)+"]")
-		}
-		return code
-	default:
-		switch shape.Type {
-		case "timestamp":
-			return fmt.Sprintf("assert.Equal(t, time.Unix(%#v, 0).UTC().String(), %s.String())\n", out, prefix)
-		case "blob":
-			return fmt.Sprintf("assert.Equal(t, %#v, string(%s))\n", out, prefix)
-		case "integer", "long":
-			return fmt.Sprintf("assert.Equal(t, int64(%#v), *%s)\n", out, prefix)
-		default:
-			if !reflect.ValueOf(out).IsValid() {
-				return fmt.Sprintf("assert.Nil(t, %s)\n", prefix)
-			}
-			return fmt.Sprintf("assert.Equal(t, %#v, *%s)\n", out, prefix)
-		}
-	}
-}
-
-func getType(t string) uint {
-	switch t {
-	case "Input":
-		return TestSuiteTypeInput
-	case "Output":
-		return TestSuiteTypeOutput
-	default:
-		panic("Invalid type for test suite")
-	}
 }
 
 func main() {

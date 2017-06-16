@@ -2,9 +2,8 @@ package iotdataplane_test
 
 import (
 	"fmt"
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/awstesting/unit"
@@ -26,6 +25,7 @@ func TestRequireEndpointIfRegionProvided(t *testing.T) {
 
 func TestRequireEndpointIfNoRegionProvided(t *testing.T) {
 	svc := iotdataplane.New(unit.Session, &aws.Config{
+		Region:                 aws.String(""),
 		DisableParamValidation: aws.Bool(true),
 	})
 	fmt.Println(svc.ClientInfo.SigningRegion)

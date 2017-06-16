@@ -1,5 +1,3 @@
-// +build codegen
-
 package api
 
 import (
@@ -10,35 +8,26 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+
+	"github.com/aws/aws-sdk-go/private/util"
 )
 
 // A ShapeRef defines the usage of a shape within the API.
 type ShapeRef struct {
-	API           *API   `json:"-"`
-	Shape         *Shape `json:"-"`
-	Documentation string
-	ShapeName     string `json:"shape"`
-	Location      string
-	LocationName  string
-	QueryName     string
-	Flattened     bool
-	Streaming     bool
-	XMLAttribute  bool
-	// Ignore, if set, will not be sent over the wire
-	Ignore           bool
+	API              *API   `json:"-"`
+	Shape            *Shape `json:"-"`
+	Documentation    string
+	ShapeName        string `json:"shape"`
+	Location         string
+	LocationName     string
+	QueryName        string
+	Flattened        bool
+	Streaming        bool
+	XMLAttribute     bool
 	XMLNamespace     XMLInfo
 	Payload          string
 	IdempotencyToken bool `json:"idempotencyToken"`
-	JSONValue        bool `json:"jsonvalue"`
 	Deprecated       bool `json:"deprecated"`
-
-	OrigShapeName string `json:"-"`
-}
-
-// ErrorInfo represents the error block of a shape's structure
-type ErrorInfo struct {
-	Code           string
-	HTTPStatusCode int
 }
 
 // A XMLInfo defines URL and prefix for Shapes when rendered as XML
@@ -68,62 +57,26 @@ type Shape struct {
 	LocationName     string
 	IdempotencyToken bool `json:"idempotencyToken"`
 	XMLNamespace     XMLInfo
-	Min              float64 // optional Minimum length (string, list) or value (number)
-	Max              float64 // optional Maximum length (string, list) or value (number)
+	Min              int // optional Minimum length (string, list) or value (number)
+	Max              int // optional Minimum length (string, list) or value (number)
 
 	refs       []*ShapeRef // References to this shape
 	resolvePkg string      // use this package in the goType() if present
-
-	OrigShapeName string `json:"-"`
 
 	// Defines if the shape is a placeholder and should not be used directly
 	Placeholder bool
 
 	Deprecated bool `json:"deprecated"`
-
-	Validations ShapeValidations
-
-	// Error information that is set if the shape is an error shape.
-	IsError   bool
-	ErrorInfo ErrorInfo `json:"error"`
-}
-
-// ErrorCodeName will return the error shape's name formated for
-// error code const.
-func (s *Shape) ErrorCodeName() string {
-	return "ErrCode" + s.ShapeName
-}
-
-// ErrorName will return the shape's name or error code if available based
-// on the API's protocol. This is the error code string returned by the service.
-func (s *Shape) ErrorName() string {
-	name := s.ShapeName
-	switch s.API.Metadata.Protocol {
-	case "query", "ec2query", "rest-xml":
-		if len(s.ErrorInfo.Code) > 0 {
-			name = s.ErrorInfo.Code
-		}
-	}
-
-	return name
-}
-
-// GoTags returns the struct tags for a shape.
-func (s *Shape) GoTags(root, required bool) string {
-	ref := &ShapeRef{ShapeName: s.ShapeName, API: s.API, Shape: s}
-	return ref.GoTags(root, required)
 }
 
 // Rename changes the name of the Shape to newName. Also updates
 // the associated API's reference to use newName.
 func (s *Shape) Rename(newName string) {
 	for _, r := range s.refs {
-		r.OrigShapeName = r.ShapeName
 		r.ShapeName = newName
 	}
 
 	delete(s.API.Shapes, s.ShapeName)
-	s.OrigShapeName = s.ShapeName
 	s.API.Shapes[newName] = s
 	s.ShapeName = newName
 }
@@ -143,64 +96,6 @@ func (s *Shape) MemberNames() []string {
 // <packageName>.<type> format. Package naming only applies to structures.
 func (s *Shape) GoTypeWithPkgName() string {
 	return goType(s, true)
-}
-
-// GenAccessors returns if the shape's reference should have setters generated.
-func (s *ShapeRef) UseIndirection() bool {
-	switch s.Shape.Type {
-	case "map", "list", "blob", "structure", "jsonvalue":
-		return false
-	}
-
-	if s.Streaming || s.Shape.Streaming {
-		return false
-	}
-
-	if s.JSONValue {
-		return false
-	}
-
-	return true
-}
-
-// GoStructValueType returns the Shape's Go type value instead of a pointer
-// for the type.
-func (s *Shape) GoStructValueType(name string, ref *ShapeRef) string {
-	v := s.GoStructType(name, ref)
-
-	if ref.UseIndirection() && v[0] == '*' {
-		return v[1:]
-	}
-
-	return v
-}
-
-// GoStructType returns the type of a struct field based on the API
-// model definition.
-func (s *Shape) GoStructType(name string, ref *ShapeRef) string {
-	if (ref.Streaming || ref.Shape.Streaming) && s.Payload == name {
-		rtype := "io.ReadSeeker"
-		if strings.HasSuffix(s.ShapeName, "Output") {
-			rtype = "io.ReadCloser"
-		}
-
-		s.API.imports["io"] = true
-		return rtype
-	}
-
-	if ref.JSONValue {
-		s.API.imports["github.com/aws/aws-sdk-go/aws"] = true
-		return "aws.JSONValue"
-	}
-
-	for _, v := range s.Validations {
-		// TODO move this to shape validation resolution
-		if (v.Ref.Shape.Type == "map" || v.Ref.Shape.Type == "list") && v.Type == ShapeValidationNested {
-			s.API.imports["fmt"] = true
-		}
-	}
-
-	return ref.GoType()
 }
 
 // GoType returns a shape's Go type
@@ -245,8 +140,6 @@ func goType(s *Shape, withPkgName bool) string {
 		return "*" + s.ShapeName
 	case "map":
 		return "map[string]" + s.ValueRef.GoType()
-	case "jsonvalue":
-		return "aws.JSONValue"
 	case "list":
 		return "[]" + s.MemberRef.GoType()
 	case "boolean":
@@ -302,7 +195,7 @@ func (s ShapeTag) String() string {
 type ShapeTags []ShapeTag
 
 // Join returns an ordered serialization of the shape tags with the provided
-// separator.
+// seperator.
 func (s ShapeTags) Join(sep string) string {
 	o := &bytes.Buffer{}
 	for i, t := range s {
@@ -315,7 +208,7 @@ func (s ShapeTags) Join(sep string) string {
 	return o.String()
 }
 
-// String is an alias for Join with the empty space separator.
+// String is an alias for Join with the empty space seperator.
 func (s ShapeTags) String() string {
 	return s.Join(" ")
 }
@@ -349,13 +242,12 @@ func (ref *ShapeRef) GoTags(toplevel bool, isRequired bool) string {
 		tags = append(tags, ShapeTag{"locationNameValue", ref.Shape.ValueRef.LocationName})
 	}
 	if ref.Shape.Min > 0 {
-		tags = append(tags, ShapeTag{"min", fmt.Sprintf("%v", ref.Shape.Min)})
+		tags = append(tags, ShapeTag{"min", fmt.Sprintf("%d", ref.Shape.Min)})
 	}
 
 	if ref.Deprecated || ref.Shape.Deprecated {
 		tags = append(tags, ShapeTag{"deprecated", "true"})
 	}
-
 	// All shapes have a type
 	tags = append(tags, ShapeTag{"type", ref.Shape.Type})
 
@@ -408,30 +300,20 @@ func (ref *ShapeRef) GoTags(toplevel bool, isRequired bool) string {
 		tags = append(tags, ShapeTag{"idempotencyToken", "true"})
 	}
 
-	if ref.Ignore {
-		tags = append(tags, ShapeTag{"ignore", "true"})
-	}
-
 	return fmt.Sprintf("`%s`", tags)
 }
 
 // Docstring returns the godocs formated documentation
 func (ref *ShapeRef) Docstring() string {
 	if ref.Documentation != "" {
-		return strings.Trim(ref.Documentation, "\n ")
+		return ref.Documentation
 	}
 	return ref.Shape.Docstring()
 }
 
 // Docstring returns the godocs formated documentation
 func (s *Shape) Docstring() string {
-	return strings.Trim(s.Documentation, "\n ")
-}
-
-// IndentedDocstring is the indented form of the doc string.
-func (ref *ShapeRef) IndentedDocstring() string {
-	doc := ref.Docstring()
-	return strings.Replace(doc, "// ", "//   ", -1)
+	return s.Documentation
 }
 
 var goCodeStringerTmpl = template.Must(template.New("goCodeStringerTmpl").Parse(`
@@ -445,11 +327,10 @@ func (s {{ .ShapeName }}) GoString() string {
 }
 `))
 
-// GoCodeStringers renders the Stringers for API input/output shapes
-func (s *Shape) GoCodeStringers() string {
+func (s *Shape) goCodeStringers() string {
 	w := bytes.Buffer{}
 	if err := goCodeStringerTmpl.Execute(&w, s); err != nil {
-		panic(fmt.Sprintln("Unexpected error executing GoCodeStringers template", err))
+		panic(fmt.Sprintln("Unexpected error executing goCodeStringers template", err))
 	}
 
 	return w.String()
@@ -480,131 +361,53 @@ func (s *Shape) EnumName(n int) string {
 	return enum
 }
 
-// NestedShape returns the shape pointer value for the shape which is nested
-// under the current shape. If the shape is not nested nil will be returned.
-//
-// strucutures, the current shape is returned
-// map: the value shape of the map is returned
-// list: the element shape of the list is returned
-func (s *Shape) NestedShape() *Shape {
-	var nestedShape *Shape
-	switch s.Type {
-	case "structure":
-		nestedShape = s
-	case "map":
-		nestedShape = s.ValueRef.Shape
-	case "list":
-		nestedShape = s.MemberRef.Shape
-	}
-
-	return nestedShape
-}
-
-var structShapeTmpl = template.Must(template.New("StructShape").Funcs(template.FuncMap{
-	"GetCrosslinkURL": GetCrosslinkURL,
-}).Parse(`
-{{ .Docstring }}
-{{ if ne $.OrigShapeName "" -}}
-{{ $crosslinkURL := GetCrosslinkURL $.API.BaseCrosslinkURL $.API.APIName $.API.Metadata.UID $.OrigShapeName -}}
-{{ if ne $crosslinkURL "" -}} 
-// Please also see {{ $crosslinkURL }}
-{{ end -}}
-{{ else -}}
-{{ $crosslinkURL := GetCrosslinkURL $.API.BaseCrosslinkURL $.API.APIName $.API.Metadata.UID $.ShapeName -}}
-{{ if ne $crosslinkURL "" -}} 
-// Please also see {{ $crosslinkURL }}
-{{ end -}}
-{{ end -}}
-{{ $context := . -}}
-type {{ .ShapeName }} struct {
-	_ struct{} {{ .GoTags true false }}
-
-	{{ range $_, $name := $context.MemberNames -}}
-		{{ $elem := index $context.MemberRefs $name -}}
-		{{ $isBlob := $context.WillRefBeBase64Encoded $name -}}
-		{{ $isRequired := $context.IsRequired $name -}}
-		{{ $doc := $elem.Docstring -}}
-
-		{{ if $doc -}}
-			{{ $doc }}
-		{{ end -}}
-		{{ if $isBlob -}}
-			{{ if $doc -}}
-				//
-			{{ end -}}
-			// {{ $name }} is automatically base64 encoded/decoded by the SDK.
-		{{ end -}}
-		{{ if $isRequired -}}
-			{{ if or $doc $isBlob -}}
-				//
-			{{ end -}}
-			// {{ $name }} is a required field
-		{{ end -}}
-		{{ $name }} {{ $context.GoStructType $name $elem }} {{ $elem.GoTags false $isRequired }}
-
-	{{ end }}
-}
-{{ if not .API.NoStringerMethods }}
-	{{ .GoCodeStringers }}
-{{ end }}
-{{ if not .API.NoValidataShapeMethods }}
-	{{ if .Validations -}}
-		{{ .Validations.GoCode . }}
-	{{ end }}
-{{ end }}
-
-{{ if not .API.NoGenStructFieldAccessors }}
-
-{{ $builderShapeName := print .ShapeName -}}
-
-{{ range $_, $name := $context.MemberNames -}}
-	{{ $elem := index $context.MemberRefs $name -}}
-
-// Set{{ $name }} sets the {{ $name }} field's value.
-func (s *{{ $builderShapeName }}) Set{{ $name }}(v {{ $context.GoStructValueType $name $elem }}) *{{ $builderShapeName }} {
-	{{ if $elem.UseIndirection -}}
-	s.{{ $name }} = &v
-	{{ else -}}
-	s.{{ $name }} = v
-	{{ end -}}
-	return s
-}
-
-{{ end }}
-{{ end }}
-`))
-
-var enumShapeTmpl = template.Must(template.New("EnumShape").Parse(`
-{{ .Docstring }}
-const (
-	{{ $context := . -}}
-	{{ range $index, $elem := .Enum -}}
-		{{ $name := index $context.EnumConsts $index -}}
-		// {{ $name }} is a {{ $context.ShapeName }} enum value
-		{{ $name }} = "{{ $elem }}"
-
-	{{ end }}
-)
-`))
-
 // GoCode returns the rendered Go code for the Shape.
 func (s *Shape) GoCode() string {
-	b := &bytes.Buffer{}
+	code := s.Docstring()
+	if !s.IsEnum() {
+		code += "type " + s.ShapeName + " "
+	}
 
 	switch {
 	case s.Type == "structure":
-		if err := structShapeTmpl.Execute(b, s); err != nil {
-			panic(fmt.Sprintf("Failed to generate struct shape %s, %v\n", s.ShapeName, err))
+		ref := &ShapeRef{ShapeName: s.ShapeName, API: s.API, Shape: s}
+
+		code += "struct {\n"
+		code += "_ struct{} " + ref.GoTags(true, false) + "\n\n"
+		for _, n := range s.MemberNames() {
+			m := s.MemberRefs[n]
+			code += m.Docstring()
+			if (m.Streaming || m.Shape.Streaming) && s.Payload == n {
+				rtype := "io.ReadSeeker"
+				if len(s.refs) > 1 {
+					rtype = "aws.ReaderSeekCloser"
+				} else if strings.HasSuffix(s.ShapeName, "Output") {
+					rtype = "io.ReadCloser"
+				}
+
+				s.API.imports["io"] = true
+				code += n + " " + rtype + " " + m.GoTags(false, s.IsRequired(n)) + "\n\n"
+			} else {
+				code += n + " " + m.GoType() + " " + m.GoTags(false, s.IsRequired(n)) + "\n\n"
+			}
+		}
+		code += "}"
+
+		if !s.API.NoStringerMethods {
+			code += s.goCodeStringers()
 		}
 	case s.IsEnum():
-		if err := enumShapeTmpl.Execute(b, s); err != nil {
-			panic(fmt.Sprintf("Failed to generate enum shape %s, %v\n", s.ShapeName, err))
+		code += "const (\n"
+		for n, e := range s.Enum {
+			code += fmt.Sprintf("\t// @enum %s\n\t%s = %q\n",
+				s.ShapeName, s.EnumConsts[n], e)
 		}
+		code += ")"
 	default:
-		panic(fmt.Sprintln("Cannot generate toplevel shape for", s.Type))
+		panic("Cannot generate toplevel shape for " + s.Type)
 	}
 
-	return b.String()
+	return util.GoFmt(code)
 }
 
 // IsEnum returns whether this shape is an enum list
@@ -642,18 +445,4 @@ func (s *Shape) removeRef(ref *ShapeRef) {
 			break
 		}
 	}
-}
-
-func (s *Shape) WillRefBeBase64Encoded(refName string) bool {
-	payloadRefName := s.Payload
-	if payloadRefName == refName {
-		return false
-	}
-
-	ref, ok := s.MemberRefs[refName]
-	if !ok {
-		panic(fmt.Sprintf("shape %s does not contain %q refName", s.ShapeName, refName))
-	}
-
-	return ref.Shape.Type == "blob"
 }

@@ -4,28 +4,13 @@
     "apiVersion":"2015-12-08",
     "endpointPrefix":"acm",
     "jsonVersion":"1.1",
-    "protocol":"json",
     "serviceAbbreviation":"ACM",
     "serviceFullName":"AWS Certificate Manager",
     "signatureVersion":"v4",
     "targetPrefix":"CertificateManager",
-    "uid":"acm-2015-12-08"
+    "protocol":"json"
   },
   "operations":{
-    "AddTagsToCertificate":{
-      "name":"AddTagsToCertificate",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"AddTagsToCertificateRequest"},
-      "errors":[
-        {"shape":"ResourceNotFoundException"},
-        {"shape":"InvalidArnException"},
-        {"shape":"InvalidTagException"},
-        {"shape":"TooManyTagsException"}
-      ]
-    },
     "DeleteCertificate":{
       "name":"DeleteCertificate",
       "http":{
@@ -34,9 +19,18 @@
       },
       "input":{"shape":"DeleteCertificateRequest"},
       "errors":[
-        {"shape":"ResourceNotFoundException"},
-        {"shape":"ResourceInUseException"},
-        {"shape":"InvalidArnException"}
+        {
+          "shape":"ResourceNotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"ResourceInUseException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidArnException",
+          "exception":true
+        }
       ]
     },
     "DescribeCertificate":{
@@ -48,8 +42,14 @@
       "input":{"shape":"DescribeCertificateRequest"},
       "output":{"shape":"DescribeCertificateResponse"},
       "errors":[
-        {"shape":"ResourceNotFoundException"},
-        {"shape":"InvalidArnException"}
+        {
+          "shape":"ResourceNotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidArnException",
+          "exception":true
+        }
       ]
     },
     "GetCertificate":{
@@ -61,22 +61,18 @@
       "input":{"shape":"GetCertificateRequest"},
       "output":{"shape":"GetCertificateResponse"},
       "errors":[
-        {"shape":"ResourceNotFoundException"},
-        {"shape":"RequestInProgressException"},
-        {"shape":"InvalidArnException"}
-      ]
-    },
-    "ImportCertificate":{
-      "name":"ImportCertificate",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"ImportCertificateRequest"},
-      "output":{"shape":"ImportCertificateResponse"},
-      "errors":[
-        {"shape":"ResourceNotFoundException"},
-        {"shape":"LimitExceededException"}
+        {
+          "shape":"ResourceNotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"RequestInProgressException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidArnException",
+          "exception":true
+        }
       ]
     },
     "ListCertificates":{
@@ -88,32 +84,6 @@
       "input":{"shape":"ListCertificatesRequest"},
       "output":{"shape":"ListCertificatesResponse"}
     },
-    "ListTagsForCertificate":{
-      "name":"ListTagsForCertificate",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"ListTagsForCertificateRequest"},
-      "output":{"shape":"ListTagsForCertificateResponse"},
-      "errors":[
-        {"shape":"ResourceNotFoundException"},
-        {"shape":"InvalidArnException"}
-      ]
-    },
-    "RemoveTagsFromCertificate":{
-      "name":"RemoveTagsFromCertificate",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"RemoveTagsFromCertificateRequest"},
-      "errors":[
-        {"shape":"ResourceNotFoundException"},
-        {"shape":"InvalidArnException"},
-        {"shape":"InvalidTagException"}
-      ]
-    },
     "RequestCertificate":{
       "name":"RequestCertificate",
       "http":{
@@ -123,8 +93,14 @@
       "input":{"shape":"RequestCertificateRequest"},
       "output":{"shape":"RequestCertificateResponse"},
       "errors":[
-        {"shape":"LimitExceededException"},
-        {"shape":"InvalidDomainValidationOptionsException"}
+        {
+          "shape":"LimitExceededException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidDomainValidationOptionsException",
+          "exception":true
+        }
       ]
     },
     "ResendValidationEmail":{
@@ -135,52 +111,43 @@
       },
       "input":{"shape":"ResendValidationEmailRequest"},
       "errors":[
-        {"shape":"ResourceNotFoundException"},
-        {"shape":"InvalidStateException"},
-        {"shape":"InvalidArnException"},
-        {"shape":"InvalidDomainValidationOptionsException"}
+        {
+          "shape":"ResourceNotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidStateException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidArnException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidDomainValidationOptionsException",
+          "exception":true
+        }
       ]
     }
   },
   "shapes":{
-    "AddTagsToCertificateRequest":{
-      "type":"structure",
-      "required":[
-        "CertificateArn",
-        "Tags"
-      ],
-      "members":{
-        "CertificateArn":{"shape":"Arn"},
-        "Tags":{"shape":"TagList"}
-      }
-    },
     "Arn":{
       "type":"string",
-      "max":2048,
       "min":20,
+      "max":2048,
       "pattern":"arn:[\\w+=/,.@-]+:[\\w+=/,.@-]+:[\\w+=/,.@-]*:[0-9]+:[\\w+=,.@-]+(/[\\w+=/,.@-]+)*"
     },
     "CertificateBody":{
       "type":"string",
-      "max":32768,
       "min":1,
+      "max":524288,
       "pattern":"-{5}BEGIN CERTIFICATE-{5}\\u000D?\\u000A([A-Za-z0-9/+]{64}\\u000D?\\u000A)*[A-Za-z0-9/+]{1,64}={0,2}\\u000D?\\u000A-{5}END CERTIFICATE-{5}(\\u000D?\\u000A)?"
-    },
-    "CertificateBodyBlob":{
-      "type":"blob",
-      "max":32768,
-      "min":1
     },
     "CertificateChain":{
       "type":"string",
-      "max":2097152,
       "min":1,
-      "pattern":"(-{5}BEGIN CERTIFICATE-{5}\\u000D?\\u000A([A-Za-z0-9/+]{64}\\u000D?\\u000A)*[A-Za-z0-9/+]{1,64}={0,2}\\u000D?\\u000A-{5}END CERTIFICATE-{5}\\u000D?\\u000A)*-{5}BEGIN CERTIFICATE-{5}\\u000D?\\u000A([A-Za-z0-9/+]{64}\\u000D?\\u000A)*[A-Za-z0-9/+]{1,64}={0,2}\\u000D?\\u000A-{5}END CERTIFICATE-{5}(\\u000D?\\u000A)?"
-    },
-    "CertificateChainBlob":{
-      "type":"blob",
       "max":2097152,
-      "min":1
+      "pattern":"(-{5}BEGIN CERTIFICATE-{5}\\u000D?\\u000A([A-Za-z0-9/+]{64}\\u000D?\\u000A)*[A-Za-z0-9/+]{1,64}={0,2}\\u000D?\\u000A-{5}END CERTIFICATE-{5}\\u000D?\\u000A)*-{5}BEGIN CERTIFICATE-{5}\\u000D?\\u000A([A-Za-z0-9/+]{64}\\u000D?\\u000A)*[A-Za-z0-9/+]{1,64}={0,2}\\u000D?\\u000A-{5}END CERTIFICATE-{5}(\\u000D?\\u000A)?"
     },
     "CertificateDetail":{
       "type":"structure",
@@ -194,7 +161,6 @@
         "Issuer":{"shape":"String"},
         "CreatedAt":{"shape":"TStamp"},
         "IssuedAt":{"shape":"TStamp"},
-        "ImportedAt":{"shape":"TStamp"},
         "Status":{"shape":"CertificateStatus"},
         "RevokedAt":{"shape":"TStamp"},
         "RevocationReason":{"shape":"RevocationReason"},
@@ -202,10 +168,7 @@
         "NotAfter":{"shape":"TStamp"},
         "KeyAlgorithm":{"shape":"KeyAlgorithm"},
         "SignatureAlgorithm":{"shape":"String"},
-        "InUseBy":{"shape":"InUseList"},
-        "FailureReason":{"shape":"FailureReason"},
-        "Type":{"shape":"CertificateType"},
-        "RenewalSummary":{"shape":"RenewalSummary"}
+        "InUseBy":{"shape":"InUseList"}
       }
     },
     "CertificateStatus":{
@@ -235,13 +198,6 @@
       "type":"list",
       "member":{"shape":"CertificateSummary"}
     },
-    "CertificateType":{
-      "type":"string",
-      "enum":[
-        "IMPORTED",
-        "AMAZON_ISSUED"
-      ]
-    },
     "DeleteCertificateRequest":{
       "type":"structure",
       "required":["CertificateArn"],
@@ -265,22 +221,14 @@
     "DomainList":{
       "type":"list",
       "member":{"shape":"DomainNameString"},
-      "max":100,
-      "min":1
+      "min":1,
+      "max":1000
     },
     "DomainNameString":{
       "type":"string",
-      "max":253,
       "min":1,
+      "max":253,
       "pattern":"^(\\*\\.)?(((?!-)[A-Za-z0-9-]{0,62}[A-Za-z0-9])\\.)+((?!-)[A-Za-z0-9-]{1,62}[A-Za-z0-9])$"
-    },
-    "DomainStatus":{
-      "type":"string",
-      "enum":[
-        "PENDING_VALIDATION",
-        "SUCCESS",
-        "FAILED"
-      ]
     },
     "DomainValidation":{
       "type":"structure",
@@ -288,15 +236,14 @@
       "members":{
         "DomainName":{"shape":"DomainNameString"},
         "ValidationEmails":{"shape":"ValidationEmailList"},
-        "ValidationDomain":{"shape":"DomainNameString"},
-        "ValidationStatus":{"shape":"DomainStatus"}
+        "ValidationDomain":{"shape":"DomainNameString"}
       }
     },
     "DomainValidationList":{
       "type":"list",
       "member":{"shape":"DomainValidation"},
-      "max":1000,
-      "min":1
+      "min":1,
+      "max":1000
     },
     "DomainValidationOption":{
       "type":"structure",
@@ -312,18 +259,8 @@
     "DomainValidationOptionList":{
       "type":"list",
       "member":{"shape":"DomainValidationOption"},
-      "max":100,
-      "min":1
-    },
-    "FailureReason":{
-      "type":"string",
-      "enum":[
-        "NO_AVAILABLE_CONTACTS",
-        "ADDITIONAL_VERIFICATION_REQUIRED",
-        "DOMAIN_NOT_ALLOWED",
-        "INVALID_PUBLIC_DOMAIN",
-        "OTHER"
-      ]
+      "min":1,
+      "max":1000
     },
     "GetCertificateRequest":{
       "type":"structure",
@@ -341,28 +278,9 @@
     },
     "IdempotencyToken":{
       "type":"string",
-      "max":32,
       "min":1,
+      "max":32,
       "pattern":"\\w+"
-    },
-    "ImportCertificateRequest":{
-      "type":"structure",
-      "required":[
-        "Certificate",
-        "PrivateKey"
-      ],
-      "members":{
-        "CertificateArn":{"shape":"Arn"},
-        "Certificate":{"shape":"CertificateBodyBlob"},
-        "PrivateKey":{"shape":"PrivateKeyBlob"},
-        "CertificateChain":{"shape":"CertificateChainBlob"}
-      }
-    },
-    "ImportCertificateResponse":{
-      "type":"structure",
-      "members":{
-        "CertificateArn":{"shape":"Arn"}
-      }
     },
     "InUseList":{
       "type":"list",
@@ -389,18 +307,10 @@
       },
       "exception":true
     },
-    "InvalidTagException":{
-      "type":"structure",
-      "members":{
-        "message":{"shape":"String"}
-      },
-      "exception":true
-    },
     "KeyAlgorithm":{
       "type":"string",
       "enum":[
         "RSA_2048",
-        "RSA_1024",
         "EC_prime256v1"
       ]
     },
@@ -426,66 +336,16 @@
         "CertificateSummaryList":{"shape":"CertificateSummaryList"}
       }
     },
-    "ListTagsForCertificateRequest":{
-      "type":"structure",
-      "required":["CertificateArn"],
-      "members":{
-        "CertificateArn":{"shape":"Arn"}
-      }
-    },
-    "ListTagsForCertificateResponse":{
-      "type":"structure",
-      "members":{
-        "Tags":{"shape":"TagList"}
-      }
-    },
     "MaxItems":{
       "type":"integer",
-      "max":1000,
-      "min":1
+      "min":1,
+      "max":1000
     },
     "NextToken":{
       "type":"string",
+      "min":1,
       "max":320,
-      "min":1,
       "pattern":"[\\u0009\\u000A\\u000D\\u0020-\\u00FF]*"
-    },
-    "PrivateKeyBlob":{
-      "type":"blob",
-      "max":524288,
-      "min":1,
-      "sensitive":true
-    },
-    "RemoveTagsFromCertificateRequest":{
-      "type":"structure",
-      "required":[
-        "CertificateArn",
-        "Tags"
-      ],
-      "members":{
-        "CertificateArn":{"shape":"Arn"},
-        "Tags":{"shape":"TagList"}
-      }
-    },
-    "RenewalStatus":{
-      "type":"string",
-      "enum":[
-        "PENDING_AUTO_RENEWAL",
-        "PENDING_VALIDATION",
-        "SUCCESS",
-        "FAILED"
-      ]
-    },
-    "RenewalSummary":{
-      "type":"structure",
-      "required":[
-        "RenewalStatus",
-        "DomainValidationOptions"
-      ],
-      "members":{
-        "RenewalStatus":{"shape":"RenewalStatus"},
-        "DomainValidationOptions":{"shape":"DomainValidationList"}
-      }
     },
     "RequestCertificateRequest":{
       "type":"structure",
@@ -554,39 +414,6 @@
     },
     "String":{"type":"string"},
     "TStamp":{"type":"timestamp"},
-    "Tag":{
-      "type":"structure",
-      "required":["Key"],
-      "members":{
-        "Key":{"shape":"TagKey"},
-        "Value":{"shape":"TagValue"}
-      }
-    },
-    "TagKey":{
-      "type":"string",
-      "max":128,
-      "min":1,
-      "pattern":"[\\p{L}\\p{Z}\\p{N}_.:\\/=+\\-@]*"
-    },
-    "TagList":{
-      "type":"list",
-      "member":{"shape":"Tag"},
-      "max":50,
-      "min":1
-    },
-    "TagValue":{
-      "type":"string",
-      "max":256,
-      "min":0,
-      "pattern":"[\\p{L}\\p{Z}\\p{N}_.:\\/=+\\-@]*"
-    },
-    "TooManyTagsException":{
-      "type":"structure",
-      "members":{
-        "message":{"shape":"String"}
-      },
-      "exception":true
-    },
     "ValidationEmailList":{
       "type":"list",
       "member":{"shape":"String"}

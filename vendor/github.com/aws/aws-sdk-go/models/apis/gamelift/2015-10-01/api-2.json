@@ -4,11 +4,10 @@
     "apiVersion":"2015-10-01",
     "endpointPrefix":"gamelift",
     "jsonVersion":"1.1",
-    "protocol":"json",
     "serviceFullName":"Amazon GameLift",
     "signatureVersion":"v4",
     "targetPrefix":"GameLift",
-    "uid":"gamelift-2015-10-01"
+    "protocol":"json"
   },
   "operations":{
     "CreateAlias":{
@@ -20,11 +19,27 @@
       "input":{"shape":"CreateAliasInput"},
       "output":{"shape":"CreateAliasOutput"},
       "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"ConflictException"},
-        {"shape":"InternalServiceException"},
-        {"shape":"LimitExceededException"}
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"ConflictException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"LimitExceededException",
+          "exception":true
+        }
       ]
     },
     "CreateBuild":{
@@ -36,10 +51,23 @@
       "input":{"shape":"CreateBuildInput"},
       "output":{"shape":"CreateBuildOutput"},
       "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"ConflictException"},
-        {"shape":"InternalServiceException"}
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"ConflictException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "CreateFleet":{
@@ -51,12 +79,31 @@
       "input":{"shape":"CreateFleetInput"},
       "output":{"shape":"CreateFleetOutput"},
       "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"NotFoundException"},
-        {"shape":"ConflictException"},
-        {"shape":"LimitExceededException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"}
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"ConflictException",
+          "exception":true
+        },
+        {
+          "shape":"LimitExceededException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        }
       ]
     },
     "CreateGameSession":{
@@ -68,31 +115,39 @@
       "input":{"shape":"CreateGameSessionInput"},
       "output":{"shape":"CreateGameSessionOutput"},
       "errors":[
-        {"shape":"ConflictException"},
-        {"shape":"InternalServiceException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidFleetStatusException"},
-        {"shape":"TerminalRoutingStrategyException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"FleetCapacityExceededException"},
-        {"shape":"LimitExceededException"},
-        {"shape":"IdempotentParameterMismatchException"}
-      ]
-    },
-    "CreateGameSessionQueue":{
-      "name":"CreateGameSessionQueue",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"CreateGameSessionQueueInput"},
-      "output":{"shape":"CreateGameSessionQueueOutput"},
-      "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"LimitExceededException"}
+        {
+          "shape":"ConflictException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidFleetStatusException",
+          "exception":true
+        },
+        {
+          "shape":"TerminalRoutingStrategyException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"FleetCapacityExceededException",
+          "exception":true
+        }
       ]
     },
     "CreatePlayerSession":{
@@ -104,13 +159,35 @@
       "input":{"shape":"CreatePlayerSessionInput"},
       "output":{"shape":"CreatePlayerSessionOutput"},
       "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidGameSessionStatusException"},
-        {"shape":"GameSessionFullException"},
-        {"shape":"TerminalRoutingStrategyException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"}
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidGameSessionStatusException",
+          "exception":true
+        },
+        {
+          "shape":"GameSessionFullException",
+          "exception":true
+        },
+        {
+          "shape":"TerminalRoutingStrategyException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        }
       ]
     },
     "CreatePlayerSessions":{
@@ -122,13 +199,35 @@
       "input":{"shape":"CreatePlayerSessionsInput"},
       "output":{"shape":"CreatePlayerSessionsOutput"},
       "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidGameSessionStatusException"},
-        {"shape":"GameSessionFullException"},
-        {"shape":"TerminalRoutingStrategyException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"}
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidGameSessionStatusException",
+          "exception":true
+        },
+        {
+          "shape":"GameSessionFullException",
+          "exception":true
+        },
+        {
+          "shape":"TerminalRoutingStrategyException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        }
       ]
     },
     "DeleteAlias":{
@@ -139,10 +238,23 @@
       },
       "input":{"shape":"DeleteAliasInput"},
       "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"InternalServiceException"}
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "DeleteBuild":{
@@ -153,10 +265,23 @@
       },
       "input":{"shape":"DeleteBuildInput"},
       "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"}
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        }
       ]
     },
     "DeleteFleet":{
@@ -167,40 +292,31 @@
       },
       "input":{"shape":"DeleteFleetInput"},
       "errors":[
-        {"shape":"NotFoundException"},
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidFleetStatusException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"}
-      ]
-    },
-    "DeleteGameSessionQueue":{
-      "name":"DeleteGameSessionQueue",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"DeleteGameSessionQueueInput"},
-      "output":{"shape":"DeleteGameSessionQueueOutput"},
-      "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"UnauthorizedException"}
-      ]
-    },
-    "DeleteScalingPolicy":{
-      "name":"DeleteScalingPolicy",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"DeleteScalingPolicyInput"},
-      "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"NotFoundException"}
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"InvalidFleetStatusException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidFleetStatusException",
+          "exception":true
+        }
       ]
     },
     "DescribeAlias":{
@@ -212,10 +328,23 @@
       "input":{"shape":"DescribeAliasInput"},
       "output":{"shape":"DescribeAliasOutput"},
       "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InternalServiceException"}
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "DescribeBuild":{
@@ -227,10 +356,23 @@
       "input":{"shape":"DescribeBuildInput"},
       "output":{"shape":"DescribeBuildOutput"},
       "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InternalServiceException"}
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "DescribeEC2InstanceLimits":{
@@ -242,9 +384,19 @@
       "input":{"shape":"DescribeEC2InstanceLimitsInput"},
       "output":{"shape":"DescribeEC2InstanceLimitsOutput"},
       "errors":[
-        {"shape":"InvalidRequestException"},
-        {"shape":"InternalServiceException"},
-        {"shape":"UnauthorizedException"}
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        }
       ]
     },
     "DescribeFleetAttributes":{
@@ -256,10 +408,23 @@
       "input":{"shape":"DescribeFleetAttributesInput"},
       "output":{"shape":"DescribeFleetAttributesOutput"},
       "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"}
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        }
       ]
     },
     "DescribeFleetCapacity":{
@@ -271,10 +436,23 @@
       "input":{"shape":"DescribeFleetCapacityInput"},
       "output":{"shape":"DescribeFleetCapacityOutput"},
       "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"}
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        }
       ]
     },
     "DescribeFleetEvents":{
@@ -286,10 +464,23 @@
       "input":{"shape":"DescribeFleetEventsInput"},
       "output":{"shape":"DescribeFleetEventsOutput"},
       "errors":[
-        {"shape":"NotFoundException"},
-        {"shape":"InternalServiceException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"}
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        }
       ]
     },
     "DescribeFleetPortSettings":{
@@ -301,10 +492,23 @@
       "input":{"shape":"DescribeFleetPortSettingsInput"},
       "output":{"shape":"DescribeFleetPortSettingsOutput"},
       "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"}
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        }
       ]
     },
     "DescribeFleetUtilization":{
@@ -316,56 +520,23 @@
       "input":{"shape":"DescribeFleetUtilizationInput"},
       "output":{"shape":"DescribeFleetUtilizationOutput"},
       "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"}
-      ]
-    },
-    "DescribeGameSessionDetails":{
-      "name":"DescribeGameSessionDetails",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"DescribeGameSessionDetailsInput"},
-      "output":{"shape":"DescribeGameSessionDetailsOutput"},
-      "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"TerminalRoutingStrategyException"}
-      ]
-    },
-    "DescribeGameSessionPlacement":{
-      "name":"DescribeGameSessionPlacement",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"DescribeGameSessionPlacementInput"},
-      "output":{"shape":"DescribeGameSessionPlacementOutput"},
-      "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"UnauthorizedException"}
-      ]
-    },
-    "DescribeGameSessionQueues":{
-      "name":"DescribeGameSessionQueues",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"DescribeGameSessionQueuesInput"},
-      "output":{"shape":"DescribeGameSessionQueuesOutput"},
-      "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"UnauthorizedException"}
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        }
       ]
     },
     "DescribeGameSessions":{
@@ -377,26 +548,27 @@
       "input":{"shape":"DescribeGameSessionsInput"},
       "output":{"shape":"DescribeGameSessionsOutput"},
       "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"TerminalRoutingStrategyException"}
-      ]
-    },
-    "DescribeInstances":{
-      "name":"DescribeInstances",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"DescribeInstancesInput"},
-      "output":{"shape":"DescribeInstancesOutput"},
-      "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InternalServiceException"}
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"TerminalRoutingStrategyException",
+          "exception":true
+        }
       ]
     },
     "DescribePlayerSessions":{
@@ -408,40 +580,23 @@
       "input":{"shape":"DescribePlayerSessionsInput"},
       "output":{"shape":"DescribePlayerSessionsOutput"},
       "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"}
-      ]
-    },
-    "DescribeRuntimeConfiguration":{
-      "name":"DescribeRuntimeConfiguration",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"DescribeRuntimeConfigurationInput"},
-      "output":{"shape":"DescribeRuntimeConfigurationOutput"},
-      "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"}
-      ]
-    },
-    "DescribeScalingPolicies":{
-      "name":"DescribeScalingPolicies",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"DescribeScalingPoliciesInput"},
-      "output":{"shape":"DescribeScalingPoliciesOutput"},
-      "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"NotFoundException"}
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        }
       ]
     },
     "GetGameSessionLogUrl":{
@@ -453,25 +608,23 @@
       "input":{"shape":"GetGameSessionLogUrlInput"},
       "output":{"shape":"GetGameSessionLogUrlOutput"},
       "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"NotFoundException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"}
-      ]
-    },
-    "GetInstanceAccess":{
-      "name":"GetInstanceAccess",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"GetInstanceAccessInput"},
-      "output":{"shape":"GetInstanceAccessOutput"},
-      "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InternalServiceException"}
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        }
       ]
     },
     "ListAliases":{
@@ -483,9 +636,19 @@
       "input":{"shape":"ListAliasesInput"},
       "output":{"shape":"ListAliasesOutput"},
       "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"InternalServiceException"}
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "ListBuilds":{
@@ -497,9 +660,19 @@
       "input":{"shape":"ListBuildsInput"},
       "output":{"shape":"ListBuildsOutput"},
       "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"InternalServiceException"}
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "ListFleets":{
@@ -511,25 +684,23 @@
       "input":{"shape":"ListFleetsInput"},
       "output":{"shape":"ListFleetsOutput"},
       "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"}
-      ]
-    },
-    "PutScalingPolicy":{
-      "name":"PutScalingPolicy",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"PutScalingPolicyInput"},
-      "output":{"shape":"PutScalingPolicyOutput"},
-      "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"NotFoundException"}
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        }
       ]
     },
     "RequestUploadCredentials":{
@@ -541,10 +712,23 @@
       "input":{"shape":"RequestUploadCredentialsInput"},
       "output":{"shape":"RequestUploadCredentialsOutput"},
       "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InternalServiceException"}
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "ResolveAlias":{
@@ -556,57 +740,27 @@
       "input":{"shape":"ResolveAliasInput"},
       "output":{"shape":"ResolveAliasOutput"},
       "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"TerminalRoutingStrategyException"},
-        {"shape":"InternalServiceException"}
-      ]
-    },
-    "SearchGameSessions":{
-      "name":"SearchGameSessions",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"SearchGameSessionsInput"},
-      "output":{"shape":"SearchGameSessionsOutput"},
-      "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"TerminalRoutingStrategyException"}
-      ]
-    },
-    "StartGameSessionPlacement":{
-      "name":"StartGameSessionPlacement",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"StartGameSessionPlacementInput"},
-      "output":{"shape":"StartGameSessionPlacementOutput"},
-      "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"UnauthorizedException"}
-      ]
-    },
-    "StopGameSessionPlacement":{
-      "name":"StopGameSessionPlacement",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"StopGameSessionPlacementInput"},
-      "output":{"shape":"StopGameSessionPlacementOutput"},
-      "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"UnauthorizedException"}
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"TerminalRoutingStrategyException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "UpdateAlias":{
@@ -618,10 +772,23 @@
       "input":{"shape":"UpdateAliasInput"},
       "output":{"shape":"UpdateAliasOutput"},
       "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InternalServiceException"}
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "UpdateBuild":{
@@ -633,10 +800,23 @@
       "input":{"shape":"UpdateBuildInput"},
       "output":{"shape":"UpdateBuildOutput"},
       "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InternalServiceException"}
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        }
       ]
     },
     "UpdateFleetAttributes":{
@@ -648,13 +828,35 @@
       "input":{"shape":"UpdateFleetAttributesInput"},
       "output":{"shape":"UpdateFleetAttributesOutput"},
       "errors":[
-        {"shape":"NotFoundException"},
-        {"shape":"ConflictException"},
-        {"shape":"InvalidFleetStatusException"},
-        {"shape":"LimitExceededException"},
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"}
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"ConflictException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidFleetStatusException",
+          "exception":true
+        },
+        {
+          "shape":"LimitExceededException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        }
       ]
     },
     "UpdateFleetCapacity":{
@@ -666,13 +868,35 @@
       "input":{"shape":"UpdateFleetCapacityInput"},
       "output":{"shape":"UpdateFleetCapacityOutput"},
       "errors":[
-        {"shape":"NotFoundException"},
-        {"shape":"ConflictException"},
-        {"shape":"LimitExceededException"},
-        {"shape":"InvalidFleetStatusException"},
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"}
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"ConflictException",
+          "exception":true
+        },
+        {
+          "shape":"LimitExceededException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidFleetStatusException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        }
       ]
     },
     "UpdateFleetPortSettings":{
@@ -684,13 +908,35 @@
       "input":{"shape":"UpdateFleetPortSettingsInput"},
       "output":{"shape":"UpdateFleetPortSettingsOutput"},
       "errors":[
-        {"shape":"NotFoundException"},
-        {"shape":"ConflictException"},
-        {"shape":"InvalidFleetStatusException"},
-        {"shape":"LimitExceededException"},
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"UnauthorizedException"}
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"ConflictException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidFleetStatusException",
+          "exception":true
+        },
+        {
+          "shape":"LimitExceededException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        }
       ]
     },
     "UpdateGameSession":{
@@ -702,43 +948,31 @@
       "input":{"shape":"UpdateGameSessionInput"},
       "output":{"shape":"UpdateGameSessionOutput"},
       "errors":[
-        {"shape":"NotFoundException"},
-        {"shape":"ConflictException"},
-        {"shape":"InternalServiceException"},
-        {"shape":"UnauthorizedException"},
-        {"shape":"InvalidGameSessionStatusException"},
-        {"shape":"InvalidRequestException"}
-      ]
-    },
-    "UpdateGameSessionQueue":{
-      "name":"UpdateGameSessionQueue",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"UpdateGameSessionQueueInput"},
-      "output":{"shape":"UpdateGameSessionQueueOutput"},
-      "errors":[
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"NotFoundException"},
-        {"shape":"UnauthorizedException"}
-      ]
-    },
-    "UpdateRuntimeConfiguration":{
-      "name":"UpdateRuntimeConfiguration",
-      "http":{
-        "method":"POST",
-        "requestUri":"/"
-      },
-      "input":{"shape":"UpdateRuntimeConfigurationInput"},
-      "output":{"shape":"UpdateRuntimeConfigurationOutput"},
-      "errors":[
-        {"shape":"UnauthorizedException"},
-        {"shape":"NotFoundException"},
-        {"shape":"InternalServiceException"},
-        {"shape":"InvalidRequestException"},
-        {"shape":"InvalidFleetStatusException"}
+        {
+          "shape":"NotFoundException",
+          "exception":true
+        },
+        {
+          "shape":"ConflictException",
+          "exception":true
+        },
+        {
+          "shape":"InternalServiceException",
+          "exception":true,
+          "fault":true
+        },
+        {
+          "shape":"UnauthorizedException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidGameSessionStatusException",
+          "exception":true
+        },
+        {
+          "shape":"InvalidRequestException",
+          "exception":true
+        }
       ]
     }
   },
@@ -747,8 +981,7 @@
       "type":"structure",
       "members":{
         "AliasId":{"shape":"AliasId"},
-        "Name":{"shape":"NonBlankAndLengthConstraintString"},
-        "AliasArn":{"shape":"ArnStringModel"},
+        "Name":{"shape":"FreeText"},
         "Description":{"shape":"FreeText"},
         "RoutingStrategy":{"shape":"RoutingStrategy"},
         "CreationTime":{"shape":"Timestamp"},
@@ -762,12 +995,6 @@
     "AliasList":{
       "type":"list",
       "member":{"shape":"Alias"}
-    },
-    "ArnStringModel":{
-      "type":"string",
-      "max":256,
-      "min":1,
-      "pattern":"[a-zA-Z0-9:/-]+"
     },
     "AwsCredentials":{
       "type":"structure",
@@ -786,7 +1013,6 @@
         "Version":{"shape":"FreeText"},
         "Status":{"shape":"BuildStatus"},
         "SizeOnDisk":{"shape":"PositiveLong"},
-        "OperatingSystem":{"shape":"OperatingSystem"},
         "CreationTime":{"shape":"Timestamp"}
       }
     },
@@ -806,15 +1032,6 @@
         "FAILED"
       ]
     },
-    "ComparisonOperatorType":{
-      "type":"string",
-      "enum":[
-        "GreaterThanOrEqualToThreshold",
-        "GreaterThanThreshold",
-        "LessThanThreshold",
-        "LessThanOrEqualToThreshold"
-      ]
-    },
     "ConflictException":{
       "type":"structure",
       "members":{
@@ -824,12 +1041,9 @@
     },
     "CreateAliasInput":{
       "type":"structure",
-      "required":[
-        "Name",
-        "RoutingStrategy"
-      ],
+      "required":["Name"],
       "members":{
-        "Name":{"shape":"NonBlankAndLengthConstraintString"},
+        "Name":{"shape":"NonZeroAndMaxString"},
         "Description":{"shape":"NonZeroAndMaxString"},
         "RoutingStrategy":{"shape":"RoutingStrategy"}
       }
@@ -844,9 +1058,7 @@
       "type":"structure",
       "members":{
         "Name":{"shape":"NonZeroAndMaxString"},
-        "Version":{"shape":"NonZeroAndMaxString"},
-        "StorageLocation":{"shape":"S3Location"},
-        "OperatingSystem":{"shape":"OperatingSystem"}
+        "Version":{"shape":"NonZeroAndMaxString"}
       }
     },
     "CreateBuildOutput":{
@@ -862,6 +1074,7 @@
       "required":[
         "Name",
         "BuildId",
+        "ServerLaunchPath",
         "EC2InstanceType"
       ],
       "members":{
@@ -872,11 +1085,7 @@
         "ServerLaunchParameters":{"shape":"NonZeroAndMaxString"},
         "LogPaths":{"shape":"StringList"},
         "EC2InstanceType":{"shape":"EC2InstanceType"},
-        "EC2InboundPermissions":{"shape":"IpPermissionsList"},
-        "NewGameSessionProtectionPolicy":{"shape":"ProtectionPolicy"},
-        "RuntimeConfiguration":{"shape":"RuntimeConfiguration"},
-        "ResourceCreationLimitPolicy":{"shape":"ResourceCreationLimitPolicy"},
-        "MetricGroups":{"shape":"MetricGroupList"}
+        "EC2InboundPermissions":{"shape":"IpPermissionsList"}
       }
     },
     "CreateFleetOutput":{
@@ -893,32 +1102,13 @@
         "AliasId":{"shape":"AliasId"},
         "MaximumPlayerSessionCount":{"shape":"WholeNumber"},
         "Name":{"shape":"NonZeroAndMaxString"},
-        "GameProperties":{"shape":"GamePropertyList"},
-        "CreatorId":{"shape":"NonZeroAndMaxString"},
-        "GameSessionId":{"shape":"IdStringModel"},
-        "IdempotencyToken":{"shape":"IdStringModel"}
+        "GameProperties":{"shape":"GamePropertyList"}
       }
     },
     "CreateGameSessionOutput":{
       "type":"structure",
       "members":{
         "GameSession":{"shape":"GameSession"}
-      }
-    },
-    "CreateGameSessionQueueInput":{
-      "type":"structure",
-      "required":["Name"],
-      "members":{
-        "Name":{"shape":"GameSessionQueueName"},
-        "TimeoutInSeconds":{"shape":"WholeNumber"},
-        "PlayerLatencyPolicies":{"shape":"PlayerLatencyPolicyList"},
-        "Destinations":{"shape":"GameSessionQueueDestinationList"}
-      }
-    },
-    "CreateGameSessionQueueOutput":{
-      "type":"structure",
-      "members":{
-        "GameSessionQueue":{"shape":"GameSessionQueue"}
       }
     },
     "CreatePlayerSessionInput":{
@@ -928,9 +1118,8 @@
         "PlayerId"
       ],
       "members":{
-        "GameSessionId":{"shape":"ArnStringModel"},
-        "PlayerId":{"shape":"NonZeroAndMaxString"},
-        "PlayerData":{"shape":"PlayerData"}
+        "GameSessionId":{"shape":"GameSessionId"},
+        "PlayerId":{"shape":"NonZeroAndMaxString"}
       }
     },
     "CreatePlayerSessionOutput":{
@@ -946,9 +1135,8 @@
         "PlayerIds"
       ],
       "members":{
-        "GameSessionId":{"shape":"ArnStringModel"},
-        "PlayerIds":{"shape":"PlayerIdList"},
-        "PlayerDataMap":{"shape":"PlayerDataMap"}
+        "GameSessionId":{"shape":"GameSessionId"},
+        "PlayerIds":{"shape":"PlayerIdList"}
       }
     },
     "CreatePlayerSessionsOutput":{
@@ -975,29 +1163,6 @@
       "type":"structure",
       "required":["FleetId"],
       "members":{
-        "FleetId":{"shape":"FleetId"}
-      }
-    },
-    "DeleteGameSessionQueueInput":{
-      "type":"structure",
-      "required":["Name"],
-      "members":{
-        "Name":{"shape":"GameSessionQueueName"}
-      }
-    },
-    "DeleteGameSessionQueueOutput":{
-      "type":"structure",
-      "members":{
-      }
-    },
-    "DeleteScalingPolicyInput":{
-      "type":"structure",
-      "required":[
-        "Name",
-        "FleetId"
-      ],
-      "members":{
-        "Name":{"shape":"NonZeroAndMaxString"},
         "FleetId":{"shape":"FleetId"}
       }
     },
@@ -1115,57 +1280,11 @@
         "NextToken":{"shape":"NonZeroAndMaxString"}
       }
     },
-    "DescribeGameSessionDetailsInput":{
-      "type":"structure",
-      "members":{
-        "FleetId":{"shape":"FleetId"},
-        "GameSessionId":{"shape":"ArnStringModel"},
-        "AliasId":{"shape":"AliasId"},
-        "StatusFilter":{"shape":"NonZeroAndMaxString"},
-        "Limit":{"shape":"PositiveInteger"},
-        "NextToken":{"shape":"NonZeroAndMaxString"}
-      }
-    },
-    "DescribeGameSessionDetailsOutput":{
-      "type":"structure",
-      "members":{
-        "GameSessionDetails":{"shape":"GameSessionDetailList"},
-        "NextToken":{"shape":"NonZeroAndMaxString"}
-      }
-    },
-    "DescribeGameSessionPlacementInput":{
-      "type":"structure",
-      "required":["PlacementId"],
-      "members":{
-        "PlacementId":{"shape":"IdStringModel"}
-      }
-    },
-    "DescribeGameSessionPlacementOutput":{
-      "type":"structure",
-      "members":{
-        "GameSessionPlacement":{"shape":"GameSessionPlacement"}
-      }
-    },
-    "DescribeGameSessionQueuesInput":{
-      "type":"structure",
-      "members":{
-        "Names":{"shape":"GameSessionQueueNameList"},
-        "Limit":{"shape":"PositiveInteger"},
-        "NextToken":{"shape":"NonZeroAndMaxString"}
-      }
-    },
-    "DescribeGameSessionQueuesOutput":{
-      "type":"structure",
-      "members":{
-        "GameSessionQueues":{"shape":"GameSessionQueueList"},
-        "NextToken":{"shape":"NonZeroAndMaxString"}
-      }
-    },
     "DescribeGameSessionsInput":{
       "type":"structure",
       "members":{
         "FleetId":{"shape":"FleetId"},
-        "GameSessionId":{"shape":"ArnStringModel"},
+        "GameSessionId":{"shape":"GameSessionId"},
         "AliasId":{"shape":"AliasId"},
         "StatusFilter":{"shape":"NonZeroAndMaxString"},
         "Limit":{"shape":"PositiveInteger"},
@@ -1179,27 +1298,10 @@
         "NextToken":{"shape":"NonZeroAndMaxString"}
       }
     },
-    "DescribeInstancesInput":{
-      "type":"structure",
-      "required":["FleetId"],
-      "members":{
-        "FleetId":{"shape":"FleetId"},
-        "InstanceId":{"shape":"InstanceId"},
-        "Limit":{"shape":"PositiveInteger"},
-        "NextToken":{"shape":"NonZeroAndMaxString"}
-      }
-    },
-    "DescribeInstancesOutput":{
-      "type":"structure",
-      "members":{
-        "Instances":{"shape":"InstanceList"},
-        "NextToken":{"shape":"NonZeroAndMaxString"}
-      }
-    },
     "DescribePlayerSessionsInput":{
       "type":"structure",
       "members":{
-        "GameSessionId":{"shape":"ArnStringModel"},
+        "GameSessionId":{"shape":"GameSessionId"},
         "PlayerId":{"shape":"NonZeroAndMaxString"},
         "PlayerSessionId":{"shape":"PlayerSessionId"},
         "PlayerSessionStatusFilter":{"shape":"NonZeroAndMaxString"},
@@ -1214,57 +1316,12 @@
         "NextToken":{"shape":"NonZeroAndMaxString"}
       }
     },
-    "DescribeRuntimeConfigurationInput":{
-      "type":"structure",
-      "required":["FleetId"],
-      "members":{
-        "FleetId":{"shape":"FleetId"}
-      }
-    },
-    "DescribeRuntimeConfigurationOutput":{
-      "type":"structure",
-      "members":{
-        "RuntimeConfiguration":{"shape":"RuntimeConfiguration"}
-      }
-    },
-    "DescribeScalingPoliciesInput":{
-      "type":"structure",
-      "required":["FleetId"],
-      "members":{
-        "FleetId":{"shape":"FleetId"},
-        "StatusFilter":{"shape":"ScalingStatusType"},
-        "Limit":{"shape":"PositiveInteger"},
-        "NextToken":{"shape":"NonZeroAndMaxString"}
-      }
-    },
-    "DescribeScalingPoliciesOutput":{
-      "type":"structure",
-      "members":{
-        "ScalingPolicies":{"shape":"ScalingPolicyList"},
-        "NextToken":{"shape":"NonZeroAndMaxString"}
-      }
-    },
-    "DesiredPlayerSession":{
-      "type":"structure",
-      "members":{
-        "PlayerId":{"shape":"NonZeroAndMaxString"},
-        "PlayerData":{"shape":"PlayerData"}
-      }
-    },
-    "DesiredPlayerSessionList":{
-      "type":"list",
-      "member":{"shape":"DesiredPlayerSession"}
-    },
-    "Double":{"type":"double"},
     "EC2InstanceCounts":{
       "type":"structure",
       "members":{
         "DESIRED":{"shape":"WholeNumber"},
-        "MINIMUM":{"shape":"WholeNumber"},
-        "MAXIMUM":{"shape":"WholeNumber"},
         "PENDING":{"shape":"WholeNumber"},
         "ACTIVE":{"shape":"WholeNumber"},
-        "IDLE":{"shape":"WholeNumber"},
         "TERMINATING":{"shape":"WholeNumber"}
       }
     },
@@ -1342,16 +1399,7 @@
         "FLEET_VALIDATION_EXECUTABLE_RUNTIME_FAILURE",
         "FLEET_VALIDATION_TIMED_OUT",
         "FLEET_ACTIVATION_FAILED",
-        "FLEET_ACTIVATION_FAILED_NO_INSTANCES",
-        "FLEET_NEW_GAME_SESSION_PROTECTION_POLICY_UPDATED",
-        "SERVER_PROCESS_INVALID_PATH",
-        "SERVER_PROCESS_SDK_INITIALIZATION_TIMEOUT",
-        "SERVER_PROCESS_PROCESS_READY_TIMEOUT",
-        "SERVER_PROCESS_CRASHED",
-        "SERVER_PROCESS_TERMINATED_UNHEALTHY",
-        "SERVER_PROCESS_FORCE_TERMINATED",
-        "SERVER_PROCESS_PROCESS_EXIT_TIMEOUT",
-        "GAME_SESSION_ACTIVATION_TIMEOUT"
+        "FLEET_ACTIVATION_FAILED_NO_INSTANCES"
       ]
     },
     "EventList":{
@@ -1362,7 +1410,6 @@
       "type":"structure",
       "members":{
         "FleetId":{"shape":"FleetId"},
-        "FleetArn":{"shape":"ArnStringModel"},
         "Description":{"shape":"NonZeroAndMaxString"},
         "Name":{"shape":"NonZeroAndMaxString"},
         "CreationTime":{"shape":"Timestamp"},
@@ -1371,11 +1418,7 @@
         "BuildId":{"shape":"BuildId"},
         "ServerLaunchPath":{"shape":"NonZeroAndMaxString"},
         "ServerLaunchParameters":{"shape":"NonZeroAndMaxString"},
-        "LogPaths":{"shape":"StringList"},
-        "NewGameSessionProtectionPolicy":{"shape":"ProtectionPolicy"},
-        "OperatingSystem":{"shape":"OperatingSystem"},
-        "ResourceCreationLimitPolicy":{"shape":"ResourceCreationLimitPolicy"},
-        "MetricGroups":{"shape":"MetricGroupList"}
+        "LogPaths":{"shape":"StringList"}
       }
     },
     "FleetAttributesList":{
@@ -1428,7 +1471,6 @@
       "type":"structure",
       "members":{
         "FleetId":{"shape":"FleetId"},
-        "ActiveServerProcessCount":{"shape":"WholeNumber"},
         "ActiveGameSessionCount":{"shape":"WholeNumber"},
         "CurrentPlayerSessionCount":{"shape":"WholeNumber"},
         "MaximumPlayerSessionCount":{"shape":"WholeNumber"}
@@ -1438,7 +1480,6 @@
       "type":"list",
       "member":{"shape":"FleetUtilization"}
     },
-    "Float":{"type":"float"},
     "FreeText":{"type":"string"},
     "GameProperty":{
       "type":"structure",
@@ -1467,7 +1508,7 @@
     "GameSession":{
       "type":"structure",
       "members":{
-        "GameSessionId":{"shape":"NonZeroAndMaxString"},
+        "GameSessionId":{"shape":"GameSessionId"},
         "Name":{"shape":"NonZeroAndMaxString"},
         "FleetId":{"shape":"FleetId"},
         "CreationTime":{"shape":"Timestamp"},
@@ -1477,26 +1518,8 @@
         "Status":{"shape":"GameSessionStatus"},
         "GameProperties":{"shape":"GamePropertyList"},
         "IpAddress":{"shape":"IpAddress"},
-        "Port":{"shape":"PortNumber"},
-        "PlayerSessionCreationPolicy":{"shape":"PlayerSessionCreationPolicy"},
-        "CreatorId":{"shape":"NonZeroAndMaxString"}
+        "PlayerSessionCreationPolicy":{"shape":"PlayerSessionCreationPolicy"}
       }
-    },
-    "GameSessionActivationTimeoutSeconds":{
-      "type":"integer",
-      "max":600,
-      "min":1
-    },
-    "GameSessionDetail":{
-      "type":"structure",
-      "members":{
-        "GameSession":{"shape":"GameSession"},
-        "ProtectionPolicy":{"shape":"ProtectionPolicy"}
-      }
-    },
-    "GameSessionDetailList":{
-      "type":"list",
-      "member":{"shape":"GameSessionDetail"}
     },
     "GameSessionFullException":{
       "type":"structure",
@@ -1505,72 +1528,13 @@
       },
       "exception":true
     },
+    "GameSessionId":{
+      "type":"string",
+      "pattern":"^(gamei-|gsess-)\\S+"
+    },
     "GameSessionList":{
       "type":"list",
       "member":{"shape":"GameSession"}
-    },
-    "GameSessionPlacement":{
-      "type":"structure",
-      "members":{
-        "PlacementId":{"shape":"IdStringModel"},
-        "GameSessionQueueName":{"shape":"GameSessionQueueName"},
-        "Status":{"shape":"GameSessionPlacementState"},
-        "GameProperties":{"shape":"GamePropertyList"},
-        "MaximumPlayerSessionCount":{"shape":"WholeNumber"},
-        "GameSessionName":{"shape":"NonZeroAndMaxString"},
-        "GameSessionId":{"shape":"NonZeroAndMaxString"},
-        "GameSessionArn":{"shape":"NonZeroAndMaxString"},
-        "GameSessionRegion":{"shape":"NonZeroAndMaxString"},
-        "PlayerLatencies":{"shape":"PlayerLatencyList"},
-        "StartTime":{"shape":"Timestamp"},
-        "EndTime":{"shape":"Timestamp"},
-        "IpAddress":{"shape":"IpAddress"},
-        "Port":{"shape":"PortNumber"},
-        "PlacedPlayerSessions":{"shape":"PlacedPlayerSessionList"}
-      }
-    },
-    "GameSessionPlacementState":{
-      "type":"string",
-      "enum":[
-        "PENDING",
-        "FULFILLED",
-        "CANCELLED",
-        "TIMED_OUT"
-      ]
-    },
-    "GameSessionQueue":{
-      "type":"structure",
-      "members":{
-        "Name":{"shape":"GameSessionQueueName"},
-        "GameSessionQueueArn":{"shape":"ArnStringModel"},
-        "TimeoutInSeconds":{"shape":"WholeNumber"},
-        "PlayerLatencyPolicies":{"shape":"PlayerLatencyPolicyList"},
-        "Destinations":{"shape":"GameSessionQueueDestinationList"}
-      }
-    },
-    "GameSessionQueueDestination":{
-      "type":"structure",
-      "members":{
-        "DestinationArn":{"shape":"ArnStringModel"}
-      }
-    },
-    "GameSessionQueueDestinationList":{
-      "type":"list",
-      "member":{"shape":"GameSessionQueueDestination"}
-    },
-    "GameSessionQueueList":{
-      "type":"list",
-      "member":{"shape":"GameSessionQueue"}
-    },
-    "GameSessionQueueName":{
-      "type":"string",
-      "max":128,
-      "min":1,
-      "pattern":"[a-zA-Z0-9-]+"
-    },
-    "GameSessionQueueNameList":{
-      "type":"list",
-      "member":{"shape":"GameSessionQueueName"}
     },
     "GameSessionStatus":{
       "type":"string",
@@ -1578,15 +1542,14 @@
         "ACTIVE",
         "ACTIVATING",
         "TERMINATED",
-        "TERMINATING",
-        "ERROR"
+        "TERMINATING"
       ]
     },
     "GetGameSessionLogUrlInput":{
       "type":"structure",
       "required":["GameSessionId"],
       "members":{
-        "GameSessionId":{"shape":"ArnStringModel"}
+        "GameSessionId":{"shape":"GameSessionId"}
       }
     },
     "GetGameSessionLogUrlOutput":{
@@ -1595,83 +1558,6 @@
         "PreSignedUrl":{"shape":"NonZeroAndMaxString"}
       }
     },
-    "GetInstanceAccessInput":{
-      "type":"structure",
-      "required":[
-        "FleetId",
-        "InstanceId"
-      ],
-      "members":{
-        "FleetId":{"shape":"FleetId"},
-        "InstanceId":{"shape":"InstanceId"}
-      }
-    },
-    "GetInstanceAccessOutput":{
-      "type":"structure",
-      "members":{
-        "InstanceAccess":{"shape":"InstanceAccess"}
-      }
-    },
-    "IdStringModel":{
-      "type":"string",
-      "max":48,
-      "min":1,
-      "pattern":"[a-zA-Z0-9-]+"
-    },
-    "IdempotentParameterMismatchException":{
-      "type":"structure",
-      "members":{
-        "Message":{"shape":"NonEmptyString"}
-      },
-      "exception":true
-    },
-    "Instance":{
-      "type":"structure",
-      "members":{
-        "FleetId":{"shape":"FleetId"},
-        "InstanceId":{"shape":"InstanceId"},
-        "IpAddress":{"shape":"IpAddress"},
-        "OperatingSystem":{"shape":"OperatingSystem"},
-        "Type":{"shape":"EC2InstanceType"},
-        "Status":{"shape":"InstanceStatus"},
-        "CreationTime":{"shape":"Timestamp"}
-      }
-    },
-    "InstanceAccess":{
-      "type":"structure",
-      "members":{
-        "FleetId":{"shape":"FleetId"},
-        "InstanceId":{"shape":"InstanceId"},
-        "IpAddress":{"shape":"IpAddress"},
-        "OperatingSystem":{"shape":"OperatingSystem"},
-        "Credentials":{"shape":"InstanceCredentials"}
-      }
-    },
-    "InstanceCredentials":{
-      "type":"structure",
-      "members":{
-        "UserName":{"shape":"NonEmptyString"},
-        "Secret":{"shape":"NonEmptyString"}
-      },
-      "sensitive":true
-    },
-    "InstanceId":{
-      "type":"string",
-      "pattern":"[a-zA-Z0-9\\.-]+"
-    },
-    "InstanceList":{
-      "type":"list",
-      "member":{"shape":"Instance"}
-    },
-    "InstanceStatus":{
-      "type":"string",
-      "enum":[
-        "PENDING",
-        "ACTIVE",
-        "TERMINATING"
-      ]
-    },
-    "Integer":{"type":"integer"},
     "InternalServiceException":{
       "type":"structure",
       "members":{
@@ -1782,43 +1668,6 @@
         "NextToken":{"shape":"NonZeroAndMaxString"}
       }
     },
-    "MaxConcurrentGameSessionActivations":{
-      "type":"integer",
-      "max":2147483647,
-      "min":1
-    },
-    "MetricGroup":{
-      "type":"string",
-      "max":255,
-      "min":1
-    },
-    "MetricGroupList":{
-      "type":"list",
-      "member":{"shape":"MetricGroup"},
-      "max":1
-    },
-    "MetricName":{
-      "type":"string",
-      "enum":[
-        "ActivatingGameSessions",
-        "ActiveGameSessions",
-        "ActiveInstances",
-        "AvailableGameSessions",
-        "AvailablePlayerSessions",
-        "CurrentPlayerSessions",
-        "IdleInstances",
-        "PercentAvailableGameSessions",
-        "PercentIdleInstances",
-        "QueueDepth",
-        "WaitTime"
-      ]
-    },
-    "NonBlankAndLengthConstraintString":{
-      "type":"string",
-      "max":1024,
-      "min":1,
-      "pattern":".*\\S.*"
-    },
     "NonBlankString":{
       "type":"string",
       "pattern":"[^\\s]+"
@@ -1829,8 +1678,8 @@
     },
     "NonZeroAndMaxString":{
       "type":"string",
-      "max":1024,
-      "min":1
+      "min":1,
+      "max":1024
     },
     "NotFoundException":{
       "type":"structure",
@@ -1839,76 +1688,23 @@
       },
       "exception":true
     },
-    "OperatingSystem":{
-      "type":"string",
-      "enum":[
-        "WINDOWS_2012",
-        "AMAZON_LINUX"
-      ]
-    },
-    "PlacedPlayerSession":{
-      "type":"structure",
-      "members":{
-        "PlayerId":{"shape":"NonZeroAndMaxString"},
-        "PlayerSessionId":{"shape":"PlayerSessionId"}
-      }
-    },
-    "PlacedPlayerSessionList":{
-      "type":"list",
-      "member":{"shape":"PlacedPlayerSession"}
-    },
-    "PlayerData":{
-      "type":"string",
-      "max":2048,
-      "min":1
-    },
-    "PlayerDataMap":{
-      "type":"map",
-      "key":{"shape":"NonZeroAndMaxString"},
-      "value":{"shape":"PlayerData"}
-    },
     "PlayerIdList":{
       "type":"list",
       "member":{"shape":"NonZeroAndMaxString"},
-      "max":25,
-      "min":1
-    },
-    "PlayerLatency":{
-      "type":"structure",
-      "members":{
-        "PlayerId":{"shape":"NonZeroAndMaxString"},
-        "RegionIdentifier":{"shape":"NonZeroAndMaxString"},
-        "LatencyInMilliseconds":{"shape":"Float"}
-      }
-    },
-    "PlayerLatencyList":{
-      "type":"list",
-      "member":{"shape":"PlayerLatency"}
-    },
-    "PlayerLatencyPolicy":{
-      "type":"structure",
-      "members":{
-        "MaximumIndividualPlayerLatencyMilliseconds":{"shape":"WholeNumber"},
-        "PolicyDurationSeconds":{"shape":"WholeNumber"}
-      }
-    },
-    "PlayerLatencyPolicyList":{
-      "type":"list",
-      "member":{"shape":"PlayerLatencyPolicy"}
+      "min":1,
+      "max":25
     },
     "PlayerSession":{
       "type":"structure",
       "members":{
         "PlayerSessionId":{"shape":"PlayerSessionId"},
         "PlayerId":{"shape":"NonZeroAndMaxString"},
-        "GameSessionId":{"shape":"NonZeroAndMaxString"},
+        "GameSessionId":{"shape":"GameSessionId"},
         "FleetId":{"shape":"FleetId"},
         "CreationTime":{"shape":"Timestamp"},
         "TerminationTime":{"shape":"Timestamp"},
         "Status":{"shape":"PlayerSessionStatus"},
-        "IpAddress":{"shape":"IpAddress"},
-        "Port":{"shape":"PortNumber"},
-        "PlayerData":{"shape":"PlayerData"}
+        "IpAddress":{"shape":"IpAddress"}
       }
     },
     "PlayerSessionCreationPolicy":{
@@ -1937,8 +1733,8 @@
     },
     "PortNumber":{
       "type":"integer",
-      "max":60000,
-      "min":1
+      "min":1025,
+      "max":60000
     },
     "PositiveInteger":{
       "type":"integer",
@@ -1947,42 +1743,6 @@
     "PositiveLong":{
       "type":"long",
       "min":1
-    },
-    "ProtectionPolicy":{
-      "type":"string",
-      "enum":[
-        "NoProtection",
-        "FullProtection"
-      ]
-    },
-    "PutScalingPolicyInput":{
-      "type":"structure",
-      "required":[
-        "Name",
-        "FleetId",
-        "ScalingAdjustment",
-        "ScalingAdjustmentType",
-        "Threshold",
-        "ComparisonOperator",
-        "EvaluationPeriods",
-        "MetricName"
-      ],
-      "members":{
-        "Name":{"shape":"NonZeroAndMaxString"},
-        "FleetId":{"shape":"FleetId"},
-        "ScalingAdjustment":{"shape":"Integer"},
-        "ScalingAdjustmentType":{"shape":"ScalingAdjustmentType"},
-        "Threshold":{"shape":"Double"},
-        "ComparisonOperator":{"shape":"ComparisonOperatorType"},
-        "EvaluationPeriods":{"shape":"PositiveInteger"},
-        "MetricName":{"shape":"MetricName"}
-      }
-    },
-    "PutScalingPolicyOutput":{
-      "type":"structure",
-      "members":{
-        "Name":{"shape":"NonZeroAndMaxString"}
-      }
     },
     "RequestUploadCredentialsInput":{
       "type":"structure",
@@ -2011,13 +1771,6 @@
         "FleetId":{"shape":"FleetId"}
       }
     },
-    "ResourceCreationLimitPolicy":{
-      "type":"structure",
-      "members":{
-        "NewGameSessionsPerCreator":{"shape":"WholeNumber"},
-        "PolicyPeriodInMinutes":{"shape":"WholeNumber"}
-      }
-    },
     "RoutingStrategy":{
       "type":"structure",
       "members":{
@@ -2033,130 +1786,11 @@
         "TERMINAL"
       ]
     },
-    "RuntimeConfiguration":{
-      "type":"structure",
-      "members":{
-        "ServerProcesses":{"shape":"ServerProcessList"},
-        "MaxConcurrentGameSessionActivations":{"shape":"MaxConcurrentGameSessionActivations"},
-        "GameSessionActivationTimeoutSeconds":{"shape":"GameSessionActivationTimeoutSeconds"}
-      }
-    },
     "S3Location":{
       "type":"structure",
       "members":{
         "Bucket":{"shape":"NonEmptyString"},
-        "Key":{"shape":"NonEmptyString"},
-        "RoleArn":{"shape":"NonEmptyString"}
-      }
-    },
-    "ScalingAdjustmentType":{
-      "type":"string",
-      "enum":[
-        "ChangeInCapacity",
-        "ExactCapacity",
-        "PercentChangeInCapacity"
-      ]
-    },
-    "ScalingPolicy":{
-      "type":"structure",
-      "members":{
-        "FleetId":{"shape":"FleetId"},
-        "Name":{"shape":"NonZeroAndMaxString"},
-        "Status":{"shape":"ScalingStatusType"},
-        "ScalingAdjustment":{"shape":"Integer"},
-        "ScalingAdjustmentType":{"shape":"ScalingAdjustmentType"},
-        "ComparisonOperator":{"shape":"ComparisonOperatorType"},
-        "Threshold":{"shape":"Double"},
-        "EvaluationPeriods":{"shape":"PositiveInteger"},
-        "MetricName":{"shape":"MetricName"}
-      }
-    },
-    "ScalingPolicyList":{
-      "type":"list",
-      "member":{"shape":"ScalingPolicy"}
-    },
-    "ScalingStatusType":{
-      "type":"string",
-      "enum":[
-        "ACTIVE",
-        "UPDATE_REQUESTED",
-        "UPDATING",
-        "DELETE_REQUESTED",
-        "DELETING",
-        "DELETED",
-        "ERROR"
-      ]
-    },
-    "SearchGameSessionsInput":{
-      "type":"structure",
-      "members":{
-        "FleetId":{"shape":"FleetId"},
-        "AliasId":{"shape":"AliasId"},
-        "FilterExpression":{"shape":"NonZeroAndMaxString"},
-        "SortExpression":{"shape":"NonZeroAndMaxString"},
-        "Limit":{"shape":"PositiveInteger"},
-        "NextToken":{"shape":"NonZeroAndMaxString"}
-      }
-    },
-    "SearchGameSessionsOutput":{
-      "type":"structure",
-      "members":{
-        "GameSessions":{"shape":"GameSessionList"},
-        "NextToken":{"shape":"NonZeroAndMaxString"}
-      }
-    },
-    "ServerProcess":{
-      "type":"structure",
-      "required":[
-        "LaunchPath",
-        "ConcurrentExecutions"
-      ],
-      "members":{
-        "LaunchPath":{"shape":"NonZeroAndMaxString"},
-        "Parameters":{"shape":"NonZeroAndMaxString"},
-        "ConcurrentExecutions":{"shape":"PositiveInteger"}
-      }
-    },
-    "ServerProcessList":{
-      "type":"list",
-      "member":{"shape":"ServerProcess"},
-      "max":50,
-      "min":1
-    },
-    "StartGameSessionPlacementInput":{
-      "type":"structure",
-      "required":[
-        "PlacementId",
-        "GameSessionQueueName",
-        "MaximumPlayerSessionCount"
-      ],
-      "members":{
-        "PlacementId":{"shape":"IdStringModel"},
-        "GameSessionQueueName":{"shape":"GameSessionQueueName"},
-        "GameProperties":{"shape":"GamePropertyList"},
-        "MaximumPlayerSessionCount":{"shape":"WholeNumber"},
-        "GameSessionName":{"shape":"NonZeroAndMaxString"},
-        "PlayerLatencies":{"shape":"PlayerLatencyList"},
-        "DesiredPlayerSessions":{"shape":"DesiredPlayerSessionList"}
-      }
-    },
-    "StartGameSessionPlacementOutput":{
-      "type":"structure",
-      "members":{
-        "GameSessionPlacement":{"shape":"GameSessionPlacement"}
-      }
-    },
-    "StopGameSessionPlacementInput":{
-      "type":"structure",
-      "required":["PlacementId"],
-      "members":{
-        "PlacementId":{"shape":"IdStringModel"}
-      }
-    },
-    "StopGameSessionPlacementOutput":{
-      "type":"structure",
-      "members":{
-        "GameSessionPlacement":{"shape":"GameSessionPlacement"}
+        "Key":{"shape":"NonEmptyString"}
       }
     },
     "StringList":{
@@ -2183,7 +1817,7 @@
       "required":["AliasId"],
       "members":{
         "AliasId":{"shape":"AliasId"},
-        "Name":{"shape":"NonBlankAndLengthConstraintString"},
+        "Name":{"shape":"NonZeroAndMaxString"},
         "Description":{"shape":"NonZeroAndMaxString"},
         "RoutingStrategy":{"shape":"RoutingStrategy"}
       }
@@ -2215,10 +1849,7 @@
       "members":{
         "FleetId":{"shape":"FleetId"},
         "Name":{"shape":"NonZeroAndMaxString"},
-        "Description":{"shape":"NonZeroAndMaxString"},
-        "NewGameSessionProtectionPolicy":{"shape":"ProtectionPolicy"},
-        "ResourceCreationLimitPolicy":{"shape":"ResourceCreationLimitPolicy"},
-        "MetricGroups":{"shape":"MetricGroupList"}
+        "Description":{"shape":"NonZeroAndMaxString"}
       }
     },
     "UpdateFleetAttributesOutput":{
@@ -2229,12 +1860,13 @@
     },
     "UpdateFleetCapacityInput":{
       "type":"structure",
-      "required":["FleetId"],
+      "required":[
+        "FleetId",
+        "DesiredInstances"
+      ],
       "members":{
         "FleetId":{"shape":"FleetId"},
-        "DesiredInstances":{"shape":"WholeNumber"},
-        "MinSize":{"shape":"WholeNumber"},
-        "MaxSize":{"shape":"WholeNumber"}
+        "DesiredInstances":{"shape":"WholeNumber"}
       }
     },
     "UpdateFleetCapacityOutput":{
@@ -2262,50 +1894,16 @@
       "type":"structure",
       "required":["GameSessionId"],
       "members":{
-        "GameSessionId":{"shape":"ArnStringModel"},
+        "GameSessionId":{"shape":"GameSessionId"},
         "MaximumPlayerSessionCount":{"shape":"WholeNumber"},
         "Name":{"shape":"NonZeroAndMaxString"},
-        "PlayerSessionCreationPolicy":{"shape":"PlayerSessionCreationPolicy"},
-        "ProtectionPolicy":{"shape":"ProtectionPolicy"}
+        "PlayerSessionCreationPolicy":{"shape":"PlayerSessionCreationPolicy"}
       }
     },
     "UpdateGameSessionOutput":{
       "type":"structure",
       "members":{
         "GameSession":{"shape":"GameSession"}
-      }
-    },
-    "UpdateGameSessionQueueInput":{
-      "type":"structure",
-      "required":["Name"],
-      "members":{
-        "Name":{"shape":"GameSessionQueueName"},
-        "TimeoutInSeconds":{"shape":"WholeNumber"},
-        "PlayerLatencyPolicies":{"shape":"PlayerLatencyPolicyList"},
-        "Destinations":{"shape":"GameSessionQueueDestinationList"}
-      }
-    },
-    "UpdateGameSessionQueueOutput":{
-      "type":"structure",
-      "members":{
-        "GameSessionQueue":{"shape":"GameSessionQueue"}
-      }
-    },
-    "UpdateRuntimeConfigurationInput":{
-      "type":"structure",
-      "required":[
-        "FleetId",
-        "RuntimeConfiguration"
-      ],
-      "members":{
-        "FleetId":{"shape":"FleetId"},
-        "RuntimeConfiguration":{"shape":"RuntimeConfiguration"}
-      }
-    },
-    "UpdateRuntimeConfigurationOutput":{
-      "type":"structure",
-      "members":{
-        "RuntimeConfiguration":{"shape":"RuntimeConfiguration"}
       }
     },
     "WholeNumber":{

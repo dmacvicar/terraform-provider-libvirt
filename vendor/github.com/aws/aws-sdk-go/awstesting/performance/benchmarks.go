@@ -1,5 +1,3 @@
-// +build integration
-
 package performance
 
 import (
@@ -13,7 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/awstesting/mock"
-	"github.com/gucumber/gucumber"
+	"github.com/lsegal/gucumber"
 )
 
 // mapCreateClients allows for the creation of clients

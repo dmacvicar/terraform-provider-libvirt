@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 const (
@@ -302,7 +302,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{"BUILD"},
 		Target:     []string{"ACTIVE"},
-		Refresh:    waitForNetworkActive(network),
+		Refresh:    waitForNetworkActive(*network),
 		Timeout:    1 * time.Minute,
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
@@ -327,7 +327,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	}
 	defer network.Free()
 
-	networkDef, err := newDefNetworkfromLibvirt(&network)
+	networkDef, err := newDefNetworkfromLibvirt(network)
 	if err != nil {
 		return fmt.Errorf("Error reading libvirt network XML description: %s", err)
 	}
@@ -420,7 +420,7 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 	return nil
 }
 
-func waitForNetworkActive(network libvirt.VirNetwork) resource.StateRefreshFunc {
+func waitForNetworkActive(network libvirt.Network) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		active, err := network.IsActive()
 		if err != nil {
@@ -434,11 +434,11 @@ func waitForNetworkActive(network libvirt.VirNetwork) resource.StateRefreshFunc 
 }
 
 // wait for network to be up and timeout after 5 minutes.
-func waitForNetworkDestroyed(virConn *libvirt.VirConnection, uuid string) resource.StateRefreshFunc {
+func waitForNetworkDestroyed(virConn *libvirt.Connect, uuid string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		log.Printf("Waiting for network %s to be destroyed", uuid)
 		network, err := virConn.LookupNetworkByUUIDString(uuid)
-		if err.(libvirt.VirError).Code == libvirt.VIR_ERR_NO_NETWORK {
+		if err.(libvirt.Error).Code == libvirt.ERR_NO_NETWORK {
 			return virConn, "NOT-EXISTS", nil
 		}
 		defer network.Free()

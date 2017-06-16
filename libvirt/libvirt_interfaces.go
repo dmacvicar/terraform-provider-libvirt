@@ -1,11 +1,13 @@
 package libvirt
 
-// Interface used to expose a libvirt.VirDomain
+import "github.com/libvirt/libvirt-go"
+
+// Interface used to expose a libvirt.Domain
 // Used to allow testing
 type LibVirtDomain interface {
-	QemuAgentCommand(cmd string, timeout int, flags uint32) string
+	QemuAgentCommand(command string, timeout libvirt.DomainQemuAgentCommandTimeout, flags uint32) (string, error)
 }
 
 type LibVirtNetwork interface {
-	GetXMLDesc(flags uint32) (string, error)
+	GetXMLDesc(flags libvirt.NetworkXMLFlags) (string, error)
 }

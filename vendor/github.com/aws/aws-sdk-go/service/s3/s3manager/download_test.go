@@ -3,22 +3,17 @@ package s3manager_test
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
-	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
-	"github.com/aws/aws-sdk-go/awstesting"
 	"github.com/aws/aws-sdk-go/awstesting/unit"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -150,37 +145,6 @@ func dlLoggingSvcContentRangeTotalAny(data []byte, states []int) (*s3.S3, *[]str
 		}
 		r.HTTPResponse.Header.Set("Content-Range", fmt.Sprintf("bytes %d-%d/*",
 			start, fin-1))
-		index++
-	})
-
-	return svc, &names
-}
-
-func dlLoggingSvcWithErrReader(cases []testErrReader) (*s3.S3, *[]string) {
-	var m sync.Mutex
-	names := []string{}
-	var index int = 0
-
-	svc := s3.New(unit.Session, &aws.Config{
-		MaxRetries: aws.Int(len(cases) - 1),
-	})
-	svc.Handlers.Send.Clear()
-	svc.Handlers.Send.PushBack(func(r *request.Request) {
-		m.Lock()
-		defer m.Unlock()
-
-		names = append(names, r.Operation.Name)
-
-		c := cases[index]
-
-		r.HTTPResponse = &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(&c),
-			Header:     http.Header{},
-		}
-		r.HTTPResponse.Header.Set("Content-Range",
-			fmt.Sprintf("bytes %d-%d/%d", 0, c.Len-1, c.Len))
-		r.HTTPResponse.Header.Set("Content-Length", fmt.Sprintf("%d", c.Len))
 		index++
 	})
 
@@ -342,174 +306,4 @@ func TestDownloadContentRangeTotalAny(t *testing.T) {
 		count += int(b)
 	}
 	assert.Equal(t, 0, count)
-}
-
-func TestDownloadPartBodyRetry_SuccessRetry(t *testing.T) {
-	s, names := dlLoggingSvcWithErrReader([]testErrReader{
-		{Buf: []byte("ab"), Len: 3, Err: io.ErrUnexpectedEOF},
-		{Buf: []byte("123"), Len: 3, Err: io.EOF},
-	})
-
-	d := s3manager.NewDownloaderWithClient(s, func(d *s3manager.Downloader) {
-		d.Concurrency = 1
-	})
-
-	w := &aws.WriteAtBuffer{}
-	n, err := d.Download(w, &s3.GetObjectInput{
-		Bucket: aws.String("bucket"),
-		Key:    aws.String("key"),
-	})
-
-	assert.Nil(t, err)
-	assert.Equal(t, int64(3), n)
-	assert.Equal(t, []string{"GetObject", "GetObject"}, *names)
-	assert.Equal(t, []byte("123"), w.Bytes())
-}
-
-func TestDownloadPartBodyRetry_SuccessNoRetry(t *testing.T) {
-	s, names := dlLoggingSvcWithErrReader([]testErrReader{
-		{Buf: []byte("abc"), Len: 3, Err: io.EOF},
-	})
-
-	d := s3manager.NewDownloaderWithClient(s, func(d *s3manager.Downloader) {
-		d.Concurrency = 1
-	})
-
-	w := &aws.WriteAtBuffer{}
-	n, err := d.Download(w, &s3.GetObjectInput{
-		Bucket: aws.String("bucket"),
-		Key:    aws.String("key"),
-	})
-
-	assert.Nil(t, err)
-	assert.Equal(t, int64(3), n)
-	assert.Equal(t, []string{"GetObject"}, *names)
-	assert.Equal(t, []byte("abc"), w.Bytes())
-}
-
-func TestDownloadPartBodyRetry_FailRetry(t *testing.T) {
-	s, names := dlLoggingSvcWithErrReader([]testErrReader{
-		{Buf: []byte("ab"), Len: 3, Err: io.ErrUnexpectedEOF},
-	})
-
-	d := s3manager.NewDownloaderWithClient(s, func(d *s3manager.Downloader) {
-		d.Concurrency = 1
-	})
-
-	w := &aws.WriteAtBuffer{}
-	n, err := d.Download(w, &s3.GetObjectInput{
-		Bucket: aws.String("bucket"),
-		Key:    aws.String("key"),
-	})
-
-	assert.Error(t, err)
-	assert.Equal(t, int64(2), n)
-	assert.Equal(t, []string{"GetObject"}, *names)
-	assert.Equal(t, []byte("ab"), w.Bytes())
-}
-
-func TestDownloadWithContextCanceled(t *testing.T) {
-	d := s3manager.NewDownloader(unit.Session)
-
-	params := s3.GetObjectInput{
-		Bucket: aws.String("Bucket"),
-		Key:    aws.String("Key"),
-	}
-
-	ctx := &awstesting.FakeContext{DoneCh: make(chan struct{})}
-	ctx.Error = fmt.Errorf("context canceled")
-	close(ctx.DoneCh)
-
-	w := &aws.WriteAtBuffer{}
-
-	_, err := d.DownloadWithContext(ctx, w, &params)
-	if err == nil {
-		t.Fatalf("expected error, did not get one")
-	}
-	aerr := err.(awserr.Error)
-	if e, a := request.CanceledErrorCode, aerr.Code(); e != a {
-		t.Errorf("expected error code %q, got %q", e, a)
-	}
-	if e, a := "canceled", aerr.Message(); !strings.Contains(a, e) {
-		t.Errorf("expected error message to contain %q, but did not %q", e, a)
-	}
-}
-
-func TestDownload_WithFailure(t *testing.T) {
-	svc := s3.New(unit.Session)
-	svc.Handlers.Send.Clear()
-
-	first := true
-	svc.Handlers.Send.PushBack(func(r *request.Request) {
-		if first {
-			first = false
-			body := bytes.NewReader(make([]byte, s3manager.DefaultDownloadPartSize))
-			r.HTTPResponse = &http.Response{
-				StatusCode:    http.StatusOK,
-				Status:        http.StatusText(http.StatusOK),
-				ContentLength: int64(body.Len()),
-				Body:          ioutil.NopCloser(body),
-				Header:        http.Header{},
-			}
-			r.HTTPResponse.Header.Set("Content-Length", strconv.Itoa(body.Len()))
-			r.HTTPResponse.Header.Set("Content-Range",
-				fmt.Sprintf("bytes 0-%d/%d", body.Len()-1, body.Len()*10))
-			return
-		}
-
-		// Give a chance for the multipart chunks to be queued up
-		time.Sleep(1 * time.Second)
-
-		r.HTTPResponse = &http.Response{
-			Header: http.Header{},
-			Body:   ioutil.NopCloser(&bytes.Buffer{}),
-		}
-		r.Error = awserr.New("ConnectionError", "some connection error", nil)
-		r.Retryable = aws.Bool(false)
-	})
-
-	start := time.Now()
-	d := s3manager.NewDownloaderWithClient(svc, func(d *s3manager.Downloader) {
-		d.Concurrency = 2
-	})
-
-	w := &aws.WriteAtBuffer{}
-	params := s3.GetObjectInput{
-		Bucket: aws.String("Bucket"),
-		Key:    aws.String("Key"),
-	}
-
-	// Expect this request to exit quickly after failure
-	_, err := d.Download(w, &params)
-	if err == nil {
-		t.Fatalf("expect error, got none")
-	}
-
-	limit := start.Add(5 * time.Second)
-	dur := time.Now().Sub(start)
-	if time.Now().After(limit) {
-		t.Errorf("expect time to be less than %v, took %v", limit, dur)
-	}
-}
-
-type testErrReader struct {
-	Buf []byte
-	Err error
-	Len int64
-
-	off int
-}
-
-func (r *testErrReader) Read(p []byte) (int, error) {
-	to := len(r.Buf) - r.off
-
-	n := copy(p, r.Buf[r.off:to])
-	r.off += n
-
-	if n < len(p) {
-		return n, r.Err
-
-	}
-
-	return n, nil
 }

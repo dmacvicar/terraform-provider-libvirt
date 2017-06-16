@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 // network transparent image
@@ -134,17 +134,19 @@ func newImage(source string) (image, error) {
 	}
 }
 
-func newCopier(virConn *libvirt.VirConnection, volume libvirt.VirStorageVol, size uint64) func(src io.Reader) error {
+func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64) func(src io.Reader) error {
 	copier := func(src io.Reader) error {
-		stream, err := libvirt.NewVirStream(virConn, 0)
+		stream, err := virConn.NewStream(0)
 		if err != nil {
 			return err
 		}
-		defer stream.Close()
+		defer stream.Finish()
 
 		volume.Upload(stream, 0, size, 0)
 
-		n, err := io.Copy(stream, src)
+		sio := NewStreamIO(*stream)
+
+		n, err := io.Copy(sio, src)
 		if err != nil {
 			return err
 		}

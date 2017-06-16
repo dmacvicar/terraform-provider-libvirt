@@ -7,8 +7,7 @@
     "protocol":"rest-json",
     "serviceFullName":"Amazon CloudSearch Domain",
     "signatureVersion":"v4",
-    "signingName":"cloudsearch",
-    "uid":"cloudsearchdomain-2013-01-01"
+    "signingName":"cloudsearch"
   },
   "operations":{
     "Search":{

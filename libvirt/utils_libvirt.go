@@ -4,7 +4,7 @@ import (
 	"encoding/xml"
 	"log"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 func getHostXMLDesc(ip, mac, name string) string {
@@ -21,27 +21,27 @@ func getHostXMLDesc(ip, mac, name string) string {
 }
 
 // Adds a new static host to the network
-func addHost(n *libvirt.VirNetwork, ip, mac, name string) error {
+func addHost(n *libvirt.Network, ip, mac, name string) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)
 	log.Printf("Adding host with XML:\n%s", xmlDesc)
-	return n.UpdateXMLDesc(xmlDesc, libvirt.VIR_NETWORK_UPDATE_COMMAND_ADD_LAST, libvirt.VIR_NETWORK_SECTION_IP_DHCP_HOST)
+	return n.Update(libvirt.NETWORK_UPDATE_COMMAND_ADD_LAST, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, xmlDesc, libvirt.NETWORK_UPDATE_AFFECT_CURRENT)
 }
 
 // Removes a static host from the network
-func removeHost(n *libvirt.VirNetwork, ip, mac, name string) error {
+func removeHost(n *libvirt.Network, ip, mac, name string) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)
 	log.Printf("Removing host with XML:\n%s", xmlDesc)
-	return n.UpdateXMLDesc(xmlDesc, libvirt.VIR_NETWORK_UPDATE_COMMAND_DELETE, libvirt.VIR_NETWORK_SECTION_IP_DHCP_HOST)
+	return n.Update(libvirt.NETWORK_UPDATE_COMMAND_DELETE, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, xmlDesc, libvirt.NETWORK_UPDATE_AFFECT_CURRENT)
 }
 
 // Update a static host from the network
-func updateHost(n *libvirt.VirNetwork, ip, mac, name string) error {
+func updateHost(n *libvirt.Network, ip, mac, name string) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)
 	log.Printf("Updating host with XML:\n%s", xmlDesc)
-	return n.UpdateXMLDesc(xmlDesc, libvirt.VIR_NETWORK_UPDATE_COMMAND_MODIFY, libvirt.VIR_NETWORK_SECTION_IP_DHCP_HOST)
+	return n.Update(libvirt.NETWORK_UPDATE_COMMAND_MODIFY, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, xmlDesc, libvirt.NETWORK_UPDATE_AFFECT_CURRENT)
 }
 
-func getHostArchitecture(virConn *libvirt.VirConnection) (string, error) {
+func getHostArchitecture(virConn *libvirt.Connect) (string, error) {
 	type HostCapabilities struct {
 		XMLName xml.Name `xml:"capabilities"`
 		Host    struct {

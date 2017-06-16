@@ -3,7 +3,6 @@ import:
 - package: github.com/davecgh/go-spew
   subpackages:
   - spew
-- package: github.com/dmacvicar/libvirt-go
 - package: github.com/hashicorp/terraform
   version: v0.9.4
   subpackages:
@@ -17,3 +16,5 @@ import:
   subpackages:
   - common/uuid
 - package: gopkg.in/yaml.v2
+- package: github.com/libvirt/libvirt-go
+  version: ^3.4.0

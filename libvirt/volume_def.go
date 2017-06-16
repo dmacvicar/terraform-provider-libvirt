@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	libvirt "github.com/dmacvicar/libvirt-go"
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 type UnixTimestamp struct{ time.Time }
@@ -86,7 +86,7 @@ func newDefVolumeFromXML(s string) (defVolume, error) {
 	return volumeDef, nil
 }
 
-func newDefVolumeFromLibvirt(volume *libvirt.VirStorageVol) (defVolume, error) {
+func newDefVolumeFromLibvirt(volume *libvirt.StorageVol) (defVolume, error) {
 	name, err := volume.GetName()
 	if err != nil {
 		return defVolume{}, fmt.Errorf("could not get name for volume: %s.", err)

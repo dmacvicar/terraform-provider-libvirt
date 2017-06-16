@@ -1,13 +1,5 @@
 {
   "pagination": {
-    "GetOfferingStatus": {
-      "input_token": "nextToken",
-      "output_token": "nextToken",
-      "result_key": [
-        "current",
-        "nextPeriod"
-      ]
-    },
     "ListArtifacts": {
       "input_token": "nextToken",
       "output_token": "nextToken",
@@ -27,16 +19,6 @@
       "input_token": "nextToken",
       "output_token": "nextToken",
       "result_key": "jobs"
-    },
-    "ListOfferingTransactions": {
-      "input_token": "nextToken",
-      "output_token": "nextToken",
-      "result_key": "offeringTransactions"
-    },
-    "ListOfferings": {
-      "input_token": "nextToken",
-      "output_token": "nextToken",
-      "result_key": "offerings"
     },
     "ListProjects": {
       "input_token": "nextToken",
