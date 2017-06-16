@@ -3,7 +3,6 @@ package libvirt
 import (
 	"encoding/xml"
 	"math/rand"
-	"time"
 )
 
 const OUI = "05abcd"
@@ -60,7 +59,6 @@ func newCDROM() defDisk {
 
 func randomWWN(strlen int) string {
 	const chars = "abcdef0123456789"
-	rand.Seed(time.Now().UTC().UnixNano())
 	result := make([]byte, strlen)
 	for i := 0; i < strlen; i++ {
 		result[i] = chars[rand.Intn(len(chars))]
