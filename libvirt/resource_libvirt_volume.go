@@ -35,6 +35,11 @@ func volumeCommonSchema() map[string]*schema.Schema {
 			Computed: true,
 			ForceNew: true,
 		},
+		"format": &schema.Schema{
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+		},
 		"base_volume_id": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: true,
@@ -46,6 +51,11 @@ func volumeCommonSchema() map[string]*schema.Schema {
 			ForceNew: true,
 		},
 		"base_volume_name": &schema.Schema{
+			Type:     schema.TypeString,
+			Optional: true,
+			ForceNew: true,
+		},
+		"base_volume_format": &schema.Schema{
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
@@ -105,6 +115,12 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	if name, ok := d.GetOk("name"); ok {
 		volumeDef.Name = name.(string)
 	}
+
+	volumeFormat := "qcow2"
+	if _, ok := d.GetOk("format"); ok {
+		volumeFormat = d.Get("format").(string)
+	}
+	volumeDef.Target.Format.Type = volumeFormat
 
 	var (
 		img    image
@@ -171,7 +187,12 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 		volume = nil
 		volumeDef.BackingStore = new(defBackingStore)
-		volumeDef.BackingStore.Format.Type = "qcow2"
+
+		baseVolumeFormat := "qcow2"
+		if _, ok := d.GetOk("base_volume_format"); ok {
+			baseVolumeFormat = d.Get("base_volume_format").(string)
+		}
+		volumeDef.BackingStore.Format.Type = baseVolumeFormat
 		baseVolume, err := virConn.LookupStorageVolByKey(baseVolumeId.(string))
 		if err != nil {
 			return fmt.Errorf("Can't retrieve volume %s", baseVolumeId.(string))
