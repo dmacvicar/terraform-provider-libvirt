@@ -52,7 +52,7 @@ func xmlMarshallIndented(b interface{}) (string, error) {
 	enc := xml.NewEncoder(buf)
 	enc.Indent("  ", "    ")
 	if err := enc.Encode(b); err != nil {
-		fmt.Errorf("could not marshall this:\n%s", spew.Sdump(b))
+		return "", fmt.Errorf("could not marshall this:\n%s", spew.Sdump(b))
 	}
 	return buf.String(), nil
 }
