@@ -95,6 +95,15 @@ func resourceLibvirtDomain() *schema.Resource {
 				ForceNew: true,
 				Default:  "",
 			},
+			"filesystem": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Required: false,
+				ForceNew: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeMap,
+				},
+			},
 			"disk": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -289,6 +298,34 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		domainDef.Devices.Controller = append(domainDef.Devices.Controller, controller)
 	}
 
+	filesystemsCount := d.Get("filesystem.#").(int)
+	var filesystems []defFilesystem
+	for i := 0; i < filesystemsCount; i++ {
+		fs := newFilesystemDef()
+
+		fsKey := fmt.Sprintf("filesystem.%d", i)
+		fsMap := d.Get(fsKey).(map[string]interface{})
+		if accessMode, ok := fsMap["accessmode"]; ok {
+			fs.AccessMode = accessMode.(string)
+		}
+		if sourceDir, ok := fsMap["source"]; ok {
+			fs.Source.Dir = sourceDir.(string)
+		} else {
+			return fmt.Errorf("Filesystem entry must have a 'source' set")
+		}
+		if targetDir, ok := fsMap["target"]; ok {
+			fs.Target.Dir = targetDir.(string)
+		} else {
+			return fmt.Errorf("Filesystem entry must have a 'target' set")
+		}
+		if readonly, ok := fsMap["readonly"]; ok {
+			fs.ReadOnly = readonly.(string) == "1"
+		}
+
+		filesystems = append(filesystems, fs)
+	}
+	log.Printf("filesystems: %+v\n", filesystems)
+
 	type pendingMapping struct {
 		mac      string
 		hostname string
@@ -421,6 +458,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	domainDef.Devices.Disks = disks
+	domainDef.Devices.Filesystems = filesystems
 	domainDef.Devices.NetworkInterfaces = netIfaces
 
 	connectURI, err := virConn.GetURI()
@@ -434,9 +472,9 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error serializing libvirt domain: %s", err)
 	}
 
-	log.Printf("[DEBUG] Creating libvirt domain with XML:\n%s", string(data))
+	log.Printf("[DEBUG] Creating libvirt domain with XML:\n%s", data)
 
-	domain, err := virConn.DomainDefineXML(string(data))
+	domain, err := virConn.DomainDefineXML(data)
 	if err != nil {
 		return fmt.Errorf("Error defining libvirt domain: %s", err)
 	}
@@ -698,6 +736,18 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		disks = append(disks, disk)
 	}
 	d.Set("disks", disks)
+
+	filesystems := make([]map[string]interface{}, 0)
+	for _, fsDef := range domainDef.Devices.Filesystems {
+		fs := map[string]interface{}{
+			"accessmode": fsDef.AccessMode,
+			"source":     fsDef.Source.Dir,
+			"target":     fsDef.Target.Dir,
+			"readonly":   fsDef.ReadOnly,
+		}
+		filesystems = append(filesystems, fs)
+	}
+	d.Set("filesystems", filesystems)
 
 	// look interfaces with addresses
 	ifacesWithAddr, err := getDomainInterfaces(*domain)

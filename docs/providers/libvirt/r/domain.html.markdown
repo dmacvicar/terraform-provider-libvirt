@@ -41,6 +41,7 @@ The following arguments are supported:
   cloud-init won't cause the domain to be recreated, however the change will
   have effect on the next reboot.
 * `cpu` - (Optional) Configures CPU mode.
+* `filesystem` - (Optional) An array of one or more host filesystems to attach to the domain. The `filesystem` object structure is documented below.
 
 There is an optional `coreos_ignition` parameter:
 * `coreos_ignition` (Optional) The `libvirt_ignition` resource that is to be used by
@@ -294,6 +295,49 @@ resource "libvirt_domain" "my_machine" {
     mode = "host-passthrough"
   }
 }
+```
+
+
+The optional `filesystem` block allows to define one or more [filesytem](https://libvirt.org/formatdomain.html#elementsFilesystems)
+entries to be added to the domain. This allows to share a directory of the libvirtd
+host with the guest.
+
+Currently the following attributes are supported:
+
+  * `accessmode`: specifies the security mode for accessing the source. By default
+    the `mapped` mode is chosen.
+  * `source`: the directory of the host to be shared with the guest.
+  * `target`: an arbitrary string tag that is exported to the guest as a hint for
+     where to mount the source.
+  * `readonly`: enables exporting filesystem as a readonly mount for guest, by
+    default read-only access is given.
+
+Example:
+
+```
+filesystem {
+  source = "/tmp"
+  target = "tmp"
+  readonly = false
+}
+filesystem {
+  source = "/proc"
+  target = "proc"
+  readonly = true
+}
+```
+
+The exported filesystems can be mounted inside of the guest in this way:
+
+```
+sudo mount -t 9p -o trans=virtio,version=9p2000.L,rw tmp /host/tmp
+sudo mount -t 9p -o trans=virtio,version=9p2000.L,r proc /host/proc
+```
+
+This can be automated inside of `/etc/fstab`:
+```
+tmp /host/tmp 9p  trans=virtio,version=9p2000.L,rw  0 0
+proc /host/proc  9p  trans=virtio,version=9p2000.L,r  0 0
 ```
 
 ## Attributes Reference

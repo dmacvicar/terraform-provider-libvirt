@@ -351,6 +351,51 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_Filesystems(t *testing.T) {
+	var domain libvirt.Domain
+
+	var config = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+                    filesystem {
+                      source = "/tmp"
+                      target = "tmp"
+                      readonly = false
+                    }
+                    filesystem {
+                      source = "/proc"
+                      target = "proc"
+                      readonly = true
+                    }
+            }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "filesystem.0.source", "/tmp"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "filesystem.0.target", "tmp"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "filesystem.0.readonly", "0"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "filesystem.1.source", "/proc"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "filesystem.1.target", "proc"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "filesystem.1.readonly", "1"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 	virtConn := testAccProvider.Meta().(*Client).libvirt
 
