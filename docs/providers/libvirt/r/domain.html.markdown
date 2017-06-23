@@ -41,6 +41,7 @@ The following arguments are supported:
   cloud-init won't cause the domain to be recreated, however the change will
   have effect on the next reboot.
 * `cpu` - (Optional) Configures CPU mode.
+* `autostart` - (Optional) Set to `true` to start the domain on host boot up. If not specified `false` is assumed.
 * `filesystem` - (Optional) An array of one or more host filesystems to attach to the domain. The `filesystem` object structure is documented below.
 
 There is an optional `coreos_ignition` parameter:
@@ -297,6 +298,13 @@ resource "libvirt_domain" "my_machine" {
 }
 ```
 
+To start the domain on host boot up set `autostart` to `true` like so:
+```
+resource "libvirt_domain" "my_machine" {
+  ...
+  autostart = true
+}
+```
 
 The optional `filesystem` block allows to define one or more [filesytem](https://libvirt.org/formatdomain.html#elementsFilesystems)
 entries to be added to the domain. This allows to share a directory of the libvirtd
