@@ -140,6 +140,11 @@ func resourceLibvirtDomain() *schema.Resource {
 				Required: false,
 				ForceNew: true,
 			},
+			"autostart": &schema.Schema{
+				Type: schema.TypeBool,
+				Optional: true,
+				Required: false,
+			},
 		},
 	}
 }
@@ -479,6 +484,13 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error defining libvirt domain: %s", err)
 	}
 
+	if autostart, ok := d.GetOk("autostart"); ok {
+		err = domain.SetAutostart(autostart.(bool))
+		if err != nil {
+			return fmt.Errorf("Error setting autostart for domain: %s", err)
+		}
+	}
+
 	err = domain.Create()
 	if err != nil {
 		return fmt.Errorf("Error creating libvirt domain: %s", err)
@@ -623,6 +635,14 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		d.SetPartial("cloudinit")
 	}
 
+	if d.HasChange("autostart") {
+		err = domain.SetAutostart(d.Get("autostart").(bool))
+		if err != nil {
+			return fmt.Errorf("Error setting autostart for domain: %s", err)
+		}
+		d.SetPartial("autostart")
+	}
+
 	netIfacesCount := d.Get("network_interface.#").(int)
 	for i := 0; i < netIfacesCount; i++ {
 		prefix := fmt.Sprintf("network_interface.%d", i)
@@ -691,6 +711,11 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
 	}
 
+	autostart, err := domain.GetAutostart()
+	if err != nil {
+		return fmt.Errorf("Error reading domain autostart setting: %s", err)
+	}
+
 	d.Set("name", domainDef.Name)
 	d.Set("metadata", domainDef.Metadata.TerraformLibvirt.Xml)
 	d.Set("vpu", domainDef.VCpu)
@@ -698,6 +723,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("firmware", domainDef.Os.Loader)
 	d.Set("nvram", domainDef.Os.NvRam)
 	d.Set("cpu", domainDef.Cpu)
+	d.Set("autostart", autostart)
 
 	running, err := isDomainRunning(*domain)
 	if err != nil {

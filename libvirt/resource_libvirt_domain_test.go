@@ -351,6 +351,30 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_Autostart(t *testing.T) {
+	var domain libvirt.Domain
+
+	var config = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+                    autostart = true
+            }`)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					resource.TestCheckResourceAttr("libvirt_domain.acceptance-test-domain", "autostart", "true"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_Filesystems(t *testing.T) {
 	var domain libvirt.Domain
 
