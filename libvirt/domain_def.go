@@ -27,6 +27,7 @@ type defDomain struct {
 		Disks             []defDisk             `xml:"disk"`
 		NetworkInterfaces []defNetworkInterface `xml:"interface"`
 		Console           []defConsole          `xml:"console"`
+		Filesystems       []defFilesystem       `xml:"filesystem"`
 		Graphics          *defGraphics          `xml:"graphics,omitempty"`
 		// QEMU guest agent channel
 		QemuGAChannel struct {
@@ -119,6 +120,59 @@ type defConsole struct {
 		Type string `xml:"type,attr,omitempty"`
 		Port string `xml:"port,attr"`
 	} `xml:"target"`
+}
+
+type defFilesystemReadOnly bool
+
+type defFilesystem struct {
+	Type       string                `xml:"type,attr"`
+	AccessMode string                `xml:"accessmode,attr"`
+	ReadOnly   defFilesystemReadOnly `xml:"readonly",omitempty`
+	Source     struct {
+		Dir string `xml:"dir,attr,omitempty"`
+	} `xml:"source"`
+	Target struct {
+		Dir string `xml:"dir,attr,omitempty"`
+	} `xml:"target"`
+}
+
+// The filesystem element has a <readonly/> tag when
+// the host directory cannot be written by the guest. When
+// the <readonly/> tag is omitted the read-write permissions
+// are granted.
+// To show the empty <readonly/> tag we have to define a
+// "alias" of bool and provide a custom marshaller for it.
+func (r defFilesystemReadOnly) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	if !r {
+		return nil
+	}
+	err := e.EncodeElement("", start)
+	return err
+}
+
+func (r *defFilesystemReadOnly) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var value string
+	err := d.DecodeElement(&value, &start)
+	if err != nil {
+		return err
+	}
+
+	*r = value == ""
+
+	return nil
+}
+
+func newFilesystemDef() defFilesystem {
+	fs := defFilesystem{}
+
+	// This is the only type used by qemu/kvm
+	fs.Type = "mount"
+
+	// A safe default value
+	fs.AccessMode = "mapped"
+	fs.ReadOnly = true
+
+	return fs
 }
 
 // Creates a domain definition with the defaults
