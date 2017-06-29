@@ -178,31 +178,3 @@ func TestAccLibvirtVolume_Format(t *testing.T) {
 		},
 	})
 }
-
-func TestAccLibvirtVolume_BaseVolumeFormat(t *testing.T) {
-	var volume libvirt.StorageVol
-
-	const testAccCheckLibvirtVolumeConfig_format = `
-		resource "libvirt_volume" "terraform-acceptance-test-4" {
-		    name = "terraform-test"
-		    base_volume_format = "raw"
-		}`
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
-		Steps: []resource.TestStep{
-			resource.TestStep{
-				Config: testAccCheckLibvirtVolumeConfig_format,
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-4", &volume),
-					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-4", "name", "terraform-test"),
-					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-4", "base_volume_format", "raw"),
-				),
-			},
-		},
-	})
-}
