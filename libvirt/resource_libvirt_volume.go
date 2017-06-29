@@ -55,11 +55,6 @@ func volumeCommonSchema() map[string]*schema.Schema {
 			Optional: true,
 			ForceNew: true,
 		},
-		"base_volume_format": &schema.Schema{
-			Type:     schema.TypeString,
-			Optional: true,
-			ForceNew: true,
-		},
 	}
 }
 
@@ -187,12 +182,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 		volume = nil
 		volumeDef.BackingStore = new(defBackingStore)
-
-		baseVolumeFormat := "qcow2"
-		if _, ok := d.GetOk("base_volume_format"); ok {
-			baseVolumeFormat = d.Get("base_volume_format").(string)
-		}
-		volumeDef.BackingStore.Format.Type = baseVolumeFormat
 		baseVolume, err := virConn.LookupStorageVolByKey(baseVolumeId.(string))
 		if err != nil {
 			return fmt.Errorf("Can't retrieve volume %s", baseVolumeId.(string))
@@ -202,6 +191,16 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf("can't get name for base image '%s'", baseVolumeId)
 		}
 		volumeDef.BackingStore.Path = baseVolPath
+		backingStoreXml, err := baseVolume.GetXMLDesc(0)
+		if err != nil {
+			return fmt.Errorf("can't get definitions for base image '%s'", baseVolumeId)
+		}
+		backingStore, err := newDefVolumeFromXML(backingStoreXml)
+		if err != nil {
+			return fmt.Errorf("can't parse definitions for base image '%s'", baseVolumeId)
+		}
+		log.Printf("[DEBUG] base volume format is %s", backingStore.Target.Format.Type)
+		volumeDef.BackingStore.Format.Type = backingStore.Target.Format.Type
 	}
 
 	if baseVolumeName, ok := d.GetOk("base_volume_name"); ok {
@@ -221,7 +220,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		}
 
 		volumeDef.BackingStore = new(defBackingStore)
-		volumeDef.BackingStore.Format.Type = "qcow2"
 		baseVolume, err := baseVolumePool.LookupStorageVolByName(baseVolumeName.(string))
 		if err != nil {
 			return fmt.Errorf("Can't retrieve volume %s", baseVolumeName.(string))
@@ -231,6 +229,16 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf("can't get name for base image '%s'", baseVolumeName)
 		}
 		volumeDef.BackingStore.Path = baseVolPath
+		backingStoreXml, err := baseVolume.GetXMLDesc(0)
+		if err != nil {
+			return fmt.Errorf("can't get definitions for base image '%s'", baseVolumeName)
+		}
+		backingStore, err := newDefVolumeFromXML(backingStoreXml)
+		if err != nil {
+			return fmt.Errorf("can't parse definitions for base image '%s'", baseVolumeName)
+		}
+		log.Printf("[DEBUG] base volume format is %s", backingStore.Target.Format.Type)
+		volumeDef.BackingStore.Format.Type = backingStore.Target.Format.Type
 	}
 
 	if volume == nil {

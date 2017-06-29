@@ -26,7 +26,6 @@ resource "libvirt_volume" "debian8-qcow2" {
 resource "libvirt_volume" "vol-debian8-raw" {
   name = "vol-debian8-raw"
   base_volume_id = "${libvirt_volume.debian8-raw.id}"
-  base_volume_format = "raw"
 }
 
 # volume with qcow2 backing storage
