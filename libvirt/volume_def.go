@@ -101,3 +101,18 @@ func newDefVolumeFromLibvirt(volume *libvirt.StorageVol) (defVolume, error) {
 	}
 	return volumeDef, nil
 }
+
+func newDefBackingStoreFromLibvirt(baseVolume *libvirt.StorageVol) (defBackingStore, error) {
+	baseVolumeDef, err := newDefVolumeFromLibvirt(baseVolume)
+	if err != nil {
+		return defBackingStore{}, fmt.Errorf("could not get volume: %s.", err)
+	}
+	baseVolPath, err := baseVolume.GetPath()
+	if err != nil {
+		return defBackingStore{}, fmt.Errorf("could not get base image path: %s", err)
+	}
+	var backingStoreDef defBackingStore
+	backingStoreDef.Path = baseVolPath
+	backingStoreDef.Format.Type = baseVolumeDef.Target.Format.Type
+	return backingStoreDef, nil
+}
