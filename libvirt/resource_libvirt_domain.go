@@ -15,11 +15,12 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
+	"github.com/libvirt/libvirt-go-xml"
 )
 
 type DomainMeta struct {
 	domain *libvirt.Domain
-	ifaces chan defNetworkInterface
+	ifaces chan libvirtxml.DomainInterface
 }
 
 var PoolSync = NewLibVirtPoolSync()
@@ -141,7 +142,7 @@ func resourceLibvirtDomain() *schema.Resource {
 				ForceNew: true,
 			},
 			"autostart": &schema.Schema{
-				Type: schema.TypeBool,
+				Type:     schema.TypeBool,
 				Optional: true,
 				Required: false,
 			},
@@ -183,21 +184,20 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		domainDef.Name = name.(string)
 	}
 
-	if metadata, ok := d.GetOk("metadata"); ok {
-		domainDef.Metadata.TerraformLibvirt.Xml = metadata.(string)
-	}
-
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
-		var fw_cfg []defCmd
+		//var fw_cfg []defCmd
+		var fw_cfg []libvirtxml.DomainQEMUCommandlineArg
 		ignitionKey, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
 		if err != nil {
 			return err
 		}
 		ign_str := fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionKey)
-		fw_cfg = append(fw_cfg, defCmd{"-fw_cfg"})
-		fw_cfg = append(fw_cfg, defCmd{ign_str})
-		domainDef.CmdLine.Cmd = fw_cfg
-		domainDef.Xmlns = "http://libvirt.org/schemas/domain/qemu/1.0"
+		fw_cfg = append(fw_cfg, libvirtxml.DomainQEMUCommandlineArg{"-fw_cfg"})
+		fw_cfg = append(fw_cfg, libvirtxml.DomainQEMUCommandlineArg{ign_str})
+		QemuCmdline := &libvirtxml.DomainQEMUCommandline{
+			Args: fw_cfg,
+		}
+		domainDef.QEMUCommandline = QemuCmdline
 	}
 
 	arch, err := getHostArchitecture(virConn)
@@ -210,14 +210,21 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	} else {
 		if graphics, ok := d.GetOk("graphics"); ok {
 			graphics_map := graphics.(map[string]interface{})
+			domainDef.Devices.Graphics = []libvirtxml.DomainGraphic{
+				libvirtxml.DomainGraphic{},
+			}
 			if graphics_type, ok := graphics_map["type"]; ok {
-				domainDef.Devices.Graphics.Type = graphics_type.(string)
+				domainDef.Devices.Graphics[0].Type = graphics_type.(string)
 			}
 			if autoport, ok := graphics_map["autoport"]; ok {
-				domainDef.Devices.Graphics.Autoport = autoport.(string)
+				domainDef.Devices.Graphics[0].AutoPort = autoport.(string)
 			}
 			if listen_type, ok := graphics_map["listen_type"]; ok {
-				domainDef.Devices.Graphics.Listen.Type = listen_type.(string)
+				domainDef.Devices.Graphics[0].Listeners = []libvirtxml.DomainGraphicListener{
+					libvirtxml.DomainGraphicListener{
+						Type: listen_type.(string),
+					},
+				}
 			}
 		}
 	}
@@ -225,7 +232,9 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	if cpu, ok := d.GetOk("cpu"); ok {
 		cpu_map := cpu.(map[string]interface{})
 		if cpu_mode, ok := cpu_map["mode"]; ok {
-			domainDef.Cpu.Mode = cpu_mode.(string)
+			domainDef.CPU = &libvirtxml.DomainCPU{
+				Mode: cpu_mode.(string),
+			}
 		}
 	}
 
@@ -234,10 +243,12 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		if _, err := os.Stat(firmwareFile); os.IsNotExist(err) {
 			return fmt.Errorf("Could not find firmware file '%s'.", firmwareFile)
 		}
-		domainDef.Os.Loader = &defLoader{
-			File:     firmwareFile,
-			ReadOnly: "yes",
-			Type:     "pflash",
+		domainDef.OS = &libvirtxml.DomainOS{
+			Loader: &libvirtxml.DomainLoader{
+				Path:     firmwareFile,
+				Readonly: "yes",
+				Type:     "pflash",
+			},
 		}
 
 		if nvram, ok := d.GetOk("nvram"); ok {
@@ -245,39 +256,58 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			if _, err := os.Stat(nvramFile); os.IsNotExist(err) {
 				return fmt.Errorf("Could not find nvram file '%s'.", nvramFile)
 			}
-			domainDef.Os.NvRam = &defNvRam{
-				File: nvramFile,
+			domainDef.OS.NVRam = &libvirtxml.DomainNVRam{
+				NVRam: nvramFile,
 			}
 		}
 	}
 
-	domainDef.Memory.Amount = d.Get("memory").(int)
-	domainDef.VCpu.Amount = d.Get("vcpu").(int)
+	domainDef.Memory = &libvirtxml.DomainMemory{
+		Value: uint(d.Get("memory").(int)),
+		Unit:  "MiB",
+	}
+	domainDef.VCPU = &libvirtxml.DomainVCPU{
+		Value: d.Get("vcpu").(int),
+	}
 
 	if consoleCount, ok := d.GetOk("console.#"); ok {
-		var consoles []defConsole
+		var consoles []libvirtxml.DomainConsole
 		for i := 0; i < consoleCount.(int); i++ {
-			console := defConsole{}
+			console := libvirtxml.DomainConsole{}
 			consolePrefix := fmt.Sprintf("console.%d", i)
 			console.Type = d.Get(consolePrefix + ".type").(string)
-			console.Target.Port = d.Get(consolePrefix + ".target_port").(string)
+			console.Target = &libvirtxml.DomainConsoleTarget{
+				Port: d.Get(consolePrefix + ".target_port").(*uint),
+			}
 			if source_path, ok := d.GetOk(consolePrefix + ".source_path"); ok {
-				console.Source.Path = source_path.(string)
+				console.Source = &libvirtxml.DomainChardevSource{
+					Path: source_path.(string),
+				}
 			}
 			if target_type, ok := d.GetOk(consolePrefix + ".target_type"); ok {
 				console.Target.Type = target_type.(string)
 			}
 			consoles = append(consoles, console)
 		}
-		domainDef.Devices.Console = consoles
+		domainDef.Devices.Consoles = consoles
 	}
 
 	disksCount := d.Get("disk.#").(int)
-	var disks []defDisk
+	var disks []libvirtxml.DomainDisk
 	var scsiDisk bool = false
 	for i := 0; i < disksCount; i++ {
-		disk := newDefDisk()
-		disk.Target.Dev = fmt.Sprintf("vd%s", DiskLetterForIndex(i))
+		disk := libvirtxml.DomainDisk{
+			Type:   "file",
+			Device: "disk",
+			Target: &libvirtxml.DomainDiskTarget{
+				Bus: "virtio",
+				Dev: fmt.Sprintf("vd%s", DiskLetterForIndex(i)),
+			},
+			Driver: &libvirtxml.DomainDiskDriver{
+				Name: "qemu",
+				Type: "qcow2",
+			},
+		}
 
 		diskKey := fmt.Sprintf("disk.%d", i)
 		diskMap := d.Get(diskKey).(map[string]interface{})
@@ -286,9 +316,9 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			disk.Target.Bus = "scsi"
 			scsiDisk = true
 			if wwn, ok := diskMap["wwn"].(string); ok {
-				disk.Wwn = wwn
+				disk.WWN = wwn
 			} else {
-				disk.Wwn = randomWWN(10)
+				disk.WWN = randomWWN(10)
 			}
 		}
 		diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
@@ -300,19 +330,21 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf("Error retrieving volume file: %s", err)
 		}
 
-		disk.Source.File = diskVolumeFile
+		disk.Source = &libvirtxml.DomainDiskSource{
+			File: diskVolumeFile,
+		}
 
 		disks = append(disks, disk)
 	}
 
 	log.Printf("[DEBUG] scsiDisk: %s", scsiDisk)
 	if scsiDisk {
-		controller := defController{Type: "scsi", Model: "virtio-scsi"}
-		domainDef.Devices.Controller = append(domainDef.Devices.Controller, controller)
+		controller := libvirtxml.DomainController{Type: "scsi", Model: "virtio-scsi"}
+		domainDef.Devices.Controllers = append(domainDef.Devices.Controllers, controller)
 	}
 
 	filesystemsCount := d.Get("filesystem.#").(int)
-	var filesystems []defFilesystem
+	var filesystems []libvirtxml.DomainFilesystem
 	for i := 0; i < filesystemsCount; i++ {
 		fs := newFilesystemDef()
 
@@ -322,17 +354,25 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			fs.AccessMode = accessMode.(string)
 		}
 		if sourceDir, ok := fsMap["source"]; ok {
-			fs.Source.Dir = sourceDir.(string)
+			fs.Source = &libvirtxml.DomainFilesystemSource{
+				Dir: sourceDir.(string),
+			}
 		} else {
 			return fmt.Errorf("Filesystem entry must have a 'source' set")
 		}
 		if targetDir, ok := fsMap["target"]; ok {
-			fs.Target.Dir = targetDir.(string)
+			fs.Target = &libvirtxml.DomainFilesystemTarget{
+				Dir: targetDir.(string),
+			}
 		} else {
 			return fmt.Errorf("Filesystem entry must have a 'target' set")
 		}
 		if readonly, ok := fsMap["readonly"]; ok {
-			fs.ReadOnly = readonly.(string) == "1"
+			if readonly.(string) == "1" {
+				fs.ReadOnly = &libvirtxml.DomainFilesystemReadOnly{}
+			} else {
+				fs.ReadOnly = nil
+			}
 		}
 
 		filesystems = append(filesystems, fs)
@@ -358,13 +398,16 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	netIfacesCount := d.Get("network_interface.#").(int)
-	netIfaces := make([]defNetworkInterface, 0, netIfacesCount)
+	netIfaces := make([]libvirtxml.DomainInterface, 0, netIfacesCount)
 	partialNetIfaces := make(map[string]pendingMapping, netIfacesCount)
+	waitForLeases = make(map[libvirtxml.DomainInterface]bool, netIfacesCount)
 	for i := 0; i < netIfacesCount; i++ {
 		prefix := fmt.Sprintf("network_interface.%d", i)
 
-		netIface := defNetworkInterface{}
-		netIface.Model.Type = "virtio"
+		netIface := libvirtxml.DomainInterface{}
+		netIface.Model = &libvirtxml.DomainInterfaceModel{
+			Type: "virtio",
+		}
 
 		// calculate the MAC address
 		var mac string
@@ -377,12 +420,14 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				return fmt.Errorf("Error generating mac address: %s", err)
 			}
 		}
-		netIface.Mac.Address = mac
+		netIface.MAC = &libvirtxml.DomainInterfaceMAC{
+			Address: mac,
+		}
 
 		// this is not passed to libvirt, but used by waitForAddress
-		netIface.waitForLease = false
+		waitForLeases[netIface] = false
 		if waitForLease, ok := d.GetOk(prefix + ".wait_for_lease"); ok {
-			netIface.waitForLease = waitForLease.(bool)
+			waitForLeases[netIface] = waitForLease.(bool)
 		}
 
 		// connect to the interface to the network... first, look for the network
@@ -390,7 +435,9 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			// when using a "network_name" we do not try to do anything: we just
 			// connect to that network
 			netIface.Type = "network"
-			netIface.Source.Network = n.(string)
+			netIface.Source = &libvirtxml.DomainInterfaceSource{
+				Network: n.(string),
+			}
 		} else if networkUUID, ok := d.GetOk(prefix + ".network_id"); ok {
 			// when using a "network_id" we are referring to a "network resource"
 			// we have defined somewhere else...
@@ -405,7 +452,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				return fmt.Errorf("Error retrieving network name: %s", err)
 			}
 			networkDef, err := newDefNetworkfromLibvirt(network)
-			if !networkDef.HasDHCP() {
+			if !HasDHCP(networkDef) {
 				continue
 			}
 
@@ -430,7 +477,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			} else {
 				// no IPs provided: if the hostname has been provided, wait until we get an IP
 				if len(hostname) > 0 {
-					if !netIface.waitForLease {
+					if !waitForLeases[netIface] {
 						return fmt.Errorf("Cannot map '%s': we are not waiting for lease and no IP has been provided", hostname)
 					}
 					// the resource specifies a hostname but not an IP, so we must wait until we
@@ -447,22 +494,32 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				}
 			}
 			netIface.Type = "network"
-			netIface.Source.Network = networkName
+			netIface.Source = &libvirtxml.DomainInterfaceSource{
+				Network: networkName,
+			}
 		} else if bridgeNameI, ok := d.GetOk(prefix + ".bridge"); ok {
 			netIface.Type = "bridge"
-			netIface.Source.Bridge = bridgeNameI.(string)
+			netIface.Source = &libvirtxml.DomainInterfaceSource{
+				Bridge: bridgeNameI.(string),
+			}
 		} else if devI, ok := d.GetOk(prefix + ".vepa"); ok {
 			netIface.Type = "direct"
-			netIface.Source.Dev = devI.(string)
-			netIface.Source.Mode = "vepa"
+			netIface.Source = &libvirtxml.DomainInterfaceSource{
+				Dev:  devI.(string),
+				Mode: "vepa",
+			}
 		} else if devI, ok := d.GetOk(prefix + ".macvtap"); ok {
 			netIface.Type = "direct"
-			netIface.Source.Dev = devI.(string)
-			netIface.Source.Mode = "bridge"
+			netIface.Source = &libvirtxml.DomainInterfaceSource{
+				Dev:  devI.(string),
+				Mode: "bridge",
+			}
 		} else if devI, ok := d.GetOk(prefix + ".passthrough"); ok {
 			netIface.Type = "direct"
-			netIface.Source.Dev = devI.(string)
-			netIface.Source.Mode = "passthrough"
+			netIface.Source = &libvirtxml.DomainInterfaceSource{
+				Dev:  devI.(string),
+				Mode: "passthrough",
+			}
 		} else {
 			// no network has been specified: we are on our own
 		}
@@ -472,7 +529,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	domainDef.Devices.Disks = disks
 	domainDef.Devices.Filesystems = filesystems
-	domainDef.Devices.NetworkInterfaces = netIfaces
+	domainDef.Devices.Interfaces = netIfaces
 
 	connectURI, err := virConn.GetURI()
 	if err != nil {
@@ -522,7 +579,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	domainMeta := DomainMeta{
 		domain,
-		make(chan defNetworkInterface, len(netIfaces)),
+		make(chan libvirtxml.DomainInterface, len(netIfaces)),
 	}
 
 	// populate interface channels
@@ -601,26 +658,6 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	d.Partial(true)
-
-	if d.HasChange("metadata") {
-		metadata := defMetadata{}
-		metadata.Xml = d.Get("metadata").(string)
-		metadataToXml, err := xml.Marshal(metadata)
-		if err != nil {
-			return fmt.Errorf("Error serializing libvirt metadata: %s", err)
-		}
-
-		err = domain.SetMetadata(libvirt.DOMAIN_METADATA_ELEMENT,
-			string(metadataToXml),
-			"terraform-libvirt",
-			"http://github.com/dmacvicar/terraform-provider-libvirt/",
-			libvirt.DOMAIN_AFFECT_LIVE|libvirt.DOMAIN_AFFECT_CONFIG)
-		if err != nil {
-			return fmt.Errorf("Error changing domain metadata: %s", err)
-		}
-
-		d.SetPartial("metadata")
-	}
 
 	if d.HasChange("cloudinit") {
 		cloudinit, err := newDiskForCloudInit(virConn, d.Get("cloudinit").(string))
@@ -725,12 +762,11 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.Set("name", domainDef.Name)
-	d.Set("metadata", domainDef.Metadata.TerraformLibvirt.Xml)
-	d.Set("vpu", domainDef.VCpu)
+	d.Set("vpu", domainDef.VCPU)
 	d.Set("memory", domainDef.Memory)
-	d.Set("firmware", domainDef.Os.Loader)
-	d.Set("nvram", domainDef.Os.NvRam)
-	d.Set("cpu", domainDef.Cpu)
+	d.Set("firmware", domainDef.OS.Loader)
+	d.Set("nvram", domainDef.OS.NVRam)
+	d.Set("cpu", domainDef.CPU)
 	d.Set("autostart", autostart)
 
 	running, err := isDomainRunning(*domain)
@@ -804,11 +840,11 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	netIfaces := make([]map[string]interface{}, 0)
-	for i, networkInterfaceDef := range domainDef.Devices.NetworkInterfaces {
+	for i, networkInterfaceDef := range domainDef.Devices.Interfaces {
 		// we need it to read old values
 		prefix := fmt.Sprintf("network_interface.%d", i)
 
-		mac := strings.ToUpper(networkInterfaceDef.Mac.Address)
+		mac := strings.ToUpper(networkInterfaceDef.MAC.Address)
 		netIface := map[string]interface{}{
 			"network_id":     "",
 			"network_name":   "",
@@ -847,12 +883,12 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				netIface["network_name"] = networkInterfaceDef.Source.Network
 
 				// try to look for this MAC in the DHCP configuration for this VM
-				if networkDef.HasDHCP() {
+				if HasDHCP(networkDef) {
 				hostnameSearch:
-					for _, ip := range networkDef.Ips {
-						if ip.Dhcp != nil {
-							for _, host := range ip.Dhcp.Hosts {
-								if strings.ToUpper(host.Mac) == netIface["mac"] {
+					for _, ip := range networkDef.IPs {
+						if ip.DHCP != nil {
+							for _, host := range ip.DHCP.Hosts {
+								if strings.ToUpper(host.MAC) == netIface["mac"] {
 									log.Printf("[DEBUG] read: hostname for '%s': '%s'", netIface["mac"], host.Name)
 									netIface["hostname"] = host.Name
 									break hostnameSearch
@@ -980,21 +1016,21 @@ func resourceLibvirtDomainStateRefreshFunc(
 	}
 }
 
-func hasNetworkAddress(iface defNetworkInterface,
+func hasNetworkAddress(iface libvirtxml.DomainInterface,
 	domain libvirt.Domain) (found bool, ignore bool, err error) {
 
-	if !iface.waitForLease {
+	if !waitForLeases[iface] {
 		return false, true, nil
 	}
 
-	mac := strings.ToUpper(iface.Mac.Address)
+	mac := strings.ToUpper(iface.MAC.Address)
 	if mac == "" {
 		log.Printf("[DEBUG] Can't wait without a mac address.\n")
 		// we can't get the ip without a mac address
 		return false, true, nil
 	}
 
-	log.Printf("[DEBUG] waiting for network address for interface with hwaddr: '%s'\n", iface.Mac.Address)
+	log.Printf("[DEBUG] waiting for network address for interface with hwaddr: '%s'\n", iface.MAC.Address)
 	ifacesWithAddr, err := getDomainInterfaces(domain)
 	if err != nil {
 		return false, false, fmt.Errorf("Error retrieving interface addresses: %s", err)
@@ -1052,8 +1088,19 @@ func isDomainRunning(domain libvirt.Domain) (bool, error) {
 	return state == libvirt.DOMAIN_RUNNING, nil
 }
 
-func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (defDisk, error) {
-	disk := newCDROM()
+func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml.DomainDisk, error) {
+	disk := libvirtxml.DomainDisk{
+		Type:   "file",
+		Device: "cdrom",
+		Target: &libvirtxml.DomainDiskTarget{
+			Dev: "hda",
+			Bus: "ide",
+		},
+		Driver: &libvirtxml.DomainDiskDriver{
+			Name: "qemu",
+			Type: "raw",
+		},
+	}
 
 	diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
 	if err != nil {
@@ -1064,7 +1111,9 @@ func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (defDisk, e
 		return disk, fmt.Errorf("Error retrieving volume file: %s", err)
 	}
 
-	disk.Source.File = diskVolumeFile
+	disk.Source = &libvirtxml.DomainDiskSource{
+		File: diskVolumeFile,
+	}
 
 	return disk, nil
 }

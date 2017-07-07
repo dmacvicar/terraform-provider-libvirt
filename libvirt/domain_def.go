@@ -1,216 +1,77 @@
 package libvirt
 
 import (
-	"encoding/xml"
 	"os"
+
+	"github.com/libvirt/libvirt-go-xml"
 )
 
-type defDomain struct {
-	XMLName  xml.Name  `xml:"domain"`
-	Name     string    `xml:"name"`
-	Type     string    `xml:"type,attr"`
-	Xmlns    string    `xml:"xmlns:qemu,attr"`
-	Os       defOs     `xml:"os"`
-	Memory   defMemory `xml:"memory"`
-	VCpu     defVCpu   `xml:"vcpu"`
-	Metadata struct {
-		XMLName          xml.Name `xml:"metadata"`
-		TerraformLibvirt defMetadata
+func newFilesystemDef() libvirtxml.DomainFilesystem {
+	return libvirtxml.DomainFilesystem{
+		Type:       "mount",  // This is the only type used by qemu/kvm
+		AccessMode: "mapped", // A safe default value
+		ReadOnly:   &libvirtxml.DomainFilesystemReadOnly{},
 	}
-	Features struct {
-		Acpi string `xml:"acpi"`
-		Apic string `xml:"apic"`
-		Pae  string `xml:"pae"`
-	} `xml:"features"`
-	Devices struct {
-		Controller        []defController       `xml:"controller,omitempty"`
-		Disks             []defDisk             `xml:"disk"`
-		NetworkInterfaces []defNetworkInterface `xml:"interface"`
-		Console           []defConsole          `xml:"console"`
-		Filesystems       []defFilesystem       `xml:"filesystem"`
-		Graphics          *defGraphics          `xml:"graphics,omitempty"`
-		// QEMU guest agent channel
-		QemuGAChannel struct {
-			Type   string `xml:"type,attr"`
-			Source struct {
-				Mode string `xml:"mode,attr"`
-			} `xml:"source"`
-			Target struct {
-				Type string `xml:"type,attr"`
-				Name string `xml:"name,attr"`
-			} `xml:"target"`
-		} `xml:"channel"`
-		Rng struct {
-			Model   string `xml:"model,attr"`
-			Backend struct {
-				Model string `xml:"model,attr"`
-			} `xml:"backend"`
-		} `xml:"rng"`
-	} `xml:"devices"`
-	CmdLine struct {
-		XMLName xml.Name `xml:"qemu:commandline"`
-		Cmd     []defCmd `xml:"qemu:arg"`
-	}
-	Cpu struct {
-		Mode string `xml:"mode,attr,omitempty"`
-	} `xml:"cpu,omitempty"`
-}
-
-type defGraphics struct {
-	Type     string `xml:"type,attr"`
-	Autoport string `xml:"autoport,attr"`
-	Listen   struct {
-		Type string `xml:"type,attr"`
-	} `xml:"listen"`
-}
-
-type defMetadata struct {
-	XMLName xml.Name `xml:"http://github.com/dmacvicar/terraform-provider-libvirt/ user_data"`
-	Xml     string   `xml:",cdata"`
-}
-
-type defOs struct {
-	Type   defOsType  `xml:"type"`
-	Loader *defLoader `xml:"loader,omitempty"`
-	NvRam  *defNvRam  `xml:"nvram,omitempty"`
-}
-
-type defOsType struct {
-	Arch    string `xml:"arch,attr,omitempty"`
-	Machine string `xml:"machine,attr,omitempty"`
-	Name    string `xml:",chardata"`
-}
-
-type defMemory struct {
-	Unit   string `xml:"unit,attr"`
-	Amount int    `xml:",chardata"`
-}
-
-type defVCpu struct {
-	Placement string `xml:"unit,attr"`
-	Amount    int    `xml:",chardata"`
-}
-
-type defCmd struct {
-	Value string `xml:"value,attr"`
-}
-
-type defLoader struct {
-	ReadOnly string `xml:"readonly,attr,omitempty"`
-	Type     string `xml:"type,attr,omitempty"`
-	File     string `xml:",chardata"`
-}
-
-// <nvram>/var/lib/libvirt/qemu/nvram/sled12sp1_VARS.fd</nvram>
-type defNvRam struct {
-	File string `xml:",chardata"`
-}
-
-type defController struct {
-	Type  string `xml:"type,attr,omitempty"`
-	Model string `xml:"model,attr,omitempty"`
-}
-
-type defConsole struct {
-	Type   string `xml:"type,attr"`
-	Source struct {
-		Path string `xml:"path,attr,omitempty"`
-	} `xml:"source"`
-	Target struct {
-		Type string `xml:"type,attr,omitempty"`
-		Port string `xml:"port,attr"`
-	} `xml:"target"`
-}
-
-type defFilesystemReadOnly bool
-
-type defFilesystem struct {
-	Type       string                `xml:"type,attr"`
-	AccessMode string                `xml:"accessmode,attr"`
-	ReadOnly   defFilesystemReadOnly `xml:"readonly",omitempty`
-	Source     struct {
-		Dir string `xml:"dir,attr,omitempty"`
-	} `xml:"source"`
-	Target struct {
-		Dir string `xml:"dir,attr,omitempty"`
-	} `xml:"target"`
-}
-
-// The filesystem element has a <readonly/> tag when
-// the host directory cannot be written by the guest. When
-// the <readonly/> tag is omitted the read-write permissions
-// are granted.
-// To show the empty <readonly/> tag we have to define a
-// "alias" of bool and provide a custom marshaller for it.
-func (r defFilesystemReadOnly) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	if !r {
-		return nil
-	}
-	err := e.EncodeElement("", start)
-	return err
-}
-
-func (r *defFilesystemReadOnly) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var value string
-	err := d.DecodeElement(&value, &start)
-	if err != nil {
-		return err
-	}
-
-	*r = value == ""
-
-	return nil
-}
-
-func newFilesystemDef() defFilesystem {
-	fs := defFilesystem{}
-
-	// This is the only type used by qemu/kvm
-	fs.Type = "mount"
-
-	// A safe default value
-	fs.AccessMode = "mapped"
-	fs.ReadOnly = true
-
-	return fs
 }
 
 // Creates a domain definition with the defaults
 // the provider uses
-func newDomainDef() defDomain {
-	// libvirt domain definition
-	domainDef := defDomain{}
+func newDomainDef() libvirtxml.Domain {
+	domainDef := libvirtxml.Domain{
+		OS: &libvirtxml.DomainOS{
+			Type: &libvirtxml.DomainOSType{
+				Type: "hvm",
+			},
+		},
+		Memory: &libvirtxml.DomainMemory{
+			Unit:  "MiB",
+			Value: 512,
+		},
+		VCPU: &libvirtxml.DomainVCPU{
+			Placement: "static",
+			Value:     1,
+		},
+		CPU: &libvirtxml.DomainCPU{},
+		Devices: &libvirtxml.DomainDeviceList{
+			Graphics: []libvirtxml.DomainGraphic{
+				libvirtxml.DomainGraphic{
+					Type:     "spice",
+					AutoPort: "yes",
+				},
+			},
+			Channels: []libvirtxml.DomainChannel{
+				libvirtxml.DomainChannel{
+					Type: "unix",
+					Source: &libvirtxml.DomainChardevSource{
+						Mode: "bind",
+					},
+					Target: &libvirtxml.DomainChannelTarget{
+						Type: "virtio",
+						Name: "org.qemu.guest_agent.0",
+					},
+				},
+			},
+			RNGs: []libvirtxml.DomainRNG{
+				libvirtxml.DomainRNG{
+					Model: "virtio",
+					Backend: &libvirtxml.DomainRNGBackend{
+						Model: "random",
+					},
+				},
+			},
+		},
+		Features: &libvirtxml.DomainFeatureList{
+			PAE:  &libvirtxml.DomainFeature{},
+			ACPI: &libvirtxml.DomainFeature{},
+			APIC: &libvirtxml.DomainFeatureAPIC{},
+		},
+	}
+
 	if v := os.Getenv("TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE"); v != "" {
 		domainDef.Type = v
 	} else {
 		domainDef.Type = "kvm"
 	}
-	domainDef.Xmlns = ""
-
-	domainDef.Os = defOs{}
-	domainDef.Os.Type = defOsType{}
-	domainDef.Os.Type.Name = "hvm"
-
-	domainDef.Memory = defMemory{}
-	domainDef.Memory.Unit = "MiB"
-	domainDef.Memory.Amount = 512
-
-	domainDef.VCpu = defVCpu{}
-	domainDef.VCpu.Placement = "static"
-	domainDef.VCpu.Amount = 1
-
-	domainDef.Devices.Graphics = &defGraphics{}
-	domainDef.Devices.Graphics.Type = "spice"
-	domainDef.Devices.Graphics.Autoport = "yes"
-	domainDef.Devices.Graphics.Listen.Type = "none"
-
-	domainDef.Devices.QemuGAChannel.Type = "unix"
-	domainDef.Devices.QemuGAChannel.Source.Mode = "bind"
-	domainDef.Devices.QemuGAChannel.Target.Type = "virtio"
-	domainDef.Devices.QemuGAChannel.Target.Name = "org.qemu.guest_agent.0"
-
-	domainDef.Devices.Rng.Model = "virtio"
-	domainDef.Devices.Rng.Backend.Model = "random"
 
 	return domainDef
 }

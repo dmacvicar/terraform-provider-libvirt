@@ -478,7 +478,6 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.Domain) resource.
 
 func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		var cmdLine []defCmd
 		xmlDesc, err := domain.GetXMLDesc(0)
 		if err != nil {
 			return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
@@ -496,7 +495,7 @@ func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol)
 			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
 		}
 
-		cmdLine = domainDef.CmdLine.Cmd
+		cmdLine := domainDef.QEMUCommandline.Args
 		for i, cmd := range cmdLine {
 			if i == 1 && cmd.Value != ignStr {
 				return fmt.Errorf("libvirt domain fw_cfg XML is incorrect %s", cmd.Value)
@@ -533,7 +532,7 @@ func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.Test
 			if diskBus := disk.Target.Bus; diskBus != "scsi" {
 				return fmt.Errorf("Disk bus is not scsi")
 			}
-			if wwn := disk.Wwn; wwn != n {
+			if wwn := disk.WWN; wwn != n {
 				return fmt.Errorf("Disk wwn %s is not equal to %s", wwn, n)
 			}
 		}

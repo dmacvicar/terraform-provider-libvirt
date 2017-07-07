@@ -5,12 +5,13 @@ import (
 	"log"
 
 	libvirt "github.com/libvirt/libvirt-go"
+	"github.com/libvirt/libvirt-go-xml"
 )
 
 func getHostXMLDesc(ip, mac, name string) string {
-	dd := defNetworkIpDhcpHost{
-		Ip:   ip,
-		Mac:  mac,
+	dd := libvirtxml.NetworkDHCPHost{
+		IP:   ip,
+		MAC:  mac,
 		Name: name,
 	}
 	xml, err := xmlMarshallIndented(dd)

@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
+	"github.com/libvirt/libvirt-go-xml"
 )
 
 const (
@@ -156,7 +158,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 
 	networkDef := newNetworkDef()
 	networkDef.Name = d.Get("name").(string)
-	networkDef.Domain = &defNetworkDomain{
+	networkDef.Domain = &libvirtxml.NetworkDomain{
 		Name: d.Get("domain").(string),
 	}
 
@@ -165,13 +167,15 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	if b, ok := d.GetOk("bridge"); ok {
 		bridgeName = b.(string)
 	}
-	networkDef.Bridge = &defNetworkBridge{
+	networkDef.Bridge = &libvirtxml.NetworkBridge{
 		Name: bridgeName,
-		Stp:  "on",
+		STP:  "on",
 	}
 
 	// check the network mode
-	networkDef.Forward.Mode = strings.ToLower(d.Get("mode").(string))
+	networkDef.Forward = &libvirtxml.NetworkForward{
+		Mode: strings.ToLower(d.Get("mode").(string)),
+	}
 	if networkDef.Forward.Mode == netModeIsolated || networkDef.Forward.Mode == netModeNat || networkDef.Forward.Mode == netModeRoute {
 
 		if networkDef.Forward.Mode == netModeIsolated {
@@ -179,13 +183,13 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			networkDef.Forward = nil
 		} else if networkDef.Forward.Mode == netModeRoute {
 			// there is no NAT when using a routed network
-			networkDef.Forward.Nat = nil
+			networkDef.Forward.NAT = nil
 		}
 
 		// some network modes require a DHCP/DNS server
 		// set the addresses for DHCP
 		if addresses, ok := d.GetOk("addresses"); ok {
-			ipsPtrsLst := []*defNetworkIp{}
+			ipsPtrsLst := []libvirtxml.NetworkIP{}
 			for _, addressI := range addresses.([]interface{}) {
 				address := addressI.(string)
 				_, ipNet, err := net.ParseCIDR(address)
@@ -210,46 +214,49 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 				start[len(start)-1]++
 
 				// assign the .1 to the host interface
-				dni := defNetworkIp{
+				dni := libvirtxml.NetworkIP{
 					Address: start.String(),
-					Prefix:  ones,
+					Prefix:  strconv.Itoa(ones),
 					Family:  family,
 				}
 
 				start[len(start)-1]++ // then skip the .1
 				end[len(end)-1]--     // and skip the .255 (for broadcast)
 
-				dni.Dhcp = &defNetworkIpDhcp{
-					Ranges: []*defNetworkIpDhcpRange{
-						&defNetworkIpDhcpRange{
+				dni.DHCP = &libvirtxml.NetworkDHCP{
+					Ranges: []libvirtxml.NetworkDHCPRange{
+						libvirtxml.NetworkDHCPRange{
 							Start: start.String(),
 							End:   end.String(),
 						},
 					},
 				}
-				ipsPtrsLst = append(ipsPtrsLst, &dni)
+				ipsPtrsLst = append(ipsPtrsLst, dni)
 			}
-			networkDef.Ips = ipsPtrsLst
+			networkDef.IPs = ipsPtrsLst
 		}
 
 		if dns_forward_count, ok := d.GetOk("dns_forwarder.#"); ok {
-			var dns defNetworkDns
+			dns := libvirtxml.NetworkDNS{
+				Forwarders: []libvirtxml.NetworkDNSForwarder{},
+			}
+
 			for i := 0; i < dns_forward_count.(int); i++ {
-				forward := defDnsForwarder{}
+				forward := libvirtxml.NetworkDNSForwarder{}
 				forwardPrefix := fmt.Sprintf("dns_forwarder.%d", i)
 				if address, ok := d.GetOk(forwardPrefix + ".address"); ok {
 					ip := net.ParseIP(address.(string))
 					if ip == nil {
 						return fmt.Errorf("Could not parse address '%s'", address)
 					}
-					forward.Address = ip.String()
+					forward.Addr = ip.String()
 				}
 				if domain, ok := d.GetOk(forwardPrefix + ".domain"); ok {
 					forward.Domain = domain.(string)
 				}
-				dns.Forwarder = append(dns.Forwarder, &forward)
+				dns.Forwarders = append(dns.Forwarders, forward)
 			}
-			networkDef.Dns = &dns
+			networkDef.DNS = &dns
 		}
 
 	} else if networkDef.Forward.Mode == netModeBridge {
@@ -347,7 +354,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("running", active)
 
 	addresses := []string{}
-	for _, address := range networkDef.Ips {
+	for _, address := range networkDef.IPs {
 		// we get the host interface IP (ie, 10.10.8.1) but we want the network CIDR (ie, 10.10.8.0/24)
 		// so we need some transformations...
 		addr := net.ParseIP(address.Address)
@@ -358,7 +365,9 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		if addr.To4() != nil {
 			bits = net.IPv4len * 8
 		}
-		mask := net.CIDRMask(address.Prefix, bits)
+
+		prefix, _ := strconv.Atoi(address.Prefix)
+		mask := net.CIDRMask(prefix, bits)
 		network := addr.Mask(mask)
 		addresses = append(addresses, fmt.Sprintf("%s/%d", network, address.Prefix))
 	}
