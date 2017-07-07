@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/libvirt/libvirt-go-xml"
 )
 
 func init() {
@@ -77,14 +78,14 @@ func TestNetworkDefUnmarshall(t *testing.T) {
 	if b.Forward.Mode != "nat" {
 		t.Errorf("wrong forward mode: '%s'", b.Forward.Mode)
 	}
-	if len(b.Forward.Nat.Addresses) == 0 {
-		t.Errorf("wrong number of addresses: %s", b.Forward.Nat.Addresses)
+	if len(b.Forward.NAT.Addresses) == 0 {
+		t.Errorf("wrong number of addresses: %s", b.Forward.NAT.Addresses)
 	}
-	if b.Forward.Nat.Addresses[0].Start != "1.2.3.4" {
-		t.Errorf("wrong forward start address: %s", b.Forward.Nat.Addresses[0].Start)
+	if b.Forward.NAT.Addresses[0].Start != "1.2.3.4" {
+		t.Errorf("wrong forward start address: %s", b.Forward.NAT.Addresses[0].Start)
 	}
-	if len(b.Ips) == 0 {
-		t.Errorf("wrong number of IPs: %d", len(b.Ips))
+	if len(b.IPs) == 0 {
+		t.Errorf("wrong number of IPs: %d", len(b.IPs))
 	}
 	if bs, err := xmlMarshallIndented(b); err != nil {
 		t.Fatalf("marshalling error\n%s", spew.Sdump(b))
@@ -106,17 +107,17 @@ func TestBrokenNetworkDefUnmarshall(t *testing.T) {
 }
 
 func TestHasDHCPNoForwardSet(t *testing.T) {
-	net := defNetwork{}
+	net := libvirtxml.Network{}
 
-	if net.HasDHCP() {
+	if HasDHCP(net) {
 		t.Error("Expected to not have forward enabled")
 	}
 }
 
 func TestHasDHCPForwardSet(t *testing.T) {
-	createNet := func(mode string) defNetwork {
-		return defNetwork{
-			Forward: &defNetworkForward{
+	createNet := func(mode string) libvirtxml.Network {
+		return libvirtxml.Network{
+			Forward: &libvirtxml.NetworkForward{
 				Mode: mode,
 			},
 		}
@@ -124,7 +125,7 @@ func TestHasDHCPForwardSet(t *testing.T) {
 
 	for _, mode := range []string{"nat", "route", ""} {
 		net := createNet(mode)
-		if !net.HasDHCP() {
+		if !HasDHCP(net) {
 			t.Errorf(
 				"Expected to have forward enabled with forward set to be '%s'",
 				mode)

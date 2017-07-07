@@ -3,6 +3,8 @@ package libvirt
 import (
 	"encoding/xml"
 	"testing"
+
+	"github.com/libvirt/libvirt-go-xml"
 )
 
 func TestGetHostXMLDesc(t *testing.T) {
@@ -12,18 +14,18 @@ func TestGetHostXMLDesc(t *testing.T) {
 
 	data := getHostXMLDesc(ip, mac, name)
 
-	dd := defNetworkIpDhcpHost{}
+	dd := libvirtxml.NetworkDHCPHost{}
 	err := xml.Unmarshal([]byte(data), &dd)
 	if err != nil {
 		t.Errorf("error %v", err)
 	}
 
-	if dd.Ip != ip {
-		t.Errorf("expected ip %s, got %s", ip, dd.Ip)
+	if dd.IP != ip {
+		t.Errorf("expected ip %s, got %s", ip, dd.IP)
 	}
 
-	if dd.Mac != mac {
-		t.Errorf("expected mac %s, got %s", mac, dd.Mac)
+	if dd.MAC != mac {
+		t.Errorf("expected mac %s, got %s", mac, dd.MAC)
 	}
 
 	if dd.Name != name {
