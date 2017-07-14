@@ -156,9 +156,17 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 	if virConn == nil {
 		return false, fmt.Errorf("The libvirt connection was nil.")
 	}
+
 	domain, err := virConn.LookupDomainByUUIDString(d.Id())
+	if err != nil {
+		if err.(libvirt.Error).Code == libvirt.ERR_NO_DOMAIN {
+			return false, nil
+		}
+		return false, err
+	}
 	defer domain.Free()
-	return err == nil, err
+
+	return true, nil
 }
 
 func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error {
