@@ -1,5 +1,5 @@
-hash: 68e2acca116bc7eb7f8cd0958665c47cbddeda84005fafb9d90bf781563c0ca9
-updated: 2017-06-07T10:38:02.706155214+02:00
+hash: 2ab777ab6ba80c757dcf4940680b896243b0842787d991bfca6c18efd3f496dd
+updated: 2017-07-20T12:15:39.378349689+02:00
 imports:
 - name: github.com/apparentlymart/go-cidr
   version: f74186abdf0be1c9f8bfa7a5f97afcd3e598ff5e
@@ -115,7 +115,9 @@ imports:
 - name: github.com/jmespath/go-jmespath
   version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
 - name: github.com/libvirt/libvirt-go
-  version: 5ba8227244c30438609adcec6ea84dc1e688dfbd
+  version: 664b6d217e029ce5ad3094a8c2202c202b213d06
+- name: github.com/libvirt/libvirt-go-xml
+  version: 83a754119fc7239caffd1f50e08cb13b1b3825ef
 - name: github.com/mitchellh/copystructure
   version: d23ffcb85de31694d6ccaa23ccb4a03e55c1303f
 - name: github.com/mitchellh/go-homedir
