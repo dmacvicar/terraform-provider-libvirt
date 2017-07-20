@@ -952,4 +952,10 @@ int virDomainSetBlockThresholdCompat(virDomainPtr domain,
 #endif
 
 
+/* 3.5.0 */
+
+#ifndef VIR_DOMAIN_BLOCK_COPY_TRANSIENT_JOB
+#define VIR_DOMAIN_BLOCK_COPY_TRANSIENT_JOB 1 << 2
+#endif
+
 #endif /* LIBVIRT_GO_DOMAIN_COMPAT_H__ */
