@@ -3,31 +3,12 @@ language: go
 
 go:
   - 1.8
-
-before_install:
-  - sudo add-apt-repository -y cloud-archive:mitaka
-  - sudo apt-get -qq update
-  - sudo apt-get install -y qemu libvirt-bin libvirt-dev
-  - sudo usermod -a -G libvirtd $USER
-  - echo -e "<pool type='dir'>\n<name>default</name>\n<target>\n<path>/pool-default</path>\n</target>\n</pool>" > pool.xml
-  - sudo mkdir /pool-default
-  - sudo chmod a+rwx /pool-default
-  - sudo virsh pool-define pool.xml
-  - sudo virsh pool-start default
+install: true
+before_script:
   - go get github.com/mattn/goveralls
-
-install:
-  - go build .
-
-# override the custom test script, this would trigger
-# also the execution of the unit tests of the vendored
-# code
-env:
-  global:
-    - TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE=qemu
-    - TF_ACC=true
-    - LIBVIRT_DEFAULT_URI="qemu:///system"
-
+  - sudo bash ./travis/setup-host
+  - sudo lxc exec libvirt -- bash /code/travis/setup-guest
 script:
-  - sg libvirtd -c "go test -v ./libvirt"
-  - sg libvirtd -c "$HOME/gopath/bin/goveralls -v -service=travis-ci"
+  - sudo lxc exec libvirt -- bash /code/travis/run-tests-inside-guest
+  - sudo lxc file pull libvirt/root/go/src/github.com/dmacvicar/terraform-provider-libvirt/profile.cov .
+  - goveralls -coverprofile=profile.cov -service=travis-ci
