@@ -1,0 +1,21 @@
+#!/bin/bash
+set -x
+
+unset http_proxy
+
+check_network() {
+  ping -c 3 archive.ubuntu.com
+}
+
+while check_network ; [ $? -ne 0 ];do
+  echo waiting for network to be ready...
+  sleep 1
+done
+
+apt-get -qq update
+apt-get install -y qemu libvirt-bin libvirt-dev golang-1.8
+echo -e "<pool type='dir'>\n<name>default</name>\n<target>\n<path>/pool-default</path>\n</target>\n</pool>" > pool.xml
+mkdir /pool-default
+chmod a+rwx /pool-default
+virsh pool-define pool.xml
+virsh pool-start default

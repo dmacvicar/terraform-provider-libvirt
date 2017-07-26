@@ -1,0 +1,19 @@
+#!/bin/bash
+set -x
+
+unset http_proxy
+
+export GOROOT=/usr/lib/go-1.8/
+export GOPATH=/root/go
+export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+
+mkdir -p /root/go/src/github.com/dmacvicar/
+cp -r /code/ /root/go/src/github.com/dmacvicar/terraform-provider-libvirt
+cd /root/go/src/github.com/dmacvicar/terraform-provider-libvirt
+
+go build .
+
+export TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE=qemu
+export LIBVIRT_DEFAULT_URI="qemu:///system"
+export TF_ACC=true
+go test -v -covermode=count -coverprofile=profile.cov ./libvirt
