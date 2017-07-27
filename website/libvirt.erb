@@ -1,0 +1,38 @@
+<% wrap_layout :inner do %>
+  <% content_for :sidebar do %>
+    <div class="docs-sidebar hidden-print affix-top" role="complementary">
+      <ul class="nav docs-sidenav">
+        <li<%= sidebar_current("docs-home") %>>
+          <a href="/docs/providers/index.html">All Providers</a>
+        </li>
+
+        <li<%= sidebar_current("docs-libvirt-index") %>>
+          <a href="/docs/providers/libvirt/index.html">libvirt Provider</a>
+        </li>
+
+        <li<%= sidebar_current("docs-libvirt-resource") %>>
+          <a href="#">Resources</a>
+          <ul class="nav nav-visible">
+            <li<%= sidebar_current("docs-libvirt-resource-cloudinit") %>>
+              <a href="/docs/providers/libvirt/r/cloudinit.html">libvirt_cloudinit</a>
+            </li>
+            <li<%= sidebar_current("docs-libvirt-resource-coreos-ignition") %>>
+              <a href="/docs/providers/libvirt/r/coreos_ignition.html">libvirt_ignition</a>
+            </li>
+            <li<%= sidebar_current("docs-libvirt-resource-domain") %>>
+              <a href="/docs/providers/libvirt/r/domain.html">libvirt_domain</a>
+            </li>
+            <li<%= sidebar_current("docs-libvirt-resource-network") %>>
+              <a href="/docs/providers/libvirt/r/network.html">libvirt_network</a>
+            </li>
+            <li<%= sidebar_current("docs-libvirt-resource-volume") %>>
+              <a href="/docs/providers/libvirt/r/volume.html">libvirt_volume</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= yield %>
+<% end %>
