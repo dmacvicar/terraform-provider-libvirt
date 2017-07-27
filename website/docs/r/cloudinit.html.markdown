@@ -8,12 +8,12 @@ description: |-
 
 # libvirt\_cloudinit
 
-Manages a [cloud-init](http://cloudinit.readthedocs.io/) ISO disk that can be used to customize a Domain during 1st
-boot.
+Manages a [cloud-init](http://cloudinit.readthedocs.io/) ISO disk that can be
+used to customize a domain during first boot.
 
 ## Example Usage
 
-```
+```hcl
 resource "libvirt_cloudinit" "commoninit" {
   name = "commoninit.iso"
   local_hostname = "node"
