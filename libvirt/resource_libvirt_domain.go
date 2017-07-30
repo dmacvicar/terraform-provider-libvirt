@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -270,27 +271,32 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		Value: d.Get("vcpu").(int),
 	}
 
-	if consoleCount, ok := d.GetOk("console.#"); ok {
-		var consoles []libvirtxml.DomainConsole
-		for i := 0; i < consoleCount.(int); i++ {
-			console := libvirtxml.DomainConsole{}
-			consolePrefix := fmt.Sprintf("console.%d", i)
-			console.Type = d.Get(consolePrefix + ".type").(string)
+	var consoles []libvirtxml.DomainConsole
+	for i := 0; i < d.Get("console.#").(int); i++ {
+		console := libvirtxml.DomainConsole{}
+		consolePrefix := fmt.Sprintf("console.%d", i)
+		console.Type = d.Get(consolePrefix + ".type").(string)
+		consoleTargetPortInt, err := strconv.Atoi(d.Get(consolePrefix + ".target_port").(string))
+		if err == nil {
+			consoleTargetPort := uint(consoleTargetPortInt)
 			console.Target = &libvirtxml.DomainConsoleTarget{
-				Port: d.Get(consolePrefix + ".target_port").(*uint),
+				Port: &consoleTargetPort,
 			}
-			if source_path, ok := d.GetOk(consolePrefix + ".source_path"); ok {
-				console.Source = &libvirtxml.DomainChardevSource{
-					Path: source_path.(string),
-				}
-			}
-			if target_type, ok := d.GetOk(consolePrefix + ".target_type"); ok {
-				console.Target.Type = target_type.(string)
-			}
-			consoles = append(consoles, console)
 		}
-		domainDef.Devices.Consoles = consoles
+		if source_path, ok := d.GetOk(consolePrefix + ".source_path"); ok {
+			console.Source = &libvirtxml.DomainChardevSource{
+				Path: source_path.(string),
+			}
+		}
+		if target_type, ok := d.GetOk(consolePrefix + ".target_type"); ok {
+			if console.Target == nil {
+				console.Target = &libvirtxml.DomainConsoleTarget{}
+			}
+			console.Target.Type = target_type.(string)
+		}
+		consoles = append(consoles, console)
 	}
+	domainDef.Devices.Consoles = consoles
 
 	disksCount := d.Get("disk.#").(int)
 	var disks []libvirtxml.DomainDisk

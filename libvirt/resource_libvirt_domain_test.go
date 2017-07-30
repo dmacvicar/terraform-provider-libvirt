@@ -420,6 +420,54 @@ func TestAccLibvirtDomain_Filesystems(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_Consoles(t *testing.T) {
+	var domain libvirt.Domain
+
+	var config = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+                    console {
+                      type = "pty"
+                      target_port = "0"
+                      source_path = "/dev/pts/1"
+                    }
+                    console {
+                      type = "pty"
+                      target_port = "0"
+                      target_type = "virtio"
+                      source_path = "/dev/pts/2"
+                    }
+            }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "console.0.type", "pty"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "console.0.target_port", "0"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "console.0.source_path", "/dev/pts/1"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "console.1.type", "pty"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "console.1.target_port", "0"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "console.1.target_type", "virtio"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "console.1.source_path", "/dev/pts/2"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 	virtConn := testAccProvider.Meta().(*Client).libvirt
 
