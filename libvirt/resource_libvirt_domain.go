@@ -75,7 +75,7 @@ func resourceLibvirtDomain() *schema.Resource {
 				ForceNew: true,
 			},
 			"nvram": &schema.Schema{
-				Type:     schema.TypeString,
+				Type:     schema.TypeMap,
 				Optional: true,
 				ForceNew: true,
 			},
@@ -244,21 +244,30 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		if _, err := os.Stat(firmwareFile); os.IsNotExist(err) {
 			return fmt.Errorf("Could not find firmware file '%s'.", firmwareFile)
 		}
-		domainDef.OS = &libvirtxml.DomainOS{
-			Loader: &libvirtxml.DomainLoader{
-				Path:     firmwareFile,
-				Readonly: "yes",
-				Type:     "pflash",
-			},
+		domainDef.OS.Loader = &libvirtxml.DomainLoader{
+			Path:     firmwareFile,
+			Readonly: "yes",
+			Type:     "pflash",
+			Secure:   "no",
 		}
 
 		if nvram, ok := d.GetOk("nvram"); ok {
-			nvramFile := nvram.(string)
+			nvram_map := nvram.(map[string]interface{})
+
+			nvramFile := nvram_map["file"].(string)
 			if _, err := os.Stat(nvramFile); os.IsNotExist(err) {
 				return fmt.Errorf("Could not find nvram file '%s'.", nvramFile)
 			}
+			nvramTemplateFile := ""
+			if nvram_template, ok := nvram_map["template"]; ok {
+				nvramTemplateFile = nvram_template.(string)
+				if _, err := os.Stat(nvramTemplateFile); os.IsNotExist(err) {
+					return fmt.Errorf("Could not find nvram template file '%s'.", nvramTemplateFile)
+				}
+			}
 			domainDef.OS.NVRam = &libvirtxml.DomainNVRam{
-				NVRam: nvramFile,
+				NVRam:    nvramFile,
+				Template: nvramTemplateFile,
 			}
 		}
 	}
@@ -768,7 +777,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.Set("name", domainDef.Name)
-	d.Set("vpu", domainDef.VCPU)
+	d.Set("vcpu", domainDef.VCPU)
 	d.Set("memory", domainDef.Memory)
 	d.Set("firmware", domainDef.OS.Loader)
 	d.Set("nvram", domainDef.OS.NVRam)
