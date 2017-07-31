@@ -59,11 +59,14 @@ Some extra arguments are also provided for using UEFI images:
 environment. Users should usually specify one of the standard _Open Virtual Machine
 Firmware_ (_OVMF_) images available for their distributions. The file will be opened
 read-only.
-* `nvram` - (Optional) the _nvram_ variables file corresponding to the firmware. When provided,
-this file must be writable and specific to this domain, as it will be updated when running
-the domain. However, `libvirt` can manage this automatically (and this is the recommended solution)
-if a mapping for the firmware to a _variables file_ exists in `/etc/libvirt/qemu.conf:nvram`.
-In that case, `libvirt` will copy that variables file into a file specific for this domain.
+* `nvram` - (Optional) this block allows specifying the following attributes related to the _nvram_:
+  * `file` - path to the file backing the NVRAM store for non-volatile variables. When provided, 
+  this file must be writable and specific to this domain, as it will be updated when running the 
+  domain. However, `libvirt` can  manage this automatically (and this is the recommended solution) 
+  if a mapping for the firmware to a _variables file_ exists in `/etc/libvirt/qemu.conf:nvram`.
+  In that case, `libvirt` will copy that variables file into a file specific for this domain.
+  * `template` - (Optional) path to the file used to override variables from the master NVRAM 
+  store.
 
 So you should typically use the firmware as this,
 
@@ -86,6 +89,46 @@ and `/etc/libvirt/qemu.conf` should contain:
 nvram = [
    "/usr/share/qemu/ovmf-x86_64-code.bin:/usr/share/qemu/ovmf-x86_64-vars.bin"
 ]
+```
+
+In case you need (or want) to specify the path for the NVRAM store, the domain definition should 
+look like this:
+
+```hcl
+resource "libvirt_domain" "my_machine" {
+  name = "my_machine"
+  firmware = "/usr/share/qemu/ovmf-x86_64-code.bin"
+  nvram {
+    file = "/usr/local/share/qemu/custom-vars.bin"
+  }
+  memory = "2048"
+
+  disk {
+    volume_id = "${libvirt_volume.volume.id}"
+  }
+  ...
+}
+
+```
+
+Finally, if you want the initial values for the NVRAM to be overridden by custom initial values
+coming from a template, the domain definition should look like this:
+
+```hcl
+resource "libvirt_domain" "my_machine" {
+  name = "my_machine"
+  firmware = "/usr/share/qemu/ovmf-x86_64-code.bin"
+  nvram {
+    file = "/usr/local/share/qemu/custom-vars.bin"
+    template = "/usr/local/share/qemu/template-vars.bin"
+  }
+  memory = "2048"
+
+  disk {
+    volume_id = "${libvirt_volume.volume.id}"
+  }
+  ...
+}
 ```
 
 ### Handling disks

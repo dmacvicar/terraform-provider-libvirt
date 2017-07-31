@@ -3,6 +3,7 @@ package libvirt
 import (
 	"encoding/xml"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"testing"
 
@@ -586,4 +587,99 @@ func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.Test
 		}
 		return nil
 	}
+}
+
+func createNvramFile() (string, error) {
+	// size of an accepted, valid, nvram backing store
+	nvram_dummy_buffer := make([]byte, 131072)
+	file, err := ioutil.TempFile("/tmp", "nvram")
+	if err != nil {
+		return "", err
+	}
+	file.Chmod(0777)
+	_, err = file.Write(nvram_dummy_buffer)
+	if err != nil {
+		return "", err
+	}
+	if file.Close() != nil {
+		return "", err
+	}
+	return file.Name(), nil
+}
+
+func TestAccLibvirtDomain_FirmwareNoTemplate(t *testing.T) {
+	nvram_path, err := createNvramFile()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var domain libvirt.Domain
+	var config = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain" {
+                name = "terraform-test-firmware-no-template"
+	            firmware = "/usr/share/ovmf/OVMF.fd"
+                nvram {
+                    file = "%s"
+  	            }
+            }`, nvram_path)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "name", "terraform-test-firmware-no-template"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "nvram.file", nvram_path),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "firmware", "/usr/share/ovmf/OVMF.fd"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtDomain_FirmwareTemplate(t *testing.T) {
+	nvram_path, err := createNvramFile()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var domain libvirt.Domain
+	var config = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain" {
+                name = "terraform-test-firmware-with-template"
+                firmware = "/usr/share/ovmf/OVMF.fd"
+                nvram {
+                	file = "%s"
+                	template = "/usr/share/qemu/OVMF.fd"
+                }
+            }`, nvram_path)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "name", "terraform-test-firmware-with-template"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "nvram.file", nvram_path),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "nvram.template", "/usr/share/qemu/OVMF.fd"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "firmware", "/usr/share/ovmf/OVMF.fd"),
+				),
+			},
+		},
+	})
 }
