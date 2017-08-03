@@ -28,6 +28,7 @@ import (
 	"github.com/coreos/ignition/internal/exec/util"
 	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/resource"
+	internalUtil "github.com/coreos/ignition/internal/util"
 )
 
 const (
@@ -44,13 +45,13 @@ func init() {
 
 type creator struct{}
 
-func (creator) Create(logger *log.Logger, client *resource.HttpClient, root string) stages.Stage {
+func (creator) Create(logger *log.Logger, root string, f resource.Fetcher) stages.Stage {
 	return &stage{
 		Util: util.Util{
 			DestDir: root,
 			Logger:  logger,
+			Fetcher: f,
 		},
-		client: client,
 	}
 }
 
@@ -60,8 +61,6 @@ func (creator) Name() string {
 
 type stage struct {
 	util.Util
-
-	client *resource.HttpClient
 }
 
 func (stage) Name() string {
@@ -111,23 +110,31 @@ func (s stage) createFilesystemsEntries(config types.Config) error {
 
 // filesystemEntry represent a thing that knows how to create itself.
 type filesystemEntry interface {
-	create(l *log.Logger, c *resource.HttpClient, u util.Util) error
+	create(l *log.Logger, u util.Util) error
 }
 
 type fileEntry types.File
 
-func (tmp fileEntry) create(l *log.Logger, c *resource.HttpClient, u util.Util) error {
+func (tmp fileEntry) create(l *log.Logger, u util.Util) error {
 	f := types.File(tmp)
-	file := util.RenderFile(l, c, f)
-	if file == nil {
+
+	if f.User.ID == nil {
+		f.User.ID = internalUtil.IntToPtr(0)
+	}
+	if f.Group.ID == nil {
+		f.Group.ID = internalUtil.IntToPtr(0)
+	}
+
+	fetchOp := u.PrepareFetch(l, f)
+	if fetchOp == nil {
 		return fmt.Errorf("failed to resolve file %q", f.Path)
 	}
 
 	if err := l.LogOp(
-		func() error { return u.WriteFile(file) },
+		func() error { return u.PerformFetch(fetchOp) },
 		"writing file %q", string(f.Path),
 	); err != nil {
-		return fmt.Errorf("failed to create file %q: %v", file.Path, err)
+		return fmt.Errorf("failed to create file %q: %v", fetchOp.Path, err)
 	}
 
 	return nil
@@ -135,8 +142,16 @@ func (tmp fileEntry) create(l *log.Logger, c *resource.HttpClient, u util.Util) 
 
 type dirEntry types.Directory
 
-func (tmp dirEntry) create(l *log.Logger, _ *resource.HttpClient, u util.Util) error {
+func (tmp dirEntry) create(l *log.Logger, u util.Util) error {
 	d := types.Directory(tmp)
+
+	if d.User.ID == nil {
+		d.User.ID = internalUtil.IntToPtr(0)
+	}
+	if d.Group.ID == nil {
+		d.Group.ID = internalUtil.IntToPtr(0)
+	}
+
 	err := l.LogOp(func() error {
 		path := filepath.Clean(u.JoinPath(string(d.Path)))
 
@@ -178,8 +193,15 @@ func (tmp dirEntry) create(l *log.Logger, _ *resource.HttpClient, u util.Util) e
 
 type linkEntry types.Link
 
-func (tmp linkEntry) create(l *log.Logger, _ *resource.HttpClient, u util.Util) error {
+func (tmp linkEntry) create(l *log.Logger, u util.Util) error {
 	s := types.Link(tmp)
+
+	if s.User.ID == nil {
+		s.User.ID = internalUtil.IntToPtr(0)
+	}
+	if s.Group.ID == nil {
+		s.Group.ID = internalUtil.IntToPtr(0)
+	}
 
 	if err := l.LogOp(
 		func() error { return u.WriteLink(s) },
@@ -282,12 +304,13 @@ func (s stage) createEntries(fs types.Filesystem, files []filesystemEntry) error
 	}
 
 	u := util.Util{
-		Logger:  s.Logger,
 		DestDir: mnt,
+		Fetcher: s.Util.Fetcher,
+		Logger:  s.Logger,
 	}
 
 	for _, e := range files {
-		if err := e.create(s.Logger, s.client, u); err != nil {
+		if err := e.create(s.Logger, u); err != nil {
 			return err
 		}
 	}
@@ -302,11 +325,29 @@ func (s stage) createUnits(config types.Config) error {
 			return err
 		}
 		if unit.Enable {
+			s.Logger.Warning("the enable field has been deprecated in favor of enabled")
 			if err := s.Logger.LogOp(
 				func() error { return s.EnableUnit(unit) },
 				"enabling unit %q", unit.Name,
 			); err != nil {
 				return err
+			}
+		}
+		if unit.Enabled != nil {
+			if *unit.Enabled {
+				if err := s.Logger.LogOp(
+					func() error { return s.EnableUnit(unit) },
+					"enabling unit %q", unit.Name,
+				); err != nil {
+					return err
+				}
+			} else {
+				if err := s.Logger.LogOp(
+					func() error { return s.DisableUnit(unit) },
+					"disabling unit %q", unit.Name,
+				); err != nil {
+					return err
+				}
 			}
 		}
 		if unit.Mask {
@@ -336,9 +377,13 @@ func (s stage) writeSystemdUnit(unit types.Unit) error {
 				continue
 			}
 
-			f := util.FileFromUnitDropin(unit, dropin)
+			f, err := util.FileFromUnitDropin(unit, dropin)
+			if err != nil {
+				s.Logger.Crit("error converting dropin: %v", err)
+				return err
+			}
 			if err := s.Logger.LogOp(
-				func() error { return s.WriteFile(f) },
+				func() error { return s.PerformFetch(f) },
 				"writing drop-in %q at %q", dropin.Name, f.Path,
 			); err != nil {
 				return err
@@ -349,9 +394,13 @@ func (s stage) writeSystemdUnit(unit types.Unit) error {
 			return nil
 		}
 
-		f := util.FileFromSystemdUnit(unit)
+		f, err := util.FileFromSystemdUnit(unit)
+		if err != nil {
+			s.Logger.Crit("error converting unit: %v", err)
+			return err
+		}
 		if err := s.Logger.LogOp(
-			func() error { return s.WriteFile(f) },
+			func() error { return s.PerformFetch(f) },
 			"writing unit %q at %q", unit.Name, f.Path,
 		); err != nil {
 			return err
@@ -369,9 +418,13 @@ func (s stage) writeNetworkdUnit(unit types.Networkdunit) error {
 			return nil
 		}
 
-		f := util.FileFromNetworkdUnit(unit)
+		f, err := util.FileFromNetworkdUnit(unit)
+		if err != nil {
+			s.Logger.Crit("error converting unit: %v", err)
+			return err
+		}
 		if err := s.Logger.LogOp(
-			func() error { return s.WriteFile(f) },
+			func() error { return s.PerformFetch(f) },
 			"writing unit %q at %q", unit.Name, f.Path,
 		); err != nil {
 			return err

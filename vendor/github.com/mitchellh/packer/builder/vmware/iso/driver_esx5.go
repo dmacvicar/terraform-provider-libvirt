@@ -198,7 +198,7 @@ func (d *ESX5Driver) VNCAddress(_ string, portMin, portMax uint) (string, uint, 
 		}
 	}
 
-	vncTimeout := time.Duration(15)
+	vncTimeout := time.Duration(15 * time.Second)
 	envTimeout := os.Getenv("PACKER_ESXI_VNC_PROBE_TIMEOUT")
 	if envTimeout != "" {
 		if parsedTimeout, err := time.ParseDuration(envTimeout); err != nil {
@@ -395,8 +395,9 @@ func (d *ESX5Driver) connect() error {
 	sshConfig := &ssh.Config{
 		Connection: ssh.ConnectFunc("tcp", address),
 		SSHConfig: &gossh.ClientConfig{
-			User: d.Username,
-			Auth: auth,
+			User:            d.Username,
+			Auth:            auth,
+			HostKeyCallback: gossh.InsecureIgnoreHostKey(),
 		},
 	}
 

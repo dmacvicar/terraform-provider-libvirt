@@ -18,12 +18,10 @@
 package gce
 
 import (
-	"net/http"
 	"net/url"
 
 	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/config/validate/report"
-	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/providers/util"
 	"github.com/coreos/ignition/internal/resource"
 )
@@ -34,14 +32,19 @@ var (
 		Host:   "metadata.google.internal",
 		Path:   "computeMetadata/v1/instance/attributes/user-data",
 	}
-	metadataHeader = http.Header{"Metadata-Flavor": []string{"Google"}}
+	metadataHeaderKey = "Metadata-Flavor"
+	metadataHeaderVal = "Google"
 )
 
-func FetchConfig(logger *log.Logger, client *resource.HttpClient) (types.Config, report.Report, error) {
-	data, err := resource.FetchConfigWithHeader(logger, client, userdataUrl, metadataHeader)
-	if err != nil {
+func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
+	headers := resource.ConfigHeaders
+	headers.Set(metadataHeaderKey, metadataHeaderVal)
+	data, err := f.FetchToBuffer(userdataUrl, resource.FetchOptions{
+		Headers: headers,
+	})
+	if err != nil && err != resource.ErrNotFound {
 		return types.Config{}, report.Report{}, err
 	}
 
-	return util.ParseConfig(logger, data)
+	return util.ParseConfig(f.Logger, data)
 }

@@ -17,21 +17,11 @@ package util
 import (
 	"crypto/sha512"
 	"encoding/hex"
-	"fmt"
 	"hash"
 
 	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/internal/resource"
 )
-
-type ErrHashMismatch struct {
-	Calculated string
-	Expected   string
-}
-
-func (e ErrHashMismatch) Error() string {
-	return fmt.Sprintf("hash verification failed (calculated %s but expected %s)",
-		e.Calculated, e.Expected)
-}
 
 func AssertValid(verify types.Verification, data []byte) error {
 	if hash := verify.Hash; hash != nil {
@@ -52,7 +42,7 @@ func AssertValid(verify types.Verification, data []byte) error {
 		encodedSum := make([]byte, hex.EncodedLen(len(sum)))
 		hex.Encode(encodedSum, sum)
 		if string(encodedSum) != hashSum {
-			return ErrHashMismatch{
+			return resource.ErrHashMismatch{
 				Calculated: string(encodedSum),
 				Expected:   hashSum,
 			}

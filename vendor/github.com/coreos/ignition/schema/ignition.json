@@ -356,6 +356,9 @@
             "enable": {
               "type": "boolean"
             },
+            "enabled": {
+              "type": ["boolean", "null"]
+            },
             "mask": {
               "type": "boolean"
             },

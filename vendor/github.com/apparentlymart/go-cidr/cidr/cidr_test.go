@@ -115,6 +115,11 @@ func TestHost(t *testing.T) {
 			Output: "192.168.1.1",
 		},
 		Case{
+			Range:  "2001:db8::/32",
+			Num:    1,
+			Output: "2001:db8::1",
+		},
+		Case{
 			Range: "192.168.1.0/24",
 			Num:   256,
 			Error: true, // only 0-255 will fit in 8 bits

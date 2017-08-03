@@ -24,7 +24,6 @@ import (
 
 	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/config/validate/report"
-	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/providers/util"
 	"github.com/coreos/ignition/internal/resource"
 )
@@ -33,19 +32,19 @@ const (
 	firmwareConfigPath = "/sys/firmware/qemu_fw_cfg/by_name/opt/com.coreos/config/raw"
 )
 
-func FetchConfig(logger *log.Logger, _ *resource.HttpClient) (types.Config, report.Report, error) {
-	_, err := logger.LogCmd(exec.Command("modprobe", "qemu_fw_cfg"), "loading QEMU firmware config module")
+func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
+	_, err := f.Logger.LogCmd(exec.Command("modprobe", "qemu_fw_cfg"), "loading QEMU firmware config module")
 	if err != nil {
 		return types.Config{}, report.Report{}, err
 	}
 
 	data, err := ioutil.ReadFile(firmwareConfigPath)
 	if os.IsNotExist(err) {
-		logger.Info("QEMU firmware config was not found. Ignoring...")
+		f.Logger.Info("QEMU firmware config was not found. Ignoring...")
 	} else if err != nil {
-		logger.Err("couldn't read QEMU firmware config: %v", err)
+		f.Logger.Err("couldn't read QEMU firmware config: %v", err)
 		return types.Config{}, report.Report{}, err
 	}
 
-	return util.ParseConfig(logger, data)
+	return util.ParseConfig(f.Logger, data)
 }

@@ -1,6 +1,7 @@
 package getter
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -165,5 +166,85 @@ func TestS3Getter_ClientMode_collision(t *testing.T) {
 	}
 	if mode != ClientModeFile {
 		t.Fatal("expect ClientModeFile")
+	}
+}
+
+func TestS3Getter_Url(t *testing.T) {
+	var s3tests = []struct {
+		name    string
+		url     string
+		region  string
+		bucket  string
+		path    string
+		version string
+	}{
+		{
+			name:    "AWSv1234",
+			url:     "s3::https://s3-eu-west-1.amazonaws.com/bucket/foo/bar.baz?version=1234",
+			region:  "eu-west-1",
+			bucket:  "bucket",
+			path:    "foo/bar.baz",
+			version: "1234",
+		},
+		{
+			name:    "localhost-1",
+			url:     "s3::http://127.0.0.1:9000/test-bucket/hello.txt?aws_access_key_id=TESTID&aws_access_key_secret=TestSecret&region=us-east-2&version=1",
+			region:  "us-east-2",
+			bucket:  "test-bucket",
+			path:    "hello.txt",
+			version: "1",
+		},
+		{
+			name:    "localhost-2",
+			url:     "s3::http://127.0.0.1:9000/test-bucket/hello.txt?aws_access_key_id=TESTID&aws_access_key_secret=TestSecret&version=1",
+			region:  "us-east-1",
+			bucket:  "test-bucket",
+			path:    "hello.txt",
+			version: "1",
+		},
+		{
+			name:    "localhost-3",
+			url:     "s3::http://127.0.0.1:9000/test-bucket/hello.txt?aws_access_key_id=TESTID&aws_access_key_secret=TestSecret",
+			region:  "us-east-1",
+			bucket:  "test-bucket",
+			path:    "hello.txt",
+			version: "",
+		},
+	}
+
+	for i, pt := range s3tests {
+		t.Run(pt.name, func(t *testing.T) {
+			g := new(S3Getter)
+			forced, src := getForcedGetter(pt.url)
+			u, err := url.Parse(src)
+
+			if err != nil {
+				t.Errorf("test %d: unexpected error: %s", i, err)
+			}
+			if forced != "s3" {
+				t.Fatalf("expected forced protocol to be s3")
+			}
+
+			region, bucket, path, version, creds, err := g.parseUrl(u)
+
+			if err != nil {
+				t.Fatalf("err: %s", err)
+			}
+			if region != pt.region {
+				t.Fatalf("expected %s, got %s", pt.region, region)
+			}
+			if bucket != pt.bucket {
+				t.Fatalf("expected %s, got %s", pt.bucket, bucket)
+			}
+			if path != pt.path {
+				t.Fatalf("expected %s, got %s", pt.path, path)
+			}
+			if version != pt.version {
+				t.Fatalf("expected %s, got %s", pt.version, version)
+			}
+			if &creds == nil {
+				t.Fatalf("expected to not be nil")
+			}
+		})
 	}
 }

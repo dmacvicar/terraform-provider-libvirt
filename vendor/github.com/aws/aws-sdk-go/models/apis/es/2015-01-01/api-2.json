@@ -3,9 +3,10 @@
   "metadata":{
     "apiVersion":"2015-01-01",
     "endpointPrefix":"es",
+    "protocol":"rest-json",
     "serviceFullName":"Amazon Elasticsearch Service",
     "signatureVersion":"v4",
-    "protocol":"rest-json"
+    "uid":"es-2015-01-01"
   },
   "operations":{
     "AddTags":{
@@ -16,25 +17,10 @@
       },
       "input":{"shape":"AddTagsRequest"},
       "errors":[
-        {
-          "shape":"BaseException",
-          "exception":true
-        },
-        {
-          "shape":"LimitExceededException",
-          "error":{"httpStatusCode":409},
-          "exception":true
-        },
-        {
-          "shape":"ValidationException",
-          "error":{"httpStatusCode":400},
-          "exception":true
-        },
-        {
-          "shape":"InternalException",
-          "error":{"httpStatusCode":500},
-          "exception":true
-        }
+        {"shape":"BaseException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ValidationException"},
+        {"shape":"InternalException"}
       ]
     },
     "CreateElasticsearchDomain":{
@@ -46,40 +32,13 @@
       "input":{"shape":"CreateElasticsearchDomainRequest"},
       "output":{"shape":"CreateElasticsearchDomainResponse"},
       "errors":[
-        {
-          "shape":"BaseException",
-          "exception":true
-        },
-        {
-          "shape":"DisabledOperationException",
-          "error":{"httpStatusCode":409},
-          "exception":true
-        },
-        {
-          "shape":"InternalException",
-          "error":{"httpStatusCode":500},
-          "exception":true
-        },
-        {
-          "shape":"InvalidTypeException",
-          "error":{"httpStatusCode":409},
-          "exception":true
-        },
-        {
-          "shape":"LimitExceededException",
-          "error":{"httpStatusCode":409},
-          "exception":true
-        },
-        {
-          "shape":"ResourceAlreadyExistsException",
-          "error":{"httpStatusCode":409},
-          "exception":true
-        },
-        {
-          "shape":"ValidationException",
-          "error":{"httpStatusCode":400},
-          "exception":true
-        }
+        {"shape":"BaseException"},
+        {"shape":"DisabledOperationException"},
+        {"shape":"InternalException"},
+        {"shape":"InvalidTypeException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ResourceAlreadyExistsException"},
+        {"shape":"ValidationException"}
       ]
     },
     "DeleteElasticsearchDomain":{
@@ -91,25 +50,10 @@
       "input":{"shape":"DeleteElasticsearchDomainRequest"},
       "output":{"shape":"DeleteElasticsearchDomainResponse"},
       "errors":[
-        {
-          "shape":"BaseException",
-          "exception":true
-        },
-        {
-          "shape":"InternalException",
-          "error":{"httpStatusCode":500},
-          "exception":true
-        },
-        {
-          "shape":"ResourceNotFoundException",
-          "error":{"httpStatusCode":409},
-          "exception":true
-        },
-        {
-          "shape":"ValidationException",
-          "error":{"httpStatusCode":400},
-          "exception":true
-        }
+        {"shape":"BaseException"},
+        {"shape":"InternalException"},
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"ValidationException"}
       ]
     },
     "DescribeElasticsearchDomain":{
@@ -121,25 +65,10 @@
       "input":{"shape":"DescribeElasticsearchDomainRequest"},
       "output":{"shape":"DescribeElasticsearchDomainResponse"},
       "errors":[
-        {
-          "shape":"BaseException",
-          "exception":true
-        },
-        {
-          "shape":"InternalException",
-          "error":{"httpStatusCode":500},
-          "exception":true
-        },
-        {
-          "shape":"ResourceNotFoundException",
-          "error":{"httpStatusCode":409},
-          "exception":true
-        },
-        {
-          "shape":"ValidationException",
-          "error":{"httpStatusCode":400},
-          "exception":true
-        }
+        {"shape":"BaseException"},
+        {"shape":"InternalException"},
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"ValidationException"}
       ]
     },
     "DescribeElasticsearchDomainConfig":{
@@ -151,25 +80,10 @@
       "input":{"shape":"DescribeElasticsearchDomainConfigRequest"},
       "output":{"shape":"DescribeElasticsearchDomainConfigResponse"},
       "errors":[
-        {
-          "shape":"BaseException",
-          "exception":true
-        },
-        {
-          "shape":"InternalException",
-          "error":{"httpStatusCode":500},
-          "exception":true
-        },
-        {
-          "shape":"ResourceNotFoundException",
-          "error":{"httpStatusCode":409},
-          "exception":true
-        },
-        {
-          "shape":"ValidationException",
-          "error":{"httpStatusCode":400},
-          "exception":true
-        }
+        {"shape":"BaseException"},
+        {"shape":"InternalException"},
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"ValidationException"}
       ]
     },
     "DescribeElasticsearchDomains":{
@@ -181,20 +95,26 @@
       "input":{"shape":"DescribeElasticsearchDomainsRequest"},
       "output":{"shape":"DescribeElasticsearchDomainsResponse"},
       "errors":[
-        {
-          "shape":"BaseException",
-          "exception":true
-        },
-        {
-          "shape":"InternalException",
-          "error":{"httpStatusCode":500},
-          "exception":true
-        },
-        {
-          "shape":"ValidationException",
-          "error":{"httpStatusCode":400},
-          "exception":true
-        }
+        {"shape":"BaseException"},
+        {"shape":"InternalException"},
+        {"shape":"ValidationException"}
+      ]
+    },
+    "DescribeElasticsearchInstanceTypeLimits":{
+      "name":"DescribeElasticsearchInstanceTypeLimits",
+      "http":{
+        "method":"GET",
+        "requestUri":"/2015-01-01/es/instanceTypeLimits/{ElasticsearchVersion}/{InstanceType}"
+      },
+      "input":{"shape":"DescribeElasticsearchInstanceTypeLimitsRequest"},
+      "output":{"shape":"DescribeElasticsearchInstanceTypeLimitsResponse"},
+      "errors":[
+        {"shape":"BaseException"},
+        {"shape":"InternalException"},
+        {"shape":"InvalidTypeException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"ValidationException"}
       ]
     },
     "ListDomainNames":{
@@ -205,15 +125,38 @@
       },
       "output":{"shape":"ListDomainNamesResponse"},
       "errors":[
-        {
-          "shape":"BaseException",
-          "exception":true
-        },
-        {
-          "shape":"ValidationException",
-          "error":{"httpStatusCode":400},
-          "exception":true
-        }
+        {"shape":"BaseException"},
+        {"shape":"ValidationException"}
+      ]
+    },
+    "ListElasticsearchInstanceTypes":{
+      "name":"ListElasticsearchInstanceTypes",
+      "http":{
+        "method":"GET",
+        "requestUri":"/2015-01-01/es/instanceTypes/{ElasticsearchVersion}"
+      },
+      "input":{"shape":"ListElasticsearchInstanceTypesRequest"},
+      "output":{"shape":"ListElasticsearchInstanceTypesResponse"},
+      "errors":[
+        {"shape":"BaseException"},
+        {"shape":"InternalException"},
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"ValidationException"}
+      ]
+    },
+    "ListElasticsearchVersions":{
+      "name":"ListElasticsearchVersions",
+      "http":{
+        "method":"GET",
+        "requestUri":"/2015-01-01/es/versions"
+      },
+      "input":{"shape":"ListElasticsearchVersionsRequest"},
+      "output":{"shape":"ListElasticsearchVersionsResponse"},
+      "errors":[
+        {"shape":"BaseException"},
+        {"shape":"InternalException"},
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"ValidationException"}
       ]
     },
     "ListTags":{
@@ -225,25 +168,10 @@
       "input":{"shape":"ListTagsRequest"},
       "output":{"shape":"ListTagsResponse"},
       "errors":[
-        {
-          "shape":"BaseException",
-          "exception":true
-        },
-        {
-          "shape":"ResourceNotFoundException",
-          "error":{"httpStatusCode":409},
-          "exception":true
-        },
-        {
-          "shape":"ValidationException",
-          "error":{"httpStatusCode":400},
-          "exception":true
-        },
-        {
-          "shape":"InternalException",
-          "error":{"httpStatusCode":500},
-          "exception":true
-        }
+        {"shape":"BaseException"},
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"ValidationException"},
+        {"shape":"InternalException"}
       ]
     },
     "RemoveTags":{
@@ -254,20 +182,9 @@
       },
       "input":{"shape":"RemoveTagsRequest"},
       "errors":[
-        {
-          "shape":"BaseException",
-          "exception":true
-        },
-        {
-          "shape":"ValidationException",
-          "error":{"httpStatusCode":400},
-          "exception":true
-        },
-        {
-          "shape":"InternalException",
-          "error":{"httpStatusCode":500},
-          "exception":true
-        }
+        {"shape":"BaseException"},
+        {"shape":"ValidationException"},
+        {"shape":"InternalException"}
       ]
     },
     "UpdateElasticsearchDomainConfig":{
@@ -279,35 +196,12 @@
       "input":{"shape":"UpdateElasticsearchDomainConfigRequest"},
       "output":{"shape":"UpdateElasticsearchDomainConfigResponse"},
       "errors":[
-        {
-          "shape":"BaseException",
-          "exception":true
-        },
-        {
-          "shape":"InternalException",
-          "error":{"httpStatusCode":500},
-          "exception":true
-        },
-        {
-          "shape":"InvalidTypeException",
-          "error":{"httpStatusCode":409},
-          "exception":true
-        },
-        {
-          "shape":"LimitExceededException",
-          "error":{"httpStatusCode":409},
-          "exception":true
-        },
-        {
-          "shape":"ResourceNotFoundException",
-          "error":{"httpStatusCode":409},
-          "exception":true
-        },
-        {
-          "shape":"ValidationException",
-          "error":{"httpStatusCode":400},
-          "exception":true
-        }
+        {"shape":"BaseException"},
+        {"shape":"InternalException"},
+        {"shape":"InvalidTypeException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ResourceNotFoundException"},
+        {"shape":"ValidationException"}
       ]
     }
   },
@@ -334,6 +228,17 @@
         "ARN":{"shape":"ARN"},
         "TagList":{"shape":"TagList"}
       }
+    },
+    "AdditionalLimit":{
+      "type":"structure",
+      "members":{
+        "LimitName":{"shape":"LimitName"},
+        "LimitValues":{"shape":"LimitValueList"}
+      }
+    },
+    "AdditionalLimitList":{
+      "type":"list",
+      "member":{"shape":"AdditionalLimit"}
     },
     "AdvancedOptions":{
       "type":"map",
@@ -364,6 +269,7 @@
       "required":["DomainName"],
       "members":{
         "DomainName":{"shape":"DomainName"},
+        "ElasticsearchVersion":{"shape":"ElasticsearchVersionString"},
         "ElasticsearchClusterConfig":{"shape":"ElasticsearchClusterConfig"},
         "EBSOptions":{"shape":"EBSOptions"},
         "AccessPolicies":{"shape":"PolicyDocument"},
@@ -444,6 +350,36 @@
         "DomainStatusList":{"shape":"ElasticsearchDomainStatusList"}
       }
     },
+    "DescribeElasticsearchInstanceTypeLimitsRequest":{
+      "type":"structure",
+      "required":[
+        "InstanceType",
+        "ElasticsearchVersion"
+      ],
+      "members":{
+        "DomainName":{
+          "shape":"DomainName",
+          "location":"querystring",
+          "locationName":"domainName"
+        },
+        "InstanceType":{
+          "shape":"ESPartitionInstanceType",
+          "location":"uri",
+          "locationName":"InstanceType"
+        },
+        "ElasticsearchVersion":{
+          "shape":"ElasticsearchVersionString",
+          "location":"uri",
+          "locationName":"ElasticsearchVersion"
+        }
+      }
+    },
+    "DescribeElasticsearchInstanceTypeLimitsResponse":{
+      "type":"structure",
+      "members":{
+        "LimitsByRole":{"shape":"LimitsByRole"}
+      }
+    },
     "DisabledOperationException":{
       "type":"structure",
       "members":{
@@ -453,8 +389,8 @@
     },
     "DomainId":{
       "type":"string",
-      "min":1,
-      "max":64
+      "max":64,
+      "min":1
     },
     "DomainInfo":{
       "type":"structure",
@@ -468,8 +404,8 @@
     },
     "DomainName":{
       "type":"string",
-      "min":3,
       "max":28,
+      "min":3,
       "pattern":"[a-z][a-z0-9\\-]+"
     },
     "DomainNameList":{
@@ -503,6 +439,11 @@
         "m3.large.elasticsearch",
         "m3.xlarge.elasticsearch",
         "m3.2xlarge.elasticsearch",
+        "m4.large.elasticsearch",
+        "m4.xlarge.elasticsearch",
+        "m4.2xlarge.elasticsearch",
+        "m4.4xlarge.elasticsearch",
+        "m4.10xlarge.elasticsearch",
         "t2.micro.elasticsearch",
         "t2.small.elasticsearch",
         "t2.medium.elasticsearch",
@@ -512,7 +453,22 @@
         "r3.4xlarge.elasticsearch",
         "r3.8xlarge.elasticsearch",
         "i2.xlarge.elasticsearch",
-        "i2.2xlarge.elasticsearch"
+        "i2.2xlarge.elasticsearch",
+        "d2.xlarge.elasticsearch",
+        "d2.2xlarge.elasticsearch",
+        "d2.4xlarge.elasticsearch",
+        "d2.8xlarge.elasticsearch",
+        "c4.large.elasticsearch",
+        "c4.xlarge.elasticsearch",
+        "c4.2xlarge.elasticsearch",
+        "c4.4xlarge.elasticsearch",
+        "c4.8xlarge.elasticsearch",
+        "r4.large.elasticsearch",
+        "r4.xlarge.elasticsearch",
+        "r4.2xlarge.elasticsearch",
+        "r4.4xlarge.elasticsearch",
+        "r4.8xlarge.elasticsearch",
+        "r4.16xlarge.elasticsearch"
       ]
     },
     "ElasticsearchClusterConfig":{
@@ -540,6 +496,7 @@
     "ElasticsearchDomainConfig":{
       "type":"structure",
       "members":{
+        "ElasticsearchVersion":{"shape":"ElasticsearchVersionStatus"},
         "ElasticsearchClusterConfig":{"shape":"ElasticsearchClusterConfigStatus"},
         "EBSOptions":{"shape":"EBSOptionsStatus"},
         "AccessPolicies":{"shape":"AccessPoliciesStatus"},
@@ -563,6 +520,7 @@
         "Deleted":{"shape":"Boolean"},
         "Endpoint":{"shape":"ServiceUrl"},
         "Processing":{"shape":"Boolean"},
+        "ElasticsearchVersion":{"shape":"ElasticsearchVersionString"},
         "ElasticsearchClusterConfig":{"shape":"ElasticsearchClusterConfig"},
         "EBSOptions":{"shape":"EBSOptions"},
         "AccessPolicies":{"shape":"PolicyDocument"},
@@ -574,7 +532,41 @@
       "type":"list",
       "member":{"shape":"ElasticsearchDomainStatus"}
     },
+    "ElasticsearchInstanceTypeList":{
+      "type":"list",
+      "member":{"shape":"ESPartitionInstanceType"}
+    },
+    "ElasticsearchVersionList":{
+      "type":"list",
+      "member":{"shape":"ElasticsearchVersionString"}
+    },
+    "ElasticsearchVersionStatus":{
+      "type":"structure",
+      "required":[
+        "Options",
+        "Status"
+      ],
+      "members":{
+        "Options":{"shape":"ElasticsearchVersionString"},
+        "Status":{"shape":"OptionStatus"}
+      }
+    },
+    "ElasticsearchVersionString":{"type":"string"},
     "ErrorMessage":{"type":"string"},
+    "InstanceCountLimits":{
+      "type":"structure",
+      "members":{
+        "MinimumInstanceCount":{"shape":"MinimumInstanceCount"},
+        "MaximumInstanceCount":{"shape":"MaximumInstanceCount"}
+      }
+    },
+    "InstanceLimits":{
+      "type":"structure",
+      "members":{
+        "InstanceCountLimits":{"shape":"InstanceCountLimits"}
+      }
+    },
+    "InstanceRole":{"type":"string"},
     "IntegerClass":{"type":"integer"},
     "InternalException":{
       "type":"structure",
@@ -597,10 +589,84 @@
       "error":{"httpStatusCode":409},
       "exception":true
     },
+    "LimitName":{"type":"string"},
+    "LimitValue":{"type":"string"},
+    "LimitValueList":{
+      "type":"list",
+      "member":{"shape":"LimitValue"}
+    },
+    "Limits":{
+      "type":"structure",
+      "members":{
+        "StorageTypes":{"shape":"StorageTypeList"},
+        "InstanceLimits":{"shape":"InstanceLimits"},
+        "AdditionalLimits":{"shape":"AdditionalLimitList"}
+      }
+    },
+    "LimitsByRole":{
+      "type":"map",
+      "key":{"shape":"InstanceRole"},
+      "value":{"shape":"Limits"}
+    },
     "ListDomainNamesResponse":{
       "type":"structure",
       "members":{
         "DomainNames":{"shape":"DomainInfoList"}
+      }
+    },
+    "ListElasticsearchInstanceTypesRequest":{
+      "type":"structure",
+      "required":["ElasticsearchVersion"],
+      "members":{
+        "ElasticsearchVersion":{
+          "shape":"ElasticsearchVersionString",
+          "location":"uri",
+          "locationName":"ElasticsearchVersion"
+        },
+        "DomainName":{
+          "shape":"DomainName",
+          "location":"querystring",
+          "locationName":"domainName"
+        },
+        "MaxResults":{
+          "shape":"MaxResults",
+          "location":"querystring",
+          "locationName":"maxResults"
+        },
+        "NextToken":{
+          "shape":"NextToken",
+          "location":"querystring",
+          "locationName":"nextToken"
+        }
+      }
+    },
+    "ListElasticsearchInstanceTypesResponse":{
+      "type":"structure",
+      "members":{
+        "ElasticsearchInstanceTypes":{"shape":"ElasticsearchInstanceTypeList"},
+        "NextToken":{"shape":"NextToken"}
+      }
+    },
+    "ListElasticsearchVersionsRequest":{
+      "type":"structure",
+      "members":{
+        "MaxResults":{
+          "shape":"MaxResults",
+          "location":"querystring",
+          "locationName":"maxResults"
+        },
+        "NextToken":{
+          "shape":"NextToken",
+          "location":"querystring",
+          "locationName":"nextToken"
+        }
+      }
+    },
+    "ListElasticsearchVersionsResponse":{
+      "type":"structure",
+      "members":{
+        "ElasticsearchVersions":{"shape":"ElasticsearchVersionList"},
+        "NextToken":{"shape":"NextToken"}
       }
     },
     "ListTagsRequest":{
@@ -620,6 +686,13 @@
         "TagList":{"shape":"TagList"}
       }
     },
+    "MaxResults":{
+      "type":"integer",
+      "max":100
+    },
+    "MaximumInstanceCount":{"type":"integer"},
+    "MinimumInstanceCount":{"type":"integer"},
+    "NextToken":{"type":"string"},
     "OptionState":{
       "type":"string",
       "enum":[
@@ -687,6 +760,31 @@
         "Status":{"shape":"OptionStatus"}
       }
     },
+    "StorageSubTypeName":{"type":"string"},
+    "StorageType":{
+      "type":"structure",
+      "members":{
+        "StorageTypeName":{"shape":"StorageTypeName"},
+        "StorageSubTypeName":{"shape":"StorageSubTypeName"},
+        "StorageTypeLimits":{"shape":"StorageTypeLimitList"}
+      }
+    },
+    "StorageTypeLimit":{
+      "type":"structure",
+      "members":{
+        "LimitName":{"shape":"LimitName"},
+        "LimitValues":{"shape":"LimitValueList"}
+      }
+    },
+    "StorageTypeLimitList":{
+      "type":"list",
+      "member":{"shape":"StorageTypeLimit"}
+    },
+    "StorageTypeList":{
+      "type":"list",
+      "member":{"shape":"StorageType"}
+    },
+    "StorageTypeName":{"type":"string"},
     "String":{"type":"string"},
     "StringList":{
       "type":"list",
@@ -705,8 +803,8 @@
     },
     "TagKey":{
       "type":"string",
-      "min":1,
-      "max":128
+      "max":128,
+      "min":1
     },
     "TagList":{
       "type":"list",
@@ -714,8 +812,8 @@
     },
     "TagValue":{
       "type":"string",
-      "min":0,
-      "max":256
+      "max":256,
+      "min":0
     },
     "UIntValue":{
       "type":"integer",

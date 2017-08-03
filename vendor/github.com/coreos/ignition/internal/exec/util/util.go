@@ -18,11 +18,13 @@ import (
 	"path/filepath"
 
 	"github.com/coreos/ignition/internal/log"
+	"github.com/coreos/ignition/internal/resource"
 )
 
 // Util encapsulates logging and destdir indirection for the util methods.
 type Util struct {
 	DestDir string // directory prefix to use in applying fs paths.
+	Fetcher resource.Fetcher
 	*log.Logger
 }
 

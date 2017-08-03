@@ -26,36 +26,24 @@ import (
 	"github.com/coreos/ignition/internal/exec/stages"
 	"github.com/coreos/ignition/internal/exec/util"
 	"github.com/coreos/ignition/internal/log"
+	"github.com/coreos/ignition/internal/oem"
 	"github.com/coreos/ignition/internal/providers"
 	"github.com/coreos/ignition/internal/providers/cmdline"
 	"github.com/coreos/ignition/internal/resource"
+	internalUtil "github.com/coreos/ignition/internal/util"
 )
 
 const (
 	DefaultFetchTimeout = time.Minute
 )
 
-var (
-	baseConfig = types.Config{
-		Ignition: types.Ignition{Version: types.MaxVersion.String()},
-		Storage: types.Storage{
-			Filesystems: []types.Filesystem{{
-				Name: "root",
-				Path: func(p string) *string { return &p }("/sysroot"),
-			}},
-		},
-	}
-)
-
 // Engine represents the entity that fetches and executes a configuration.
 type Engine struct {
-	ConfigCache       string
-	FetchTimeout      time.Duration
-	Logger            *log.Logger
-	Root              string
-	FetchFunc         providers.FuncFetchConfig
-	OemBaseConfig     types.Config
-	DefaultUserConfig types.Config
+	ConfigCache  string
+	FetchTimeout time.Duration
+	Logger       *log.Logger
+	Root         string
+	OEMConfig    oem.Config
 
 	client resource.HttpClient
 }
@@ -63,12 +51,12 @@ type Engine struct {
 // Run executes the stage of the given name. It returns true if the stage
 // successfully ran and false if there were any errors.
 func (e Engine) Run(stageName string) bool {
-	cfg, err := e.acquireConfig()
+	cfg, f, err := e.acquireConfig()
 	switch err {
 	case nil:
 	case config.ErrCloudConfig, config.ErrScript, config.ErrEmpty:
 		e.Logger.Info("%v: ignoring user-provided config", err)
-		cfg = e.DefaultUserConfig
+		cfg = e.OEMConfig.DefaultUserConfig()
 	default:
 		e.Logger.Crit("failed to acquire config: %v", err)
 		return false
@@ -76,29 +64,63 @@ func (e Engine) Run(stageName string) bool {
 
 	e.Logger.PushPrefix(stageName)
 	defer e.Logger.PopPrefix()
-	return stages.Get(stageName).Create(e.Logger, &e.client, e.Root).Run(config.Append(baseConfig, config.Append(e.OemBaseConfig, cfg)))
+
+	baseConfig := types.Config{
+		Ignition: types.Ignition{Version: types.MaxVersion.String()},
+		Storage: types.Storage{
+			Filesystems: []types.Filesystem{{
+				Name: "root",
+				Path: internalUtil.StringToPtr(e.Root),
+			}},
+		},
+	}
+
+	return stages.Get(stageName).Create(e.Logger, e.Root, f).Run(config.Append(baseConfig, config.Append(e.OEMConfig.BaseConfig(), cfg)))
 }
 
 // acquireConfig returns the configuration, first checking a local cache
 // before attempting to fetch it from the provider.
-func (e *Engine) acquireConfig() (cfg types.Config, err error) {
+func (e *Engine) acquireConfig() (cfg types.Config, f resource.Fetcher, err error) {
 	// First try read the config @ e.ConfigCache.
 	b, err := ioutil.ReadFile(e.ConfigCache)
 	if err == nil {
 		if err = json.Unmarshal(b, &cfg); err != nil {
 			e.Logger.Crit("failed to parse cached config: %v", err)
 		}
+		// Create an http client and fetcher with the timeouts from the cached
+		// config
 		e.client = resource.NewHttpClient(e.Logger, cfg.Ignition.Timeouts)
+		f, err = e.OEMConfig.NewFetcherFunc()(e.Logger, &e.client)
+		if err != nil {
+			e.Logger.Crit("failed to generate fetcher: %s", err)
+			return
+		}
 		return
 	}
 
+	// Create a new http client and fetcher with the timeouts set via the flags,
+	// since we don't have a config with timeout values we can use
 	timeout := int(e.FetchTimeout.Seconds())
 	e.client = resource.NewHttpClient(e.Logger, types.Timeouts{HTTPTotal: &timeout})
+	f, err = e.OEMConfig.NewFetcherFunc()(e.Logger, &e.client)
+	if err != nil {
+		e.Logger.Crit("failed to generate fetcher: %s", err)
+		return
+	}
 
 	// (Re)Fetch the config if the cache is unreadable.
-	cfg, err = e.fetchProviderConfig()
+	cfg, err = e.fetchProviderConfig(f)
 	if err != nil {
 		e.Logger.Crit("failed to fetch config: %s", err)
+		return
+	}
+
+	// Regenerate the http client and fetcher to use the timeouts from the
+	// newly fetched config
+	e.client = resource.NewHttpClient(e.Logger, cfg.Ignition.Timeouts)
+	f, err = e.OEMConfig.NewFetcherFunc()(e.Logger, &e.client)
+	if err != nil {
+		e.Logger.Crit("failed to generate fetcher: %s", err)
 		return
 	}
 
@@ -122,10 +144,10 @@ func (e *Engine) acquireConfig() (cfg types.Config, err error) {
 // check's the engine's provider. An error is returned if the provider is
 // unavailable. This will also render the config (see renderConfig) before
 // returning.
-func (e Engine) fetchProviderConfig() (types.Config, error) {
-	cfg, r, err := cmdline.FetchConfig(e.Logger, &e.client)
+func (e Engine) fetchProviderConfig(f resource.Fetcher) (types.Config, error) {
+	cfg, r, err := cmdline.FetchConfig(f)
 	if err == providers.ErrNoProvider {
-		cfg, r, err = e.FetchFunc(e.Logger, &e.client)
+		cfg, r, err = e.OEMConfig.FetchFunc()(f)
 	}
 
 	e.logReport(r)
@@ -133,7 +155,7 @@ func (e Engine) fetchProviderConfig() (types.Config, error) {
 		return types.Config{}, err
 	}
 
-	return e.renderConfig(cfg)
+	return e.renderConfig(cfg, f)
 }
 
 // renderConfig evaluates "ignition.config.replace" and "ignition.config.append"
@@ -142,16 +164,16 @@ func (e Engine) fetchProviderConfig() (types.Config, error) {
 // "ignition.config.append" is set, each of the referenced configs will be
 // evaluated and appended to the provided config. If neither option is set, the
 // provided config will be returned unmodified.
-func (e *Engine) renderConfig(cfg types.Config) (types.Config, error) {
+func (e *Engine) renderConfig(cfg types.Config, f resource.Fetcher) (types.Config, error) {
 	// Apply any new timeout info before fetching other configs.
 	e.client = resource.NewHttpClient(e.Logger, cfg.Ignition.Timeouts)
 	if cfgRef := cfg.Ignition.Config.Replace; cfgRef != nil {
-		return e.fetchReferencedConfig(*cfgRef)
+		return e.fetchReferencedConfig(*cfgRef, f)
 	}
 
 	appendedCfg := cfg
 	for _, cfgRef := range cfg.Ignition.Config.Append {
-		newCfg, err := e.fetchReferencedConfig(cfgRef)
+		newCfg, err := e.fetchReferencedConfig(cfgRef, f)
 		if err != nil {
 			return newCfg, err
 		}
@@ -163,12 +185,14 @@ func (e *Engine) renderConfig(cfg types.Config) (types.Config, error) {
 
 // fetchReferencedConfig fetches, renders, and attempts to verify the requested
 // config.
-func (e Engine) fetchReferencedConfig(cfgRef types.ConfigReference) (types.Config, error) {
+func (e Engine) fetchReferencedConfig(cfgRef types.ConfigReference, f resource.Fetcher) (types.Config, error) {
 	u, err := url.Parse(cfgRef.Source)
 	if err != nil {
 		return types.Config{}, err
 	}
-	rawCfg, err := resource.Fetch(e.Logger, &e.client, *u)
+	rawCfg, err := f.FetchToBuffer(*u, resource.FetchOptions{
+		Headers: resource.ConfigHeaders,
+	})
 	if err != nil {
 		return types.Config{}, err
 	}
@@ -183,7 +207,7 @@ func (e Engine) fetchReferencedConfig(cfgRef types.ConfigReference) (types.Confi
 		return types.Config{}, err
 	}
 
-	return e.renderConfig(cfg)
+	return e.renderConfig(cfg, f)
 }
 
 func (e Engine) logReport(r report.Report) {

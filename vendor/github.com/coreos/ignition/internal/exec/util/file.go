@@ -15,8 +15,6 @@
 package util
 
 import (
-	"bufio"
-	"compress/gzip"
 	"encoding/hex"
 	"hash"
 	"io"
@@ -36,31 +34,14 @@ const (
 	DefaultFilePermissions      os.FileMode = 0644
 )
 
-type File struct {
-	io.ReadCloser
-	hash.Hash
-	Path        string
-	Mode        os.FileMode
-	Uid         int
-	Gid         int
-	expectedSum string
-}
-
-func (f File) Verify() error {
-	if f.Hash == nil {
-		return nil
-	}
-	sum := f.Sum(nil)
-	encodedSum := make([]byte, hex.EncodedLen(len(sum)))
-	hex.Encode(encodedSum, sum)
-
-	if string(encodedSum) != f.expectedSum {
-		return ErrHashMismatch{
-			Calculated: string(encodedSum),
-			Expected:   f.expectedSum,
-		}
-	}
-	return nil
+type FetchOp struct {
+	Hash         hash.Hash
+	Path         string
+	Mode         os.FileMode
+	Uid          int
+	Gid          int
+	Url          url.URL
+	FetchOptions resource.FetchOptions
 }
 
 // newHashedReader returns a new ReadCloser that also writes to the provided hash.
@@ -74,59 +55,51 @@ func newHashedReader(reader io.ReadCloser, hasher hash.Hash) io.ReadCloser {
 	}
 }
 
-// RenderFile returns a *File with a Reader that downloads, hashes, and decompresses the incoming data.
-// It returns nil if f had invalid options. Errors reading/verifying/decompressing the file will
-// present themselves when the Reader is actually read from.
-func RenderFile(l *log.Logger, c *resource.HttpClient, f types.File) *File {
-	var reader io.ReadCloser
+// PrepareFetch converts a given logger, http client, and types.File into a
+// FetchOp. This includes operations such as parsing the source URL, generating
+// a hasher, and performing user/group name lookups. If an error is encountered,
+// the issue will be logged and nil will be returned.
+func (u Util) PrepareFetch(l *log.Logger, f types.File) *FetchOp {
 	var err error
-	var expectedSum string
+	var expectedSum []byte
 
 	// explicitly ignoring the error here because the config should already be
 	// validated by this point
-	u, _ := url.Parse(f.Contents.Source)
+	uri, _ := url.Parse(f.Contents.Source)
 
-	reader, err = resource.FetchAsReader(l, c, *u)
-	if err != nil {
-		l.Crit("Error fetching file %q: %v", f.Path, err)
-		return nil
-	}
-
-	fileHash, err := GetHasher(f.Contents.Verification)
+	hasher, err := GetHasher(f.Contents.Verification)
 	if err != nil {
 		l.Crit("Error verifying file %q: %v", f.Path, err)
 		return nil
 	}
 
-	if fileHash != nil {
-		reader = newHashedReader(reader, fileHash)
+	if hasher != nil {
 		// explicitly ignoring the error here because the config should already
 		// be validated by this point
-		_, expectedSum, _ = f.Contents.Verification.HashParts()
-	}
-
-	reader, err = decompressFileStream(l, f, reader)
-	if err != nil {
-		l.Crit("Error decompressing file %q: %v", f.Path, err)
-		return nil
+		_, expectedSumString, _ := f.Contents.Verification.HashParts()
+		expectedSum, err = hex.DecodeString(expectedSumString)
+		if err != nil {
+			l.Crit("Error parsing verification string %q: %v", expectedSumString, err)
+			return nil
+		}
 	}
 
 	if f.User.Name != "" {
-		u, err := Util{DestDir: "/sysroot"}.userLookup(f.User.Name)
+		user, err := u.userLookup(f.User.Name)
 		if err != nil {
 			l.Crit("No such user %q: %v", f.User.Name, err)
 			return nil
 		}
-		uid, err := strconv.ParseInt(u.Uid, 0, 0)
+		uid, err := strconv.ParseInt(user.Uid, 0, 0)
 		if err != nil {
-			l.Crit("Couldn't parse uid %q: %v", u.Uid, err)
+			l.Crit("Couldn't parse uid %q: %v", user.Uid, err)
 			return nil
 		}
 		tmp := int(uid)
 		f.User.ID = &tmp
 	}
 	if f.Group.Name != "" {
-		g, err := Util{DestDir: "/sysroot"}.groupLookup(f.Group.Name)
+		g, err := u.groupLookup(f.Group.Name)
 		if err != nil {
 			l.Crit("No such group %q: %v", f.Group.Name, err)
 			return nil
@@ -140,53 +113,18 @@ func RenderFile(l *log.Logger, c *resource.HttpClient, f types.File) *File {
 		f.Group.ID = &tmp
 	}
 
-	return &File{
-		Path:        f.Path,
-		ReadCloser:  reader,
-		Hash:        fileHash,
-		Mode:        os.FileMode(f.Mode),
-		Uid:         *f.User.ID,
-		Gid:         *f.Group.ID,
-		expectedSum: expectedSum,
-	}
-}
-
-// gzipReader is a wrapper for gzip's reader that closes the stream it wraps as well
-// as itself when Close() is called.
-type gzipReader struct {
-	*gzip.Reader //actually a ReadCloser
-	source       io.Closer
-}
-
-func newGzipReader(reader io.ReadCloser) (io.ReadCloser, error) {
-	gzReader, err := gzip.NewReader(reader)
-	if err != nil {
-		return nil, err
-	}
-	return gzipReader{
-		Reader: gzReader,
-		source: reader,
-	}, nil
-}
-
-func (gz gzipReader) Close() error {
-	if err := gz.Reader.Close(); err != nil {
-		return err
-	}
-	if err := gz.source.Close(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func decompressFileStream(l *log.Logger, f types.File, contents io.ReadCloser) (io.ReadCloser, error) {
-	switch f.Contents.Compression {
-	case "":
-		return contents, nil
-	case "gzip":
-		return newGzipReader(contents)
-	default:
-		return nil, types.ErrCompressionInvalid
+	return &FetchOp{
+		Path: f.Path,
+		Hash: hasher,
+		Mode: os.FileMode(f.Mode),
+		Uid:  *f.User.ID,
+		Gid:  *f.Group.ID,
+		Url:  *uri,
+		FetchOptions: resource.FetchOptions{
+			Hash:        hasher,
+			Compression: f.Contents.Compression,
+			ExpectedSum: expectedSum,
+		},
 	}
 }
 
@@ -198,14 +136,15 @@ func (u Util) WriteLink(s types.Link) error {
 	}
 
 	if s.Hard {
-		return os.Link(s.Target, path)
+		targetPath := u.JoinPath(s.Target)
+		return os.Link(targetPath, path)
 	}
 	return os.Symlink(s.Target, path)
 }
 
-// WriteFile creates and writes the file described by f using the provided context.
-func (u Util) WriteFile(f *File) error {
-	defer f.Close()
+// PerformFetch performs a fetch operation generated by PrepareFetch, retrieving
+// the file and writing it to disk. Any encountered errors are returned.
+func (u Util) PerformFetch(f *FetchOp) error {
 	var err error
 
 	path := u.JoinPath(string(f.Path))
@@ -227,14 +166,9 @@ func (u Util) WriteFile(f *File) error {
 		}
 	}()
 
-	fileWriter := bufio.NewWriter(tmp)
-
-	if _, err = io.Copy(fileWriter, f); err != nil {
-		return err
-	}
-	fileWriter.Flush()
-
-	if err = f.Verify(); err != nil {
+	err = u.Fetcher.Fetch(f.Url, tmp, f.FetchOptions)
+	if err != nil {
+		u.Crit("Error fetching file %q: %v", f.Path, err)
 		return err
 	}
 

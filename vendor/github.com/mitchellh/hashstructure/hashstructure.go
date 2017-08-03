@@ -325,7 +325,6 @@ func (w *walker) visit(v reflect.Value, opts *visitOpts) (uint64, error) {
 		return 0, fmt.Errorf("unknown kind to hash: %s", k)
 	}
 
-	return 0, nil
 }
 
 func hashUpdateOrdered(h hash.Hash64, a, b uint64) uint64 {

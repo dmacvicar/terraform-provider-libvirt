@@ -8,6 +8,7 @@
     "serviceFullName":"Amazon Simple Email Service",
     "signatureVersion":"v4",
     "signingName":"ses",
+    "uid":"email-2010-12-01",
     "xmlNamespace":"http://ses.amazonaws.com/doc/2010-12-01/"
   },
   "operations":{
@@ -25,6 +26,43 @@
       "errors":[
         {"shape":"RuleSetDoesNotExistException"},
         {"shape":"AlreadyExistsException"},
+        {"shape":"LimitExceededException"}
+      ]
+    },
+    "CreateConfigurationSet":{
+      "name":"CreateConfigurationSet",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"CreateConfigurationSetRequest"},
+      "output":{
+        "shape":"CreateConfigurationSetResponse",
+        "resultWrapper":"CreateConfigurationSetResult"
+      },
+      "errors":[
+        {"shape":"ConfigurationSetAlreadyExistsException"},
+        {"shape":"InvalidConfigurationSetException"},
+        {"shape":"LimitExceededException"}
+      ]
+    },
+    "CreateConfigurationSetEventDestination":{
+      "name":"CreateConfigurationSetEventDestination",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"CreateConfigurationSetEventDestinationRequest"},
+      "output":{
+        "shape":"CreateConfigurationSetEventDestinationResponse",
+        "resultWrapper":"CreateConfigurationSetEventDestinationResult"
+      },
+      "errors":[
+        {"shape":"ConfigurationSetDoesNotExistException"},
+        {"shape":"EventDestinationAlreadyExistsException"},
+        {"shape":"InvalidCloudWatchDestinationException"},
+        {"shape":"InvalidFirehoseDestinationException"},
+        {"shape":"InvalidSNSDestinationException"},
         {"shape":"LimitExceededException"}
       ]
     },
@@ -79,6 +117,37 @@
       "errors":[
         {"shape":"AlreadyExistsException"},
         {"shape":"LimitExceededException"}
+      ]
+    },
+    "DeleteConfigurationSet":{
+      "name":"DeleteConfigurationSet",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DeleteConfigurationSetRequest"},
+      "output":{
+        "shape":"DeleteConfigurationSetResponse",
+        "resultWrapper":"DeleteConfigurationSetResult"
+      },
+      "errors":[
+        {"shape":"ConfigurationSetDoesNotExistException"}
+      ]
+    },
+    "DeleteConfigurationSetEventDestination":{
+      "name":"DeleteConfigurationSetEventDestination",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DeleteConfigurationSetEventDestinationRequest"},
+      "output":{
+        "shape":"DeleteConfigurationSetEventDestinationResponse",
+        "resultWrapper":"DeleteConfigurationSetEventDestinationResult"
+      },
+      "errors":[
+        {"shape":"ConfigurationSetDoesNotExistException"},
+        {"shape":"EventDestinationDoesNotExistException"}
       ]
     },
     "DeleteIdentity":{
@@ -167,6 +236,21 @@
         "resultWrapper":"DescribeActiveReceiptRuleSetResult"
       }
     },
+    "DescribeConfigurationSet":{
+      "name":"DescribeConfigurationSet",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DescribeConfigurationSetRequest"},
+      "output":{
+        "shape":"DescribeConfigurationSetResponse",
+        "resultWrapper":"DescribeConfigurationSetResult"
+      },
+      "errors":[
+        {"shape":"ConfigurationSetDoesNotExistException"}
+      ]
+    },
     "DescribeReceiptRule":{
       "name":"DescribeReceiptRule",
       "http":{
@@ -208,6 +292,18 @@
       "output":{
         "shape":"GetIdentityDkimAttributesResponse",
         "resultWrapper":"GetIdentityDkimAttributesResult"
+      }
+    },
+    "GetIdentityMailFromDomainAttributes":{
+      "name":"GetIdentityMailFromDomainAttributes",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"GetIdentityMailFromDomainAttributesRequest"},
+      "output":{
+        "shape":"GetIdentityMailFromDomainAttributesResponse",
+        "resultWrapper":"GetIdentityMailFromDomainAttributesResult"
       }
     },
     "GetIdentityNotificationAttributes":{
@@ -266,6 +362,18 @@
       "output":{
         "shape":"GetSendStatisticsResponse",
         "resultWrapper":"GetSendStatisticsResult"
+      }
+    },
+    "ListConfigurationSets":{
+      "name":"ListConfigurationSets",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"ListConfigurationSetsRequest"},
+      "output":{
+        "shape":"ListConfigurationSetsResponse",
+        "resultWrapper":"ListConfigurationSetsResult"
       }
     },
     "ListIdentities":{
@@ -385,7 +493,9 @@
         "resultWrapper":"SendEmailResult"
       },
       "errors":[
-        {"shape":"MessageRejected"}
+        {"shape":"MessageRejected"},
+        {"shape":"MailFromDomainNotVerifiedException"},
+        {"shape":"ConfigurationSetDoesNotExistException"}
       ]
     },
     "SendRawEmail":{
@@ -400,7 +510,9 @@
         "resultWrapper":"SendRawEmailResult"
       },
       "errors":[
-        {"shape":"MessageRejected"}
+        {"shape":"MessageRejected"},
+        {"shape":"MailFromDomainNotVerifiedException"},
+        {"shape":"ConfigurationSetDoesNotExistException"}
       ]
     },
     "SetActiveReceiptRuleSet":{
@@ -442,6 +554,30 @@
         "resultWrapper":"SetIdentityFeedbackForwardingEnabledResult"
       }
     },
+    "SetIdentityHeadersInNotificationsEnabled":{
+      "name":"SetIdentityHeadersInNotificationsEnabled",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"SetIdentityHeadersInNotificationsEnabledRequest"},
+      "output":{
+        "shape":"SetIdentityHeadersInNotificationsEnabledResponse",
+        "resultWrapper":"SetIdentityHeadersInNotificationsEnabledResult"
+      }
+    },
+    "SetIdentityMailFromDomain":{
+      "name":"SetIdentityMailFromDomain",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"SetIdentityMailFromDomainRequest"},
+      "output":{
+        "shape":"SetIdentityMailFromDomainResponse",
+        "resultWrapper":"SetIdentityMailFromDomainResult"
+      }
+    },
     "SetIdentityNotificationTopic":{
       "name":"SetIdentityNotificationTopic",
       "http":{
@@ -468,6 +604,25 @@
       "errors":[
         {"shape":"RuleSetDoesNotExistException"},
         {"shape":"RuleDoesNotExistException"}
+      ]
+    },
+    "UpdateConfigurationSetEventDestination":{
+      "name":"UpdateConfigurationSetEventDestination",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"UpdateConfigurationSetEventDestinationRequest"},
+      "output":{
+        "shape":"UpdateConfigurationSetEventDestinationResponse",
+        "resultWrapper":"UpdateConfigurationSetEventDestinationResult"
+      },
+      "errors":[
+        {"shape":"ConfigurationSetDoesNotExistException"},
+        {"shape":"EventDestinationDoesNotExistException"},
+        {"shape":"InvalidCloudWatchDestinationException"},
+        {"shape":"InvalidFirehoseDestinationException"},
+        {"shape":"InvalidSNSDestinationException"}
       ]
     },
     "UpdateReceiptRule":{
@@ -566,6 +721,13 @@
     },
     "AmazonResourceName":{"type":"string"},
     "ArrivalDate":{"type":"timestamp"},
+    "BehaviorOnMXFailure":{
+      "type":"string",
+      "enum":[
+        "UseDefaultValue",
+        "RejectMessage"
+      ]
+    },
     "Body":{
       "type":"structure",
       "members":{
@@ -646,6 +808,74 @@
       "members":{
       }
     },
+    "CloudWatchDestination":{
+      "type":"structure",
+      "required":["DimensionConfigurations"],
+      "members":{
+        "DimensionConfigurations":{"shape":"CloudWatchDimensionConfigurations"}
+      }
+    },
+    "CloudWatchDimensionConfiguration":{
+      "type":"structure",
+      "required":[
+        "DimensionName",
+        "DimensionValueSource",
+        "DefaultDimensionValue"
+      ],
+      "members":{
+        "DimensionName":{"shape":"DimensionName"},
+        "DimensionValueSource":{"shape":"DimensionValueSource"},
+        "DefaultDimensionValue":{"shape":"DefaultDimensionValue"}
+      }
+    },
+    "CloudWatchDimensionConfigurations":{
+      "type":"list",
+      "member":{"shape":"CloudWatchDimensionConfiguration"}
+    },
+    "ConfigurationSet":{
+      "type":"structure",
+      "required":["Name"],
+      "members":{
+        "Name":{"shape":"ConfigurationSetName"}
+      }
+    },
+    "ConfigurationSetAlreadyExistsException":{
+      "type":"structure",
+      "members":{
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"}
+      },
+      "error":{
+        "code":"ConfigurationSetAlreadyExists",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
+    },
+    "ConfigurationSetAttribute":{
+      "type":"string",
+      "enum":["eventDestinations"]
+    },
+    "ConfigurationSetAttributeList":{
+      "type":"list",
+      "member":{"shape":"ConfigurationSetAttribute"}
+    },
+    "ConfigurationSetDoesNotExistException":{
+      "type":"structure",
+      "members":{
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"}
+      },
+      "error":{
+        "code":"ConfigurationSetDoesNotExist",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
+    },
+    "ConfigurationSetName":{"type":"string"},
+    "ConfigurationSets":{
+      "type":"list",
+      "member":{"shape":"ConfigurationSet"}
+    },
     "Content":{
       "type":"structure",
       "required":["Data"],
@@ -655,6 +885,34 @@
       }
     },
     "Counter":{"type":"long"},
+    "CreateConfigurationSetEventDestinationRequest":{
+      "type":"structure",
+      "required":[
+        "ConfigurationSetName",
+        "EventDestination"
+      ],
+      "members":{
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"},
+        "EventDestination":{"shape":"EventDestination"}
+      }
+    },
+    "CreateConfigurationSetEventDestinationResponse":{
+      "type":"structure",
+      "members":{
+      }
+    },
+    "CreateConfigurationSetRequest":{
+      "type":"structure",
+      "required":["ConfigurationSet"],
+      "members":{
+        "ConfigurationSet":{"shape":"ConfigurationSet"}
+      }
+    },
+    "CreateConfigurationSetResponse":{
+      "type":"structure",
+      "members":{
+      }
+    },
     "CreateReceiptFilterRequest":{
       "type":"structure",
       "required":["Filter"],
@@ -692,6 +950,44 @@
       }
     },
     "CreateReceiptRuleSetResponse":{
+      "type":"structure",
+      "members":{
+      }
+    },
+    "CustomMailFromStatus":{
+      "type":"string",
+      "enum":[
+        "Pending",
+        "Success",
+        "Failed",
+        "TemporaryFailure"
+      ]
+    },
+    "DefaultDimensionValue":{"type":"string"},
+    "DeleteConfigurationSetEventDestinationRequest":{
+      "type":"structure",
+      "required":[
+        "ConfigurationSetName",
+        "EventDestinationName"
+      ],
+      "members":{
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"},
+        "EventDestinationName":{"shape":"EventDestinationName"}
+      }
+    },
+    "DeleteConfigurationSetEventDestinationResponse":{
+      "type":"structure",
+      "members":{
+      }
+    },
+    "DeleteConfigurationSetRequest":{
+      "type":"structure",
+      "required":["ConfigurationSetName"],
+      "members":{
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"}
+      }
+    },
+    "DeleteConfigurationSetResponse":{
       "type":"structure",
       "members":{
       }
@@ -783,6 +1079,21 @@
         "Rules":{"shape":"ReceiptRulesList"}
       }
     },
+    "DescribeConfigurationSetRequest":{
+      "type":"structure",
+      "required":["ConfigurationSetName"],
+      "members":{
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"},
+        "ConfigurationSetAttributeNames":{"shape":"ConfigurationSetAttributeList"}
+      }
+    },
+    "DescribeConfigurationSetResponse":{
+      "type":"structure",
+      "members":{
+        "ConfigurationSet":{"shape":"ConfigurationSet"},
+        "EventDestinations":{"shape":"EventDestinations"}
+      }
+    },
     "DescribeReceiptRuleRequest":{
       "type":"structure",
       "required":[
@@ -823,6 +1134,15 @@
       }
     },
     "DiagnosticCode":{"type":"string"},
+    "DimensionName":{"type":"string"},
+    "DimensionValueSource":{
+      "type":"string",
+      "enum":[
+        "messageTag",
+        "emailHeader",
+        "linkTag"
+      ]
+    },
     "DkimAttributes":{
       "type":"map",
       "key":{"shape":"Identity"},
@@ -841,6 +1161,68 @@
     },
     "DsnStatus":{"type":"string"},
     "Enabled":{"type":"boolean"},
+    "EventDestination":{
+      "type":"structure",
+      "required":[
+        "Name",
+        "MatchingEventTypes"
+      ],
+      "members":{
+        "Name":{"shape":"EventDestinationName"},
+        "Enabled":{"shape":"Enabled"},
+        "MatchingEventTypes":{"shape":"EventTypes"},
+        "KinesisFirehoseDestination":{"shape":"KinesisFirehoseDestination"},
+        "CloudWatchDestination":{"shape":"CloudWatchDestination"},
+        "SNSDestination":{"shape":"SNSDestination"}
+      }
+    },
+    "EventDestinationAlreadyExistsException":{
+      "type":"structure",
+      "members":{
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"},
+        "EventDestinationName":{"shape":"EventDestinationName"}
+      },
+      "error":{
+        "code":"EventDestinationAlreadyExists",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
+    },
+    "EventDestinationDoesNotExistException":{
+      "type":"structure",
+      "members":{
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"},
+        "EventDestinationName":{"shape":"EventDestinationName"}
+      },
+      "error":{
+        "code":"EventDestinationDoesNotExist",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
+    },
+    "EventDestinationName":{"type":"string"},
+    "EventDestinations":{
+      "type":"list",
+      "member":{"shape":"EventDestination"}
+    },
+    "EventType":{
+      "type":"string",
+      "enum":[
+        "send",
+        "reject",
+        "bounce",
+        "complaint",
+        "delivery",
+        "open",
+        "click"
+      ]
+    },
+    "EventTypes":{
+      "type":"list",
+      "member":{"shape":"EventType"}
+    },
     "Explanation":{"type":"string"},
     "ExtensionField":{
       "type":"structure",
@@ -871,6 +1253,20 @@
       "required":["DkimAttributes"],
       "members":{
         "DkimAttributes":{"shape":"DkimAttributes"}
+      }
+    },
+    "GetIdentityMailFromDomainAttributesRequest":{
+      "type":"structure",
+      "required":["Identities"],
+      "members":{
+        "Identities":{"shape":"IdentityList"}
+      }
+    },
+    "GetIdentityMailFromDomainAttributesResponse":{
+      "type":"structure",
+      "required":["MailFromDomainAttributes"],
+      "members":{
+        "MailFromDomainAttributes":{"shape":"MailFromDomainAttributes"}
       }
     },
     "GetIdentityNotificationAttributesRequest":{
@@ -952,6 +1348,19 @@
       "type":"list",
       "member":{"shape":"Identity"}
     },
+    "IdentityMailFromDomainAttributes":{
+      "type":"structure",
+      "required":[
+        "MailFromDomain",
+        "MailFromDomainStatus",
+        "BehaviorOnMXFailure"
+      ],
+      "members":{
+        "MailFromDomain":{"shape":"MailFromDomainName"},
+        "MailFromDomainStatus":{"shape":"CustomMailFromStatus"},
+        "BehaviorOnMXFailure":{"shape":"BehaviorOnMXFailure"}
+      }
+    },
     "IdentityNotificationAttributes":{
       "type":"structure",
       "required":[
@@ -964,7 +1373,10 @@
         "BounceTopic":{"shape":"NotificationTopic"},
         "ComplaintTopic":{"shape":"NotificationTopic"},
         "DeliveryTopic":{"shape":"NotificationTopic"},
-        "ForwardingEnabled":{"shape":"Enabled"}
+        "ForwardingEnabled":{"shape":"Enabled"},
+        "HeadersInBounceNotificationsEnabled":{"shape":"Enabled"},
+        "HeadersInComplaintNotificationsEnabled":{"shape":"Enabled"},
+        "HeadersInDeliveryNotificationsEnabled":{"shape":"Enabled"}
       }
     },
     "IdentityType":{
@@ -981,6 +1393,43 @@
         "VerificationStatus":{"shape":"VerificationStatus"},
         "VerificationToken":{"shape":"VerificationToken"}
       }
+    },
+    "InvalidCloudWatchDestinationException":{
+      "type":"structure",
+      "members":{
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"},
+        "EventDestinationName":{"shape":"EventDestinationName"}
+      },
+      "error":{
+        "code":"InvalidCloudWatchDestination",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
+    },
+    "InvalidConfigurationSetException":{
+      "type":"structure",
+      "members":{
+      },
+      "error":{
+        "code":"InvalidConfigurationSet",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
+    },
+    "InvalidFirehoseDestinationException":{
+      "type":"structure",
+      "members":{
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"},
+        "EventDestinationName":{"shape":"EventDestinationName"}
+      },
+      "error":{
+        "code":"InvalidFirehoseDestination",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
     },
     "InvalidLambdaFunctionException":{
       "type":"structure",
@@ -1017,6 +1466,19 @@
       },
       "exception":true
     },
+    "InvalidSNSDestinationException":{
+      "type":"structure",
+      "members":{
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"},
+        "EventDestinationName":{"shape":"EventDestinationName"}
+      },
+      "error":{
+        "code":"InvalidSNSDestination",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
+    },
     "InvalidSnsTopicException":{
       "type":"structure",
       "members":{
@@ -1035,6 +1497,17 @@
         "Event",
         "RequestResponse"
       ]
+    },
+    "KinesisFirehoseDestination":{
+      "type":"structure",
+      "required":[
+        "IAMRoleARN",
+        "DeliveryStreamARN"
+      ],
+      "members":{
+        "IAMRoleARN":{"shape":"AmazonResourceName"},
+        "DeliveryStreamARN":{"shape":"AmazonResourceName"}
+      }
     },
     "LambdaAction":{
       "type":"structure",
@@ -1056,6 +1529,20 @@
         "senderFault":true
       },
       "exception":true
+    },
+    "ListConfigurationSetsRequest":{
+      "type":"structure",
+      "members":{
+        "NextToken":{"shape":"NextToken"},
+        "MaxItems":{"shape":"MaxItems"}
+      }
+    },
+    "ListConfigurationSetsResponse":{
+      "type":"structure",
+      "members":{
+        "ConfigurationSets":{"shape":"ConfigurationSets"},
+        "NextToken":{"shape":"NextToken"}
+      }
     },
     "ListIdentitiesRequest":{
       "type":"structure",
@@ -1117,6 +1604,23 @@
         "VerifiedEmailAddresses":{"shape":"AddressList"}
       }
     },
+    "MailFromDomainAttributes":{
+      "type":"map",
+      "key":{"shape":"Identity"},
+      "value":{"shape":"IdentityMailFromDomainAttributes"}
+    },
+    "MailFromDomainName":{"type":"string"},
+    "MailFromDomainNotVerifiedException":{
+      "type":"structure",
+      "members":{
+      },
+      "error":{
+        "code":"MailFromDomainNotVerifiedException",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
+    },
     "Max24HourSend":{"type":"double"},
     "MaxItems":{"type":"integer"},
     "MaxSendRate":{"type":"double"},
@@ -1153,6 +1657,23 @@
       },
       "exception":true
     },
+    "MessageTag":{
+      "type":"structure",
+      "required":[
+        "Name",
+        "Value"
+      ],
+      "members":{
+        "Name":{"shape":"MessageTagName"},
+        "Value":{"shape":"MessageTagValue"}
+      }
+    },
+    "MessageTagList":{
+      "type":"list",
+      "member":{"shape":"MessageTag"}
+    },
+    "MessageTagName":{"type":"string"},
+    "MessageTagValue":{"type":"string"},
     "NextToken":{"type":"string"},
     "NotificationAttributes":{
       "type":"map",
@@ -1386,6 +1907,13 @@
         "Base64"
       ]
     },
+    "SNSDestination":{
+      "type":"structure",
+      "required":["TopicARN"],
+      "members":{
+        "TopicARN":{"shape":"AmazonResourceName"}
+      }
+    },
     "SendBounceRequest":{
       "type":"structure",
       "required":[
@@ -1436,7 +1964,9 @@
         "ReplyToAddresses":{"shape":"AddressList"},
         "ReturnPath":{"shape":"Address"},
         "SourceArn":{"shape":"AmazonResourceName"},
-        "ReturnPathArn":{"shape":"AmazonResourceName"}
+        "ReturnPathArn":{"shape":"AmazonResourceName"},
+        "Tags":{"shape":"MessageTagList"},
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"}
       }
     },
     "SendEmailResponse":{
@@ -1455,7 +1985,9 @@
         "RawMessage":{"shape":"RawMessage"},
         "FromArn":{"shape":"AmazonResourceName"},
         "SourceArn":{"shape":"AmazonResourceName"},
-        "ReturnPathArn":{"shape":"AmazonResourceName"}
+        "ReturnPathArn":{"shape":"AmazonResourceName"},
+        "Tags":{"shape":"MessageTagList"},
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"}
       }
     },
     "SendRawEmailResponse":{
@@ -1505,6 +2037,38 @@
       }
     },
     "SetIdentityFeedbackForwardingEnabledResponse":{
+      "type":"structure",
+      "members":{
+      }
+    },
+    "SetIdentityHeadersInNotificationsEnabledRequest":{
+      "type":"structure",
+      "required":[
+        "Identity",
+        "NotificationType",
+        "Enabled"
+      ],
+      "members":{
+        "Identity":{"shape":"Identity"},
+        "NotificationType":{"shape":"NotificationType"},
+        "Enabled":{"shape":"Enabled"}
+      }
+    },
+    "SetIdentityHeadersInNotificationsEnabledResponse":{
+      "type":"structure",
+      "members":{
+      }
+    },
+    "SetIdentityMailFromDomainRequest":{
+      "type":"structure",
+      "required":["Identity"],
+      "members":{
+        "Identity":{"shape":"Identity"},
+        "MailFromDomain":{"shape":"MailFromDomainName"},
+        "BehaviorOnMXFailure":{"shape":"BehaviorOnMXFailure"}
+      }
+    },
+    "SetIdentityMailFromDomainResponse":{
       "type":"structure",
       "members":{
       }
@@ -1562,6 +2126,22 @@
         "Require",
         "Optional"
       ]
+    },
+    "UpdateConfigurationSetEventDestinationRequest":{
+      "type":"structure",
+      "required":[
+        "ConfigurationSetName",
+        "EventDestination"
+      ],
+      "members":{
+        "ConfigurationSetName":{"shape":"ConfigurationSetName"},
+        "EventDestination":{"shape":"EventDestination"}
+      }
+    },
+    "UpdateConfigurationSetEventDestinationResponse":{
+      "type":"structure",
+      "members":{
+      }
     },
     "UpdateReceiptRuleRequest":{
       "type":"structure",

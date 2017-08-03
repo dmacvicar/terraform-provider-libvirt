@@ -30,7 +30,7 @@ type Stage interface {
 // StageCreator is responsible for instantiating a particular stage given a
 // logger and root path under the root partition.
 type StageCreator interface {
-	Create(logger *log.Logger, client *resource.HttpClient, root string) Stage
+	Create(logger *log.Logger, root string, f resource.Fetcher) Stage
 	Name() string
 }
 

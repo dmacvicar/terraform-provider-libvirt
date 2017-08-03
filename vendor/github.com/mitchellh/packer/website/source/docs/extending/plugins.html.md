@@ -1,20 +1,20 @@
 ---
+description: |
+    Packer Plugins allow new functionality to be added to Packer without modifying
+    the core source code. Packer plugins are able to add new builders,
+    provisioners, hooks, and more.
 layout: docs
-sidebar_current: docs-extending-plugins
-page_title: Plugins - Extending
-description: |-
-  Packer Plugins allow new functionality to be added to Packer without modifying
-  the core source code. Packer plugins are able to add new commands, builders,
-  provisioners, hooks, and more.
+page_title: 'Plugins - Extending'
+sidebar_current: 'docs-extending-plugins'
 ---
 
 # Plugins
 
 Packer Plugins allow new functionality to be added to Packer without modifying
-the core source code. Packer plugins are able to add new commands, builders,
+the core source code. Packer plugins are able to add new builders,
 provisioners, hooks, and more. In fact, much of Packer itself is implemented by
 writing plugins that are simply distributed with Packer. For example, all the
-commands, builders, provisioners, and more that ship with Packer are implemented
+builders, provisioners, and more that ship with Packer are implemented
 as Plugins that are simply hardcoded to load with Packer.
 
 This page will cover how to install and use plugins. If you're interested in
@@ -60,8 +60,6 @@ The valid types for plugins are:
 
 -   `builder` - Plugins responsible for building images for a specific platform.
 
--   `command` - A CLI sub-command for `packer`.
-
 -   `post-processor` - A post-processor responsible for taking an artifact from
     a builder and turning it into something else.
 
@@ -80,7 +78,7 @@ assumed that you're familiar with the language. This page will not be a Go
 language tutorial. Thankfully, if you are familiar with Go, the Go toolchain
 provides many conveniences to help to develop Packer plugins.
 
-~> **Warning!** This is an advanced topic. If you're new to Packer, we
+~&gt; **Warning!** This is an advanced topic. If you're new to Packer, we
 recommend getting a bit more comfortable before you dive into writing plugins.
 
 ### Plugin System Architecture
@@ -114,7 +112,7 @@ the following two packages, you're encouraged to use whatever packages you want.
 Because plugins are their own processes, there is no danger of colliding
 dependencies.
 
--   `github.com/mitchellh/packer` - Contains all the interfaces that you have to
+-   `github.com/hashicorp/packer` - Contains all the interfaces that you have to
     implement for any given plugin.
 
 -   `github.com/hashicorp/packer/packer/plugin` - Contains the code to serve
@@ -131,7 +129,7 @@ There are two steps involved in creating a plugin:
 A basic example is shown below. In this example, assume the `Builder` struct
 implements the `packer.Builder` interface:
 
-```go
+``` go
 import (
   "github.com/hashicorp/packer/packer/plugin"
 )
@@ -155,7 +153,7 @@ using standard installation procedures.
 The specifics of how to implement each type of interface are covered in the
 relevant subsections available in the navigation to the left.
 
-~> **Lock your dependencies!** Unfortunately, Go's dependency management
+~&gt; **Lock your dependencies!** Unfortunately, Go's dependency management
 story is fairly sad. There are various unofficial methods out there for locking
 dependencies, and using one of them is highly recommended since the Packer
 codebase will continue to improve, potentially breaking APIs along the way until
@@ -171,16 +169,15 @@ visible on stderr when the `PACKER_LOG` environmental is set.
 Packer will prefix any logs from plugins with the path to that plugin to make it
 identifiable where the logs come from. Some example logs are shown below:
 
-```text
-2013/06/10 21:44:43 ui: Available commands are:
-2013/06/10 21:44:43 Loading command: build
-2013/06/10 21:44:43 packer-command-build: 2013/06/10 21:44:43 Plugin minimum port: 10000
-2013/06/10 21:44:43 packer-command-build: 2013/06/10 21:44:43 Plugin maximum port: 25000
-2013/06/10 21:44:43 packer-command-build: 2013/06/10 21:44:43 Plugin address: :10000
+``` text
+2013/06/10 21:44:43 Loading builder: custom
+2013/06/10 21:44:43 packer-builder-custom: 2013/06/10 21:44:43 Plugin minimum port: 10000
+2013/06/10 21:44:43 packer-builder-custom: 2013/06/10 21:44:43 Plugin maximum port: 25000
+2013/06/10 21:44:43 packer-builder-custom: 2013/06/10 21:44:43 Plugin address: :10000
 ```
 
-As you can see, the log messages from the "build" command plugin are prefixed
-with "packer-command-build". Log output is *extremely* helpful in debugging
+As you can see, the log messages from the custom builder plugin are prefixed
+with "packer-builder-custom". Log output is *extremely* helpful in debugging
 issues and you're encouraged to be as verbose as you need to be in order for the
 logs to be helpful.
 
@@ -203,7 +200,7 @@ While developing plugins, you can configure your Packer configuration to point
 directly to the compiled plugin in order to test it. For example, building the
 CustomCloud plugin, I may configure packer like so:
 
-```json
+``` json
 {
   "builders": {
     "custom-cloud": "/an/absolute/path/to/packer-builder-custom-cloud"

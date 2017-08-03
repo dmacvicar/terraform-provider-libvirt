@@ -51,7 +51,7 @@ var (
 	}
 )
 
-func FetchConfig(logger *log.Logger, client *resource.HttpClient) (types.Config, report.Report, error) {
+func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
 	var data []byte
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 
@@ -61,9 +61,9 @@ func FetchConfig(logger *log.Logger, client *resource.HttpClient) (types.Config,
 			switch err {
 			case context.Canceled:
 			case context.DeadlineExceeded:
-				logger.Err("timed out while fetching config from %s", name)
+				f.Logger.Err("timed out while fetching config from %s", name)
 			default:
-				logger.Err("failed to fetch config from %s: %v", name, err)
+				f.Logger.Err("failed to fetch config from %s: %v", name, err)
 			}
 			return
 		}
@@ -73,20 +73,20 @@ func FetchConfig(logger *log.Logger, client *resource.HttpClient) (types.Config,
 	}
 
 	go dispatch("config drive (config-2)", func() ([]byte, error) {
-		return fetchConfigFromDevice(logger, ctx, diskByLabelPath+"config-2")
+		return fetchConfigFromDevice(f.Logger, ctx, diskByLabelPath+"config-2")
 	})
 
 	go dispatch("config drive (CONFIG-2)", func() ([]byte, error) {
-		return fetchConfigFromDevice(logger, ctx, diskByLabelPath+"CONFIG-2")
+		return fetchConfigFromDevice(f.Logger, ctx, diskByLabelPath+"CONFIG-2")
 	})
 
 	go dispatch("metadata service", func() ([]byte, error) {
-		return fetchConfigFromMetadataService(logger, client, ctx)
+		return fetchConfigFromMetadataService(f)
 	})
 
 	<-ctx.Done()
 	if ctx.Err() == context.DeadlineExceeded {
-		logger.Info("neither config drive nor metadata service were available in time. Continuing without a config...")
+		f.Logger.Info("neither config drive nor metadata service were available in time. Continuing without a config...")
 	}
 
 	return config.Parse(data)
@@ -130,6 +130,9 @@ func fetchConfigFromDevice(logger *log.Logger, ctx context.Context, path string)
 	return ioutil.ReadFile(filepath.Join(mnt, configDriveUserdataPath))
 }
 
-func fetchConfigFromMetadataService(logger *log.Logger, client *resource.HttpClient, ctx context.Context) ([]byte, error) {
-	return resource.FetchConfig(logger, client, metadataServiceUrl)
+func fetchConfigFromMetadataService(f resource.Fetcher) ([]byte, error) {
+	res, err := f.FetchToBuffer(metadataServiceUrl, resource.FetchOptions{
+		Headers: resource.ConfigHeaders,
+	})
+	return res, err
 }
