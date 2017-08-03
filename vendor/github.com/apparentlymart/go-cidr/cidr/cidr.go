@@ -71,8 +71,13 @@ func Host(base *net.IPNet, num int) (net.IP, error) {
 	if numUint64 > maxHostNum {
 		return nil, fmt.Errorf("prefix of %d does not accommodate a host numbered %d", parentLen, num)
 	}
-
-	return insertNumIntoIP(ip, num, 32), nil
+        var bitlength int
+        if ip.To4() != nil {
+              bitlength = 32
+        } else {
+              bitlength = 128
+        }
+	return insertNumIntoIP(ip, num, bitlength), nil
 }
 
 // AddressRange returns the first and last addresses in the given CIDR range.

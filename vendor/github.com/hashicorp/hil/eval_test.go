@@ -747,6 +747,35 @@ func TestEval(t *testing.T) {
 			UnknownValue,
 			TypeUnknown,
 		},
+		{
+			Input:      `${"foo\\"}`,
+			Scope:      nil,
+			Result:     `foo\`,
+			ResultType: TypeString,
+		},
+		{
+			Input:      `${"foo\\\\"}`,
+			Scope:      nil,
+			Result:     `foo\\`,
+			ResultType: TypeString,
+		},
+		{
+			`${second("foo", "\\", "/", "bar")}`,
+			&ast.BasicScope{
+				FuncMap: map[string]ast.Function{
+					"second": {
+						ArgTypes:   []ast.Type{ast.TypeString, ast.TypeString, ast.TypeString, ast.TypeString},
+						ReturnType: ast.TypeString,
+						Callback: func(args []interface{}) (interface{}, error) {
+							return args[1].(string), nil
+						},
+					},
+				},
+			},
+			false,
+			`\`,
+			TypeString,
+		},
 	}
 
 	for i, tc := range cases {

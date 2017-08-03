@@ -5,7 +5,8 @@
     "endpointPrefix":"apigateway",
     "protocol":"rest-json",
     "serviceFullName":"Amazon API Gateway",
-    "signatureVersion":"v4"
+    "signatureVersion":"v4",
+    "uid":"apigateway-2015-07-09"
   },
   "operations":{
     "CreateApiKey":{
@@ -22,7 +23,8 @@
         {"shape":"NotFoundException"},
         {"shape":"TooManyRequestsException"},
         {"shape":"LimitExceededException"},
-        {"shape":"BadRequestException"}
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"}
       ]
     },
     "CreateAuthorizer":{
@@ -78,6 +80,42 @@
         {"shape":"ServiceUnavailableException"}
       ]
     },
+    "CreateDocumentationPart":{
+      "name":"CreateDocumentationPart",
+      "http":{
+        "method":"POST",
+        "requestUri":"/restapis/{restapi_id}/documentation/parts",
+        "responseCode":201
+      },
+      "input":{"shape":"CreateDocumentationPartRequest"},
+      "output":{"shape":"DocumentationPart"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "CreateDocumentationVersion":{
+      "name":"CreateDocumentationVersion",
+      "http":{
+        "method":"POST",
+        "requestUri":"/restapis/{restapi_id}/documentation/versions",
+        "responseCode":201
+      },
+      "input":{"shape":"CreateDocumentationVersionRequest"},
+      "output":{"shape":"DocumentationVersion"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
     "CreateDomainName":{
       "name":"CreateDomainName",
       "http":{
@@ -90,6 +128,7 @@
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
         {"shape":"TooManyRequestsException"}
       ]
     },
@@ -107,6 +146,23 @@
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
         {"shape":"ConflictException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "CreateRequestValidator":{
+      "name":"CreateRequestValidator",
+      "http":{
+        "method":"POST",
+        "requestUri":"/restapis/{restapi_id}/requestvalidators",
+        "responseCode":201
+      },
+      "input":{"shape":"CreateRequestValidatorRequest"},
+      "output":{"shape":"RequestValidator"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
         {"shape":"LimitExceededException"},
         {"shape":"TooManyRequestsException"}
       ]
@@ -160,6 +216,41 @@
         {"shape":"NotFoundException"},
         {"shape":"ConflictException"},
         {"shape":"LimitExceededException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "CreateUsagePlan":{
+      "name":"CreateUsagePlan",
+      "http":{
+        "method":"POST",
+        "requestUri":"/usageplans",
+        "responseCode":201
+      },
+      "input":{"shape":"CreateUsagePlanRequest"},
+      "output":{"shape":"UsagePlan"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ConflictException"},
+        {"shape":"NotFoundException"}
+      ]
+    },
+    "CreateUsagePlanKey":{
+      "name":"CreateUsagePlanKey",
+      "http":{
+        "method":"POST",
+        "requestUri":"/usageplans/{usageplanId}/keys",
+        "responseCode":201
+      },
+      "input":{"shape":"CreateUsagePlanKeyRequest"},
+      "output":{"shape":"UsagePlanKey"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
         {"shape":"TooManyRequestsException"}
       ]
     },
@@ -237,6 +328,38 @@
         {"shape":"TooManyRequestsException"}
       ]
     },
+    "DeleteDocumentationPart":{
+      "name":"DeleteDocumentationPart",
+      "http":{
+        "method":"DELETE",
+        "requestUri":"/restapis/{restapi_id}/documentation/parts/{part_id}",
+        "responseCode":202
+      },
+      "input":{"shape":"DeleteDocumentationPartRequest"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"ConflictException"},
+        {"shape":"BadRequestException"}
+      ]
+    },
+    "DeleteDocumentationVersion":{
+      "name":"DeleteDocumentationVersion",
+      "http":{
+        "method":"DELETE",
+        "requestUri":"/restapis/{restapi_id}/documentation/versions/{doc_version}",
+        "responseCode":202
+      },
+      "input":{"shape":"DeleteDocumentationVersionRequest"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
     "DeleteDomainName":{
       "name":"DeleteDomainName",
       "http":{
@@ -251,6 +374,22 @@
         {"shape":"TooManyRequestsException"}
       ]
     },
+    "DeleteGatewayResponse":{
+      "name":"DeleteGatewayResponse",
+      "http":{
+        "method":"DELETE",
+        "requestUri":"/restapis/{restapi_id}/gatewayresponses/{response_type}",
+        "responseCode":202
+      },
+      "input":{"shape":"DeleteGatewayResponseRequest"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"}
+      ]
+    },
     "DeleteIntegration":{
       "name":"DeleteIntegration",
       "http":{
@@ -262,7 +401,8 @@
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
-        {"shape":"TooManyRequestsException"}
+        {"shape":"TooManyRequestsException"},
+        {"shape":"ConflictException"}
       ]
     },
     "DeleteIntegrationResponse":{
@@ -276,7 +416,9 @@
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
-        {"shape":"TooManyRequestsException"}
+        {"shape":"TooManyRequestsException"},
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"}
       ]
     },
     "DeleteMethod":{
@@ -290,7 +432,8 @@
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
-        {"shape":"TooManyRequestsException"}
+        {"shape":"TooManyRequestsException"},
+        {"shape":"ConflictException"}
       ]
     },
     "DeleteMethodResponse":{
@@ -304,7 +447,9 @@
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
-        {"shape":"TooManyRequestsException"}
+        {"shape":"TooManyRequestsException"},
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"}
       ]
     },
     "DeleteModel":{
@@ -315,6 +460,22 @@
         "responseCode":202
       },
       "input":{"shape":"DeleteModelRequest"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"}
+      ]
+    },
+    "DeleteRequestValidator":{
+      "name":"DeleteRequestValidator",
+      "http":{
+        "method":"DELETE",
+        "requestUri":"/restapis/{restapi_id}/requestvalidators/{requestvalidator_id}",
+        "responseCode":202
+      },
+      "input":{"shape":"DeleteRequestValidatorRequest"},
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
@@ -335,6 +496,7 @@
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
         {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
         {"shape":"TooManyRequestsException"}
       ]
     },
@@ -349,7 +511,8 @@
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
-        {"shape":"TooManyRequestsException"}
+        {"shape":"TooManyRequestsException"},
+        {"shape":"BadRequestException"}
       ]
     },
     "DeleteStage":{
@@ -361,6 +524,38 @@
       },
       "input":{"shape":"DeleteStageRequest"},
       "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"BadRequestException"}
+      ]
+    },
+    "DeleteUsagePlan":{
+      "name":"DeleteUsagePlan",
+      "http":{
+        "method":"DELETE",
+        "requestUri":"/usageplans/{usageplanId}",
+        "responseCode":202
+      },
+      "input":{"shape":"DeleteUsagePlanRequest"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"BadRequestException"},
+        {"shape":"NotFoundException"}
+      ]
+    },
+    "DeleteUsagePlanKey":{
+      "name":"DeleteUsagePlanKey",
+      "http":{
+        "method":"DELETE",
+        "requestUri":"/usageplans/{usageplanId}/keys/{keyId}",
+        "responseCode":202
+      },
+      "input":{"shape":"DeleteUsagePlanKeyRequest"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
         {"shape":"TooManyRequestsException"}
@@ -568,6 +763,64 @@
         {"shape":"ServiceUnavailableException"}
       ]
     },
+    "GetDocumentationPart":{
+      "name":"GetDocumentationPart",
+      "http":{
+        "method":"GET",
+        "requestUri":"/restapis/{restapi_id}/documentation/parts/{part_id}"
+      },
+      "input":{"shape":"GetDocumentationPartRequest"},
+      "output":{"shape":"DocumentationPart"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetDocumentationParts":{
+      "name":"GetDocumentationParts",
+      "http":{
+        "method":"GET",
+        "requestUri":"/restapis/{restapi_id}/documentation/parts"
+      },
+      "input":{"shape":"GetDocumentationPartsRequest"},
+      "output":{"shape":"DocumentationParts"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetDocumentationVersion":{
+      "name":"GetDocumentationVersion",
+      "http":{
+        "method":"GET",
+        "requestUri":"/restapis/{restapi_id}/documentation/versions/{doc_version}"
+      },
+      "input":{"shape":"GetDocumentationVersionRequest"},
+      "output":{"shape":"DocumentationVersion"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetDocumentationVersions":{
+      "name":"GetDocumentationVersions",
+      "http":{
+        "method":"GET",
+        "requestUri":"/restapis/{restapi_id}/documentation/versions"
+      },
+      "input":{"shape":"GetDocumentationVersionsRequest"},
+      "output":{"shape":"DocumentationVersions"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
     "GetDomainName":{
       "name":"GetDomainName",
       "http":{
@@ -610,6 +863,36 @@
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
         {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetGatewayResponse":{
+      "name":"GetGatewayResponse",
+      "http":{
+        "method":"GET",
+        "requestUri":"/restapis/{restapi_id}/gatewayresponses/{response_type}"
+      },
+      "input":{"shape":"GetGatewayResponseRequest"},
+      "output":{"shape":"GatewayResponse"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetGatewayResponses":{
+      "name":"GetGatewayResponses",
+      "http":{
+        "method":"GET",
+        "requestUri":"/restapis/{restapi_id}/gatewayresponses"
+      },
+      "input":{"shape":"GetGatewayResponsesRequest"},
+      "output":{"shape":"GatewayResponses"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
         {"shape":"TooManyRequestsException"}
       ]
     },
@@ -713,6 +996,35 @@
         {"shape":"TooManyRequestsException"}
       ]
     },
+    "GetRequestValidator":{
+      "name":"GetRequestValidator",
+      "http":{
+        "method":"GET",
+        "requestUri":"/restapis/{restapi_id}/requestvalidators/{requestvalidator_id}"
+      },
+      "input":{"shape":"GetRequestValidatorRequest"},
+      "output":{"shape":"RequestValidator"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetRequestValidators":{
+      "name":"GetRequestValidators",
+      "http":{
+        "method":"GET",
+        "requestUri":"/restapis/{restapi_id}/requestvalidators"
+      },
+      "input":{"shape":"GetRequestValidatorsRequest"},
+      "output":{"shape":"RequestValidators"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
     "GetResource":{
       "name":"GetResource",
       "http":{
@@ -783,6 +1095,34 @@
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
         {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetSdkType":{
+      "name":"GetSdkType",
+      "http":{
+        "method":"GET",
+        "requestUri":"/sdktypes/{sdktype_id}"
+      },
+      "input":{"shape":"GetSdkTypeRequest"},
+      "output":{"shape":"SdkType"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetSdkTypes":{
+      "name":"GetSdkTypes",
+      "http":{
+        "method":"GET",
+        "requestUri":"/sdktypes"
+      },
+      "input":{"shape":"GetSdkTypesRequest"},
+      "output":{"shape":"SdkTypes"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
         {"shape":"TooManyRequestsException"}
       ]
     },
@@ -814,6 +1154,151 @@
         {"shape":"TooManyRequestsException"}
       ]
     },
+    "GetUsage":{
+      "name":"GetUsage",
+      "http":{
+        "method":"GET",
+        "requestUri":"/usageplans/{usageplanId}/usage"
+      },
+      "input":{"shape":"GetUsageRequest"},
+      "output":{"shape":"Usage"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetUsagePlan":{
+      "name":"GetUsagePlan",
+      "http":{
+        "method":"GET",
+        "requestUri":"/usageplans/{usageplanId}"
+      },
+      "input":{"shape":"GetUsagePlanRequest"},
+      "output":{"shape":"UsagePlan"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetUsagePlanKey":{
+      "name":"GetUsagePlanKey",
+      "http":{
+        "method":"GET",
+        "requestUri":"/usageplans/{usageplanId}/keys/{keyId}",
+        "responseCode":200
+      },
+      "input":{"shape":"GetUsagePlanKeyRequest"},
+      "output":{"shape":"UsagePlanKey"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetUsagePlanKeys":{
+      "name":"GetUsagePlanKeys",
+      "http":{
+        "method":"GET",
+        "requestUri":"/usageplans/{usageplanId}/keys"
+      },
+      "input":{"shape":"GetUsagePlanKeysRequest"},
+      "output":{"shape":"UsagePlanKeys"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "GetUsagePlans":{
+      "name":"GetUsagePlans",
+      "http":{
+        "method":"GET",
+        "requestUri":"/usageplans"
+      },
+      "input":{"shape":"GetUsagePlansRequest"},
+      "output":{"shape":"UsagePlans"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"ConflictException"},
+        {"shape":"NotFoundException"}
+      ]
+    },
+    "ImportApiKeys":{
+      "name":"ImportApiKeys",
+      "http":{
+        "method":"POST",
+        "requestUri":"/apikeys?mode=import",
+        "responseCode":201
+      },
+      "input":{"shape":"ImportApiKeysRequest"},
+      "output":{"shape":"ApiKeyIds"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"}
+      ]
+    },
+    "ImportDocumentationParts":{
+      "name":"ImportDocumentationParts",
+      "http":{
+        "method":"PUT",
+        "requestUri":"/restapis/{restapi_id}/documentation/parts"
+      },
+      "input":{"shape":"ImportDocumentationPartsRequest"},
+      "output":{"shape":"DocumentationPartIds"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"BadRequestException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "ImportRestApi":{
+      "name":"ImportRestApi",
+      "http":{
+        "method":"POST",
+        "requestUri":"/restapis?mode=import",
+        "responseCode":201
+      },
+      "input":{"shape":"ImportRestApiRequest"},
+      "output":{"shape":"RestApi"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"BadRequestException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"ConflictException"}
+      ]
+    },
+    "PutGatewayResponse":{
+      "name":"PutGatewayResponse",
+      "http":{
+        "method":"PUT",
+        "requestUri":"/restapis/{restapi_id}/gatewayresponses/{response_type}",
+        "responseCode":201
+      },
+      "input":{"shape":"PutGatewayResponseRequest"},
+      "output":{"shape":"GatewayResponse"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
     "PutIntegration":{
       "name":"PutIntegration",
       "http":{
@@ -826,6 +1311,7 @@
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
         {"shape":"NotFoundException"},
         {"shape":"TooManyRequestsException"}
       ]
@@ -844,7 +1330,8 @@
         {"shape":"NotFoundException"},
         {"shape":"LimitExceededException"},
         {"shape":"BadRequestException"},
-        {"shape":"TooManyRequestsException"}
+        {"shape":"TooManyRequestsException"},
+        {"shape":"ConflictException"}
       ]
     },
     "PutMethod":{
@@ -881,6 +1368,23 @@
         {"shape":"LimitExceededException"},
         {"shape":"BadRequestException"},
         {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "PutRestApi":{
+      "name":"PutRestApi",
+      "http":{
+        "method":"PUT",
+        "requestUri":"/restapis/{restapi_id}"
+      },
+      "input":{"shape":"PutRestApiRequest"},
+      "output":{"shape":"RestApi"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"NotFoundException"},
+        {"shape":"BadRequestException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"ConflictException"}
       ]
     },
     "TestInvokeAuthorizer":{
@@ -940,7 +1444,8 @@
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
         {"shape":"BadRequestException"},
-        {"shape":"TooManyRequestsException"}
+        {"shape":"TooManyRequestsException"},
+        {"shape":"ConflictException"}
       ]
     },
     "UpdateAuthorizer":{
@@ -1005,6 +1510,39 @@
         {"shape":"ServiceUnavailableException"}
       ]
     },
+    "UpdateDocumentationPart":{
+      "name":"UpdateDocumentationPart",
+      "http":{
+        "method":"PATCH",
+        "requestUri":"/restapis/{restapi_id}/documentation/parts/{part_id}"
+      },
+      "input":{"shape":"UpdateDocumentationPartRequest"},
+      "output":{"shape":"DocumentationPart"},
+      "errors":[
+        {"shape":"BadRequestException"},
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"ConflictException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "UpdateDocumentationVersion":{
+      "name":"UpdateDocumentationVersion",
+      "http":{
+        "method":"PATCH",
+        "requestUri":"/restapis/{restapi_id}/documentation/versions/{doc_version}"
+      },
+      "input":{"shape":"UpdateDocumentationVersionRequest"},
+      "output":{"shape":"DocumentationVersion"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"ConflictException"},
+        {"shape":"BadRequestException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
     "UpdateDomainName":{
       "name":"UpdateDomainName",
       "http":{
@@ -1013,6 +1551,22 @@
       },
       "input":{"shape":"UpdateDomainNameRequest"},
       "output":{"shape":"DomainName"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "UpdateGatewayResponse":{
+      "name":"UpdateGatewayResponse",
+      "http":{
+        "method":"PATCH",
+        "requestUri":"/restapis/{restapi_id}/gatewayresponses/{response_type}"
+      },
+      "input":{"shape":"UpdateGatewayResponseRequest"},
+      "output":{"shape":"GatewayResponse"},
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
@@ -1032,7 +1586,8 @@
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
         {"shape":"BadRequestException"},
-        {"shape":"TooManyRequestsException"}
+        {"shape":"TooManyRequestsException"},
+        {"shape":"ConflictException"}
       ]
     },
     "UpdateIntegrationResponse":{
@@ -1046,6 +1601,7 @@
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
+        {"shape":"ConflictException"},
         {"shape":"BadRequestException"},
         {"shape":"TooManyRequestsException"}
       ]
@@ -1062,6 +1618,7 @@
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
         {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
         {"shape":"TooManyRequestsException"}
       ]
     },
@@ -1091,6 +1648,22 @@
       },
       "input":{"shape":"UpdateModelRequest"},
       "output":{"shape":"Model"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"NotFoundException"},
+        {"shape":"BadRequestException"},
+        {"shape":"ConflictException"},
+        {"shape":"TooManyRequestsException"}
+      ]
+    },
+    "UpdateRequestValidator":{
+      "name":"UpdateRequestValidator",
+      "http":{
+        "method":"PATCH",
+        "requestUri":"/restapis/{restapi_id}/requestvalidators/{requestvalidator_id}"
+      },
+      "input":{"shape":"UpdateRequestValidatorRequest"},
+      "output":{"shape":"RequestValidator"},
       "errors":[
         {"shape":"UnauthorizedException"},
         {"shape":"NotFoundException"},
@@ -1145,6 +1718,37 @@
         {"shape":"BadRequestException"},
         {"shape":"TooManyRequestsException"}
       ]
+    },
+    "UpdateUsage":{
+      "name":"UpdateUsage",
+      "http":{
+        "method":"PATCH",
+        "requestUri":"/usageplans/{usageplanId}/keys/{keyId}/usage"
+      },
+      "input":{"shape":"UpdateUsageRequest"},
+      "output":{"shape":"Usage"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"BadRequestException"},
+        {"shape":"NotFoundException"}
+      ]
+    },
+    "UpdateUsagePlan":{
+      "name":"UpdateUsagePlan",
+      "http":{
+        "method":"PATCH",
+        "requestUri":"/usageplans/{usageplanId}"
+      },
+      "input":{"shape":"UpdateUsagePlanRequest"},
+      "output":{"shape":"UsagePlan"},
+      "errors":[
+        {"shape":"UnauthorizedException"},
+        {"shape":"TooManyRequestsException"},
+        {"shape":"BadRequestException"},
+        {"shape":"NotFoundException"},
+        {"shape":"ConflictException"}
+      ]
     }
   },
   "shapes":{
@@ -1152,29 +1756,52 @@
       "type":"structure",
       "members":{
         "cloudwatchRoleArn":{"shape":"String"},
-        "throttleSettings":{"shape":"ThrottleSettings"}
+        "throttleSettings":{"shape":"ThrottleSettings"},
+        "features":{"shape":"ListOfString"},
+        "apiKeyVersion":{"shape":"String"}
       }
     },
     "ApiKey":{
       "type":"structure",
       "members":{
         "id":{"shape":"String"},
+        "value":{"shape":"String"},
         "name":{"shape":"String"},
+        "customerId":{"shape":"String"},
         "description":{"shape":"String"},
         "enabled":{"shape":"Boolean"},
-        "stageKeys":{"shape":"ListOfString"},
         "createdDate":{"shape":"Timestamp"},
-        "lastUpdatedDate":{"shape":"Timestamp"}
+        "lastUpdatedDate":{"shape":"Timestamp"},
+        "stageKeys":{"shape":"ListOfString"}
+      }
+    },
+    "ApiKeyIds":{
+      "type":"structure",
+      "members":{
+        "ids":{"shape":"ListOfString"},
+        "warnings":{"shape":"ListOfString"}
       }
     },
     "ApiKeys":{
       "type":"structure",
       "members":{
+        "warnings":{"shape":"ListOfString"},
         "position":{"shape":"String"},
         "items":{
           "shape":"ListOfApiKey",
           "locationName":"item"
         }
+      }
+    },
+    "ApiKeysFormat":{
+      "type":"string",
+      "enum":["csv"]
+    },
+    "ApiStage":{
+      "type":"structure",
+      "members":{
+        "apiId":{"shape":"String"},
+        "stage":{"shape":"String"}
       }
     },
     "Authorizer":{
@@ -1183,6 +1810,8 @@
         "id":{"shape":"String"},
         "name":{"shape":"String"},
         "type":{"shape":"AuthorizerType"},
+        "providerARNs":{"shape":"ListOfARNs"},
+        "authType":{"shape":"String"},
         "authorizerUri":{"shape":"String"},
         "authorizerCredentials":{"shape":"String"},
         "identitySource":{"shape":"String"},
@@ -1192,7 +1821,10 @@
     },
     "AuthorizerType":{
       "type":"string",
-      "enum":["TOKEN"]
+      "enum":[
+        "TOKEN",
+        "COGNITO_USER_POOLS"
+      ]
     },
     "Authorizers":{
       "type":"structure",
@@ -1283,13 +1915,23 @@
       "error":{"httpStatusCode":409},
       "exception":true
     },
+    "ContentHandlingStrategy":{
+      "type":"string",
+      "enum":[
+        "CONVERT_TO_BINARY",
+        "CONVERT_TO_TEXT"
+      ]
+    },
     "CreateApiKeyRequest":{
       "type":"structure",
       "members":{
         "name":{"shape":"String"},
         "description":{"shape":"String"},
         "enabled":{"shape":"Boolean"},
-        "stageKeys":{"shape":"ListOfStageKeys"}
+        "generateDistinctId":{"shape":"Boolean"},
+        "value":{"shape":"String"},
+        "stageKeys":{"shape":"ListOfStageKeys"},
+        "customerId":{"shape":"String"}
       }
     },
     "CreateAuthorizerRequest":{
@@ -1298,7 +1940,6 @@
         "restApiId",
         "name",
         "type",
-        "authorizerUri",
         "identitySource"
       ],
       "members":{
@@ -1309,6 +1950,8 @@
         },
         "name":{"shape":"String"},
         "type":{"shape":"AuthorizerType"},
+        "providerARNs":{"shape":"ListOfARNs"},
+        "authType":{"shape":"String"},
         "authorizerUri":{"shape":"String"},
         "authorizerCredentials":{"shape":"String"},
         "identitySource":{"shape":"String"},
@@ -1335,10 +1978,7 @@
     },
     "CreateDeploymentRequest":{
       "type":"structure",
-      "required":[
-        "restApiId",
-        "stageName"
-      ],
+      "required":["restApiId"],
       "members":{
         "restApiId":{
           "shape":"String",
@@ -1353,21 +1993,50 @@
         "variables":{"shape":"MapOfStringToString"}
       }
     },
-    "CreateDomainNameRequest":{
+    "CreateDocumentationPartRequest":{
       "type":"structure",
       "required":[
-        "domainName",
-        "certificateName",
-        "certificateBody",
-        "certificatePrivateKey",
-        "certificateChain"
+        "restApiId",
+        "location",
+        "properties"
       ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "location":{"shape":"DocumentationPartLocation"},
+        "properties":{"shape":"String"}
+      }
+    },
+    "CreateDocumentationVersionRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "documentationVersion"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "documentationVersion":{"shape":"String"},
+        "stageName":{"shape":"String"},
+        "description":{"shape":"String"}
+      }
+    },
+    "CreateDomainNameRequest":{
+      "type":"structure",
+      "required":["domainName"],
       "members":{
         "domainName":{"shape":"String"},
         "certificateName":{"shape":"String"},
         "certificateBody":{"shape":"String"},
         "certificatePrivateKey":{"shape":"String"},
-        "certificateChain":{"shape":"String"}
+        "certificateChain":{"shape":"String"},
+        "certificateArn":{"shape":"String"}
       }
     },
     "CreateModelRequest":{
@@ -1387,6 +2056,20 @@
         "description":{"shape":"String"},
         "schema":{"shape":"String"},
         "contentType":{"shape":"String"}
+      }
+    },
+    "CreateRequestValidatorRequest":{
+      "type":"structure",
+      "required":["restApiId"],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "name":{"shape":"String"},
+        "validateRequestBody":{"shape":"Boolean"},
+        "validateRequestParameters":{"shape":"Boolean"}
       }
     },
     "CreateResourceRequest":{
@@ -1416,7 +2099,9 @@
       "members":{
         "name":{"shape":"String"},
         "description":{"shape":"String"},
-        "cloneFrom":{"shape":"String"}
+        "version":{"shape":"String"},
+        "cloneFrom":{"shape":"String"},
+        "binaryMediaTypes":{"shape":"ListOfString"}
       }
     },
     "CreateStageRequest":{
@@ -1437,7 +2122,36 @@
         "description":{"shape":"String"},
         "cacheClusterEnabled":{"shape":"Boolean"},
         "cacheClusterSize":{"shape":"CacheClusterSize"},
-        "variables":{"shape":"MapOfStringToString"}
+        "variables":{"shape":"MapOfStringToString"},
+        "documentationVersion":{"shape":"String"}
+      }
+    },
+    "CreateUsagePlanKeyRequest":{
+      "type":"structure",
+      "required":[
+        "usagePlanId",
+        "keyId",
+        "keyType"
+      ],
+      "members":{
+        "usagePlanId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"usageplanId"
+        },
+        "keyId":{"shape":"String"},
+        "keyType":{"shape":"String"}
+      }
+    },
+    "CreateUsagePlanRequest":{
+      "type":"structure",
+      "required":["name"],
+      "members":{
+        "name":{"shape":"String"},
+        "description":{"shape":"String"},
+        "apiStages":{"shape":"ListOfApiStage"},
+        "throttle":{"shape":"ThrottleSettings"},
+        "quota":{"shape":"QuotaSettings"}
       }
     },
     "DeleteApiKeyRequest":{
@@ -1519,6 +2233,44 @@
         }
       }
     },
+    "DeleteDocumentationPartRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "documentationPartId"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "documentationPartId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"part_id"
+        }
+      }
+    },
+    "DeleteDocumentationVersionRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "documentationVersion"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "documentationVersion":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"doc_version"
+        }
+      }
+    },
     "DeleteDomainNameRequest":{
       "type":"structure",
       "required":["domainName"],
@@ -1527,6 +2279,25 @@
           "shape":"String",
           "location":"uri",
           "locationName":"domain_name"
+        }
+      }
+    },
+    "DeleteGatewayResponseRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "responseType"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "responseType":{
+          "shape":"GatewayResponseType",
+          "location":"uri",
+          "locationName":"response_type"
         }
       }
     },
@@ -1661,6 +2432,25 @@
         }
       }
     },
+    "DeleteRequestValidatorRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "requestValidatorId"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "requestValidatorId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"requestvalidator_id"
+        }
+      }
+    },
     "DeleteResourceRequest":{
       "type":"structure",
       "required":[
@@ -1710,6 +2500,36 @@
         }
       }
     },
+    "DeleteUsagePlanKeyRequest":{
+      "type":"structure",
+      "required":[
+        "usagePlanId",
+        "keyId"
+      ],
+      "members":{
+        "usagePlanId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"usageplanId"
+        },
+        "keyId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"keyId"
+        }
+      }
+    },
+    "DeleteUsagePlanRequest":{
+      "type":"structure",
+      "required":["usagePlanId"],
+      "members":{
+        "usagePlanId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"usageplanId"
+        }
+      }
+    },
     "Deployment":{
       "type":"structure",
       "members":{
@@ -1729,11 +2549,87 @@
         }
       }
     },
+    "DocumentationPart":{
+      "type":"structure",
+      "members":{
+        "id":{"shape":"String"},
+        "location":{"shape":"DocumentationPartLocation"},
+        "properties":{"shape":"String"}
+      }
+    },
+    "DocumentationPartIds":{
+      "type":"structure",
+      "members":{
+        "ids":{"shape":"ListOfString"},
+        "warnings":{"shape":"ListOfString"}
+      }
+    },
+    "DocumentationPartLocation":{
+      "type":"structure",
+      "required":["type"],
+      "members":{
+        "type":{"shape":"DocumentationPartType"},
+        "path":{"shape":"String"},
+        "method":{"shape":"String"},
+        "statusCode":{"shape":"DocumentationPartLocationStatusCode"},
+        "name":{"shape":"String"}
+      }
+    },
+    "DocumentationPartLocationStatusCode":{
+      "type":"string",
+      "pattern":"^([1-5]\\d\\d|\\*|\\s*)$"
+    },
+    "DocumentationPartType":{
+      "type":"string",
+      "enum":[
+        "API",
+        "AUTHORIZER",
+        "MODEL",
+        "RESOURCE",
+        "METHOD",
+        "PATH_PARAMETER",
+        "QUERY_PARAMETER",
+        "REQUEST_HEADER",
+        "REQUEST_BODY",
+        "RESPONSE",
+        "RESPONSE_HEADER",
+        "RESPONSE_BODY"
+      ]
+    },
+    "DocumentationParts":{
+      "type":"structure",
+      "members":{
+        "position":{"shape":"String"},
+        "items":{
+          "shape":"ListOfDocumentationPart",
+          "locationName":"item"
+        }
+      }
+    },
+    "DocumentationVersion":{
+      "type":"structure",
+      "members":{
+        "version":{"shape":"String"},
+        "createdDate":{"shape":"Timestamp"},
+        "description":{"shape":"String"}
+      }
+    },
+    "DocumentationVersions":{
+      "type":"structure",
+      "members":{
+        "position":{"shape":"String"},
+        "items":{
+          "shape":"ListOfDocumentationVersion",
+          "locationName":"item"
+        }
+      }
+    },
     "DomainName":{
       "type":"structure",
       "members":{
         "domainName":{"shape":"String"},
         "certificateName":{"shape":"String"},
+        "certificateArn":{"shape":"String"},
         "certificateUploadDate":{"shape":"Timestamp"},
         "distributionDomainName":{"shape":"String"}
       }
@@ -1804,6 +2700,51 @@
         }
       }
     },
+    "GatewayResponse":{
+      "type":"structure",
+      "members":{
+        "responseType":{"shape":"GatewayResponseType"},
+        "statusCode":{"shape":"StatusCode"},
+        "responseParameters":{"shape":"MapOfStringToString"},
+        "responseTemplates":{"shape":"MapOfStringToString"},
+        "defaultResponse":{"shape":"Boolean"}
+      }
+    },
+    "GatewayResponseType":{
+      "type":"string",
+      "enum":[
+        "DEFAULT_4XX",
+        "DEFAULT_5XX",
+        "RESOURCE_NOT_FOUND",
+        "UNAUTHORIZED",
+        "INVALID_API_KEY",
+        "ACCESS_DENIED",
+        "AUTHORIZER_FAILURE",
+        "AUTHORIZER_CONFIGURATION_ERROR",
+        "INVALID_SIGNATURE",
+        "EXPIRED_TOKEN",
+        "MISSING_AUTHENTICATION_TOKEN",
+        "INTEGRATION_FAILURE",
+        "INTEGRATION_TIMEOUT",
+        "API_CONFIGURATION_ERROR",
+        "UNSUPPORTED_MEDIA_TYPE",
+        "BAD_REQUEST_PARAMETERS",
+        "BAD_REQUEST_BODY",
+        "REQUEST_TOO_LARGE",
+        "THROTTLED",
+        "QUOTA_EXCEEDED"
+      ]
+    },
+    "GatewayResponses":{
+      "type":"structure",
+      "members":{
+        "position":{"shape":"String"},
+        "items":{
+          "shape":"ListOfGatewayResponse",
+          "locationName":"item"
+        }
+      }
+    },
     "GenerateClientCertificateRequest":{
       "type":"structure",
       "members":{
@@ -1823,6 +2764,11 @@
           "shape":"String",
           "location":"uri",
           "locationName":"api_Key"
+        },
+        "includeValue":{
+          "shape":"NullableBoolean",
+          "location":"querystring",
+          "locationName":"includeValue"
         }
       }
     },
@@ -1838,6 +2784,21 @@
           "shape":"NullableInteger",
           "location":"querystring",
           "locationName":"limit"
+        },
+        "nameQuery":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"name"
+        },
+        "customerId":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"customerId"
+        },
+        "includeValues":{
+          "shape":"NullableBoolean",
+          "location":"querystring",
+          "locationName":"includeValues"
         }
       }
     },
@@ -1963,10 +2924,110 @@
           "shape":"String",
           "location":"uri",
           "locationName":"deployment_id"
+        },
+        "embed":{
+          "shape":"ListOfString",
+          "location":"querystring",
+          "locationName":"embed"
         }
       }
     },
     "GetDeploymentsRequest":{
+      "type":"structure",
+      "required":["restApiId"],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "position":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"position"
+        },
+        "limit":{
+          "shape":"NullableInteger",
+          "location":"querystring",
+          "locationName":"limit"
+        }
+      }
+    },
+    "GetDocumentationPartRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "documentationPartId"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "documentationPartId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"part_id"
+        }
+      }
+    },
+    "GetDocumentationPartsRequest":{
+      "type":"structure",
+      "required":["restApiId"],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "type":{
+          "shape":"DocumentationPartType",
+          "location":"querystring",
+          "locationName":"type"
+        },
+        "nameQuery":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"name"
+        },
+        "path":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"path"
+        },
+        "position":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"position"
+        },
+        "limit":{
+          "shape":"NullableInteger",
+          "location":"querystring",
+          "locationName":"limit"
+        }
+      }
+    },
+    "GetDocumentationVersionRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "documentationVersion"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "documentationVersion":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"doc_version"
+        }
+      }
+    },
+    "GetDocumentationVersionsRequest":{
       "type":"structure",
       "required":["restApiId"],
       "members":{
@@ -2044,6 +3105,46 @@
           "shape":"String",
           "location":"header",
           "locationName":"Accept"
+        }
+      }
+    },
+    "GetGatewayResponseRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "responseType"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "responseType":{
+          "shape":"GatewayResponseType",
+          "location":"uri",
+          "locationName":"response_type"
+        }
+      }
+    },
+    "GetGatewayResponsesRequest":{
+      "type":"structure",
+      "required":["restApiId"],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "position":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"position"
+        },
+        "limit":{
+          "shape":"NullableInteger",
+          "location":"querystring",
+          "locationName":"limit"
         }
       }
     },
@@ -2223,6 +3324,46 @@
         }
       }
     },
+    "GetRequestValidatorRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "requestValidatorId"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "requestValidatorId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"requestvalidator_id"
+        }
+      }
+    },
+    "GetRequestValidatorsRequest":{
+      "type":"structure",
+      "required":["restApiId"],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "position":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"position"
+        },
+        "limit":{
+          "shape":"NullableInteger",
+          "location":"querystring",
+          "locationName":"limit"
+        }
+      }
+    },
     "GetResourceRequest":{
       "type":"structure",
       "required":[
@@ -2239,6 +3380,11 @@
           "shape":"String",
           "location":"uri",
           "locationName":"resource_id"
+        },
+        "embed":{
+          "shape":"ListOfString",
+          "location":"querystring",
+          "locationName":"embed"
         }
       }
     },
@@ -2260,6 +3406,11 @@
           "shape":"NullableInteger",
           "location":"querystring",
           "locationName":"limit"
+        },
+        "embed":{
+          "shape":"ListOfString",
+          "location":"querystring",
+          "locationName":"embed"
         }
       }
     },
@@ -2318,6 +3469,32 @@
         }
       }
     },
+    "GetSdkTypeRequest":{
+      "type":"structure",
+      "required":["id"],
+      "members":{
+        "id":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"sdktype_id"
+        }
+      }
+    },
+    "GetSdkTypesRequest":{
+      "type":"structure",
+      "members":{
+        "position":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"position"
+        },
+        "limit":{
+          "shape":"NullableInteger",
+          "location":"querystring",
+          "locationName":"limit"
+        }
+      }
+    },
     "GetStageRequest":{
       "type":"structure",
       "required":[
@@ -2353,6 +3530,186 @@
         }
       }
     },
+    "GetUsagePlanKeyRequest":{
+      "type":"structure",
+      "required":[
+        "usagePlanId",
+        "keyId"
+      ],
+      "members":{
+        "usagePlanId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"usageplanId"
+        },
+        "keyId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"keyId"
+        }
+      }
+    },
+    "GetUsagePlanKeysRequest":{
+      "type":"structure",
+      "required":["usagePlanId"],
+      "members":{
+        "usagePlanId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"usageplanId"
+        },
+        "position":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"position"
+        },
+        "limit":{
+          "shape":"NullableInteger",
+          "location":"querystring",
+          "locationName":"limit"
+        },
+        "nameQuery":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"name"
+        }
+      }
+    },
+    "GetUsagePlanRequest":{
+      "type":"structure",
+      "required":["usagePlanId"],
+      "members":{
+        "usagePlanId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"usageplanId"
+        }
+      }
+    },
+    "GetUsagePlansRequest":{
+      "type":"structure",
+      "members":{
+        "position":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"position"
+        },
+        "keyId":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"keyId"
+        },
+        "limit":{
+          "shape":"NullableInteger",
+          "location":"querystring",
+          "locationName":"limit"
+        }
+      }
+    },
+    "GetUsageRequest":{
+      "type":"structure",
+      "required":[
+        "usagePlanId",
+        "startDate",
+        "endDate"
+      ],
+      "members":{
+        "usagePlanId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"usageplanId"
+        },
+        "keyId":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"keyId"
+        },
+        "startDate":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"startDate"
+        },
+        "endDate":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"endDate"
+        },
+        "position":{
+          "shape":"String",
+          "location":"querystring",
+          "locationName":"position"
+        },
+        "limit":{
+          "shape":"NullableInteger",
+          "location":"querystring",
+          "locationName":"limit"
+        }
+      }
+    },
+    "ImportApiKeysRequest":{
+      "type":"structure",
+      "required":[
+        "body",
+        "format"
+      ],
+      "members":{
+        "body":{"shape":"Blob"},
+        "format":{
+          "shape":"ApiKeysFormat",
+          "location":"querystring",
+          "locationName":"format"
+        },
+        "failOnWarnings":{
+          "shape":"Boolean",
+          "location":"querystring",
+          "locationName":"failonwarnings"
+        }
+      },
+      "payload":"body"
+    },
+    "ImportDocumentationPartsRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "body"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "mode":{
+          "shape":"PutMode",
+          "location":"querystring",
+          "locationName":"mode"
+        },
+        "failOnWarnings":{
+          "shape":"Boolean",
+          "location":"querystring",
+          "locationName":"failonwarnings"
+        },
+        "body":{"shape":"Blob"}
+      },
+      "payload":"body"
+    },
+    "ImportRestApiRequest":{
+      "type":"structure",
+      "required":["body"],
+      "members":{
+        "failOnWarnings":{
+          "shape":"Boolean",
+          "location":"querystring",
+          "locationName":"failonwarnings"
+        },
+        "parameters":{
+          "shape":"MapOfStringToString",
+          "location":"querystring"
+        },
+        "body":{"shape":"Blob"}
+      },
+      "payload":"body"
+    },
     "Integer":{"type":"integer"},
     "Integration":{
       "type":"structure",
@@ -2363,6 +3720,8 @@
         "credentials":{"shape":"String"},
         "requestParameters":{"shape":"MapOfStringToString"},
         "requestTemplates":{"shape":"MapOfStringToString"},
+        "passthroughBehavior":{"shape":"String"},
+        "contentHandling":{"shape":"ContentHandlingStrategy"},
         "cacheNamespace":{"shape":"String"},
         "cacheKeyParameters":{"shape":"ListOfString"},
         "integrationResponses":{"shape":"MapOfIntegrationResponse"}
@@ -2374,7 +3733,8 @@
         "statusCode":{"shape":"StatusCode"},
         "selectionPattern":{"shape":"String"},
         "responseParameters":{"shape":"MapOfStringToString"},
-        "responseTemplates":{"shape":"MapOfStringToString"}
+        "responseTemplates":{"shape":"MapOfStringToString"},
+        "contentHandling":{"shape":"ContentHandlingStrategy"}
       }
     },
     "IntegrationType":{
@@ -2382,7 +3742,9 @@
       "enum":[
         "HTTP",
         "AWS",
-        "MOCK"
+        "MOCK",
+        "HTTP_PROXY",
+        "AWS_PROXY"
       ]
     },
     "LimitExceededException":{
@@ -2398,9 +3760,17 @@
       "error":{"httpStatusCode":429},
       "exception":true
     },
+    "ListOfARNs":{
+      "type":"list",
+      "member":{"shape":"ProviderARN"}
+    },
     "ListOfApiKey":{
       "type":"list",
       "member":{"shape":"ApiKey"}
+    },
+    "ListOfApiStage":{
+      "type":"list",
+      "member":{"shape":"ApiStage"}
     },
     "ListOfAuthorizer":{
       "type":"list",
@@ -2418,9 +3788,25 @@
       "type":"list",
       "member":{"shape":"Deployment"}
     },
+    "ListOfDocumentationPart":{
+      "type":"list",
+      "member":{"shape":"DocumentationPart"}
+    },
+    "ListOfDocumentationVersion":{
+      "type":"list",
+      "member":{"shape":"DocumentationVersion"}
+    },
     "ListOfDomainName":{
       "type":"list",
       "member":{"shape":"DomainName"}
+    },
+    "ListOfGatewayResponse":{
+      "type":"list",
+      "member":{"shape":"GatewayResponse"}
+    },
+    "ListOfLong":{
+      "type":"list",
+      "member":{"shape":"Long"}
     },
     "ListOfModel":{
       "type":"list",
@@ -2430,6 +3816,10 @@
       "type":"list",
       "member":{"shape":"PatchOperation"}
     },
+    "ListOfRequestValidator":{
+      "type":"list",
+      "member":{"shape":"RequestValidator"}
+    },
     "ListOfResource":{
       "type":"list",
       "member":{"shape":"Resource"}
@@ -2437,6 +3827,14 @@
     "ListOfRestApi":{
       "type":"list",
       "member":{"shape":"RestApi"}
+    },
+    "ListOfSdkConfigurationProperty":{
+      "type":"list",
+      "member":{"shape":"SdkConfigurationProperty"}
+    },
+    "ListOfSdkType":{
+      "type":"list",
+      "member":{"shape":"SdkType"}
     },
     "ListOfStage":{
       "type":"list",
@@ -2450,6 +3848,18 @@
       "type":"list",
       "member":{"shape":"String"}
     },
+    "ListOfUsage":{
+      "type":"list",
+      "member":{"shape":"ListOfLong"}
+    },
+    "ListOfUsagePlan":{
+      "type":"list",
+      "member":{"shape":"UsagePlan"}
+    },
+    "ListOfUsagePlanKey":{
+      "type":"list",
+      "member":{"shape":"UsagePlanKey"}
+    },
     "Long":{"type":"long"},
     "MapOfHeaderValues":{
       "type":"map",
@@ -2460,6 +3870,11 @@
       "type":"map",
       "key":{"shape":"String"},
       "value":{"shape":"IntegrationResponse"}
+    },
+    "MapOfKeyUsages":{
+      "type":"map",
+      "key":{"shape":"String"},
+      "value":{"shape":"ListOfUsage"}
     },
     "MapOfMethod":{
       "type":"map",
@@ -2503,6 +3918,8 @@
         "authorizationType":{"shape":"String"},
         "authorizerId":{"shape":"String"},
         "apiKeyRequired":{"shape":"NullableBoolean"},
+        "requestValidatorId":{"shape":"String"},
+        "operationName":{"shape":"String"},
         "requestParameters":{"shape":"MapOfStringToBoolean"},
         "requestModels":{"shape":"MapOfStringToString"},
         "methodResponses":{"shape":"MapOfMethodResponse"},
@@ -2569,10 +3986,21 @@
     },
     "NullableBoolean":{"type":"boolean"},
     "NullableInteger":{"type":"integer"},
+    "Op":{
+      "type":"string",
+      "enum":[
+        "add",
+        "remove",
+        "replace",
+        "move",
+        "copy",
+        "test"
+      ]
+    },
     "PatchOperation":{
       "type":"structure",
       "members":{
-        "op":{"shape":"op"},
+        "op":{"shape":"Op"},
         "path":{"shape":"String"},
         "value":{"shape":"String"},
         "from":{"shape":"String"}
@@ -2582,6 +4010,29 @@
       "type":"map",
       "key":{"shape":"String"},
       "value":{"shape":"MapOfMethodSnapshot"}
+    },
+    "ProviderARN":{"type":"string"},
+    "PutGatewayResponseRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "responseType"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "responseType":{
+          "shape":"GatewayResponseType",
+          "location":"uri",
+          "locationName":"response_type"
+        },
+        "statusCode":{"shape":"StatusCode"},
+        "responseParameters":{"shape":"MapOfStringToString"},
+        "responseTemplates":{"shape":"MapOfStringToString"}
+      }
     },
     "PutIntegrationRequest":{
       "type":"structure",
@@ -2616,8 +4067,10 @@
         "credentials":{"shape":"String"},
         "requestParameters":{"shape":"MapOfStringToString"},
         "requestTemplates":{"shape":"MapOfStringToString"},
+        "passthroughBehavior":{"shape":"String"},
         "cacheNamespace":{"shape":"String"},
-        "cacheKeyParameters":{"shape":"ListOfString"}
+        "cacheKeyParameters":{"shape":"ListOfString"},
+        "contentHandling":{"shape":"ContentHandlingStrategy"}
       }
     },
     "PutIntegrationResponseRequest":{
@@ -2651,7 +4104,8 @@
         },
         "selectionPattern":{"shape":"String"},
         "responseParameters":{"shape":"MapOfStringToString"},
-        "responseTemplates":{"shape":"MapOfStringToString"}
+        "responseTemplates":{"shape":"MapOfStringToString"},
+        "contentHandling":{"shape":"ContentHandlingStrategy"}
       }
     },
     "PutMethodRequest":{
@@ -2681,8 +4135,10 @@
         "authorizationType":{"shape":"String"},
         "authorizerId":{"shape":"String"},
         "apiKeyRequired":{"shape":"Boolean"},
+        "operationName":{"shape":"String"},
         "requestParameters":{"shape":"MapOfStringToBoolean"},
-        "requestModels":{"shape":"MapOfStringToString"}
+        "requestModels":{"shape":"MapOfStringToString"},
+        "requestValidatorId":{"shape":"String"}
       }
     },
     "PutMethodResponseRequest":{
@@ -2718,6 +4174,78 @@
         "responseModels":{"shape":"MapOfStringToString"}
       }
     },
+    "PutMode":{
+      "type":"string",
+      "enum":[
+        "merge",
+        "overwrite"
+      ]
+    },
+    "PutRestApiRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "body"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "mode":{
+          "shape":"PutMode",
+          "location":"querystring",
+          "locationName":"mode"
+        },
+        "failOnWarnings":{
+          "shape":"Boolean",
+          "location":"querystring",
+          "locationName":"failonwarnings"
+        },
+        "parameters":{
+          "shape":"MapOfStringToString",
+          "location":"querystring"
+        },
+        "body":{"shape":"Blob"}
+      },
+      "payload":"body"
+    },
+    "QuotaPeriodType":{
+      "type":"string",
+      "enum":[
+        "DAY",
+        "WEEK",
+        "MONTH"
+      ]
+    },
+    "QuotaSettings":{
+      "type":"structure",
+      "members":{
+        "limit":{"shape":"Integer"},
+        "offset":{"shape":"Integer"},
+        "period":{"shape":"QuotaPeriodType"}
+      }
+    },
+    "RequestValidator":{
+      "type":"structure",
+      "members":{
+        "id":{"shape":"String"},
+        "name":{"shape":"String"},
+        "validateRequestBody":{"shape":"Boolean"},
+        "validateRequestParameters":{"shape":"Boolean"}
+      }
+    },
+    "RequestValidators":{
+      "type":"structure",
+      "members":{
+        "position":{"shape":"String"},
+        "items":{
+          "shape":"ListOfRequestValidator",
+          "locationName":"item"
+        }
+      }
+    },
     "Resource":{
       "type":"structure",
       "members":{
@@ -2744,7 +4272,10 @@
         "id":{"shape":"String"},
         "name":{"shape":"String"},
         "description":{"shape":"String"},
-        "createdDate":{"shape":"Timestamp"}
+        "createdDate":{"shape":"Timestamp"},
+        "version":{"shape":"String"},
+        "warnings":{"shape":"ListOfString"},
+        "binaryMediaTypes":{"shape":"ListOfString"}
       }
     },
     "RestApis":{
@@ -2755,6 +4286,16 @@
           "shape":"ListOfRestApi",
           "locationName":"item"
         }
+      }
+    },
+    "SdkConfigurationProperty":{
+      "type":"structure",
+      "members":{
+        "name":{"shape":"String"},
+        "friendlyName":{"shape":"String"},
+        "description":{"shape":"String"},
+        "required":{"shape":"Boolean"},
+        "defaultValue":{"shape":"String"}
       }
     },
     "SdkResponse":{
@@ -2773,6 +4314,25 @@
         "body":{"shape":"Blob"}
       },
       "payload":"body"
+    },
+    "SdkType":{
+      "type":"structure",
+      "members":{
+        "id":{"shape":"String"},
+        "friendlyName":{"shape":"String"},
+        "description":{"shape":"String"},
+        "configurationProperties":{"shape":"ListOfSdkConfigurationProperty"}
+      }
+    },
+    "SdkTypes":{
+      "type":"structure",
+      "members":{
+        "position":{"shape":"String"},
+        "items":{
+          "shape":"ListOfSdkType",
+          "locationName":"item"
+        }
+      }
     },
     "ServiceUnavailableException":{
       "type":"structure",
@@ -2800,6 +4360,7 @@
         "cacheClusterStatus":{"shape":"CacheClusterStatus"},
         "methodSettings":{"shape":"MapOfMethodSettings"},
         "variables":{"shape":"MapOfStringToString"},
+        "documentationVersion":{"shape":"String"},
         "createdDate":{"shape":"Timestamp"},
         "lastUpdatedDate":{"shape":"Timestamp"}
       }
@@ -2860,7 +4421,8 @@
         "latency":{"shape":"Long"},
         "principalId":{"shape":"String"},
         "policy":{"shape":"String"},
-        "authorization":{"shape":"MapOfStringToList"}
+        "authorization":{"shape":"MapOfStringToList"},
+        "claims":{"shape":"MapOfStringToString"}
       }
     },
     "TestInvokeMethodRequest":{
@@ -3030,6 +4592,46 @@
         "patchOperations":{"shape":"ListOfPatchOperation"}
       }
     },
+    "UpdateDocumentationPartRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "documentationPartId"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "documentationPartId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"part_id"
+        },
+        "patchOperations":{"shape":"ListOfPatchOperation"}
+      }
+    },
+    "UpdateDocumentationVersionRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "documentationVersion"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "documentationVersion":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"doc_version"
+        },
+        "patchOperations":{"shape":"ListOfPatchOperation"}
+      }
+    },
     "UpdateDomainNameRequest":{
       "type":"structure",
       "required":["domainName"],
@@ -3038,6 +4640,26 @@
           "shape":"String",
           "location":"uri",
           "locationName":"domain_name"
+        },
+        "patchOperations":{"shape":"ListOfPatchOperation"}
+      }
+    },
+    "UpdateGatewayResponseRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "responseType"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "responseType":{
+          "shape":"GatewayResponseType",
+          "location":"uri",
+          "locationName":"response_type"
         },
         "patchOperations":{"shape":"ListOfPatchOperation"}
       }
@@ -3178,6 +4800,26 @@
         "patchOperations":{"shape":"ListOfPatchOperation"}
       }
     },
+    "UpdateRequestValidatorRequest":{
+      "type":"structure",
+      "required":[
+        "restApiId",
+        "requestValidatorId"
+      ],
+      "members":{
+        "restApiId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"restapi_id"
+        },
+        "requestValidatorId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"requestvalidator_id"
+        },
+        "patchOperations":{"shape":"ListOfPatchOperation"}
+      }
+    },
     "UpdateResourceRequest":{
       "type":"structure",
       "required":[
@@ -3230,16 +4872,91 @@
         "patchOperations":{"shape":"ListOfPatchOperation"}
       }
     },
-    "op":{
-      "type":"string",
-      "enum":[
-        "add",
-        "remove",
-        "replace",
-        "move",
-        "copy",
-        "test"
-      ]
+    "UpdateUsagePlanRequest":{
+      "type":"structure",
+      "required":["usagePlanId"],
+      "members":{
+        "usagePlanId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"usageplanId"
+        },
+        "patchOperations":{"shape":"ListOfPatchOperation"}
+      }
+    },
+    "UpdateUsageRequest":{
+      "type":"structure",
+      "required":[
+        "usagePlanId",
+        "keyId"
+      ],
+      "members":{
+        "usagePlanId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"usageplanId"
+        },
+        "keyId":{
+          "shape":"String",
+          "location":"uri",
+          "locationName":"keyId"
+        },
+        "patchOperations":{"shape":"ListOfPatchOperation"}
+      }
+    },
+    "Usage":{
+      "type":"structure",
+      "members":{
+        "usagePlanId":{"shape":"String"},
+        "startDate":{"shape":"String"},
+        "endDate":{"shape":"String"},
+        "position":{"shape":"String"},
+        "items":{
+          "shape":"MapOfKeyUsages",
+          "locationName":"values"
+        }
+      }
+    },
+    "UsagePlan":{
+      "type":"structure",
+      "members":{
+        "id":{"shape":"String"},
+        "name":{"shape":"String"},
+        "description":{"shape":"String"},
+        "apiStages":{"shape":"ListOfApiStage"},
+        "throttle":{"shape":"ThrottleSettings"},
+        "quota":{"shape":"QuotaSettings"},
+        "productCode":{"shape":"String"}
+      }
+    },
+    "UsagePlanKey":{
+      "type":"structure",
+      "members":{
+        "id":{"shape":"String"},
+        "type":{"shape":"String"},
+        "value":{"shape":"String"},
+        "name":{"shape":"String"}
+      }
+    },
+    "UsagePlanKeys":{
+      "type":"structure",
+      "members":{
+        "position":{"shape":"String"},
+        "items":{
+          "shape":"ListOfUsagePlanKey",
+          "locationName":"item"
+        }
+      }
+    },
+    "UsagePlans":{
+      "type":"structure",
+      "members":{
+        "position":{"shape":"String"},
+        "items":{
+          "shape":"ListOfUsagePlan",
+          "locationName":"item"
+        }
+      }
     }
   }
 }

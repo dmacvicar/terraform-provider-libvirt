@@ -105,7 +105,7 @@ func Parse(rawConfig []byte) (types.Config, report.Report, error) {
 		})
 		r.Merge(validate.ValidateWithoutSource(configValue))
 	} else {
-		r.Merge(validate.Validate(configValue, astjson.FromJsonRoot(ast), bytes.NewReader(rawConfig)))
+		r.Merge(validate.Validate(configValue, astjson.FromJsonRoot(ast), bytes.NewReader(rawConfig), true))
 	}
 
 	if r.IsFatal() {

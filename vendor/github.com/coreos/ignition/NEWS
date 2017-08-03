@@ -1,4 +1,65 @@
-23-Jun-2017 IGNITION v0.15.0
+28-Jul-2017 IGNITION v0.17.2
+
+  Bug Fixes
+
+    - Fix failure to create files/directories/links on correct filesystem
+    - Fix failure to force filesystem creation when legacy force flag was set
+    - Prevent VFAT filesystem creation from unconditionally overwriting existing
+      filesystem
+    - Fix deprecation warning on enable field in OEM systemd units
+    - Fix failure where hard link targets would be on incorrect filesystem,
+      causing creation to fail
+    - Fix incorrect filesystem UUID check when deciding whether to reuse
+      existing filesystem, causing Ignition to fail
+
+05-Jul-2017 IGNITION v0.17.1
+
+  Bug Fixes
+
+    - Fix failure when user data was not provided on EC2 and GCE
+    - Fix failure to fetch user data on packet.net
+
+30-Jun-2017 IGNITION v0.17.0
+
+  Features
+
+    - Add support for S3 fetching and IAM role credential use in EC2
+    - Add enabled flag to services to allow disabling services
+    - Add new vagrant-virtualbox oem
+
+  Changes
+
+    - Mark 2.1.0 as stable
+    - No longer accept 2.1.0-experimental configs
+    - Create new 2.2.0-experimental spec from 2.1.0
+
+  Bug Fixes
+
+    - Mask user-configdrive.service and user-configvirtfs.service on brightbox
+      and openstack to prevent cloudinit from running a second time
+    - Use value given in root flag everywhere, instead of hard coding /sysroot
+
+16-Jun-2017 IGNITION v0.16.0
+
+  Experimental (2.1.0-experimental)
+
+    - Fix TFTP URL validation
+    - Fix nil pointer dereference when uid or gid for a file is unspecified
+    - Add support for VFAT filesystem creation
+    - Fix raid device validation
+
+  Changes
+
+    - Validate length of filesystem labels
+    - Remove all OEM etcd v0 drop-in units
+    - Remove xendom0 OEM
+
+  Features
+
+    - Add support for VMware's OVF environment
+    - Add support for VirtualBox OEM
+
+23-May-2017 IGNITION v0.15.0
 
   Experimental (2.1.0-experimental)
 

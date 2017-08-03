@@ -5,9 +5,7 @@ set -eu
 source ./build
 
 SRC=$(find . -name '*.go' \
-	-not -path "./internal/vendor/*" \
-	-not -path "./config/vendor/*" \
-	-not -path "./config/v1/vendor/*")
+  -not -path "./vendor/*")
 
 PKG=$(cd gopath/src/${REPO_PATH}; go list ./... | \
 	grep --invert-match vendor)

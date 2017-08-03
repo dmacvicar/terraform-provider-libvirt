@@ -78,13 +78,11 @@ func main() {
 
 	oemConfig := oem.MustGet(flags.oem.String())
 	engine := exec.Engine{
-		Root:              flags.root,
-		FetchTimeout:      flags.fetchTimeout,
-		Logger:            &logger,
-		ConfigCache:       flags.configCache,
-		FetchFunc:         oemConfig.FetchFunc(),
-		OemBaseConfig:     oemConfig.BaseConfig(),
-		DefaultUserConfig: oemConfig.DefaultUserConfig(),
+		Root:         flags.root,
+		FetchTimeout: flags.fetchTimeout,
+		Logger:       &logger,
+		ConfigCache:  flags.configCache,
+		OEMConfig:    oemConfig,
 	}
 
 	if !engine.Run(flags.stage.String()) {

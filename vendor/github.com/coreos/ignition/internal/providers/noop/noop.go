@@ -20,11 +20,10 @@ import (
 	"github.com/coreos/ignition/config"
 	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/config/validate/report"
-	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/resource"
 )
 
-func FetchConfig(logger *log.Logger, _ *resource.HttpClient) (types.Config, report.Report, error) {
-	logger.Debug("noop provider fetching empty config")
+func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
+	f.Logger.Debug("noop provider fetching empty config")
 	return types.Config{}, report.Report{}, config.ErrEmpty
 }

@@ -54,8 +54,9 @@ type AstNode interface {
 }
 
 // Validate walks down a struct tree calling Validate on every node that implements it, building
-// A report of all the errors, warnings, info, and deprecations it encounters
-func Validate(vObj reflect.Value, ast AstNode, source io.ReadSeeker) (r report.Report) {
+// A report of all the errors, warnings, info, and deprecations it encounters. If checkUnusedKeys
+// is true, Validate will generate warnings for unused keys in the ast, otherwise it will not.
+func Validate(vObj reflect.Value, ast AstNode, source io.ReadSeeker, checkUnusedKeys bool) (r report.Report) {
 	if !vObj.IsValid() {
 		return
 	}
@@ -85,11 +86,11 @@ func Validate(vObj reflect.Value, ast AstNode, source io.ReadSeeker) (r report.R
 
 	switch vObj.Kind() {
 	case reflect.Ptr:
-		sub_report := Validate(vObj.Elem(), ast, source)
+		sub_report := Validate(vObj.Elem(), ast, source, checkUnusedKeys)
 		sub_report.AddPosition(line, col, "")
 		r.Merge(sub_report)
 	case reflect.Struct:
-		sub_report := validateStruct(vObj, ast, source)
+		sub_report := validateStruct(vObj, ast, source, checkUnusedKeys)
 		sub_report.AddPosition(line, col, "")
 		r.Merge(sub_report)
 	case reflect.Slice:
@@ -100,7 +101,7 @@ func Validate(vObj reflect.Value, ast AstNode, source io.ReadSeeker) (r report.R
 					sub_node = n
 				}
 			}
-			sub_report := Validate(vObj.Index(i), sub_node, source)
+			sub_report := Validate(vObj.Index(i), sub_node, source, checkUnusedKeys)
 			sub_report.AddPosition(line, col, "")
 			r.Merge(sub_report)
 		}
@@ -109,7 +110,7 @@ func Validate(vObj reflect.Value, ast AstNode, source io.ReadSeeker) (r report.R
 }
 
 func ValidateWithoutSource(cfg reflect.Value) (report report.Report) {
-	return Validate(cfg, nil, nil)
+	return Validate(cfg, nil, nil, false)
 }
 
 type field struct {
@@ -137,7 +138,7 @@ func getFields(vObj reflect.Value) []field {
 	return ret
 }
 
-func validateStruct(vObj reflect.Value, ast AstNode, source io.ReadSeeker) report.Report {
+func validateStruct(vObj reflect.Value, ast AstNode, source io.ReadSeeker, checkUnusedKeys bool) report.Report {
 	r := report.Report{}
 
 	// isFromObject will be true if this struct was unmarshalled from a JSON object.
@@ -190,11 +191,11 @@ func validateStruct(vObj reflect.Value, ast AstNode, source io.ReadSeeker) repor
 			r.Merge(sub_report)
 		}
 
-		sub_report := Validate(f.Value, sub_node, src)
+		sub_report := Validate(f.Value, sub_node, src, checkUnusedKeys)
 		sub_report.AddPosition(line, col, "")
 		r.Merge(sub_report)
 	}
-	if !isFromObject {
+	if !isFromObject || !checkUnusedKeys {
 		// If this struct was not unmarshalled from a JSON object, there cannot be unused keys.
 		return r
 	}

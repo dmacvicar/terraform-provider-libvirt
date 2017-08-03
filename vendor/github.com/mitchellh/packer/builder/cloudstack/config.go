@@ -17,6 +17,7 @@ import (
 // Config holds all the details needed to configure the builder.
 type Config struct {
 	common.PackerConfig `mapstructure:",squash"`
+	common.HTTPConfig   `mapstructure:",squash"`
 	Comm                communicator.Config `mapstructure:",squash"`
 
 	APIURL       string        `mapstructure:"api_url"`
@@ -26,9 +27,10 @@ type Config struct {
 	HTTPGetOnly  bool          `mapstructure:"http_get_only"`
 	SSLNoVerify  bool          `mapstructure:"ssl_no_verify"`
 
+	CIDRList          []string `mapstructure:"cidr_list"`
 	DiskOffering      string   `mapstructure:"disk_offering"`
 	DiskSize          int64    `mapstructure:"disk_size"`
-	CIDRList          []string `mapstructure:"cidr_list"`
+	Expunge           bool     `mapstructure:"expunge"`
 	Hypervisor        string   `mapstructure:"hypervisor"`
 	InstanceName      string   `mapstructure:"instance_name"`
 	Keypair           string   `mapstructure:"keypair"`
@@ -64,6 +66,11 @@ func NewConfig(raws ...interface{}) (*Config, error) {
 	err := config.Decode(c, &config.DecodeOpts{
 		Interpolate:        true,
 		InterpolateContext: &c.ctx,
+		InterpolateFilter: &interpolate.RenderFilter{
+			Exclude: []string{
+				"user_data",
+			},
+		},
 	}, raws...)
 	if err != nil {
 		return nil, err
@@ -72,8 +79,27 @@ func NewConfig(raws ...interface{}) (*Config, error) {
 	var errs *packer.MultiError
 
 	// Set some defaults.
+	if c.APIURL == "" {
+		// Default to environment variable for api_url, if it exists
+		c.APIURL = os.Getenv("CLOUDSTACK_API_URL")
+	}
+
+	if c.APIKey == "" {
+		// Default to environment variable for api_key, if it exists
+		c.APIKey = os.Getenv("CLOUDSTACK_API_KEY")
+	}
+
+	if c.SecretKey == "" {
+		// Default to environment variable for secret_key, if it exists
+		c.SecretKey = os.Getenv("CLOUDSTACK_SECRET_KEY")
+	}
+
 	if c.AsyncTimeout == 0 {
 		c.AsyncTimeout = 30 * time.Minute
+	}
+
+	if len(c.CIDRList) == 0 && !c.UseLocalIPAddress {
+		c.CIDRList = []string{"0.0.0.0/0"}
 	}
 
 	if c.InstanceName == "" {
@@ -105,10 +131,6 @@ func NewConfig(raws ...interface{}) (*Config, error) {
 
 	if c.SecretKey == "" {
 		errs = packer.MultiErrorAppend(errs, errors.New("a secret_key must be specified"))
-	}
-
-	if len(c.CIDRList) == 0 && !c.UseLocalIPAddress {
-		errs = packer.MultiErrorAppend(errs, errors.New("a cidr_list must be specified"))
 	}
 
 	if c.Network == "" {

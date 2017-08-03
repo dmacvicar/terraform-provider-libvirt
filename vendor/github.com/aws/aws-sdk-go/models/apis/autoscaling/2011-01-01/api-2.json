@@ -6,6 +6,7 @@
     "protocol":"query",
     "serviceFullName":"Auto Scaling",
     "signatureVersion":"v4",
+    "uid":"autoscaling-2011-01-01",
     "xmlNamespace":"http://autoscaling.amazonaws.com/doc/2011-01-01/"
   },
   "operations":{
@@ -16,6 +17,21 @@
         "requestUri":"/"
       },
       "input":{"shape":"AttachInstancesQuery"},
+      "errors":[
+        {"shape":"ResourceContentionFault"}
+      ]
+    },
+    "AttachLoadBalancerTargetGroups":{
+      "name":"AttachLoadBalancerTargetGroups",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"AttachLoadBalancerTargetGroupsType"},
+      "output":{
+        "shape":"AttachLoadBalancerTargetGroupsResultType",
+        "resultWrapper":"AttachLoadBalancerTargetGroupsResult"
+      },
       "errors":[
         {"shape":"ResourceContentionFault"}
       ]
@@ -86,7 +102,8 @@
       "errors":[
         {"shape":"LimitExceededFault"},
         {"shape":"AlreadyExistsFault"},
-        {"shape":"ResourceContentionFault"}
+        {"shape":"ResourceContentionFault"},
+        {"shape":"ResourceInUseFault"}
       ]
     },
     "DeleteAutoScalingGroup":{
@@ -170,7 +187,8 @@
       },
       "input":{"shape":"DeleteTagsType"},
       "errors":[
-        {"shape":"ResourceContentionFault"}
+        {"shape":"ResourceContentionFault"},
+        {"shape":"ResourceInUseFault"}
       ]
     },
     "DescribeAccountLimits":{
@@ -287,6 +305,21 @@
       "output":{
         "shape":"DescribeLifecycleHooksAnswer",
         "resultWrapper":"DescribeLifecycleHooksResult"
+      },
+      "errors":[
+        {"shape":"ResourceContentionFault"}
+      ]
+    },
+    "DescribeLoadBalancerTargetGroups":{
+      "name":"DescribeLoadBalancerTargetGroups",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DescribeLoadBalancerTargetGroupsRequest"},
+      "output":{
+        "shape":"DescribeLoadBalancerTargetGroupsResponse",
+        "resultWrapper":"DescribeLoadBalancerTargetGroupsResult"
       },
       "errors":[
         {"shape":"ResourceContentionFault"}
@@ -439,6 +472,21 @@
       "output":{
         "shape":"DetachInstancesAnswer",
         "resultWrapper":"DetachInstancesResult"
+      },
+      "errors":[
+        {"shape":"ResourceContentionFault"}
+      ]
+    },
+    "DetachLoadBalancerTargetGroups":{
+      "name":"DetachLoadBalancerTargetGroups",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DetachLoadBalancerTargetGroupsType"},
+      "output":{
+        "shape":"DetachLoadBalancerTargetGroupsResultType",
+        "resultWrapper":"DetachLoadBalancerTargetGroupsResult"
       },
       "errors":[
         {"shape":"ResourceContentionFault"}
@@ -780,6 +828,22 @@
         "AutoScalingGroupName":{"shape":"ResourceName"}
       }
     },
+    "AttachLoadBalancerTargetGroupsResultType":{
+      "type":"structure",
+      "members":{
+      }
+    },
+    "AttachLoadBalancerTargetGroupsType":{
+      "type":"structure",
+      "required":[
+        "AutoScalingGroupName",
+        "TargetGroupARNs"
+      ],
+      "members":{
+        "AutoScalingGroupName":{"shape":"ResourceName"},
+        "TargetGroupARNs":{"shape":"TargetGroupARNs"}
+      }
+    },
     "AttachLoadBalancersResultType":{
       "type":"structure",
       "members":{
@@ -787,6 +851,10 @@
     },
     "AttachLoadBalancersType":{
       "type":"structure",
+      "required":[
+        "AutoScalingGroupName",
+        "LoadBalancerNames"
+      ],
       "members":{
         "AutoScalingGroupName":{"shape":"ResourceName"},
         "LoadBalancerNames":{"shape":"LoadBalancerNames"}
@@ -814,13 +882,14 @@
         "DefaultCooldown":{"shape":"Cooldown"},
         "AvailabilityZones":{"shape":"AvailabilityZones"},
         "LoadBalancerNames":{"shape":"LoadBalancerNames"},
+        "TargetGroupARNs":{"shape":"TargetGroupARNs"},
         "HealthCheckType":{"shape":"XmlStringMaxLen32"},
         "HealthCheckGracePeriod":{"shape":"HealthCheckGracePeriod"},
         "Instances":{"shape":"Instances"},
         "CreatedTime":{"shape":"TimestampType"},
         "SuspendedProcesses":{"shape":"SuspendedProcesses"},
         "PlacementGroup":{"shape":"XmlStringMaxLen255"},
-        "VPCZoneIdentifier":{"shape":"XmlStringMaxLen255"},
+        "VPCZoneIdentifier":{"shape":"XmlStringMaxLen2047"},
         "EnabledMetrics":{"shape":"EnabledMetrics"},
         "Status":{"shape":"XmlStringMaxLen255"},
         "Tags":{"shape":"TagDescriptionList"},
@@ -969,10 +1038,11 @@
         "DefaultCooldown":{"shape":"Cooldown"},
         "AvailabilityZones":{"shape":"AvailabilityZones"},
         "LoadBalancerNames":{"shape":"LoadBalancerNames"},
+        "TargetGroupARNs":{"shape":"TargetGroupARNs"},
         "HealthCheckType":{"shape":"XmlStringMaxLen32"},
         "HealthCheckGracePeriod":{"shape":"HealthCheckGracePeriod"},
         "PlacementGroup":{"shape":"XmlStringMaxLen255"},
-        "VPCZoneIdentifier":{"shape":"XmlStringMaxLen255"},
+        "VPCZoneIdentifier":{"shape":"XmlStringMaxLen2047"},
         "TerminationPolicies":{"shape":"TerminationPolicies"},
         "NewInstancesProtectedFromScaleIn":{"shape":"InstanceProtected"},
         "Tags":{"shape":"Tags"}
@@ -1007,6 +1077,21 @@
       "required":["Tags"],
       "members":{
         "Tags":{"shape":"Tags"}
+      }
+    },
+    "CustomizedMetricSpecification":{
+      "type":"structure",
+      "required":[
+        "MetricName",
+        "Namespace",
+        "Statistic"
+      ],
+      "members":{
+        "MetricName":{"shape":"MetricName"},
+        "Namespace":{"shape":"MetricNamespace"},
+        "Dimensions":{"shape":"MetricDimensions"},
+        "Statistic":{"shape":"MetricStatistic"},
+        "Unit":{"shape":"MetricUnit"}
       }
     },
     "DeleteAutoScalingGroupType":{
@@ -1054,7 +1139,10 @@
     },
     "DeleteScheduledActionType":{
       "type":"structure",
-      "required":["ScheduledActionName"],
+      "required":[
+        "AutoScalingGroupName",
+        "ScheduledActionName"
+      ],
       "members":{
         "AutoScalingGroupName":{"shape":"ResourceName"},
         "ScheduledActionName":{"shape":"ResourceName"}
@@ -1114,6 +1202,22 @@
       "members":{
         "AutoScalingGroupName":{"shape":"ResourceName"},
         "LifecycleHookNames":{"shape":"LifecycleHookNames"}
+      }
+    },
+    "DescribeLoadBalancerTargetGroupsRequest":{
+      "type":"structure",
+      "required":["AutoScalingGroupName"],
+      "members":{
+        "AutoScalingGroupName":{"shape":"ResourceName"},
+        "NextToken":{"shape":"XmlString"},
+        "MaxRecords":{"shape":"MaxRecords"}
+      }
+    },
+    "DescribeLoadBalancerTargetGroupsResponse":{
+      "type":"structure",
+      "members":{
+        "LoadBalancerTargetGroups":{"shape":"LoadBalancerTargetGroupStates"},
+        "NextToken":{"shape":"XmlString"}
       }
     },
     "DescribeLoadBalancersRequest":{
@@ -1217,6 +1321,22 @@
         "ShouldDecrementDesiredCapacity":{"shape":"ShouldDecrementDesiredCapacity"}
       }
     },
+    "DetachLoadBalancerTargetGroupsResultType":{
+      "type":"structure",
+      "members":{
+      }
+    },
+    "DetachLoadBalancerTargetGroupsType":{
+      "type":"structure",
+      "required":[
+        "AutoScalingGroupName",
+        "TargetGroupARNs"
+      ],
+      "members":{
+        "AutoScalingGroupName":{"shape":"ResourceName"},
+        "TargetGroupARNs":{"shape":"TargetGroupARNs"}
+      }
+    },
     "DetachLoadBalancersResultType":{
       "type":"structure",
       "members":{
@@ -1224,6 +1344,10 @@
     },
     "DetachLoadBalancersType":{
       "type":"structure",
+      "required":[
+        "AutoScalingGroupName",
+        "LoadBalancerNames"
+      ],
       "members":{
         "AutoScalingGroupName":{"shape":"ResourceName"},
         "LoadBalancerNames":{"shape":"LoadBalancerNames"}
@@ -1237,6 +1361,7 @@
         "Metrics":{"shape":"Metrics"}
       }
     },
+    "DisableScaleIn":{"type":"boolean"},
     "Ebs":{
       "type":"structure",
       "members":{
@@ -1461,7 +1586,8 @@
     },
     "LifecycleHookNames":{
       "type":"list",
-      "member":{"shape":"AsciiStringMaxLen255"}
+      "member":{"shape":"AsciiStringMaxLen255"},
+      "max":50
     },
     "LifecycleHooks":{
       "type":"list",
@@ -1513,6 +1639,17 @@
       "type":"list",
       "member":{"shape":"LoadBalancerState"}
     },
+    "LoadBalancerTargetGroupState":{
+      "type":"structure",
+      "members":{
+        "LoadBalancerTargetGroupARN":{"shape":"XmlStringMaxLen511"},
+        "State":{"shape":"XmlStringMaxLen255"}
+      }
+    },
+    "LoadBalancerTargetGroupStates":{
+      "type":"list",
+      "member":{"shape":"LoadBalancerTargetGroupState"}
+    },
     "MaxNumberOfAutoScalingGroups":{"type":"integer"},
     "MaxNumberOfLaunchConfigurations":{"type":"integer"},
     "MaxRecords":{"type":"integer"},
@@ -1526,6 +1663,23 @@
       "type":"list",
       "member":{"shape":"MetricCollectionType"}
     },
+    "MetricDimension":{
+      "type":"structure",
+      "required":[
+        "Name",
+        "Value"
+      ],
+      "members":{
+        "Name":{"shape":"MetricDimensionName"},
+        "Value":{"shape":"MetricDimensionValue"}
+      }
+    },
+    "MetricDimensionName":{"type":"string"},
+    "MetricDimensionValue":{"type":"string"},
+    "MetricDimensions":{
+      "type":"list",
+      "member":{"shape":"MetricDimension"}
+    },
     "MetricGranularityType":{
       "type":"structure",
       "members":{
@@ -1536,7 +1690,29 @@
       "type":"list",
       "member":{"shape":"MetricGranularityType"}
     },
+    "MetricName":{"type":"string"},
+    "MetricNamespace":{"type":"string"},
     "MetricScale":{"type":"double"},
+    "MetricStatistic":{
+      "type":"string",
+      "enum":[
+        "Average",
+        "Minimum",
+        "Maximum",
+        "SampleCount",
+        "Sum"
+      ]
+    },
+    "MetricType":{
+      "type":"string",
+      "enum":[
+        "ASGAverageCPUUtilization",
+        "ASGAverageNetworkIn",
+        "ASGAverageNetworkOut",
+        "ALBRequestCountPerTarget"
+      ]
+    },
+    "MetricUnit":{"type":"string"},
     "Metrics":{
       "type":"list",
       "member":{"shape":"XmlStringMaxLen255"}
@@ -1578,7 +1754,8 @@
     "PolicyARNType":{
       "type":"structure",
       "members":{
-        "PolicyARN":{"shape":"ResourceName"}
+        "PolicyARN":{"shape":"ResourceName"},
+        "Alarms":{"shape":"Alarms"}
       }
     },
     "PolicyIncrement":{"type":"integer"},
@@ -1589,6 +1766,14 @@
     "PolicyTypes":{
       "type":"list",
       "member":{"shape":"XmlStringMaxLen64"}
+    },
+    "PredefinedMetricSpecification":{
+      "type":"structure",
+      "required":["PredefinedMetricType"],
+      "members":{
+        "PredefinedMetricType":{"shape":"MetricType"},
+        "ResourceLabel":{"shape":"XmlStringMaxLen1023"}
+      }
     },
     "ProcessNames":{
       "type":"list",
@@ -1653,8 +1838,7 @@
       "type":"structure",
       "required":[
         "AutoScalingGroupName",
-        "PolicyName",
-        "AdjustmentType"
+        "PolicyName"
       ],
       "members":{
         "AutoScalingGroupName":{"shape":"ResourceName"},
@@ -1667,7 +1851,8 @@
         "Cooldown":{"shape":"Cooldown"},
         "MetricAggregationType":{"shape":"XmlStringMaxLen32"},
         "StepAdjustments":{"shape":"StepAdjustments"},
-        "EstimatedInstanceWarmup":{"shape":"EstimatedInstanceWarmup"}
+        "EstimatedInstanceWarmup":{"shape":"EstimatedInstanceWarmup"},
+        "TargetTrackingConfiguration":{"shape":"TargetTrackingConfiguration"}
       }
     },
     "PutScheduledUpdateGroupActionType":{
@@ -1784,7 +1969,8 @@
         "StepAdjustments":{"shape":"StepAdjustments"},
         "MetricAggregationType":{"shape":"XmlStringMaxLen32"},
         "EstimatedInstanceWarmup":{"shape":"EstimatedInstanceWarmup"},
-        "Alarms":{"shape":"Alarms"}
+        "Alarms":{"shape":"Alarms"},
+        "TargetTrackingConfiguration":{"shape":"TargetTrackingConfiguration"}
       }
     },
     "ScalingProcessQuery":{
@@ -1950,6 +2136,20 @@
         "NextToken":{"shape":"XmlString"}
       }
     },
+    "TargetGroupARNs":{
+      "type":"list",
+      "member":{"shape":"XmlStringMaxLen511"}
+    },
+    "TargetTrackingConfiguration":{
+      "type":"structure",
+      "required":["TargetValue"],
+      "members":{
+        "PredefinedMetricSpecification":{"shape":"PredefinedMetricSpecification"},
+        "CustomizedMetricSpecification":{"shape":"CustomizedMetricSpecification"},
+        "TargetValue":{"shape":"MetricScale"},
+        "DisableScaleIn":{"shape":"DisableScaleIn"}
+      }
+    },
     "TerminateInstanceInAutoScalingGroupType":{
       "type":"structure",
       "required":[
@@ -1980,7 +2180,7 @@
         "HealthCheckType":{"shape":"XmlStringMaxLen32"},
         "HealthCheckGracePeriod":{"shape":"HealthCheckGracePeriod"},
         "PlacementGroup":{"shape":"XmlStringMaxLen255"},
-        "VPCZoneIdentifier":{"shape":"XmlStringMaxLen255"},
+        "VPCZoneIdentifier":{"shape":"XmlStringMaxLen2047"},
         "TerminationPolicies":{"shape":"TerminationPolicies"},
         "NewInstancesProtectedFromScaleIn":{"shape":"InstanceProtected"}
       }
@@ -2011,6 +2211,12 @@
       "min":1,
       "pattern":"[\\u0020-\\uD7FF\\uE000-\\uFFFD\\uD800\\uDC00-\\uDBFF\\uDFFF\\r\\n\\t]*"
     },
+    "XmlStringMaxLen2047":{
+      "type":"string",
+      "max":2047,
+      "min":1,
+      "pattern":"[\\u0020-\\uD7FF\\uE000-\\uFFFD\\uD800\\uDC00-\\uDBFF\\uDFFF\\r\\n\\t]*"
+    },
     "XmlStringMaxLen255":{
       "type":"string",
       "max":255,
@@ -2020,6 +2226,12 @@
     "XmlStringMaxLen32":{
       "type":"string",
       "max":32,
+      "min":1,
+      "pattern":"[\\u0020-\\uD7FF\\uE000-\\uFFFD\\uD800\\uDC00-\\uDBFF\\uDFFF\\r\\n\\t]*"
+    },
+    "XmlStringMaxLen511":{
+      "type":"string",
+      "max":511,
       "min":1,
       "pattern":"[\\u0020-\\uD7FF\\uE000-\\uFFFD\\uD800\\uDC00-\\uDBFF\\uDFFF\\r\\n\\t]*"
     },

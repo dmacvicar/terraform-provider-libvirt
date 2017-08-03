@@ -7,7 +7,8 @@
     "protocol":"json",
     "serviceFullName":"AWS Device Farm",
     "signatureVersion":"v4",
-    "targetPrefix":"DeviceFarm_20150623"
+    "targetPrefix":"DeviceFarm_20150623",
+    "uid":"devicefarm-2015-06-23"
   },
   "operations":{
     "CreateDevicePool":{
@@ -25,6 +26,21 @@
         {"shape":"ServiceAccountException"}
       ]
     },
+    "CreateNetworkProfile":{
+      "name":"CreateNetworkProfile",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"CreateNetworkProfileRequest"},
+      "output":{"shape":"CreateNetworkProfileResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
     "CreateProject":{
       "name":"CreateProject",
       "http":{
@@ -33,6 +49,21 @@
       },
       "input":{"shape":"CreateProjectRequest"},
       "output":{"shape":"CreateProjectResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
+    "CreateRemoteAccessSession":{
+      "name":"CreateRemoteAccessSession",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"CreateRemoteAccessSessionRequest"},
+      "output":{"shape":"CreateRemoteAccessSessionResult"},
       "errors":[
         {"shape":"ArgumentException"},
         {"shape":"NotFoundException"},
@@ -70,6 +101,21 @@
         {"shape":"ServiceAccountException"}
       ]
     },
+    "DeleteNetworkProfile":{
+      "name":"DeleteNetworkProfile",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DeleteNetworkProfileRequest"},
+      "output":{"shape":"DeleteNetworkProfileResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
     "DeleteProject":{
       "name":"DeleteProject",
       "http":{
@@ -78,6 +124,21 @@
       },
       "input":{"shape":"DeleteProjectRequest"},
       "output":{"shape":"DeleteProjectResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
+    "DeleteRemoteAccessSession":{
+      "name":"DeleteRemoteAccessSession",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DeleteRemoteAccessSessionRequest"},
+      "output":{"shape":"DeleteRemoteAccessSessionResult"},
       "errors":[
         {"shape":"ArgumentException"},
         {"shape":"NotFoundException"},
@@ -190,6 +251,37 @@
         {"shape":"ServiceAccountException"}
       ]
     },
+    "GetNetworkProfile":{
+      "name":"GetNetworkProfile",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"GetNetworkProfileRequest"},
+      "output":{"shape":"GetNetworkProfileResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
+    "GetOfferingStatus":{
+      "name":"GetOfferingStatus",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"GetOfferingStatusRequest"},
+      "output":{"shape":"GetOfferingStatusResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"NotEligibleException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
     "GetProject":{
       "name":"GetProject",
       "http":{
@@ -198,6 +290,21 @@
       },
       "input":{"shape":"GetProjectRequest"},
       "output":{"shape":"GetProjectResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
+    "GetRemoteAccessSession":{
+      "name":"GetRemoteAccessSession",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"GetRemoteAccessSessionRequest"},
+      "output":{"shape":"GetRemoteAccessSessionResult"},
       "errors":[
         {"shape":"ArgumentException"},
         {"shape":"NotFoundException"},
@@ -265,6 +372,21 @@
         {"shape":"ServiceAccountException"}
       ]
     },
+    "InstallToRemoteAccessSession":{
+      "name":"InstallToRemoteAccessSession",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"InstallToRemoteAccessSessionRequest"},
+      "output":{"shape":"InstallToRemoteAccessSessionResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
     "ListArtifacts":{
       "name":"ListArtifacts",
       "http":{
@@ -325,6 +447,69 @@
         {"shape":"ServiceAccountException"}
       ]
     },
+    "ListNetworkProfiles":{
+      "name":"ListNetworkProfiles",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"ListNetworkProfilesRequest"},
+      "output":{"shape":"ListNetworkProfilesResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
+    "ListOfferingPromotions":{
+      "name":"ListOfferingPromotions",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"ListOfferingPromotionsRequest"},
+      "output":{"shape":"ListOfferingPromotionsResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"NotEligibleException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
+    "ListOfferingTransactions":{
+      "name":"ListOfferingTransactions",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"ListOfferingTransactionsRequest"},
+      "output":{"shape":"ListOfferingTransactionsResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"NotEligibleException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
+    "ListOfferings":{
+      "name":"ListOfferings",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"ListOfferingsRequest"},
+      "output":{"shape":"ListOfferingsResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"NotEligibleException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
     "ListProjects":{
       "name":"ListProjects",
       "http":{
@@ -333,6 +518,21 @@
       },
       "input":{"shape":"ListProjectsRequest"},
       "output":{"shape":"ListProjectsResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
+    "ListRemoteAccessSessions":{
+      "name":"ListRemoteAccessSessions",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"ListRemoteAccessSessionsRequest"},
+      "output":{"shape":"ListRemoteAccessSessionsResult"},
       "errors":[
         {"shape":"ArgumentException"},
         {"shape":"NotFoundException"},
@@ -430,6 +630,38 @@
         {"shape":"ServiceAccountException"}
       ]
     },
+    "PurchaseOffering":{
+      "name":"PurchaseOffering",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"PurchaseOfferingRequest"},
+      "output":{"shape":"PurchaseOfferingResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"NotEligibleException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
+    "RenewOffering":{
+      "name":"RenewOffering",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"RenewOfferingRequest"},
+      "output":{"shape":"RenewOfferingResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"NotEligibleException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
     "ScheduleRun":{
       "name":"ScheduleRun",
       "http":{
@@ -446,6 +678,36 @@
         {"shape":"ServiceAccountException"}
       ]
     },
+    "StopRemoteAccessSession":{
+      "name":"StopRemoteAccessSession",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"StopRemoteAccessSessionRequest"},
+      "output":{"shape":"StopRemoteAccessSessionResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
+    "StopRun":{
+      "name":"StopRun",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"StopRunRequest"},
+      "output":{"shape":"StopRunResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
     "UpdateDevicePool":{
       "name":"UpdateDevicePool",
       "http":{
@@ -454,6 +716,21 @@
       },
       "input":{"shape":"UpdateDevicePoolRequest"},
       "output":{"shape":"UpdateDevicePoolResult"},
+      "errors":[
+        {"shape":"ArgumentException"},
+        {"shape":"NotFoundException"},
+        {"shape":"LimitExceededException"},
+        {"shape":"ServiceAccountException"}
+      ]
+    },
+    "UpdateNetworkProfile":{
+      "name":"UpdateNetworkProfile",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"UpdateNetworkProfileRequest"},
+      "output":{"shape":"UpdateNetworkProfileResult"},
       "errors":[
         {"shape":"ArgumentException"},
         {"shape":"NotFoundException"},
@@ -487,9 +764,15 @@
       "type":"structure",
       "members":{
         "awsAccountNumber":{"shape":"AWSAccountNumber"},
-        "unmeteredDevices":{"shape":"PurchasedDevicesMap"}
+        "unmeteredDevices":{"shape":"PurchasedDevicesMap"},
+        "unmeteredRemoteAccessDevices":{"shape":"PurchasedDevicesMap"},
+        "maxJobTimeoutMinutes":{"shape":"JobTimeoutMinutes"},
+        "trialMinutes":{"shape":"TrialMinutes"},
+        "maxSlots":{"shape":"MaxSlotMap"},
+        "defaultJobTimeoutMinutes":{"shape":"JobTimeoutMinutes"}
       }
     },
+    "AccountsCleanup":{"type":"boolean"},
     "AmazonResourceName":{
       "type":"string",
       "min":32
@@ -498,6 +781,7 @@
       "type":"list",
       "member":{"shape":"AmazonResourceName"}
     },
+    "AppPackagesCleanup":{"type":"boolean"},
     "ArgumentException":{
       "type":"structure",
       "members":{
@@ -530,6 +814,7 @@
         "SCREENSHOT",
         "DEVICE_LOG",
         "MESSAGE_LOG",
+        "VIDEO_LOG",
         "RESULT_LOG",
         "SERVICE_LOG",
         "WEBKIT_LOG",
@@ -547,7 +832,9 @@
         "APPIUM_PYTHON_XML_OUTPUT",
         "EXPLORER_EVENT_LOG",
         "EXPLORER_SUMMARY_LOG",
-        "APPLICATION_CRASH_REPORT"
+        "APPLICATION_CRASH_REPORT",
+        "XCTEST_LOG",
+        "VIDEO"
       ]
     },
     "Artifacts":{
@@ -607,17 +894,70 @@
         "devicePool":{"shape":"DevicePool"}
       }
     },
+    "CreateNetworkProfileRequest":{
+      "type":"structure",
+      "required":[
+        "projectArn",
+        "name"
+      ],
+      "members":{
+        "projectArn":{"shape":"AmazonResourceName"},
+        "name":{"shape":"Name"},
+        "description":{"shape":"Message"},
+        "type":{"shape":"NetworkProfileType"},
+        "uplinkBandwidthBits":{"shape":"Long"},
+        "downlinkBandwidthBits":{"shape":"Long"},
+        "uplinkDelayMs":{"shape":"Long"},
+        "downlinkDelayMs":{"shape":"Long"},
+        "uplinkJitterMs":{"shape":"Long"},
+        "downlinkJitterMs":{"shape":"Long"},
+        "uplinkLossPercent":{"shape":"PercentInteger"},
+        "downlinkLossPercent":{"shape":"PercentInteger"}
+      }
+    },
+    "CreateNetworkProfileResult":{
+      "type":"structure",
+      "members":{
+        "networkProfile":{"shape":"NetworkProfile"}
+      }
+    },
     "CreateProjectRequest":{
       "type":"structure",
       "required":["name"],
       "members":{
-        "name":{"shape":"Name"}
+        "name":{"shape":"Name"},
+        "defaultJobTimeoutMinutes":{"shape":"JobTimeoutMinutes"}
       }
     },
     "CreateProjectResult":{
       "type":"structure",
       "members":{
         "project":{"shape":"Project"}
+      }
+    },
+    "CreateRemoteAccessSessionConfiguration":{
+      "type":"structure",
+      "members":{
+        "billingMethod":{"shape":"BillingMethod"}
+      }
+    },
+    "CreateRemoteAccessSessionRequest":{
+      "type":"structure",
+      "required":[
+        "projectArn",
+        "deviceArn"
+      ],
+      "members":{
+        "projectArn":{"shape":"AmazonResourceName"},
+        "deviceArn":{"shape":"AmazonResourceName"},
+        "name":{"shape":"Name"},
+        "configuration":{"shape":"CreateRemoteAccessSessionConfiguration"}
+      }
+    },
+    "CreateRemoteAccessSessionResult":{
+      "type":"structure",
+      "members":{
+        "remoteAccessSession":{"shape":"RemoteAccessSession"}
       }
     },
     "CreateUploadRequest":{
@@ -640,6 +980,10 @@
         "upload":{"shape":"Upload"}
       }
     },
+    "CurrencyCode":{
+      "type":"string",
+      "enum":["USD"]
+    },
     "DateTime":{"type":"timestamp"},
     "DeleteDevicePoolRequest":{
       "type":"structure",
@@ -653,6 +997,18 @@
       "members":{
       }
     },
+    "DeleteNetworkProfileRequest":{
+      "type":"structure",
+      "required":["arn"],
+      "members":{
+        "arn":{"shape":"AmazonResourceName"}
+      }
+    },
+    "DeleteNetworkProfileResult":{
+      "type":"structure",
+      "members":{
+      }
+    },
     "DeleteProjectRequest":{
       "type":"structure",
       "required":["arn"],
@@ -661,6 +1017,18 @@
       }
     },
     "DeleteProjectResult":{
+      "type":"structure",
+      "members":{
+      }
+    },
+    "DeleteRemoteAccessSessionRequest":{
+      "type":"structure",
+      "required":["arn"],
+      "members":{
+        "arn":{"shape":"AmazonResourceName"}
+      }
+    },
+    "DeleteRemoteAccessSessionResult":{
       "type":"structure",
       "members":{
       }
@@ -705,7 +1073,10 @@
         "memory":{"shape":"Long"},
         "image":{"shape":"String"},
         "carrier":{"shape":"String"},
-        "radio":{"shape":"String"}
+        "radio":{"shape":"String"},
+        "remoteAccessEnabled":{"shape":"Boolean"},
+        "fleetType":{"shape":"String"},
+        "fleetName":{"shape":"String"}
       }
     },
     "DeviceAttribute":{
@@ -714,7 +1085,9 @@
         "ARN",
         "PLATFORM",
         "FORM_FACTOR",
-        "MANUFACTURER"
+        "MANUFACTURER",
+        "REMOTE_ACCESS_ENABLED",
+        "APPIUM_VERSION"
       ]
     },
     "DeviceFormFactor":{
@@ -777,6 +1150,14 @@
       "member":{"shape":"Device"}
     },
     "Double":{"type":"double"},
+    "ExecutionConfiguration":{
+      "type":"structure",
+      "members":{
+        "jobTimeoutMinutes":{"shape":"JobTimeoutMinutes"},
+        "accountsCleanup":{"shape":"AccountsCleanup"},
+        "appPackagesCleanup":{"shape":"AppPackagesCleanup"}
+      }
+    },
     "ExecutionResult":{
       "type":"string",
       "enum":[
@@ -793,10 +1174,14 @@
       "type":"string",
       "enum":[
         "PENDING",
+        "PENDING_CONCURRENCY",
+        "PENDING_DEVICE",
         "PROCESSING",
         "SCHEDULING",
+        "PREPARING",
         "RUNNING",
-        "COMPLETED"
+        "COMPLETED",
+        "STOPPING"
       ]
     },
     "Filter":{
@@ -821,7 +1206,8 @@
       "members":{
         "devicePoolArn":{"shape":"AmazonResourceName"},
         "appArn":{"shape":"AmazonResourceName"},
-        "testType":{"shape":"TestType"}
+        "testType":{"shape":"TestType"},
+        "test":{"shape":"ScheduleRunTest"}
       }
     },
     "GetDevicePoolCompatibilityResult":{
@@ -870,6 +1256,33 @@
         "job":{"shape":"Job"}
       }
     },
+    "GetNetworkProfileRequest":{
+      "type":"structure",
+      "required":["arn"],
+      "members":{
+        "arn":{"shape":"AmazonResourceName"}
+      }
+    },
+    "GetNetworkProfileResult":{
+      "type":"structure",
+      "members":{
+        "networkProfile":{"shape":"NetworkProfile"}
+      }
+    },
+    "GetOfferingStatusRequest":{
+      "type":"structure",
+      "members":{
+        "nextToken":{"shape":"PaginationToken"}
+      }
+    },
+    "GetOfferingStatusResult":{
+      "type":"structure",
+      "members":{
+        "current":{"shape":"OfferingStatusMap"},
+        "nextPeriod":{"shape":"OfferingStatusMap"},
+        "nextToken":{"shape":"PaginationToken"}
+      }
+    },
     "GetProjectRequest":{
       "type":"structure",
       "required":["arn"],
@@ -881,6 +1294,19 @@
       "type":"structure",
       "members":{
         "project":{"shape":"Project"}
+      }
+    },
+    "GetRemoteAccessSessionRequest":{
+      "type":"structure",
+      "required":["arn"],
+      "members":{
+        "arn":{"shape":"AmazonResourceName"}
+      }
+    },
+    "GetRemoteAccessSessionResult":{
+      "type":"structure",
+      "members":{
+        "remoteAccessSession":{"shape":"RemoteAccessSession"}
       }
     },
     "GetRunRequest":{
@@ -953,6 +1379,23 @@
       "type":"list",
       "member":{"shape":"IncompatibilityMessage"}
     },
+    "InstallToRemoteAccessSessionRequest":{
+      "type":"structure",
+      "required":[
+        "remoteAccessSessionArn",
+        "appArn"
+      ],
+      "members":{
+        "remoteAccessSessionArn":{"shape":"AmazonResourceName"},
+        "appArn":{"shape":"AmazonResourceName"}
+      }
+    },
+    "InstallToRemoteAccessSessionResult":{
+      "type":"structure",
+      "members":{
+        "appUpload":{"shape":"Upload"}
+      }
+    },
     "Integer":{"type":"integer"},
     "Job":{
       "type":"structure",
@@ -971,6 +1414,7 @@
         "deviceMinutes":{"shape":"DeviceMinutes"}
       }
     },
+    "JobTimeoutMinutes":{"type":"integer"},
     "Jobs":{
       "type":"list",
       "member":{"shape":"Job"}
@@ -1046,6 +1490,61 @@
         "nextToken":{"shape":"PaginationToken"}
       }
     },
+    "ListNetworkProfilesRequest":{
+      "type":"structure",
+      "required":["arn"],
+      "members":{
+        "arn":{"shape":"AmazonResourceName"},
+        "type":{"shape":"NetworkProfileType"},
+        "nextToken":{"shape":"PaginationToken"}
+      }
+    },
+    "ListNetworkProfilesResult":{
+      "type":"structure",
+      "members":{
+        "networkProfiles":{"shape":"NetworkProfiles"},
+        "nextToken":{"shape":"PaginationToken"}
+      }
+    },
+    "ListOfferingPromotionsRequest":{
+      "type":"structure",
+      "members":{
+        "nextToken":{"shape":"PaginationToken"}
+      }
+    },
+    "ListOfferingPromotionsResult":{
+      "type":"structure",
+      "members":{
+        "offeringPromotions":{"shape":"OfferingPromotions"},
+        "nextToken":{"shape":"PaginationToken"}
+      }
+    },
+    "ListOfferingTransactionsRequest":{
+      "type":"structure",
+      "members":{
+        "nextToken":{"shape":"PaginationToken"}
+      }
+    },
+    "ListOfferingTransactionsResult":{
+      "type":"structure",
+      "members":{
+        "offeringTransactions":{"shape":"OfferingTransactions"},
+        "nextToken":{"shape":"PaginationToken"}
+      }
+    },
+    "ListOfferingsRequest":{
+      "type":"structure",
+      "members":{
+        "nextToken":{"shape":"PaginationToken"}
+      }
+    },
+    "ListOfferingsResult":{
+      "type":"structure",
+      "members":{
+        "offerings":{"shape":"Offerings"},
+        "nextToken":{"shape":"PaginationToken"}
+      }
+    },
     "ListProjectsRequest":{
       "type":"structure",
       "members":{
@@ -1057,6 +1556,21 @@
       "type":"structure",
       "members":{
         "projects":{"shape":"Projects"},
+        "nextToken":{"shape":"PaginationToken"}
+      }
+    },
+    "ListRemoteAccessSessionsRequest":{
+      "type":"structure",
+      "required":["arn"],
+      "members":{
+        "arn":{"shape":"AmazonResourceName"},
+        "nextToken":{"shape":"PaginationToken"}
+      }
+    },
+    "ListRemoteAccessSessionsResult":{
+      "type":"structure",
+      "members":{
+        "remoteAccessSessions":{"shape":"RemoteAccessSessions"},
         "nextToken":{"shape":"PaginationToken"}
       }
     },
@@ -1162,9 +1676,14 @@
       }
     },
     "Long":{"type":"long"},
+    "MaxSlotMap":{
+      "type":"map",
+      "key":{"shape":"String"},
+      "value":{"shape":"Integer"}
+    },
     "Message":{
       "type":"string",
-      "max":8192,
+      "max":16384,
       "min":0
     },
     "Metadata":{
@@ -1172,10 +1691,52 @@
       "max":8192,
       "min":0
     },
+    "MonetaryAmount":{
+      "type":"structure",
+      "members":{
+        "amount":{"shape":"Double"},
+        "currencyCode":{"shape":"CurrencyCode"}
+      }
+    },
     "Name":{
       "type":"string",
       "max":256,
       "min":0
+    },
+    "NetworkProfile":{
+      "type":"structure",
+      "members":{
+        "arn":{"shape":"AmazonResourceName"},
+        "name":{"shape":"Name"},
+        "description":{"shape":"Message"},
+        "type":{"shape":"NetworkProfileType"},
+        "uplinkBandwidthBits":{"shape":"Long"},
+        "downlinkBandwidthBits":{"shape":"Long"},
+        "uplinkDelayMs":{"shape":"Long"},
+        "downlinkDelayMs":{"shape":"Long"},
+        "uplinkJitterMs":{"shape":"Long"},
+        "downlinkJitterMs":{"shape":"Long"},
+        "uplinkLossPercent":{"shape":"PercentInteger"},
+        "downlinkLossPercent":{"shape":"PercentInteger"}
+      }
+    },
+    "NetworkProfileType":{
+      "type":"string",
+      "enum":[
+        "CURATED",
+        "PRIVATE"
+      ]
+    },
+    "NetworkProfiles":{
+      "type":"list",
+      "member":{"shape":"NetworkProfile"}
+    },
+    "NotEligibleException":{
+      "type":"structure",
+      "members":{
+        "message":{"shape":"Message"}
+      },
+      "exception":true
     },
     "NotFoundException":{
       "type":"structure",
@@ -1184,10 +1745,88 @@
       },
       "exception":true
     },
+    "Offering":{
+      "type":"structure",
+      "members":{
+        "id":{"shape":"OfferingIdentifier"},
+        "description":{"shape":"Message"},
+        "type":{"shape":"OfferingType"},
+        "platform":{"shape":"DevicePlatform"},
+        "recurringCharges":{"shape":"RecurringCharges"}
+      }
+    },
+    "OfferingIdentifier":{
+      "type":"string",
+      "min":32
+    },
+    "OfferingPromotion":{
+      "type":"structure",
+      "members":{
+        "id":{"shape":"OfferingPromotionIdentifier"},
+        "description":{"shape":"Message"}
+      }
+    },
+    "OfferingPromotionIdentifier":{
+      "type":"string",
+      "min":4
+    },
+    "OfferingPromotions":{
+      "type":"list",
+      "member":{"shape":"OfferingPromotion"}
+    },
+    "OfferingStatus":{
+      "type":"structure",
+      "members":{
+        "type":{"shape":"OfferingTransactionType"},
+        "offering":{"shape":"Offering"},
+        "quantity":{"shape":"Integer"},
+        "effectiveOn":{"shape":"DateTime"}
+      }
+    },
+    "OfferingStatusMap":{
+      "type":"map",
+      "key":{"shape":"OfferingIdentifier"},
+      "value":{"shape":"OfferingStatus"}
+    },
+    "OfferingTransaction":{
+      "type":"structure",
+      "members":{
+        "offeringStatus":{"shape":"OfferingStatus"},
+        "transactionId":{"shape":"TransactionIdentifier"},
+        "offeringPromotionId":{"shape":"OfferingPromotionIdentifier"},
+        "createdOn":{"shape":"DateTime"},
+        "cost":{"shape":"MonetaryAmount"}
+      }
+    },
+    "OfferingTransactionType":{
+      "type":"string",
+      "enum":[
+        "PURCHASE",
+        "RENEW",
+        "SYSTEM"
+      ]
+    },
+    "OfferingTransactions":{
+      "type":"list",
+      "member":{"shape":"OfferingTransaction"}
+    },
+    "OfferingType":{
+      "type":"string",
+      "enum":["RECURRING"]
+    },
+    "Offerings":{
+      "type":"list",
+      "member":{"shape":"Offering"}
+    },
     "PaginationToken":{
       "type":"string",
       "max":1024,
       "min":4
+    },
+    "PercentInteger":{
+      "type":"integer",
+      "max":100,
+      "min":0
     },
     "Problem":{
       "type":"structure",
@@ -1217,12 +1856,27 @@
       "members":{
         "arn":{"shape":"AmazonResourceName"},
         "name":{"shape":"Name"},
+        "defaultJobTimeoutMinutes":{"shape":"JobTimeoutMinutes"},
         "created":{"shape":"DateTime"}
       }
     },
     "Projects":{
       "type":"list",
       "member":{"shape":"Project"}
+    },
+    "PurchaseOfferingRequest":{
+      "type":"structure",
+      "members":{
+        "offeringId":{"shape":"OfferingIdentifier"},
+        "quantity":{"shape":"Integer"},
+        "offeringPromotionId":{"shape":"OfferingPromotionIdentifier"}
+      }
+    },
+    "PurchaseOfferingResult":{
+      "type":"structure",
+      "members":{
+        "offeringTransaction":{"shape":"OfferingTransaction"}
+      }
     },
     "PurchasedDevicesMap":{
       "type":"map",
@@ -1236,6 +1890,55 @@
         "bluetooth":{"shape":"Boolean"},
         "nfc":{"shape":"Boolean"},
         "gps":{"shape":"Boolean"}
+      }
+    },
+    "RecurringCharge":{
+      "type":"structure",
+      "members":{
+        "cost":{"shape":"MonetaryAmount"},
+        "frequency":{"shape":"RecurringChargeFrequency"}
+      }
+    },
+    "RecurringChargeFrequency":{
+      "type":"string",
+      "enum":["MONTHLY"]
+    },
+    "RecurringCharges":{
+      "type":"list",
+      "member":{"shape":"RecurringCharge"}
+    },
+    "RemoteAccessSession":{
+      "type":"structure",
+      "members":{
+        "arn":{"shape":"AmazonResourceName"},
+        "name":{"shape":"Name"},
+        "created":{"shape":"DateTime"},
+        "status":{"shape":"ExecutionStatus"},
+        "result":{"shape":"ExecutionResult"},
+        "message":{"shape":"Message"},
+        "started":{"shape":"DateTime"},
+        "stopped":{"shape":"DateTime"},
+        "device":{"shape":"Device"},
+        "billingMethod":{"shape":"BillingMethod"},
+        "deviceMinutes":{"shape":"DeviceMinutes"},
+        "endpoint":{"shape":"String"}
+      }
+    },
+    "RemoteAccessSessions":{
+      "type":"list",
+      "member":{"shape":"RemoteAccessSession"}
+    },
+    "RenewOfferingRequest":{
+      "type":"structure",
+      "members":{
+        "offeringId":{"shape":"OfferingIdentifier"},
+        "quantity":{"shape":"Integer"}
+      }
+    },
+    "RenewOfferingResult":{
+      "type":"structure",
+      "members":{
+        "offeringTransaction":{"shape":"OfferingTransaction"}
       }
     },
     "Resolution":{
@@ -1260,7 +1963,8 @@
         "LESS_THAN",
         "GREATER_THAN",
         "IN",
-        "NOT_IN"
+        "NOT_IN",
+        "CONTAINS"
       ]
     },
     "Rules":{
@@ -1284,7 +1988,8 @@
         "totalJobs":{"shape":"Integer"},
         "completedJobs":{"shape":"Integer"},
         "billingMethod":{"shape":"BillingMethod"},
-        "deviceMinutes":{"shape":"DeviceMinutes"}
+        "deviceMinutes":{"shape":"DeviceMinutes"},
+        "networkProfile":{"shape":"NetworkProfile"}
       }
     },
     "Runs":{
@@ -1350,7 +2055,8 @@
         "devicePoolArn":{"shape":"AmazonResourceName"},
         "name":{"shape":"Name"},
         "test":{"shape":"ScheduleRunTest"},
-        "configuration":{"shape":"ScheduleRunConfiguration"}
+        "configuration":{"shape":"ScheduleRunConfiguration"},
+        "executionConfiguration":{"shape":"ExecutionConfiguration"}
       }
     },
     "ScheduleRunResult":{
@@ -1375,6 +2081,32 @@
         "message":{"shape":"Message"}
       },
       "exception":true
+    },
+    "StopRemoteAccessSessionRequest":{
+      "type":"structure",
+      "required":["arn"],
+      "members":{
+        "arn":{"shape":"AmazonResourceName"}
+      }
+    },
+    "StopRemoteAccessSessionResult":{
+      "type":"structure",
+      "members":{
+        "remoteAccessSession":{"shape":"RemoteAccessSession"}
+      }
+    },
+    "StopRunRequest":{
+      "type":"structure",
+      "required":["arn"],
+      "members":{
+        "arn":{"shape":"AmazonResourceName"}
+      }
+    },
+    "StopRunResult":{
+      "type":"structure",
+      "members":{
+        "run":{"shape":"Run"}
+      }
     },
     "String":{"type":"string"},
     "Suite":{
@@ -1433,12 +2165,24 @@
         "INSTRUMENTATION",
         "UIAUTOMATION",
         "UIAUTOMATOR",
-        "XCTEST"
+        "XCTEST",
+        "XCTEST_UI"
       ]
     },
     "Tests":{
       "type":"list",
       "member":{"shape":"Test"}
+    },
+    "TransactionIdentifier":{
+      "type":"string",
+      "min":32
+    },
+    "TrialMinutes":{
+      "type":"structure",
+      "members":{
+        "total":{"shape":"Double"},
+        "remaining":{"shape":"Double"}
+      }
     },
     "URL":{
       "type":"string",
@@ -1477,12 +2221,37 @@
         "devicePool":{"shape":"DevicePool"}
       }
     },
+    "UpdateNetworkProfileRequest":{
+      "type":"structure",
+      "required":["arn"],
+      "members":{
+        "arn":{"shape":"AmazonResourceName"},
+        "name":{"shape":"Name"},
+        "description":{"shape":"Message"},
+        "type":{"shape":"NetworkProfileType"},
+        "uplinkBandwidthBits":{"shape":"Long"},
+        "downlinkBandwidthBits":{"shape":"Long"},
+        "uplinkDelayMs":{"shape":"Long"},
+        "downlinkDelayMs":{"shape":"Long"},
+        "uplinkJitterMs":{"shape":"Long"},
+        "downlinkJitterMs":{"shape":"Long"},
+        "uplinkLossPercent":{"shape":"PercentInteger"},
+        "downlinkLossPercent":{"shape":"PercentInteger"}
+      }
+    },
+    "UpdateNetworkProfileResult":{
+      "type":"structure",
+      "members":{
+        "networkProfile":{"shape":"NetworkProfile"}
+      }
+    },
     "UpdateProjectRequest":{
       "type":"structure",
       "required":["arn"],
       "members":{
         "arn":{"shape":"AmazonResourceName"},
-        "name":{"shape":"Name"}
+        "name":{"shape":"Name"},
+        "defaultJobTimeoutMinutes":{"shape":"JobTimeoutMinutes"}
       }
     },
     "UpdateProjectResult":{
@@ -1531,7 +2300,8 @@
         "INSTRUMENTATION_TEST_PACKAGE",
         "UIAUTOMATION_TEST_PACKAGE",
         "UIAUTOMATOR_TEST_PACKAGE",
-        "XCTEST_TEST_PACKAGE"
+        "XCTEST_TEST_PACKAGE",
+        "XCTEST_UI_TEST_PACKAGE"
       ]
     },
     "Uploads":{

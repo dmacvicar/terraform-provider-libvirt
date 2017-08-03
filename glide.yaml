@@ -4,7 +4,7 @@ import:
   subpackages:
   - spew
 - package: github.com/hashicorp/terraform
-  version: v0.9.4
+  version: ~0.10.0
   subpackages:
   - helper/resource
   - helper/schema

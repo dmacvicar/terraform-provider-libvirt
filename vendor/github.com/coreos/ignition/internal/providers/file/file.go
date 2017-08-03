@@ -20,7 +20,6 @@ import (
 
 	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/config/validate/report"
-	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/providers/util"
 	"github.com/coreos/ignition/internal/resource"
 )
@@ -30,18 +29,18 @@ const (
 	defaultFilename   = "config.ign"
 )
 
-func FetchConfig(logger *log.Logger, _ *resource.HttpClient) (types.Config, report.Report, error) {
+func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
 	filename := os.Getenv(cfgFilenameEnvVar)
 	if filename == "" {
 		filename = defaultFilename
-		logger.Info("using default filename")
+		f.Logger.Info("using default filename")
 	}
-	logger.Info("using config file at %q", filename)
+	f.Logger.Info("using config file at %q", filename)
 
 	rawConfig, err := ioutil.ReadFile(filename)
 	if err != nil {
-		logger.Err("couldn't read config %q: %v", filename, err)
+		f.Logger.Err("couldn't read config %q: %v", filename, err)
 		return types.Config{}, report.Report{}, err
 	}
-	return util.ParseConfig(logger, rawConfig)
+	return util.ParseConfig(f.Logger, rawConfig)
 }

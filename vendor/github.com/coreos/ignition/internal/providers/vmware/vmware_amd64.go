@@ -20,39 +20,69 @@ package vmware
 import (
 	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/config/validate/report"
-	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/providers"
 	"github.com/coreos/ignition/internal/providers/util"
 	"github.com/coreos/ignition/internal/resource"
 
 	"github.com/sigma/vmw-guestinfo/rpcvmx"
 	"github.com/sigma/vmw-guestinfo/vmcheck"
+	"github.com/vmware/vmw-ovflib"
 )
 
-func FetchConfig(logger *log.Logger, _ *resource.HttpClient) (types.Config, report.Report, error) {
+func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
 	if !vmcheck.IsVirtualWorld() {
 		return types.Config{}, report.Report{}, providers.ErrNoProvider
 	}
 
+	config, err := fetchRawConfig(f)
+	if err != nil {
+		return types.Config{}, report.Report{}, err
+	}
+
+	decodedData, err := decodeConfig(config)
+	if err != nil {
+		f.Logger.Debug("failed to decode config: %v", err)
+		return types.Config{}, report.Report{}, err
+	}
+
+	f.Logger.Debug("config successfully fetched")
+	return util.ParseConfig(f.Logger, decodedData)
+}
+
+func fetchRawConfig(f resource.Fetcher) (config, error) {
 	info := rpcvmx.NewConfig()
+
+	ovfEnv, err := info.String("ovfenv", "")
+	if err != nil {
+		f.Logger.Debug("failed to fetch ovfenv: %v. Continuing...", err)
+	} else if ovfEnv != "" {
+		f.Logger.Debug("using OVF environment from guestinfo")
+		env, err := ovf.ReadEnvironment([]byte(ovfEnv))
+		if err != nil {
+			f.Logger.Err("failed to parse OVF environment: %v", err)
+			return config{}, err
+		}
+
+		return config{
+			data:     env.Properties["guestinfo.coreos.config.data"],
+			encoding: env.Properties["guestinfo.coreos.config.data.encoding"],
+		}, nil
+	}
+
 	data, err := info.String("coreos.config.data", "")
 	if err != nil {
-		logger.Debug("failed to fetch config: %v", err)
-		return types.Config{}, report.Report{}, err
+		f.Logger.Debug("failed to fetch config: %v", err)
+		return config{}, err
 	}
 
 	encoding, err := info.String("coreos.config.data.encoding", "")
 	if err != nil {
-		logger.Debug("failed to fetch config encoding: %v", err)
-		return types.Config{}, report.Report{}, err
+		f.Logger.Debug("failed to fetch config encoding: %v", err)
+		return config{}, err
 	}
 
-	decodedData, err := decodeData(data, encoding)
-	if err != nil {
-		logger.Debug("failed to decode config: %v", err)
-		return types.Config{}, report.Report{}, err
-	}
-
-	logger.Debug("config successfully fetched")
-	return util.ParseConfig(logger, decodedData)
+	return config{
+		data:     data,
+		encoding: encoding,
+	}, nil
 }

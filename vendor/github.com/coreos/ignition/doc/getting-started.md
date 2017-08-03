@@ -35,6 +35,12 @@ journalctl --identifier=ignition --all
 
 In the event that this doesn't yield any results, running as root may help. There are circumstances where the journal isn't owned by the systemd-journal group or the current user is not a part of that group.
 
+### Increasing Verbosity
+
+In cases where the machine fails to boot, it's sometimes helpful to ask journald to log more information to the console. This makes it easy to access the Ignition logs in environments where no interactive console is available. The following kernel parameter will increase the console's log output, making all of Ignition's logs visible:
+
+`systemd.journald.max_level_console=debug`
+
 ### Validating the Configuration
 
 One common cause for Ignition failures is a malformed configuration (e.g. a misspelled section or incorrect hierarchy). Ignition will log errors, warnings, and other notes about the configuration that it parsed, so this can be used to debug issues with the configuration provided. As a convenience, CoreOS hosts an [online validator][validator] which can be used to quickly verify configurations.

@@ -7,6 +7,7 @@
     "serviceAbbreviation":"Elastic Beanstalk",
     "serviceFullName":"AWS Elastic Beanstalk",
     "signatureVersion":"v4",
+    "uid":"elasticbeanstalk-2010-12-01",
     "xmlNamespace":"http://elasticbeanstalk.amazonaws.com/docs/2010-12-01/"
   },
   "operations":{
@@ -19,6 +20,22 @@
       "input":{"shape":"AbortEnvironmentUpdateMessage"},
       "errors":[
         {"shape":"InsufficientPrivilegesException"}
+      ]
+    },
+    "ApplyEnvironmentManagedAction":{
+      "name":"ApplyEnvironmentManagedAction",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"ApplyEnvironmentManagedActionRequest"},
+      "output":{
+        "shape":"ApplyEnvironmentManagedActionResult",
+        "resultWrapper":"ApplyEnvironmentManagedActionResult"
+      },
+      "errors":[
+        {"shape":"ElasticBeanstalkServiceException"},
+        {"shape":"ManagedActionInvalidStateException"}
       ]
     },
     "CheckDNSAvailability":{
@@ -79,7 +96,8 @@
         {"shape":"TooManyApplicationsException"},
         {"shape":"TooManyApplicationVersionsException"},
         {"shape":"InsufficientPrivilegesException"},
-        {"shape":"S3LocationNotInServiceRegionException"}
+        {"shape":"S3LocationNotInServiceRegionException"},
+        {"shape":"CodeBuildNotInServiceRegionException"}
       ]
     },
     "CreateConfigurationTemplate":{
@@ -95,6 +113,7 @@
       },
       "errors":[
         {"shape":"InsufficientPrivilegesException"},
+        {"shape":"TooManyBucketsException"},
         {"shape":"TooManyConfigurationTemplatesException"}
       ]
     },
@@ -112,6 +131,23 @@
       "errors":[
         {"shape":"TooManyEnvironmentsException"},
         {"shape":"InsufficientPrivilegesException"}
+      ]
+    },
+    "CreatePlatformVersion":{
+      "name":"CreatePlatformVersion",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"CreatePlatformVersionRequest"},
+      "output":{
+        "shape":"CreatePlatformVersionResult",
+        "resultWrapper":"CreatePlatformVersionResult"
+      },
+      "errors":[
+        {"shape":"InsufficientPrivilegesException"},
+        {"shape":"ElasticBeanstalkServiceException"},
+        {"shape":"TooManyPlatformsException"}
       ]
     },
     "CreateStorageLocation":{
@@ -174,6 +210,24 @@
       },
       "input":{"shape":"DeleteEnvironmentConfigurationMessage"}
     },
+    "DeletePlatformVersion":{
+      "name":"DeletePlatformVersion",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DeletePlatformVersionRequest"},
+      "output":{
+        "shape":"DeletePlatformVersionResult",
+        "resultWrapper":"DeletePlatformVersionResult"
+      },
+      "errors":[
+        {"shape":"OperationInProgressException"},
+        {"shape":"InsufficientPrivilegesException"},
+        {"shape":"ElasticBeanstalkServiceException"},
+        {"shape":"PlatformVersionStillReferencedException"}
+      ]
+    },
     "DescribeApplicationVersions":{
       "name":"DescribeApplicationVersions",
       "http":{
@@ -208,7 +262,10 @@
       "output":{
         "shape":"ConfigurationOptionsDescription",
         "resultWrapper":"DescribeConfigurationOptionsResult"
-      }
+      },
+      "errors":[
+        {"shape":"TooManyBucketsException"}
+      ]
     },
     "DescribeConfigurationSettings":{
       "name":"DescribeConfigurationSettings",
@@ -220,7 +277,10 @@
       "output":{
         "shape":"ConfigurationSettingsDescriptions",
         "resultWrapper":"DescribeConfigurationSettingsResult"
-      }
+      },
+      "errors":[
+        {"shape":"TooManyBucketsException"}
+      ]
     },
     "DescribeEnvironmentHealth":{
       "name":"DescribeEnvironmentHealth",
@@ -235,6 +295,36 @@
       },
       "errors":[
         {"shape":"InvalidRequestException"},
+        {"shape":"ElasticBeanstalkServiceException"}
+      ]
+    },
+    "DescribeEnvironmentManagedActionHistory":{
+      "name":"DescribeEnvironmentManagedActionHistory",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DescribeEnvironmentManagedActionHistoryRequest"},
+      "output":{
+        "shape":"DescribeEnvironmentManagedActionHistoryResult",
+        "resultWrapper":"DescribeEnvironmentManagedActionHistoryResult"
+      },
+      "errors":[
+        {"shape":"ElasticBeanstalkServiceException"}
+      ]
+    },
+    "DescribeEnvironmentManagedActions":{
+      "name":"DescribeEnvironmentManagedActions",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DescribeEnvironmentManagedActionsRequest"},
+      "output":{
+        "shape":"DescribeEnvironmentManagedActionsResult",
+        "resultWrapper":"DescribeEnvironmentManagedActionsResult"
+      },
+      "errors":[
         {"shape":"ElasticBeanstalkServiceException"}
       ]
     },
@@ -293,6 +383,22 @@
         {"shape":"ElasticBeanstalkServiceException"}
       ]
     },
+    "DescribePlatformVersion":{
+      "name":"DescribePlatformVersion",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"DescribePlatformVersionRequest"},
+      "output":{
+        "shape":"DescribePlatformVersionResult",
+        "resultWrapper":"DescribePlatformVersionResult"
+      },
+      "errors":[
+        {"shape":"InsufficientPrivilegesException"},
+        {"shape":"ElasticBeanstalkServiceException"}
+      ]
+    },
     "ListAvailableSolutionStacks":{
       "name":"ListAvailableSolutionStacks",
       "http":{
@@ -303,6 +409,22 @@
         "shape":"ListAvailableSolutionStacksResultMessage",
         "resultWrapper":"ListAvailableSolutionStacksResult"
       }
+    },
+    "ListPlatformVersions":{
+      "name":"ListPlatformVersions",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"ListPlatformVersionsRequest"},
+      "output":{
+        "shape":"ListPlatformVersionsResult",
+        "resultWrapper":"ListPlatformVersionsResult"
+      },
+      "errors":[
+        {"shape":"InsufficientPrivilegesException"},
+        {"shape":"ElasticBeanstalkServiceException"}
+      ]
     },
     "RebuildEnvironment":{
       "name":"RebuildEnvironment",
@@ -378,6 +500,21 @@
         "resultWrapper":"UpdateApplicationResult"
       }
     },
+    "UpdateApplicationResourceLifecycle":{
+      "name":"UpdateApplicationResourceLifecycle",
+      "http":{
+        "method":"POST",
+        "requestUri":"/"
+      },
+      "input":{"shape":"UpdateApplicationResourceLifecycleMessage"},
+      "output":{
+        "shape":"ApplicationResourceLifecycleDescriptionMessage",
+        "resultWrapper":"UpdateApplicationResourceLifecycleResult"
+      },
+      "errors":[
+        {"shape":"InsufficientPrivilegesException"}
+      ]
+    },
     "UpdateApplicationVersion":{
       "name":"UpdateApplicationVersion",
       "http":{
@@ -402,7 +539,8 @@
         "resultWrapper":"UpdateConfigurationTemplateResult"
       },
       "errors":[
-        {"shape":"InsufficientPrivilegesException"}
+        {"shape":"InsufficientPrivilegesException"},
+        {"shape":"TooManyBucketsException"}
       ]
     },
     "UpdateEnvironment":{
@@ -417,7 +555,8 @@
         "resultWrapper":"UpdateEnvironmentResult"
       },
       "errors":[
-        {"shape":"InsufficientPrivilegesException"}
+        {"shape":"InsufficientPrivilegesException"},
+        {"shape":"TooManyBucketsException"}
       ]
     },
     "ValidateConfigurationSettings":{
@@ -432,11 +571,13 @@
         "resultWrapper":"ValidateConfigurationSettingsResult"
       },
       "errors":[
-        {"shape":"InsufficientPrivilegesException"}
+        {"shape":"InsufficientPrivilegesException"},
+        {"shape":"TooManyBucketsException"}
       ]
     }
   },
   "shapes":{
+    "ARN":{"type":"string"},
     "AbortEnvironmentUpdateMessage":{
       "type":"structure",
       "members":{
@@ -445,6 +586,31 @@
       }
     },
     "AbortableOperationInProgress":{"type":"boolean"},
+    "ActionHistoryStatus":{
+      "type":"string",
+      "enum":[
+        "Completed",
+        "Failed",
+        "Unknown"
+      ]
+    },
+    "ActionStatus":{
+      "type":"string",
+      "enum":[
+        "Scheduled",
+        "Pending",
+        "Running",
+        "Unknown"
+      ]
+    },
+    "ActionType":{
+      "type":"string",
+      "enum":[
+        "InstanceRefresh",
+        "PlatformUpdate",
+        "Unknown"
+      ]
+    },
     "ApplicationDescription":{
       "type":"structure",
       "members":{
@@ -453,7 +619,8 @@
         "DateCreated":{"shape":"CreationDate"},
         "DateUpdated":{"shape":"UpdateDate"},
         "Versions":{"shape":"VersionLabelsList"},
-        "ConfigurationTemplates":{"shape":"ConfigurationTemplateNamesList"}
+        "ConfigurationTemplates":{"shape":"ConfigurationTemplateNamesList"},
+        "ResourceLifecycleConfig":{"shape":"ApplicationResourceLifecycleConfig"}
       }
     },
     "ApplicationDescriptionList":{
@@ -490,12 +657,28 @@
       "type":"list",
       "member":{"shape":"ApplicationName"}
     },
+    "ApplicationResourceLifecycleConfig":{
+      "type":"structure",
+      "members":{
+        "ServiceRole":{"shape":"String"},
+        "VersionLifecycleConfig":{"shape":"ApplicationVersionLifecycleConfig"}
+      }
+    },
+    "ApplicationResourceLifecycleDescriptionMessage":{
+      "type":"structure",
+      "members":{
+        "ApplicationName":{"shape":"ApplicationName"},
+        "ResourceLifecycleConfig":{"shape":"ApplicationResourceLifecycleConfig"}
+      }
+    },
     "ApplicationVersionDescription":{
       "type":"structure",
       "members":{
         "ApplicationName":{"shape":"ApplicationName"},
         "Description":{"shape":"Description"},
         "VersionLabel":{"shape":"VersionLabel"},
+        "SourceBuildInformation":{"shape":"SourceBuildInformation"},
+        "BuildArn":{"shape":"String"},
         "SourceBundle":{"shape":"S3Location"},
         "DateCreated":{"shape":"CreationDate"},
         "DateUpdated":{"shape":"UpdateDate"},
@@ -515,7 +698,15 @@
     "ApplicationVersionDescriptionsMessage":{
       "type":"structure",
       "members":{
-        "ApplicationVersions":{"shape":"ApplicationVersionDescriptionList"}
+        "ApplicationVersions":{"shape":"ApplicationVersionDescriptionList"},
+        "NextToken":{"shape":"Token"}
+      }
+    },
+    "ApplicationVersionLifecycleConfig":{
+      "type":"structure",
+      "members":{
+        "MaxCountRule":{"shape":"MaxCountRule"},
+        "MaxAgeRule":{"shape":"MaxAgeRule"}
       }
     },
     "ApplicationVersionProccess":{"type":"boolean"},
@@ -525,8 +716,27 @@
         "Processed",
         "Unprocessed",
         "Failed",
-        "Processing"
+        "Processing",
+        "Building"
       ]
+    },
+    "ApplyEnvironmentManagedActionRequest":{
+      "type":"structure",
+      "required":["ActionId"],
+      "members":{
+        "EnvironmentName":{"shape":"String"},
+        "EnvironmentId":{"shape":"String"},
+        "ActionId":{"shape":"String"}
+      }
+    },
+    "ApplyEnvironmentManagedActionResult":{
+      "type":"structure",
+      "members":{
+        "ActionId":{"shape":"String"},
+        "ActionDescription":{"shape":"String"},
+        "ActionType":{"shape":"ActionType"},
+        "Status":{"shape":"String"}
+      }
     },
     "AutoCreateApplication":{"type":"boolean"},
     "AutoScalingGroup":{
@@ -546,6 +756,28 @@
     "AvailableSolutionStackNamesList":{
       "type":"list",
       "member":{"shape":"SolutionStackName"}
+    },
+    "BoxedBoolean":{"type":"boolean"},
+    "BoxedInt":{"type":"integer"},
+    "BuildConfiguration":{
+      "type":"structure",
+      "required":[
+        "CodeBuildServiceRole",
+        "Image"
+      ],
+      "members":{
+        "ArtifactName":{"shape":"String"},
+        "CodeBuildServiceRole":{"shape":"NonEmptyString"},
+        "ComputeType":{"shape":"ComputeType"},
+        "Image":{"shape":"NonEmptyString"},
+        "TimeoutInMinutes":{"shape":"BoxedInt"}
+      }
+    },
+    "Builder":{
+      "type":"structure",
+      "members":{
+        "ARN":{"shape":"ARN"}
+      }
     },
     "CPUUtilization":{
       "type":"structure",
@@ -583,6 +815,17 @@
       }
     },
     "CnameAvailability":{"type":"boolean"},
+    "CodeBuildNotInServiceRegionException":{
+      "type":"structure",
+      "members":{
+      },
+      "error":{
+        "code":"CodeBuildNotInServiceRegionException",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
+    },
     "ComposeEnvironmentsMessage":{
       "type":"structure",
       "members":{
@@ -590,6 +833,14 @@
         "GroupName":{"shape":"GroupName"},
         "VersionLabels":{"shape":"VersionLabels"}
       }
+    },
+    "ComputeType":{
+      "type":"string",
+      "enum":[
+        "BUILD_GENERAL1_SMALL",
+        "BUILD_GENERAL1_MEDIUM",
+        "BUILD_GENERAL1_LARGE"
+      ]
     },
     "ConfigurationDeploymentStatus":{
       "type":"string",
@@ -652,6 +903,7 @@
       "type":"structure",
       "members":{
         "SolutionStackName":{"shape":"SolutionStackName"},
+        "PlatformArn":{"shape":"PlatformArn"},
         "Options":{"shape":"ConfigurationOptionDescriptionsList"}
       }
     },
@@ -659,6 +911,7 @@
       "type":"structure",
       "members":{
         "SolutionStackName":{"shape":"SolutionStackName"},
+        "PlatformArn":{"shape":"PlatformArn"},
         "ApplicationName":{"shape":"ApplicationName"},
         "TemplateName":{"shape":"ConfigurationTemplateName"},
         "Description":{"shape":"Description"},
@@ -699,7 +952,8 @@
       "required":["ApplicationName"],
       "members":{
         "ApplicationName":{"shape":"ApplicationName"},
-        "Description":{"shape":"Description"}
+        "Description":{"shape":"Description"},
+        "ResourceLifecycleConfig":{"shape":"ApplicationResourceLifecycleConfig"}
       }
     },
     "CreateApplicationVersionMessage":{
@@ -712,7 +966,9 @@
         "ApplicationName":{"shape":"ApplicationName"},
         "VersionLabel":{"shape":"VersionLabel"},
         "Description":{"shape":"Description"},
+        "SourceBuildInformation":{"shape":"SourceBuildInformation"},
         "SourceBundle":{"shape":"S3Location"},
+        "BuildConfiguration":{"shape":"BuildConfiguration"},
         "AutoCreateApplication":{"shape":"AutoCreateApplication"},
         "Process":{"shape":"ApplicationVersionProccess"}
       }
@@ -727,6 +983,7 @@
         "ApplicationName":{"shape":"ApplicationName"},
         "TemplateName":{"shape":"ConfigurationTemplateName"},
         "SolutionStackName":{"shape":"SolutionStackName"},
+        "PlatformArn":{"shape":"PlatformArn"},
         "SourceConfiguration":{"shape":"SourceConfiguration"},
         "EnvironmentId":{"shape":"EnvironmentId"},
         "Description":{"shape":"Description"},
@@ -747,8 +1004,31 @@
         "VersionLabel":{"shape":"VersionLabel"},
         "TemplateName":{"shape":"ConfigurationTemplateName"},
         "SolutionStackName":{"shape":"SolutionStackName"},
+        "PlatformArn":{"shape":"PlatformArn"},
         "OptionSettings":{"shape":"ConfigurationOptionSettingsList"},
         "OptionsToRemove":{"shape":"OptionsSpecifierList"}
+      }
+    },
+    "CreatePlatformVersionRequest":{
+      "type":"structure",
+      "required":[
+        "PlatformName",
+        "PlatformVersion",
+        "PlatformDefinitionBundle"
+      ],
+      "members":{
+        "PlatformName":{"shape":"PlatformName"},
+        "PlatformVersion":{"shape":"PlatformVersion"},
+        "PlatformDefinitionBundle":{"shape":"S3Location"},
+        "EnvironmentName":{"shape":"EnvironmentName"},
+        "OptionSettings":{"shape":"ConfigurationOptionSettingsList"}
+      }
+    },
+    "CreatePlatformVersionResult":{
+      "type":"structure",
+      "members":{
+        "PlatformSummary":{"shape":"PlatformSummary"},
+        "Builder":{"shape":"Builder"}
       }
     },
     "CreateStorageLocationResultMessage":{
@@ -758,6 +1038,17 @@
       }
     },
     "CreationDate":{"type":"timestamp"},
+    "CustomAmi":{
+      "type":"structure",
+      "members":{
+        "VirtualizationType":{"shape":"VirtualizationType"},
+        "ImageId":{"shape":"ImageId"}
+      }
+    },
+    "CustomAmiList":{
+      "type":"list",
+      "member":{"shape":"CustomAmi"}
+    },
     "DNSCname":{
       "type":"string",
       "max":255,
@@ -810,12 +1101,36 @@
         "EnvironmentName":{"shape":"EnvironmentName"}
       }
     },
+    "DeletePlatformVersionRequest":{
+      "type":"structure",
+      "members":{
+        "PlatformArn":{"shape":"PlatformArn"}
+      }
+    },
+    "DeletePlatformVersionResult":{
+      "type":"structure",
+      "members":{
+        "PlatformSummary":{"shape":"PlatformSummary"}
+      }
+    },
     "DeleteSourceBundle":{"type":"boolean"},
+    "Deployment":{
+      "type":"structure",
+      "members":{
+        "VersionLabel":{"shape":"String"},
+        "DeploymentId":{"shape":"NullableLong"},
+        "Status":{"shape":"String"},
+        "DeploymentTime":{"shape":"DeploymentTimestamp"}
+      }
+    },
+    "DeploymentTimestamp":{"type":"timestamp"},
     "DescribeApplicationVersionsMessage":{
       "type":"structure",
       "members":{
         "ApplicationName":{"shape":"ApplicationName"},
-        "VersionLabels":{"shape":"VersionLabelsList"}
+        "VersionLabels":{"shape":"VersionLabelsList"},
+        "MaxRecords":{"shape":"MaxRecords"},
+        "NextToken":{"shape":"Token"}
       }
     },
     "DescribeApplicationsMessage":{
@@ -831,6 +1146,7 @@
         "TemplateName":{"shape":"ConfigurationTemplateName"},
         "EnvironmentName":{"shape":"EnvironmentName"},
         "SolutionStackName":{"shape":"SolutionStackName"},
+        "PlatformArn":{"shape":"PlatformArn"},
         "Options":{"shape":"OptionsSpecifierList"}
       }
     },
@@ -864,6 +1180,36 @@
         "RefreshedAt":{"shape":"RefreshedAt"}
       }
     },
+    "DescribeEnvironmentManagedActionHistoryRequest":{
+      "type":"structure",
+      "members":{
+        "EnvironmentId":{"shape":"EnvironmentId"},
+        "EnvironmentName":{"shape":"EnvironmentName"},
+        "NextToken":{"shape":"String"},
+        "MaxItems":{"shape":"Integer"}
+      }
+    },
+    "DescribeEnvironmentManagedActionHistoryResult":{
+      "type":"structure",
+      "members":{
+        "ManagedActionHistoryItems":{"shape":"ManagedActionHistoryItems"},
+        "NextToken":{"shape":"String"}
+      }
+    },
+    "DescribeEnvironmentManagedActionsRequest":{
+      "type":"structure",
+      "members":{
+        "EnvironmentName":{"shape":"String"},
+        "EnvironmentId":{"shape":"String"},
+        "Status":{"shape":"ActionStatus"}
+      }
+    },
+    "DescribeEnvironmentManagedActionsResult":{
+      "type":"structure",
+      "members":{
+        "ManagedActions":{"shape":"ManagedActions"}
+      }
+    },
     "DescribeEnvironmentResourcesMessage":{
       "type":"structure",
       "members":{
@@ -890,6 +1236,7 @@
         "TemplateName":{"shape":"ConfigurationTemplateName"},
         "EnvironmentId":{"shape":"EnvironmentId"},
         "EnvironmentName":{"shape":"EnvironmentName"},
+        "PlatformArn":{"shape":"PlatformArn"},
         "RequestId":{"shape":"RequestId"},
         "Severity":{"shape":"EventSeverity"},
         "StartTime":{"shape":"TimeFilterStart"},
@@ -915,6 +1262,18 @@
         "NextToken":{"shape":"NextToken"}
       }
     },
+    "DescribePlatformVersionRequest":{
+      "type":"structure",
+      "members":{
+        "PlatformArn":{"shape":"PlatformArn"}
+      }
+    },
+    "DescribePlatformVersionResult":{
+      "type":"structure",
+      "members":{
+        "PlatformDescription":{"shape":"PlatformDescription"}
+      }
+    },
     "Description":{
       "type":"string",
       "max":200
@@ -936,6 +1295,7 @@
         "ApplicationName":{"shape":"ApplicationName"},
         "VersionLabel":{"shape":"VersionLabel"},
         "SolutionStackName":{"shape":"SolutionStackName"},
+        "PlatformArn":{"shape":"PlatformArn"},
         "TemplateName":{"shape":"ConfigurationTemplateName"},
         "Description":{"shape":"Description"},
         "EndpointURL":{"shape":"EndpointURL"},
@@ -1038,7 +1398,7 @@
     },
     "EnvironmentName":{
       "type":"string",
-      "max":23,
+      "max":40,
       "min":4
     },
     "EnvironmentNamesList":{
@@ -1097,6 +1457,7 @@
         "VersionLabel":{"shape":"VersionLabel"},
         "TemplateName":{"shape":"ConfigurationTemplateName"},
         "EnvironmentName":{"shape":"EnvironmentName"},
+        "PlatformArn":{"shape":"PlatformArn"},
         "RequestId":{"shape":"RequestId"},
         "Severity":{"shape":"EventSeverity"}
       }
@@ -1125,6 +1486,18 @@
       ]
     },
     "ExceptionMessage":{"type":"string"},
+    "FailureType":{
+      "type":"string",
+      "enum":[
+        "UpdateCancelled",
+        "CancellationFailed",
+        "RollbackFailed",
+        "RollbackSuccessful",
+        "InternalFailure",
+        "InvalidEnvironmentState",
+        "PermissionsError"
+      ]
+    },
     "FileTypeExtension":{
       "type":"string",
       "max":100,
@@ -1136,6 +1509,7 @@
       "max":19,
       "min":1
     },
+    "ImageId":{"type":"string"},
     "IncludeDeleted":{"type":"boolean"},
     "IncludeDeletedBackTo":{"type":"timestamp"},
     "Instance":{
@@ -1180,6 +1554,9 @@
         "RefreshedAt",
         "LaunchedAt",
         "System",
+        "Deployment",
+        "AvailabilityZone",
+        "InstanceType",
         "All"
       ]
     },
@@ -1241,6 +1618,21 @@
         "SolutionStackDetails":{"shape":"AvailableSolutionStackDetailsList"}
       }
     },
+    "ListPlatformVersionsRequest":{
+      "type":"structure",
+      "members":{
+        "Filters":{"shape":"PlatformFilters"},
+        "MaxRecords":{"shape":"PlatformMaxRecords"},
+        "NextToken":{"shape":"Token"}
+      }
+    },
+    "ListPlatformVersionsResult":{
+      "type":"structure",
+      "members":{
+        "PlatformSummaryList":{"shape":"PlatformSummaryList"},
+        "NextToken":{"shape":"Token"}
+      }
+    },
     "Listener":{
       "type":"structure",
       "members":{
@@ -1275,6 +1667,71 @@
       "type":"list",
       "member":{"shape":"Listener"}
     },
+    "Maintainer":{"type":"string"},
+    "ManagedAction":{
+      "type":"structure",
+      "members":{
+        "ActionId":{"shape":"String"},
+        "ActionDescription":{"shape":"String"},
+        "ActionType":{"shape":"ActionType"},
+        "Status":{"shape":"ActionStatus"},
+        "WindowStartTime":{"shape":"Timestamp"}
+      }
+    },
+    "ManagedActionHistoryItem":{
+      "type":"structure",
+      "members":{
+        "ActionId":{"shape":"String"},
+        "ActionType":{"shape":"ActionType"},
+        "ActionDescription":{"shape":"String"},
+        "FailureType":{"shape":"FailureType"},
+        "Status":{"shape":"ActionHistoryStatus"},
+        "FailureDescription":{"shape":"String"},
+        "ExecutedTime":{"shape":"Timestamp"},
+        "FinishedTime":{"shape":"Timestamp"}
+      }
+    },
+    "ManagedActionHistoryItems":{
+      "type":"list",
+      "member":{"shape":"ManagedActionHistoryItem"},
+      "max":100,
+      "min":1
+    },
+    "ManagedActionInvalidStateException":{
+      "type":"structure",
+      "members":{
+      },
+      "error":{
+        "code":"ManagedActionInvalidStateException",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
+    },
+    "ManagedActions":{
+      "type":"list",
+      "member":{"shape":"ManagedAction"},
+      "max":100,
+      "min":1
+    },
+    "MaxAgeRule":{
+      "type":"structure",
+      "required":["Enabled"],
+      "members":{
+        "Enabled":{"shape":"BoxedBoolean"},
+        "MaxAgeInDays":{"shape":"BoxedInt"},
+        "DeleteSourceFromS3":{"shape":"BoxedBoolean"}
+      }
+    },
+    "MaxCountRule":{
+      "type":"structure",
+      "required":["Enabled"],
+      "members":{
+        "Enabled":{"shape":"BoxedBoolean"},
+        "MaxCount":{"shape":"BoxedInt"},
+        "DeleteSourceFromS3":{"shape":"BoxedBoolean"}
+      }
+    },
     "MaxRecords":{
       "type":"integer",
       "max":1000,
@@ -1286,8 +1743,15 @@
       "max":100,
       "min":1
     },
+    "NonEmptyString":{
+      "type":"string",
+      "pattern":".*\\S.*"
+    },
     "NullableDouble":{"type":"double"},
     "NullableInteger":{"type":"integer"},
+    "NullableLong":{"type":"long"},
+    "OperatingSystemName":{"type":"string"},
+    "OperatingSystemVersion":{"type":"string"},
     "OperationInProgressException":{
       "type":"structure",
       "members":{
@@ -1321,6 +1785,117 @@
     "OptionsSpecifierList":{
       "type":"list",
       "member":{"shape":"OptionSpecification"}
+    },
+    "PlatformArn":{"type":"string"},
+    "PlatformCategory":{"type":"string"},
+    "PlatformDescription":{
+      "type":"structure",
+      "members":{
+        "PlatformArn":{"shape":"PlatformArn"},
+        "PlatformOwner":{"shape":"PlatformOwner"},
+        "PlatformName":{"shape":"PlatformName"},
+        "PlatformVersion":{"shape":"PlatformVersion"},
+        "SolutionStackName":{"shape":"SolutionStackName"},
+        "PlatformStatus":{"shape":"PlatformStatus"},
+        "DateCreated":{"shape":"CreationDate"},
+        "DateUpdated":{"shape":"UpdateDate"},
+        "PlatformCategory":{"shape":"PlatformCategory"},
+        "Description":{"shape":"Description"},
+        "Maintainer":{"shape":"Maintainer"},
+        "OperatingSystemName":{"shape":"OperatingSystemName"},
+        "OperatingSystemVersion":{"shape":"OperatingSystemVersion"},
+        "ProgrammingLanguages":{"shape":"PlatformProgrammingLanguages"},
+        "Frameworks":{"shape":"PlatformFrameworks"},
+        "CustomAmiList":{"shape":"CustomAmiList"},
+        "SupportedTierList":{"shape":"SupportedTierList"},
+        "SupportedAddonList":{"shape":"SupportedAddonList"}
+      }
+    },
+    "PlatformFilter":{
+      "type":"structure",
+      "members":{
+        "Type":{"shape":"PlatformFilterType"},
+        "Operator":{"shape":"PlatformFilterOperator"},
+        "Values":{"shape":"PlatformFilterValueList"}
+      }
+    },
+    "PlatformFilterOperator":{"type":"string"},
+    "PlatformFilterType":{"type":"string"},
+    "PlatformFilterValue":{"type":"string"},
+    "PlatformFilterValueList":{
+      "type":"list",
+      "member":{"shape":"PlatformFilterValue"}
+    },
+    "PlatformFilters":{
+      "type":"list",
+      "member":{"shape":"PlatformFilter"}
+    },
+    "PlatformFramework":{
+      "type":"structure",
+      "members":{
+        "Name":{"shape":"String"},
+        "Version":{"shape":"String"}
+      }
+    },
+    "PlatformFrameworks":{
+      "type":"list",
+      "member":{"shape":"PlatformFramework"}
+    },
+    "PlatformMaxRecords":{
+      "type":"integer",
+      "min":1
+    },
+    "PlatformName":{"type":"string"},
+    "PlatformOwner":{"type":"string"},
+    "PlatformProgrammingLanguage":{
+      "type":"structure",
+      "members":{
+        "Name":{"shape":"String"},
+        "Version":{"shape":"String"}
+      }
+    },
+    "PlatformProgrammingLanguages":{
+      "type":"list",
+      "member":{"shape":"PlatformProgrammingLanguage"}
+    },
+    "PlatformStatus":{
+      "type":"string",
+      "enum":[
+        "Creating",
+        "Failed",
+        "Ready",
+        "Deleting",
+        "Deleted"
+      ]
+    },
+    "PlatformSummary":{
+      "type":"structure",
+      "members":{
+        "PlatformArn":{"shape":"PlatformArn"},
+        "PlatformOwner":{"shape":"PlatformOwner"},
+        "PlatformStatus":{"shape":"PlatformStatus"},
+        "PlatformCategory":{"shape":"PlatformCategory"},
+        "OperatingSystemName":{"shape":"OperatingSystemName"},
+        "OperatingSystemVersion":{"shape":"OperatingSystemVersion"},
+        "SupportedTierList":{"shape":"SupportedTierList"},
+        "SupportedAddonList":{"shape":"SupportedAddonList"}
+      }
+    },
+    "PlatformSummaryList":{
+      "type":"list",
+      "member":{"shape":"PlatformSummary"}
+    },
+    "PlatformVersion":{"type":"string"},
+    "PlatformVersionStillReferencedException":{
+      "type":"structure",
+      "members":{
+      },
+      "error":{
+        "code":"PlatformVersionStillReferencedException",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
     },
     "Queue":{
       "type":"structure",
@@ -1429,7 +2004,10 @@
         "Causes":{"shape":"Causes"},
         "LaunchedAt":{"shape":"LaunchedAt"},
         "ApplicationMetrics":{"shape":"ApplicationMetrics"},
-        "System":{"shape":"SystemStatus"}
+        "System":{"shape":"SystemStatus"},
+        "Deployment":{"shape":"Deployment"},
+        "AvailabilityZone":{"shape":"String"},
+        "InstanceType":{"shape":"String"}
       }
     },
     "SolutionStackDescription":{
@@ -1443,9 +2021,19 @@
       "type":"list",
       "member":{"shape":"FileTypeExtension"}
     },
-    "SolutionStackName":{
-      "type":"string",
-      "max":100
+    "SolutionStackName":{"type":"string"},
+    "SourceBuildInformation":{
+      "type":"structure",
+      "required":[
+        "SourceType",
+        "SourceRepository",
+        "SourceLocation"
+      ],
+      "members":{
+        "SourceType":{"shape":"SourceType"},
+        "SourceRepository":{"shape":"SourceRepository"},
+        "SourceLocation":{"shape":"SourceLocation"}
+      }
     },
     "SourceBundleDeletionException":{
       "type":"structure",
@@ -1465,6 +2053,26 @@
         "TemplateName":{"shape":"ConfigurationTemplateName"}
       }
     },
+    "SourceLocation":{
+      "type":"string",
+      "max":255,
+      "min":3,
+      "pattern":".+/.+"
+    },
+    "SourceRepository":{
+      "type":"string",
+      "enum":[
+        "CodeCommit",
+        "S3"
+      ]
+    },
+    "SourceType":{
+      "type":"string",
+      "enum":[
+        "Git",
+        "Zip"
+      ]
+    },
     "StatusCodes":{
       "type":"structure",
       "members":{
@@ -1475,6 +2083,16 @@
       }
     },
     "String":{"type":"string"},
+    "SupportedAddon":{"type":"string"},
+    "SupportedAddonList":{
+      "type":"list",
+      "member":{"shape":"SupportedAddon"}
+    },
+    "SupportedTier":{"type":"string"},
+    "SupportedTierList":{
+      "type":"list",
+      "member":{"shape":"SupportedTier"}
+    },
     "SwapEnvironmentCNAMEsMessage":{
       "type":"structure",
       "members":{
@@ -1525,6 +2143,7 @@
     "TerminateEnvironmentResources":{"type":"boolean"},
     "TimeFilterEnd":{"type":"timestamp"},
     "TimeFilterStart":{"type":"timestamp"},
+    "Timestamp":{"type":"timestamp"},
     "Token":{"type":"string"},
     "TooManyApplicationVersionsException":{
       "type":"structure",
@@ -1576,6 +2195,17 @@
       },
       "exception":true
     },
+    "TooManyPlatformsException":{
+      "type":"structure",
+      "members":{
+      },
+      "error":{
+        "code":"TooManyPlatformsException",
+        "httpStatusCode":400,
+        "senderFault":true
+      },
+      "exception":true
+    },
     "Trigger":{
       "type":"structure",
       "members":{
@@ -1592,6 +2222,17 @@
       "members":{
         "ApplicationName":{"shape":"ApplicationName"},
         "Description":{"shape":"Description"}
+      }
+    },
+    "UpdateApplicationResourceLifecycleMessage":{
+      "type":"structure",
+      "required":[
+        "ApplicationName",
+        "ResourceLifecycleConfig"
+      ],
+      "members":{
+        "ApplicationName":{"shape":"ApplicationName"},
+        "ResourceLifecycleConfig":{"shape":"ApplicationResourceLifecycleConfig"}
       }
     },
     "UpdateApplicationVersionMessage":{
@@ -1633,6 +2274,7 @@
         "VersionLabel":{"shape":"VersionLabel"},
         "TemplateName":{"shape":"ConfigurationTemplateName"},
         "SolutionStackName":{"shape":"SolutionStackName"},
+        "PlatformArn":{"shape":"PlatformArn"},
         "OptionSettings":{"shape":"ConfigurationOptionSettingsList"},
         "OptionsToRemove":{"shape":"OptionsSpecifierList"}
       }
@@ -1684,6 +2326,7 @@
     "VersionLabelsList":{
       "type":"list",
       "member":{"shape":"VersionLabel"}
-    }
+    },
+    "VirtualizationType":{"type":"string"}
   }
 }

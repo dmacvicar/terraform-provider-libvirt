@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	ignition "github.com/hashicorp/terraform/builtin/providers/ignition"
+	"github.com/hashicorp/terraform/builtin/providers/ignition"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 )

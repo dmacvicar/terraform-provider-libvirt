@@ -10,4 +10,6 @@ https://coreos.com/tectonic
 
 ## Adobe
 
-Environment: AWS
+Environments: AWS, Azure, datacenter
+
+Adobe currently uses Ignition and [ct](https://github.com/coreos/container-linux-config-transpiler) in combination with [CloudFormation](https://aws.amazon.com/cloudformation/), [Azure Resource Manager](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview) or [RackHD](https://github.com/RackHD) to deploy custom [DC/OS Community edition](https://dcos.io/) clusters.

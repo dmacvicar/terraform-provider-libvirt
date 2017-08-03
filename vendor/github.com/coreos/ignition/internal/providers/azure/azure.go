@@ -50,7 +50,8 @@ const (
 	CDS_DISC_OK
 )
 
-func FetchConfig(logger *log.Logger, _ *resource.HttpClient) (types.Config, report.Report, error) {
+func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
+	logger := f.Logger
 	logger.Debug("waiting for config DVD...")
 	waitForCdrom(logger)
 

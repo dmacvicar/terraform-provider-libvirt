@@ -19,6 +19,7 @@ import (
 	"net/url"
 
 	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/providers"
 	"github.com/coreos/ignition/internal/providers/azure"
 	"github.com/coreos/ignition/internal/providers/digitalocean"
@@ -29,8 +30,11 @@ import (
 	"github.com/coreos/ignition/internal/providers/openstack"
 	"github.com/coreos/ignition/internal/providers/packet"
 	"github.com/coreos/ignition/internal/providers/qemu"
+	"github.com/coreos/ignition/internal/providers/virtualbox"
 	"github.com/coreos/ignition/internal/providers/vmware"
 	"github.com/coreos/ignition/internal/registry"
+	"github.com/coreos/ignition/internal/resource"
+	"github.com/coreos/ignition/internal/util"
 
 	"github.com/vincent-petithory/dataurl"
 )
@@ -39,6 +43,7 @@ import (
 type Config struct {
 	name              string
 	fetch             providers.FuncFetchConfig
+	newFetcher        providers.FuncNewFetcher
 	baseConfig        types.Config
 	defaultUserConfig types.Config
 }
@@ -51,6 +56,18 @@ func (c Config) FetchFunc() providers.FuncFetchConfig {
 	return c.fetch
 }
 
+func (c Config) NewFetcherFunc() providers.FuncNewFetcher {
+	if c.newFetcher != nil {
+		return c.newFetcher
+	}
+	return func(l *log.Logger, c *resource.HttpClient) (resource.Fetcher, error) {
+		return resource.Fetcher{
+			Logger: l,
+			Client: c,
+		}, nil
+	}
+}
+
 func (c Config) BaseConfig() types.Config {
 	return c.baseConfig
 }
@@ -60,6 +77,7 @@ func (c Config) DefaultUserConfig() types.Config {
 }
 
 var configs = registry.Create("oem configs")
+var yes = util.BoolToPtr(true)
 
 func init() {
 	configs.Register(Config{
@@ -68,10 +86,7 @@ func init() {
 		baseConfig: types.Config{
 			Systemd: types.Systemd{
 				Units: []types.Unit{
-					{Enable: true, Name: "waagent.service"},
-					{Name: "etcd.service", Dropins: []types.Dropin{
-						{Name: "10-oem.conf", Contents: "[Service]\nEnvironment=ETCD_PEER_ELECTION_TIMEOUT=1200\n"},
-					}},
+					{Enabled: yes, Name: "waagent.service"},
 					{Name: "etcd2.service", Dropins: []types.Dropin{
 						{Name: "10-oem.conf", Contents: "[Service]\nEnvironment=ETCD_ELECTION_TIMEOUT=1200\n"},
 					}},
@@ -94,31 +109,45 @@ func init() {
 		fetch: digitalocean.FetchConfig,
 		baseConfig: types.Config{
 			Systemd: types.Systemd{
-				Units: []types.Unit{{Enable: true, Name: "coreos-metadata-sshkeys@.service"}},
+				Units: []types.Unit{{Enabled: yes, Name: "coreos-metadata-sshkeys@.service"}},
 			},
 		},
 		defaultUserConfig: types.Config{Systemd: types.Systemd{Units: []types.Unit{userCloudInit("DigitalOcean", "digitalocean")}}},
 	})
 	configs.Register(Config{
-		name:              "brightbox",
-		fetch:             openstack.FetchConfig,
-		defaultUserConfig: types.Config{Systemd: types.Systemd{Units: []types.Unit{userCloudInit("BrightBox", "ec2-compat")}}},
+		name:  "brightbox",
+		fetch: openstack.FetchConfig,
+		defaultUserConfig: types.Config{
+			Systemd: types.Systemd{
+				Units: []types.Unit{
+					{Mask: true, Name: "user-configdrive.service"},
+					{Mask: true, Name: "user-configvirtfs.service"},
+					userCloudInit("BrightBox", "ec2-compat"),
+				},
+			},
+		},
 	})
 	configs.Register(Config{
-		name:              "openstack",
-		fetch:             openstack.FetchConfig,
-		defaultUserConfig: types.Config{Systemd: types.Systemd{Units: []types.Unit{userCloudInit("OpenStack", "ec2-compat")}}},
+		name:  "openstack",
+		fetch: openstack.FetchConfig,
+		defaultUserConfig: types.Config{
+			Systemd: types.Systemd{
+				Units: []types.Unit{
+					{Mask: true, Name: "user-configdrive.service"},
+					{Mask: true, Name: "user-configvirtfs.service"},
+					userCloudInit("OpenStack", "ec2-compat"),
+				},
+			},
+		},
 	})
 	configs.Register(Config{
-		name:  "ec2",
-		fetch: ec2.FetchConfig,
+		name:       "ec2",
+		fetch:      ec2.FetchConfig,
+		newFetcher: ec2.NewFetcher,
 		baseConfig: types.Config{
 			Systemd: types.Systemd{
 				Units: []types.Unit{
-					{Enable: true, Name: "coreos-metadata-sshkeys@.service"},
-					{Name: "etcd.service", Dropins: []types.Dropin{
-						{Name: "10-oem.conf", Contents: "[Service]\nEnvironment=ETCD_PEER_ELECTION_TIMEOUT=1200\n"},
-					}},
+					{Enabled: yes, Name: "coreos-metadata-sshkeys@.service"},
 					{Name: "etcd2.service", Dropins: []types.Dropin{
 						{Name: "10-oem.conf", Contents: "[Service]\nEnvironment=ETCD_ELECTION_TIMEOUT=1200\n"},
 					}},
@@ -145,8 +174,8 @@ func init() {
 		baseConfig: types.Config{
 			Systemd: types.Systemd{
 				Units: []types.Unit{
-					{Enable: true, Name: "coreos-metadata-sshkeys@.service"},
-					{Enable: true, Name: "oem-gce.service"},
+					{Enabled: yes, Name: "coreos-metadata-sshkeys@.service"},
+					{Enabled: yes, Name: "oem-gce.service"},
 				},
 			},
 			Storage: types.Storage{
@@ -195,8 +224,8 @@ alias gsutil="(docker images google/cloud-sdk || docker pull google/cloud-sdk) >
 		baseConfig: types.Config{
 			Systemd: types.Systemd{
 				Units: []types.Unit{
-					{Enable: true, Name: "coreos-metadata-sshkeys@.service"},
-					{Enable: true, Name: "packet-phone-home.service"},
+					{Enabled: yes, Name: "coreos-metadata-sshkeys@.service"},
+					{Enabled: yes, Name: "packet-phone-home.service"},
 				},
 			},
 			Storage: types.Storage{Files: []types.File{serviceFromOem("packet-phone-home.service")}},
@@ -220,17 +249,21 @@ alias gsutil="(docker images google/cloud-sdk || docker pull google/cloud-sdk) >
 		fetch: noop.FetchConfig,
 	})
 	configs.Register(Config{
+		name:  "vagrant-virtualbox",
+		fetch: virtualbox.FetchConfig,
+	})
+	configs.Register(Config{
+		name:  "virtualbox",
+		fetch: virtualbox.FetchConfig,
+	})
+	configs.Register(Config{
 		name:  "vmware",
 		fetch: vmware.FetchConfig,
 		baseConfig: types.Config{
-			Systemd: types.Systemd{Units: []types.Unit{{Enable: true, Name: "vmtoolsd.service"}}},
+			Systemd: types.Systemd{Units: []types.Unit{{Enabled: yes, Name: "vmtoolsd.service"}}},
 			Storage: types.Storage{Files: []types.File{serviceFromOem("vmtoolsd.service")}},
 		},
 		defaultUserConfig: types.Config{Systemd: types.Systemd{Units: []types.Unit{userCloudInit("VMware", "vmware")}}},
-	})
-	configs.Register(Config{
-		name:  "xendom0",
-		fetch: noop.FetchConfig,
 	})
 	configs.Register(Config{
 		name:  "interoute",
@@ -295,7 +328,7 @@ WantedBy=multi-user.target
 
 	return types.Unit{
 		Name:     "oem-cloudinit.service",
-		Enable:   true,
+		Enabled:  yes,
 		Contents: fmt.Sprintf(contents, name, oem),
 	}
 }

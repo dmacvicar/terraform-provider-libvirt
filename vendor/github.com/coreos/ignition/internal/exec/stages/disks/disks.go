@@ -19,8 +19,10 @@
 package disks
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
+	"strings"
 
 	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/internal/exec/stages"
@@ -35,19 +37,23 @@ const (
 	name = "disks"
 )
 
+var (
+	ErrBadFilesystem = errors.New("filesystem is not of the correct type")
+)
+
 func init() {
 	stages.Register(creator{})
 }
 
 type creator struct{}
 
-func (creator) Create(logger *log.Logger, client *resource.HttpClient, root string) stages.Stage {
+func (creator) Create(logger *log.Logger, root string, f resource.Fetcher) stages.Stage {
 	return &stage{
 		Util: util.Util{
 			DestDir: root,
 			Logger:  logger,
+			Fetcher: f,
 		},
-		client: client,
 	}
 }
 
@@ -289,63 +295,85 @@ func (s stage) createFilesystem(fs types.Mount) error {
 	if err != nil {
 		return err
 	}
-	if info.format == fs.Format &&
-		(fs.Label == nil || info.label == *fs.Label) &&
-		(fs.UUID == nil || info.uuid == *fs.UUID) &&
-		!fs.WipeFilesystem {
-		s.Logger.Info("filesystem at %q is already formatted. Skipping mkfs...", fs.Device)
-		return nil
+
+	if fs.Create != nil {
+		// If we are using 2.0.0 semantics...
+
+		if !fs.Create.Force && info.format != "" {
+			s.Logger.Err("filesystem detected at %q (found %s) and force was not requested", fs.Device, info.format)
+			return ErrBadFilesystem
+		}
+	} else if !fs.WipeFilesystem {
+		// If the filesystem isn't forcefully being created, then we need
+		// to check if it is of the correct type or that no filesystem exists.
+
+		if info.format == fs.Format &&
+			(fs.Label == nil || info.label == *fs.Label) &&
+			(fs.UUID == nil || canonicalizeFilesystemUUID(info.format, info.uuid) == canonicalizeFilesystemUUID(fs.Format, *fs.UUID)) {
+			s.Logger.Info("filesystem at %q is already correctly formatted. Skipping mkfs...", fs.Device)
+			return nil
+		} else if info.format != "" {
+			s.Logger.Err("filesystem at %q is not of the correct type, label, or UUID (found %s, %q, %s) and a filesystem wipe was not requested", fs.Device, info.format, info.label, info.uuid)
+			return ErrBadFilesystem
+		}
 	}
 
 	mkfs := ""
-	var force bool
 	var args []string
 	if fs.Create == nil {
-		force = fs.WipeFilesystem
 		args = translateMountOptionSliceToStringSlice(fs.Options)
 	} else {
-		force = fs.Create.Force
 		args = translateCreateOptionSliceToStringSlice(fs.Create.Options)
 	}
 	switch fs.Format {
 	case "btrfs":
 		mkfs = "/sbin/mkfs.btrfs"
-		if force {
-			args = append(args, "--force")
-		}
+		args = append(args, "--force")
 		if fs.UUID != nil {
-			args = append(args, []string{"-U", *fs.UUID}...)
+			args = append(args, []string{"-U", canonicalizeFilesystemUUID(fs.Format, *fs.UUID)}...)
+		}
+		if fs.Label != nil {
+			args = append(args, []string{"-L", *fs.Label}...)
 		}
 	case "ext4":
 		mkfs = "/sbin/mkfs.ext4"
-		args = append(args, "-p")
-		if force {
-			args = append(args, "-F")
-		}
+		args = append(args, "-F")
 		if fs.UUID != nil {
-			args = append(args, []string{"-U", *fs.UUID}...)
+			args = append(args, []string{"-U", canonicalizeFilesystemUUID(fs.Format, *fs.UUID)}...)
+		}
+		if fs.Label != nil {
+			args = append(args, []string{"-L", *fs.Label}...)
 		}
 	case "xfs":
 		mkfs = "/sbin/mkfs.xfs"
-		if force {
-			args = append(args, "-f")
-		}
+		args = append(args, "-f")
 		if fs.UUID != nil {
-			args = append(args, []string{"-m", "uuid=" + *fs.UUID}...)
+			args = append(args, []string{"-m", "uuid=" + canonicalizeFilesystemUUID(fs.Format, *fs.UUID)}...)
+		}
+		if fs.Label != nil {
+			args = append(args, []string{"-L", *fs.Label}...)
 		}
 	case "swap":
 		mkfs = "/sbin/mkswap"
-		if force {
-			args = append(args, "-f")
-		}
+		args = append(args, "-f")
 		if fs.UUID != nil {
-			args = append(args, []string{"-U", *fs.UUID}...)
+			args = append(args, []string{"-U", canonicalizeFilesystemUUID(fs.Format, *fs.UUID)}...)
+		}
+		if fs.Label != nil {
+			args = append(args, []string{"-L", *fs.Label}...)
+		}
+	case "vfat":
+		mkfs = "/sbin/mkfs.vfat"
+		// There is no force flag for mkfs.vfat, it always destroys any data on
+		// the device at which it is pointed.
+		if fs.UUID != nil {
+			args = append(args, []string{"-i", canonicalizeFilesystemUUID(fs.Format, *fs.UUID)}...)
+		}
+		if fs.Label != nil {
+			args = append(args, []string{"-n", *fs.Label}...)
 		}
 	default:
 		return fmt.Errorf("unsupported filesystem format: %q", fs.Format)
-	}
-	if fs.Label != nil {
-		args = append(args, []string{"-L", *fs.Label}...)
 	}
 
 	devAlias := util.DeviceAlias(string(fs.Device))
@@ -409,4 +437,22 @@ func (s stage) readFilesystemInfo(fs types.Mount) (filesystemInfo, error) {
 	)
 
 	return res, err
+}
+
+// canonicalizeFilesystemUUID does the minimum amount of canonicalization
+// required to make two valid equivalent UUIDs compare equal, but doesn't
+// attempt to fully validate the UUID.
+func canonicalizeFilesystemUUID(format, uuid string) string {
+	uuid = strings.ToLower(uuid)
+	if format == "vfat" {
+		// FAT uses a 32-bit volume ID instead of a UUID. blkid
+		// (and the rest of the world) formats it as A1B2-C3D4, but
+		// mkfs.fat doesn't permit the dash, so strip it. Older
+		// versions of Ignition would fail if the config included
+		// the dash, so we need to support omitting it.
+		if len(uuid) >= 5 && uuid[4] == '-' {
+			uuid = uuid[0:4] + uuid[5:]
+		}
+	}
+	return uuid
 }

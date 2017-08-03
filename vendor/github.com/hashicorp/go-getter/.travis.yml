@@ -10,8 +10,13 @@ addons:
 language: go
 
 go:
-  - 1.5
+  - 1.8.x
+  - master
 
 branches:
   only:
     - master
+
+matrix:
+  allow_failures:
+    - go: master

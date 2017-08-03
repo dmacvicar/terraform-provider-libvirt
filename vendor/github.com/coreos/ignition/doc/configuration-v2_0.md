@@ -1,5 +1,7 @@
 # Configuration Specification v2.0.0 #
 
+*NOTE*: The [configuration specification 2.1.0][v2_1] is currently the latest stable version of the spec, and it's advised to use that over version 2.0.0.
+
 The Ignition configuration is a JSON document conforming to the following specification, with **_italicized_** entries being optional:
 
 * **ignition** (object): metadata about the configuration itself.
@@ -83,5 +85,6 @@ The Ignition configuration is a JSON document conforming to the following specif
     * **_gid_** (integer): the group ID of the new group.
     * **_passwordHash_** (string): the encrypted password of the new group.
 
+[v2_1]: configuration-v2_1.md
 [part-types]: http://en.wikipedia.org/wiki/GUID_Partition_Table#Partition_type_GUIDs
 [rfc2397]: https://tools.ietf.org/html/rfc2397
