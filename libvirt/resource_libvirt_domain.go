@@ -804,11 +804,11 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 			virVol, err = virPool.LookupStorageVolByName(diskDef.Source.Volume)
 		}
-		defer virVol.Free()
 
 		if err != nil {
 			return fmt.Errorf("Error retrieving volume for disk: %s", err)
 		}
+		defer virVol.Free()
 
 		virVolKey, err := virVol.GetKey()
 		if err != nil {
