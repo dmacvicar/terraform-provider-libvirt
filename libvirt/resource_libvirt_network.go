@@ -116,7 +116,16 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 		return false, fmt.Errorf("The libvirt connection was nil.")
 	}
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
+	if err != nil {
+		// If the network couldn't be found, don't return an error otherwise
+		// Terraform won't create it again.
+		if lverr, ok := err.(libvirt.Error); ok && lverr.Code == libvirt.ERR_NO_NETWORK {
+			return false, nil
+		}
+		return false, err
+	}
 	defer network.Free()
+
 	return err == nil, err
 }
 
@@ -126,6 +135,9 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("The libvirt connection was nil.")
 	}
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
+	if err != nil {
+		return err
+	}
 	defer network.Free()
 
 	d.Partial(true)
