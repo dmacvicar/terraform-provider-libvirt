@@ -89,14 +89,13 @@ func resourceCloudInitRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	ci, err := newCloudInitDefFromRemoteISO(virConn, d.Id())
+	if err != nil {
+		return fmt.Errorf("Error while retrieving remote ISO: %s", err)
+	}
 	d.Set("pool", ci.PoolName)
 	d.Set("name", ci.Name)
 	d.Set("local_hostname", ci.Metadata.LocalHostname)
 	d.Set("user_data", ci.UserDataRaw)
-
-	if err != nil {
-		return fmt.Errorf("Error while retrieving remote ISO: %s", err)
-	}
 
 	if len(ci.UserData.SSHAuthorizedKeys) == 1 {
 		d.Set("ssh_authorized_key", ci.UserData.SSHAuthorizedKeys[0])

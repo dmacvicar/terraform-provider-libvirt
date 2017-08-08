@@ -273,6 +273,12 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 			if err := yaml.Unmarshal(data, &ci.UserData); err != nil {
 				return ci, fmt.Errorf("Error while unmarshalling user-data: %s", err)
 			}
+			// This may differ from the user_data provided in the .tf file
+			// because it always includes ssh_authorized_keys. However, this
+			// shouldn't be an issue since both the authorized keys in the .tf
+			// file (field: ssh_authorized_key) and the ones in this userdata
+			// (field: ssh_authorized_keys) are the same.
+			ci.UserDataRaw = fmt.Sprintf("%s", data)
 		}
 
 		//TODO: the iso9660 has a bug...
