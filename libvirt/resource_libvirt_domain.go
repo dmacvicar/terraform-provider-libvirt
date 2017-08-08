@@ -675,12 +675,16 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	d.Partial(true)
 
 	if d.HasChange("cloudinit") {
-		cloudinit, err := newDiskForCloudInit(virConn, d.Get("cloudinit").(string))
+		cloudinitID, err := getCloudInitVolumeKeyFromTerraformID(d.Get("cloudinit").(string))
+		if err != nil {
+			return err
+		}
+		disk, err := newDiskForCloudInit(virConn, cloudinitID)
 		if err != nil {
 			return err
 		}
 
-		data, err := xml.Marshal(cloudinit)
+		data, err := xml.Marshal(disk)
 		if err != nil {
 			return fmt.Errorf("Error serializing cloudinit disk: %s", err)
 		}
