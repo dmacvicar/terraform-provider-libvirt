@@ -14,7 +14,11 @@ func getHostXMLDesc(ip, mac, name string) string {
 		MAC:  mac,
 		Name: name,
 	}
-	xml, err := xmlMarshallIndented(dd)
+	tmp := struct {
+		XMLName xml.Name `xml:"host"`
+		libvirtxml.NetworkDHCPHost
+	}{xml.Name{}, dd}
+	xml, err := xmlMarshallIndented(tmp)
 	if err != nil {
 		panic("could not marshall host")
 	}
