@@ -381,7 +381,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		prefix, _ := strconv.Atoi(address.Prefix)
 		mask := net.CIDRMask(prefix, bits)
 		network := addr.Mask(mask)
-		addresses = append(addresses, fmt.Sprintf("%s/%d", network, address.Prefix))
+		addresses = append(addresses, fmt.Sprintf("%s/%s", network, address.Prefix))
 	}
 	if len(addresses) > 0 {
 		d.Set("addresses", addresses)
