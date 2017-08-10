@@ -92,7 +92,7 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	}
 
 	volumeDef.Capacity.Unit = "B"
-	volumeDef.Capacity.Amount = size
+	volumeDef.Capacity.Value = size
 	volumeDef.Target.Format.Type = "raw"
 
 	volumeDefXml, err := xml.Marshal(volumeDef)
