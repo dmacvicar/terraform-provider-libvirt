@@ -72,7 +72,7 @@ func (ign *defIgnition) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	}
 
 	volumeDef.Capacity.Unit = "B"
-	volumeDef.Capacity.Amount = size
+	volumeDef.Capacity.Value = size
 	volumeDef.Target.Format.Type = "raw"
 
 	volumeDefXml, err := xml.Marshal(volumeDef)
@@ -88,7 +88,7 @@ func (ign *defIgnition) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	defer volume.Free()
 
 	// upload ignition file
-	err = img.Import(newCopier(virConn, volume, volumeDef.Capacity.Amount), volumeDef)
+	err = img.Import(newCopier(virConn, volume, volumeDef.Capacity.Value), volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error while uploading ignition file %s: %s", img.String(), err)
 	}

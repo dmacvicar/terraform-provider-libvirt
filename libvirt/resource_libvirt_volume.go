@@ -159,7 +159,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		} else {
 			log.Printf("Image %s image is: %d bytes", img, size)
 			volumeDef.Capacity.Unit = "B"
-			volumeDef.Capacity.Amount = size
+			volumeDef.Capacity.Value = size
 		}
 	} else {
 		_, noSize := d.GetOk("size")
@@ -168,7 +168,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		if noSize && noBaseVol {
 			return fmt.Errorf("'size' needs to be specified if no 'source' or 'base_volume_id' is given.")
 		}
-		volumeDef.Capacity.Amount = uint64(d.Get("size").(int))
+		volumeDef.Capacity.Value = uint64(d.Get("size").(int))
 	}
 
 	if baseVolumeId, ok := d.GetOk("base_volume_id"); ok {
@@ -250,7 +250,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	// upload source if present
 	if _, ok := d.GetOk("source"); ok {
-		err = img.Import(newCopier(virConn, volume, volumeDef.Capacity.Amount), volumeDef)
+		err = img.Import(newCopier(virConn, volume, volumeDef.Capacity.Value), volumeDef)
 		if err != nil {
 			return fmt.Errorf("Error while uploading source %s: %s", img.String(), err)
 		}

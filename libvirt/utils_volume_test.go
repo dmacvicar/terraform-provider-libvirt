@@ -6,6 +6,9 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
+
+	"github.com/libvirt/libvirt-go-xml"
 )
 
 func TestLocalImageDownload(t *testing.T) {
@@ -24,7 +27,6 @@ func TestLocalImageDownload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	url := fmt.Sprintf("file://%s", tmpfile.Name())
 	image, err := newImage(url)
 	if err != nil {
@@ -33,9 +35,8 @@ func TestLocalImageDownload(t *testing.T) {
 
 	t.Logf("Importing %s", url)
 	vol := newDefVolume()
-	modTime := UnixTimestamp{tmpfileStat.ModTime()}
-	vol.Target.Timestamps = &defTimestamps{
-		Modification: &modTime,
+	vol.Target.Timestamps = &libvirtxml.StorageVolumeTargetTimestamps{
+		Mtime: fmt.Sprintf("%d.%d", tmpfileStat.ModTime().Unix(), tmpfileStat.ModTime().Nanosecond()),
 	}
 
 	copier := func(r io.Reader) error {
@@ -43,7 +44,7 @@ func TestLocalImageDownload(t *testing.T) {
 		return nil
 	}
 	if err = image.Import(copier, vol); err != nil {
-		t.Fatal("Could not copy image from %s: %v", url, err)
+		t.Fatalf("Could not copy image from %s: %v", url, err)
 	}
 	t.Log("File not copied because modification time was the same")
 }
@@ -72,17 +73,34 @@ func TestRemoteImageDownload(t *testing.T) {
 
 	t.Logf("Importing %s", url)
 	vol := newDefVolume()
-	modTime := UnixTimestamp{tmpfileStat.ModTime()}
-	vol.Target.Timestamps = &defTimestamps{
-		Modification: &modTime,
+	vol.Target.Timestamps = &libvirtxml.StorageVolumeTargetTimestamps{
+		Mtime: fmt.Sprintf("%d.%d", tmpfileStat.ModTime().Unix(), tmpfileStat.ModTime().Nanosecond()),
 	}
 	copier := func(r io.Reader) error {
 		t.Fatalf("ERROR: starting copy of %s... but the file is the same!", url)
 		return nil
 	}
 	if err = image.Import(copier, vol); err != nil {
-		t.Fatal("Could not copy image from %s: %v", url, err)
+		t.Fatalf("Could not copy image from %s: %v", url, err)
 	}
 	t.Log("File not copied because modification time was the same")
 
+}
+
+func TestTimeFromEpoch(t *testing.T) {
+	if ts := timeFromEpoch(""); ts.UnixNano() > 0 {
+		t.Fatalf("expected timestamp '0.0', got %v.%v", ts.Unix(), ts.Nanosecond())
+	}
+
+	if ts := timeFromEpoch("abc"); ts.UnixNano() > 0 {
+		t.Fatalf("expected timestamp '0.0', got %v.%v", ts.Unix(), ts.Nanosecond())
+	}
+
+	if ts := timeFromEpoch("123"); ts.UnixNano() != time.Unix(123, 0).UnixNano() {
+		t.Fatalf("expected timestamp '123.0', got %v.%v", ts.Unix(), ts.Nanosecond())
+	}
+
+	if ts := timeFromEpoch("123.456"); ts.UnixNano() != time.Unix(123, 456).UnixNano() {
+		t.Fatalf("expected timestamp '123.456', got %v.%v", ts.Unix(), ts.Nanosecond())
+	}
 }
