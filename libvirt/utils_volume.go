@@ -135,21 +135,31 @@ func newImage(source string) (image, error) {
 
 func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64) func(src io.Reader) error {
 	copier := func(src io.Reader) error {
+		var bytesCopied int64
+
 		stream, err := virConn.NewStream(0)
 		if err != nil {
 			return err
 		}
-		defer stream.Finish()
+
+		defer func() {
+			if uint64(bytesCopied) != size {
+				stream.Abort()
+			} else {
+				stream.Finish()
+			}
+			stream.Free()
+		}()
 
 		volume.Upload(stream, 0, size, 0)
 
 		sio := NewStreamIO(*stream)
 
-		n, err := io.Copy(sio, src)
+		bytesCopied, err = io.Copy(sio, src)
 		if err != nil {
 			return err
 		}
-		log.Printf("%d bytes uploaded\n", n)
+		log.Printf("%d bytes uploaded\n", bytesCopied)
 		return nil
 	}
 	return copier
