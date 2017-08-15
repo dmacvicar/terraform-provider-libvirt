@@ -65,7 +65,11 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	}
 	defer pool.Free()
 
-	PoolSync.AcquireLock(ci.PoolName)
+	for {
+		if PoolSync.AcquireLock(ci.PoolName) {
+			break
+		}
+	}
 	defer PoolSync.ReleaseLock(ci.PoolName)
 
 	// Refresh the pool of the volume so that libvirt knows it is
