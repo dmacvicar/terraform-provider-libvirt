@@ -68,7 +68,6 @@ func resourceLibvirtNetwork() *schema.Resource {
 			"addresses": {
 				Type:     schema.TypeList,
 				Optional: true,
-				Required: false,
 				ForceNew: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
@@ -82,29 +81,24 @@ func resourceLibvirtNetwork() *schema.Resource {
 			"dns_forwarder": {
 				Type:     schema.TypeList,
 				Optional: true,
-				Required: false,
 				ForceNew: true,
 				Elem: &schema.Resource{
-					Schema: dnsForwarderSchema(),
+					Schema: map[string]*schema.Schema{
+						"address": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Required: false,
+							ForceNew: true,
+						},
+						"domain": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Required: false,
+							ForceNew: true,
+						},
+					},
 				},
 			},
-		},
-	}
-}
-
-func dnsForwarderSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"address": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
-			ForceNew: true,
-		},
-		"domain": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Required: false,
-			ForceNew: true,
 		},
 	}
 }

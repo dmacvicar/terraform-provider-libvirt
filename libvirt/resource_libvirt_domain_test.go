@@ -181,7 +181,7 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 		name = "terraform-test-domain"
 		disk {
 			volume_id = "${libvirt_volume.acceptance-test-volume1.id}"
-			scsi      = "yes"
+			scsi      = "true"
 			wwn       = "000000123456789a"
 		}
 	}`)
@@ -223,7 +223,7 @@ func TestAccLibvirtDomainURLDisk(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: configURL,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -273,7 +273,7 @@ func TestAccLibvirtDomainKernelInitrdCmdline(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtVolumeExists("libvirt_volume.kernel", &kernel),
@@ -406,7 +406,7 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 		name = "terraform-test"
 		graphics {
 			type        = "spice"
-			autoport    = "yes"
+			autoport    = "true"
 			listen_type = "none"
 		}
 	}`)
@@ -421,11 +421,11 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "graphics.type", "spice"),
+						"libvirt_domain.acceptance-test-domain", "graphics.0.type", "spice"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "graphics.autoport", "yes"),
+						"libvirt_domain.acceptance-test-domain", "graphics.0.autoport", "true"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "graphics.listen_type", "none"),
+						"libvirt_domain.acceptance-test-domain", "graphics.0.listen_type", "none"),
 				),
 			},
 		},
@@ -560,13 +560,13 @@ func TestAccLibvirtDomain_Filesystems(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "filesystem.0.target", "tmp"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "filesystem.0.readonly", "0"),
+						"libvirt_domain.acceptance-test-domain", "filesystem.0.readonly", "false"),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "filesystem.1.source", "/proc"),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "filesystem.1.target", "proc"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "filesystem.1.readonly", "1"),
+						"libvirt_domain.acceptance-test-domain", "filesystem.1.readonly", "true"),
 				),
 			},
 		},
@@ -914,7 +914,7 @@ func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, f
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "name", "terraform-test-firmware-no-template"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.file", NVRAMPath),
+						"libvirt_domain.acceptance-test-domain", "nvram.0.file", NVRAMPath),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "firmware", firmware),
 				),
@@ -952,9 +952,9 @@ func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, fir
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "name", "terraform-test-firmware-with-template"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.file", NVRAMPath),
+						"libvirt_domain.acceptance-test-domain", "nvram.0.file", NVRAMPath),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.template", template),
+						"libvirt_domain.acceptance-test-domain", "nvram.0.template", template),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "firmware", firmware),
 				),

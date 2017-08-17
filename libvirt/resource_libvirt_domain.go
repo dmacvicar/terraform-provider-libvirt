@@ -53,7 +53,6 @@ func resourceLibvirtDomain() *schema.Resource {
 			},
 			"metadata": {
 				Type:     schema.TypeString,
-				Required: false,
 				Optional: true,
 				ForceNew: false,
 			},
@@ -75,13 +74,27 @@ func resourceLibvirtDomain() *schema.Resource {
 				ForceNew: true,
 			},
 			"nvram": {
-				Type:     schema.TypeMap,
+				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"file": {
+							Type:     schema.TypeString,
+							Required: true,
+							ForceNew: true,
+						},
+						"template": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+					},
+				},
 			},
 			"cloudinit": {
 				Type:     schema.TypeString,
-				Required: false,
 				Optional: true,
 				ForceNew: false,
 			},
@@ -94,52 +107,184 @@ func resourceLibvirtDomain() *schema.Resource {
 			"filesystem": {
 				Type:     schema.TypeList,
 				Optional: true,
-				Required: false,
 				ForceNew: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeMap,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"accessmode": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  "mapped",
+						},
+						"source": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"target": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"readonly": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  true,
+						},
+					},
 				},
 			},
 			"disk": {
 				Type:     schema.TypeList,
 				Optional: true,
-				Required: false,
 				ForceNew: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeMap,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"volume_id": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"url": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"file": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"scsi": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+						"wwn": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+					},
 				},
 			},
 			"network_interface": {
 				Type:     schema.TypeList,
 				Optional: true,
-				Required: false,
 				Elem: &schema.Resource{
-					Schema: networkInterfaceCommonSchema(),
+					Schema: map[string]*schema.Schema{
+						"network_id": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"network_name": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"bridge": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"vepa": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"macvtap": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"passthrough": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"hostname": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"mac": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"wait_for_lease": {
+							Type:     schema.TypeBool,
+							Optional: true,
+						},
+						"addresses": {
+							Type:     schema.TypeList,
+							Optional: true,
+							Computed: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+					},
 				},
 			},
 			"graphics": {
-				Type:     schema.TypeMap,
+				Type:     schema.TypeList,
 				Optional: true,
-				Required: false,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"type": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  "spice",
+						},
+						"autoport": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  true,
+						},
+						"listen_type": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  "none",
+						},
+					},
+				},
 			},
 			"console": {
 				Type:     schema.TypeList,
 				Optional: true,
-				Required: false,
 				Elem: &schema.Resource{
-					Schema: consoleSchema(),
+					Schema: map[string]*schema.Schema{
+						"type": {
+							Type:     schema.TypeString,
+							Required: true,
+							ForceNew: true,
+						},
+						"source_path": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+						"target_port": {
+							Type:     schema.TypeString,
+							Required: true,
+							ForceNew: true,
+						},
+						"target_type": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+					},
 				},
 			},
 			"cpu": {
 				Type:     schema.TypeMap,
 				Optional: true,
-				Required: false,
 				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"mode": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
 			},
 			"autostart": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Required: false,
 			},
 			"machine": {
 				Type:     schema.TypeString,
@@ -156,7 +301,16 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				Required: false,
 				Elem: &schema.Resource{
-					Schema: bootDeviceSchema(),
+					Schema: map[string]*schema.Schema{
+						"dev": {
+							Type:     schema.TypeList,
+							Optional: true,
+							Required: false,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+					},
 				},
 			},
 			"emulator": {
@@ -184,19 +338,6 @@ func resourceLibvirtDomain() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeMap,
 				},
-			},
-		},
-	}
-}
-
-func bootDeviceSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
-		"dev": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Required: false,
-			Elem: &schema.Schema{
-				Type: schema.TypeString,
 			},
 		},
 	}
@@ -240,16 +381,20 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
-		var fwCfg []libvirtxml.DomainQEMUCommandlineArg
 		ignitionKey, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
 		if err != nil {
 			return err
 		}
-		ignStr := fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionKey)
-		fwCfg = append(fwCfg, libvirtxml.DomainQEMUCommandlineArg{Value: "-fw_cfg"})
-		fwCfg = append(fwCfg, libvirtxml.DomainQEMUCommandlineArg{Value: ignStr})
+
 		QemuCmdline := &libvirtxml.DomainQEMUCommandline{
-			Args: fwCfg,
+			Args: []libvirtxml.DomainQEMUCommandlineArg{
+				{
+					Value: "-fw_cfg",
+				},
+				{
+					Value: fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionKey),
+				},
+			},
 		}
 		domainDef.QEMUCommandline = QemuCmdline
 	}
@@ -262,18 +407,18 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	if arch == "s390x" || arch == "ppc64" {
 		domainDef.Devices.Graphics = nil
 	} else {
-		if graphics, ok := d.GetOk("graphics"); ok {
-			graphicsMap := graphics.(map[string]interface{})
-			domainDef.Devices.Graphics = []libvirtxml.DomainGraphic{
-				{},
-			}
-			if graphicsType, ok := graphicsMap["type"]; ok {
+		prefix := "graphics.0"
+		if _, ok := d.GetOk(prefix); ok {
+			domainDef.Devices.Graphics = []libvirtxml.DomainGraphic{{}}
+			if graphicsType, ok := d.GetOk(prefix + ".type"); ok {
 				domainDef.Devices.Graphics[0].Type = graphicsType.(string)
 			}
-			if autoport, ok := graphicsMap["autoport"]; ok {
-				domainDef.Devices.Graphics[0].AutoPort = autoport.(string)
+			if d.Get(prefix + ".autoport").(bool) {
+				domainDef.Devices.Graphics[0].AutoPort = "yes"
+			} else {
+				domainDef.Devices.Graphics[0].AutoPort = "no"
 			}
-			if listenType, ok := graphicsMap["listen_type"]; ok {
+			if listenType, ok := d.GetOk(prefix + ".listen_type"); ok {
 				domainDef.Devices.Graphics[0].Listeners = []libvirtxml.DomainGraphicListener{
 					{
 						Type: listenType.(string),
@@ -283,12 +428,8 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	if kernel, ok := d.GetOk("kernel"); ok {
-		domainDef.OS.Kernel = kernel.(string)
-	}
-	if initrd, ok := d.GetOk("initrd"); ok {
-		domainDef.OS.Initrd = initrd.(string)
-	}
+	domainDef.OS.Kernel = d.Get("kernel").(string)
+	domainDef.OS.Initrd = d.Get("initrd").(string)
 
 	var cmdlineArgs []string
 	for i := 0; i < d.Get("cmdline.#").(int); i++ {
@@ -299,12 +440,9 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	sort.Strings(cmdlineArgs)
 	domainDef.OS.KernelArgs = strings.Join(cmdlineArgs, " ")
 
-	if cpu, ok := d.GetOk("cpu"); ok {
-		cpuMap := cpu.(map[string]interface{})
-		if cpuMode, ok := cpuMap["mode"]; ok {
-			domainDef.CPU = &libvirtxml.DomainCPU{
-				Mode: cpuMode.(string),
-			}
+	if cpuMode, ok := d.GetOk("cpu.mode"); ok {
+		domainDef.CPU = &libvirtxml.DomainCPU{
+			Mode: cpuMode.(string),
 		}
 	}
 
@@ -320,15 +458,13 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			Secure:   "no",
 		}
 
-		if nvram, ok := d.GetOk("nvram"); ok {
-			nvramMap := nvram.(map[string]interface{})
-
-			nvramFile := nvramMap["file"].(string)
+		if _, ok := d.GetOk("nvram.0"); ok {
+			nvramFile := d.Get("nvram.0.file").(string)
 			if _, err := os.Stat(nvramFile); os.IsNotExist(err) {
 				return fmt.Errorf("could not find nvram file '%s'", nvramFile)
 			}
 			nvramTemplateFile := ""
-			if nvramTemplate, ok := nvramMap["template"]; ok {
+			if nvramTemplate, ok := d.GetOk("nvram.0.template"); ok {
 				nvramTemplateFile = nvramTemplate.(string)
 				if _, err := os.Stat(nvramTemplateFile); os.IsNotExist(err) {
 					return fmt.Errorf("could not find nvram template file '%s'", nvramTemplateFile)
@@ -341,19 +477,17 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	var bootDevices []libvirtxml.DomainBootDevice
-	bootDevice := libvirtxml.DomainBootDevice{}
-	bootDeviceCount := d.Get("boot_device.#").(int)
-	for i := 0; i < bootDeviceCount; i++ {
-		prefix := fmt.Sprintf("boot_device.%d", i)
-		if bootMap, ok := d.GetOk(prefix + ".dev"); ok {
+	for i := 0; i < d.Get("boot_device.#").(int); i++ {
+		if bootMap, ok := d.GetOk(fmt.Sprintf("boot_device.%d.dev", i)); ok {
 			for _, dev := range bootMap.([]interface{}) {
-				bootDevice.Dev = dev.(string)
-				bootDevices = append(bootDevices, bootDevice)
+				domainDef.OS.BootDevices = append(domainDef.OS.BootDevices,
+					libvirtxml.DomainBootDevice{
+						Dev: dev.(string),
+					})
 			}
 		}
 	}
-	domainDef.OS.BootDevices = bootDevices
+
 	domainDef.Memory = &libvirtxml.DomainMemory{
 		Value: uint(d.Get("memory").(int)),
 		Unit:  "MiB",
@@ -362,57 +496,50 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		Value: d.Get("vcpu").(int),
 	}
 
-	var consoles []libvirtxml.DomainConsole
 	for i := 0; i < d.Get("console.#").(int); i++ {
 		console := libvirtxml.DomainConsole{}
-		consolePrefix := fmt.Sprintf("console.%d", i)
-		console.Type = d.Get(consolePrefix + ".type").(string)
-		consoleTargetPortInt, err := strconv.Atoi(d.Get(consolePrefix + ".target_port").(string))
+		prefix := fmt.Sprintf("console.%d", i)
+		console.Type = d.Get(prefix + ".type").(string)
+		consoleTargetPortInt, err := strconv.Atoi(d.Get(prefix + ".target_port").(string))
 		if err == nil {
 			consoleTargetPort := uint(consoleTargetPortInt)
 			console.Target = &libvirtxml.DomainConsoleTarget{
 				Port: &consoleTargetPort,
 			}
 		}
-		if sourcePath, ok := d.GetOk(consolePrefix + ".source_path"); ok {
+		if sourcePath, ok := d.GetOk(prefix + ".source_path"); ok {
 			console.Source = &libvirtxml.DomainChardevSource{
 				Path: sourcePath.(string),
 			}
 		}
-		if targetType, ok := d.GetOk(consolePrefix + ".target_type"); ok {
+		if targetType, ok := d.GetOk(prefix + ".target_type"); ok {
 			if console.Target == nil {
 				console.Target = &libvirtxml.DomainConsoleTarget{}
 			}
 			console.Target.Type = targetType.(string)
 		}
-		consoles = append(consoles, console)
+		domainDef.Devices.Consoles = append(domainDef.Devices.Consoles, console)
 	}
-	domainDef.Devices.Consoles = consoles
 
-	disksCount := d.Get("disk.#").(int)
-	var disks []libvirtxml.DomainDisk
 	var scsiDisk = false
-	for i := 0; i < disksCount; i++ {
+	for i := 0; i < d.Get("disk.#").(int); i++ {
 		disk := newDefDisk(i)
 
-		diskKey := fmt.Sprintf("disk.%d", i)
-		diskMap := d.Get(diskKey).(map[string]interface{})
-		if _, ok := diskMap["scsi"].(string); ok {
+		prefix := fmt.Sprintf("disk.%d", i)
+		if d.Get(prefix + ".scsi").(bool) {
 			disk.Target.Bus = "scsi"
 			scsiDisk = true
-			if wwn, ok := diskMap["wwn"].(string); ok {
-				disk.WWN = wwn
+			if wwn, ok := d.GetOk(prefix + ".wwn"); ok {
+				disk.WWN = wwn.(string)
 			} else {
 				disk.WWN = randomWWN(10)
 			}
 		}
 
-		if _, ok := diskMap["volume_id"].(string); ok {
-			volumeKey := diskMap["volume_id"].(string)
-
-			diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
+		if volumeKey, ok := d.GetOk(prefix + ".volume_id"); ok {
+			diskVolume, err := virConn.LookupStorageVolByKey(volumeKey.(string))
 			if err != nil {
-				return fmt.Errorf("Can't retrieve volume %s", volumeKey)
+				return fmt.Errorf("Can't retrieve volume %s", volumeKey.(string))
 			}
 			diskVolumeFile, err := diskVolume.GetPath()
 			if err != nil {
@@ -422,11 +549,11 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			disk.Source = &libvirtxml.DomainDiskSource{
 				File: diskVolumeFile,
 			}
-		} else if _, ok := diskMap["url"].(string); ok {
+		} else if rawURL, ok := d.GetOk(prefix + ".url"); ok {
 			// Support for remote, read-only http disks
 			// useful for booting CDs
 			disk.Type = "network"
-			url, err := url.Parse(diskMap["url"].(string))
+			url, err := url.Parse(rawURL.(string))
 			if err != nil {
 				return err
 			}
@@ -435,7 +562,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				Protocol: url.Scheme,
 				Name:     url.Path,
 				Hosts: []libvirtxml.DomainDiskSourceHost{
-					libvirtxml.DomainDiskSourceHost{
+					{
 						Name: url.Hostname(),
 						Port: url.Port(),
 					},
@@ -447,14 +574,14 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			if !strings.HasSuffix(url.Path, ".qcow2") {
 				disk.Driver.Type = "raw"
 			}
-		} else if _, ok := diskMap["file"].(string); ok {
+		} else if file, ok := d.GetOk(prefix + ".file"); ok {
 			// support for local disks, e.g. CDs
 			disk.Type = "file"
 			disk.Source = &libvirtxml.DomainDiskSource{
-				File: diskMap["file"].(string),
+				File: file.(string),
 			}
 
-			if strings.HasSuffix(diskMap["file"].(string), ".iso") {
+			if strings.HasSuffix(file.(string), ".iso") {
 				disk.Device = "cdrom"
 				disk.Target = &libvirtxml.DomainDiskTarget{
 					Dev: "hda",
@@ -467,50 +594,48 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			}
 		}
 
-		disks = append(disks, disk)
+		domainDef.Devices.Disks = append(domainDef.Devices.Disks, disk)
 	}
 
 	log.Printf("[DEBUG] scsiDisk: %t", scsiDisk)
 	if scsiDisk {
-		controller := libvirtxml.DomainController{Type: "scsi", Model: "virtio-scsi"}
-		domainDef.Devices.Controllers = append(domainDef.Devices.Controllers, controller)
+		domainDef.Devices.Controllers = append(domainDef.Devices.Controllers,
+			libvirtxml.DomainController{
+				Type:  "scsi",
+				Model: "virtio-scsi",
+			})
 	}
 
-	filesystemsCount := d.Get("filesystem.#").(int)
-	var filesystems []libvirtxml.DomainFilesystem
-	for i := 0; i < filesystemsCount; i++ {
+	for i := 0; i < d.Get("filesystem.#").(int); i++ {
 		fs := newFilesystemDef()
 
-		fsKey := fmt.Sprintf("filesystem.%d", i)
-		fsMap := d.Get(fsKey).(map[string]interface{})
-		if accessMode, ok := fsMap["accessmode"]; ok {
+		prefix := fmt.Sprintf("filesystem.%d", i)
+		if accessMode, ok := d.GetOk(prefix + ".accessmode"); ok {
 			fs.AccessMode = accessMode.(string)
 		}
-		if sourceDir, ok := fsMap["source"]; ok {
+		if sourceDir, ok := d.GetOk(prefix + ".source"); ok {
 			fs.Source = &libvirtxml.DomainFilesystemSource{
 				Dir: sourceDir.(string),
 			}
 		} else {
 			return fmt.Errorf("Filesystem entry must have a 'source' set")
 		}
-		if targetDir, ok := fsMap["target"]; ok {
+		if targetDir, ok := d.GetOk(prefix + ".target"); ok {
 			fs.Target = &libvirtxml.DomainFilesystemTarget{
 				Dir: targetDir.(string),
 			}
 		} else {
 			return fmt.Errorf("Filesystem entry must have a 'target' set")
 		}
-		if readonly, ok := fsMap["readonly"]; ok {
-			if readonly.(string) == "1" {
-				fs.ReadOnly = &libvirtxml.DomainFilesystemReadOnly{}
-			} else {
-				fs.ReadOnly = nil
-			}
+		if d.Get(prefix + ".readonly").(bool) {
+			fs.ReadOnly = &libvirtxml.DomainFilesystemReadOnly{}
+		} else {
+			fs.ReadOnly = nil
 		}
 
-		filesystems = append(filesystems, fs)
+		domainDef.Devices.Filesystems = append(domainDef.Devices.Filesystems, fs)
 	}
-	log.Printf("filesystems: %+v\n", filesystems)
+	log.Printf("filesystems: %+v\n", domainDef.Devices.Filesystems)
 
 	type pendingMapping struct {
 		mac      string
@@ -527,7 +652,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		if err != nil {
 			return err
 		}
-		disks = append(disks, disk)
+		domainDef.Devices.Disks = append(domainDef.Devices.Disks, disk)
 	}
 
 	netIfacesCount := d.Get("network_interface.#").(int)
@@ -658,8 +783,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		netIfaces = append(netIfaces, netIface)
 	}
 
-	domainDef.Devices.Disks = disks
-	domainDef.Devices.Filesystems = filesystems
 	domainDef.Devices.Interfaces = netIfaces
 
 	connectURI, err := virConn.GetURI()
