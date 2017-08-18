@@ -249,7 +249,7 @@ type DomainInterface struct {
 
 type DomainChardevSource struct {
 	Mode   string `xml:"mode,attr,omitempty"`
-	Path   string `xml:"path,attr"`
+	Path   string `xml:"path,attr,omitempty"`
 	Append string `xml:"append,attr,omitempty"`
 }
 
