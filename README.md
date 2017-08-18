@@ -70,6 +70,33 @@ dependencies.
 Run `go install` to build the binary. You will now find the binary at
 `$GOPATH/bin/terraform-provider-libvirt`.
 
+## Building from source on (K)Ubuntu
+
+You need to install distribution packages like this:
+
+`sudo apt install golang-1.8 golang-go libvirt-dev`
+
+A specific directory hierarchy is also required:
+
+```cd $HOME
+mkdir -p terraform/src/github.com/dmacvicar
+cd terraform/src/github.com/dmacvicar
+```
+
+Checkout the source from git:
+
+```git clone https://github.com/dmacvicar/terraform-provider-libvirt.git
+```
+
+Set the appropriate environment variables:
+
+```export GOPATH=$HOME/terraform:/usr/share/gocode:/usr/share/go-1.8
+export GOROOT=/usr/lib/go-1.8
+```
+
+Then you can run `go install`. The binary will be placed at
+`$HOME/terraform/bin`.
+
 ## Running
 
 1.  create the example file libvirt.tf in your working directory
