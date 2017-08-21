@@ -1300,6 +1300,7 @@ func getDomainInterfaces(domain libvirt.Domain) ([]libvirt.DomainInterface, erro
 	// get all the interfaces using the qemu-agent, this includes also
 	// interfaces that are not attached to networks managed by libvirt
 	// (eg. bridges, macvtap,...)
+	log.Print("[DEBUG] fetching networking interfaces using qemu-agent")
 	interfaces := getDomainInterfacesViaQemuAgent(&domain, true)
 	if len(interfaces) > 0 {
 		// the agent will always return all the interfaces, both the
@@ -1308,9 +1309,8 @@ func getDomainInterfaces(domain libvirt.Domain) ([]libvirt.DomainInterface, erro
 		return interfaces, nil
 	}
 
-	log.Print("[DEBUG] fetching networking interfaces using libvirt API")
-
 	// get all the interfaces attached to libvirt networks
+	log.Print("[DEBUG] fetching networking interfaces using libvirt API")
 	interfaces, err := domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
 	if err != nil {
 		switch err.(type) {
