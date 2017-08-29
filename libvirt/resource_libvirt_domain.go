@@ -147,6 +147,14 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				Required: false,
 			},
+			"machine": &schema.Schema{
+			        Type: schema.TypeString,
+				Optional: true,
+			},
+			"arch": &schema.Schema{
+			        Type: schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -239,6 +247,9 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	domainDef.OS.Type.Arch = d.Get("arch").(string)
+	domainDef.OS.Type.Machine = d.Get("machine").(string)
+	
 	if firmware, ok := d.GetOk("firmware"); ok {
 		firmwareFile := firmware.(string)
 		if _, err := os.Stat(firmwareFile); os.IsNotExist(err) {

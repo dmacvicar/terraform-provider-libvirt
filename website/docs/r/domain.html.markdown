@@ -50,6 +50,11 @@ The following arguments are supported:
 * `coreos_ignition` - (Optional) The
   [libvirt_ignition](/docs/providers/libvirt/r/coreos_ignition.html) resource
   that is to be used by the CoreOS domain.
+* `arch` - (Optional) The architecture for the VM (probably x86_64 or i686),
+  you normally won't need to set this unless you are building a special VM
+* `machine` - (Optional) The machine type,
+  you normally won't need to set this unless you are running on a platform that
+  defaults to the wrong machine type for your template 
 
 ### UEFI images
 
