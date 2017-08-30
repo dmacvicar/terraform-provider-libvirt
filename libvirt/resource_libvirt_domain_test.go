@@ -683,3 +683,55 @@ func TestAccLibvirtDomain_FirmwareTemplate(t *testing.T) {
 		},
 	})
 }
+
+func TestAccLibvirtDomain_MachineType(t *testing.T) {
+	var domain libvirt.Domain
+
+	// Using machine type of pc as this is earliest QEMU target
+	// and so most likely to be available
+	var config = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+                    machine = "pc"
+            }`)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					resource.TestCheckResourceAttr("libvirt_domain.acceptance-test-domain", "machine", "pc"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtDomain_ArchType(t *testing.T) {
+	var domain libvirt.Domain
+
+	// Using i686 as architecture in case anyone running tests on an i686 only host
+	var config = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+                    arch  = "i686"
+            }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					resource.TestCheckResourceAttr("libvirt_domain.acceptance-test-domain", "arch", "i686"),
+				),
+			},
+		},
+	})
+}
