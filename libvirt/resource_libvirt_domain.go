@@ -155,6 +155,27 @@ func resourceLibvirtDomain() *schema.Resource {
 			        Type: schema.TypeString,
 				Optional: true,
 			},
+			"boot_device": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Required: false,
+				Elem: &schema.Resource{
+					Schema: bootDeviceSchema(),
+				},
+			},
+		},
+	}
+}
+
+func bootDeviceSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"dev": &schema.Schema{
+			Type:     schema.TypeList,
+			Optional: true,
+			Required: false,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
 		},
 	}
 }
@@ -283,6 +304,19 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	var bootDevices []libvirtxml.DomainBootDevice
+	bootDevice := libvirtxml.DomainBootDevice{}
+	bootDeviceCount := d.Get("boot_device.#").(int)
+	for i := 0; i < bootDeviceCount; i++ {
+		prefix := fmt.Sprintf("boot_device.%d", i)
+		if boot_map, ok := d.GetOk(prefix + ".dev"); ok {
+			for _, dev := range boot_map.([]interface{}) {
+				bootDevice.Dev = dev.(string)
+				bootDevices = append(bootDevices, bootDevice)
+			}
+		}
+	}
+	domainDef.OS.BootDevices = bootDevices
 	domainDef.Memory = &libvirtxml.DomainMemory{
 		Value: uint(d.Get("memory").(int)),
 		Unit:  "MiB",

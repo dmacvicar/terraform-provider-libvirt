@@ -55,6 +55,7 @@ The following arguments are supported:
 * `machine` - (Optional) The machine type,
   you normally won't need to set this unless you are running on a platform that
   defaults to the wrong machine type for your template 
+* `boot_device` - (Optional) A list of devices (dev) which sets boot order
 
 ### UEFI images
 
