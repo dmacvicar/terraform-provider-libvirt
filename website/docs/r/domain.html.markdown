@@ -55,7 +55,8 @@ The following arguments are supported:
 * `machine` - (Optional) The machine type,
   you normally won't need to set this unless you are running on a platform that
   defaults to the wrong machine type for your template 
-* `boot_device` - (Optional) A list of devices (dev) which sets boot order
+* `boot_device` - (Optional) A list of devices (dev) which defines boot order. Example
+   [below](#define-boot-device-order).
 
 ### UEFI images
 
@@ -404,6 +405,16 @@ This can be automated inside of `/etc/fstab`:
 ```hcl
 tmp /host/tmp 9p  trans=virtio,version=9p2000.L,rw  0 0
 proc /host/proc  9p  trans=virtio,version=9p2000.L,r  0 0
+```
+
+### Define Boot Device Order
+
+Set hd as default and fallback to network.
+
+```hcl
+boot_devices {
+  dev = [ "hd", "network"]
+}
 ```
 
 ## Attributes Reference
