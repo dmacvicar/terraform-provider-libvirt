@@ -66,6 +66,6 @@ resource "libvirt_domain" "domain-debian8-qcow2" {
   graphics {
     type = "spice"
     listen_type = "address"
-    autoport = true
+    autoport = "yes"
   }
 }
