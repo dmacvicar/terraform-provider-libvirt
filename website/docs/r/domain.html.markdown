@@ -57,6 +57,7 @@ The following arguments are supported:
   defaults to the wrong machine type for your template 
 * `boot_device` - (Optional) A list of devices (dev) which defines boot order. Example
    [below](#define-boot-device-order).
+* `emulator` - (Optional) The path of the emulator to use
 
 ### UEFI images
 

@@ -163,6 +163,10 @@ func resourceLibvirtDomain() *schema.Resource {
 					Schema: bootDeviceSchema(),
 				},
 			},
+			"emulator": &schema.Schema{
+			        Type: schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -270,6 +274,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	domainDef.OS.Type.Arch = d.Get("arch").(string)
 	domainDef.OS.Type.Machine = d.Get("machine").(string)
+	domainDef.Devices.Emulator = d.Get("emulator").(string)
 	
 	if firmware, ok := d.GetOk("firmware"); ok {
 		firmwareFile := firmware.(string)
@@ -832,6 +837,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("nvram", domainDef.OS.NVRam)
 	d.Set("cpu", domainDef.CPU)
 	d.Set("autostart", autostart)
+	d.Set("emulator", domainDef.Devices.Emulator)
 
 	running, err := isDomainRunning(*domain)
 	if err != nil {
