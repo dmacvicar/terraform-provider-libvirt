@@ -5,7 +5,7 @@ import (
 	"log"
 
 	libvirt "github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 func getHostXMLDesc(ip, mac, name string) string {
@@ -67,4 +67,17 @@ func getHostArchitecture(virConn *libvirt.Connect) (string, error) {
 	xml.Unmarshal([]byte(info), &capabilities)
 
 	return capabilities.Host.CPU.Arch, nil
+}
+
+func getHostCapabilities(virConn *libvirt.Connect) (libvirtxml.Caps, error) {
+	// We should perhaps think of storing this on the connect object
+	// on first call to avoid the back and forth
+	caps := libvirtxml.Caps{}
+	capsXML, err := virConn.GetCapabilities()
+	if err != nil {
+		return caps, err
+	}
+	xml.Unmarshal([]byte(capsXML), &caps)
+	log.Printf("[TRACE] Capabilities of host \n %+v", caps)
+	return caps, nil
 }

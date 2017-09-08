@@ -1,9 +1,9 @@
 package libvirt
 
 import (
+	libvirt "github.com/libvirt/libvirt-go"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 	"os"
-
-	"github.com/libvirt/libvirt-go-xml"
 )
 
 func newFilesystemDef() libvirtxml.DomainFilesystem {
@@ -20,7 +20,9 @@ func newDomainDef() libvirtxml.Domain {
 	domainDef := libvirtxml.Domain{
 		OS: &libvirtxml.DomainOS{
 			Type: &libvirtxml.DomainOSType{
-				Type: "hvm",
+				Type:    "hvm",
+				Arch:    "x86_64",
+				Machine: "pc",
 			},
 		},
 		Memory: &libvirtxml.DomainMemory{
@@ -74,4 +76,25 @@ func newDomainDef() libvirtxml.Domain {
 	}
 
 	return domainDef
+}
+
+func newDomainDefForConnection(virConn *libvirt.Connect) (libvirtxml.Domain, error) {
+	d := newDomainDef()
+	caps, err := getHostCapabilities(virConn)
+	if err != nil {
+		return d, err
+	}
+	guest, err := getGuestForArchType(caps, d.OS.Type.Arch, d.OS.Type.Type)
+	if err != nil {
+		return d, err
+	}
+
+	d.Devices.Emulator = guest.Arch.Emulator
+
+	canonicalmachine, err := getCanonicalMachineName(caps, d.OS.Type.Arch, d.OS.Type.Type, d.OS.Type.Machine)
+	if err != nil {
+		return d, err
+	}
+	d.OS.Type.Machine = canonicalmachine
+	return d, nil
 }
