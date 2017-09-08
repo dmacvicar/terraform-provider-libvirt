@@ -148,12 +148,14 @@ func resourceLibvirtDomain() *schema.Resource {
 				Required: false,
 			},
 			"machine": &schema.Schema{
-			        Type: schema.TypeString,
+				Type:     schema.TypeString,
 				Optional: true,
+				Default:  "pc",
 			},
 			"arch": &schema.Schema{
-			        Type: schema.TypeString,
+				Type:     schema.TypeString,
 				Optional: true,
+				Default:  "x86_64",
 			},
 			"boot_device": &schema.Schema{
 				Type:     schema.TypeList,
@@ -270,7 +272,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	domainDef.OS.Type.Arch = d.Get("arch").(string)
 	domainDef.OS.Type.Machine = d.Get("machine").(string)
-	
+
 	if firmware, ok := d.GetOk("firmware"); ok {
 		firmwareFile := firmware.(string)
 		if _, err := os.Stat(firmwareFile); os.IsNotExist(err) {
@@ -831,7 +833,17 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("firmware", domainDef.OS.Loader)
 	d.Set("nvram", domainDef.OS.NVRam)
 	d.Set("cpu", domainDef.CPU)
+	d.Set("arch", domainDef.OS.Type.Arch)
 	d.Set("autostart", autostart)
+
+	// Machine name will probably have been canonicalised to latest version
+	// eg. pc -> pc-i440fx-2.9
+	// so we need to undo that or we won't match the tf file
+	machine, err := getOriginalMachineName(virConn, domainDef.OS.Type.Arch, domainDef.OS.Type.Machine)
+	if err != nil {
+		return err
+	}
+	d.Set("machine", machine)
 
 	running, err := isDomainRunning(*domain)
 	if err != nil {
