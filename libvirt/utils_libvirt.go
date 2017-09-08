@@ -4,8 +4,10 @@ import (
 	"encoding/xml"
 	"log"
 
+	"errors"
+	"fmt"
 	libvirt "github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 func getHostXMLDesc(ip, mac, name string) string {
@@ -67,4 +69,52 @@ func getHostArchitecture(virConn *libvirt.Connect) (string, error) {
 	xml.Unmarshal([]byte(info), &capabilities)
 
 	return capabilities.Host.CPU.Arch, nil
+}
+
+func getGuestMachines(virConn *libvirt.Connect, targetarch string) ([]libvirtxml.CapsGuestMachine, error) {
+	info, err := virConn.GetCapabilities()
+	if err != nil {
+		return nil, err
+	}
+	capabilities := libvirtxml.Caps{}
+
+	xml.Unmarshal([]byte(info), &capabilities)
+
+	for _, guest := range capabilities.Guests {
+		if guest.Arch.Name == targetarch {
+			return guest.Arch.Machines, nil
+		}
+	}
+	return nil, errors.New("Cannot find any guest machines for that architecture!")
+}
+
+func getCanonicalMachineName(virConn *libvirt.Connect, targetarch string, targetmachine string) (string, error) {
+	machines, err := getGuestMachines(virConn, targetarch)
+	if err != nil {
+		return "", err
+	}
+	for _, machine := range machines {
+		if machine.Name == targetmachine {
+			if machine.Canonical != nil {
+				return *machine.Canonical, nil
+			} // we have a canonical name
+		}
+		return machine.Name, nil // we don't have a canonical name
+	}
+	errmsg := errors.New(fmt.Sprintf("Cannot find machine of type %s for architecture %2", targetmachine, targetarch))
+	return "", errmsg
+}
+
+func getOriginalMachineName(virConn *libvirt.Connect, targetarch string, canonicalmachine string) (string, error) {
+	machines, err := getGuestMachines(virConn, targetarch)
+	if err != nil {
+		return "", err
+	}
+
+	for _, machine := range machines {
+		if machine.Canonical != nil && *machine.Canonical == canonicalmachine {
+			return machine.Name, nil
+		}
+	}
+	return canonicalmachine, nil
 }
