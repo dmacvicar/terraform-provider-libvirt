@@ -291,9 +291,13 @@ The block supports:
 * `type` - the type of graphics emulation (default is "spice")
 * `autoport` - defaults to "yes"
 * `listen_type` - "listen type", defaults to "none"
+* `listen_address` - "listen address", default empty
 
 On occasion we have found it necessary to set a `type` of `vnc` and a
 `listen_type` of `address` with certain builds of QEMU.
+
+If using vnc `listen_address` allows overriding of the defaults which may
+vary by installation.
 
 The `graphics` block will look as follows:
 

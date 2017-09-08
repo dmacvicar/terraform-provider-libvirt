@@ -250,9 +250,11 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				domainDef.Devices.Graphics[0].AutoPort = autoport.(string)
 			}
 			if listen_type, ok := graphics_map["listen_type"]; ok {
+				listen_address, _ := graphics_map["listen_address"]
 				domainDef.Devices.Graphics[0].Listeners = []libvirtxml.DomainGraphicListener{
 					libvirtxml.DomainGraphicListener{
 						Type: listen_type.(string),
+						Address: listen_address.(string),
 					},
 				}
 			}
