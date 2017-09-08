@@ -148,12 +148,14 @@ func resourceLibvirtDomain() *schema.Resource {
 				Required: false,
 			},
 			"machine": &schema.Schema{
-			        Type: schema.TypeString,
+				Type:     schema.TypeString,
 				Optional: true,
+				Default:  "pc",
 			},
 			"arch": &schema.Schema{
-			        Type: schema.TypeString,
+				Type:     schema.TypeString,
 				Optional: true,
+				Default:  "x86_64",
 			},
 			"boot_device": &schema.Schema{
 				Type:     schema.TypeList,
@@ -162,6 +164,11 @@ func resourceLibvirtDomain() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: bootDeviceSchema(),
 				},
+			},
+			"emulator": &schema.Schema{
+				Type:     schema.TypeString,
+				Default:  "/usr/bin/qemu-system-x86_64",
+				Optional: true,
 			},
 		},
 	}
@@ -208,8 +215,10 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("The libvirt connection was nil.")
 	}
 
-	domainDef := newDomainDef()
-
+	domainDef, err := newDomainDefForConnection(virConn)
+	if err != nil {
+		return err
+	}
 	if name, ok := d.GetOk("name"); ok {
 		domainDef.Name = name.(string)
 	}
@@ -268,9 +277,20 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	domainDef.OS.Type.Arch = d.Get("arch").(string)
-	domainDef.OS.Type.Machine = d.Get("machine").(string)
-	
+
+	guestarch, found := d.GetOk("arch")
+	if found == true {
+		domainDef.OS.Type.Arch = guestarch.(string)
+	}
+	machine, found := d.GetOk("machine")
+	if found == true {
+		domainDef.OS.Type.Arch = machine.(string)
+	}
+	emulator, found := d.GetOk("emulator")
+	if found == true {
+		domainDef.OS.Type.Arch = emulator.(string)
+	}
+
 	if firmware, ok := d.GetOk("firmware"); ok {
 		firmwareFile := firmware.(string)
 		if _, err := os.Stat(firmwareFile); os.IsNotExist(err) {
@@ -814,7 +834,11 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("[DEBUG] read: obtained XML desc for domain:\n%s", xmlDesc)
 
-	domainDef := newDomainDef()
+	domainDef, err := newDomainDefForConnection(virConn)
+	if err != nil {
+		return err
+	}
+
 	err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
 	if err != nil {
 		return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
@@ -831,7 +855,33 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("firmware", domainDef.OS.Loader)
 	d.Set("nvram", domainDef.OS.NVRam)
 	d.Set("cpu", domainDef.CPU)
+	d.Set("arch", domainDef.OS.Type.Arch)
 	d.Set("autostart", autostart)
+	d.Set("arch", domainDef.OS.Type.Arch)
+
+	caps, err := getHostCapabilities(virConn)
+	if err != nil {
+		return err
+	}
+	machine, err := getOriginalMachineName(caps, domainDef.OS.Type.Arch, domainDef.OS.Type.Type,
+		domainDef.OS.Type.Machine)
+	if err != nil {
+		return err
+	}
+	d.Set("machine", machine)
+
+	// Emulator is the same as the default don't set it in domainDef
+	// or it will show as changed
+	d.Set("emulator", domainDef.Devices.Emulator)
+
+	// Machine name will probably have been canonicalised to latest version
+	// eg. pc -> pc-i440fx-2.9
+	// so we need to undo that or we won't match the tf file
+	machine, err := getOriginalMachineName(virConn, domainDef.OS.Type.Arch, domainDef.OS.Type.Machine)
+	if err != nil {
+		return err
+	}
+	d.Set("machine", machine)
 
 	running, err := isDomainRunning(*domain)
 	if err != nil {
@@ -1012,7 +1062,11 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
 	}
 
-	domainDef := newDomainDef()
+	domainDef, err := newDomainDefForConnection(virConn)
+	if err != nil {
+		return err
+	}
+
 	err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
 	if err != nil {
 		return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
