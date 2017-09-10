@@ -13,7 +13,7 @@ while check_network ; [ $? -ne 0 ];do
 done
 
 apt-get -qq update
-apt-get install -y qemu libvirt-bin libvirt-dev golang-1.8 ovmf
+apt-get install -y qemu-system-common libvirt-bin libvirt-dev golang-1.8 ovmf
 echo -e "<pool type='dir'>\n<name>default</name>\n<target>\n<path>/pool-default</path>\n</target>\n</pool>" > pool.xml
 mkdir /pool-default
 chmod a+rwx /pool-default
