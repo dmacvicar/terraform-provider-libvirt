@@ -1,0 +1,23 @@
+#!/bin/bash
+set -x
+
+unset http_proxy
+
+check_network() {
+  ping -c 3 download.fedoraproject.org
+}
+
+while check_network ; [ $? -ne 0 ];do
+  echo waiting for network to be ready...
+  sleep 1
+done
+
+dnf clean all
+dnf install -y libvirt libvirt-devel qemu-kvm libvirt-client golang edk2-ovmf pkgconf-pkg-config
+systemctl enable libvirtd.service
+systemctl start libvirtd.service
+echo -e "<pool type='dir'>\n<name>default</name>\n<target>\n<path>/pool-default</path>\n</target>\n</pool>" > pool.xml
+mkdir /pool-default
+chmod a+rwx /pool-default
+virsh pool-define pool.xml
+virsh pool-start default
