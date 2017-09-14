@@ -365,7 +365,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			},
 			Driver: &libvirtxml.DomainDiskDriver{
 				Name: "qemu",
-				Type: "qcow2",
 			},
 		}
 
