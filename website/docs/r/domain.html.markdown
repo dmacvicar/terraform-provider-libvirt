@@ -54,7 +54,7 @@ The following arguments are supported:
   you normally won't need to set this unless you are building a special VM
 * `machine` - (Optional) The machine type,
   you normally won't need to set this unless you are running on a platform that
-  defaults to the wrong machine type for your template 
+  defaults to the wrong machine type for your template
 * `boot_device` - (Optional) A list of devices (dev) which defines boot order. Example
    [below](#define-boot-device-order).
 
@@ -67,12 +67,12 @@ environment. Users should usually specify one of the standard _Open Virtual Mach
 Firmware_ (_OVMF_) images available for their distributions. The file will be opened
 read-only.
 * `nvram` - (Optional) this block allows specifying the following attributes related to the _nvram_:
-  * `file` - path to the file backing the NVRAM store for non-volatile variables. When provided, 
-  this file must be writable and specific to this domain, as it will be updated when running the 
-  domain. However, `libvirt` can  manage this automatically (and this is the recommended solution) 
+  * `file` - path to the file backing the NVRAM store for non-volatile variables. When provided,
+  this file must be writable and specific to this domain, as it will be updated when running the
+  domain. However, `libvirt` can  manage this automatically (and this is the recommended solution)
   if a mapping for the firmware to a _variables file_ exists in `/etc/libvirt/qemu.conf:nvram`.
   In that case, `libvirt` will copy that variables file into a file specific for this domain.
-  * `template` - (Optional) path to the file used to override variables from the master NVRAM 
+  * `template` - (Optional) path to the file used to override variables from the master NVRAM
   store.
 
 So you should typically use the firmware as this,
@@ -98,7 +98,7 @@ nvram = [
 ]
 ```
 
-In case you need (or want) to specify the path for the NVRAM store, the domain definition should 
+In case you need (or want) to specify the path for the NVRAM store, the domain definition should
 look like this:
 
 ```hcl
@@ -412,7 +412,7 @@ proc /host/proc  9p  trans=virtio,version=9p2000.L,r  0 0
 Set hd as default and fallback to network.
 
 ```hcl
-boot_devices {
+boot_device {
   dev = [ "hd", "network"]
 }
 ```

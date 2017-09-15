@@ -20,7 +20,7 @@ resource "libvirt_domain" "domain-debian9-qcow2" {
        bridge = "br0"
        mac = "52:54:00:b2:2f:86"
   }
-  boot_devices {
+  boot_device {
       dev = [ "hd", "network"]
   }
   disk {
