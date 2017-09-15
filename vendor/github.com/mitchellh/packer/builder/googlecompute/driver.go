@@ -58,11 +58,14 @@ type Driver interface {
 }
 
 type InstanceConfig struct {
+	AcceleratorType   string
+	AcceleratorCount  int64
 	Address           string
 	Description       string
 	DiskSizeGb        int64
 	DiskType          string
 	Image             *Image
+	Labels            map[string]string
 	MachineType       string
 	Metadata          map[string]string
 	Name              string

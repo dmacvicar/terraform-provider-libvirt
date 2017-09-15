@@ -27,6 +27,7 @@ package libvirtxml
 
 import (
 	"encoding/xml"
+	"strconv"
 )
 
 type DomainController struct {
@@ -281,15 +282,15 @@ type DomainAlias struct {
 }
 
 type DomainAddress struct {
-	Type       string `xml:"type,attr"`
-	Controller *uint  `xml:"controller,attr"`
-	Domain     *uint  `xml:"domain,attr"`
-	Bus        *uint  `xml:"bus,attr"`
-	Port       *uint  `xml:"port,attr"`
-	Slot       *uint  `xml:"slot,attr"`
-	Function   *uint  `xml:"function,attr"`
-	Target     *uint  `xml:"target,attr"`
-	Unit       *uint  `xml:"unit,attr"`
+	Type       string   `xml:"type,attr"`
+	Controller *uint    `xml:"controller,attr"`
+	Domain     *HexUint `xml:"domain,attr"`
+	Bus        *HexUint `xml:"bus,attr"`
+	Port       *uint    `xml:"port,attr"`
+	Slot       *HexUint `xml:"slot,attr"`
+	Function   *HexUint `xml:"function,attr"`
+	Target     *uint    `xml:"target,attr"`
+	Unit       *uint    `xml:"unit,attr"`
 }
 
 type DomainConsole struct {
@@ -791,4 +792,12 @@ func (d *DomainRNG) Marshal() (string, error) {
 		return "", err
 	}
 	return string(doc), nil
+}
+
+type HexUint uint
+
+func (h *HexUint) UnmarshalXMLAttr(attr xml.Attr) error {
+	val, err := strconv.ParseUint(attr.Value, 0, 32)
+	*h = HexUint(val)
+	return err
 }

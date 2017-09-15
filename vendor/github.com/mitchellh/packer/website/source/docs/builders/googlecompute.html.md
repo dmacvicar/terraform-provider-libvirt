@@ -174,6 +174,12 @@ builder.
     Not required if you run Packer on a GCE instance with a service account.
     Instructions for creating file or using service accounts are above.
 
+-   `accelerator_count` (int) - Number of guest accelerator cards to add to the launched instance.
+
+-   `accelerator_type` (string) - Full or partial URL of the guest accelerator type. GPU accelerators can only be used with
+    `"on_host_maintenance": "TERMINATE"` option set.
+    Example: `"projects/project_id/zones/europe-west1-b/acceleratorTypes/nvidia-tesla-k80"`
+
 -   `address` (string) - The name of a pre-allocated static external IP address.
     Note, must be the name and not the actual IP address.
 
@@ -197,6 +203,9 @@ builder.
 
 -   `instance_name` (string) - A name to give the launched instance. Beware that
     this must be unique. Defaults to `"packer-{{uuid}}"`.
+
+-   `labels` (object of key/value strings) - Key/value pair labels to apply to
+    the launched instance.
 
 -   `machine_type` (string) - The machine type. Defaults to `"n1-standard-1"`.
 

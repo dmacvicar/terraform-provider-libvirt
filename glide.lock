@@ -1,10 +1,12 @@
-hash: c087217723357297929efa9631b59df1fa900afaf4ce4be8ee947931dcdb524d
-updated: 2017-08-07T13:32:37.989883807+02:00
+hash: be35bd4738eaa3a323d88bcfd008850cd80d8e952fa1dcb99d8ecf2b391c04fd
+updated: 2017-09-15T09:58:54.522036191+02:00
 imports:
 - name: github.com/apparentlymart/go-cidr
   version: 2bd8b58cf4275aeb086ade613de226773e29e853
   subpackages:
   - cidr
+- name: github.com/armon/go-radix
+  version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
   version: 07a12acf062c74aacf99ed8a6a4ee1bc52ab1627
   subpackages:
@@ -37,12 +39,14 @@ imports:
   version: 9fd32a8b3d3d3f9d43c341bfe098430e07609480
   subpackages:
   - netrc
+- name: github.com/bgentry/speakeasy
+  version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
 - name: github.com/blang/semver
   version: 2ee87856327ba09384cabd113bc6b5d174e9ec0f
 - name: github.com/c4milo/gotoolkit
   version: e37eeabad07ed8fbe83a0b222c963c480394f033
 - name: github.com/davecgh/go-spew
-  version: adab96458c51a58dc1783b3335dcce5461522e75
+  version: 346938d642f2ec3594ed81d874461961cd0faa76
   subpackages:
   - spew
 - name: github.com/go-ini/ini
@@ -93,7 +97,7 @@ imports:
 - name: github.com/hashicorp/logutils
   version: 0dc08b1671f34c4250ce212759ebd880f743d883
 - name: github.com/hashicorp/terraform
-  version: 2041053ee9444fa8175a298093b55a89586a1823
+  version: a1d06eb97378d097d4175c3284ea026937618477
   subpackages:
   - config
   - config/module
@@ -114,15 +118,19 @@ imports:
 - name: github.com/hashicorp/yamux
   version: d1caa6c97c9fc1cc9e83bbe34d0603f9ff0ce8bd
 - name: github.com/hooklift/iso9660
-  version: cdba112a03a125329ec2dc17ed1543e28f998e51
+  version: d6245ab24065917ac16be2ff10ddd3934f41fe54
 - name: github.com/imdario/mergo
-  version: e3000cb3d28c72b837601cac94debd91032d19fe
+  version: 3e95a51e0639b4cf372f2ccf74c86749d747fbdc
 - name: github.com/jmespath/go-jmespath
   version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/libvirt/libvirt-go
-  version: 664b6d217e029ce5ad3094a8c2202c202b213d06
+  version: 0822ea6d658d7a0deeaa2ce63ed3efd6306bee03
 - name: github.com/libvirt/libvirt-go-xml
-  version: 83a754119fc7239caffd1f50e08cb13b1b3825ef
+  version: 0d3f72161e0d970116a2a66256e9dd445b6eeb23
+- name: github.com/mattn/go-isatty
+  version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+- name: github.com/mitchellh/cli
+  version: 65fcae5817c8600da98ada9d7edf26dd1a84837b
 - name: github.com/mitchellh/copystructure
   version: d23ffcb85de31694d6ccaa23ccb4a03e55c1303f
 - name: github.com/mitchellh/go-homedir
@@ -134,11 +142,17 @@ imports:
 - name: github.com/mitchellh/mapstructure
   version: d0303fe809921458f417bcf828397a65db30a7e4
 - name: github.com/mitchellh/packer
-  version: c96c15427248cae88af899b678908644d92d04ac
+  version: 84b9b07901fabfeab1325eb2d8d207aeefa944c7
   subpackages:
   - common/uuid
 - name: github.com/mitchellh/reflectwalk
   version: 63d60e9d0dbc60cf9164e6510889b0db6683d98c
+- name: github.com/posener/complete
+  version: 88e59760adaddb8276c9b15511302890690e2dae
+  subpackages:
+  - cmd
+  - cmd/install
+  - match
 - name: github.com/satori/go.uuid
   version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
 - name: github.com/ulikunitz/xz
@@ -171,6 +185,10 @@ imports:
   - internal/timeseries
   - lex/httplex
   - trace
+- name: golang.org/x/sys
+  version: 062cd7e4e68206d8bab9b18396626e855c992658
+  subpackages:
+  - unix
 - name: golang.org/x/text
   version: 3bd178b88a8180be2df394a1fbb81313916f0e7b
   subpackages:

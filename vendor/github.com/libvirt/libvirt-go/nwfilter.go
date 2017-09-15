@@ -42,6 +42,7 @@ type NWFilter struct {
 	ptr C.virNWFilterPtr
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nwfilter.html#virNWFilterFree
 func (f *NWFilter) Free() error {
 	ret := C.virNWFilterFree(f.ptr)
 	if ret == -1 {
@@ -50,6 +51,7 @@ func (f *NWFilter) Free() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nwfilter.html#virNWFilterRef
 func (c *NWFilter) Ref() error {
 	ret := C.virNWFilterRef(c.ptr)
 	if ret == -1 {
@@ -58,6 +60,7 @@ func (c *NWFilter) Ref() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nwfilter.html#virNWFilterGetName
 func (f *NWFilter) GetName() (string, error) {
 	name := C.virNWFilterGetName(f.ptr)
 	if name == nil {
@@ -66,6 +69,7 @@ func (f *NWFilter) GetName() (string, error) {
 	return C.GoString(name), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nwfilter.html#virNWFilterUndefine
 func (f *NWFilter) Undefine() error {
 	result := C.virNWFilterUndefine(f.ptr)
 	if result == -1 {
@@ -74,6 +78,7 @@ func (f *NWFilter) Undefine() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nwfilter.html#virNWFilterGetUUID
 func (f *NWFilter) GetUUID() ([]byte, error) {
 	var cUuid [C.VIR_UUID_BUFLEN](byte)
 	cuidPtr := unsafe.Pointer(&cUuid)
@@ -84,6 +89,7 @@ func (f *NWFilter) GetUUID() ([]byte, error) {
 	return C.GoBytes(cuidPtr, C.VIR_UUID_BUFLEN), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nwfilter.html#virNWFilterGetUUIDString
 func (f *NWFilter) GetUUIDString() (string, error) {
 	var cUuid [C.VIR_UUID_STRING_BUFLEN](C.char)
 	cuidPtr := unsafe.Pointer(&cUuid)
@@ -94,6 +100,7 @@ func (f *NWFilter) GetUUIDString() (string, error) {
 	return C.GoString((*C.char)(cuidPtr)), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nwfilter.html#virNWFilterGetXMLDesc
 func (f *NWFilter) GetXMLDesc(flags uint32) (string, error) {
 	result := C.virNWFilterGetXMLDesc(f.ptr, C.uint(flags))
 	if result == nil {

@@ -48,6 +48,7 @@ type Interface struct {
 	ptr C.virInterfacePtr
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-interface.html#virInterfaceCreate
 func (n *Interface) Create(flags uint32) error {
 	result := C.virInterfaceCreate(n.ptr, C.uint(flags))
 	if result == -1 {
@@ -56,6 +57,7 @@ func (n *Interface) Create(flags uint32) error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-interface.html#virInterfaceDestroy
 func (n *Interface) Destroy(flags uint32) error {
 	result := C.virInterfaceDestroy(n.ptr, C.uint(flags))
 	if result == -1 {
@@ -64,6 +66,7 @@ func (n *Interface) Destroy(flags uint32) error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-interface.html#virInterfaceIsActive
 func (n *Interface) IsActive() (bool, error) {
 	result := C.virInterfaceIsActive(n.ptr)
 	if result == -1 {
@@ -75,6 +78,7 @@ func (n *Interface) IsActive() (bool, error) {
 	return false, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-interface.html#virInterfaceGetMACString
 func (n *Interface) GetMACString() (string, error) {
 	result := C.virInterfaceGetMACString(n.ptr)
 	if result == nil {
@@ -84,6 +88,7 @@ func (n *Interface) GetMACString() (string, error) {
 	return mac, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-interface.html#virInterfaceGetName
 func (n *Interface) GetName() (string, error) {
 	result := C.virInterfaceGetName(n.ptr)
 	if result == nil {
@@ -93,6 +98,7 @@ func (n *Interface) GetName() (string, error) {
 	return name, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-interface.html#virInterfaceGetXMLDesc
 func (n *Interface) GetXMLDesc(flags InterfaceXMLFlags) (string, error) {
 	result := C.virInterfaceGetXMLDesc(n.ptr, C.uint(flags))
 	if result == nil {
@@ -103,6 +109,7 @@ func (n *Interface) GetXMLDesc(flags InterfaceXMLFlags) (string, error) {
 	return xml, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-interface.html#virInterfaceUndefine
 func (n *Interface) Undefine() error {
 	result := C.virInterfaceUndefine(n.ptr)
 	if result == -1 {
@@ -111,6 +118,7 @@ func (n *Interface) Undefine() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-interface.html#virInterfaceFree
 func (n *Interface) Free() error {
 	ret := C.virInterfaceFree(n.ptr)
 	if ret == -1 {
@@ -119,6 +127,7 @@ func (n *Interface) Free() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-interface.html#virInterfaceRef
 func (c *Interface) Ref() error {
 	ret := C.virInterfaceRef(c.ptr)
 	if ret == -1 {

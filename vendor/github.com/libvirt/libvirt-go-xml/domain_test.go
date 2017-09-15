@@ -31,10 +31,10 @@ import (
 )
 
 type Address struct {
-	Domain   uint
-	Bus      uint
-	Slot     uint
-	Function uint
+	Domain   HexUint
+	Bus      HexUint
+	Slot     HexUint
+	Function HexUint
 }
 
 var uhciIndex uint = 0
@@ -48,7 +48,7 @@ var balloonAddr = Address{0, 0, 7, 0}
 var duplexAddr = Address{0, 0, 8, 0}
 
 var serialPort uint = 0
-var tabletBus uint = 0
+var tabletBus HexUint = 0
 var tabletPort uint = 1
 
 var nicAverage int = 1000

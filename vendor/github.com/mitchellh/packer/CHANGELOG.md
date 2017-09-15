@@ -1,16 +1,103 @@
-## UNRELEASED
+## 1.1.0 (September 12, 2017)
+
+### IMPROVEMENTS:
+
+* builder/alicloud: Update alicloud go sdk and enable multi sites support for
+    alicloud [GH-5219]
+* builder/amazon: Upgrade aws-sdk-go to 1.10.14, add tags at instance run time.
+    [GH-5196]
+* builder/azure: Add object_id to windows_custom_image.json. [GH-5285]
+* builder/azure: Add support for storage account for managed images. [GH-5244]
+* builder/azure: Update pkcs12 package. [GH-5301]
+* builder/cloudstack: Add support for Security Groups. [GH-5175]
+* builder/docker: Uploading files and directories now use docker cp. [GH-5273]
+    [GH-5333]
+* builder/googlecompute: Add `labels` option for labeling launched instances.
+    [GH-5308]
+* builder/googlecompute: Add support for accelerator api. [GH-5137]
+* builder/profitbricks: added support for Cloud API v4. [GH-5233]
+* builder/vmware-esxi: Remote builds now respect `output_directory` [GH-4592]
+* builder/vmware: Set artifact ID to `VMName`. [GH-5187]
+* core: Build solaris binary by default. [GH-5268] [GH-5248]
+* core: Remove LGPL dependencies. [GH-5262]
+* provisioner/puppet: Add `guest_os_type` option to add support for Windows.
+    [GH-5252]
+* provisioner/salt-masterless: Also use sudo to clean up if we used sudo to
+    install. [GH-5240]
+
+### BACKWARDS INCOMPATIBILITIES:
+
+* builder/amazon: Changes way that AMI artifacts are printed out after build,
+    aligning them to builder. Could affect output parsing. [GH-5281]
+* builder/amazon: Split `enhanced_networking` into `sriov_support` and
+    `ena_support` to support finer grained control. Use `packer fix
+    <template.json>` to automatically update your template to use `ena_support`
+    where previously there was only `enhanced_networking`. Make sure to also
+    add `sriov_support` if you need that feature, and to ensure `ena_support`
+    is what you intended to be in your template. [GH-5284]
+* builder/cloudstack: Setup temporary SSH keypair; backwards incompatible in
+    the uncommon case that the source image allowed SSH auth with password but
+    not with keypair. [GH-5174]
+* communicator/ssh: Renamed `ssh_disable_agent` to
+    `ssh_disable_agent_forwarding`. Need to run fixer on packer configs that
+    use `ssh_disable_agent`. [GH-5024]
+* communicator: Preserve left-sided white-space in remote command output. Make
+    sure any scripts that parse this output can handle the new whitespace
+    before upgrading. [GH-5167]
+* provisioner/shell: Set default for `ExpectDisconnect` to `false`. If your
+    script causes the connection to be reset, you should set this to `true` to
+    prevent errors. [GH-5283]
+
+### BUG FIXES:
+
+* builder/amazon: `force_deregister` works in all regions, not just original
+    region. [GH-5250]
+* builder/docker: Directory uploads now use the same semantics as the rest of
+    the communicators. [GH-5333]
+* builder/vmware: Fix timestamp in default VMName. [GH-5274]
+* builder/winrm: WinRM now waits to make sure commands can run successfully
+    before considering itself connected. [GH-5300]
+* core: Fix issue where some builders wouldn't respect `-on-error` behavior.
+    [GH-5297]
+* provisioner/windows-restart: The first powershell provisioner after a restart
+    now works. [GH-5272]
+
+### FEATURES:
+
+* **New builder**: Oracle Cloud Infrastructure (OCI) builder for creating
+    custom images. [GH-4554]
+* **New builder:** `lxc` for building lxc images. [GH-3523]
+* **New builder:** `lxd` for building lxd images. [GH-3625]
+* **New post-processor**: vSphere Template post-processor to be used with
+    vmware-iso builder enabling user to mark a VM as a template. [GH-5114]
+
+## 1.0.4 (August 11, 2017)
 
 ### IMPROVEMENTS:
 
 * builder/alicloud: Increase polling timeout. [GH-5148]
+* builder/azure: Add `private_virtual_network_with_public_ip` option to
+    optionally obtain a public IP. [GH-5222]
+* builder/googlecompute: use a more portable method of obtaining zone.
+    [GH-5192]
+* builder/hyperv: Properly interpolate user variables in template. [GH-5184]
 * builder/parallels: Remove soon to be removed --vmtype flag in createvm.
     [GH-5172]
 * contrib: add json files to zsh completion. [GH-5195]
 
 ### BUG FIXES:
+
+* builder/amazon: Don't delete snapshots we didn't create. [GH-5211]
 * builder/amazon: fix builds when using the null communicator. [GH-5217]
+* builder/docker: Correctly handle case when uploading an empty directory.
+    [GH-5234]
+* command/push: Don't push variables if they are unspecified. Reverts to
+    behavior in 1.0.1. [GH-5235]
+* command/push: fix handling of symlinks. [GH-5226]
 * core: Strip query parameters from ISO URLs when checking against a checksum
     file. [GH-5181]
+* provisioner/ansible-remote: Fix issue where packer could hang communicating
+    with ansible-remote. [GH-5146]
 
 ## 1.0.3 (July 17, 2017)
 
@@ -56,7 +143,7 @@
     provisioner stdout [GH-4719]
 * post-processor/checksum: Fix interpolation of "output". [GH-5112]
 * push: Push vars in packer config, not just those set from command line and in
-    var-file. [GH-4992]
+    var-file. [GH-5101]
 
 ## 1.0.2 (June 21, 2017)
 

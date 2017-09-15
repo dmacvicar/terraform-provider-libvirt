@@ -7,12 +7,15 @@ go:
   - 1.5
   - 1.6
   - 1.7
+  - 1.8
+  - 1.9
 
 env:
   - LIBVIRT=1.2.0  EXT=gz
   - LIBVIRT=1.2.10 EXT=gz
   - LIBVIRT=1.2.20 EXT=gz
   - LIBVIRT=2.5.0  EXT=xz
+  - LIBVIRT=3.6.0  EXT=xz
 
 install:
   - sudo apt-get -qqy build-dep libvirt
@@ -29,6 +32,7 @@ install:
   - make
   - sudo make install
   - popd
+  - sudo cp libvirtd.sasl /etc/sasl2/libvirt.conf
   - sudo libvirtd -d -l -f libvirtd.conf
   - sudo virtlogd -d || true
   - sudo chmod a+rwx /var/run/libvirt/libvirt-sock*

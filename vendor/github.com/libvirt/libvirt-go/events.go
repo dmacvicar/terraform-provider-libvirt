@@ -43,6 +43,7 @@ const (
 	EVENT_HANDLE_HANGUP   = EventHandleType(C.VIR_EVENT_HANDLE_HANGUP)
 )
 
+// See also https://libvirt.org/html/libvirt-libvirt-event.html#virEventRegisterDefaultImpl
 func EventRegisterDefaultImpl() error {
 	if i := int(C.virEventRegisterDefaultImpl()); i != 0 {
 		return GetLastError()
@@ -50,6 +51,7 @@ func EventRegisterDefaultImpl() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-event.html#virEventRunDefaultImpl
 func EventRunDefaultImpl() error {
 	if i := int(C.virEventRunDefaultImpl()); i != 0 {
 		return GetLastError()
@@ -71,6 +73,7 @@ func eventHandleCallback(watch int, fd int, events int, callbackID int) {
 	callback(watch, fd, (EventHandleType)(events))
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-event.html#virEventAddHandle
 func EventAddHandle(fd int, events EventHandleType, callback EventHandleCallback) (int, error) {
 	callbackID := registerCallbackId(callback)
 
@@ -82,10 +85,12 @@ func EventAddHandle(fd int, events EventHandleType, callback EventHandleCallback
 	return int(ret), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-event.html#virEventUpdateHandle
 func EventUpdateHandle(watch int, events EventHandleType) {
 	C.virEventUpdateHandle((C.int)(watch), (C.int)(events))
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-event.html#virEventRemoveHandle
 func EventRemoveHandle(watch int) {
 	C.virEventRemoveHandle((C.int)(watch))
 }
@@ -104,6 +109,7 @@ func eventTimeoutCallback(timer int, callbackID int) {
 	callback(timer)
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-event.html#virEventAddTimeout
 func EventAddTimeout(freq int, callback EventTimeoutCallback) (int, error) {
 	callbackID := registerCallbackId(callback)
 
@@ -115,10 +121,12 @@ func EventAddTimeout(freq int, callback EventTimeoutCallback) (int, error) {
 	return int(ret), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-event.html#virEventUpdateTimeout
 func EventUpdateTimeout(timer int, freq int) {
 	C.virEventUpdateTimeout((C.int)(timer), (C.int)(freq))
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-event.html#virEventRemoveTimeout
 func EventRemoveTimeout(timer int) {
 	C.virEventRemoveTimeout((C.int)(timer))
 }
@@ -162,6 +170,7 @@ type EventLoop interface {
 
 var eventLoopImpl EventLoop
 
+// See also https://libvirt.org/html/libvirt-libvirt-event.html#virEventRegisterImpl
 func EventRegisterImpl(impl EventLoop) {
 	eventLoopImpl = impl
 	C.virEventRegisterImpl_cgo()
