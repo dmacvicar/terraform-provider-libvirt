@@ -67,6 +67,7 @@ type Secret struct {
 	ptr C.virSecretPtr
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-secret.html#virSecretFree
 func (s *Secret) Free() error {
 	ret := C.virSecretFree(s.ptr)
 	if ret == -1 {
@@ -75,6 +76,7 @@ func (s *Secret) Free() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-secret.html#virSecretRef
 func (c *Secret) Ref() error {
 	ret := C.virSecretRef(c.ptr)
 	if ret == -1 {
@@ -83,6 +85,7 @@ func (c *Secret) Ref() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-secret.html#virSecretUndefine
 func (s *Secret) Undefine() error {
 	result := C.virSecretUndefine(s.ptr)
 	if result == -1 {
@@ -91,6 +94,7 @@ func (s *Secret) Undefine() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-secret.html#virSecretGetUUID
 func (s *Secret) GetUUID() ([]byte, error) {
 	var cUuid [C.VIR_UUID_BUFLEN](byte)
 	cuidPtr := unsafe.Pointer(&cUuid)
@@ -101,6 +105,7 @@ func (s *Secret) GetUUID() ([]byte, error) {
 	return C.GoBytes(cuidPtr, C.VIR_UUID_BUFLEN), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-secret.html#virSecretGetUUIDString
 func (s *Secret) GetUUIDString() (string, error) {
 	var cUuid [C.VIR_UUID_STRING_BUFLEN](C.char)
 	cuidPtr := unsafe.Pointer(&cUuid)
@@ -111,6 +116,7 @@ func (s *Secret) GetUUIDString() (string, error) {
 	return C.GoString((*C.char)(cuidPtr)), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-secret.html#virSecretGetUsageID
 func (s *Secret) GetUsageID() (string, error) {
 	result := C.virSecretGetUsageID(s.ptr)
 	if result == nil {
@@ -119,6 +125,7 @@ func (s *Secret) GetUsageID() (string, error) {
 	return C.GoString(result), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-secret.html#virSecretGetUsageType
 func (s *Secret) GetUsageType() (SecretUsageType, error) {
 	result := SecretUsageType(C.virSecretGetUsageType(s.ptr))
 	if result == -1 {
@@ -127,6 +134,7 @@ func (s *Secret) GetUsageType() (SecretUsageType, error) {
 	return result, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-secret.html#virSecretGetXMLDesc
 func (s *Secret) GetXMLDesc(flags uint32) (string, error) {
 	result := C.virSecretGetXMLDesc(s.ptr, C.uint(flags))
 	if result == nil {
@@ -137,6 +145,7 @@ func (s *Secret) GetXMLDesc(flags uint32) (string, error) {
 	return xml, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-secret.html#virSecretGetValue
 func (s *Secret) GetValue(flags uint32) ([]byte, error) {
 	var cvalue_size C.size_t
 
@@ -149,6 +158,7 @@ func (s *Secret) GetValue(flags uint32) ([]byte, error) {
 	return ret, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-secret.html#virSecretSetValue
 func (s *Secret) SetValue(value []byte, flags uint32) error {
 	cvalue := make([]C.uchar, len(value))
 

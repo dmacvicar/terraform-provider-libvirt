@@ -22,9 +22,9 @@ func (s *StepConnectDocker) Run(state multistep.StateBag) multistep.StepAction {
 	// Create the communicator that talks to Docker via various
 	// os/exec tricks.
 	comm := &Communicator{
-		ContainerId:  containerId,
+		ContainerID:  containerId,
 		HostDir:      tempDir,
-		ContainerDir: "/packer-files",
+		ContainerDir: config.ContainerDir,
 		Version:      version,
 		Config:       config,
 	}

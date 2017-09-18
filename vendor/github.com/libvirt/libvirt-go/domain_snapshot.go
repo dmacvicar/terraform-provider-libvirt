@@ -89,6 +89,7 @@ type DomainSnapshot struct {
 	ptr C.virDomainSnapshotPtr
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html#virDomainSnapshotFree
 func (s *DomainSnapshot) Free() error {
 	ret := C.virDomainSnapshotFree(s.ptr)
 	if ret == -1 {
@@ -97,6 +98,7 @@ func (s *DomainSnapshot) Free() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html#virDomainSnapshotRef
 func (c *DomainSnapshot) Ref() error {
 	ret := C.virDomainSnapshotRef(c.ptr)
 	if ret == -1 {
@@ -105,6 +107,7 @@ func (c *DomainSnapshot) Ref() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html#virDomainSnapshotDelete
 func (s *DomainSnapshot) Delete(flags DomainSnapshotDeleteFlags) error {
 	result := C.virDomainSnapshotDelete(s.ptr, C.uint(flags))
 	if result != 0 {
@@ -113,6 +116,7 @@ func (s *DomainSnapshot) Delete(flags DomainSnapshotDeleteFlags) error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html#virDomainRevertToSnapshot
 func (s *DomainSnapshot) RevertToSnapshot(flags DomainSnapshotRevertFlags) error {
 	result := C.virDomainRevertToSnapshot(s.ptr, C.uint(flags))
 	if result != 0 {
@@ -121,6 +125,7 @@ func (s *DomainSnapshot) RevertToSnapshot(flags DomainSnapshotRevertFlags) error
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html#virDomainSnapshotIsCurrent
 func (s *DomainSnapshot) IsCurrent(flags uint32) (bool, error) {
 	result := C.virDomainSnapshotIsCurrent(s.ptr, C.uint(flags))
 	if result == -1 {
@@ -132,6 +137,7 @@ func (s *DomainSnapshot) IsCurrent(flags uint32) (bool, error) {
 	return false, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html#virDomainSnapshotHasMetadata
 func (s *DomainSnapshot) HasMetadata(flags uint32) (bool, error) {
 	result := C.virDomainSnapshotHasMetadata(s.ptr, C.uint(flags))
 	if result == -1 {
@@ -143,6 +149,7 @@ func (s *DomainSnapshot) HasMetadata(flags uint32) (bool, error) {
 	return false, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html#virDomainSnapshotGetXMLDesc
 func (s *DomainSnapshot) GetXMLDesc(flags DomainXMLFlags) (string, error) {
 	result := C.virDomainSnapshotGetXMLDesc(s.ptr, C.uint(flags))
 	if result == nil {
@@ -153,6 +160,7 @@ func (s *DomainSnapshot) GetXMLDesc(flags DomainXMLFlags) (string, error) {
 	return xml, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html#virDomainSnapshotGetName
 func (s *DomainSnapshot) GetName() (string, error) {
 	name := C.virDomainSnapshotGetName(s.ptr)
 	if name == nil {
@@ -161,6 +169,7 @@ func (s *DomainSnapshot) GetName() (string, error) {
 	return C.GoString(name), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html#virDomainSnapshotGetParent
 func (s *DomainSnapshot) GetParent(flags uint32) (*DomainSnapshot, error) {
 	ptr := C.virDomainSnapshotGetParent(s.ptr, C.uint(flags))
 	if ptr == nil {
@@ -169,6 +178,7 @@ func (s *DomainSnapshot) GetParent(flags uint32) (*DomainSnapshot, error) {
 	return &DomainSnapshot{ptr: ptr}, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html#virDomainSnapshotNumChildren
 func (s *DomainSnapshot) NumChildren(flags DomainSnapshotListFlags) (int, error) {
 	result := int(C.virDomainSnapshotNumChildren(s.ptr, C.uint(flags)))
 	if result == -1 {
@@ -177,6 +187,7 @@ func (s *DomainSnapshot) NumChildren(flags DomainSnapshotListFlags) (int, error)
 	return result, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html#virDomainSnapshotListChildrenNames
 func (s *DomainSnapshot) ListChildrenNames(flags DomainSnapshotListFlags) ([]string, error) {
 	const maxNames = 1024
 	var names [maxNames](*C.char)
@@ -196,6 +207,7 @@ func (s *DomainSnapshot) ListChildrenNames(flags DomainSnapshotListFlags) ([]str
 	return goNames, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-domain-snapshot.html#virDomainSnapshotListAllChildren
 func (d *DomainSnapshot) ListAllChildren(flags DomainSnapshotListFlags) ([]DomainSnapshot, error) {
 	var cList *C.virDomainSnapshotPtr
 	numVols := C.virDomainSnapshotListAllChildren(d.ptr, (**C.virDomainSnapshotPtr)(&cList), C.uint(flags))

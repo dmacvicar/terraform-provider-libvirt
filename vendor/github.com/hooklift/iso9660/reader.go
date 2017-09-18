@@ -23,7 +23,7 @@ var (
 // from its constructor.
 type Reader struct {
 	// File descriptor to the opened ISO image
-	image *os.File
+	image io.ReadSeeker
 	// Copy of unencoded Primary Volume Descriptor
 	pvd PrimaryVolume
 	// Queue used to walk through file system iteratively
@@ -35,7 +35,7 @@ type Reader struct {
 }
 
 // NewReader creates a new ISO 9660 image reader.
-func NewReader(rs *os.File) (*Reader, error) {
+func NewReader(rs io.ReadSeeker) (*Reader, error) {
 	// Starts reading from image data area
 	sector := dataAreaSector
 	// Iterates over volume descriptors until it finds the primary volume descriptor

@@ -557,6 +557,9 @@ const (
 
 	// Error from libssh
 	FROM_LIBSSH = ErrorDomain(C.VIR_FROM_LIBSSH)
+
+	// Error from resoruce control
+	FROM_RESCTRL = ErrorDomain(C.VIR_FROM_RESCTRL)
 )
 
 type Error struct {

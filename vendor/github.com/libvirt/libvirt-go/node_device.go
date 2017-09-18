@@ -57,6 +57,7 @@ type NodeDevice struct {
 	ptr C.virNodeDevicePtr
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nodedev.html#virNodeDeviceFree
 func (n *NodeDevice) Free() error {
 	ret := C.virNodeDeviceFree(n.ptr)
 	if ret == -1 {
@@ -65,6 +66,7 @@ func (n *NodeDevice) Free() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nodedev.html#virNodeDeviceRef
 func (c *NodeDevice) Ref() error {
 	ret := C.virNodeDeviceRef(c.ptr)
 	if ret == -1 {
@@ -73,6 +75,7 @@ func (c *NodeDevice) Ref() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nodedev.html#virNodeDeviceDestroy
 func (n *NodeDevice) Destroy() error {
 	result := C.virNodeDeviceDestroy(n.ptr)
 	if result == -1 {
@@ -81,6 +84,7 @@ func (n *NodeDevice) Destroy() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nodedev.html#virNodeDeviceReset
 func (n *NodeDevice) Reset() error {
 	result := C.virNodeDeviceReset(n.ptr)
 	if result == -1 {
@@ -89,6 +93,7 @@ func (n *NodeDevice) Reset() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nodedev.html#virNodeDeviceDettach
 func (n *NodeDevice) Detach() error {
 	result := C.virNodeDeviceDettach(n.ptr)
 	if result == -1 {
@@ -97,6 +102,7 @@ func (n *NodeDevice) Detach() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nodedev.html#virNodeDeviceDetachFlags
 func (n *NodeDevice) DetachFlags(driverName string, flags uint32) error {
 	cDriverName := C.CString(driverName)
 	defer C.free(unsafe.Pointer(cDriverName))
@@ -107,6 +113,7 @@ func (n *NodeDevice) DetachFlags(driverName string, flags uint32) error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nodedev.html#virNodeDeviceReAttach
 func (n *NodeDevice) ReAttach() error {
 	result := C.virNodeDeviceReAttach(n.ptr)
 	if result == -1 {
@@ -115,6 +122,7 @@ func (n *NodeDevice) ReAttach() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nodedev.html#virNodeDeviceGetName
 func (n *NodeDevice) GetName() (string, error) {
 	name := C.virNodeDeviceGetName(n.ptr)
 	if name == nil {
@@ -123,6 +131,7 @@ func (n *NodeDevice) GetName() (string, error) {
 	return C.GoString(name), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nodedev.html#virNodeDeviceGetXMLDesc
 func (n *NodeDevice) GetXMLDesc(flags uint32) (string, error) {
 	result := C.virNodeDeviceGetXMLDesc(n.ptr, C.uint(flags))
 	if result == nil {
@@ -133,6 +142,7 @@ func (n *NodeDevice) GetXMLDesc(flags uint32) (string, error) {
 	return xml, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-nodedev.html#virNodeDeviceGetParent
 func (n *NodeDevice) GetParent() (string, error) {
 	result := C.virNodeDeviceGetParent(n.ptr)
 	if result == nil {
@@ -142,7 +152,8 @@ func (n *NodeDevice) GetParent() (string, error) {
 	return C.GoString(result), nil
 }
 
-func (p *NodeDevice) NumOfStorageCaps() (int, error) {
+// See also https://libvirt.org/html/libvirt-libvirt-nodedev.html#virNodeDeviceNumOfCaps
+func (p *NodeDevice) NumOfCaps() (int, error) {
 	result := int(C.virNodeDeviceNumOfCaps(p.ptr))
 	if result == -1 {
 		return 0, GetLastError()
@@ -150,7 +161,8 @@ func (p *NodeDevice) NumOfStorageCaps() (int, error) {
 	return result, nil
 }
 
-func (p *NodeDevice) ListStorageCaps() ([]string, error) {
+// See also https://libvirt.org/html/libvirt-libvirt-nodedev.html#virNodeDeviceListCaps
+func (p *NodeDevice) ListCaps() ([]string, error) {
 	const maxCaps = 1024
 	var names [maxCaps](*C.char)
 	namesPtr := unsafe.Pointer(&names)

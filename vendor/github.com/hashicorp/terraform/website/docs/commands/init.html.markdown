@@ -56,7 +56,7 @@ By default, `terraform init` assumes that the working directory already
 contains a configuration and will attempt to initialize that configuration.
 
 Optionally, init can be run against an empty directory with the
-`-with-module=MODULE-SOURCE` option, in which case the given module will be
+`-from-module=MODULE-SOURCE` option, in which case the given module will be
 copied into the target directory before any other initialization steps are
 run.
 
@@ -130,10 +130,16 @@ versions that comply with the version constraints given in configuration.
 To skip plugin installation, use `-get-plugins=false`.
 
 The automatic plugin installation behavior can be overridden by extracting
-the desired providers into a local directory and using the additonal option
+the desired providers into a local directory and using the additional option
 `-plugin-dir=PATH`. When this option is specified, _only_ the given directory
 is consulted, which prevents Terraform from making requests to the plugin
 repository or looking for plugins in other local directories.
+
+Custom plugins can be used along with automatically installed plugins by
+placing them in `terraform.d/plugins/OS_ARCH/` inside the directory being
+initialized. Plugins found here will take precedence if they meet the required
+constraints in the configuration. The `init` command will continue to
+automatically download other plugins as needed.
 
 When plugins are automatically downloaded and installed, by default the
 contents are verified against an official HashiCorp release signature to

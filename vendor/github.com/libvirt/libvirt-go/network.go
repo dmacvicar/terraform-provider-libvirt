@@ -121,6 +121,7 @@ type NetworkDHCPLease struct {
 	Clientid   string
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkFree
 func (n *Network) Free() error {
 	ret := C.virNetworkFree(n.ptr)
 	if ret == -1 {
@@ -129,6 +130,7 @@ func (n *Network) Free() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkRef
 func (c *Network) Ref() error {
 	ret := C.virNetworkRef(c.ptr)
 	if ret == -1 {
@@ -137,6 +139,7 @@ func (c *Network) Ref() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkCreate
 func (n *Network) Create() error {
 	result := C.virNetworkCreate(n.ptr)
 	if result == -1 {
@@ -145,6 +148,7 @@ func (n *Network) Create() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkDestroy
 func (n *Network) Destroy() error {
 	result := C.virNetworkDestroy(n.ptr)
 	if result == -1 {
@@ -153,6 +157,7 @@ func (n *Network) Destroy() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkIsActive
 func (n *Network) IsActive() (bool, error) {
 	result := C.virNetworkIsActive(n.ptr)
 	if result == -1 {
@@ -164,6 +169,7 @@ func (n *Network) IsActive() (bool, error) {
 	return false, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkIsPersistent
 func (n *Network) IsPersistent() (bool, error) {
 	result := C.virNetworkIsPersistent(n.ptr)
 	if result == -1 {
@@ -175,6 +181,7 @@ func (n *Network) IsPersistent() (bool, error) {
 	return false, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkGetAutostart
 func (n *Network) GetAutostart() (bool, error) {
 	var out C.int
 	result := C.virNetworkGetAutostart(n.ptr, (*C.int)(unsafe.Pointer(&out)))
@@ -189,6 +196,7 @@ func (n *Network) GetAutostart() (bool, error) {
 	}
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkSetAutostart
 func (n *Network) SetAutostart(autostart bool) error {
 	var cAutostart C.int
 	switch autostart {
@@ -204,6 +212,7 @@ func (n *Network) SetAutostart(autostart bool) error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkGetName
 func (n *Network) GetName() (string, error) {
 	name := C.virNetworkGetName(n.ptr)
 	if name == nil {
@@ -212,6 +221,7 @@ func (n *Network) GetName() (string, error) {
 	return C.GoString(name), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkGetUUID
 func (n *Network) GetUUID() ([]byte, error) {
 	var cUuid [C.VIR_UUID_BUFLEN](byte)
 	cuidPtr := unsafe.Pointer(&cUuid)
@@ -222,6 +232,7 @@ func (n *Network) GetUUID() ([]byte, error) {
 	return C.GoBytes(cuidPtr, C.VIR_UUID_BUFLEN), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkGetUUIDString
 func (n *Network) GetUUIDString() (string, error) {
 	var cUuid [C.VIR_UUID_STRING_BUFLEN](C.char)
 	cuidPtr := unsafe.Pointer(&cUuid)
@@ -232,6 +243,7 @@ func (n *Network) GetUUIDString() (string, error) {
 	return C.GoString((*C.char)(cuidPtr)), nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkGetBridgeName
 func (n *Network) GetBridgeName() (string, error) {
 	result := C.virNetworkGetBridgeName(n.ptr)
 	if result == nil {
@@ -242,6 +254,7 @@ func (n *Network) GetBridgeName() (string, error) {
 	return bridge, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkGetXMLDesc
 func (n *Network) GetXMLDesc(flags NetworkXMLFlags) (string, error) {
 	result := C.virNetworkGetXMLDesc(n.ptr, C.uint(flags))
 	if result == nil {
@@ -252,6 +265,7 @@ func (n *Network) GetXMLDesc(flags NetworkXMLFlags) (string, error) {
 	return xml, nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUndefine
 func (n *Network) Undefine() error {
 	result := C.virNetworkUndefine(n.ptr)
 	if result == -1 {
@@ -260,6 +274,7 @@ func (n *Network) Undefine() error {
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdate
 func (n *Network) Update(cmd NetworkUpdateCommand, section NetworkUpdateSection, parentIndex int, xml string, flags NetworkUpdateFlags) error {
 	cxml := C.CString(xml)
 	defer C.free(unsafe.Pointer(cxml))
@@ -270,6 +285,7 @@ func (n *Network) Update(cmd NetworkUpdateCommand, section NetworkUpdateSection,
 	return nil
 }
 
+// See also https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkGetDHCPLeases
 func (n *Network) GetDHCPLeases() ([]NetworkDHCPLease, error) {
 	if C.LIBVIR_VERSION_NUMBER < 1002006 {
 		return []NetworkDHCPLease{}, GetNotImplementedError("virNetworkGetDHCPLeases")

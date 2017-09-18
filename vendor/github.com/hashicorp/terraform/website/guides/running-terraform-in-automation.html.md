@@ -104,7 +104,7 @@ such an automation setup:
   and CPU architecture as where it was created. For example, this means that
   it is not possible to create a plan on a Windows computer and then apply it
   on a Linux server.
-* Terraform expects the provider plugins that were used used to produce a
+* Terraform expects the provider plugins that were used to produce a
   plan to be available and identical when the plan is applied, to ensure
   that the plan is interpreted correctly. An error will be produced if
   Terraform or any plugins are upgraded between creating and applying a plan.
@@ -281,6 +281,11 @@ control over the execution environment, but on the other hand it prevents
 use of newer plugin versions that have not yet been installed into the
 local plugin directory. Which approach is more appropriate will depend on
 unique constraints within each organization.
+
+Plugins can also be provided along with the configuration by creating a
+`terraform.d/plugins/OS_ARCH` directory, which will be searched before
+automatically downloading additional plugins. The `-get-plugins=false` flag can
+be used to prevent Terraform from automatically downloading additional plugins. 
 
 ## Terraform Enterprise
 

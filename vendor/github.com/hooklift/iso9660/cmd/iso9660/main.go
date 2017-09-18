@@ -67,7 +67,7 @@ Usage:
 		fmt.Printf("Extracting %s...\n", fp)
 
 		freader := f.Sys().(io.Reader)
-		ff, err := os.OpenFile(fp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, f.Mode())
+		ff, err := os.Create(fp)
 		if err != nil {
 			panic(err)
 		}
@@ -76,6 +76,10 @@ Usage:
 				panic(err)
 			}
 		}()
+
+		if err := ff.Chmod(f.Mode()); err != nil {
+			panic(err)
+		}
 
 		if _, err := io.Copy(ff, freader); err != nil {
 			panic(err)
