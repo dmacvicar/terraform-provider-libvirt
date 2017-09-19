@@ -1,7 +1,7 @@
 package ignition
 
 import (
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/config/v2_1/types"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -49,9 +49,11 @@ func resourceGroupExists(d *schema.ResourceData, meta interface{}) (bool, error)
 }
 
 func buildGroup(d *schema.ResourceData, c *cache) (string, error) {
-	return c.addGroup(&types.Group{
+	group := &types.PasswdGroup{
 		Name:         d.Get("name").(string),
 		PasswordHash: d.Get("password_hash").(string),
-		Gid:          getUInt(d, "gid"),
-	}), nil
+		Gid:          getInt(d, "gid"),
+	}
+
+	return c.addGroup(group), nil
 }

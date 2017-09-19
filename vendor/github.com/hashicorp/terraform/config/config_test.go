@@ -312,6 +312,13 @@ func TestConfigValidate_countUserVar(t *testing.T) {
 	}
 }
 
+func TestConfigValidate_countLocalValue(t *testing.T) {
+	c := testConfig(t, "validate-local-value-count")
+	if err := c.Validate(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+}
+
 func TestConfigValidate_countVar(t *testing.T) {
 	c := testConfig(t, "validate-count-var")
 	if err := c.Validate(); err != nil {
@@ -650,6 +657,22 @@ func TestNameRegexp(t *testing.T) {
 		if NameRegexp.Match([]byte(tc.Input)) != tc.Match {
 			t.Fatalf("Input: %s\n\nExpected: %#v", tc.Input, tc.Match)
 		}
+	}
+}
+
+func TestConfigValidate_localValuesMultiFile(t *testing.T) {
+	c, err := LoadDir(filepath.Join(fixtureDir, "validate-local-multi-file"))
+	if err != nil {
+		t.Fatalf("unexpected error during load: %s", err)
+	}
+	if err := c.Validate(); err != nil {
+		t.Fatalf("unexpected error from validate: %s", err)
+	}
+	if len(c.Locals) != 1 {
+		t.Fatalf("got 0 locals; want 1")
+	}
+	if got, want := c.Locals[0].Name, "test"; got != want {
+		t.Errorf("wrong local name\ngot:  %#v\nwant: %#v", got, want)
 	}
 }
 

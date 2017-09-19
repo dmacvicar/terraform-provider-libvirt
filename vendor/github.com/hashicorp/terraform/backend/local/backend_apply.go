@@ -96,47 +96,27 @@ func (b *Local) opApply(
 			return
 		}
 
-		trivialPlan := plan.Diff == nil || plan.Diff.Empty()
+		dispPlan := format.NewPlan(plan)
+		trivialPlan := dispPlan.Empty()
 		hasUI := op.UIOut != nil && op.UIIn != nil
-		if hasUI && ((op.Destroy && !op.DestroyForce) ||
-			(!op.Destroy && !op.AutoApprove && !trivialPlan)) {
+		mustConfirm := hasUI && ((op.Destroy && !op.DestroyForce) || (!op.Destroy && !op.AutoApprove && !trivialPlan))
+		if mustConfirm {
 			var desc, query string
 			if op.Destroy {
 				// Default destroy message
-				desc = "Terraform will delete all your managed infrastructure, as shown above.\n" +
+				desc = "Terraform will destroy all your managed infrastructure, as shown above.\n" +
 					"There is no undo. Only 'yes' will be accepted to confirm."
-
-				// If targets are specified, list those to user
-				if op.Targets != nil {
-					var descBuffer bytes.Buffer
-					descBuffer.WriteString("Terraform will delete the following infrastructure:\n")
-					for _, target := range op.Targets {
-						descBuffer.WriteString("\t")
-						descBuffer.WriteString(target)
-						descBuffer.WriteString("\n")
-					}
-					descBuffer.WriteString("There is no undo. Only 'yes' will be accepted to confirm")
-					desc = descBuffer.String()
-				}
 				query = "Do you really want to destroy?"
 			} else {
-				desc = "Terraform will apply the changes described above.\n" +
+				desc = "Terraform will perform the actions described above.\n" +
 					"Only 'yes' will be accepted to approve."
-				query = "Do you want to apply these changes?"
+				query = "Do you want to perform these actions?"
 			}
 
 			if !trivialPlan {
 				// Display the plan of what we are going to apply/destroy.
-				if op.Destroy {
-					op.UIOut.Output("\n" + strings.TrimSpace(approveDestroyPlanHeader) + "\n")
-				} else {
-					op.UIOut.Output("\n" + strings.TrimSpace(approvePlanHeader) + "\n")
-				}
-				op.UIOut.Output(format.Plan(&format.PlanOpts{
-					Plan:        plan,
-					Color:       b.Colorize(),
-					ModuleDepth: -1,
-				}))
+				b.renderPlan(dispPlan)
+				b.CLI.Output("")
 			}
 
 			v, err := op.UIIn.Input(&terraform.InputOpts{
@@ -352,18 +332,4 @@ const earlyStateWriteErrorFmt = `Error saving current state: %s
 Terraform encountered an error attempting to save the state before canceling
 the current operation. Once the operation is complete another attempt will be
 made to save the final state.
-`
-
-const approvePlanHeader = `
-The Terraform execution plan has been generated and is shown below.
-Resources are shown in alphabetical order for quick scanning. Green resources
-will be created (or destroyed and then created if an existing resource
-exists), yellow resources are being changed in-place, and red resources
-will be destroyed. Cyan entries are data sources to be read.
-`
-
-const approveDestroyPlanHeader = `
-The Terraform destroy plan has been generated and is shown below.
-Resources are shown in alphabetical order for quick scanning.
-Resources shown in red will be destroyed.
 `

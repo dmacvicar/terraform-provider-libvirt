@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/config/v2_1/types"
 )
 
 var configReferenceResource = &schema.Resource{
@@ -45,6 +45,16 @@ func resourceConfig() *schema.Resource {
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 			"files": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+			"directories": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+			"links": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -119,7 +129,7 @@ func renderConfig(d *schema.ResourceData, c *cache) (string, error) {
 		return "", err
 	}
 
-	bytes, err := json.Marshal(i)
+	bytes, err := json.MarshalIndent(i, "  ", "  ")
 
 	if err != nil {
 		return "", err
@@ -156,14 +166,14 @@ func buildConfig(d *schema.ResourceData, c *cache) (*types.Config, error) {
 		return nil, err
 	}
 
-	return config, nil
+	return config, handleReport(config.Validate())
 }
 
 func buildIgnition(d *schema.ResourceData) (types.Ignition, error) {
 	var err error
 
 	i := types.Ignition{}
-	i.Version.UnmarshalJSON([]byte(`"2.0.0"`))
+	i.Version = types.MaxVersion.String()
 
 	rr := d.Get("replace.0").(map[string]interface{})
 	if len(rr) != 0 {
@@ -190,20 +200,10 @@ func buildIgnition(d *schema.ResourceData) (types.Ignition, error) {
 
 func buildConfigReference(raw map[string]interface{}) (*types.ConfigReference, error) {
 	r := &types.ConfigReference{}
+	r.Source = raw["source"].(string)
 
-	src, err := buildURL(raw["source"].(string))
-	if err != nil {
-		return nil, err
-	}
-
-	r.Source = src
-
-	if raw["verification"].(string) != "" {
-		hash, err := buildHash(raw["verification"].(string))
-		if err != nil {
-			return nil, err
-		}
-
+	hash := raw["verification"].(string)
+	if hash != "" {
 		r.Verification.Hash = &hash
 	}
 
@@ -214,6 +214,9 @@ func buildStorage(d *schema.ResourceData, c *cache) (types.Storage, error) {
 	storage := types.Storage{}
 
 	for _, id := range d.Get("disks").([]interface{}) {
+		if id == nil {
+			continue
+		}
 		d, ok := c.disks[id.(string)]
 		if !ok {
 			return storage, fmt.Errorf("invalid disk %q, unknown disk id", id)
@@ -223,15 +226,21 @@ func buildStorage(d *schema.ResourceData, c *cache) (types.Storage, error) {
 	}
 
 	for _, id := range d.Get("arrays").([]interface{}) {
+		if id == nil {
+			continue
+		}
 		a, ok := c.arrays[id.(string)]
 		if !ok {
 			return storage, fmt.Errorf("invalid raid %q, unknown raid id", id)
 		}
 
-		storage.Arrays = append(storage.Arrays, *a)
+		storage.Raid = append(storage.Raid, *a)
 	}
 
 	for _, id := range d.Get("filesystems").([]interface{}) {
+		if id == nil {
+			continue
+		}
 		f, ok := c.filesystems[id.(string)]
 		if !ok {
 			return storage, fmt.Errorf("invalid filesystem %q, unknown filesystem id", id)
@@ -241,12 +250,39 @@ func buildStorage(d *schema.ResourceData, c *cache) (types.Storage, error) {
 	}
 
 	for _, id := range d.Get("files").([]interface{}) {
+		if id == nil {
+			continue
+		}
 		f, ok := c.files[id.(string)]
 		if !ok {
 			return storage, fmt.Errorf("invalid file %q, unknown file id", id)
 		}
 
 		storage.Files = append(storage.Files, *f)
+	}
+
+	for _, id := range d.Get("directories").([]interface{}) {
+		if id == nil {
+			continue
+		}
+		f, ok := c.directories[id.(string)]
+		if !ok {
+			return storage, fmt.Errorf("invalid file %q, unknown directory id", id)
+		}
+
+		storage.Directories = append(storage.Directories, *f)
+	}
+
+	for _, id := range d.Get("links").([]interface{}) {
+		if id == nil {
+			continue
+		}
+		f, ok := c.links[id.(string)]
+		if !ok {
+			return storage, fmt.Errorf("invalid file %q, unknown link id", id)
+		}
+
+		storage.Links = append(storage.Links, *f)
 	}
 
 	return storage, nil
@@ -257,6 +293,10 @@ func buildSystemd(d *schema.ResourceData, c *cache) (types.Systemd, error) {
 	systemd := types.Systemd{}
 
 	for _, id := range d.Get("systemd").([]interface{}) {
+		if id == nil {
+			continue
+		}
+
 		u, ok := c.systemdUnits[id.(string)]
 		if !ok {
 			return systemd, fmt.Errorf("invalid systemd unit %q, unknown systemd unit id", id)
@@ -273,6 +313,10 @@ func buildNetworkd(d *schema.ResourceData, c *cache) (types.Networkd, error) {
 	networkd := types.Networkd{}
 
 	for _, id := range d.Get("networkd").([]interface{}) {
+		if id == nil {
+			continue
+		}
+
 		u, ok := c.networkdUnits[id.(string)]
 		if !ok {
 			return networkd, fmt.Errorf("invalid networkd unit %q, unknown networkd unit id", id)
@@ -288,6 +332,10 @@ func buildPasswd(d *schema.ResourceData, c *cache) (types.Passwd, error) {
 	passwd := types.Passwd{}
 
 	for _, id := range d.Get("users").([]interface{}) {
+		if id == nil {
+			continue
+		}
+
 		u, ok := c.users[id.(string)]
 		if !ok {
 			return passwd, fmt.Errorf("invalid user %q, unknown user id", id)
@@ -297,6 +345,10 @@ func buildPasswd(d *schema.ResourceData, c *cache) (types.Passwd, error) {
 	}
 
 	for _, id := range d.Get("groups").([]interface{}) {
+		if id == nil {
+			continue
+		}
+
 		g, ok := c.groups[id.(string)]
 		if !ok {
 			return passwd, fmt.Errorf("invalid group %q, unknown group id", id)

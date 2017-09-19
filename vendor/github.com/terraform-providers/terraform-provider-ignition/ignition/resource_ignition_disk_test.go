@@ -2,9 +2,10 @@ package ignition
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/config/v2_1/types"
 )
 
 func TestIngnitionDisk(t *testing.T) {
@@ -59,25 +60,42 @@ func TestIngnitionDisk(t *testing.T) {
 	})
 }
 
-func TestIngnitionDiskResource(t *testing.T) {
-	testIgnition(t, `
-		resource "ignition_disk" "foo" {
+func TestIngnitionDiskInvalidDevice(t *testing.T) {
+	testIgnitionError(t, `
+		data "ignition_disk" "foo" {
+			device = "a"
+		}
+
+		data "ignition_config" "test" {
+			disks = [
+				"${data.ignition_disk.foo.id}",
+			]
+		}
+	`, regexp.MustCompile("path not absolute"))
+}
+
+func TestIngnitionDiskInvalidPartition(t *testing.T) {
+	testIgnitionError(t, `
+		data "ignition_disk" "foo" {
 			device = "/foo"
 			partition {
 				label = "qux"
+				size = 42
+				start = 2048
+				type_guid =  "01234567-89AB-CDEF-EDCB-A98765432101"
+			}
+			partition {
+				label = "bar"
+				size = 42
+				start = 2048
+				type_guid =  "01234567-89AB-CDEF-EDCB-A98765432101"
 			}
 		}
 
 		data "ignition_config" "test" {
 			disks = [
-				"${ignition_disk.foo.id}",
+				"${data.ignition_disk.foo.id}",
 			]
 		}
-	`, func(c *types.Config) error {
-		if len(c.Storage.Disks) != 1 {
-			return fmt.Errorf("disks, found %d", len(c.Storage.Disks))
-		}
-
-		return nil
-	})
+	`, regexp.MustCompile("overlap"))
 }

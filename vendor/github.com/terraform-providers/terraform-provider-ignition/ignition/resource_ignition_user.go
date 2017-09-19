@@ -1,9 +1,7 @@
 package ignition
 
 import (
-	"reflect"
-
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/config/v2_1/types"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -74,6 +72,11 @@ func resourceUser() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"system": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -98,29 +101,51 @@ func resourceUserExists(d *schema.ResourceData, meta interface{}) (bool, error) 
 }
 
 func buildUser(d *schema.ResourceData, c *cache) (string, error) {
-	uc := types.UserCreate{
-		Uid:          getUInt(d, "uid"),
-		GECOS:        d.Get("gecos").(string),
-		Homedir:      d.Get("home_dir").(string),
+	user := types.PasswdUser{
+		Name:         d.Get("name").(string),
+		UID:          getInt(d, "uid"),
+		Gecos:        d.Get("gecos").(string),
+		HomeDir:      d.Get("home_dir").(string),
 		NoCreateHome: d.Get("no_create_home").(bool),
 		PrimaryGroup: d.Get("primary_group").(string),
-		Groups:       castSliceInterface(d.Get("groups").([]interface{})),
+		Groups:       castSliceInterfaceToPasswdUserGroup(d.Get("groups").([]interface{})),
 		NoUserGroup:  d.Get("no_user_group").(bool),
 		NoLogInit:    d.Get("no_log_init").(bool),
 		Shell:        d.Get("shell").(string),
+		System:       d.Get("system").(bool),
+		SSHAuthorizedKeys: castSliceInterfaceToSSHAuthorizedKey(
+			d.Get("ssh_authorized_keys").([]interface{}),
+		),
 	}
 
-	puc := &uc
-	if reflect.DeepEqual(uc, types.UserCreate{}) { // check if the struct is empty
-		puc = nil
+	pwd := d.Get("password_hash").(string)
+	if pwd != "" {
+		user.PasswordHash = &pwd
 	}
 
-	user := types.User{
-		Name:              d.Get("name").(string),
-		PasswordHash:      d.Get("password_hash").(string),
-		SSHAuthorizedKeys: castSliceInterface(d.Get("ssh_authorized_keys").([]interface{})),
-		Create:            puc,
-	}
+	return c.addUser(&user), handleReport(user.Validate())
+}
 
-	return c.addUser(&user), nil
+func castSliceInterfaceToPasswdUserGroup(i []interface{}) []types.PasswdUserGroup {
+	var res []types.PasswdUserGroup
+	for _, g := range i {
+		if g == nil {
+			continue
+		}
+
+		res = append(res, types.PasswdUserGroup(g.(string)))
+	}
+	return res
+}
+
+func castSliceInterfaceToSSHAuthorizedKey(i []interface{}) []types.SSHAuthorizedKey {
+	var res []types.SSHAuthorizedKey
+	for _, k := range i {
+		if k == nil {
+			continue
+		}
+
+		res = append(res, types.SSHAuthorizedKey(k.(string)))
+	}
+	return res
 }

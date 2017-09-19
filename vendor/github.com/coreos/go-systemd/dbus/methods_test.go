@@ -16,6 +16,7 @@ package dbus
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path"
@@ -27,11 +28,6 @@ import (
 
 	"github.com/godbus/dbus"
 )
-
-type TrUnitProp struct {
-	name  string
-	props []Property
-}
 
 func setupConn(t *testing.T) *Conn {
 	conn, err := New()
@@ -87,14 +83,6 @@ func getUnitStatus(units []UnitStatus, name string) *UnitStatus {
 	return nil
 }
 
-func getUnitStatusSingle(conn *Conn, name string) *UnitStatus {
-	units, err := conn.ListUnits()
-	if err != nil {
-		return nil
-	}
-	return getUnitStatus(units, name)
-}
-
 func getUnitFile(units []UnitFile, name string) *UnitFile {
 	for _, u := range units {
 		if path.Base(u.Path) == name {
@@ -104,39 +92,10 @@ func getUnitFile(units []UnitFile, name string) *UnitFile {
 	return nil
 }
 
-func runStartTrUnit(t *testing.T, conn *Conn, trTarget TrUnitProp) error {
-	reschan := make(chan string)
-	_, err := conn.StartTransientUnit(trTarget.name, "replace", trTarget.props, reschan)
-	if err != nil {
-		return err
-	}
-
-	job := <-reschan
-	if job != "done" {
-		return fmt.Errorf("Job is not done: %s", job)
-	}
-
-	return nil
-}
-
-func runStopUnit(t *testing.T, conn *Conn, trTarget TrUnitProp) error {
-	reschan := make(chan string)
-	_, err := conn.StopUnit(trTarget.name, "replace", reschan)
-	if err != nil {
-		return err
-	}
-
-	// wait for StopUnit job to complete
-	<-reschan
-
-	return nil
-}
-
 // Ensure that basic unit starting and stopping works.
 func TestStartStopUnit(t *testing.T) {
 	target := "start-stop.service"
 	conn := setupConn(t)
-	defer conn.Close()
 
 	setupUnit(target, conn, t)
 	linkUnit(target, conn, t)
@@ -191,7 +150,6 @@ func TestStartStopUnit(t *testing.T) {
 func TestRestartUnit(t *testing.T) {
 	target := "start-stop.service"
 	conn := setupConn(t)
-	defer conn.Close()
 
 	setupUnit(target, conn, t)
 	linkUnit(target, conn, t)
@@ -277,7 +235,6 @@ func TestRestartUnit(t *testing.T) {
 func TestReloadUnit(t *testing.T) {
 	target := "reload.service"
 	conn := setupConn(t)
-	defer conn.Close()
 
 	err := conn.Subscribe()
 	if err != nil {
@@ -362,7 +319,6 @@ waitevent:
 func TestReloadOrRestartUnit(t *testing.T) {
 	target := "reload.service"
 	conn := setupConn(t)
-	defer conn.Close()
 
 	setupUnit(target, conn, t)
 	linkUnit(target, conn, t)
@@ -442,7 +398,6 @@ func TestListUnitsByNames(t *testing.T) {
 	target2 := "unexisting.service"
 
 	conn := setupConn(t)
-	defer conn.Close()
 
 	units, err := conn.ListUnitsByNames([]string{target1, target2})
 
@@ -473,7 +428,6 @@ func TestListUnitsByPatterns(t *testing.T) {
 	target2 := "unexisting.service"
 
 	conn := setupConn(t)
-	defer conn.Close()
 
 	units, err := conn.ListUnitsByPatterns([]string{}, []string{"systemd-journald*", target2})
 
@@ -501,7 +455,6 @@ func TestListUnitsFiltered(t *testing.T) {
 	target := "systemd-journald.service"
 
 	conn := setupConn(t)
-	defer conn.Close()
 
 	units, err := conn.ListUnitsFiltered([]string{"active"})
 
@@ -536,7 +489,6 @@ func TestListUnitFilesByPatterns(t *testing.T) {
 	target2 := "exit.target"
 
 	conn := setupConn(t)
-	defer conn.Close()
 
 	units, err := conn.ListUnitFilesByPatterns([]string{"static"}, []string{"systemd-journald*", target2})
 
@@ -572,7 +524,6 @@ func TestListUnitFiles(t *testing.T) {
 	target2 := "exit.target"
 
 	conn := setupConn(t)
-	defer conn.Close()
 
 	units, err := conn.ListUnitFiles()
 
@@ -601,7 +552,6 @@ func TestListUnitFiles(t *testing.T) {
 func TestEnableDisableUnit(t *testing.T) {
 	target := "enable-disable.service"
 	conn := setupConn(t)
-	defer conn.Close()
 
 	setupUnit(target, conn, t)
 	abs := findFixture(target, t)
@@ -646,7 +596,6 @@ func TestEnableDisableUnit(t *testing.T) {
 // systems and ensures that one of its properties is valid.
 func TestGetUnitProperties(t *testing.T) {
 	conn := setupConn(t)
-	defer conn.Close()
 
 	unit := "-.mount"
 
@@ -677,7 +626,6 @@ func TestGetUnitProperties(t *testing.T) {
 // as a fail will manifest as GetUnitProperties hanging indefinitely.
 func TestGetUnitPropertiesRejectsInvalidName(t *testing.T) {
 	conn := setupConn(t)
-	defer conn.Close()
 
 	unit := "//invalid#$^/"
 
@@ -696,7 +644,6 @@ func TestGetUnitPropertiesRejectsInvalidName(t *testing.T) {
 // on all systemd systems and ensures that one of its property is valid.
 func TestGetServiceProperty(t *testing.T) {
 	conn := setupConn(t)
-	defer conn.Close()
 
 	service := "systemd-udevd.service"
 
@@ -719,7 +666,6 @@ func TestGetServiceProperty(t *testing.T) {
 // property was set.
 func TestSetUnitProperties(t *testing.T) {
 	conn := setupConn(t)
-	defer conn.Close()
 
 	unit := "-.mount"
 
@@ -738,501 +684,64 @@ func TestSetUnitProperties(t *testing.T) {
 	}
 }
 
-// Ensure that oneshot transient unit starting and stopping works.
-func TestStartStopTransientUnitAll(t *testing.T) {
-	testCases := []struct {
-		trTarget  TrUnitProp
-		trDep     TrUnitProp
-		checkFunc func(t *testing.T, trTarget TrUnitProp, trDep TrUnitProp) error
-	}{
-		{
-			trTarget: TrUnitProp{
-				name: "testing-transient.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-				},
-			},
-			trDep:     TrUnitProp{"", nil},
-			checkFunc: checkTransientUnit,
-		},
-		{
-			trTarget: TrUnitProp{
-				name: "testing-transient-oneshot.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/true"}, false),
-					PropType("oneshot"),
-					PropRemainAfterExit(true),
-				},
-			},
-			trDep:     TrUnitProp{"", nil},
-			checkFunc: checkTransientUnitOneshot,
-		},
-		{
-			trTarget: TrUnitProp{
-				name: "testing-transient-requires.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-					PropRequires("testing-transient-requiresdep.service"),
-				},
-			},
-			trDep: TrUnitProp{
-				name: "testing-transient-requiresdep.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-				},
-			},
-			checkFunc: checkTransientUnitRequires,
-		},
-		{
-			trTarget: TrUnitProp{
-				name: "testing-transient-requires-ov.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-					PropRequires("testing-transient-requiresdep-ov.service"),
-				},
-			},
-			trDep: TrUnitProp{
-				name: "testing-transient-requiresdep-ov.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-				},
-			},
-			checkFunc: checkTransientUnitRequiresOv,
-		},
-		{
-			trTarget: TrUnitProp{
-				name: "testing-transient-requisite.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-					PropRequisite("testing-transient-requisitedep.service"),
-				},
-			},
-			trDep: TrUnitProp{
-				name: "testing-transient-requisitedep.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-				},
-			},
-			checkFunc: checkTransientUnitRequisite,
-		},
-		{
-			trTarget: TrUnitProp{
-				name: "testing-transient-requisite-ov.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-					PropRequisiteOverridable("testing-transient-requisitedep-ov.service"),
-				},
-			},
-			trDep: TrUnitProp{
-				name: "testing-transient-requisitedep-ov.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-				},
-			},
-			checkFunc: checkTransientUnitRequisiteOv,
-		},
-		{
-			trTarget: TrUnitProp{
-				name: "testing-transient-wants.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-					PropWants("testing-transient-wantsdep.service"),
-				},
-			},
-			trDep: TrUnitProp{
-				name: "testing-transient-wantsdep.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-				},
-			},
-			checkFunc: checkTransientUnitWants,
-		},
-		{
-			trTarget: TrUnitProp{
-				name: "testing-transient-bindsto.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-					PropBindsTo("testing-transient-bindstodep.service"),
-				},
-			},
-			trDep: TrUnitProp{
-				name: "testing-transient-bindstodep.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-				},
-			},
-			checkFunc: checkTransientUnitBindsTo,
-		},
-		{
-			trTarget: TrUnitProp{
-				name: "testing-transient-conflicts.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-					PropConflicts("testing-transient-conflictsdep.service"),
-				},
-			},
-			trDep: TrUnitProp{
-				name: "testing-transient-conflictsdep.service",
-				props: []Property{
-					PropExecStart([]string{"/bin/sleep", "400"}, false),
-				},
-			},
-			checkFunc: checkTransientUnitConflicts,
-		},
-	}
-
-	for i, tt := range testCases {
-		if err := tt.checkFunc(t, tt.trTarget, tt.trDep); err != nil {
-			t.Errorf("case %d: failed test with unit %s. err: %v", i, tt.trTarget.name, err)
-		}
-	}
-}
-
 // Ensure that basic transient unit starting and stopping works.
-func checkTransientUnit(t *testing.T, trTarget TrUnitProp, trDep TrUnitProp) error {
+func TestStartStopTransientUnit(t *testing.T) {
 	conn := setupConn(t)
-	defer conn.Close()
+
+	props := []Property{
+		PropExecStart([]string{"/bin/sleep", "400"}, false),
+	}
+	target := fmt.Sprintf("testing-transient-%d.service", rand.Int())
 
 	// Start the unit
-	err := runStartTrUnit(t, conn, trTarget)
+	reschan := make(chan string)
+	_, err := conn.StartTransientUnit(target, "replace", props, reschan)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	unit := getUnitStatusSingle(conn, trTarget.name)
-	if unit == nil {
-		return fmt.Errorf("Test unit not found in list")
-	} else if unit.ActiveState != "active" {
-		return fmt.Errorf("Test unit not active")
+	job := <-reschan
+	if job != "done" {
+		t.Fatal("Job is not done:", job)
 	}
 
-	// Stop the unit
-	err = runStopUnit(t, conn, trTarget)
+	units, err := conn.ListUnits()
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	unit = getUnitStatusSingle(conn, trTarget.name)
-	if unit != nil {
-		return fmt.Errorf("Test unit found in list, should be stopped")
-	}
+	unit := getUnitStatus(units, target)
 
-	return nil
-}
-
-func checkTransientUnitOneshot(t *testing.T, trTarget TrUnitProp, trDep TrUnitProp) error {
-	conn := setupConn(t)
-	defer conn.Close()
-
-	// Start the unit
-	err := runStartTrUnit(t, conn, trTarget)
-	if err != nil {
-		return err
-	}
-
-	unit := getUnitStatusSingle(conn, trTarget.name)
-	if unit == nil {
-		return fmt.Errorf("Test unit not found in list")
-	} else if unit.ActiveState != "active" {
-		return fmt.Errorf("Test unit not active")
-	}
-
-	// Stop the unit
-	err = runStopUnit(t, conn, trTarget)
-	if err != nil {
-		return err
-	}
-
-	unit = getUnitStatusSingle(conn, trTarget.name)
-	if unit != nil {
-		return fmt.Errorf("Test unit found in list, should be stopped")
-	}
-
-	return nil
-}
-
-// Ensure that transient unit with Requires starting and stopping works.
-func checkTransientUnitRequires(t *testing.T, trTarget TrUnitProp, trDep TrUnitProp) error {
-	conn := setupConn(t)
-	defer conn.Close()
-
-	// Start the dependent unit
-	err := runStartTrUnit(t, conn, trDep)
-	if err != nil {
-		return err
-	}
-
-	// Start the target unit
-	err = runStartTrUnit(t, conn, trTarget)
-	if err != nil {
-		return err
-	}
-
-	unit := getUnitStatusSingle(conn, trTarget.name)
-	if unit == nil {
-		return fmt.Errorf("Test unit not found in list")
-	} else if unit.ActiveState != "active" {
-		return fmt.Errorf("Test unit not active")
-	}
-
-	// Stop the unit
-	err = runStopUnit(t, conn, trTarget)
-	if err != nil {
-		return err
-	}
-
-	unit = getUnitStatusSingle(conn, trTarget.name)
-	if unit != nil {
-		return fmt.Errorf("Test unit found in list, should be stopped")
-	}
-
-	// Stop the dependent unit
-	err = runStopUnit(t, conn, trDep)
-	if err != nil {
-		return err
-	}
-
-	unit = getUnitStatusSingle(conn, trDep.name)
-	if unit != nil {
-		return fmt.Errorf("Test unit found in list, should be stopped")
-	}
-
-	return nil
-}
-
-// Ensure that transient unit with RequiresOverridable starting and stopping works.
-func checkTransientUnitRequiresOv(t *testing.T, trTarget TrUnitProp, trDep TrUnitProp) error {
-	conn := setupConn(t)
-	defer conn.Close()
-
-	// Start the dependent unit
-	err := runStartTrUnit(t, conn, trDep)
-	if err != nil {
-		return err
-	}
-
-	// Start the target unit
-	err = runStartTrUnit(t, conn, trTarget)
-	if err != nil {
-		return err
-	}
-
-	unit := getUnitStatusSingle(conn, trTarget.name)
-	if unit == nil {
-		return fmt.Errorf("Test unit not found in list")
-	} else if unit.ActiveState != "active" {
-		return fmt.Errorf("Test unit not active")
-	}
-
-	// Stop the unit
-	err = runStopUnit(t, conn, trTarget)
-	if err != nil {
-		return err
-	}
-
-	unit = getUnitStatusSingle(conn, trTarget.name)
-	if unit != nil {
-		return fmt.Errorf("Test unit found in list, should be stopped")
-	}
-
-	// Stop the dependent unit
-	err = runStopUnit(t, conn, trDep)
-	if err != nil {
-		return err
-	}
-
-	unit = getUnitStatusSingle(conn, trDep.name)
-	if unit != nil {
-		return fmt.Errorf("Test unit found in list, should be stopped")
-	}
-
-	return nil
-}
-
-// Ensure that transient unit with Requisite starting and stopping works.
-// It's expected for target unit to fail, as its child is not started at all.
-func checkTransientUnitRequisite(t *testing.T, trTarget TrUnitProp, trDep TrUnitProp) error {
-	conn := setupConn(t)
-	defer conn.Close()
-
-	// Start the target unit
-	err := runStartTrUnit(t, conn, trTarget)
-	if err == nil {
-		return fmt.Errorf("Unit %s is expected to fail, but succeeded.", trTarget.name)
-	}
-
-	unit := getUnitStatusSingle(conn, trTarget.name)
-	if unit != nil && unit.ActiveState == "active" {
-		return fmt.Errorf("Test unit %s is active, should be inactive", trTarget.name)
-	}
-
-	return nil
-}
-
-// Ensure that transient unit with RequisiteOverridable starting and stopping works.
-// It's expected for target unit to fail, as its child is not started at all.
-func checkTransientUnitRequisiteOv(t *testing.T, trTarget TrUnitProp, trDep TrUnitProp) error {
-	conn := setupConn(t)
-	defer conn.Close()
-
-	// Start the target unit
-	err := runStartTrUnit(t, conn, trTarget)
-	if err == nil {
-		return fmt.Errorf("Unit %s is expected to fail, but succeeded.", trTarget.name)
-	}
-
-	unit := getUnitStatusSingle(conn, trTarget.name)
-	if unit != nil && unit.ActiveState == "active" {
-		return fmt.Errorf("Test unit %s is active, should be inactive", trTarget.name)
-	}
-
-	return nil
-}
-
-// Ensure that transient unit with Wants starting and stopping works.
-// It's expected for target to successfully start, even when its child is not started.
-func checkTransientUnitWants(t *testing.T, trTarget TrUnitProp, trDep TrUnitProp) error {
-	conn := setupConn(t)
-	defer conn.Close()
-
-	// Start the target unit
-	err := runStartTrUnit(t, conn, trTarget)
-	if err != nil {
-		return err
-	}
-
-	unit := getUnitStatusSingle(conn, trTarget.name)
-	if unit == nil {
-		return fmt.Errorf("Test unit not found in list")
-	} else if unit.ActiveState != "active" {
-		return fmt.Errorf("Test unit not active")
-	}
-
-	// Stop the unit
-	err = runStopUnit(t, conn, trTarget)
-	if err != nil {
-		return err
-	}
-
-	unit = getUnitStatusSingle(conn, trTarget.name)
-	if unit != nil {
-		return fmt.Errorf("Test unit found in list, should be stopped")
-	}
-
-	return nil
-}
-
-// Ensure that transient unit with BindsTo starting and stopping works.
-// Stopping its child should result in stopping target unit.
-func checkTransientUnitBindsTo(t *testing.T, trTarget TrUnitProp, trDep TrUnitProp) error {
-	conn := setupConn(t)
-	defer conn.Close()
-
-	// Start the dependent unit
-	err := runStartTrUnit(t, conn, trDep)
-	if err != nil {
-		return err
-	}
-
-	// Start the target unit
-	err = runStartTrUnit(t, conn, trTarget)
-	if err != nil {
-		return err
-	}
-
-	unit := getUnitStatusSingle(conn, trTarget.name)
 	if unit == nil {
 		t.Fatalf("Test unit not found in list")
 	} else if unit.ActiveState != "active" {
 		t.Fatalf("Test unit not active")
 	}
 
-	// Stop the dependent unit
-	err = runStopUnit(t, conn, trDep)
+	// 3. Stop the unit
+	_, err = conn.StopUnit(target, "replace", reschan)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	unit = getUnitStatusSingle(conn, trDep.name)
+	// wait for StopUnit job to complete
+	<-reschan
+
+	units, err = conn.ListUnits()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	unit = getUnitStatus(units, target)
+
 	if unit != nil {
 		t.Fatalf("Test unit found in list, should be stopped")
 	}
-
-	// Then the target unit should be gone
-	unit = getUnitStatusSingle(conn, trTarget.name)
-	if unit != nil {
-		t.Fatalf("Test unit found in list, should be stopped")
-	}
-
-	return nil
-}
-
-// Ensure that transient unit with Conflicts starting and stopping works.
-func checkTransientUnitConflicts(t *testing.T, trTarget TrUnitProp, trDep TrUnitProp) error {
-	conn := setupConn(t)
-	defer conn.Close()
-
-	// Start the dependent unit
-	err := runStartTrUnit(t, conn, trDep)
-	if err != nil {
-		return err
-	}
-
-	// Start the target unit
-	err = runStartTrUnit(t, conn, trTarget)
-	if err != nil {
-		return err
-	}
-
-	isTargetActive := false
-	unit := getUnitStatusSingle(conn, trTarget.name)
-	if unit != nil && unit.ActiveState == "active" {
-		isTargetActive = true
-	}
-
-	isReqDepActive := false
-	unit = getUnitStatusSingle(conn, trDep.name)
-	if unit != nil && unit.ActiveState == "active" {
-		isReqDepActive = true
-	}
-
-	if isTargetActive && isReqDepActive {
-		return fmt.Errorf("Conflicts didn't take place")
-	}
-
-	// Stop the target unit
-	if isTargetActive {
-		err = runStopUnit(t, conn, trTarget)
-		if err != nil {
-			return err
-		}
-
-		unit = getUnitStatusSingle(conn, trTarget.name)
-		if unit != nil {
-			return fmt.Errorf("Test unit %s found in list, should be stopped", trTarget.name)
-		}
-	}
-
-	// Stop the dependent unit
-	if isReqDepActive {
-		err = runStopUnit(t, conn, trDep)
-		if err != nil {
-			return err
-		}
-
-		unit = getUnitStatusSingle(conn, trDep.name)
-		if unit != nil {
-			return fmt.Errorf("Test unit %s found in list, should be stopped", trDep.name)
-		}
-	}
-
-	return nil
 }
 
 // Ensure that putting running programs into scopes works
 func TestStartStopTransientScope(t *testing.T) {
 	conn := setupConn(t)
-	defer conn.Close()
 
 	cmd := exec.Command("/bin/sleep", "400")
 	err := cmd.Start()
@@ -1281,7 +790,6 @@ func TestStartStopTransientScope(t *testing.T) {
 func TestKillUnit(t *testing.T) {
 	target := "start-stop.service"
 	conn := setupConn(t)
-	defer conn.Close()
 
 	err := conn.Subscribe()
 	if err != nil {
@@ -1344,7 +852,6 @@ waitevent:
 func TestResetFailedUnit(t *testing.T) {
 	target := "start-failed.service"
 	conn := setupConn(t)
-	defer conn.Close()
 
 	setupUnit(target, conn, t)
 	linkUnit(target, conn, t)
@@ -1398,7 +905,6 @@ func TestResetFailedUnit(t *testing.T) {
 func TestConnJobListener(t *testing.T) {
 	target := "start-stop.service"
 	conn := setupConn(t)
-	defer conn.Close()
 
 	setupUnit(target, conn, t)
 	linkUnit(target, conn, t)
@@ -1430,7 +936,6 @@ func TestConnJobListener(t *testing.T) {
 func TestMaskUnmask(t *testing.T) {
 	target := "mask-unmask.service"
 	conn := setupConn(t)
-	defer conn.Close()
 
 	setupUnit(target, conn, t)
 	abs := findFixture(target, t)
@@ -1483,7 +988,6 @@ func TestMaskUnmask(t *testing.T) {
 // Test a global Reload
 func TestReload(t *testing.T) {
 	conn := setupConn(t)
-	defer conn.Close()
 
 	err := conn.Reload()
 	if err != nil {

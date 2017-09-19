@@ -3,7 +3,7 @@ set -x
 
 unset http_proxy
 
-export GOROOT=/usr/lib/go-1.8/
+export GOROOT=/usr/lib/go-1.9/
 export GOPATH=/root/go
 export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 

@@ -42,27 +42,27 @@ Any change of the above fields will cause a new resource to be created.
 ## Integration with Ignition provider
 
 The `libvirt_ignition` resource can be integrated with terraform
-[Ignition Provider](/docs/providers/ignition/index.html).
+[Ignition Provider](https://www.terraform.io/docs/providers/ignition/index.html).
 
 An example where a terraform ignition provider object is used:
 
 ```hcl
-# Systemd unit resource containing the unit definition
-resource "ignition_systemd_unit" "example" {
+# Systemd unit data source containing the unit definition
+data "ignition_systemd_unit" "example" {
   name = "example.service"
   content = "[Service]\nType=oneshot\nExecStart=/usr/bin/echo Hello World\n\n[Install]\nWantedBy=multi-user.target"
 }
 
-# Ignition config include the previous defined systemd unit resource
-resource "ignition_config" "example" {
+# Ignition config include the previous defined systemd unit data source
+data "ignition_config" "example" {
   systemd = [
-      "${ignition_systemd_unit.example.id}",
+      "${data.ignition_systemd_unit.example.id}",
   ]
 }
 
 resource "libvirt_ignition" "ignition" {
   name = "ignition"
-  content = "${ignition_config.example.rendered}"
+  content = "${data.ignition_config.example.rendered}"
 }
 
 resource "libvirt_domain" "my_machine" {

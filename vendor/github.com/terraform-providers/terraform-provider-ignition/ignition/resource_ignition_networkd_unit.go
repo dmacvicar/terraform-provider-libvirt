@@ -1,7 +1,7 @@
 package ignition
 
 import (
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/config/v2_1/types"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -49,12 +49,10 @@ func resourceNetworkdUnitExists(d *schema.ResourceData, meta interface{}) (bool,
 }
 
 func buildNetworkdUnit(d *schema.ResourceData, c *cache) (string, error) {
-	if err := validateUnitContent(d.Get("content").(string)); err != nil {
-		return "", err
+	unit := &types.Networkdunit{
+		Name:     d.Get("name").(string),
+		Contents: d.Get("content").(string),
 	}
 
-	return c.addNetworkdUnit(&types.NetworkdUnit{
-		Name:     types.NetworkdUnitName(d.Get("name").(string)),
-		Contents: d.Get("content").(string),
-	}), nil
+	return c.addNetworkdUnit(unit), handleReport(unit.Validate())
 }

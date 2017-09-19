@@ -52,7 +52,7 @@ The following arguments are supported:
 
 	__Note__: `content` and `source` are mutually exclusive
 
-* `mode` - (Optional) The list of partitions and their configuration for 
+* `mode` - (Optional) The list of partitions and their configuration for
 this particular disk..
 
 * `uid` - (Optional) The user ID of the owner.
@@ -60,16 +60,16 @@ this particular disk..
 * `gid` - (Optional) The group ID of the owner.
 
 The `content` block supports:
- 
+
 * `mime` - (Required) MIME format of the content (default _text/plain_).
 
 * `content` - (Required) Content of the file.
 
 The `source` block supports:
 
-* `source` - (Required) The URL of the file contents. When using http, it is advisable to use the verification option to ensure the contents haven’t been modified.
+* `source` - (Required) The URL of the file contents. Supported schemes are http, https, tftp, s3, and [data][rfc2397]. When using http, it is advisable to use the verification option to ensure the contents haven't been modified.
 
-* `compression` - (Optional) The type of compression used on the contents (null or gzip).
+* `compression` - (Optional) The type of compression used on the contents (null or gzip). Compression cannot be used with S3.
 
 * `verification` - (Optional) The hash of the config, in the form _\<type\>-\<value\>_ where type is sha512.
 
@@ -78,3 +78,5 @@ The `source` block supports:
 The following attributes are exported:
 
 * `id` - ID used to reference this resource in _ignition_config_.
+
+[rfc2397]: https://tools.ietf.org/html/rfc2397

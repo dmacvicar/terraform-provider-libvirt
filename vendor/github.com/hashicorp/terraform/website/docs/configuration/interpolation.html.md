@@ -46,7 +46,7 @@ return list elements by index: `${var.subnets[idx]}`.
 
 #### Attributes of your own resource
 
-The syntax is `self.ATTRIBUTE`. For example `${self.private_ip_address}`
+The syntax is `self.ATTRIBUTE`. For example `${self.private_ip}`
 will interpolate that resource's private IP address.
 
 -> **Note**: The `self.ATTRIBUTE` syntax is only allowed and valid within
@@ -153,6 +153,11 @@ The supported built-in functions are:
   * `base64encode(string)` - Returns a base64-encoded representation of the
     given string.
 
+  * `base64gzip(string)` - Compresses the given string with gzip and then
+    encodes the result to base64. This can be used with certain resource
+    arguments that allow binary data to be passed with base64 encoding, since
+    Terraform strings are required to be valid UTF-8.
+
   * `base64sha256(string)` - Returns a base64-encoded representation of raw
     SHA-256 sum of the given string.
     **This is not equivalent** of `base64encode(sha256(string))`
@@ -232,6 +237,10 @@ The supported built-in functions are:
   * `floor(float)` - Returns the greatest integer value less than or equal to
       the argument.
 
+  * `flatten(list of lists)` - Flattens lists of lists down to a flat list of
+       primitive values, eliminating any nested lists recursively. Examples:
+       * `flatten(data.github_user.user.*.gpg_keys)`
+
   * `format(format, args, ...)` - Formats a string according to the given
       format. The syntax for the format is standard `sprintf` syntax.
       Good documentation for the syntax can be [found here](https://golang.org/pkg/fmt/).
@@ -248,6 +257,12 @@ The supported built-in functions are:
       `formatlist("instance %v has private ip %v", aws_instance.foo.*.id, aws_instance.foo.*.private_ip)`.
       Passing lists with different lengths to formatlist results in an error.
 
+  * `indent(numspaces, string)` - Prepends the specified number of spaces to all but the first
+      line of the given multi-line string. May be useful when inserting a multi-line string
+      into an already-indented context. The first line is not indented, to allow for the
+      indented string to be placed after some sort of already-indented preamble.
+      Example: `"    \"items\": ${ indent(4, "[\n    \"item1\"\n]") },"`
+
   * `index(list, elem)` - Finds the index of a given element in a list.
       This function only works on flat lists.
       Example: `index(aws_instance.foo.*.tags.Name, "foo-test")`
@@ -258,10 +273,9 @@ The supported built-in functions are:
       * `join(",", aws_instance.foo.*.id)`
       * `join(",", var.ami_list)`
 
-  * `jsonencode(item)` - Returns a JSON-encoded representation of the given
-    item, which may be a string, list of strings, or map from string to string.
-    Note that if the item is a string, the return value includes the double
-    quotes.
+  * `jsonencode(value)` - Returns a JSON-encoded representation of the given
+      value, which can contain arbitrarily-nested lists and maps. Note that if
+      the value is a string then its value will be placed in quotes.
 
   * `keys(map)` - Returns a lexically sorted list of the map keys.
 
@@ -377,6 +391,8 @@ The supported built-in functions are:
   * `trimspace(string)` - Returns a copy of the string with all leading and trailing white spaces removed.
 
   * `upper(string)` - Returns a copy of the string with all Unicode letters mapped to their upper case.
+
+  * `urlencode(string)` - Returns an URL-safe copy of the string.
 
   * `uuid()` - Returns a UUID string in RFC 4122 v4 format. This string will change with every invocation of the function, so in order to prevent diffs on every plan & apply, it must be used with the [`ignore_changes`](/docs/configuration/resources.html#ignore-changes) lifecycle attribute.
 

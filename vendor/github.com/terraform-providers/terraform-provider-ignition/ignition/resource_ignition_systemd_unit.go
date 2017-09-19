@@ -1,7 +1,7 @@
 package ignition
 
 import (
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/config/v2_1/types"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -15,7 +15,7 @@ func resourceSystemdUnit() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"enable": {
+			"enabled": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
@@ -74,31 +74,36 @@ func resourceSystemdUnitExists(d *schema.ResourceData, meta interface{}) (bool, 
 }
 
 func buildSystemdUnit(d *schema.ResourceData, c *cache) (string, error) {
-	var dropins []types.SystemdUnitDropIn
+	enabled := d.Get("enabled").(bool)
+	unit := &types.Unit{
+		Name:     d.Get("name").(string),
+		Contents: d.Get("content").(string),
+		Enabled:  &enabled,
+		Mask:     d.Get("mask").(bool),
+	}
+
+	if err := handleReport(unit.ValidateName()); err != nil {
+		return "", err
+	}
+
+	if err := handleReport(unit.ValidateContents()); err != nil {
+		return "", err
+	}
+
 	for _, raw := range d.Get("dropin").([]interface{}) {
 		value := raw.(map[string]interface{})
 
-		if err := validateUnitContent(value["content"].(string)); err != nil {
-			return "", err
-		}
-
-		dropins = append(dropins, types.SystemdUnitDropIn{
-			Name:     types.SystemdUnitDropInName(value["name"].(string)),
+		d := types.Dropin{
+			Name:     value["name"].(string),
 			Contents: value["content"].(string),
-		})
-	}
+		}
 
-	if err := validateUnitContent(d.Get("content").(string)); err != nil {
-		if err != errEmptyUnit {
+		if err := handleReport(d.Validate()); err != nil {
 			return "", err
 		}
+
+		unit.Dropins = append(unit.Dropins, d)
 	}
 
-	return c.addSystemdUnit(&types.SystemdUnit{
-		Name:     types.SystemdUnitName(d.Get("name").(string)),
-		Contents: d.Get("content").(string),
-		Enable:   d.Get("enable").(bool),
-		Mask:     d.Get("mask").(bool),
-		DropIns:  dropins,
-	}), nil
+	return c.addSystemdUnit(unit), nil
 }

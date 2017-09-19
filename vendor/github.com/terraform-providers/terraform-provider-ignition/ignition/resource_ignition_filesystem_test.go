@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/config/v2_1/types"
 )
 
 func TestIngnitionFilesystem(t *testing.T) {
@@ -28,28 +28,10 @@ func TestIngnitionFilesystem(t *testing.T) {
 			mount {
 				device = "/baz"
 				format = "ext4"
-				create = true
-			}
-		}
-
-		data "ignition_filesystem" "bar" {
-			name = "bar"
-			mount {
-				device = "/bar"
-				format = "ext4"
-				create = true
-				force = true
+				wipe_filesystem = true
+				label = "root"
+				uuid = "qux"
 				options = ["rw"]
-			}
-		}
-
-		data "ignition_filesystem" "zaz" {
-			name = "zaz"
-			mount {
-				device = "/zaz"
-				format = "ext4"
-				create = true
-				options = [""]
 			}
 		}
 
@@ -58,12 +40,10 @@ func TestIngnitionFilesystem(t *testing.T) {
 				"${data.ignition_filesystem.foo.id}",
 				"${data.ignition_filesystem.qux.id}",
 				"${data.ignition_filesystem.baz.id}",
-				"${data.ignition_filesystem.bar.id}",
-				"${data.ignition_filesystem.zaz.id}",
 			]
 		}
 	`, func(c *types.Config) error {
-		if len(c.Storage.Filesystems) != 5 {
+		if len(c.Storage.Filesystems) != 3 {
 			return fmt.Errorf("disks, found %d", len(c.Storage.Filesystems))
 		}
 
@@ -110,50 +90,56 @@ func TestIngnitionFilesystem(t *testing.T) {
 			return fmt.Errorf("mount.0.format, found %q", f.Mount.Format)
 		}
 
-		if f.Mount.Create.Force != false {
-			return fmt.Errorf("mount.0.force, found %t", f.Mount.Create.Force)
+		if *f.Mount.Label != "root" {
+			return fmt.Errorf("mount.0.label, found %q", *f.Mount.Label)
 		}
 
-		f = c.Storage.Filesystems[3]
-		if f.Name != "bar" {
-			return fmt.Errorf("name, found %q", f.Name)
+		if *f.Mount.UUID != "qux" {
+			return fmt.Errorf("mount.0.uuid, found %q", *f.Mount.UUID)
 		}
 
-		if f.Mount.Device != "/bar" {
-			return fmt.Errorf("mount.0.device, found %q", f.Mount.Device)
+		if f.Mount.WipeFilesystem != true {
+			return fmt.Errorf("mount.0.wipe_filesystem, found %t", f.Mount.WipeFilesystem)
 		}
 
-		if f.Mount.Format != "ext4" {
-			return fmt.Errorf("mount.0.format, found %q", f.Mount.Format)
-		}
-
-		if f.Mount.Create.Force != true {
-			return fmt.Errorf("mount.0.force, found %t", f.Mount.Create.Force)
-		}
-
-		if len(f.Mount.Create.Options) != 1 || f.Mount.Create.Options[0] != "rw" {
-			return fmt.Errorf("mount.0.options, found %q", f.Mount.Create.Options)
+		if len(f.Mount.Options) != 1 || f.Mount.Options[0] != "rw" {
+			return fmt.Errorf("mount.0.options, found %q", f.Mount.Options)
 		}
 
 		return nil
 	})
 }
 
-func TestIngnitionFilesystemMissingCreate(t *testing.T) {
+func TestIngnitionFilesystemInvalidPath(t *testing.T) {
 	testIgnitionError(t, `
-		data "ignition_filesystem" "bar" {
-			name = "bar"
+		data "ignition_filesystem" "foo" {
+			name = "foo"
+			path = "foo"
+		}
+
+		data "ignition_config" "test" {
+			filesystems = [
+				"${data.ignition_filesystem.foo.id}",
+			]
+		}
+	`, regexp.MustCompile("absolute"))
+}
+
+func TestIngnitionFilesystemInvalidPathAndMount(t *testing.T) {
+	testIgnitionError(t, `
+		data "ignition_filesystem" "foo" {
+			name = "foo"
+			path = "/foo"
 			mount {
-				device = "/bar"
+				device = "/qux"
 				format = "ext4"
-				force = true
 			}
 		}
 
 		data "ignition_config" "test" {
 			filesystems = [
-				"${data.ignition_filesystem.bar.id}",
+				"${data.ignition_filesystem.foo.id}",
 			]
 		}
-	`, regexp.MustCompile("create should be true when force or options is used"))
+	`, regexp.MustCompile("mount and path"))
 }

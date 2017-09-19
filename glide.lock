@@ -1,5 +1,5 @@
-hash: be35bd4738eaa3a323d88bcfd008850cd80d8e952fa1dcb99d8ecf2b391c04fd
-updated: 2017-09-15T09:58:54.522036191+02:00
+hash: d919aaa80ae89b2545ffed91c2cc1f12b0b5de3f5fed49439dd9bf7d3da304ef
+updated: 2017-09-19T09:06:44.057445942+02:00
 imports:
 - name: github.com/apparentlymart/go-cidr
   version: 2bd8b58cf4275aeb086ade613de226773e29e853
@@ -97,20 +97,18 @@ imports:
 - name: github.com/hashicorp/logutils
   version: 0dc08b1671f34c4250ce212759ebd880f743d883
 - name: github.com/hashicorp/terraform
-  version: a1d06eb97378d097d4175c3284ea026937618477
+  version: 1f054df7525613cccbbc705d639024cb8ac2264a
   subpackages:
   - config
   - config/module
   - dag
   - flatmap
   - helper/config
-  - helper/experiment
   - helper/hashcode
   - helper/hilmapstructure
   - helper/logging
   - helper/resource
   - helper/schema
-  - helper/shadow
   - moduledeps
   - plugin
   - plugin/discovery
@@ -186,7 +184,7 @@ imports:
   - lex/httplex
   - trace
 - name: golang.org/x/sys
-  version: 062cd7e4e68206d8bab9b18396626e855c992658
+  version: b6e1ae21643682ce023deb8d152024597b0e9bb4
   subpackages:
   - unix
 - name: golang.org/x/text
@@ -226,16 +224,17 @@ testImports:
   subpackages:
   - semver
 - name: github.com/coreos/go-systemd
-  version: d2196463941895ee908e13531a23a39feb9e1243
+  version: 7c9533367ef925dc1078d75e5b7141e10da2c4e8
   subpackages:
+  - dbus
   - unit
 - name: github.com/coreos/ignition
   version: 11813c57bc05f30644bbae7891ae30a4a62e0b33
   subpackages:
-  - config/types
+  - config/v2_1/types
   - config/validate/report
 - name: github.com/terraform-providers/terraform-provider-ignition
-  version: 5b30c2e388bdf82c11188a35d107d9448240fce2
+  version: 209c5de33574faaed7a9378a01d1a4575feb2721
   subpackages:
   - ignition
 - name: github.com/vincent-petithory/dataurl
