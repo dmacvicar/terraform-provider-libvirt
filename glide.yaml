@@ -5,7 +5,7 @@ import:
   subpackages:
   - spew
 - package: github.com/hashicorp/terraform
-  version: 0.10.2
+  version: ~0.10.5
   subpackages:
   - helper/resource
   - helper/schema
@@ -15,11 +15,16 @@ import:
   version: ^1.0.0
 - package: github.com/imdario/mergo
   version: ~0.2.2
+- package: github.com/libvirt/libvirt-go
+  version: ^3.7.0
+- package: github.com/libvirt/libvirt-go-xml
 - package: github.com/mitchellh/packer
   version: ^1.1.0
   subpackages:
   - common/uuid
 - package: gopkg.in/yaml.v2
-- package: github.com/libvirt/libvirt-go
-  version: ^3.4.0
-- package: github.com/libvirt/libvirt-go-xml
+testImport:
+- package: github.com/terraform-providers/terraform-provider-ignition
+  version: ^1.0.0
+  subpackages:
+  - ignition

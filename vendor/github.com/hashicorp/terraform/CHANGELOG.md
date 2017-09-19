@@ -1,9 +1,68 @@
+## 0.10.5 (September 14, 2017)
+
+NEW FEATURES:
+
+* config: `indent` interpolation function appends spaces to all but the first line of a multi-line string ([#15311](https://github.com/hashicorp/terraform/issues/15311))
+
+IMPROVEMENTS:
+
+* cli: `terraform fmt` has a new option `-check` which makes it return a non-zero exit status if any formatting changes are required ([#15387](https://github.com/hashicorp/terraform/issues/15387))
+* cli: When [running Terraform in automation](https://www.terraform.io/guides/running-terraform-in-automation.html), a new environment variable `TF_IN_AUTOMATION` can be used to disable or adjust certain prompts that would normally include specific CLI commands to run. This assumes that the wrapping automation tool is providing its own UI for guiding the user through the workflow, and thus the standard advice would be redundant and/or confusing. ([#16059](https://github.com/hashicorp/terraform/issues/16059))
+
+BUG FIXES:
+
+* cli: restore the "(forces new resource)" annotations on attributes that were inadvertently disabled in 0.10.4. ([#16067](https://github.com/hashicorp/terraform/issues/16067))
+* cli: fix regression with installing modules from git when the `GIT_SSH_COMMAND` environment variable is set ([#16099](https://github.com/hashicorp/terraform/issues/16099))
+
+## 0.10.4 (September 6, 2017)
+
+IMPROVEMENTS:
+* `terraform apply` now uses the standard resource address syntax to refer to resources in its log ([#15884](https://github.com/hashicorp/terraform/issues/15884))
+* `terraform plan` output has some minor adjustments to improve readability and accessibility for those who can't see its colors ([#15884](https://github.com/hashicorp/terraform/issues/15884))
+
+BUG FIXES:
+
+* backend/consul: fix crash during consul backend initialization ([#15976](https://github.com/hashicorp/terraform/issues/15976))
+* backend/azurerm: ensure that blob storage metadata is preserved when updating state blobs, to avoid losing track of lock metadata ([#16015](https://github.com/hashicorp/terraform/issues/16015))
+* config: local values now work properly in resource `count` and in modules with more than one `.tf` file ([#15995](https://github.com/hashicorp/terraform/issues/15995)] [[#15982](https://github.com/hashicorp/terraform/issues/15982))
+* cli: removed some inconsistencies in how data sources are counted and tallied in plan vs. apply and apply vs. destroy. In particular, data sources are no longer incorrectly counted as destroyed in `terraform destroy` ([#15884](https://github.com/hashicorp/terraform/issues/15884))
+
+## 0.10.3 (August 30, 2017)
+
+BACKWARDS INCOMPATIBILITIES / NOTES:
+
+* LGPL Dependencies Removed ([#15862](https://github.com/hashicorp/terraform/issues/15862))
+
+NEW FEATURES:
+
+* **Local Values**: this new configuration language feature allows assigning a symbolic local name to an expression so it can be used multiple times in configuration without repetition. See [the documentation](https://github.com/hashicorp/terraform/blob/master/website/docs/configuration/locals.html.md) for how to define and use local values. ([#15449](https://github.com/hashicorp/terraform/issues/15449))
+* **`base64gzip` interpolation function**: compresses a string with gzip and then base64-encodes the result ([#3858](https://github.com/hashicorp/terraform/issues/3858))
+* **`flatten` interpolation function**: turns a list of lists, or list of lists of lists, etc into a flat list of primitive values ([#15278](https://github.com/hashicorp/terraform/issues/15278))
+* **`urlencode` interpolation function**: applies standard URL encoding to a string so that it can be embedded in a URL without making it invalid and without any of the characters being interpreted as part of the URL structure ([#15871](https://github.com/hashicorp/terraform/issues/15871))
+* **`salt-masterless` provisioner**: runs Salt in masterless mode on a target server ([#14720](https://github.com/hashicorp/terraform/issues/14720))
+
+IMPROVEMENTS:
+
+* config: The `jsonencode` interpolation function now accepts nested list and map structures, where before it would accept only strings, lists of strings, and maps of strings. ([#14884](https://github.com/hashicorp/terraform/issues/14884))
+* cli: The "creation complete" (and similar) messages from `terraform apply` now include a total elapsed time for each operation. ([#15548](https://github.com/hashicorp/terraform/issues/15548))
+* cli: Module installation (with either `terraform init` or `terraform get`) now detects and recursively initializes submodules when the source is a git repository. ([#15891](https://github.com/hashicorp/terraform/issues/15891))
+* cli: Modules can now be installed from `.tar.xz` archives, in addition to the existing `.tar.gz`, `.tar.bz2` and `.zip`. ([#15891](https://github.com/hashicorp/terraform/issues/15891))
+* provisioner/local-exec: now possible to specify a custom "interpreter", overriding the default of either `bash -c` (on Unix) or `cmd.exe /C` (on Windows) ([#15166](https://github.com/hashicorp/terraform/issues/15166))
+* backend/consul: can now set the path to a specific CA certificate file, client certificate file, and client key file that will be used when configuring the underlying Consul client. ([#15405](https://github.com/hashicorp/terraform/issues/15405))
+* backend/http: now has optional support for locking, with special support from the target server. Additionally, the update operation can now optionally be implemented via `PUT` rather than `POST`. ([#15793](https://github.com/hashicorp/terraform/issues/15793))
+* helper/resource: Add `TestStep.SkipFunc` ([#15957](https://github.com/hashicorp/terraform/issues/15957))
+
+BUG FIXES:
+
+* cli: `terraform init` now verifies the required Terraform version from the root module config. Previously this was verified only on subsequent commands, after initialization. ([#15935](https://github.com/hashicorp/terraform/issues/15935))
+* cli: `terraform validate` now consults `terraform.tfvars`, if present, to set variable values. This is now consistent with the behavior of other commands. ([#15938](https://github.com/hashicorp/terraform/issues/15938))
+
 ## 0.10.2 (August 16, 2017)
 
 BUG FIXES:
 
 * tools/terraform-bundle: Add missing Ui to ProviderInstaller (fix crash) ([#15826](https://github.com/hashicorp/terraform/issues/15826))
-* go-plugin: crash when server emits non-key-value JSON ([go-plugin#43](https://github.com/hashicorp/go-plugin/pull/43))
+* go-plugin: don't crash when server emits non-key-value JSON ([go-plugin#43](https://github.com/hashicorp/go-plugin/pull/43))
 
 ## 0.10.1 (August 15, 2017)
 

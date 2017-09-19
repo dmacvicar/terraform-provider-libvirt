@@ -1354,6 +1354,34 @@ func TestInterpolateFuncIndex(t *testing.T) {
 	})
 }
 
+func TestInterpolateFuncIndent(t *testing.T) {
+	testFunction(t, testFunctionConfig{
+		Cases: []testFunctionCase{
+			{
+				`${indent(4, "Fleas:
+Adam
+Had'em
+
+E.E. Cummings")}`,
+				"Fleas:\n    Adam\n    Had'em\n    \n    E.E. Cummings",
+				false,
+			},
+			{
+				`${indent(4, "oneliner")}`,
+				"oneliner",
+				false,
+			},
+			{
+				`${indent(4, "#!/usr/bin/env bash
+date
+pwd")}`,
+				"#!/usr/bin/env bash\n    date\n    pwd",
+				false,
+			},
+		},
+	})
+}
+
 func TestInterpolateFuncJoin(t *testing.T) {
 	testFunction(t, testFunctionConfig{
 		Vars: map[string]ast.Variable{
@@ -1406,8 +1434,6 @@ func TestInterpolateFuncJSONEncode(t *testing.T) {
 				Type:  ast.TypeString,
 			},
 			"list": interfaceToVariableSwallowError([]string{"foo", "bar\tbaz"}),
-			// XXX can't use InterfaceToVariable as it converts empty slice into empty
-			// map.
 			"emptylist": ast.Variable{
 				Value: []ast.Variable{},
 				Type:  ast.TypeList,
@@ -1416,9 +1442,7 @@ func TestInterpolateFuncJSONEncode(t *testing.T) {
 				"foo":     "bar",
 				"ba \n z": "q\\x",
 			}),
-			"emptymap": interfaceToVariableSwallowError(map[string]string{}),
-
-			// Not yet supported (but it would be nice)
+			"emptymap":   interfaceToVariableSwallowError(map[string]string{}),
 			"nestedlist": interfaceToVariableSwallowError([][]string{{"foo"}}),
 			"nestedmap":  interfaceToVariableSwallowError(map[string][]string{"foo": {"bar"}}),
 		},
@@ -1470,13 +1494,13 @@ func TestInterpolateFuncJSONEncode(t *testing.T) {
 			},
 			{
 				`${jsonencode(nestedlist)}`,
-				nil,
-				true,
+				`[["foo"]]`,
+				false,
 			},
 			{
 				`${jsonencode(nestedmap)}`,
-				nil,
-				true,
+				`{"foo":["bar"]}`,
+				false,
 			},
 		},
 	})
@@ -2253,6 +2277,18 @@ func TestInterpolateFuncTrimSpace(t *testing.T) {
 	})
 }
 
+func TestInterpolateFuncBase64Gzip(t *testing.T) {
+	testFunction(t, testFunctionConfig{
+		Cases: []testFunctionCase{
+			{
+				`${base64gzip("test")}`,
+				"H4sIAAAAAAAA/ypJLS4BAAAA//8BAAD//wx+f9gEAAAA",
+				false,
+			},
+		},
+	})
+}
+
 func TestInterpolateFuncBase64Sha256(t *testing.T) {
 	testFunction(t, testFunctionConfig{
 		Cases: []testFunctionCase{
@@ -2499,6 +2535,79 @@ func TestInterpolateFuncBcrypt(t *testing.T) {
 				`${bcrypt("test", 15, 12)}`,
 				nil,
 				true,
+			},
+		},
+	})
+}
+
+func TestInterpolateFuncFlatten(t *testing.T) {
+	testFunction(t, testFunctionConfig{
+		Cases: []testFunctionCase{
+			// empty string within array
+			{
+				`${flatten(split(",", "a,,b"))}`,
+				[]interface{}{"a", "", "b"},
+				false,
+			},
+
+			// typical array
+			{
+				`${flatten(split(",", "a,b,c"))}`,
+				[]interface{}{"a", "b", "c"},
+				false,
+			},
+
+			// empty array
+			{
+				`${flatten(split(",", ""))}`,
+				[]interface{}{""},
+				false,
+			},
+
+			// list of lists
+			{
+				`${flatten(list(list("a"), list("b")))}`,
+				[]interface{}{"a", "b"},
+				false,
+			},
+			// list of lists of lists
+			{
+				`${flatten(list(list("a"), list(list("b","c"))))}`,
+				[]interface{}{"a", "b", "c"},
+				false,
+			},
+			// list of strings
+			{
+				`${flatten(list("a", "b", "c"))}`,
+				[]interface{}{"a", "b", "c"},
+				false,
+			},
+		},
+	})
+}
+
+func TestInterpolateFuncURLEncode(t *testing.T) {
+	testFunction(t, testFunctionConfig{
+		Cases: []testFunctionCase{
+			{
+				`${urlencode("abc123-_")}`,
+				"abc123-_",
+				false,
+			},
+			{
+				`${urlencode("foo:bar@localhost?foo=bar&bar=baz")}`,
+				"foo%3Abar%40localhost%3Ffoo%3Dbar%26bar%3Dbaz",
+				false,
+			},
+			{
+				`${urlencode("mailto:email?subject=this+is+my+subject")}`,
+				"mailto%3Aemail%3Fsubject%3Dthis%2Bis%2Bmy%2Bsubject",
+				false,
+			},
+			{
+				`${urlencode("foo/bar")}`,
+				"foo%2Fbar",
+				false,
 			},
 		},
 	})

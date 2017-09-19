@@ -2,9 +2,10 @@ package ignition
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/config/v2_1/types"
 )
 
 func TestIngnitionFile(t *testing.T) {
@@ -48,7 +49,7 @@ func TestIngnitionFile(t *testing.T) {
 		}
 	`, func(c *types.Config) error {
 		if len(c.Storage.Files) != 3 {
-			return fmt.Errorf("arrays, found %d", len(c.Storage.Files))
+			return fmt.Errorf("arrays, found %d", len(c.Storage.Raid))
 		}
 
 		f := c.Storage.Files[0]
@@ -60,20 +61,20 @@ func TestIngnitionFile(t *testing.T) {
 			return fmt.Errorf("path, found %q", f.Path)
 		}
 
-		if f.Contents.Source.String() != "data:text/plain;charset=utf-8;base64,Zm9v" {
+		if f.Contents.Source != "data:text/plain;charset=utf-8;base64,Zm9v" {
 			return fmt.Errorf("contents.source, found %q", f.Contents.Source)
 		}
 
-		if f.Mode != types.FileMode(420) {
+		if f.Mode != 420 {
 			return fmt.Errorf("mode, found %q", f.Mode)
 		}
 
-		if f.User.Id != 42 {
-			return fmt.Errorf("uid, found %q", f.User.Id)
+		if *f.User.ID != 42 {
+			return fmt.Errorf("uid, found %q", *f.User.ID)
 		}
 
-		if f.Group.Id != 84 {
-			return fmt.Errorf("gid, found %q", f.Group.Id)
+		if *f.Group.ID != 84 {
+			return fmt.Errorf("gid, found %q", *f.Group.ID)
 		}
 
 		f = c.Storage.Files[1]
@@ -85,7 +86,7 @@ func TestIngnitionFile(t *testing.T) {
 			return fmt.Errorf("path, found %q", f.Path)
 		}
 
-		if f.Contents.Source.String() != "qux" {
+		if f.Contents.Source != "qux" {
 			return fmt.Errorf("contents.source, found %q", f.Contents.Source)
 		}
 
@@ -93,8 +94,8 @@ func TestIngnitionFile(t *testing.T) {
 			return fmt.Errorf("contents.compression, found %q", f.Contents.Compression)
 		}
 
-		if f.Contents.Verification.Hash.Sum != "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" {
-			return fmt.Errorf("config.replace.verification, found %q", f.Contents.Verification.Hash)
+		if *f.Contents.Verification.Hash != "sha512-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" {
+			return fmt.Errorf("config.replace.verification, found %q", *f.Contents.Verification.Hash)
 		}
 
 		f = c.Storage.Files[2]
@@ -106,7 +107,7 @@ func TestIngnitionFile(t *testing.T) {
 			return fmt.Errorf("path, found %q", f.Path)
 		}
 
-		if f.Contents.Source.String() != "nop" {
+		if f.Contents.Source != "nop" {
 			return fmt.Errorf("contents.source, found %q", f.Contents.Source)
 		}
 
@@ -120,4 +121,42 @@ func TestIngnitionFile(t *testing.T) {
 
 		return nil
 	})
+}
+
+func TestIngnitionFileInvalidMode(t *testing.T) {
+	testIgnitionError(t, `
+		data "ignition_file" "foo" {
+			filesystem = "foo"
+			path = "/foo"
+			mode = 999999
+			content {
+				content = "foo"
+			}
+		}
+
+		data "ignition_config" "test" {
+			files = [
+				"${data.ignition_file.foo.id}",
+			]
+		}
+	`, regexp.MustCompile("illegal file mode"))
+}
+
+func TestIngnitionFileInvalidPath(t *testing.T) {
+	testIgnitionError(t, `
+		data "ignition_file" "foo" {
+			filesystem = "foo"
+			path = "foo"
+			mode = 999999
+			content {
+				content = "foo"
+			}
+		}
+
+		data "ignition_config" "test" {
+			files = [
+				"${data.ignition_file.foo.id}",
+			]
+		}
+	`, regexp.MustCompile("absolute"))
 }

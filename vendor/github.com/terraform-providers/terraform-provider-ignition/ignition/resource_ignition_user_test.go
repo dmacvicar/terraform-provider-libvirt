@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/config/v2_1/types"
 )
 
 func TestIngnitionUser(t *testing.T) {
@@ -22,6 +22,7 @@ func TestIngnitionUser(t *testing.T) {
 			no_user_group = true
 			no_log_init = true
 			shell = "shell"
+			system = true
 		}
 
 		data "ignition_user" "qux" {
@@ -45,8 +46,8 @@ func TestIngnitionUser(t *testing.T) {
 			return fmt.Errorf("Field Name didn't match. Expected: %s, Given: %s", "foo", u.Name)
 		}
 
-		if u.PasswordHash != "password" {
-			return fmt.Errorf("Field PasswordHash didn't match. Expected: %s, Given: %s", "password", u.PasswordHash)
+		if *u.PasswordHash != "password" {
+			return fmt.Errorf("Field PasswordHash didn't match. Expected: %s, Given: %s", "password", *u.PasswordHash)
 		}
 
 		if len(u.SSHAuthorizedKeys) != 1 {
@@ -57,54 +58,54 @@ func TestIngnitionUser(t *testing.T) {
 			return fmt.Errorf("Field SSHAuthorizedKeys didn't match. Expected: %s, Given: %s", "keys", u.SSHAuthorizedKeys[0])
 		}
 
-		if *u.Create.Uid != uint(42) {
-			return fmt.Errorf("Field Uid didn't match. Expected: %d, Given: %d", uint(42), u.Create.Uid)
+		if *u.UID != 42 {
+			return fmt.Errorf("Field Uid didn't match. Expected: %d, Given: %d", uint(42), u.UID)
 		}
 
-		if u.Create.GECOS != "gecos" {
-			return fmt.Errorf("Field GECOS didn't match. Expected: %s, Given: %s", "gecos", u.Create.GECOS)
+		if u.Gecos != "gecos" {
+			return fmt.Errorf("Field GECOS didn't match. Expected: %s, Given: %s", "gecos", u.Gecos)
 		}
 
-		if u.Create.Homedir != "home" {
-			return fmt.Errorf("Field Homedir didn't match. Expected: %s, Given: %s", "home", u.Create.Homedir)
+		if u.HomeDir != "home" {
+			return fmt.Errorf("Field Homedir didn't match. Expected: %s, Given: %s", "home", u.HomeDir)
 		}
 
-		if u.Create.NoCreateHome != true {
-			return fmt.Errorf("Field NoCreateHome didn't match. Expected: %t, Given: %t", true, u.Create.NoCreateHome)
+		if u.NoCreateHome != true {
+			return fmt.Errorf("Field NoCreateHome didn't match. Expected: %t, Given: %t", true, u.NoCreateHome)
 		}
 
-		if u.Create.PrimaryGroup != "primary_group" {
-			return fmt.Errorf("Field PrimaryGroup didn't match. Expected: %s, Given: %s", "primary_group", u.Create.PrimaryGroup)
+		if u.PrimaryGroup != "primary_group" {
+			return fmt.Errorf("Field PrimaryGroup didn't match. Expected: %s, Given: %s", "primary_group", u.PrimaryGroup)
 		}
 
-		if len(u.Create.Groups) != 1 {
-			return fmt.Errorf("Lenght of field Groups didn't match. Expected: %d, Given: %d", 1, len(u.Create.Groups))
+		if len(u.Groups) != 1 {
+			return fmt.Errorf("Lenght of field Groups didn't match. Expected: %d, Given: %d", 1, len(u.Groups))
 		}
 
-		if u.Create.Groups[0] != "group" {
-			return fmt.Errorf("Field Groups didn't match. Expected: %s, Given: %s", "group", u.Create.Groups[0])
+		if u.Groups[0] != "group" {
+			return fmt.Errorf("Field Groups didn't match. Expected: %s, Given: %s", "group", u.Groups[0])
 		}
 
-		if u.Create.NoUserGroup != true {
-			return fmt.Errorf("Field NoUserGroup didn't match. Expected: %t, Given: %t", true, u.Create.NoUserGroup)
+		if u.NoUserGroup != true {
+			return fmt.Errorf("Field NoUserGroup didn't match. Expected: %t, Given: %t", true, u.NoUserGroup)
 		}
 
-		if u.Create.NoLogInit != true {
-			return fmt.Errorf("Field NoLogInit didn't match. Expected: %t, Given: %t", true, u.Create.NoLogInit)
+		if u.NoLogInit != true {
+			return fmt.Errorf("Field NoLogInit didn't match. Expected: %t, Given: %t", true, u.NoLogInit)
 		}
 
-		if u.Create.Shell != "shell" {
-			return fmt.Errorf("Field Shell didn't match. Expected: %s, Given: %s", "shell", u.Create.Shell)
+		if u.Shell != "shell" {
+			return fmt.Errorf("Field Shell didn't match. Expected: %s, Given: %s", "shell", u.Shell)
+		}
+
+		if u.System != true {
+			return fmt.Errorf("Field System didn't match. Expected: %v, Given: %v", true, u.System)
 		}
 
 		u = c.Passwd.Users[1]
 
 		if u.Name != "qux" {
 			return fmt.Errorf("Field Name didn't match. Expected: %s, Given: %s", "qux", u.Name)
-		}
-
-		if u.Create != nil {
-			return fmt.Errorf("Field Create didn't match. Expected: %v, Given: %v", nil, u.Create)
 		}
 
 		return nil

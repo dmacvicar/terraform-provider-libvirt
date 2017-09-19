@@ -17,21 +17,18 @@ limitations under the License.
 package machine1
 
 import (
-	"fmt"
-	"math/rand"
 	"os/exec"
 	"testing"
-	"time"
 
 	"github.com/coreos/go-systemd/dbus"
 )
 
 const (
-	machinePrefix = "machined-test-"
+	testServiceName = "machined-test.service"
+	machineName     = "testMachine"
 )
 
-func mustCreateTestProcess(machineName string) (pid int) {
-	testServiceName := machineName + ".service"
+func mustCreateTestProcess() (pid int) {
 	systemdRun, err := exec.LookPath("systemd-run")
 	if err != nil {
 		panic(err.Error())
@@ -41,9 +38,9 @@ func mustCreateTestProcess(machineName string) (pid int) {
 		panic(err.Error())
 	}
 	cmd := exec.Command(systemdRun, "--unit="+testServiceName, sleep, "5000")
-	out, err := cmd.CombinedOutput()
+	err = cmd.Run()
 	if err != nil {
-		panic(fmt.Errorf("systemd-run failed: %q", out))
+		panic(err.Error())
 	}
 	dbusConn, err := dbus.New()
 	if err != nil {
@@ -59,8 +56,7 @@ func mustCreateTestProcess(machineName string) (pid int) {
 }
 
 func TestMachine(t *testing.T) {
-	machineName := machinePrefix + generateRandomLabel(8)
-	leader := mustCreateTestProcess(machineName)
+	leader := mustCreateTestProcess()
 
 	conn, newErr := New()
 	if newErr != nil {
@@ -91,14 +87,4 @@ func TestMachine(t *testing.T) {
 	} else if getErr == nil {
 		t.Fatal("expected error but got nil")
 	}
-}
-
-func generateRandomLabel(n int) string {
-	letters := []rune("abcdefghijklmnopqrstuvwxyz")
-	s := make([]rune, n)
-	rand.Seed(time.Now().UnixNano())
-	for i := range s {
-		s[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(s)
 }

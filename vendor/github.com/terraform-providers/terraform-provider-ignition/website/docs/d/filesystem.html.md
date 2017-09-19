@@ -39,13 +39,15 @@ The `mount` block supports:
 
 * `device` - (Required) The absolute path to the device. Devices are typically referenced by the _/dev/disk/by-*_ symlinks.
 
-* `format` - (Required) The filesystem format (ext4, btrfs, or xfs).
+* `format` - (Required) The filesystem format (ext4, btrfs, xfs, vfat, or swap).
 
-* `create` - (Optional) Indicates if the filesystem shall be created.
+* `wipe_filesystem` - (Optional)  Whether or not to wipe the device before filesystem creation.
 
-* `force` - (Optional) Whether or not the create operation shall overwrite an existing filesystem. Only allowed if the filesystem is being created.
+* `label` - (Optional) The label of the filesystem.
 
-* `options` - (Optional) Any additional options to be passed to the format-specific mkfs utility. Only allowed if the filesystem is being created
+* `uuid` - (Optional) The uuid of the filesystem.
+
+* `options` - (Optional) Any additional options to be passed to the format-specific mkfs utility.
 
 ## Attributes Reference
 

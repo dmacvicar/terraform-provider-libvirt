@@ -1519,6 +1519,7 @@ func TestContext2Apply_destroyData(t *testing.T) {
 			},
 		},
 	}
+	hook := &testHook{}
 	ctx := testContext2(t, &ContextOpts{
 		Module: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -1528,6 +1529,7 @@ func TestContext2Apply_destroyData(t *testing.T) {
 		),
 		State:   state,
 		Destroy: true,
+		Hooks:   []Hook{hook},
 	})
 
 	if p, err := ctx.Plan(); err != nil {
@@ -1547,6 +1549,15 @@ func TestContext2Apply_destroyData(t *testing.T) {
 
 	if got := len(newState.Modules[0].Resources); got != 0 {
 		t.Fatalf("state has %d resources after destroy; want 0", got)
+	}
+
+	wantHookCalls := []*testHookCall{
+		{"PreDiff", "data.null_data_source.testing"},
+		{"PostDiff", "data.null_data_source.testing"},
+		{"PostStateUpdate", ""},
+	}
+	if !reflect.DeepEqual(hook.Calls, wantHookCalls) {
+		t.Errorf("wrong hook calls\ngot: %swant: %s", spew.Sdump(hook.Calls), spew.Sdump(wantHookCalls))
 	}
 }
 
@@ -8760,4 +8771,41 @@ module.child.subchild:
     num = 2
     type = aws_instance
 	`)
+}
+
+func TestContext2Apply_localVal(t *testing.T) {
+	m := testModule(t, "apply-local-val")
+	ctx := testContext2(t, &ContextOpts{
+		Module: m,
+		ProviderResolver: ResourceProviderResolverFixed(
+			map[string]ResourceProviderFactory{},
+		),
+	})
+
+	if _, err := ctx.Plan(); err != nil {
+		t.Fatalf("error during plan: %s", err)
+	}
+
+	state, err := ctx.Apply()
+	if err != nil {
+		t.Fatalf("error during apply: %s", err)
+	}
+
+	got := strings.TrimSpace(state.String())
+	want := strings.TrimSpace(`
+<no state>
+Outputs:
+
+result_1 = hello
+result_3 = hello world
+
+module.child:
+  <no state>
+  Outputs:
+
+  result = hello
+`)
+	if got != want {
+		t.Fatalf("wrong final state\ngot:\n%s\nwant:\n%s", got, want)
+	}
 }

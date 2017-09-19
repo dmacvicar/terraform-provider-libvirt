@@ -2,7 +2,7 @@ dist: trusty
 language: go
 
 go:
-  - 1.8
+  - 1.9
 go_import_path: github.com/dmacvicar/terraform-provider-libvirt
 install: true
 before_script:

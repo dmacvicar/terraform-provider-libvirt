@@ -257,6 +257,12 @@ func (c *InitCommand) Run(args []string) int {
 	}
 
 	c.Ui.Output(c.Colorize().Color(strings.TrimSpace(outputInitSuccess)))
+	if !c.RunningInAutomation {
+		// If we're not running in an automation wrapper, give the user
+		// some more detailed next steps that are appropriate for interactive
+		// shell usage.
+		c.Ui.Output(c.Colorize().Color(strings.TrimSpace(outputInitSuccessCLI)))
+	}
 
 	return 0
 }
@@ -288,6 +294,11 @@ func (c *InitCommand) getProviders(path string, state *terraform.State, upgrade 
 		return err
 	}
 
+	if err := terraform.CheckRequiredVersion(mod); err != nil {
+		c.Ui.Error(err.Error())
+		return err
+	}
+
 	var available discovery.PluginMetaSet
 	if upgrade {
 		// If we're in upgrade mode, we ignore any auto-installed plugins
@@ -312,7 +323,7 @@ func (c *InitCommand) getProviders(path string, state *terraform.State, upgrade 
 	var errs error
 	if c.getPlugins {
 		if len(missing) > 0 {
-			c.Ui.Output(fmt.Sprintf(" - Checking for available provider plugins on %s...",
+			c.Ui.Output(fmt.Sprintf("- Checking for available provider plugins on %s...",
 				discovery.GetReleaseHost()))
 		}
 
@@ -531,7 +542,9 @@ with Terraform immediately by creating Terraform configuration files.
 
 const outputInitSuccess = `
 [reset][bold][green]Terraform has been successfully initialized![reset][green]
+`
 
+const outputInitSuccessCLI = `[reset][green]
 You may now begin working with Terraform. Try running "terraform plan" to see
 any changes that are required for your infrastructure. All Terraform commands
 should now work.

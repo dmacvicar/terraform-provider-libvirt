@@ -46,7 +46,9 @@ The following arguments are supported:
 
 * `no_log_init` - (Optional) Whether or not to add the user to the lastlog and faillog databases.
 
-* `shell` - (Optional) The login shell of the new account.	
+* `shell` - (Optional) The login shell of the new account.
+
+* `system` - (Optional) Whether or not to make the account a system account. This only has an effect if the account doesn't exist yet.
 
 ## Attributes Reference
 

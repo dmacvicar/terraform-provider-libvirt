@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/config/v2_1/types"
 )
 
 func TestIngnitionGroup(t *testing.T) {
@@ -40,7 +40,7 @@ func TestIngnitionGroup(t *testing.T) {
 			return fmt.Errorf("password_hash, found %q", g.PasswordHash)
 		}
 
-		if g.Gid == nil || *g.Gid != uint(42) {
+		if g.Gid == nil || *g.Gid != 42 {
 			return fmt.Errorf("gid, found %q", *g.Gid)
 		}
 
