@@ -529,25 +529,20 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 					}
 				}
 			} else {
-				// no IPs provided: if the hostname has been provided, wait until we get an IP
-				if len(hostname) > 0 {
-					if waitForLeaseI, ok := d.GetOk(prefix + ".wait_for_lease"); ok {
-						waitForLease := waitForLeaseI.(bool)
-						if !waitForLease {
-							return fmt.Errorf("Cannot map '%s': we are not waiting for lease and no IP has been provided", hostname)
-						}
+				// no IPs provided so check whether we are waiting for a lease
+				if waitForLeaseI, ok := d.GetOk(prefix + ".wait_for_lease"); ok {
+					waitForLease := waitForLeaseI.(bool)
+					if !waitForLease {
+						return fmt.Errorf("Cannot map '%s': we are not waiting for lease and no IP has been provided", hostname)
 					}
-					// the resource specifies a hostname but not an IP, so we must wait until we
-					// have a valid lease and then read the IP we have been assigned, so we can
-					// do the mapping
-					log.Printf("[DEBUG] Will wait for an IP for hostname '%s'...", hostname)
-					partialNetIfaces[strings.ToUpper(mac)] = pendingMapping{
-						mac:      strings.ToUpper(mac),
-						hostname: hostname,
-						network:  network,
-					}
-				} else {
-					// neither an IP or a hostname has been provided: so nothing must be forced
+				}
+				// we must wait until we have a valid lease and then read the IP we
+				// have been assigned, so we can do the mapping
+				log.Printf("[DEBUG] Will wait for an IP for hostname '%s'...", hostname)
+				partialNetIfaces[strings.ToUpper(mac)] = pendingMapping{
+					mac:      strings.ToUpper(mac),
+					hostname: hostname,
+					network:  network,
 				}
 			}
 			netIface.Type = "network"
