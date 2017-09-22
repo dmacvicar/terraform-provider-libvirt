@@ -2,8 +2,11 @@
 set -x
 
 unset http_proxy
-
-export GOROOT=/usr/lib/go-1.8/
+if [ -x /usr/lib/golang/ ]; then 
+    export GOROOT=/usr/lib/golang/
+else
+    export GOROOT=/usr/lib/go-1.8/
+fi
 export GOPATH=/root/go
 export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 

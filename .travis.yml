@@ -1,14 +1,17 @@
 dist: trusty
 language: go
 
+env:
+  - GUEST_OS=ubuntu
+  - GUEST_OS=fedora
 go:
   - 1.8
 go_import_path: github.com/dmacvicar/terraform-provider-libvirt
 install: true
 before_script:
   - go get github.com/mattn/goveralls
-  - sudo bash ./travis/setup-host
-  - sudo lxc exec libvirt -- bash /code/travis/setup-guest
+  - sudo bash ./travis/${GUEST_OS}/setup-host
+  - sudo lxc exec libvirt -- bash /code/travis/${GUEST_OS}/setup-guest
 script:
   - sudo lxc exec libvirt -- bash /code/travis/run-tests-inside-guest
   - sudo lxc file pull libvirt/root/go/src/github.com/dmacvicar/terraform-provider-libvirt/profile.cov .
