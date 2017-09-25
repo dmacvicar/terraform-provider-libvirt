@@ -289,12 +289,17 @@ settings.
 
 The block supports:
 
-* `type` - the type of graphics emulation (default is "spice")
-* `autoport` - defaults to "yes"
-* `listen_type` - "listen type", defaults to "none"
+* `type` - the type of graphics emulation, spice or vnc  (default is "spice")
+* `autoport` - should a port be allocated to listen on (default is "yes")
+* `listen_address` - address to listen on, set to "0.0.0.0" for all addresses
+   (default is "127.0.0.1")
+* `listen_type` - listen type for graphics (default is "address"
+* `listen_port` - set a specific port for listening (default is unset)
 
 On occasion we have found it necessary to set a `type` of `vnc` and a
 `listen_type` of `address` with certain builds of QEMU.
+
+For hopefully obvious reasons you cannot set autoport to "yes" and specify a port
 
 The `graphics` block will look as follows:
 
@@ -304,13 +309,20 @@ resource "libvirt_domain" "my_machine" {
   graphics {
     type = "vnc"
     listen_type = "address"
+    listen_address = "192.168.66.22"
+    listen_port = "5910"
   }
 }
 ```
 
-~> **Note well:** the `graphics` block is ignored for the architectures
-  `s390x` and `ppc64`.
+### Video devices
 
+* `video_type` - (Optional) Argument allows selecting a video type.
+
+If one is not specified and a `graphics` block is included a default "cirrus" video device will be added.
+
+~> **Note well:** the `graphics` block and `video` settings are ignored for the architectures
+  `s390x` and `ppc64`.
 
 ### Console devices
 
