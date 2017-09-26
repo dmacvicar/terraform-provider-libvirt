@@ -299,7 +299,7 @@ func TestAccLibvirtDomain_GraphicsSDLFail(t *testing.T) {
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config:      config,
-				ExpectError: regexp.MustCompile(".*We only support graphics types of spice.*"),
+				ExpectError: regexp.MustCompile(".*We only support graphics types of spice or vnc, not: sdl.*"),
 			},
 		},
 	},
@@ -316,7 +316,7 @@ func TestAccLibvirtDomain_GraphicsPortAutoPortFail(t *testing.T) {
                     name = "terraform-test"
                     graphics {
                             type = "spice"
-                            autoport = "true"
+                            autoport = "yes"
                             listen_port = "5901"
                     }
             }`)
@@ -328,14 +328,14 @@ func TestAccLibvirtDomain_GraphicsPortAutoPortFail(t *testing.T) {
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config:      config,
-				ExpectError: regexp.MustCompile(".*It does not make sense.*"),
+				ExpectError: regexp.MustCompile(".*autoport and listen_port cannot be used at the same time.*"),
 			},
 		},
 	},
 	)
 }
 
-func TestAccLibvirtDomain_GraphicsSpice(t *testing.T) {
+func TestAccLibvirtDomain_GraphicsSpiceAndDefVideo(t *testing.T) {
 	var domain libvirt.Domain
 
 	var config = fmt.Sprintf(`
@@ -368,6 +368,9 @@ func TestAccLibvirtDomain_GraphicsSpice(t *testing.T) {
 						"libvirt_domain.acceptance-test-domain", "graphics.autoport", "yes"),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "graphics.listen_type", "address"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "video_type", "cirrus"),
+
 				),
 			},
 		},
@@ -452,6 +455,40 @@ func TestAccLibvirtDomain_GraphicsVNCPort(t *testing.T) {
 						"libvirt_domain.acceptance-test-domain", "graphics.listen_type", "address"),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "graphics.listen_address", "0.0.0.0"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtDomain_GraphicsVNCSimple(t *testing.T) {
+	var domain libvirt.Domain
+
+	var config = fmt.Sprintf(`
+            resource "libvirt_volume" "acceptance-test-graphics" {
+                    name = "terraform-test"
+            }
+
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+                    graphics {
+                            type = "vnc"
+                    }
+            }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "graphics.type", "vnc"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "graphics.autoport", "yes"),
 				),
 			},
 		},

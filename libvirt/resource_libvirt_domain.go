@@ -126,6 +126,7 @@ func resourceLibvirtDomain() *schema.Resource {
 			"graphics": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
+				Computed: true,
 			},
 			"video_type": &schema.Schema{
 				Type:     schema.TypeString,
@@ -258,6 +259,8 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				libvirtxml.DomainGraphic{},
 			}
 
+			// Check that we supoort the graphics type and set to spice if not specified
+			// a a default
 			if graphicsType, ok := graphicsMap["type"].(string); ok {
 				if !(graphicsType == "vnc" || graphicsType == "spice") {
 					return fmt.Errorf("[ERROR] We only support graphics types of spice or vnc, not: %s", graphicsType)
@@ -268,20 +271,28 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				d.Set("graphics.type", "spice")
 			}
 
+			autoPort, autoPortOk := graphicsMap["autoport"]
+			listenPort, listenPortOk := graphicsMap["listen_port"]
+
 			// If both autoport is yes and port are set then we should fail
-			// If neither are set use autoport
-			// Otherwise use autoport or port as specified
-			if graphicsMap["autoport"] != nil && graphicsMap["listen_port"] != nil {
-				return fmt.Errorf("[ERROR] It does not make sense to set autoport to yes and a listen_port")
-			} else if (graphicsMap["autoport"] == nil && graphicsMap["listen_port"] == nil) ||
-				(graphicsMap["autoport"] != nil && graphicsMap["autoport"].(string) == "yes") {
+			if autoPort == "yes" && listenPortOk {
+				return fmt.Errorf("[ERROR] autoport and listen_port cannot be used at the same time")
+			}
+
+			// If neither are set use autoport and store for read back
+			if !autoPortOk && !listenPortOk {
+				log.Printf("[INFO] No graphics.autoport or graphics.listen_port set using default autoport = yes")
 				domainDef.Devices.Graphics[0].AutoPort = "yes"
 				d.Set("graphics.autoport", "yes")
 			} else {
-				log.Printf("[INFO] As port has been specified turning autoport off")
-				domainDef.Devices.Graphics[0].AutoPort = "no"
-				d.Set("graphics.autoport", "no")
-				domainDef.Devices.Graphics[0].Port, _ = strconv.Atoi(graphicsMap["listen_port"].(string))
+				// Otherwise use autoport and/or port as specified
+				if autoPortOk {
+					domainDef.Devices.Graphics[0].AutoPort = autoPort.(string)
+				}
+
+				if listenPortOk {
+					domainDef.Devices.Graphics[0].Port, _ = strconv.Atoi(listenPort.(string))
+				}
 			}
 
 			if listenType, ok := graphicsMap["listen_type"]; !ok || listenType == "address" {
@@ -921,21 +932,24 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	// or it will show as changed
 	d.Set("emulator", domainDef.Devices.Emulator)
 
+	// Parse in the graphics structure
 	if domainDef.Devices.Graphics != nil {
-		graphics := map[string]string{}
 		graphicsInstance := domainDef.Devices.Graphics[0]
-		graphics["type"] = graphicsInstance.Type
+
+		d.Set("graphics.type", graphicsInstance.Type)
+
 		// Add either the port or autoport but not both
 		if graphicsInstance.AutoPort == "yes" {
-			graphics["autoport"] = "yes"
+			d.Set("graphics.autoport", "yes")
 		} else {
-			graphics["listen_port"] = strconv.Itoa(graphicsInstance.Port)
+			d.Set("graphics.listen_port", strconv.Itoa(graphicsInstance.Port))
+			d.Set("graphics.autoport", "no")
 		}
+
 		if len(graphicsInstance.Listeners) > 0 {
-			graphics["listen_address"] = graphicsInstance.Listeners[0].Address
-			graphics["listen_type"] = graphicsInstance.Listeners[0].Type
+			d.Set("graphics.listen_address", graphicsInstance.Listeners[0].Address)
+			d.Set("graphics.listen_type", graphicsInstance.Listeners[0].Type)
 		}
-		d.Set("graphics", graphics)
 	}
 
 	if len(domainDef.Devices.Videos) > 0 {
