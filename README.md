@@ -67,6 +67,9 @@ $ terraform destroy
 This project uses [glide](https://github.com/Masterminds/glide) to vendor all its
 dependencies.
 
+Ensure you have latest version of Go installed on your system, terraform usually
+takes advantage of fetures available only inside of the latest stable release.
+
 Run `go install` to build the binary. You will now find the binary at
 `$GOPATH/bin/terraform-provider-libvirt`.
 
