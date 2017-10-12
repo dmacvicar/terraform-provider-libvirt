@@ -65,9 +65,11 @@ $ terraform destroy
 ## Building from source
 
 This project uses [glide](https://github.com/Masterminds/glide) to vendor all its
-dependencies.
+dependencies and also requires Go 1.9 or higher.
 
-Run `go install` to build the binary. You will now find the binary at
+### Build Steps
+1. Run `glide install` to install vendor dependencies.
+2. Run `go install` to build the binary. You will now find the binary at
 `$GOPATH/bin/terraform-provider-libvirt`.
 
 ## Running
