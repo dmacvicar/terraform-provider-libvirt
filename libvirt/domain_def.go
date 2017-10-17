@@ -44,9 +44,6 @@ func newDomainDef() libvirtxml.Domain {
 			Channels: []libvirtxml.DomainChannel{
 				libvirtxml.DomainChannel{
 					Type: "unix",
-					Source: &libvirtxml.DomainChardevSource{
-						Mode: "bind",
-					},
 					Target: &libvirtxml.DomainChannelTarget{
 						Type: "virtio",
 						Name: "org.qemu.guest_agent.0",
