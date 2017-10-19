@@ -10,7 +10,7 @@ import (
 func TestGetDomainInterfacesViaQemuAgentInvalidResponse(t *testing.T) {
 	domain := DomainMock{}
 
-	interfaces := getDomainInterfacesViaQemuAgent(domain, false)
+	interfaces := qemuAgentGetInterfacesInfo(domain, false)
 
 	if len(interfaces) != 0 {
 		t.Errorf("wrong number of interfaces: %d instead of 0", len(interfaces))
@@ -29,7 +29,7 @@ func TestGetDomainInterfacesViaQemuAgentNoInterfaces(t *testing.T) {
 		QemuAgentCommandResponse: string(data),
 	}
 
-	interfaces := getDomainInterfacesViaQemuAgent(domain, false)
+	interfaces := qemuAgentGetInterfacesInfo(domain, false)
 	if len(interfaces) != 0 {
 		t.Errorf("wrong number of interfaces: %d instead of 0", len(interfaces))
 	}
@@ -59,7 +59,7 @@ func TestGetDomainInterfacesViaQemuAgentIgnoreLoopbackDevice(t *testing.T) {
 		QemuAgentCommandResponse: string(data),
 	}
 
-	interfaces := getDomainInterfacesViaQemuAgent(domain, false)
+	interfaces := qemuAgentGetInterfacesInfo(domain, false)
 
 	if len(interfaces) != 0 {
 		t.Errorf("wrong number of interfaces)")
@@ -90,7 +90,7 @@ func TestGetDomainInterfacesViaQemuAgentIgnoreDevicesWithoutAddress(t *testing.T
 		QemuAgentCommandResponse: string(data),
 	}
 
-	interfaces := getDomainInterfacesViaQemuAgent(domain, false)
+	interfaces := qemuAgentGetInterfacesInfo(domain, false)
 
 	if len(interfaces) != 0 {
 		t.Errorf("wrong number of interfaces")
@@ -121,7 +121,7 @@ func TestGetDomainInterfacesViaQemuAgentUnknownIpAddressType(t *testing.T) {
 		QemuAgentCommandResponse: string(data),
 	}
 
-	interfaces := getDomainInterfacesViaQemuAgent(domain, false)
+	interfaces := qemuAgentGetInterfacesInfo(domain, false)
 
 	if len(interfaces) != 0 {
 		t.Errorf("wrong number of interfaces: %d instead of 1", len(interfaces))
@@ -162,7 +162,7 @@ func TestGetDomainInterfacesViaQemuAgent(t *testing.T) {
 		QemuAgentCommandResponse: string(data),
 	}
 
-	interfaces := getDomainInterfacesViaQemuAgent(domain, false)
+	interfaces := qemuAgentGetInterfacesInfo(domain, false)
 
 	if len(interfaces) != 1 {
 		t.Errorf("wrong number of interfaces: %d instead of 1", len(interfaces))
