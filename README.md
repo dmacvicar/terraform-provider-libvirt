@@ -77,7 +77,7 @@ resource "libvirt_domain" "terraform_test" {
 Now you can see the plan, apply it, and then destroy the infrastructure:
 
 ```console
-$ terraform init 
+$ terraform init
 $ terraform plan
 $ terraform apply
 $ terraform destroy

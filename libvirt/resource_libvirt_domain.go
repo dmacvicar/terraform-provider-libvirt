@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
@@ -525,7 +524,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	netIfacesCount := d.Get("network_interface.#").(int)
 	netIfaces := make([]libvirtxml.DomainInterface, 0, netIfacesCount)
 	partialNetIfaces := make(map[string]pendingMapping, netIfacesCount)
-	waitForLeases = make(map[libvirtxml.DomainInterface]bool, netIfacesCount)
+	waitForLeases := make(map[libvirtxml.DomainInterface]struct{}, netIfacesCount)
 	for i := 0; i < netIfacesCount; i++ {
 		prefix := fmt.Sprintf("network_interface.%d", i)
 
@@ -547,6 +546,13 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 		netIface.MAC = &libvirtxml.DomainInterfaceMAC{
 			Address: mac,
+		}
+
+		// this is not passed to libvirt, but used by waitForAddress
+		if waitForLease, ok := d.GetOk(prefix + ".wait_for_lease"); ok {
+			if waitForLease.(bool) {
+				waitForLeases[netIface] = struct{}{}
+			}
 		}
 
 		// connect to the interface to the network... first, look for the network
@@ -594,16 +600,14 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 					}
 				}
 			} else {
-				// no IPs provided so check whether we are waiting for a lease
-				if waitForLeaseI, ok := d.GetOk(prefix + ".wait_for_lease"); ok {
-					waitForLease := waitForLeaseI.(bool)
-					if !waitForLease {
-						return fmt.Errorf("Cannot map '%s': we are not waiting for lease and no IP has been provided", hostname)
-					}
+				// no IPs provided: if the hostname has been provided, wait until we get an IP
+				if _, ok := waitForLeases[netIface]; ok {
+					return fmt.Errorf("Cannot map '%s': we are not waiting for DHCP lease and no IP has been provided", hostname)
 				}
-				// we must wait until we have a valid lease and then read the IP we
-				// have been assigned, so we can do the mapping
-				log.Printf("[DEBUG] Will wait for an IP for hostname '%s'...", hostname)
+				// the resource specifies a hostname but not an IP, so we must wait until we
+				// have a valid lease and then read the IP we have been assigned, so we can
+				// do the mapping
+				log.Printf("[DEBUG] Do not have an IP for '%s' yet: will wait until DHCP provides one...", hostname)
 				partialNetIfaces[strings.ToUpper(mac)] = pendingMapping{
 					mac:      strings.ToUpper(mac),
 					hostname: hostname,
@@ -639,11 +643,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			}
 		} else {
 			// no network has been specified: we are on our own
-		}
-		// this is not passed to libvirt, but used by waitForAddress
-		waitForLeases[netIface] = false
-		if waitForLease, ok := d.GetOk(prefix + ".wait_for_lease"); ok {
-			waitForLeases[netIface] = waitForLease.(bool)
 		}
 
 		netIfaces = append(netIfaces, netIface)
@@ -699,28 +698,11 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	log.Printf("[INFO] Domain ID: %s", d.Id())
 
-	domainMeta := DomainMeta{
-		domain,
-		make(chan libvirtxml.DomainInterface, len(netIfaces)),
-	}
-
-	// populate interface channels
-	for _, iface := range netIfaces {
-		domainMeta.ifaces <- iface
-	}
-
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"blocked"},
-		Target:     []string{"running"},
-		Refresh:    resourceLibvirtDomainStateRefreshFunc(d, &domainMeta),
-		Timeout:    d.Timeout(schema.TimeoutCreate),
-		MinTimeout: 10 * time.Second,
-		Delay:      10 * time.Second,
-	}
-
-	_, err = stateConf.WaitForState()
-	if err != nil {
-		return err
+	if len(waitForLeases) > 0 {
+		err = domainWaitForLeases(domain, waitForLeases, d.Timeout(schema.TimeoutCreate))
+		if err != nil {
+			return err
+		}
 	}
 
 	err = resourceLibvirtDomainRead(d, meta)
@@ -768,7 +750,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	}
 	defer domain.Free()
 
-	running, err := isDomainRunning(*domain)
+	running, err := domainIsRunning(*domain)
 	if err != nil {
 		return err
 	}
@@ -924,7 +906,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	// or it will show as changed
 	d.Set("emulator", domainDef.Devices.Emulator)
 
-	running, err := isDomainRunning(*domain)
+	running, err := domainIsRunning(*domain)
 	if err != nil {
 		return err
 	}
@@ -993,7 +975,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("filesystems", filesystems)
 
 	// look interfaces with addresses
-	ifacesWithAddr, err := getDomainInterfaces(*domain)
+	ifacesWithAddr, err := domainGetIfacesInfo(*domain)
 	if err != nil {
 		return fmt.Errorf("Error retrieving interface addresses: %s", err)
 	}
@@ -1156,115 +1138,6 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-func resourceLibvirtDomainStateRefreshFunc(
-	d *schema.ResourceData, meta interface{}) resource.StateRefreshFunc {
-	return func() (interface{}, string, error) {
-		domain := meta.(*DomainMeta).domain
-
-		state, err := getDomainState(*domain)
-		if err != nil {
-			return nil, "", err
-		}
-
-		if state == "running" {
-			// domain and interface(s) are up, we're done
-			if len(meta.(*DomainMeta).ifaces) == 0 {
-				return meta, state, nil
-			}
-
-			// set state to "blocked" since we still have interfaces to check
-			state = "blocked"
-
-			iface := <-meta.(*DomainMeta).ifaces
-			found, ignore, err := hasNetworkAddress(iface, *domain)
-			if err != nil {
-				return nil, "", err
-			}
-
-			if found {
-				return meta, state, nil
-			} else if !found && !ignore {
-				// re-add the interface and deal with it later
-				meta.(*DomainMeta).ifaces <- iface
-			}
-		}
-
-		return meta, state, nil
-	}
-}
-
-func hasNetworkAddress(iface libvirtxml.DomainInterface,
-	domain libvirt.Domain) (found bool, ignore bool, err error) {
-
-	if !waitForLeases[iface] {
-		return false, true, nil
-	}
-
-	mac := strings.ToUpper(iface.MAC.Address)
-	if mac == "" {
-		log.Printf("[DEBUG] Can't wait without a mac address.\n")
-		// we can't get the ip without a mac address
-		return false, true, nil
-	}
-
-	log.Printf("[DEBUG] waiting for network address for interface with hwaddr: '%s'\n", iface.MAC.Address)
-	ifacesWithAddr, err := getDomainInterfaces(domain)
-	if err != nil {
-		return false, false, fmt.Errorf("Error retrieving interface addresses: %s", err)
-	}
-	log.Printf("[DEBUG] ifaces with addresses: %+v\n", ifacesWithAddr)
-
-	for _, ifaceWithAddr := range ifacesWithAddr {
-		// found
-		if mac == strings.ToUpper(ifaceWithAddr.Hwaddr) {
-			return true, false, nil
-		}
-	}
-
-	return false, false, nil
-}
-
-func getDomainState(domain libvirt.Domain) (string, error) {
-	state, _, err := domain.GetState()
-	if err != nil {
-		return "", err
-	}
-
-	var stateStr string
-
-	switch state {
-	case libvirt.DOMAIN_NOSTATE:
-		stateStr = "nostate"
-	case libvirt.DOMAIN_RUNNING:
-		stateStr = "running"
-	case libvirt.DOMAIN_BLOCKED:
-		stateStr = "blocked"
-	case libvirt.DOMAIN_PAUSED:
-		stateStr = "paused"
-	case libvirt.DOMAIN_SHUTDOWN:
-		stateStr = "shutdown"
-	case libvirt.DOMAIN_CRASHED:
-		stateStr = "crashed"
-	case libvirt.DOMAIN_PMSUSPENDED:
-		stateStr = "pmsuspended"
-	case libvirt.DOMAIN_SHUTOFF:
-		stateStr = "shutoff"
-	default:
-		stateStr = fmt.Sprintf("unknown: %v", state)
-	}
-
-	return stateStr, nil
-}
-
-func isDomainRunning(domain libvirt.Domain) (bool, error) {
-	state, _, err := domain.GetState()
-	if err != nil {
-		return false, fmt.Errorf("Couldn't get state of domain: %s", err)
-	}
-
-	return state == libvirt.DOMAIN_RUNNING, nil
-}
-
 func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml.DomainDisk, error) {
 	disk := libvirtxml.DomainDisk{
 		Type:   "file",
@@ -1293,37 +1166,4 @@ func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml
 	}
 
 	return disk, nil
-}
-
-func getDomainInterfaces(domain libvirt.Domain) ([]libvirt.DomainInterface, error) {
-
-	// get all the interfaces using the qemu-agent, this includes also
-	// interfaces that are not attached to networks managed by libvirt
-	// (eg. bridges, macvtap,...)
-	log.Print("[DEBUG] fetching networking interfaces using qemu-agent")
-	interfaces := getDomainInterfacesViaQemuAgent(&domain, true)
-	if len(interfaces) > 0 {
-		// the agent will always return all the interfaces, both the
-		// ones managed by libvirt and the ones attached to bridge interfaces
-		// or macvtap. Hence it has the highest priority
-		return interfaces, nil
-	}
-
-	// get all the interfaces attached to libvirt networks
-	log.Print("[DEBUG] fetching networking interfaces using libvirt API")
-	interfaces, err := domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
-	if err != nil {
-		switch err.(type) {
-		default:
-			return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
-		case libvirt.Error:
-			virErr := err.(libvirt.Error)
-			if virErr.Code != libvirt.ERR_OPERATION_INVALID || virErr.Domain != libvirt.FROM_QEMU {
-				return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
-			}
-		}
-	}
-	log.Printf("[DEBUG] Interfaces: %s", spew.Sdump(interfaces))
-
-	return interfaces, nil
 }

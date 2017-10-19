@@ -3,11 +3,12 @@ default: build
 build: gofmtcheck golint vet
 	go build
 
-install: 
+install:
 	go install
 
-test: 
-	bash travis/run_acceptance_test.sh
+test:
+	bash travis/run-tests-acceptance
+
 vet:
 	@echo "go vet ."
 	@go vet $$(go list ./... | grep -v vendor/) ; if [ $$? -eq 1 ]; then \
@@ -19,7 +20,8 @@ vet:
 
 golint:
 	golint ./libvirt
+
 gofmtcheck:
-	bash travis/gofmtcheck.sh
+	bash travis/run-gofmt
 
 .PHONY: build install test vet fmt golint
