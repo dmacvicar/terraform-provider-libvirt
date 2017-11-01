@@ -89,23 +89,15 @@ export TF_ACC=1
 go test ./...
 ```
 
-## Known Problems
+## Troubleshooting (aka you have a problem)
 
-* There is a [bug in libvirt](https://bugzilla.redhat.com/show_bug.cgi?id=1293804) that seems to be causing
-  problems to unlink volumes. Tracked [here](https://github.com/dmacvicar/terraform-provider-libvirt/issues/6).
+Have a look at [TROUBLESHOOTING](doc/TROUBLESHOOTING.md), and feel free to add a PR if you find out something is missing.
 
-  If you see something like:
-
-  ```console
-  cannot unlink file '/var/lib/libvirt/images/XXXXXXXXXXXX': Permission denied
-  ```
-  It is probably related and fixed in libvirt 1.3.3 (already available in openSUSE Tumbleweed).
-
-* On Ubuntu distros SELinux is enforced by qemu even if it is disabled globally, this might cause unexpected `Could not open '/var/lib/libvirt/images/<FILE_NAME>': Permission denied` errors. Double check that `security_driver = "none"` is uncommented in `/etc/libvirt/qemu.conf` and issue `sudo systemctl restart libvirt-bin` to restart the daemon.
-
-## Author
+## Authors
 
 * Duncan Mac-Vicar P. <dmacvicar@suse.de>
+
+See also the list of [contributors](https://github.com/dmacvicar/terraform-provider-libvirt/graphs/contributors) who participated in this project.
 
 The structure and boilerplate is inspired from the [Softlayer](https://github.com/finn-no/terraform-provider-softlayer) and [Google](https://github.com/hashicorp/terraform/tree/master/builtin/providers/google) Terraform provider sources.
 
