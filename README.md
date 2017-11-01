@@ -70,6 +70,8 @@ dependencies.
 Ensure you have latest version of Go installed on your system, terraform usually
 takes advantage of fetures available only inside of the latest stable release.
 
+You need also need libvirt-dev(el) package installed.
+
 Run `go install` to build the binary. You will now find the binary at
 `$GOPATH/bin/terraform-provider-libvirt`.
 
