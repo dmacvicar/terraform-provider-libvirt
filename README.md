@@ -10,6 +10,7 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 ## Requirements
 
 * libvirt 1.2.14 or newer on the hypervisor
+* latest golang version
 
 The provider uses `virDomainInterfaceAddresses` which was added in 1.2.14. If you need a stable server distribution with a recent libvirt version, try [openSUSE Leap](https://www.opensuse.org/) or [Ubuntu](http://www.ubuntu.com/server) (from version 15.10 Wily Werewolf on).
 
