@@ -30,7 +30,7 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	config := Config{
-		Uri: d.Get("uri").(string),
+		URI: d.Get("uri").(string),
 	}
 
 	return config.Client()

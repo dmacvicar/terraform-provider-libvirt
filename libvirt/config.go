@@ -6,16 +6,19 @@ import (
 	libvirt "github.com/libvirt/libvirt-go"
 )
 
+// Config struct for the libvirt-provider
 type Config struct {
-	Uri string
+	URI string
 }
 
+// Client libvirt
 type Client struct {
 	libvirt *libvirt.Connect
 }
 
+// Client libvirt, generate libvirt client given URI
 func (c *Config) Client() (*Client, error) {
-	conn, err := libvirt.NewConnect(c.Uri)
+	conn, err := libvirt.NewConnect(c.URI)
 	if err != nil {
 		return nil, err
 	}
