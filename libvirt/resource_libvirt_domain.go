@@ -152,11 +152,6 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				Default:  "pc",
 			},
-			"arch": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "x86_64",
-			},
 			"boot_device": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -165,15 +160,30 @@ func resourceLibvirtDomain() *schema.Resource {
 					Schema: bootDeviceSchema(),
 				},
 			},
-			"emulator": &schema.Schema{
-				Type:     schema.TypeString,
-				Default:  "/usr/bin/qemu-system-x86_64",
-				Optional: true,
-			},
+			emulatorSchema(),
+			archSchema(),
 		},
 	}
 }
 
+func archSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"arch": &schema.Schema{
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  "x86_64",
+		},
+	}
+}
+func emulatorSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"emulator": &schema.Schema{
+			Type:     schema.TypeString,
+			Default:  "/usr/bin/qemu-system-x86_64",
+			Optional: true,
+		},
+	}
+}
 func bootDeviceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"dev": &schema.Schema{
