@@ -34,7 +34,6 @@ func getCanonicalMachineName(caps libvirtxml.Caps, arch string, virttype string,
 	return "", fmt.Errorf("[WARN] Cannot find machine type %s for %s/%s in %v", targetmachine, virttype, arch, caps)
 }
 
-
 func getOriginalMachineName(caps libvirtxml.Caps, arch string, virttype string, targetmachine string) (string, error) {
 	guest, err := getGuestForArchType(caps, arch, virttype)
 	if err != nil {
