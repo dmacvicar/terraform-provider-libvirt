@@ -136,9 +136,9 @@ func TestMergeUserDataIntoEmptyUserDataRaw(t *testing.T) {
 }
 
 func TestMergeUserDataIntoUserDataRawGivesPrecedenceToRawData(t *testing.T) {
-	ud_key := "user-data-key"
+	udKey := "user-data-key"
 	ud := CloudInitUserData{
-		SSHAuthorizedKeys: []string{ud_key},
+		SSHAuthorizedKeys: []string{udKey},
 	}
 
 	var userDataRaw = `

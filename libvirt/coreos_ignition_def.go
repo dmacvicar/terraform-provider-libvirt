@@ -131,7 +131,7 @@ func (ign *defIgnition) createFile() (string, error) {
 	file = true
 	if _, err := os.Stat(ign.Content); err != nil {
 		var js map[string]interface{}
-		if err_conf := json.Unmarshal([]byte(ign.Content), &js); err_conf != nil {
+		if errConf := json.Unmarshal([]byte(ign.Content), &js); errConf != nil {
 			return "", fmt.Errorf("coreos_ignition 'content' is neither a file "+
 				"nor a valid json object %s", ign.Content)
 		}

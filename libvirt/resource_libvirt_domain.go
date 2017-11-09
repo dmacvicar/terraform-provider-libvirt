@@ -224,17 +224,17 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
-		//var fw_cfg []defCmd
-		var fw_cfg []libvirtxml.DomainQEMUCommandlineArg
+		//var fwCfg []defCmd
+		var fwCfg []libvirtxml.DomainQEMUCommandlineArg
 		ignitionKey, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
 		if err != nil {
 			return err
 		}
-		ign_str := fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionKey)
-		fw_cfg = append(fw_cfg, libvirtxml.DomainQEMUCommandlineArg{"-fw_cfg"})
-		fw_cfg = append(fw_cfg, libvirtxml.DomainQEMUCommandlineArg{ign_str})
+		ignStr := fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionKey)
+		fwCfg = append(fwCfg, libvirtxml.DomainQEMUCommandlineArg{"-fw_cfg"})
+		fwCfg = append(fwCfg, libvirtxml.DomainQEMUCommandlineArg{ignStr})
 		QemuCmdline := &libvirtxml.DomainQEMUCommandline{
-			Args: fw_cfg,
+			Args: fwCfg,
 		}
 		domainDef.QEMUCommandline = QemuCmdline
 	}
@@ -248,20 +248,20 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		domainDef.Devices.Graphics = nil
 	} else {
 		if graphics, ok := d.GetOk("graphics"); ok {
-			graphics_map := graphics.(map[string]interface{})
+			graphicsMap := graphics.(map[string]interface{})
 			domainDef.Devices.Graphics = []libvirtxml.DomainGraphic{
 				libvirtxml.DomainGraphic{},
 			}
-			if graphics_type, ok := graphics_map["type"]; ok {
-				domainDef.Devices.Graphics[0].Type = graphics_type.(string)
+			if graphicsType, ok := graphicsMap["type"]; ok {
+				domainDef.Devices.Graphics[0].Type = graphicsType.(string)
 			}
-			if autoport, ok := graphics_map["autoport"]; ok {
+			if autoport, ok := graphicsMap["autoport"]; ok {
 				domainDef.Devices.Graphics[0].AutoPort = autoport.(string)
 			}
-			if listen_type, ok := graphics_map["listen_type"]; ok {
+			if listenType, ok := graphicsMap["listen_type"]; ok {
 				domainDef.Devices.Graphics[0].Listeners = []libvirtxml.DomainGraphicListener{
 					libvirtxml.DomainGraphicListener{
-						Type: listen_type.(string),
+						Type: listenType.(string),
 					},
 				}
 			}
@@ -269,10 +269,10 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if cpu, ok := d.GetOk("cpu"); ok {
-		cpu_map := cpu.(map[string]interface{})
-		if cpu_mode, ok := cpu_map["mode"]; ok {
+		cpuMap := cpu.(map[string]interface{})
+		if cpuMode, ok := cpuMap["mode"]; ok {
 			domainDef.CPU = &libvirtxml.DomainCPU{
-				Mode: cpu_mode.(string),
+				Mode: cpuMode.(string),
 			}
 		}
 	}
@@ -294,15 +294,15 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 
 		if nvram, ok := d.GetOk("nvram"); ok {
-			nvram_map := nvram.(map[string]interface{})
+			nvramMap := nvram.(map[string]interface{})
 
-			nvramFile := nvram_map["file"].(string)
+			nvramFile := nvramMap["file"].(string)
 			if _, err := os.Stat(nvramFile); os.IsNotExist(err) {
 				return fmt.Errorf("Could not find nvram file '%s'.", nvramFile)
 			}
 			nvramTemplateFile := ""
-			if nvram_template, ok := nvram_map["template"]; ok {
-				nvramTemplateFile = nvram_template.(string)
+			if nvramTemplate, ok := nvramMap["template"]; ok {
+				nvramTemplateFile = nvramTemplate.(string)
 				if _, err := os.Stat(nvramTemplateFile); os.IsNotExist(err) {
 					return fmt.Errorf("Could not find nvram template file '%s'.", nvramTemplateFile)
 				}
@@ -319,8 +319,8 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	bootDeviceCount := d.Get("boot_device.#").(int)
 	for i := 0; i < bootDeviceCount; i++ {
 		prefix := fmt.Sprintf("boot_device.%d", i)
-		if boot_map, ok := d.GetOk(prefix + ".dev"); ok {
-			for _, dev := range boot_map.([]interface{}) {
+		if bootMap, ok := d.GetOk(prefix + ".dev"); ok {
+			for _, dev := range bootMap.([]interface{}) {
 				bootDevice.Dev = dev.(string)
 				bootDevices = append(bootDevices, bootDevice)
 			}
@@ -347,16 +347,16 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				Port: &consoleTargetPort,
 			}
 		}
-		if source_path, ok := d.GetOk(consolePrefix + ".source_path"); ok {
+		if sourcePath, ok := d.GetOk(consolePrefix + ".source_path"); ok {
 			console.Source = &libvirtxml.DomainChardevSource{
-				Path: source_path.(string),
+				Path: sourcePath.(string),
 			}
 		}
-		if target_type, ok := d.GetOk(consolePrefix + ".target_type"); ok {
+		if targetType, ok := d.GetOk(consolePrefix + ".target_type"); ok {
 			if console.Target == nil {
 				console.Target = &libvirtxml.DomainConsoleTarget{}
 			}
-			console.Target.Type = target_type.(string)
+			console.Target.Type = targetType.(string)
 		}
 		consoles = append(consoles, console)
 	}

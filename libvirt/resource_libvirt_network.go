@@ -248,12 +248,12 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			networkDef.IPs = ipsPtrsLst
 		}
 
-		if dns_forward_count, ok := d.GetOk("dns_forwarder.#"); ok {
+		if dnsForwardCount, ok := d.GetOk("dns_forwarder.#"); ok {
 			dns := libvirtxml.NetworkDNS{
 				Forwarders: []libvirtxml.NetworkDNSForwarder{},
 			}
 
-			for i := 0; i < dns_forward_count.(int); i++ {
+			for i := 0; i < dnsForwardCount.(int); i++ {
 				forward := libvirtxml.NetworkDNSForwarder{}
 				forwardPrefix := fmt.Sprintf("dns_forwarder.%d", i)
 				if address, ok := d.GetOk(forwardPrefix + ".address"); ok {

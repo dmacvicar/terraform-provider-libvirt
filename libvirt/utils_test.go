@@ -36,11 +36,11 @@ func TestIPsRange(t *testing.T) {
 }
 
 func TestWaitForSuccessEverythingFine(t *testing.T) {
-	wait_sleep := WAIT_SLEEP_INTERVAL
-	wait_timeout := WAIT_TIMEOUT
+	waitSleep := WAIT_SLEEP_INTERVAL
+	waitTimeout := WAIT_TIMEOUT
 	defer func() {
-		WAIT_SLEEP_INTERVAL = wait_sleep
-		WAIT_TIMEOUT = wait_timeout
+		WAIT_SLEEP_INTERVAL = waitSleep
+		WAIT_TIMEOUT = waitTimeout
 	}()
 
 	WAIT_TIMEOUT = 1 * time.Second
@@ -58,11 +58,11 @@ func TestWaitForSuccessEverythingFine(t *testing.T) {
 }
 
 func TestWaitForSuccessBrokenFunction(t *testing.T) {
-	wait_sleep := WAIT_SLEEP_INTERVAL
-	wait_timeout := WAIT_TIMEOUT
+	waitSleep := WAIT_SLEEP_INTERVAL
+	waitTimeout := WAIT_TIMEOUT
 	defer func() {
-		WAIT_SLEEP_INTERVAL = wait_sleep
-		WAIT_TIMEOUT = wait_timeout
+		WAIT_SLEEP_INTERVAL = waitSleep
+		WAIT_TIMEOUT = waitTimeout
 	}()
 
 	WAIT_TIMEOUT = 1 * time.Second
