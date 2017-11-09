@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
@@ -511,12 +510,12 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.Domain) resource.
 
 		log.Printf("The ID is %s", rs.Primary.ID)
 
-		realId, err := retrieveDomain.GetUUIDString()
+		realID, err := retrieveDomain.GetUUIDString()
 		if err != nil {
 			return err
 		}
 
-		if realId != rs.Primary.ID {
+		if realID != rs.Primary.ID {
 			return fmt.Errorf("Libvirt domain not found")
 		}
 
@@ -592,13 +591,13 @@ func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.Test
 
 func createNvramFile() (string, error) {
 	// size of an accepted, valid, nvram backing store
-	NVRAMDummyBuffer := make([]byte, 131072)
+	nvramDummyBuffer := make([]byte, 131072)
 	file, err := ioutil.TempFile("/tmp", "nvram")
 	if err != nil {
 		return "", err
 	}
 	file.Chmod(0777)
-	_, err = file.Write(NVRAMDummyBuffer)
+	_, err = file.Write(nvramDummyBuffer)
 	if err != nil {
 		return "", err
 	}
@@ -608,46 +607,21 @@ func createNvramFile() (string, error) {
 	return file.Name(), nil
 }
 
-func TestAccLibvirtDomainFirmware(t *testing.T) {
-	NVRAMPath, err := createNvramFile()
+func TestAccLibvirtDomain_FirmwareNoTemplate(t *testing.T) {
+	nvramPath, err := createNvramFile()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	firmware := fmt.Sprintf("/usr/share/qemu/ovmf-x86_64-code.bin")
-	if _, err := os.Stat(firmware); os.IsNotExist(err) {
-		firmware = "/usr/share/ovmf/OVMF.fd"
-		if _, err := os.Stat(firmware); os.IsNotExist(err) {
-			t.Skip("Can't test domain custom firmware: OVMF firmware not found: %s")
-		}
-	}
-
-	template := fmt.Sprintf("/usr/share/qemu/ovmf-x86_64-vars.bin")
-	if _, err := os.Stat(template); os.IsNotExist(err) {
-		template = "/usr/share/qemu/OVMF.fd"
-		if _, err := os.Stat(template); os.IsNotExist(err) {
-			t.Skip("Can't test domain custom firmware template: OVMF template not found: %s")
-		}
-	}
-
-	t.Run("No Template", func(t *testing.T) {
-		subtestAccLibvirtDomainFirmwareNoTemplate(t, NVRAMPath, firmware)
-	})
-	t.Run("With Template", func(t *testing.T) {
-		subtestAccLibvirtDomainFirmwareTemplate(t, NVRAMPath, firmware, template)
-	})
-}
-
-func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, firmware string) {
 	var domain libvirt.Domain
 	var config = fmt.Sprintf(`
             resource "libvirt_domain" "acceptance-test-domain" {
                 name = "terraform-test-firmware-no-template"
-	            firmware = "%s"
+	            firmware = "/usr/share/ovmf/OVMF.fd"
                 nvram {
                     file = "%s"
   	            }
-            }`, firmware, NVRAMPath)
+            }`, nvramPath)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -661,17 +635,17 @@ func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, f
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "name", "terraform-test-firmware-no-template"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.file", NVRAMPath),
+						"libvirt_domain.acceptance-test-domain", "nvram.file", nvram_path),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "firmware", firmware),
+						"libvirt_domain.acceptance-test-domain", "firmware", "/usr/share/ovmf/OVMF.fd"),
 				),
 			},
 		},
 	})
 }
 
-func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, firmware string, template string) {
-	NVRAMPath, err := createNvramFile()
+func TestAccLibvirtDomain_FirmwareTemplate(t *testing.T) {
+	nvramPath, err := createNvramFile()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -680,12 +654,12 @@ func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, fir
 	var config = fmt.Sprintf(`
             resource "libvirt_domain" "acceptance-test-domain" {
                 name = "terraform-test-firmware-with-template"
-                firmware = "%s"
+                firmware = "/usr/share/ovmf/OVMF.fd"
                 nvram {
                 	file = "%s"
-                	template = "%s"
+                	template = "/usr/share/qemu/OVMF.fd"
                 }
-            }`, firmware, NVRAMPath, template)
+            }`, nvramPath)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -699,11 +673,11 @@ func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, fir
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "name", "terraform-test-firmware-with-template"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.file", NVRAMPath),
+						"libvirt_domain.acceptance-test-domain", "nvram.file", nvram_path),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.template", template),
+						"libvirt_domain.acceptance-test-domain", "nvram.template", "/usr/share/qemu/OVMF.fd"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "firmware", firmware),
+						"libvirt_domain.acceptance-test-domain", "firmware", "/usr/share/ovmf/OVMF.fd"),
 				),
 			},
 		},
