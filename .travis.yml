@@ -7,10 +7,14 @@ go_import_path: github.com/dmacvicar/terraform-provider-libvirt
 install: true
 before_script:
   - go get github.com/mattn/goveralls
+  - go get github.com/golang/lint/golint
   - sudo bash ./travis/setup-host
   - sudo lxc exec libvirt -- bash /code/travis/setup-guest
 script:
   - bash ./travis/gofmtcheck.sh
+  # golint only on specific files ( others will blacklisted by default) 
+  # we need to solve them one by one. (see the ruby file /travis/golinter.rb)
+  - travis/golinter.rb
   - sudo lxc exec libvirt -- bash /code/travis/run-tests-inside-guest
-  - sudo lxc file pull libvirt/root/go/src/github.com/dmacvicar/terraform-provider-libvirt/profile.cov .
+  - sudo lxc file pull libvirt/root/go/src/github.com/dmacvicar/terraform-provider-libvirt/libvirt/profile.cov .
   - goveralls -coverprofile=profile.cov -service=travis-ci
