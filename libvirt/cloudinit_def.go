@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -19,10 +18,13 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// names of the files expected by cloud-init
+// USERDATA file expected by cloud-init
 const USERDATA string = "user-data"
+
+// METADATA files expected by cloud-init
 const METADATA string = "meta-data"
 
+// CloudInitUserData struct containing auth keys
 type CloudInitUserData struct {
 	SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }
@@ -95,13 +97,13 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	volumeDef.Capacity.Value = size
 	volumeDef.Target.Format.Type = "raw"
 
-	volumeDefXml, err := xml.Marshal(volumeDef)
+	volumeDefXML, err := xml.Marshal(volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error serializing libvirt volume: %s", err)
 	}
 
 	// create the volume
-	volume, err := pool.StorageVolCreateXML(string(volumeDefXml), 0)
+	volume, err := pool.StorageVolCreateXML(string(volumeDefXML), 0)
 	if err != nil {
 		return "", fmt.Errorf("Error creating libvirt volume for cloudinit device %s: %s", ci.Name, err)
 	}
@@ -146,16 +148,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 	}
 
 	isoDestination := filepath.Join(tmpDir, ci.Name)
-	cmd := exec.Command(
-		"genisoimage",
-		"-output",
-		isoDestination,
-		"-volid",
-		"cidata",
-		"-joliet",
-		"-rock",
-		filepath.Join(tmpDir, USERDATA),
-		filepath.Join(tmpDir, METADATA))
+	cmd := GenIsoCmd(isoDestination, tmpDir, USERDATA, METADATA)
 
 	log.Print("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {

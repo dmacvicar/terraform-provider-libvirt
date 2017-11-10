@@ -9,5 +9,6 @@ install: true
 before_script:
   - brew install qemu
   - brew install libvirt
+  - bash travis/setup-guest-darwin
 script:
-  - bash travis/run-tests-inside-guest
+  - make testacc
