@@ -7,18 +7,18 @@ import (
 
 	libvirt "github.com/libvirt/libvirt-go"
 )
-
+// QemuAgentInterfacesResponse type
 type QemuAgentInterfacesResponse struct {
 	Interfaces []QemuAgentInterface `json:"return"`
 }
-
+// QemuAgentInterface type
 type QemuAgentInterface struct {
 	Name        string                        `json:"name"`
 	Hwaddr      string                        `json:"hardware-address"`
-	IpAddresses []QemuAgentInterfaceIpAddress `json:"ip-addresses"`
+	IPAddresses []QemuAgentInterfaceIPAddress `json:"ip-addresses"`
 }
-
-type QemuAgentInterfaceIpAddress struct {
+// QemuAgentInterfaceIPAddress type
+type QemuAgentInterfaceIPAddress struct {
 	Type    string `json:"ip-address-type"`
 	Address string `json:"ip-address"`
 	Prefix  uint   `json:"prefix"`
@@ -64,7 +64,7 @@ func getDomainInterfacesViaQemuAgent(domain LibVirtDomain, wait4ipv4 bool) []lib
 			Hwaddr: iface.Hwaddr}
 
 		ipv4Assigned := false
-		for _, addr := range iface.IpAddresses {
+		for _, addr := range iface.IPAddresses {
 			if addr.Address == "" {
 				// ignore interfaces without an address (eg. waiting for dhcp lease)
 				continue
