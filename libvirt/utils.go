@@ -11,8 +11,8 @@ import (
 	libvirt "github.com/libvirt/libvirt-go"
 )
 
-var diskLetters []rune = []rune("abcdefghijklmnopqrstuvwxyz")
-
+var diskLetters = []rune("abcdefghijklmnopqrstuvwxyz")
+// DiskLetterForIndex return diskLetters for index
 func DiskLetterForIndex(i int) string {
 
 	q := i / len(diskLetters)
@@ -26,8 +26,8 @@ func DiskLetterForIndex(i int) string {
 	return fmt.Sprintf("%s%c", DiskLetterForIndex(q-1), letter)
 }
 
-var WAIT_SLEEP_INTERVAL time.Duration = 1 * time.Second
-var WAIT_TIMEOUT time.Duration = 5 * time.Minute
+var waitSleepInterval = 1 * time.Second
+var waitTimeout = 5 * time.Minute
 
 // WaitForSuccess wait for success and timeout after 5 minutes.
 func WaitForSuccess(errorMessage string, f func() error) error {
@@ -39,8 +39,8 @@ func WaitForSuccess(errorMessage string, f func() error) error {
 		}
 		log.Printf("[DEBUG] %s. Re-trying.\n", err)
 
-		time.Sleep(WAIT_SLEEP_INTERVAL)
-		if time.Since(start) > WAIT_TIMEOUT {
+		time.Sleep(waitSleepInterval)
+		if time.Since(start) > waitTimeout {
 			return fmt.Errorf("%s: %s", errorMessage, err)
 		}
 	}
