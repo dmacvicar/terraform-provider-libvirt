@@ -592,13 +592,13 @@ func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.Test
 
 func createNvramFile() (string, error) {
 	// size of an accepted, valid, nvram backing store
-	nvram_dummy_buffer := make([]byte, 131072)
+	NVRAMDummyBuffer := make([]byte, 131072)
 	file, err := ioutil.TempFile("/tmp", "nvram")
 	if err != nil {
 		return "", err
 	}
 	file.Chmod(0777)
-	_, err = file.Write(nvram_dummy_buffer)
+	_, err = file.Write(NVRAMDummyBuffer)
 	if err != nil {
 		return "", err
 	}
@@ -608,8 +608,8 @@ func createNvramFile() (string, error) {
 	return file.Name(), nil
 }
 
-func TestAccLibvirtDomain_Firmware(t *testing.T) {
-	nvram_path, err := createNvramFile()
+func TestAccLibvirtDomainFirmware(t *testing.T) {
+	NVRAMPath, err := createNvramFile()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -631,14 +631,14 @@ func TestAccLibvirtDomain_Firmware(t *testing.T) {
 	}
 
 	t.Run("No Template", func(t *testing.T) {
-		subtestAccLibvirtDomain_FirmwareNoTemplate(t, nvram_path, firmware)
+		subtestAccLibvirtDomainFirmwareNoTemplate(t, NVRAMPath, firmware)
 	})
 	t.Run("With Template", func(t *testing.T) {
-		subtestAccLibvirtDomain_FirmwareTemplate(t, nvram_path, firmware, template)
+		subtestAccLibvirtDomainFirmwareTemplate(t, NVRAMPath, firmware, template)
 	})
 }
 
-func subtestAccLibvirtDomain_FirmwareNoTemplate(t *testing.T, nvram_path string, firmware string) {
+func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, firmware string) {
 	var domain libvirt.Domain
 	var config = fmt.Sprintf(`
             resource "libvirt_domain" "acceptance-test-domain" {
@@ -647,7 +647,7 @@ func subtestAccLibvirtDomain_FirmwareNoTemplate(t *testing.T, nvram_path string,
                 nvram {
                     file = "%s"
   	            }
-            }`, firmware, nvram_path)
+            }`, firmware, NVRAMPath)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -661,7 +661,7 @@ func subtestAccLibvirtDomain_FirmwareNoTemplate(t *testing.T, nvram_path string,
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "name", "terraform-test-firmware-no-template"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.file", nvram_path),
+						"libvirt_domain.acceptance-test-domain", "nvram.file", NVRAMPath),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "firmware", firmware),
 				),
@@ -670,8 +670,8 @@ func subtestAccLibvirtDomain_FirmwareNoTemplate(t *testing.T, nvram_path string,
 	})
 }
 
-func subtestAccLibvirtDomain_FirmwareTemplate(t *testing.T, nvram_path string, firmware string, template string) {
-	nvram_path, err := createNvramFile()
+func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, firmware string, template string) {
+	NVRAMPath, err := createNvramFile()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -685,7 +685,7 @@ func subtestAccLibvirtDomain_FirmwareTemplate(t *testing.T, nvram_path string, f
                 	file = "%s"
                 	template = "%s"
                 }
-            }`, firmware, nvram_path, template)
+            }`, firmware, NVRAMPath, template)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -699,7 +699,7 @@ func subtestAccLibvirtDomain_FirmwareTemplate(t *testing.T, nvram_path string, f
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "name", "terraform-test-firmware-with-template"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.file", nvram_path),
+						"libvirt_domain.acceptance-test-domain", "nvram.file", NVRAMPath),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "nvram.template", template),
 					resource.TestCheckResourceAttr(
