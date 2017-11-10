@@ -7,7 +7,7 @@ import (
 	"github.com/libvirt/libvirt-go-xml"
 )
 
-// Check if the network has a DHCP server managed by libvirt
+// HasDHCP Check if the network has a DHCP server managed by libvirt
 func HasDHCP(net libvirtxml.Network) bool {
 	if net.Forward != nil {
 		if net.Forward.Mode == "nat" || net.Forward.Mode == "route" || net.Forward.Mode == "" {

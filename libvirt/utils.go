@@ -29,7 +29,7 @@ func DiskLetterForIndex(i int) string {
 var WAIT_SLEEP_INTERVAL time.Duration = 1 * time.Second
 var WAIT_TIMEOUT time.Duration = 5 * time.Minute
 
-// wait for success and timeout after 5 minutes.
+// WaitForSuccess wait for success and timeout after 5 minutes.
 func WaitForSuccess(errorMessage string, f func() error) error {
 	start := time.Now()
 	for {
@@ -57,7 +57,7 @@ func xmlMarshallIndented(b interface{}) (string, error) {
 	return buf.String(), nil
 }
 
-// Remove the volume identified by `key` from libvirt
+// RemoveVolume Remove the volume identified by `key` from libvirt
 func RemoveVolume(virConn *libvirt.Connect, key string) error {
 	volume, err := virConn.LookupStorageVolByKey(key)
 	if err != nil {

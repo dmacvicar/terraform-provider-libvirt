@@ -55,7 +55,7 @@ func FreeNetworkInterface(basename string) (string, error) {
 	return "", fmt.Errorf("could not obtain a free network interface")
 }
 
-// Calculates the first and last IP addresses in an IPNet
+// NetworkRange Calculates the first and last IP addresses in an IPNet
 func NetworkRange(network *net.IPNet) (net.IP, net.IP) {
 	netIP := network.IP.To4()
 	lastIP := net.IPv4(0, 0, 0, 0).To4()
