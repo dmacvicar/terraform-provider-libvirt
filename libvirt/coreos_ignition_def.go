@@ -75,13 +75,13 @@ func (ign *defIgnition) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	volumeDef.Capacity.Value = size
 	volumeDef.Target.Format.Type = "raw"
 
-	volumeDefXml, err := xml.Marshal(volumeDef)
+	volumeDefXML, err := xml.Marshal(volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error serializing libvirt volume: %s", err)
 	}
 
 	// create the volume
-	volume, err := pool.StorageVolCreateXML(string(volumeDefXml), 0)
+	volume, err := pool.StorageVolCreateXML(string(volumeDefXML), 0)
 	if err != nil {
 		return "", fmt.Errorf("Error creating libvirt volume for Ignition %s: %s", ign.Name, err)
 	}
