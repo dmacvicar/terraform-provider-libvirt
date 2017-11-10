@@ -614,7 +614,7 @@ func TestAccLibvirtDomain_Firmware(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	firmware := fmt.Sprintf("/usr/share/qemu/ovmf-x86_64.bin")
+	firmware := fmt.Sprintf("/usr/share/qemu/ovmf-x86_64-code.bin")
 	if _, err := os.Stat(firmware); os.IsNotExist(err) {
 		firmware = "/usr/share/ovmf/OVMF.fd"
 		if _, err := os.Stat(firmware); os.IsNotExist(err) {
