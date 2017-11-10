@@ -40,11 +40,11 @@ func newDefVolumeFromLibvirt(volume *libvirt.StorageVol) (libvirtxml.StorageVolu
 	if err != nil {
 		return libvirtxml.StorageVolume{}, fmt.Errorf("could not get name for volume: %s", err)
 	}
-	volumeDefXml, err := volume.GetXMLDesc(0)
+	volumeDefXML, err := volume.GetXMLDesc(0)
 	if err != nil {
 		return libvirtxml.StorageVolume{}, fmt.Errorf("could not get XML description for volume %s: %s", name, err)
 	}
-	volumeDef, err := newDefVolumeFromXML(volumeDefXml)
+	volumeDef, err := newDefVolumeFromXML(volumeDefXML)
 	if err != nil {
 		return libvirtxml.StorageVolume{}, fmt.Errorf("could not get a volume definition from XML for %s: %s", volumeDef.Name, err)
 	}

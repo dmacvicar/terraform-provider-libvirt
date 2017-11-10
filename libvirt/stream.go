@@ -2,10 +2,12 @@ package libvirt
 
 import libvirt "github.com/libvirt/libvirt-go"
 
+// StreamIO struct
 type StreamIO struct {
 	Stream libvirt.Stream
 }
 
+// NewStreamIO return libvirt StreamIO  
 func NewStreamIO(s libvirt.Stream) *StreamIO {
 	return &StreamIO{Stream: s}
 }
@@ -18,6 +20,7 @@ func (sio *StreamIO) Write(p []byte) (int, error) {
 	return sio.Stream.Send(p)
 }
 
+// Close  StreamIO
 func (sio *StreamIO) Close() error {
 	return sio.Stream.Finish()
 }
