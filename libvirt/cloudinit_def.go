@@ -21,10 +21,11 @@ import (
 
 // USERDATA is the name of file expected by cloud-init
 const USERDATA string = "user-data"
+
 // METADATA is the name of file expected by cloud-init
 const METADATA string = "meta-data"
 
-// CloudInitUserData struct 
+// CloudInitUserData struct
 type CloudInitUserData struct {
 	SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }

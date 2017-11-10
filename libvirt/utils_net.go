@@ -14,6 +14,7 @@ import (
 const (
 	maxIfaceNum = 100
 )
+
 // RandomMACAddress mac random
 func RandomMACAddress() (string, error) {
 	buf := make([]byte, 6)
@@ -35,6 +36,7 @@ func RandomMACAddress() (string, error) {
 	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x",
 		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
 }
+
 // RandomPort return randomport
 func RandomPort() int {
 	const minPort = 1024

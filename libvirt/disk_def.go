@@ -8,7 +8,6 @@ import (
 
 const oui = "05abcd"
 
-
 func newDefDisk() libvirtxml.DomainDisk {
 	return libvirtxml.DomainDisk{
 		Type:   "file",

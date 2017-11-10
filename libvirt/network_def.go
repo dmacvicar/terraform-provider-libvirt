@@ -28,12 +28,12 @@ func newDefNetworkFromXML(s string) (libvirtxml.Network, error) {
 }
 
 func newDefNetworkfromLibvirt(network LibVirtNetwork) (libvirtxml.Network, error) {
-	networkXmlDesc, err := network.GetXMLDesc(0)
+	networkXMLDesc, err := network.GetXMLDesc(0)
 	if err != nil {
 		return libvirtxml.Network{}, fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
 	}
 	networkDef := libvirtxml.Network{}
-	err = xml.Unmarshal([]byte(networkXmlDesc), &networkDef)
+	err = xml.Unmarshal([]byte(networkXMLDesc), &networkDef)
 	if err != nil {
 		return libvirtxml.Network{}, fmt.Errorf("Error reading libvirt network XML description: %s", err)
 	}

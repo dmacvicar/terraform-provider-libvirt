@@ -8,6 +8,7 @@ type LibVirtDomain interface {
 	QemuAgentCommand(command string, timeout libvirt.DomainQemuAgentCommandTimeout, flags uint32) (string, error)
 }
 
+// LibVirtNetwork interface
 type LibVirtNetwork interface {
 	GetXMLDesc(flags libvirt.NetworkXMLFlags) (string, error)
 }

@@ -7,7 +7,7 @@ type StreamIO struct {
 	Stream libvirt.Stream
 }
 
-// NewStreamIO return libvirt StreamIO  
+// NewStreamIO return libvirt StreamIO
 func NewStreamIO(s libvirt.Stream) *StreamIO {
 	return &StreamIO{Stream: s}
 }

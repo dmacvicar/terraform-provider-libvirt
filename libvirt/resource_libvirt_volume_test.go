@@ -47,12 +47,12 @@ func testAccCheckLibvirtVolumeExists(n string, volume *libvirt.StorageVol) resou
 		}
 		fmt.Printf("The ID is %s", rs.Primary.ID)
 
-		realId, err := retrievedVol.GetKey()
+		realID, err := retrievedVol.GetKey()
 		if err != nil {
 			return err
 		}
 
-		if realId != rs.Primary.ID {
+		if realID != rs.Primary.ID {
 			return fmt.Errorf("Resource ID and volume key does not match")
 		}
 

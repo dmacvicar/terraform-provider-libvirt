@@ -12,6 +12,7 @@ import (
 )
 
 var diskLetters = []rune("abcdefghijklmnopqrstuvwxyz")
+
 // DiskLetterForIndex return diskLetters for index
 func DiskLetterForIndex(i int) string {
 

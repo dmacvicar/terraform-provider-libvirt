@@ -19,11 +19,13 @@ import (
 	"github.com/libvirt/libvirt-go-xml"
 )
 
+// DomainMeta struct
 type DomainMeta struct {
 	domain *libvirt.Domain
 	ifaces chan libvirtxml.DomainInterface
 }
 
+// PoolSync exported pool sync
 var PoolSync = NewLibVirtPoolSync()
 
 func init() {
@@ -364,7 +366,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	disksCount := d.Get("disk.#").(int)
 	var disks []libvirtxml.DomainDisk
-	var scsiDisk bool = false
+	var scsiDisk = false
 	for i := 0; i < disksCount; i++ {
 		disk := libvirtxml.DomainDisk{
 			Type:   "file",
@@ -682,16 +684,16 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		// if we were waiting for an IP address for this MAC, go ahead.
 		if pending, ok := partialNetIfaces[mac]; ok {
 			// we should have the address now
-			if addressesI, ok := d.GetOk(prefix + ".addresses"); !ok {
+			addressesI, ok := d.GetOk(prefix + ".addresses")
+			if !ok {
 				return fmt.Errorf("Did not obtain the IP address for MAC=%s", mac)
-			} else {
-				for _, addressI := range addressesI.([]interface{}) {
-					address := addressI.(string)
-					log.Printf("[INFO] Finally adding IP/MAC/host=%s/%s/%s", address, mac, pending.hostname)
-					addHost(pending.network, address, mac, pending.hostname)
-					if err != nil {
-						return fmt.Errorf("Could not add IP/MAC/host=%s/%s/%s: %s", address, mac, pending.hostname, err)
-					}
+			}
+			for _, addressI := range addressesI.([]interface{}) {
+				address := addressI.(string)
+				log.Printf("[INFO] Finally adding IP/MAC/host=%s/%s/%s", address, mac, pending.hostname)
+				addHost(pending.network, address, mac, pending.hostname)
+				if err != nil {
+					return fmt.Errorf("Could not add IP/MAC/host=%s/%s/%s: %s", address, mac, pending.hostname, err)
 				}
 			}
 		}

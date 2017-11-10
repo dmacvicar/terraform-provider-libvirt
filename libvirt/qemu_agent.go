@@ -7,16 +7,19 @@ import (
 
 	libvirt "github.com/libvirt/libvirt-go"
 )
+
 // QemuAgentInterfacesResponse type
 type QemuAgentInterfacesResponse struct {
 	Interfaces []QemuAgentInterface `json:"return"`
 }
+
 // QemuAgentInterface type
 type QemuAgentInterface struct {
 	Name        string                        `json:"name"`
 	Hwaddr      string                        `json:"hardware-address"`
 	IPAddresses []QemuAgentInterfaceIPAddress `json:"ip-addresses"`
 }
+
 // QemuAgentInterfaceIPAddress type
 type QemuAgentInterfaceIPAddress struct {
 	Type    string `json:"ip-address-type"`
