@@ -22,12 +22,12 @@ func TestTerraformKeyOps(t *testing.T) {
 
 	volKey := "volume-key"
 
-	terraformId := ci.buildTerraformKey(volKey)
-	if terraformId == "" {
+	terraformID := ci.buildTerraformKey(volKey)
+	if terraformID == "" {
 		t.Error("key should not be empty")
 	}
 
-	actualKey, _ := getCloudInitVolumeKeyFromTerraformID(terraformId)
+	actualKey, _ := getCloudInitVolumeKeyFromTerraformID(terraformID)
 	if actualKey != volKey {
 		t.Error("wrong key returned")
 	}
