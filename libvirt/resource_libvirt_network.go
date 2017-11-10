@@ -113,7 +113,7 @@ func dnsForwarderSchema() map[string]*schema.Schema {
 func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return false, fmt.Errorf("The libvirt connection was nil.")
+		return false, fmt.Errorf("the libvirt connection was nil")
 	}
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
 	if err != nil {
@@ -132,7 +132,7 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf("the libvirt connection was nil")
 	}
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
 	if err != nil {
@@ -165,7 +165,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	// see https://libvirt.org/formatnetwork.html
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf("the libvirt connection was nil")
 	}
 
 	networkDef := newNetworkDef()
@@ -337,7 +337,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf("the libvirt connection was nil")
 	}
 
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
@@ -396,7 +396,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf("the libvirt connection was nil")
 	}
 	log.Printf("[DEBUG] Deleting network ID %s", d.Id())
 

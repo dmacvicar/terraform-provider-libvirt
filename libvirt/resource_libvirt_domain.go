@@ -192,7 +192,7 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return false, fmt.Errorf("The libvirt connection was nil.")
+		return false, fmt.Errorf("the libvirt connection was nil")
 	}
 
 	domain, err := virConn.LookupDomainByUUIDString(d.Id())
@@ -212,7 +212,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf("the libvirt connection was nil")
 	}
 
 	domainDef, err := newDomainDefForConnection(virConn)
@@ -284,7 +284,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	if firmware, ok := d.GetOk("firmware"); ok {
 		firmwareFile := firmware.(string)
 		if _, err := os.Stat(firmwareFile); os.IsNotExist(err) {
-			return fmt.Errorf("Could not find firmware file '%s'.", firmwareFile)
+			return fmt.Errorf("could not find firmware file '%s'", firmwareFile)
 		}
 		domainDef.OS.Loader = &libvirtxml.DomainLoader{
 			Path:     firmwareFile,
@@ -298,13 +298,13 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 			nvramFile := nvramMap["file"].(string)
 			if _, err := os.Stat(nvramFile); os.IsNotExist(err) {
-				return fmt.Errorf("Could not find nvram file '%s'.", nvramFile)
+				return fmt.Errorf("could not find nvram file '%s'", nvramFile)
 			}
 			nvramTemplateFile := ""
 			if nvramTemplate, ok := nvramMap["template"]; ok {
 				nvramTemplateFile = nvramTemplate.(string)
 				if _, err := os.Stat(nvramTemplateFile); os.IsNotExist(err) {
-					return fmt.Errorf("Could not find nvram template file '%s'.", nvramTemplateFile)
+					return fmt.Errorf("could not find nvram template file '%s'", nvramTemplateFile)
 				}
 			}
 			domainDef.OS.NVRam = &libvirtxml.DomainNVRam{
@@ -705,7 +705,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf("the libvirt connection was nil")
 	}
 	domain, err := virConn.LookupDomainByUUIDString(d.Id())
 	if err != nil {
@@ -805,7 +805,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf("the libvirt connection was nil")
 	}
 
 	domain, err := virConn.LookupDomainByUUIDString(d.Id())
@@ -1024,7 +1024,7 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf("the libvirt connection was nil")
 	}
 
 	log.Printf("[DEBUG] Deleting domain %s", d.Id())

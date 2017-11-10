@@ -36,7 +36,7 @@ func resourceIgnitionCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] creating ignition file")
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf("the libvirt connection was nil")
 	}
 
 	ignition := newIgnitionDef()
@@ -66,7 +66,7 @@ func resourceIgnitionCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceIgnitionRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf("the libvirt connection was nil")
 	}
 
 	ign, err := newIgnitionDefFromRemoteVol(virConn, d.Id())
@@ -83,7 +83,7 @@ func resourceIgnitionRead(d *schema.ResourceData, meta interface{}) error {
 func resourceIgnitionDelete(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf("the libvirt connection was nil")
 	}
 
 	key, err := getIgnitionVolumeKeyFromTerraformID(d.Id())
