@@ -6,7 +6,8 @@ import (
 	"github.com/libvirt/libvirt-go-xml"
 )
 
-const OUI = "05abcd"
+const oui = "05abcd"
+
 
 func newDefDisk() libvirtxml.DomainDisk {
 	return libvirtxml.DomainDisk{
@@ -43,5 +44,5 @@ func randomWWN(strlen int) string {
 	for i := 0; i < strlen; i++ {
 		result[i] = chars[rand.Intn(len(chars))]
 	}
-	return OUI + string(result)
+	return oui + string(result)
 }
