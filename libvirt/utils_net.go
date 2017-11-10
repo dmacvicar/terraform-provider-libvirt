@@ -14,7 +14,7 @@ import (
 const (
 	maxIfaceNum = 100
 )
-
+// RandomMACAddress mac random
 func RandomMACAddress() (string, error) {
 	buf := make([]byte, 6)
 	_, err := rand.Read(buf)
@@ -35,7 +35,7 @@ func RandomMACAddress() (string, error) {
 	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x",
 		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
 }
-
+// RandomPort return randomport
 func RandomPort() int {
 	const minPort = 1024
 	const maxPort = 65535
@@ -44,6 +44,7 @@ func RandomPort() int {
 	return rand.Intn(maxPort-minPort) + minPort
 }
 
+// FreeNetworkInterface free network interface
 func FreeNetworkInterface(basename string) (string, error) {
 	for i := 0; i < maxIfaceNum; i++ {
 		ifaceName := fmt.Sprintf("%s%d", basename, i)
@@ -74,7 +75,7 @@ func NetworkRange(network *net.IPNet) (net.IP, net.IP) {
 type fileWebServer struct {
 	Dir  string
 	Port int
-	Url  string
+	URL  string
 
 	server *http.Server
 }
@@ -87,7 +88,7 @@ func (fws *fileWebServer) Start() error {
 
 	fws.Dir = dir
 	fws.Port = RandomPort()
-	fws.Url = fmt.Sprintf("http://127.0.0.1:%d", fws.Port)
+	fws.URL = fmt.Sprintf("http://127.0.0.1:%d", fws.Port)
 
 	handler := http.NewServeMux()
 	handler.Handle("/", http.FileServer(http.Dir(dir)))
@@ -113,7 +114,7 @@ func (fws *fileWebServer) AddFile(content []byte) (string, *os.File, error) {
 		}
 	}
 
-	return fmt.Sprintf("%s/%s", fws.Url, path.Base(tmpfile.Name())), tmpfile, nil
+	return fmt.Sprintf("%s/%s", fws.URL, path.Base(tmpfile.Name())), tmpfile, nil
 }
 
 func (fws *fileWebServer) Stop() {
