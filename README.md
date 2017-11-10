@@ -2,35 +2,54 @@
 
 ![alpha](https://img.shields.io/badge/stability%3F-beta-yellow.svg) [![Build Status](https://travis-ci.org/dmacvicar/terraform-provider-libvirt.svg?branch=master)](https://travis-ci.org/dmacvicar/terraform-provider-libvirt) [![Coverage Status](https://coveralls.io/repos/github/dmacvicar/terraform-provider-libvirt/badge.svg?branch=master)](https://coveralls.io/github/dmacvicar/terraform-provider-libvirt?branch=master)
 
-This provider is still being actively developed. To see what is left or planned, see the [issues list](https://github.com/dmacvicar/terraform-provider-libvirt/issues).
-
+___
 This is a terraform provider that lets you provision
 servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraform.io/).
 
-## Requirements
+## Table of Content
+- [Installing](#Installing)
+- [Quickstart](#using-the-provider)
+- [Building from source](#building-from-source)
+- [How to contribute](doc/CONTRIBUTING.md)
 
-* libvirt 1.2.14 or newer on the hypervisor
-* latest golang version
 
-The provider uses `virDomainInterfaceAddresses` which was added in 1.2.14. If you need a stable server distribution with a recent libvirt version, try [openSUSE Leap](https://www.opensuse.org/) or [Ubuntu](http://www.ubuntu.com/server) (from version 15.10 Wily Werewolf on).
-
-In the future, I may try to support older libvirt versions if I find a way to elegantely conditional compile the code and get the IP addresses with alternative methods.
 
 ## Installing
+
+###### Requirements
+
+* libvirt 1.2.14 or newer on the hypervisor
+* latest [golang](https://golang.org/dl/) version
 
 [Copied from the Terraform documentation](https://www.terraform.io/docs/plugins/basics.html):
 > To install a plugin, put the binary somewhere on your filesystem, then configure Terraform to be able to find it. The configuration where plugins are defined is ~/.terraformrc for Unix-like systems and %APPDATA%/terraform.rc for Windows.
 
 If you are using opensuse/SUSE distro, add the repo and download the package (check the repo according your distro)
-
 ```console
 
-DISTRO=openSUSE_Leap_42.1
+DISTRO=openSUSE_Leap_42.3
 zypper addrepo http://download.opensuse.org/repositories/Virtualization:containers/$DISTRO/Virtualization:containers.repo
 zypper refresh
 zypper install terraform-provider-libvirt
-
 ```
+
+On debian systems you can use ```alien``` for converting the rpms
+
+## Building from source
+
+This project uses [glide](https://github.com/Masterminds/glide) to vendor all its
+dependencies.
+
+You do not have to interact with `glide` since the vendored packages are **already included in the repo**.
+
+Ensure you have the latest version of Go installed on your system, terraform usually
+takes advantage of features available only inside of the latest stable release.
+
+You need also need libvirt-dev(el) package installed.
+
+Run `go install` to build the binary. You will now find the binary at
+`$GOPATH/bin/terraform-provider-libvirt`.
+
 
 ## Using the provider
 
@@ -58,39 +77,13 @@ resource "libvirt_domain" "terraform_test" {
 Now you can see the plan, apply it, and then destroy the infrastructure:
 
 ```console
+$ terraform init 
 $ terraform plan
 $ terraform apply
 $ terraform destroy
 ```
 
-## Building from source
-
-This project uses [glide](https://github.com/Masterminds/glide) to vendor all its
-dependencies.
-
-Ensure you have latest version of Go installed on your system, terraform usually
-takes advantage of fetures available only inside of the latest stable release.
-
-You need also need libvirt-dev(el) package installed.
-
-Run `go install` to build the binary. You will now find the binary at
-`$GOPATH/bin/terraform-provider-libvirt`.
-
-## Running
-
-1.  create the example file libvirt.tf in your working directory
-2.  terraform plan
-3.  terraform apply
-
-## Running acceptance tests
-
-You need to define the LIBVIRT_DEFAULT_URI and TF_ACC variables:
-
-```console
-export LIBVIRT_DEFAULT_URI=qemu:///system
-export TF_ACC=1
-go test ./...
-```
+Look at more advanced examples [here](examples/)
 
 ## Troubleshooting (aka you have a problem)
 
