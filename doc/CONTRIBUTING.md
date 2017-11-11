@@ -18,10 +18,6 @@ https://github.com/hashicorp/terraform/blob/master/.github/CONTRIBUTING.md#runni
 
 ## Running acceptance tests 
 
-You need to define the ```LIBVIRT_DEFAULT_URI``` and ```TF_ACC``` variables.
-
 ```console
-export LIBVIRT_DEFAULT_URI=qemu:///system
-export TF_ACC=1
-go test ./...
+make testacc
 ```
