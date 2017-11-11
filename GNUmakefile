@@ -14,7 +14,9 @@ vet:
 		exit 1; \
 	fi
 
+golint:
+	golint ./libvirt
 gofmtcheck:
 	bash travis/gofmtcheck.sh
 
-.PHONY: build testacc vet fmt 
+.PHONY: build testacc vet fmt golint
