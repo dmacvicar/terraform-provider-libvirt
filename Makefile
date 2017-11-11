@@ -1,10 +1,13 @@
 default: build
 
 build: gofmtcheck
+	go build
+
+install: build
 	go install
 
-testacc: build 
-	bash tests/run_acceptance_test.sh
+test: install 
+	bash travis/run_acceptance_test.sh
 vet:
 	@echo "go vet ."
 	@go vet $$(go list ./... | grep -v vendor/) ; if [ $$? -eq 1 ]; then \
@@ -19,4 +22,4 @@ golint:
 gofmtcheck:
 	bash travis/gofmtcheck.sh
 
-.PHONY: build testacc vet fmt golint
+.PHONY: build install test vet fmt golint
