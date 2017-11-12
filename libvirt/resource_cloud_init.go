@@ -47,7 +47,7 @@ func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] creating cloudinit")
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("the libvirt connection was nil")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	cloudInit := newCloudInitDef()
@@ -85,7 +85,7 @@ func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceCloudInitRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("the libvirt connection was nil")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	ci, err := newCloudInitDefFromRemoteISO(virConn, d.Id())
@@ -107,7 +107,7 @@ func resourceCloudInitRead(d *schema.ResourceData, meta interface{}) error {
 func resourceCloudInitDelete(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("the libvirt connection was nil")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	key, err := getCloudInitVolumeKeyFromTerraformID(d.Id())

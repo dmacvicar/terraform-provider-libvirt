@@ -194,7 +194,7 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return false, fmt.Errorf("the libvirt connection was nil")
+		return false, fmt.Errorf(LibVirtConIsNil)
 	}
 
 	domain, err := virConn.LookupDomainByUUIDString(d.Id())
@@ -214,7 +214,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("the libvirt connection was nil")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	domainDef, err := newDomainDefForConnection(virConn)
@@ -707,7 +707,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("the libvirt connection was nil")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 	domain, err := virConn.LookupDomainByUUIDString(d.Id())
 	if err != nil {
@@ -807,7 +807,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("the libvirt connection was nil")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	domain, err := virConn.LookupDomainByUUIDString(d.Id())
@@ -1026,7 +1026,7 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("the libvirt connection was nil")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	log.Printf("[DEBUG] Deleting domain %s", d.Id())

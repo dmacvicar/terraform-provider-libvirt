@@ -82,7 +82,7 @@ func remoteImageSize(url string) (int, error) {
 func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("the libvirt connection was nil")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	poolName := "default"
@@ -262,7 +262,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("the libvirt connection was nil")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	volume, err := virConn.LookupStorageVolByKey(d.Id())
@@ -334,7 +334,7 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("the libvirt connection was nil")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	return RemoveVolume(virConn, d.Id())
