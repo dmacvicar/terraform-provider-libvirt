@@ -32,7 +32,7 @@ type QemuAgentInterfaceIPAddress struct {
 // When wait4ipv4 is turned on the code will not report interfaces that don't
 // have a ipv4 address set. This is useful when a domain gets the ipv6 address
 // before the ipv4 one.
-func getDomainInterfacesViaQemuAgent(domain LibVirtDomain, wait4ipv4 bool) []libvirt.DomainInterface {
+func getDomainInterfacesViaQemuAgent(domain Domain, wait4ipv4 bool) []libvirt.DomainInterface {
 	log.Print("[DEBUG] get network interfaces using qemu agent")
 
 	var interfaces []libvirt.DomainInterface

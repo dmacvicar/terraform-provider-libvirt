@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetDomainInterfacesViaQemuAgentInvalidResponse(t *testing.T) {
-	domain := LibVirtDomainMock{}
+	domain := DomainMock{}
 
 	interfaces := getDomainInterfacesViaQemuAgent(domain, false)
 
@@ -25,7 +25,7 @@ func TestGetDomainInterfacesViaQemuAgentNoInterfaces(t *testing.T) {
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	domain := LibVirtDomainMock{
+	domain := DomainMock{
 		QemuAgentCommandResponse: string(data),
 	}
 
@@ -55,7 +55,7 @@ func TestGetDomainInterfacesViaQemuAgentIgnoreLoopbackDevice(t *testing.T) {
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	domain := LibVirtDomainMock{
+	domain := DomainMock{
 		QemuAgentCommandResponse: string(data),
 	}
 
@@ -86,7 +86,7 @@ func TestGetDomainInterfacesViaQemuAgentIgnoreDevicesWithoutAddress(t *testing.T
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	domain := LibVirtDomainMock{
+	domain := DomainMock{
 		QemuAgentCommandResponse: string(data),
 	}
 
@@ -117,7 +117,7 @@ func TestGetDomainInterfacesViaQemuAgentUnknownIpAddressType(t *testing.T) {
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	domain := LibVirtDomainMock{
+	domain := DomainMock{
 		QemuAgentCommandResponse: string(data),
 	}
 
@@ -158,7 +158,7 @@ func TestGetDomainInterfacesViaQemuAgent(t *testing.T) {
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	domain := LibVirtDomainMock{
+	domain := DomainMock{
 		QemuAgentCommandResponse: string(data),
 	}
 
