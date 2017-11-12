@@ -152,7 +152,7 @@ ssh_authorized_keys:
 		t.Errorf("Unexpectd error %v", err)
 	}
 
-	if strings.Contains(res, ud_key) {
+	if strings.Contains(res, udKey) {
 		t.Error("Should not have found string defined by user data")
 	}
 

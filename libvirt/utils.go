@@ -27,8 +27,11 @@ func DiskLetterForIndex(i int) string {
 	return fmt.Sprintf("%s%c", DiskLetterForIndex(q-1), letter)
 }
 
-var waitSleepInterval = 1 * time.Second
-var waitTimeout = 5 * time.Minute
+// WaitSleepInterval time
+var WaitSleepInterval = 1 * time.Second
+
+// WaitTimeout time
+var WaitTimeout = 5 * time.Minute
 
 // WaitForSuccess wait for success and timeout after 5 minutes.
 func WaitForSuccess(errorMessage string, f func() error) error {
@@ -40,8 +43,8 @@ func WaitForSuccess(errorMessage string, f func() error) error {
 		}
 		log.Printf("[DEBUG] %s. Re-trying.\n", err)
 
-		time.Sleep(waitSleepInterval)
-		if time.Since(start) > waitTimeout {
+		time.Sleep(WaitSleepInterval)
+		if time.Since(start) > WaitTimeout {
 			return fmt.Errorf("%s: %s", errorMessage, err)
 		}
 	}

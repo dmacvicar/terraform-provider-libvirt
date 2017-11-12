@@ -635,7 +635,7 @@ func TestAccLibvirtDomain_FirmwareNoTemplate(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "name", "terraform-test-firmware-no-template"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.file", nvram_path),
+						"libvirt_domain.acceptance-test-domain", "nvram.file", nvramPath),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "firmware", "/usr/share/ovmf/OVMF.fd"),
 				),
@@ -673,7 +673,7 @@ func TestAccLibvirtDomain_FirmwareTemplate(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "name", "terraform-test-firmware-with-template"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.file", nvram_path),
+						"libvirt_domain.acceptance-test-domain", "nvram.file", nvramPath),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "nvram.template", "/usr/share/qemu/OVMF.fd"),
 					resource.TestCheckResourceAttr(

@@ -26,7 +26,7 @@ type DomainMeta struct {
 }
 
 // PoolSync exported pool sync
-var PoolSync = NewLibVirtPoolSync()
+var PoolSync = NewLVirtPoolSync()
 
 func init() {
 	spew.Config.Indent = "\t"
