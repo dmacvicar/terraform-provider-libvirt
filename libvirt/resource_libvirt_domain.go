@@ -226,7 +226,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
-		//var fwCfg []defCmd
 		var fwCfg []libvirtxml.DomainQEMUCommandlineArg
 		ignitionKey, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
 		if err != nil {

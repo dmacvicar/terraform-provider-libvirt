@@ -64,7 +64,7 @@ func xmlMarshallIndented(b interface{}) (string, error) {
 	return buf.String(), nil
 }
 
-// RemoveVolume Remove the volume identified by `key` from libvirt
+// RemoveVolume removes the volume identified by `key` from libvirt
 func RemoveVolume(virConn *libvirt.Connect, key string) error {
 	volume, err := virConn.LookupStorageVolByKey(key)
 	if err != nil {

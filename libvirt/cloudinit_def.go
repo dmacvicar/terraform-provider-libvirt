@@ -19,10 +19,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// USERDATA is the name of file expected by cloud-init
+// USERDATA is the filename expected by cloud-init
 const USERDATA string = "user-data"
 
-// METADATA is the name of file expected by cloud-init
+// METADATA is the filename expected by cloud-init
 const METADATA string = "meta-data"
 
 // CloudInitUserData struct

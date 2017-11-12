@@ -15,7 +15,7 @@ const (
 	maxIfaceNum = 100
 )
 
-// RandomMACAddress mac random
+// RandomMACAddress returns a randomized MAC address
 func RandomMACAddress() (string, error) {
 	buf := make([]byte, 6)
 	_, err := rand.Read(buf)
@@ -37,7 +37,7 @@ func RandomMACAddress() (string, error) {
 		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
 }
 
-// RandomPort return randomport
+// RandomPort returns a random port
 func RandomPort() int {
 	const minPort = 1024
 	const maxPort = 65535
@@ -46,7 +46,7 @@ func RandomPort() int {
 	return rand.Intn(maxPort-minPort) + minPort
 }
 
-// FreeNetworkInterface free network interface
+// FreeNetworkInterface returns a free network interface
 func FreeNetworkInterface(basename string) (string, error) {
 	for i := 0; i < maxIfaceNum; i++ {
 		ifaceName := fmt.Sprintf("%s%d", basename, i)
@@ -58,7 +58,7 @@ func FreeNetworkInterface(basename string) (string, error) {
 	return "", fmt.Errorf("could not obtain a free network interface")
 }
 
-// NetworkRange Calculates the first and last IP addresses in an IPNet
+// NetworkRange calculates the first and last IP addresses in an IPNet
 func NetworkRange(network *net.IPNet) (net.IP, net.IP) {
 	netIP := network.IP.To4()
 	lastIP := net.IPv4(0, 0, 0, 0).To4()

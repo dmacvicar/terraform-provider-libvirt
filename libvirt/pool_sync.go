@@ -13,7 +13,7 @@ type LVirtPoolSync struct {
 	internalMutex sync.Mutex
 }
 
-// NewLVirtPoolSync Allocate a new instance of LVirtPoolSync
+// NewLVirtPoolSync allocates a new instance of LVirtPoolSync
 func NewLVirtPoolSync() LVirtPoolSync {
 	pool := LVirtPoolSync{}
 	pool.PoolLocks = make(map[string]*sync.Mutex)
@@ -21,7 +21,7 @@ func NewLVirtPoolSync() LVirtPoolSync {
 	return pool
 }
 
-// AcquireLock Acquire a lock for the specified pool
+// AcquireLock acquires a lock for the specified pool
 func (ps LVirtPoolSync) AcquireLock(pool string) {
 	ps.internalMutex.Lock()
 	defer ps.internalMutex.Unlock()
@@ -35,7 +35,7 @@ func (ps LVirtPoolSync) AcquireLock(pool string) {
 	lock.Lock()
 }
 
-// ReleaseLock Release the look for the specified pool
+// ReleaseLock releases the look for the specified pool
 func (ps LVirtPoolSync) ReleaseLock(pool string) {
 	ps.internalMutex.Lock()
 	defer ps.internalMutex.Unlock()
