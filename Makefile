@@ -3,10 +3,10 @@ default: build
 build: gofmtcheck
 	go build
 
-install: build
+install: 
 	go install
 
-test: install 
+test: 
 	bash travis/run_acceptance_test.sh
 vet:
 	@echo "go vet ."
