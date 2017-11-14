@@ -42,7 +42,12 @@ func TestCreateFiles(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	for _, file := range []string{USERDATA, METADATA} {
+	// userData filename expected by cloud-init
+	const userData string = "user-data"
+	// metaData files expected by cloud-init
+	const metaData string = "meta-data"
+
+	for _, file := range []string{userData, metaData} {
 		check, err := exists(filepath.Join(dir, file))
 		if !check {
 			t.Errorf("%s not found: %v", file, err)

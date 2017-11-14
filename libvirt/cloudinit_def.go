@@ -18,11 +18,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// USERDATA file expected by cloud-init
-const USERDATA string = "user-data"
+// userData file expected by cloud-init
+const userData string = "user-data"
 
-// METADATA files expected by cloud-init
-const METADATA string = "meta-data"
+// metaData files expected by cloud-init
+const metaData string = "meta-data"
 
 // CloudInitUserData struct containing auth keys
 type CloudInitUserData struct {
@@ -148,7 +148,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 	}
 
 	isoDestination := filepath.Join(tmpDir, ci.Name)
-	cmd := GenIsoCmd(isoDestination, tmpDir, USERDATA, METADATA)
+	cmd := GenIsoCmd(isoDestination, tmpDir, userData, metaData)
 
 	log.Print("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {
@@ -179,7 +179,7 @@ func (ci *defCloudInit) createFiles() (string, error) {
 	userdata := fmt.Sprintf("#cloud-config\n%s", mergedUserData)
 
 	if err = ioutil.WriteFile(
-		filepath.Join(tmpDir, USERDATA),
+		filepath.Join(tmpDir, userData),
 		[]byte(userdata),
 		os.ModePerm); err != nil {
 		return "", fmt.Errorf("Error while writing user-data to file: %s", err)
@@ -189,7 +189,7 @@ func (ci *defCloudInit) createFiles() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Error dumping cloudinit's meta data: %s", err)
 	}
-	if err = ioutil.WriteFile(filepath.Join(tmpDir, METADATA), metadata, os.ModePerm); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(tmpDir, metaData), metadata, os.ModePerm); err != nil {
 		return "", fmt.Errorf("Error while writing meta-data to file: %s", err)
 	}
 
@@ -261,7 +261,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 		if f.Name() == "/user_dat." {
 			data, err := ioutil.ReadAll(f.Sys().(io.Reader))
 			if err != nil {
-				return ci, fmt.Errorf("Error while reading %s: %s", USERDATA, err)
+				return ci, fmt.Errorf("Error while reading %s: %s", userData, err)
 			}
 			if err := yaml.Unmarshal(data, &ci.UserData); err != nil {
 				return ci, fmt.Errorf("Error while unmarshalling user-data: %s", err)
@@ -278,7 +278,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 		if f.Name() == "/meta_dat." {
 			data, err := ioutil.ReadAll(f.Sys().(io.Reader))
 			if err != nil {
-				return ci, fmt.Errorf("Error while reading %s: %s", METADATA, err)
+				return ci, fmt.Errorf("Error while reading %s: %s", metaData, err)
 			}
 			if err := yaml.Unmarshal(data, &ci.Metadata); err != nil {
 				return ci, fmt.Errorf("Error while unmarshalling user-data: %s", err)
