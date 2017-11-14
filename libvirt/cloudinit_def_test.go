@@ -3,11 +3,13 @@ package libvirt
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform/terraform"
+	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
-	"gopkg.in/yaml.v2"
 )
 
 func TestNewCloudInitDef(t *testing.T) {
@@ -163,27 +165,57 @@ ssh_authorized_keys:
 }
 
 func TestCreateCloudIsoViaPlugin(t *testing.T) {
-	var config = fmt.Sprintf(`
 
-   resource "libvirt_cloudinit" "test" {
-   name = "commoninit.iso"
-   local_hostname = "tango"
-   pool =           "default"
-   user_data =      "#cloud-config\nssh_authorized_keys: []\n" 
-    }
-        `)
+	// FIXME: check for existence of the cloud-init volume
+
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtIgnitionDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return nil
+		},
 		Steps: []resource.TestStep{
 			{
-				Config: config,
+				Config: fmt.Sprintf(`
+			   resource "libvirt_cloudinit" "test" {
+			   name = "commoninit.iso"
+			   local_hostname = "tango1"
+			   pool =           "default"
+			   user_data =      "#cloud-config\nssh_authorized_keys: []\n"
+			    }`),
+
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit.test", "name", "commoninit.iso"),
 					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit.test", "local_hostname", "tango"),
+						"libvirt_cloudinit.test", "local_hostname", "tango1"),
+				),
+			},
+			// 2nd tests Invalid  userdata
+			{
+				Config: fmt.Sprintf(`
+									   resource "libvirt_cloudinit" "test" {
+									   name = "commoninit2.iso"
+									   local_hostname = "samba2"
+									   pool =           "default"
+									   user_data =      "invalidgino"
+									    }`),
+				ExpectError: regexp.MustCompile("Error merging UserData with UserDataRaw: yaml: unmarshal errors"),
+			},
+			// 3nd test explicetely don'tuse user_data
+			{
+				Config: fmt.Sprintf(`
+			   resource "libvirt_cloudinit" "test3" {
+			   name = "commoninit3.iso"
+			   local_hostname = "nouserdata"
+			   pool =           "default"
+				 }`),
+
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit.test3", "name", "commoninit3.iso"),
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit.test3", "local_hostname", "nouserdata"),
 				),
 			},
 		},
