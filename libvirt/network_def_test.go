@@ -16,16 +16,12 @@ func init() {
 
 func TestDefaultNetworkMarshall(t *testing.T) {
 	b := newNetworkDef()
-	prettyB := spew.Sdump(b)
-	t.Logf("Parsed default network:\n%s", prettyB)
-
 	buf := new(bytes.Buffer)
 	enc := xml.NewEncoder(buf)
 	enc.Indent("  ", "    ")
 	if err := enc.Encode(b); err != nil {
 		t.Fatalf("could not marshall this:\n%s", spew.Sdump(b))
 	}
-	t.Logf("Marshalled default network:\n%s", buf.String())
 }
 
 func TestNetworkDefUnmarshall(t *testing.T) {
@@ -64,8 +60,6 @@ func TestNetworkDefUnmarshall(t *testing.T) {
 	`
 
 	b, err := newDefNetworkFromXML(text)
-	prettyB := spew.Sdump(b)
-	t.Logf("Parsed:\n%s", prettyB)
 	if err != nil {
 		t.Errorf("could not parse: %s", err)
 	}
@@ -87,10 +81,9 @@ func TestNetworkDefUnmarshall(t *testing.T) {
 	if len(b.IPs) == 0 {
 		t.Errorf("wrong number of IPs: %d", len(b.IPs))
 	}
-	if bs, err := xmlMarshallIndented(b); err != nil {
+	_, err2 := xmlMarshallIndented(b)
+	if err2 != nil {
 		t.Fatalf("marshalling error\n%s", spew.Sdump(b))
-	} else {
-		t.Logf("Marshalled:\n%s", bs)
 	}
 }
 
