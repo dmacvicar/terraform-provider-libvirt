@@ -3,11 +3,12 @@ package libvirt
 import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform/terraform"
+	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"gopkg.in/yaml.v2"
 )
 
 func TestNewCloudInitDef(t *testing.T) {
@@ -173,9 +174,11 @@ func TestCreateCloudIsoViaPlugin(t *testing.T) {
     }
         `)
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtIgnitionDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return nil
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: config,
