@@ -1,11 +1,12 @@
 package libvirt
 
 import (
+	"fmt"
+	"github.com/hashicorp/terraform/helper/resource"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
 	"gopkg.in/yaml.v2"
 )
 
@@ -159,6 +160,34 @@ ssh_authorized_keys:
 	if !strings.Contains(res, "key2-from-extra-data") {
 		t.Error("Should have found string defined by raw data")
 	}
+}
+
+func TestCreateCloudIsoViaPlugin(t *testing.T) {
+	var config = fmt.Sprintf(`
+
+   resource "libvirt_cloudinit" "test" {
+   name = "commoninit.iso"
+   local_hostname = "tango"
+   pool =           "default"
+   user_data =      "#cloud-config\nssh_authorized_keys: []\n" 
+    }
+        `)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtIgnitionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit.test", "name", "commoninit.iso"),
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit.test", "local_hostname", "tango"),
+				),
+			},
+		},
+	})
 }
 
 func exists(path string) (bool, error) {
