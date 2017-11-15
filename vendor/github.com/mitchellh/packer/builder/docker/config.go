@@ -23,19 +23,21 @@ type Config struct {
 	common.PackerConfig `mapstructure:",squash"`
 	Comm                communicator.Config `mapstructure:",squash"`
 
-	Commit       bool
-	Discard      bool
-	ExportPath   string `mapstructure:"export_path"`
-	Image        string
-	Pty          bool
-	Pull         bool
-	RunCommand   []string `mapstructure:"run_command"`
-	Volumes      map[string]string
-	Privileged   bool `mapstructure:"privileged"`
-	Author       string
-	Changes      []string
-	Message      string
-	ContainerDir string `mapstructure:"container_dir"`
+	Author         string
+	Changes        []string
+	Commit         bool
+	ContainerDir   string `mapstructure:"container_dir"`
+	Discard        bool
+	ExecUser       string `mapstructure:"exec_user"`
+	ExportPath     string `mapstructure:"export_path"`
+	Image          string
+	Message        string
+	Privileged     bool `mapstructure:"privileged"`
+	Pty            bool
+	Pull           bool
+	RunCommand     []string `mapstructure:"run_command"`
+	Volumes        map[string]string
+	FixUploadOwner bool `mapstructure:"fix_upload_owner"`
 
 	// This is used to login to dockerhub to pull a private base container. For
 	// pushing to dockerhub, see the docker post-processors
@@ -52,6 +54,8 @@ type Config struct {
 
 func NewConfig(raws ...interface{}) (*Config, []string, error) {
 	c := new(Config)
+
+	c.FixUploadOwner = true
 
 	var md mapstructure.Metadata
 	err := config.Decode(c, &config.DecodeOpts{

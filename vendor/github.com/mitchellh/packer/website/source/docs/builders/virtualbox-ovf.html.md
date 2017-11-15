@@ -202,6 +202,9 @@ builder.
     `VBoxManage import`. This can be useful for passing "keepallmacs" or
     "keepnatmacs" options for existing ovf images.
 
+-   `keep_registered` (boolean) - Set this to `true` if you would like to keep
+    the VM registered with virtualbox. Defaults to `false`.
+
 -   `output_directory` (string) - This is the path to the directory where the
     resulting virtual machine will be created. This may be relative or absolute.
     If relative, the path is relative to the working directory when `packer`
@@ -366,6 +369,9 @@ Ubuntu 12.04 installer:
   "initrd=/install/initrd.gz -- <enter>"
 ]
 ```
+
+For more examples of various boot commands, see the sample projects from our
+[community templates page](/downloads-community.html#templates).
 
 ## Guest Additions
 

@@ -148,6 +148,10 @@
           <li<%= sidebar_current("docs-commands-workspace") %>>
             <a href="/docs/commands/workspace/index.html">workspace</a>
           </li>
+
+          <li<%= sidebar_current("docs-commands-cli-config") %>>
+            <a href="/docs/commands/cli-config.html">CLI Config File</a>
+          </li>
         </ul>
       </li>
 
@@ -332,20 +336,12 @@
             <a href="/docs/providers/logentries/index.html">Logentries</a>
           </li>
 
+          <li<%= sidebar_current("docs-providers-logicmonitor") %>>
+            <a href="/docs/providers/logicmonitor/index.html">LogicMonitor</a>
+          </li>
+
           <li<%= sidebar_current("docs-providers-mailgun") %>>
             <a href="/docs/providers/mailgun/index.html">Mailgun</a>
-          </li>
-
-          <li<%= sidebar_current("docs-providers-newrelic") %>>
-            <a href="/docs/providers/newrelic/index.html">New Relic</a>
-          </li>
-
-          <li<%= sidebar_current("docs-providers-nomad") %>>
-            <a href="/docs/providers/nomad/index.html">Nomad</a>
-          </li>
-
-          <li<%= sidebar_current("docs-providers-ns1") %>>
-            <a href="/docs/providers/ns1/index.html">NS1</a>
           </li>
 
           <li<%= sidebar_current("docs-providers-azurerm") %>>
@@ -358,6 +354,18 @@
 
           <li<%= sidebar_current("docs-providers-mysql") %>>
             <a href="/docs/providers/mysql/index.html">MySQL</a>
+          </li>
+          
+          <li<%= sidebar_current("docs-providers-newrelic") %>>
+            <a href="/docs/providers/newrelic/index.html">New Relic</a>
+          </li>
+
+          <li<%= sidebar_current("docs-providers-nomad") %>>
+            <a href="/docs/providers/nomad/index.html">Nomad</a>
+          </li>
+
+          <li<%= sidebar_current("docs-providers-ns1") %>>
+            <a href="/docs/providers/ns1/index.html">NS1</a>
           </li>
 
           <li<%= sidebar_current("docs-providers-oneandone") %>>
@@ -489,12 +497,16 @@
             <a href="/docs/provisioners/local-exec.html">local-exec</a>
           </li>
 
+          <li<%= sidebar_current("docs-provisioners-null-resource") %>>
+            <a href="/docs/provisioners/null_resource.html">null_resource</a>
+          </li>
+
           <li<%= sidebar_current("docs-provisioners-remote") %>>
             <a href="/docs/provisioners/remote-exec.html">remote-exec</a>
           </li>
 
-          <li<%= sidebar_current("docs-provisioners-null-resource") %>>
-            <a href="/docs/provisioners/null_resource.html">null_resource</a>
+          <li<%= sidebar_current("docs-provisioners-salt-masterless") %>>
+            <a href="/docs/provisioners/salt-masterless.html">salt-masterless</a>
           </li>
         </ul>
       </li>
@@ -508,6 +520,10 @@
 
           <li<%= sidebar_current("docs-modules-sources") %>>
             <a href="/docs/modules/sources.html">Sources</a>
+          </li>
+
+          <li<%= sidebar_current("docs-registry") %>>
+            <a href="/docs/registry/index.html">Registry</a>
           </li>
 
           <li<%= sidebar_current("docs-modules-create") %>>
@@ -581,11 +597,14 @@
 
       <hr>
 
-      <li<%= sidebar_current("docs-enterprise") %>>
-        <a href="/docs/enterprise/index.html">Terraform Enterprise</a>
-        <ul class="nav">
-        </ul>
+      <li<%= sidebar_current("docs-enterprise-home") %>>
+        <a class="back" href="/docs/enterprise/index.html">Terraform Enterprise (classic)</a>
       </li>
+
+      <li<%= sidebar_current("docs-enterprise2-home") %>>
+        <a class="back" href="/docs/enterprise-beta/index.html">Terraform Enterprise (beta)</a>
+      </li>
+
     </ul>
   <% end %>
 

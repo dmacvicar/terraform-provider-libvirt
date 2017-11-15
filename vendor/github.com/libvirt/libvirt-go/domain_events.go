@@ -329,7 +329,7 @@ func domainEventGraphicsCallback(c C.virConnectPtr, d C.virDomainPtr,
 	domain := &Domain{ptr: d}
 	connection := &Connect{ptr: c}
 
-	subjectGo := make([]DomainEventGraphicsSubjectIdentity, subject.nidentity)
+	subjectGo := make([]DomainEventGraphicsSubjectIdentity, 0)
 	nidentities := int(subject.nidentity)
 	identities := (*[1 << 30]C.virDomainEventGraphicsSubjectIdentity)(unsafe.Pointer(&subject.identities))[:nidentities:nidentities]
 	for _, identity := range identities {
