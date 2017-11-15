@@ -7,6 +7,9 @@ go:
 go_import_path: github.com/dmacvicar/terraform-provider-libvirt
 install: true
 before_script:
+  - brew upgrade
+  - launchctl list
+  - launchctl load -w /System/Library/LaunchDaemons/libvirtd.plist
   - brew install qemu
   - brew install libvirt
 script:
