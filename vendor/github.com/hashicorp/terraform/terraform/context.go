@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/terraform/config"
 	"github.com/hashicorp/terraform/config/module"
+	"github.com/hashicorp/terraform/version"
 )
 
 // InputMode defines what sort of input will be asked for when Input
@@ -154,7 +155,7 @@ func NewContext(opts *ContextOpts) (*Context, error) {
 	// Explicitly reset our state version to our current version so that
 	// any operations we do will write out that our latest version
 	// has run.
-	state.TFVersion = Version
+	state.TFVersion = version.Version
 
 	// Determine parallelism, default to 10. We do this both to limit
 	// CPU pressure but also to have an extra guard against rate throttling
@@ -532,13 +533,14 @@ func (c *Context) Plan() (*Plan, error) {
 		State:   c.state,
 		Targets: c.targets,
 
-		TerraformVersion: VersionString(),
+		TerraformVersion: version.String(),
 		ProviderSHA256s:  c.providerSHA256s,
 	}
 
 	var operation walkOperation
 	if c.destroy {
 		operation = walkPlanDestroy
+		p.Destroy = true
 	} else {
 		// Set our state to be something temporary. We do this so that
 		// the plan can update a fake state so that variables work, then

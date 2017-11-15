@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/posener/complete"
+
 	"github.com/hashicorp/go-getter"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -69,10 +71,11 @@ func (c *InitCommand) Run(args []string) int {
 		c.getPlugins = false
 	}
 
-	// set getProvider if we don't have a test version already
+	// set providerInstaller if we don't have a test version already
 	if c.providerInstaller == nil {
 		c.providerInstaller = &discovery.ProviderInstaller{
-			Dir: c.pluginDir(),
+			Dir:   c.pluginDir(),
+			Cache: c.pluginCache(),
 			PluginProtocolVersion: plugin.Handshake.ProtocolVersion,
 			SkipVerify:            !flagVerifyPlugins,
 			Ui:                    c.Ui,
@@ -152,8 +155,10 @@ func (c *InitCommand) Run(args []string) int {
 	if flagGet || flagBackend {
 		conf, err := c.Config(path)
 		if err != nil {
-			c.Ui.Error(fmt.Sprintf(
-				"Error loading configuration: %s", err))
+			// Since this may be the user's first ever interaction with Terraform,
+			// we'll provide some additional context in this case.
+			c.Ui.Error(strings.TrimSpace(errInitConfigError))
+			c.showDiagnostics(err)
 			return 1
 		}
 
@@ -452,6 +457,29 @@ func (c *InitCommand) getProviders(path string, state *terraform.State, upgrade 
 	return nil
 }
 
+func (c *InitCommand) AutocompleteArgs() complete.Predictor {
+	return complete.PredictDirs("")
+}
+
+func (c *InitCommand) AutocompleteFlags() complete.Flags {
+	return complete.Flags{
+		"-backend":        completePredictBoolean,
+		"-backend-config": complete.PredictFiles("*.tfvars"), // can also be key=value, but we can't "predict" that
+		"-force-copy":     complete.PredictNothing,
+		"-from-module":    completePredictModuleSource,
+		"-get":            completePredictBoolean,
+		"-get-plugins":    completePredictBoolean,
+		"-input":          completePredictBoolean,
+		"-lock":           completePredictBoolean,
+		"-lock-timeout":   complete.PredictAnything,
+		"-no-color":       complete.PredictNothing,
+		"-plugin-dir":     complete.PredictDirs(""),
+		"-reconfigure":    complete.PredictNothing,
+		"-upgrade":        completePredictBoolean,
+		"-verify-plugins": completePredictBoolean,
+	}
+}
+
 func (c *InitCommand) Help() string {
 	helpText := `
 Usage: terraform init [options] [DIR]
@@ -524,6 +552,13 @@ Options:
 func (c *InitCommand) Synopsis() string {
 	return "Initialize a Terraform working directory"
 }
+
+const errInitConfigError = `
+There are some problems with the configuration, described below.
+
+The Terraform configuration must be valid before initialization so that
+Terraform can determine which modules and providers need to be installed.
+`
 
 const errInitCopyNotEmpty = `
 The working directory already contains files. The -from-module option requires

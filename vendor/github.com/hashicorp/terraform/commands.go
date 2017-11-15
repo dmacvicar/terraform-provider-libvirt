@@ -1,10 +1,15 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/signal"
 
 	"github.com/hashicorp/terraform/command"
+	pluginDiscovery "github.com/hashicorp/terraform/plugin/discovery"
+	"github.com/hashicorp/terraform/svchost"
+	"github.com/hashicorp/terraform/svchost/auth"
+	"github.com/hashicorp/terraform/svchost/disco"
 	"github.com/mitchellh/cli"
 )
 
@@ -25,19 +30,15 @@ const (
 	OutputPrefix = "o:"
 )
 
-func init() {
-	Ui = &cli.PrefixedUi{
-		AskPrefix:    OutputPrefix,
-		OutputPrefix: OutputPrefix,
-		InfoPrefix:   OutputPrefix,
-		ErrorPrefix:  ErrorPrefix,
-		Ui:           &cli.BasicUi{Writer: os.Stdout},
-	}
-
+func initCommands(config *Config) {
 	var inAutomation bool
 	if v := os.Getenv(runningInAutomationEnvName); v != "" {
 		inAutomation = true
 	}
+
+	credsSrc := credentialsSource(config)
+	services := disco.NewDisco()
+	services.SetCredentialsSource(credsSrc)
 
 	meta := command.Meta{
 		Color:            true,
@@ -45,7 +46,11 @@ func init() {
 		PluginOverrides:  &PluginOverrides,
 		Ui:               Ui,
 
+		Services:    services,
+		Credentials: credsSrc,
+
 		RunningInAutomation: inAutomation,
+		PluginCacheDir:      config.PluginCacheDir,
 	}
 
 	// The command list is included in the terraform -help
@@ -338,4 +343,46 @@ func makeShutdownCh() <-chan struct{} {
 	}()
 
 	return resultCh
+}
+
+func credentialsSource(config *Config) auth.CredentialsSource {
+	creds := auth.NoCredentials
+	if len(config.Credentials) > 0 {
+		staticTable := map[svchost.Hostname]map[string]interface{}{}
+		for userHost, creds := range config.Credentials {
+			host, err := svchost.ForComparison(userHost)
+			if err != nil {
+				// We expect the config was already validated by the time we get
+				// here, so we'll just ignore invalid hostnames.
+				continue
+			}
+			staticTable[host] = creds
+		}
+		creds = auth.StaticCredentialsSource(staticTable)
+	}
+
+	for helperType, helperConfig := range config.CredentialsHelpers {
+		log.Printf("[DEBUG] Searching for credentials helper named %q", helperType)
+		available := pluginDiscovery.FindPlugins("credentials", globalPluginDirs())
+		available = available.WithName(helperType)
+		if available.Count() == 0 {
+			log.Printf("[ERROR] Unable to find credentials helper %q; ignoring", helperType)
+			break
+		}
+
+		selected := available.Newest()
+
+		helperSource := auth.HelperProgramCredentialsSource(selected.Path, helperConfig.Args...)
+		creds = auth.Credentials{
+			creds,
+			auth.CachingCredentialsSource(helperSource), // cached because external operation may be slow/expensive
+		}
+
+		// There should only be zero or one "credentials_helper" blocks. We
+		// assume that the config was validated earlier and so we don't check
+		// for extras here.
+		break
+	}
+
+	return creds
 }
