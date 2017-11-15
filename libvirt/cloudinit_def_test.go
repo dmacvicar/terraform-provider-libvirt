@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	libvirt "github.com/libvirt/libvirt-go"
 	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
@@ -165,9 +166,7 @@ ssh_authorized_keys:
 }
 
 func TestCreateCloudIsoViaPlugin(t *testing.T) {
-
-	// FIXME: check for existence of the cloud-init volume
-
+	var volume libvirt.StorageVol
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
@@ -177,49 +176,68 @@ func TestCreateCloudIsoViaPlugin(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-			   resource "libvirt_cloudinit" "test" {
-			   name = "commoninit.iso"
-			   local_hostname = "tango1"
-			   pool =           "default"
-			   user_data =      "#cloud-config\nssh_authorized_keys: []\n"
+		      resource "libvirt_cloudinit" "test" {
+			               name = "test.iso"
+			               local_hostname = "tango1"
+			               pool =           "default"
+  			             user_data =      "#cloud-config\nssh_authorized_keys: []\n"
 			    }`),
 
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit.test", "name", "commoninit.iso"),
+						"libvirt_cloudinit.test", "name", "test.iso"),
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit.test", "local_hostname", "tango1"),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit.test", &volume),
 				),
 			},
 			// 2nd tests Invalid  userdata
 			{
 				Config: fmt.Sprintf(`
-									   resource "libvirt_cloudinit" "test" {
+				  resource "libvirt_cloudinit" "test" {
 									   name = "commoninit2.iso"
 									   local_hostname = "samba2"
 									   pool =           "default"
 									   user_data =      "invalidgino"
-									    }`),
+				  }`),
 				ExpectError: regexp.MustCompile("Error merging UserData with UserDataRaw: yaml: unmarshal errors"),
-			},
-			// 3nd test explicetely don'tuse user_data
-			{
-				Config: fmt.Sprintf(`
-			   resource "libvirt_cloudinit" "test3" {
-			   name = "commoninit3.iso"
-			   local_hostname = "nouserdata"
-			   pool =           "default"
-				 }`),
-
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit.test3", "name", "commoninit3.iso"),
-					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit.test3", "local_hostname", "nouserdata"),
-				),
 			},
 		},
 	})
+}
+
+func testAccCheckCloudInitVolumeExists(n string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No libvirt volume key ID is set")
+		}
+
+		cikey, err := getCloudInitVolumeKeyFromTerraformID(rs.Primary.ID)
+		retrievedVol, err := virConn.LookupStorageVolByKey(cikey)
+		if err != nil {
+			return err
+		}
+		realID, err := retrievedVol.GetKey()
+		if err != nil {
+			return err
+		}
+
+		if realID != cikey {
+			fmt.Printf("realID is: %s \ncloudinit key is %s", realID, cikey)
+			return fmt.Errorf("Resource ID and cloudinit volume key does not match")
+		}
+
+		*volume = *retrievedVol
+
+		return nil
+	}
 }
 
 func exists(path string) (bool, error) {
