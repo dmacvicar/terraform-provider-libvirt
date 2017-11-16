@@ -43,29 +43,29 @@ func resourceLibvirtNetwork() *schema.Resource {
 		Exists: resourceLibvirtNetworkExists,
 		Update: resourceLibvirtNetworkUpdate,
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"domain": &schema.Schema{
+			"domain": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"mode": &schema.Schema{ // can be "none", "nat" (default), "route", "bridge"
+			"mode": { // can be "none", "nat" (default), "route", "bridge"
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Default:  netModeNat,
 			},
-			"bridge": &schema.Schema{
+			"bridge": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
-			"addresses": &schema.Schema{
+			"addresses": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Required: false,
@@ -74,13 +74,13 @@ func resourceLibvirtNetwork() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
-			"running": &schema.Schema{
+			"running": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
 				ForceNew: false,
 			},
-			"dns_forwarder": &schema.Schema{
+			"dns_forwarder": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Required: false,
@@ -95,13 +95,13 @@ func resourceLibvirtNetwork() *schema.Resource {
 
 func dnsForwarderSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"address": &schema.Schema{
+		"address": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
 			ForceNew: true,
 		},
-		"domain": &schema.Schema{
+		"domain": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
@@ -237,7 +237,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 
 				dni.DHCP = &libvirtxml.NetworkDHCP{
 					Ranges: []libvirtxml.NetworkDHCPRange{
-						libvirtxml.NetworkDHCPRange{
+						{
 							Start: start.String(),
 							End:   end.String(),
 						},

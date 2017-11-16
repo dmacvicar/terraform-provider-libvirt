@@ -48,58 +48,58 @@ func resourceLibvirtDomain() *schema.Resource {
 			Create: schema.DefaultTimeout(5 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"metadata": &schema.Schema{
+			"metadata": {
 				Type:     schema.TypeString,
 				Required: false,
 				Optional: true,
 				ForceNew: false,
 			},
-			"vcpu": &schema.Schema{
+			"vcpu": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  1,
 				ForceNew: true,
 			},
-			"memory": &schema.Schema{
+			"memory": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  512,
 				ForceNew: true,
 			},
-			"firmware": &schema.Schema{
+			"firmware": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"nvram": &schema.Schema{
+			"nvram": {
 				Type:     schema.TypeMap,
 				Optional: true,
 				ForceNew: true,
 			},
-			"running": &schema.Schema{
+			"running": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
 				ForceNew: false,
 			},
-			"cloudinit": &schema.Schema{
+			"cloudinit": {
 				Type:     schema.TypeString,
 				Required: false,
 				Optional: true,
 				ForceNew: false,
 			},
-			"coreos_ignition": &schema.Schema{
+			"coreos_ignition": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Default:  "",
 			},
-			"filesystem": &schema.Schema{
+			"filesystem": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Required: false,
@@ -108,7 +108,7 @@ func resourceLibvirtDomain() *schema.Resource {
 					Type: schema.TypeMap,
 				},
 			},
-			"disk": &schema.Schema{
+			"disk": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Required: false,
@@ -117,7 +117,7 @@ func resourceLibvirtDomain() *schema.Resource {
 					Type: schema.TypeMap,
 				},
 			},
-			"network_interface": &schema.Schema{
+			"network_interface": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Required: false,
@@ -125,12 +125,12 @@ func resourceLibvirtDomain() *schema.Resource {
 					Schema: networkInterfaceCommonSchema(),
 				},
 			},
-			"graphics": &schema.Schema{
+			"graphics": {
 				Type:     schema.TypeMap,
 				Optional: true,
 				Required: false,
 			},
-			"console": &schema.Schema{
+			"console": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Required: false,
@@ -138,28 +138,28 @@ func resourceLibvirtDomain() *schema.Resource {
 					Schema: consoleSchema(),
 				},
 			},
-			"cpu": &schema.Schema{
+			"cpu": {
 				Type:     schema.TypeMap,
 				Optional: true,
 				Required: false,
 				ForceNew: true,
 			},
-			"autostart": &schema.Schema{
+			"autostart": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Required: false,
 			},
-			"machine": &schema.Schema{
+			"machine": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "pc",
 			},
-			"arch": &schema.Schema{
+			"arch": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "x86_64",
 			},
-			"boot_device": &schema.Schema{
+			"boot_device": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Required: false,
@@ -167,7 +167,7 @@ func resourceLibvirtDomain() *schema.Resource {
 					Schema: bootDeviceSchema(),
 				},
 			},
-			"emulator": &schema.Schema{
+			"emulator": {
 				Type:     schema.TypeString,
 				Default:  "/usr/bin/qemu-system-x86_64",
 				Optional: true,
@@ -178,7 +178,7 @@ func resourceLibvirtDomain() *schema.Resource {
 
 func bootDeviceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"dev": &schema.Schema{
+		"dev": {
 			Type:     schema.TypeList,
 			Optional: true,
 			Required: false,
@@ -251,7 +251,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		if graphics, ok := d.GetOk("graphics"); ok {
 			graphicsMap := graphics.(map[string]interface{})
 			domainDef.Devices.Graphics = []libvirtxml.DomainGraphic{
-				libvirtxml.DomainGraphic{},
+				{},
 			}
 			if graphicsType, ok := graphicsMap["type"]; ok {
 				domainDef.Devices.Graphics[0].Type = graphicsType.(string)
@@ -261,7 +261,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			}
 			if listenType, ok := graphicsMap["listen_type"]; ok {
 				domainDef.Devices.Graphics[0].Listeners = []libvirtxml.DomainGraphicListener{
-					libvirtxml.DomainGraphicListener{
+					{
 						Type: listenType.(string),
 					},
 				}
