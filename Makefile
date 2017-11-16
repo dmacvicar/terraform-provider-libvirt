@@ -1,6 +1,6 @@
 default: build
 
-build: gofmtcheck
+build: gofmtcheck golint
 	go build
 
 install: 
