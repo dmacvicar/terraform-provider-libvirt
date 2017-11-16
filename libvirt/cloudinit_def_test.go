@@ -22,12 +22,12 @@ func TestTerraformKeyOps(t *testing.T) {
 
 	volKey := "volume-key"
 
-	terraformId := ci.buildTerraformKey(volKey)
-	if terraformId == "" {
+	terraformID := ci.buildTerraformKey(volKey)
+	if terraformID == "" {
 		t.Error("key should not be empty")
 	}
 
-	actualKey, _ := getCloudInitVolumeKeyFromTerraformID(terraformId)
+	actualKey, _ := getCloudInitVolumeKeyFromTerraformID(terraformID)
 	if actualKey != volKey {
 		t.Error("wrong key returned")
 	}
@@ -136,9 +136,9 @@ func TestMergeUserDataIntoEmptyUserDataRaw(t *testing.T) {
 }
 
 func TestMergeUserDataIntoUserDataRawGivesPrecedenceToRawData(t *testing.T) {
-	ud_key := "user-data-key"
+	udKey := "user-data-key"
 	ud := CloudInitUserData{
-		SSHAuthorizedKeys: []string{ud_key},
+		SSHAuthorizedKeys: []string{udKey},
 	}
 
 	var userDataRaw = `
@@ -152,7 +152,7 @@ ssh_authorized_keys:
 		t.Errorf("Unexpectd error %v", err)
 	}
 
-	if strings.Contains(res, ud_key) {
+	if strings.Contains(res, udKey) {
 		t.Error("Should not have found string defined by user data")
 	}
 

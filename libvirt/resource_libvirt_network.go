@@ -113,7 +113,7 @@ func dnsForwarderSchema() map[string]*schema.Schema {
 func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return false, fmt.Errorf("The libvirt connection was nil.")
+		return false, fmt.Errorf(LibVirtConIsNil)
 	}
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
 	if err != nil {
@@ -132,7 +132,7 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
 	if err != nil {
@@ -165,7 +165,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	// see https://libvirt.org/formatnetwork.html
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	networkDef := newNetworkDef()
@@ -248,12 +248,12 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			networkDef.IPs = ipsPtrsLst
 		}
 
-		if dns_forward_count, ok := d.GetOk("dns_forwarder.#"); ok {
+		if dnsForwardCount, ok := d.GetOk("dns_forwarder.#"); ok {
 			dns := libvirtxml.NetworkDNS{
 				Forwarders: []libvirtxml.NetworkDNSForwarder{},
 			}
 
-			for i := 0; i < dns_forward_count.(int); i++ {
+			for i := 0; i < dnsForwardCount.(int); i++ {
 				forward := libvirtxml.NetworkDNSForwarder{}
 				forwardPrefix := fmt.Sprintf("dns_forwarder.%d", i)
 				if address, ok := d.GetOk(forwardPrefix + ".address"); ok {
@@ -337,7 +337,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
@@ -396,7 +396,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 	log.Printf("[DEBUG] Deleting network ID %s", d.Id())
 

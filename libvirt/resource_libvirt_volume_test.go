@@ -47,12 +47,12 @@ func testAccCheckLibvirtVolumeExists(n string, volume *libvirt.StorageVol) resou
 		}
 		fmt.Printf("The ID is %s", rs.Primary.ID)
 
-		realId, err := retrievedVol.GetKey()
+		realID, err := retrievedVol.GetKey()
 		if err != nil {
 			return err
 		}
 
-		if realId != rs.Primary.ID {
+		if realID != rs.Primary.ID {
 			return fmt.Errorf("Resource ID and volume key does not match")
 		}
 
@@ -84,7 +84,7 @@ func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.StorageVol
 func TestAccLibvirtVolume_Basic(t *testing.T) {
 	var volume libvirt.StorageVol
 
-	const testAccCheckLibvirtVolumeConfig_basic = `
+	const testAccCheckLibvirtVolumeConfigBasic = `
 		resource "libvirt_volume" "terraform-acceptance-test-1" {
 		    name = "terraform-test"
 		    size =  1073741824
@@ -96,7 +96,7 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccCheckLibvirtVolumeConfig_basic,
+				Config: testAccCheckLibvirtVolumeConfigBasic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-1", &volume),
 					resource.TestCheckResourceAttr(
@@ -124,12 +124,12 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	const testAccCheckLibvirtVolumeConfig_source = `
+	const testAccCheckLibvirtVolumeConfigSource = `
 		resource "libvirt_volume" "terraform-acceptance-test-2" {
 		    name = "terraform-test"
 		    source = "%s"
 		}`
-	config := fmt.Sprintf(testAccCheckLibvirtVolumeConfig_source, url)
+	config := fmt.Sprintf(testAccCheckLibvirtVolumeConfigSource, url)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -151,7 +151,7 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 func TestAccLibvirtVolume_Format(t *testing.T) {
 	var volume libvirt.StorageVol
 
-	const testAccCheckLibvirtVolumeConfig_format = `
+	const testAccCheckLibvirtVolumeConfigFormat = `
 		resource "libvirt_volume" "terraform-acceptance-test-3" {
 		    name = "terraform-test"
 		    format = "raw"
@@ -164,7 +164,7 @@ func TestAccLibvirtVolume_Format(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccCheckLibvirtVolumeConfig_format,
+				Config: testAccCheckLibvirtVolumeConfigFormat,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-3", &volume),
 					resource.TestCheckResourceAttr(

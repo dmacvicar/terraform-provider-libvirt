@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetDomainInterfacesViaQemuAgentInvalidResponse(t *testing.T) {
-	domain := LibVirtDomainMock{}
+	domain := DomainMock{}
 
 	interfaces := getDomainInterfacesViaQemuAgent(domain, false)
 
@@ -25,7 +25,7 @@ func TestGetDomainInterfacesViaQemuAgentNoInterfaces(t *testing.T) {
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	domain := LibVirtDomainMock{
+	domain := DomainMock{
 		QemuAgentCommandResponse: string(data),
 	}
 
@@ -41,8 +41,8 @@ func TestGetDomainInterfacesViaQemuAgentIgnoreLoopbackDevice(t *testing.T) {
 			QemuAgentInterface{
 				Name:   "lo",
 				Hwaddr: "ho:me",
-				IpAddresses: []QemuAgentInterfaceIpAddress{
-					QemuAgentInterfaceIpAddress{
+				IPAddresses: []QemuAgentInterfaceIPAddress{
+					QemuAgentInterfaceIPAddress{
 						Type:    "ipv4",
 						Address: "127.0.0.1",
 						Prefix:  1,
@@ -55,7 +55,7 @@ func TestGetDomainInterfacesViaQemuAgentIgnoreLoopbackDevice(t *testing.T) {
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	domain := LibVirtDomainMock{
+	domain := DomainMock{
 		QemuAgentCommandResponse: string(data),
 	}
 
@@ -72,8 +72,8 @@ func TestGetDomainInterfacesViaQemuAgentIgnoreDevicesWithoutAddress(t *testing.T
 			QemuAgentInterface{
 				Name:   "eth1",
 				Hwaddr: "xy:yy:zz",
-				IpAddresses: []QemuAgentInterfaceIpAddress{
-					QemuAgentInterfaceIpAddress{
+				IPAddresses: []QemuAgentInterfaceIPAddress{
+					QemuAgentInterfaceIPAddress{
 						Type:    "ipv4",
 						Address: "",
 						Prefix:  1,
@@ -86,7 +86,7 @@ func TestGetDomainInterfacesViaQemuAgentIgnoreDevicesWithoutAddress(t *testing.T
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	domain := LibVirtDomainMock{
+	domain := DomainMock{
 		QemuAgentCommandResponse: string(data),
 	}
 
@@ -103,8 +103,8 @@ func TestGetDomainInterfacesViaQemuAgentUnknownIpAddressType(t *testing.T) {
 			QemuAgentInterface{
 				Name:   "eth2",
 				Hwaddr: "zy:yy:zz",
-				IpAddresses: []QemuAgentInterfaceIpAddress{
-					QemuAgentInterfaceIpAddress{
+				IPAddresses: []QemuAgentInterfaceIPAddress{
+					QemuAgentInterfaceIPAddress{
 						Type:    "ipv8",
 						Address: "i don't exist",
 						Prefix:  1,
@@ -117,7 +117,7 @@ func TestGetDomainInterfacesViaQemuAgentUnknownIpAddressType(t *testing.T) {
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	domain := LibVirtDomainMock{
+	domain := DomainMock{
 		QemuAgentCommandResponse: string(data),
 	}
 
@@ -139,13 +139,13 @@ func TestGetDomainInterfacesViaQemuAgent(t *testing.T) {
 			QemuAgentInterface{
 				Name:   device,
 				Hwaddr: mac,
-				IpAddresses: []QemuAgentInterfaceIpAddress{
-					QemuAgentInterfaceIpAddress{
+				IPAddresses: []QemuAgentInterfaceIPAddress{
+					QemuAgentInterfaceIPAddress{
 						Type:    "ipv4",
 						Address: ipv4Addr,
 						Prefix:  1,
 					},
-					QemuAgentInterfaceIpAddress{
+					QemuAgentInterfaceIPAddress{
 						Type:    "ipv6",
 						Address: ipv6Addr,
 						Prefix:  1,
@@ -158,7 +158,7 @@ func TestGetDomainInterfacesViaQemuAgent(t *testing.T) {
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	domain := LibVirtDomainMock{
+	domain := DomainMock{
 		QemuAgentCommandResponse: string(data),
 	}
 

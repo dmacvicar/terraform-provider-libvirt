@@ -511,12 +511,12 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.Domain) resource.
 
 		log.Printf("The ID is %s", rs.Primary.ID)
 
-		realId, err := retrieveDomain.GetUUIDString()
+		realID, err := retrieveDomain.GetUUIDString()
 		if err != nil {
 			return err
 		}
 
-		if realId != rs.Primary.ID {
+		if realID != rs.Primary.ID {
 			return fmt.Errorf("Libvirt domain not found")
 		}
 

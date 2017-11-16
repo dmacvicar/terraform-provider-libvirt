@@ -5,7 +5,7 @@ import (
 )
 
 func TestAcquireLock(t *testing.T) {
-	ps := NewLibVirtPoolSync()
+	ps := NewLVirtPoolSync()
 
 	ps.AcquireLock("test")
 
@@ -17,7 +17,7 @@ func TestAcquireLock(t *testing.T) {
 }
 
 func TestReleaseLock(t *testing.T) {
-	ps := NewLibVirtPoolSync()
+	ps := NewLVirtPoolSync()
 
 	ps.AcquireLock("test")
 
@@ -34,7 +34,7 @@ func TestReleaseLock(t *testing.T) {
 }
 
 func TestReleaseNotExistingLock(t *testing.T) {
-	ps := NewLibVirtPoolSync()
+	ps := NewLVirtPoolSync()
 
 	ps.ReleaseLock("test")
 	_, found := ps.PoolLocks["test"]

@@ -8,17 +8,20 @@ import (
 	libvirt "github.com/libvirt/libvirt-go"
 )
 
+// QemuAgentInterfacesResponse type
 type QemuAgentInterfacesResponse struct {
 	Interfaces []QemuAgentInterface `json:"return"`
 }
 
+// QemuAgentInterface type
 type QemuAgentInterface struct {
 	Name        string                        `json:"name"`
 	Hwaddr      string                        `json:"hardware-address"`
-	IpAddresses []QemuAgentInterfaceIpAddress `json:"ip-addresses"`
+	IPAddresses []QemuAgentInterfaceIPAddress `json:"ip-addresses"`
 }
 
-type QemuAgentInterfaceIpAddress struct {
+// QemuAgentInterfaceIPAddress type
+type QemuAgentInterfaceIPAddress struct {
 	Type    string `json:"ip-address-type"`
 	Address string `json:"ip-address"`
 	Prefix  uint   `json:"prefix"`
@@ -29,7 +32,7 @@ type QemuAgentInterfaceIpAddress struct {
 // When wait4ipv4 is turned on the code will not report interfaces that don't
 // have a ipv4 address set. This is useful when a domain gets the ipv6 address
 // before the ipv4 one.
-func getDomainInterfacesViaQemuAgent(domain LibVirtDomain, wait4ipv4 bool) []libvirt.DomainInterface {
+func getDomainInterfacesViaQemuAgent(domain Domain, wait4ipv4 bool) []libvirt.DomainInterface {
 	log.Print("[DEBUG] get network interfaces using qemu agent")
 
 	var interfaces []libvirt.DomainInterface
@@ -64,7 +67,7 @@ func getDomainInterfacesViaQemuAgent(domain LibVirtDomain, wait4ipv4 bool) []lib
 			Hwaddr: iface.Hwaddr}
 
 		ipv4Assigned := false
-		for _, addr := range iface.IpAddresses {
+		for _, addr := range iface.IPAddresses {
 			if addr.Address == "" {
 				// ignore interfaces without an address (eg. waiting for dhcp lease)
 				continue

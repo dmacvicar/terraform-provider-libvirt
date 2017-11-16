@@ -11,8 +11,12 @@ import (
 	libvirt "github.com/libvirt/libvirt-go"
 )
 
-var diskLetters []rune = []rune("abcdefghijklmnopqrstuvwxyz")
+var diskLetters = []rune("abcdefghijklmnopqrstuvwxyz")
 
+// LibVirtConIsNil is a global string error msg
+const LibVirtConIsNil string = "the libvirt connection was nil"
+
+// DiskLetterForIndex return diskLetters for index
 func DiskLetterForIndex(i int) string {
 
 	q := i / len(diskLetters)
@@ -26,10 +30,13 @@ func DiskLetterForIndex(i int) string {
 	return fmt.Sprintf("%s%c", DiskLetterForIndex(q-1), letter)
 }
 
-var WAIT_SLEEP_INTERVAL time.Duration = 1 * time.Second
-var WAIT_TIMEOUT time.Duration = 5 * time.Minute
+// WaitSleepInterval time
+var WaitSleepInterval = 1 * time.Second
 
-// wait for success and timeout after 5 minutes.
+// WaitTimeout time
+var WaitTimeout = 5 * time.Minute
+
+// WaitForSuccess wait for success and timeout after 5 minutes.
 func WaitForSuccess(errorMessage string, f func() error) error {
 	start := time.Now()
 	for {
@@ -39,8 +46,8 @@ func WaitForSuccess(errorMessage string, f func() error) error {
 		}
 		log.Printf("[DEBUG] %s. Re-trying.\n", err)
 
-		time.Sleep(WAIT_SLEEP_INTERVAL)
-		if time.Since(start) > WAIT_TIMEOUT {
+		time.Sleep(WaitSleepInterval)
+		if time.Since(start) > WaitTimeout {
 			return fmt.Errorf("%s: %s", errorMessage, err)
 		}
 	}
@@ -57,7 +64,7 @@ func xmlMarshallIndented(b interface{}) (string, error) {
 	return buf.String(), nil
 }
 
-// Remove the volume identified by `key` from libvirt
+// RemoveVolume removes the volume identified by `key` from libvirt
 func RemoveVolume(virConn *libvirt.Connect, key string) error {
 	volume, err := virConn.LookupStorageVolByKey(key)
 	if err != nil {
