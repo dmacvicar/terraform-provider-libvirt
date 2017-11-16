@@ -368,18 +368,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	var disks []libvirtxml.DomainDisk
 	var scsiDisk = false
 	for i := 0; i < disksCount; i++ {
-		disk := libvirtxml.DomainDisk{
-			Type:   "file",
-			Device: "disk",
-			Target: &libvirtxml.DomainDiskTarget{
-				Bus: "virtio",
-				Dev: fmt.Sprintf("vd%s", DiskLetterForIndex(i)),
-			},
-			Driver: &libvirtxml.DomainDiskDriver{
-				Name: "qemu",
-				Type: "qcow2",
-			},
-		}
+		disk := newDefDisk()
 
 		diskKey := fmt.Sprintf("disk.%d", i)
 		diskMap := d.Get(diskKey).(map[string]interface{})
