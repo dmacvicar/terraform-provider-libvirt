@@ -9,7 +9,7 @@ import (
 
 const oui = "05abcd"
 
-func newDefDisk() libvirtxml.DomainDisk {
+func newDefDisk(i int) libvirtxml.DomainDisk {
 	return libvirtxml.DomainDisk{
 		Type:   "file",
 		Device: "disk",

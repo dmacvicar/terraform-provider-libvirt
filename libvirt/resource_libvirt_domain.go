@@ -368,7 +368,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	var disks []libvirtxml.DomainDisk
 	var scsiDisk = false
 	for i := 0; i < disksCount; i++ {
-		disk := newDefDisk()
+		disk := newDefDisk(i)
 
 		diskKey := fmt.Sprintf("disk.%d", i)
 		diskMap := d.Get(diskKey).(map[string]interface{})
