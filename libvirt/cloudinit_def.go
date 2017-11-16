@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -19,10 +18,13 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// names of the files expected by cloud-init
-const USERDATA string = "user-data"
-const METADATA string = "meta-data"
+// userData file expected by cloud-init
+const userData string = "user-data"
 
+// metaData files expected by cloud-init
+const metaData string = "meta-data"
+
+// CloudInitUserData struct containing auth keys
 type CloudInitUserData struct {
 	SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }
@@ -95,13 +97,13 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	volumeDef.Capacity.Value = size
 	volumeDef.Target.Format.Type = "raw"
 
-	volumeDefXml, err := xml.Marshal(volumeDef)
+	volumeDefXML, err := xml.Marshal(volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error serializing libvirt volume: %s", err)
 	}
 
 	// create the volume
-	volume, err := pool.StorageVolCreateXML(string(volumeDefXml), 0)
+	volume, err := pool.StorageVolCreateXML(string(volumeDefXML), 0)
 	if err != nil {
 		return "", fmt.Errorf("Error creating libvirt volume for cloudinit device %s: %s", ci.Name, err)
 	}
@@ -146,16 +148,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 	}
 
 	isoDestination := filepath.Join(tmpDir, ci.Name)
-	cmd := exec.Command(
-		"genisoimage",
-		"-output",
-		isoDestination,
-		"-volid",
-		"cidata",
-		"-joliet",
-		"-rock",
-		filepath.Join(tmpDir, USERDATA),
-		filepath.Join(tmpDir, METADATA))
+	cmd := GenIsoCmd(isoDestination, tmpDir, userData, metaData)
 
 	log.Print("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {
@@ -186,7 +179,7 @@ func (ci *defCloudInit) createFiles() (string, error) {
 	userdata := fmt.Sprintf("#cloud-config\n%s", mergedUserData)
 
 	if err = ioutil.WriteFile(
-		filepath.Join(tmpDir, USERDATA),
+		filepath.Join(tmpDir, userData),
 		[]byte(userdata),
 		os.ModePerm); err != nil {
 		return "", fmt.Errorf("Error while writing user-data to file: %s", err)
@@ -196,7 +189,7 @@ func (ci *defCloudInit) createFiles() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Error dumping cloudinit's meta data: %s", err)
 	}
-	if err = ioutil.WriteFile(filepath.Join(tmpDir, METADATA), metadata, os.ModePerm); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(tmpDir, metaData), metadata, os.ModePerm); err != nil {
 		return "", fmt.Errorf("Error while writing meta-data to file: %s", err)
 	}
 
@@ -268,7 +261,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 		if f.Name() == "/user_dat." {
 			data, err := ioutil.ReadAll(f.Sys().(io.Reader))
 			if err != nil {
-				return ci, fmt.Errorf("Error while reading %s: %s", USERDATA, err)
+				return ci, fmt.Errorf("Error while reading %s: %s", userData, err)
 			}
 			if err := yaml.Unmarshal(data, &ci.UserData); err != nil {
 				return ci, fmt.Errorf("Error while unmarshalling user-data: %s", err)
@@ -285,7 +278,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 		if f.Name() == "/meta_dat." {
 			data, err := ioutil.ReadAll(f.Sys().(io.Reader))
 			if err != nil {
-				return ci, fmt.Errorf("Error while reading %s: %s", METADATA, err)
+				return ci, fmt.Errorf("Error while reading %s: %s", metaData, err)
 			}
 			if err := yaml.Unmarshal(data, &ci.Metadata); err != nil {
 				return ci, fmt.Errorf("Error while unmarshalling user-data: %s", err)

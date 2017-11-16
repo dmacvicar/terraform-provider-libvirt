@@ -3,14 +3,6 @@ set -x
 
 unset http_proxy
 
-export GOROOT=/usr/lib/go-1.9/
-export GOPATH=/root/go
-export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-
-mkdir -p /root/go/src/github.com/dmacvicar/
-cp -r /code/ /root/go/src/github.com/dmacvicar/terraform-provider-libvirt
-cd /root/go/src/github.com/dmacvicar/terraform-provider-libvirt
-
 go build .
 
 export TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE=qemu

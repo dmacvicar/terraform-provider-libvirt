@@ -1,12 +1,14 @@
 package libvirt
 
 import (
+	"fmt"
+	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform/terraform"
+	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"gopkg.in/yaml.v2"
 )
 
 func TestNewCloudInitDef(t *testing.T) {
@@ -42,7 +44,12 @@ func TestCreateFiles(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	for _, file := range []string{USERDATA, METADATA} {
+	// userData filename expected by cloud-init
+	const userData string = "user-data"
+	// metaData files expected by cloud-init
+	const metaData string = "meta-data"
+
+	for _, file := range []string{userData, metaData} {
 		check, err := exists(filepath.Join(dir, file))
 		if !check {
 			t.Errorf("%s not found: %v", file, err)
@@ -159,6 +166,36 @@ ssh_authorized_keys:
 	if !strings.Contains(res, "key2-from-extra-data") {
 		t.Error("Should have found string defined by raw data")
 	}
+}
+
+func TestCreateCloudIsoViaPlugin(t *testing.T) {
+	var config = fmt.Sprintf(`
+
+   resource "libvirt_cloudinit" "test" {
+   name = "commoninit.iso"
+   local_hostname = "tango"
+   pool =           "default"
+   user_data =      "#cloud-config\nssh_authorized_keys: []\n" 
+    }
+        `)
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return nil
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit.test", "name", "commoninit.iso"),
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit.test", "local_hostname", "tango"),
+				),
+			},
+		},
+	})
 }
 
 func exists(path string) (bool, error) {
