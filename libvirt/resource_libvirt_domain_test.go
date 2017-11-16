@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"testing"
 
@@ -195,6 +196,38 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
 					testAccCheckLibvirtScsiDisk("000000123456789a", &domain),
+				),
+			},
+		},
+	})
+
+}
+
+func TestAccLibvirtDomainUrlDisk(t *testing.T) {
+	var domain libvirt.Domain
+	u, err := url.Parse("http://download.opensuse.org/tumbleweed/iso/openSUSE-Tumbleweed-DVD-x86_64-Current.iso")
+	if err != nil {
+		t.Error(err)
+	}
+
+	var configUrl = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test-domain"
+                    disk {
+                            url = "%s"
+                    }
+            }`, u.String())
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: configUrl,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtUrlDisk(u, &domain),
 				),
 			},
 		},
@@ -584,6 +617,41 @@ func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.Test
 			}
 			if wwn := disk.WWN; wwn != n {
 				return fmt.Errorf("Disk wwn %s is not equal to %s", wwn, n)
+			}
+		}
+		return nil
+	}
+}
+
+func testAccCheckLibvirtUrlDisk(u *url.URL, domain *libvirt.Domain) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		xmlDesc, err := domain.GetXMLDesc(0)
+		if err != nil {
+			return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+		}
+
+		domainDef := newDomainDef()
+		err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
+		if err != nil {
+			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+		}
+
+		disks := domainDef.Devices.Disks
+		for _, disk := range disks {
+			if disk.Type != "network" {
+				return fmt.Errorf("Disk type is not network")
+			}
+			if disk.Source.Protocol != u.Scheme {
+				return fmt.Errorf("Disk protocol is not %s", u.Scheme)
+			}
+			if disk.Source.Name != u.Path {
+				return fmt.Errorf("Disk name is not %s", u.Path)
+			}
+			if len(disk.Source.Hosts) < 1 {
+				return fmt.Errorf("Disk has no hosts defined")
+			}
+			if disk.Source.Hosts[0].Name != u.Hostname() {
+				return fmt.Errorf("Disk hostname is not %s", u.Hostname())
 			}
 		}
 		return nil

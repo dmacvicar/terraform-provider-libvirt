@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -382,7 +383,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 		diskKey := fmt.Sprintf("disk.%d", i)
 		diskMap := d.Get(diskKey).(map[string]interface{})
-		volumeKey := diskMap["volume_id"].(string)
 		if _, ok := diskMap["scsi"].(string); ok {
 			disk.Target.Bus = "scsi"
 			scsiDisk = true
@@ -392,17 +392,47 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				disk.WWN = randomWWN(10)
 			}
 		}
-		diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
-		if err != nil {
-			return fmt.Errorf("Can't retrieve volume %s", volumeKey)
-		}
-		diskVolumeFile, err := diskVolume.GetPath()
-		if err != nil {
-			return fmt.Errorf("Error retrieving volume file: %s", err)
-		}
 
-		disk.Source = &libvirtxml.DomainDiskSource{
-			File: diskVolumeFile,
+		if _, ok := diskMap["volume_id"].(string); ok {
+			volumeKey := diskMap["volume_id"].(string)
+
+			diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
+			if err != nil {
+				return fmt.Errorf("Can't retrieve volume %s", volumeKey)
+			}
+			diskVolumeFile, err := diskVolume.GetPath()
+			if err != nil {
+				return fmt.Errorf("Error retrieving volume file: %s", err)
+			}
+
+			disk.Source = &libvirtxml.DomainDiskSource{
+				File: diskVolumeFile,
+			}
+		} else if _, ok := diskMap["url"].(string); ok {
+			// Support for remote, read-only http disks
+			// useful for booting CDs
+			disk.Type = "network"
+			url, err := url.Parse(diskMap["url"].(string))
+			if err != nil {
+				return err
+			}
+
+			disk.Source = &libvirtxml.DomainDiskSource{
+				Protocol: url.Scheme,
+				Name:     url.Path,
+				Hosts: []libvirtxml.DomainDiskSourceHost{
+					libvirtxml.DomainDiskSourceHost{
+						Name: url.Hostname(),
+						Port: url.Port(),
+					},
+				},
+			}
+			if strings.HasSuffix(url.Path, ".iso") {
+				disk.Device = "cdrom"
+			}
+			if !strings.HasSuffix(url.Path, ".qcow2") {
+				disk.Driver.Type = "raw"
+			}
 		}
 
 		disks = append(disks, disk)
@@ -870,33 +900,52 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	disks := make([]map[string]interface{}, 0)
 	for _, diskDef := range domainDef.Devices.Disks {
-		var virVol *libvirt.StorageVol
-		if len(diskDef.Source.File) > 0 {
-			virVol, err = virConn.LookupStorageVolByPath(diskDef.Source.File)
-		} else {
-			virPool, err := virConn.LookupStoragePoolByName(diskDef.Source.Pool)
-			if err != nil {
-				return fmt.Errorf("Error retrieving pool for disk: %s", err)
+		// network drives do not have a volume associated
+		if diskDef.Type == "network" {
+			if len(diskDef.Source.Hosts) < 1 {
+				return fmt.Errorf("Network disk does not contain any hosts")
 			}
-			defer virPool.Free()
+			url, err := url.Parse(fmt.Sprintf("%s://%s:%s%s",
+				diskDef.Source.Protocol,
+				diskDef.Source.Hosts[0].Name,
+				diskDef.Source.Hosts[0].Port,
+				diskDef.Source.Name))
+			if err != nil {
+				return err
+			}
+			disk := map[string]interface{}{
+				"url": url.String(),
+			}
+			disks = append(disks, disk)
+		} else {
+			var virVol *libvirt.StorageVol
+			if len(diskDef.Source.File) > 0 {
+				virVol, err = virConn.LookupStorageVolByPath(diskDef.Source.File)
+			} else {
+				virPool, err := virConn.LookupStoragePoolByName(diskDef.Source.Pool)
+				if err != nil {
+					return fmt.Errorf("Error retrieving pool for disk: %s", err)
+				}
+				defer virPool.Free()
 
-			virVol, err = virPool.LookupStorageVolByName(diskDef.Source.Volume)
-		}
+				virVol, err = virPool.LookupStorageVolByName(diskDef.Source.Volume)
+			}
 
-		if err != nil {
-			return fmt.Errorf("Error retrieving volume for disk: %s", err)
-		}
-		defer virVol.Free()
+			if err != nil {
+				return fmt.Errorf("Error retrieving volume for disk: %s", err)
+			}
+			defer virVol.Free()
 
-		virVolKey, err := virVol.GetKey()
-		if err != nil {
-			return fmt.Errorf("Error retrieving volume for disk: %s", err)
-		}
+			virVolKey, err := virVol.GetKey()
+			if err != nil {
+				return fmt.Errorf("Error retrieving volume for disk: %s", err)
+			}
 
-		disk := map[string]interface{}{
-			"volume_id": virVolKey,
+			disk := map[string]interface{}{
+				"volume_id": virVolKey,
+			}
+			disks = append(disks, disk)
 		}
-		disks = append(disks, disk)
 	}
 	d.Set("disks", disks)
 
