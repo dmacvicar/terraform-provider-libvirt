@@ -170,6 +170,27 @@ func resourceLibvirtDomain() *schema.Resource {
 				Default:  "/usr/bin/qemu-system-x86_64",
 				Optional: true,
 			},
+			"kernel": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: false,
+				Optional: true,
+				ForceNew: false,
+			},
+			"initrd": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: false,
+				Optional: true,
+				ForceNew: false,
+			},
+			"cmdline": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Required: false,
+				ForceNew: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeMap,
+				},
+			},
 		},
 	}
 }
@@ -266,6 +287,24 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			}
 		}
 	}
+
+	if kernel, ok := d.GetOk("kernel"); ok {
+		domainDef.OS.Kernel = kernel.(string)
+	}
+	if initrd, ok := d.GetOk("initrd"); ok {
+		domainDef.OS.Initrd = initrd.(string)
+	}
+
+	cmdlinesCount := d.Get("cmdline.#").(int)
+	cmdlineArgs := make([]string, 0)
+	for i := 0; i < cmdlinesCount; i++ {
+		cmdlineKey := fmt.Sprintf("cmdline.%d", i)
+		cmdlineMap := d.Get(cmdlineKey).(map[string]interface{})
+		for k, v := range cmdlineMap {
+			cmdlineArgs = append(cmdlineArgs, fmt.Sprintf("%s=%v", k, v))
+		}
+	}
+	domainDef.OS.KernelArgs = strings.Join(cmdlineArgs, " ")
 
 	if cpu, ok := d.GetOk("cpu"); ok {
 		cpuMap := cpu.(map[string]interface{})

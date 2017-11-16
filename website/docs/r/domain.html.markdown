@@ -59,6 +59,99 @@ The following arguments are supported:
    [below](#define-boot-device-order).
 * `emulator` - (Optional) The path of the emulator to use
 
+### Kernel and boot arguments
+
+* `kernel` - (Optional) The path of the kernel to boot
+
+If you are using a qcow2 volume, you can pass the id of the volume (eg. `${libvirt_volume.kernel.id}`)
+as they are local to the hypervisor.
+
+Given that you can define a volume from a remote http file, this means, you can also have remote kernels.
+
+```hcl
+resource "libvirt_volume" "kernel" {
+  source = "http://download.opensuse.org/tumbleweed/repo/oss/boot/x86_64/loader/linux"
+  name = "kernel"
+  pool = "default"
+  format = "raw"
+}
+
+resource "libvirt_domain" "domain-suse" {
+  name = "suse"
+  memory = "1024"
+  vcpu = 1
+
+  kernel = "${libvirt_volume.kernel.id}"
+
+  // ...
+}
+```
+
+* `kernel` - (Optional) The path of the initrd to boot.
+
+You can use it in the same way as the kernel.
+
+* `cmdlin` - (Optional) Arguments to the kernel
+
+resource "libvirt_domain" "domain-suse" {
+  name = "suse"
+  memory = "1024"
+  vcpu = 1
+
+  kernel = "${libvirt_volume.kernel.id}"
+
+  cmdline {
+    arg1 = "value1"
+    arg2 = "value2"
+  }
+}
+```
+
+Also note that the `cmd` block is actually a list of maps, so it is possible to
+declare several of them by using either the literal list and map syntax as in
+the following examples:
+
+```hcl
+resource "libvirt_domain" "my_machine" {
+  //...
+
+  cmdline {
+    arg1 = "value1"
+  }
+  cmdline {
+    arg2 = "value2"
+  }
+}
+```
+
+```hcl
+resource "libvirt_domain" "my_machine" {
+  ...
+  cmdline = [
+    {
+      arg1 = "value1"
+    },
+    {
+      arg2 = "value2"
+    }
+  ]
+}
+```
+The kernel supports passing the same option multiple times. If you need this, use separate cmdline blocks.
+
+```hcl
+resource "libvirt_domain" "my_machine" {
+  //...
+
+  cmdline {
+    arg1 = "value1"
+  }
+  cmdline {
+    arg1 = "value2"
+  }
+}
+```
+
 ### UEFI images
 
 Some extra arguments are also provided for using UEFI images:
@@ -73,7 +166,7 @@ read-only.
   domain. However, `libvirt` can  manage this automatically (and this is the recommended solution)
   if a mapping for the firmware to a _variables file_ exists in `/etc/libvirt/qemu.conf:nvram`.
   In that case, `libvirt` will copy that variables file into a file specific for this domain.
-  * `template` - (Optional) path to the file used to override variables from the master NVRAM
+s  * `template` - (Optional) path to the file used to override variables from the master NVRAM
   store.
 
 So you should typically use the firmware as this,

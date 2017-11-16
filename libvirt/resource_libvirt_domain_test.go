@@ -235,6 +235,40 @@ func TestAccLibvirtDomainURLDisk(t *testing.T) {
 
 }
 
+func TestAccLibvirtDomainKernelInitrdCmdline(t *testing.T) {
+	var domain libvirt.Domain
+
+	var config = fmt.Sprintf(`
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test-domain"
+                    kernel = "/boot/vmlinuz"
+                    initrd = "/boot/initrd"
+                    cmdline {
+                            foo = 1
+                            bar = "bye"
+                    }
+                    cmdline {
+                            foo = 2
+                    }
+            }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtDomainKernelInitrdCmdline(&domain),
+				),
+			},
+		},
+	})
+
+}
+
 func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	var domain libvirt.Domain
 
@@ -653,6 +687,32 @@ func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.Tes
 			if disk.Source.Hosts[0].Name != u.Hostname() {
 				return fmt.Errorf("Disk hostname is not %s", u.Hostname())
 			}
+		}
+		return nil
+	}
+}
+
+func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		xmlDesc, err := domain.GetXMLDesc(0)
+		if err != nil {
+			return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+		}
+
+		domainDef := newDomainDef()
+		err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
+		if err != nil {
+			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+		}
+
+		if domainDef.OS.Kernel != "/boot/vmlinuz" {
+			return fmt.Errorf("Kernel is not set correctly")
+		}
+		if domainDef.OS.Initrd != "/boot/initrd" {
+			return fmt.Errorf("Initrd is not set correctly")
+		}
+		if domainDef.OS.KernelArgs != "bar=bye foo=1 foo=2" {
+			return fmt.Errorf("Kernel args not set correctly")
 		}
 		return nil
 	}
