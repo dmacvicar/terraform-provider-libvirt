@@ -868,7 +868,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("running", running)
 
-	disks := make([]map[string]interface{}, 0)
+	var disks []map[string]interface{}
 	for _, diskDef := range domainDef.Devices.Disks {
 		var virVol *libvirt.StorageVol
 		if len(diskDef.Source.File) > 0 {
@@ -899,8 +899,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		disks = append(disks, disk)
 	}
 	d.Set("disks", disks)
-
-	filesystems := make([]map[string]interface{}, 0)
+	var filesystems []map[string]interface{}
 	for _, fsDef := range domainDef.Devices.Filesystems {
 		fs := map[string]interface{}{
 			"accessmode": fsDef.AccessMode,
@@ -921,7 +920,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	addressesForMac := func(mac string) []string {
 		// look for an ip address and try to match it with the mac address
 		// not sure if using the target device name is a better idea here
-		addrs := make([]string, 0)
+		var addrs []string
 		for _, ifaceWithAddr := range ifacesWithAddr {
 			if strings.ToUpper(ifaceWithAddr.Hwaddr) == mac {
 				for _, addr := range ifaceWithAddr.Addrs {
@@ -932,7 +931,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		return addrs
 	}
 
-	netIfaces := make([]map[string]interface{}, 0)
+	var netIfaces []map[string]interface{}
 	for i, networkInterfaceDef := range domainDef.Devices.Interfaces {
 		// we need it to read old values
 		prefix := fmt.Sprintf("network_interface.%d", i)
