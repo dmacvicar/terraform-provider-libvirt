@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -304,6 +305,8 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			cmdlineArgs = append(cmdlineArgs, fmt.Sprintf("%s=%v", k, v))
 		}
 	}
+
+	sort.Strings(cmdlineArgs)
 	domainDef.OS.KernelArgs = strings.Join(cmdlineArgs, " ")
 
 	if cpu, ok := d.GetOk("cpu"); ok {

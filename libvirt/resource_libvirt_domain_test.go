@@ -237,12 +237,28 @@ func TestAccLibvirtDomainURLDisk(t *testing.T) {
 
 func TestAccLibvirtDomainKernelInitrdCmdline(t *testing.T) {
 	var domain libvirt.Domain
+	var kernel libvirt.StorageVol
+	var initrd libvirt.StorageVol
 
 	var config = fmt.Sprintf(`
+            resource "libvirt_volume" "kernel" {
+                    source = "testdata/tetris.elf"
+                    name = "kernel"
+                    pool = "default"
+                    format = "raw"
+            }
+
+            resource "libvirt_volume" "initrd" {
+                    source = "testdata/initrd.img"
+                    name = "initrd"
+                    pool = "default"
+                    format = "raw"
+            }
+
             resource "libvirt_domain" "acceptance-test-domain" {
                     name = "terraform-test-domain"
-                    kernel = "/boot/vmlinuz"
-                    initrd = "/boot/initrd"
+                    kernel = "${libvirt_volume.kernel.id}"
+                    initrd = "${libvirt_volume.initrd.id}"
                     cmdline {
                             foo = 1
                             bar = "bye"
@@ -260,8 +276,10 @@ func TestAccLibvirtDomainKernelInitrdCmdline(t *testing.T) {
 			resource.TestStep{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtVolumeExists("libvirt_volume.kernel", &kernel),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.initrd", &initrd),
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
-					testAccCheckLibvirtDomainKernelInitrdCmdline(&domain),
+					testAccCheckLibvirtDomainKernelInitrdCmdline(&domain, &kernel, &initrd),
 				),
 			},
 		},
@@ -692,7 +710,7 @@ func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.Tes
 	}
 }
 
-func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain) resource.TestCheckFunc {
+func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel *libvirt.StorageVol, initrd *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		xmlDesc, err := domain.GetXMLDesc(0)
 		if err != nil {
@@ -705,14 +723,23 @@ func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain) resour
 			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
 		}
 
-		if domainDef.OS.Kernel != "/boot/vmlinuz" {
-			return fmt.Errorf("Kernel is not set correctly")
+		key, err := kernel.GetKey()
+		if err != nil {
+			return fmt.Errorf("Can't get kernel volume id")
 		}
-		if domainDef.OS.Initrd != "/boot/initrd" {
-			return fmt.Errorf("Initrd is not set correctly")
+		if domainDef.OS.Kernel != key {
+			return fmt.Errorf("Kernel is not set correctly: '%s' vs '%s'", domainDef.OS.Kernel, key)
+		}
+
+		key, err = initrd.GetKey()
+		if err != nil {
+			return fmt.Errorf("Can't get initrd volume id")
+		}
+		if domainDef.OS.Initrd != key {
+			return fmt.Errorf("Initrd is not set correctly: '%s' vs '%s'", domainDef.OS, key)
 		}
 		if domainDef.OS.KernelArgs != "bar=bye foo=1 foo=2" {
-			return fmt.Errorf("Kernel args not set correctly")
+			return fmt.Errorf("Kernel args not set correctly: '%s'", domainDef.OS.KernelArgs)
 		}
 		return nil
 	}
