@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	libvirt "github.com/libvirt/libvirt-go"
 	"github.com/mitchellh/packer/common/uuid"
@@ -42,6 +43,7 @@ func (ign *defIgnition) CreateAndUpload(virConn *libvirt.Connect) (string, error
 		if PoolSync.AcquireLock(ign.PoolName) {
 			break
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 	defer PoolSync.ReleaseLock(ign.PoolName)
 

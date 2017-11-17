@@ -89,6 +89,7 @@ func RemoveVolume(virConn *libvirt.Connect, key string) error {
 		if PoolSync.AcquireLock(poolName) {
 			break
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 	defer PoolSync.ReleaseLock(poolName)
 

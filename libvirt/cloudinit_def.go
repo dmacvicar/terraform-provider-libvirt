@@ -69,6 +69,7 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.Connect) (string, error
 		if PoolSync.AcquireLock(ci.PoolName) {
 			break
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 	defer PoolSync.ReleaseLock(ci.PoolName)
 

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
@@ -94,6 +95,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		if PoolSync.AcquireLock(poolName) {
 			break
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 	defer PoolSync.ReleaseLock(poolName)
 
