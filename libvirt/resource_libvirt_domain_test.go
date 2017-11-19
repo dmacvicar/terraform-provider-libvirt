@@ -203,14 +203,14 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 
 }
 
-func TestAccLibvirtDomainUrlDisk(t *testing.T) {
+func TestAccLibvirtDomainURLDisk(t *testing.T) {
 	var domain libvirt.Domain
 	u, err := url.Parse("http://download.opensuse.org/tumbleweed/iso/openSUSE-Tumbleweed-DVD-x86_64-Current.iso")
 	if err != nil {
 		t.Error(err)
 	}
 
-	var configUrl = fmt.Sprintf(`
+	var configURL = fmt.Sprintf(`
             resource "libvirt_domain" "acceptance-test-domain" {
                     name = "terraform-test-domain"
                     disk {
@@ -224,10 +224,10 @@ func TestAccLibvirtDomainUrlDisk(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: configUrl,
+				Config: configURL,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
-					testAccCheckLibvirtUrlDisk(u, &domain),
+					testAccCheckLibvirtURLDisk(u, &domain),
 				),
 			},
 		},
@@ -623,7 +623,7 @@ func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.Test
 	}
 }
 
-func testAccCheckLibvirtUrlDisk(u *url.URL, domain *libvirt.Domain) resource.TestCheckFunc {
+func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		xmlDesc, err := domain.GetXMLDesc(0)
 		if err != nil {
