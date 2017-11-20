@@ -12,6 +12,7 @@ before_script:
   - sudo lxc exec libvirt -- bash /code/travis/setup-guest
 script:
   - bash ./travis/gofmtcheck.sh
+  - make vet
   - golint -set_exit_status libvirt/
   - sudo lxc exec libvirt -- bash /code/travis/run-tests-inside-guest
   - sudo lxc file pull libvirt/root/go/src/github.com/dmacvicar/terraform-provider-libvirt/profile.cov .

@@ -271,10 +271,10 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
 			return fmt.Errorf("Can't retrieve volume %s", d.Id())
 		}
-
-		log.Printf("[INFO] Volume %s not found, attempting to start its pool")
-
 		volID := d.Id()
+
+		log.Printf("[INFO] Volume %s not found, attempting to start its pool", d.Id())
+
 		volPoolName := d.Get("pool").(string)
 		volPool, err := virConn.LookupStoragePoolByName(volPoolName)
 		if err != nil {

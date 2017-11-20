@@ -233,8 +233,8 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			return err
 		}
 		ignStr := fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionKey)
-		fwCfg = append(fwCfg, libvirtxml.DomainQEMUCommandlineArg{"-fw_cfg"})
-		fwCfg = append(fwCfg, libvirtxml.DomainQEMUCommandlineArg{ignStr})
+		fwCfg = append(fwCfg, libvirtxml.DomainQEMUCommandlineArg{Value: "-fw_cfg"})
+		fwCfg = append(fwCfg, libvirtxml.DomainQEMUCommandlineArg{Value: ignStr})
 		QemuCmdline := &libvirtxml.DomainQEMUCommandline{
 			Args: fwCfg,
 		}
@@ -427,7 +427,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		disks = append(disks, disk)
 	}
 
-	log.Printf("[DEBUG] scsiDisk: %s", scsiDisk)
+	log.Printf("[DEBUG] scsiDisk: %t", scsiDisk)
 	if scsiDisk {
 		controller := libvirtxml.DomainController{Type: "scsi", Model: "virtio-scsi"}
 		domainDef.Devices.Controllers = append(domainDef.Devices.Controllers, controller)

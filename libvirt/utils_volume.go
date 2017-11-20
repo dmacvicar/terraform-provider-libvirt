@@ -106,11 +106,12 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 		req.Header.Set("If-Modified-Since", timeFromEpoch(vol.Target.Timestamps.Mtime).UTC().Format(http.TimeFormat))
 	}
 	response, err := client.Do(req)
-	defer response.Body.Close()
 
 	if err != nil {
 		return fmt.Errorf("Error while downloading %s: %s", i.url.String(), err)
 	}
+
+	defer response.Body.Close()
 	if response.StatusCode == http.StatusNotModified {
 		return nil
 	}
