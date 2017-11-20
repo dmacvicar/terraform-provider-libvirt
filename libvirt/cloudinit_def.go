@@ -160,7 +160,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 		filepath.Join(tmpDir, USERDATA),
 		filepath.Join(tmpDir, METADATA))
 
-	log.Print("About to execute cmd: %+v", cmd)
+	log.Printf("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {
 		return "", fmt.Errorf("Error while starting the creation of CloudInit's ISO image: %s", err)
 	}

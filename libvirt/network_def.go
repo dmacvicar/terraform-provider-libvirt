@@ -52,7 +52,7 @@ func newNetworkDef() libvirtxml.Network {
 		  </forward>
 		</network>`
 	if d, err := newDefNetworkFromXML(defNetworkXML); err != nil {
-		panic(fmt.Sprint("Unexpected error while parsing default network definition: %s", err))
+		panic(fmt.Sprintf("Unexpected error while parsing default network definition: %s", err))
 	} else {
 		return d
 	}

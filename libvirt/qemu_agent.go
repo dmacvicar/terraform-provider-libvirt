@@ -50,7 +50,7 @@ func getDomainInterfacesViaQemuAgent(domain Domain, wait4ipv4 bool) []libvirt.Do
 	response := QemuAgentInterfacesResponse{}
 	if err := json.Unmarshal([]byte(result), &response); err != nil {
 		log.Printf("[DEBUG] Error converting Qemu agent response about domain interfaces: %s", err)
-		log.Printf("[DEBUG] Original message: %s", response)
+		log.Printf("[DEBUG] Original message: %v", response)
 		log.Print("[DEBUG] Returning an empty list of interfaces")
 		return interfaces
 	}
