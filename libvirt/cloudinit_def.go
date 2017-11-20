@@ -65,8 +65,8 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	}
 	defer pool.Free()
 
-	PoolSync.AcquireLock(ci.PoolName)
-	defer PoolSync.ReleaseLock(ci.PoolName)
+	poolMutexKV.Lock(ci.PoolName)
+	defer poolMutexKV.Unlock(ci.PoolName)
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.

@@ -38,8 +38,8 @@ func (ign *defIgnition) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	}
 	defer pool.Free()
 
-	PoolSync.AcquireLock(ign.PoolName)
-	defer PoolSync.ReleaseLock(ign.PoolName)
+	poolMutexKV.Lock(ign.PoolName)
+	defer poolMutexKV.Unlock(ign.PoolName)
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.

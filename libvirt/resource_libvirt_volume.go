@@ -90,8 +90,8 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		poolName = d.Get("pool").(string)
 	}
 
-	PoolSync.AcquireLock(poolName)
-	defer PoolSync.ReleaseLock(poolName)
+	poolMutexKV.Lock(poolName)
+	defer poolMutexKV.Unlock(poolName)
 
 	pool, err := virConn.LookupStoragePoolByName(poolName)
 	if err != nil {

@@ -85,8 +85,8 @@ func RemoveVolume(virConn *libvirt.Connect, key string) error {
 		return fmt.Errorf("Error retrieving name of volume: %s", err)
 	}
 
-	PoolSync.AcquireLock(poolName)
-	defer PoolSync.ReleaseLock(poolName)
+	poolMutexKV.Lock(poolName)
+	defer poolMutexKV.Unlock(poolName)
 
 	WaitForSuccess("Error refreshing pool for volume", func() error {
 		return volPool.Refresh(0)
