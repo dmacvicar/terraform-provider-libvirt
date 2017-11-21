@@ -143,7 +143,12 @@ resource "libvirt_domain" "my_machine" {
 
 The `disk` block supports:
 
-* `volume_id` - (Required) The volume id to use for this disk.
+* `volume_id` - (Optional) The volume id to use for this disk.
+* `url` - (Optional) The http url to use as the block device for this disk (read-only)
+
+While both `volume_id` and `url` are optional, it is intended that you use either a volume or a
+url.
+
 * `scsi` - (Optional) Use a scsi controller for this disk.  The controller
 model is set to `virtio-scsi`
 * `wwn` - (Optional) Specify a WWN to use for the disk if the disk is using
@@ -166,6 +171,10 @@ resource "libvirt_domain" "domain1" {
   disk {
     volume_id = "${libvirt_volume.mydisk.id}"
     scsi = "yes"
+  }
+
+  disk {
+    url = "http://foo.com/install.iso"
   }
 }
 ```

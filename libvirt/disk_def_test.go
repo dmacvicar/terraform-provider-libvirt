@@ -13,7 +13,7 @@ func init() {
 }
 
 func TestDefaultDiskMarshall(t *testing.T) {
-	b := newDefDisk()
+	b := newDefDisk(0)
 	buf := new(bytes.Buffer)
 	enc := xml.NewEncoder(buf)
 	enc.Indent("  ", "    ")

@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"fmt"
 	"math/rand"
 
 	"github.com/libvirt/libvirt-go-xml"
@@ -8,12 +9,13 @@ import (
 
 const oui = "05abcd"
 
-func newDefDisk() libvirtxml.DomainDisk {
+func newDefDisk(i int) libvirtxml.DomainDisk {
 	return libvirtxml.DomainDisk{
 		Type:   "file",
 		Device: "disk",
 		Target: &libvirtxml.DomainDiskTarget{
 			Bus: "virtio",
+			Dev: fmt.Sprintf("vd%s", DiskLetterForIndex(i)),
 		},
 		Driver: &libvirtxml.DomainDiskDriver{
 			Name: "qemu",
