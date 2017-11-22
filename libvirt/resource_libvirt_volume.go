@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
@@ -90,7 +91,12 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		poolName = d.Get("pool").(string)
 	}
 
-	PoolSync.AcquireLock(poolName)
+	for {
+		if PoolSync.AcquireLock(poolName) {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 	defer PoolSync.ReleaseLock(poolName)
 
 	pool, err := virConn.LookupStoragePoolByName(poolName)
