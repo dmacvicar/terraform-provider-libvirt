@@ -3,7 +3,7 @@ default: build
 build: gofmtcheck golint vet
 	go build
 
-install: 
+install:
 	go install
 
 test: 
