@@ -74,6 +74,11 @@ func resourceLibvirtNetwork() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"autostart": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Required: false,
+			},
 			"running": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -157,6 +162,14 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	d.Partial(false)
+
+	if d.HasChange("autostart") {
+		err = network.SetAutostart(d.Get("autostart").(bool))
+		if err != nil {
+			return fmt.Errorf("Error setting autostart for network: %s", err)
+		}
+		d.SetPartial("autostart")
+	}
 
 	return nil
 }
@@ -331,6 +344,13 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error waiting for network to reach ACTIVE state: %s", err)
 	}
 
+	if autostart, ok := d.GetOk("autostart"); ok {
+		err = network.SetAutostart(autostart.(bool))
+		if err != nil {
+			return fmt.Errorf("Error setting autostart for network: %s", err)
+		}
+	}
+
 	return resourceLibvirtNetworkRead(d, meta)
 }
 
@@ -365,6 +385,11 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	}
 	d.Set("running", active)
 
+	autostart, err := network.GetAutostart()
+	if err != nil {
+		return fmt.Errorf("Error reading network autostart setting: %s", err)
+	}
+	d.Set("autostart", autostart)
 	addresses := []string{}
 	for _, address := range networkDef.IPs {
 		// we get the host interface IP (ie, 10.10.8.1) but we want the network CIDR (ie, 10.10.8.0/24)
