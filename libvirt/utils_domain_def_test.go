@@ -32,3 +32,14 @@ func TestSplitKernelInvalidCmdLine(t *testing.T) {
 		t.Errorf("Expected error for parsing '%s'", v)
 	}
 }
+
+func TestSplitKernelEmptyCmdLine(t *testing.T) {
+	var e []map[string]string
+	r, err := splitKernelCmdLine("")
+	if !reflect.DeepEqual(r, e) {
+		t.Fatalf("got='%s' expected='%s'", spew.Sdump(r), spew.Sdump(e))
+	}
+	if err != nil {
+		t.Error(err)
+	}
+}

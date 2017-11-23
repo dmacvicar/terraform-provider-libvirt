@@ -54,6 +54,10 @@ func getOriginalMachineName(caps libvirtxml.Caps, arch string, virttype string, 
 // key
 func splitKernelCmdLine(cmdLine string) ([]map[string]string, error) {
 	var cmdLines []map[string]string
+	if len(cmdLine) == 0 {
+		return cmdLines, nil
+	}
+
 	currCmdLine := make(map[string]string)
 	argVals := strings.Split(cmdLine, " ")
 	for _, argVal := range argVals {
