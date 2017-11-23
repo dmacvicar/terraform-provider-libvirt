@@ -305,7 +305,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			cmdlineArgs = append(cmdlineArgs, fmt.Sprintf("%s=%v", k, v))
 		}
 	}
-
 	sort.Strings(cmdlineArgs)
 	domainDef.OS.KernelArgs = strings.Join(cmdlineArgs, " ")
 
@@ -904,6 +903,14 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("arch", domainDef.OS.Type.Arch)
 	d.Set("autostart", autostart)
 	d.Set("arch", domainDef.OS.Type.Arch)
+
+	cmdLines, err := splitKernelCmdLine(domainDef.OS.KernelArgs)
+	if err != nil {
+		return err
+	}
+	d.Set("cmdline", cmdLines)
+	d.Set("kernel", domainDef.OS.Kernel)
+	d.Set("initrd", domainDef.OS.Initrd)
 
 	caps, err := getHostCapabilities(virConn)
 	if err != nil {
