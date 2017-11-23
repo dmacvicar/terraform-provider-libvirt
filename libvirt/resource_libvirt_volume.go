@@ -13,44 +13,44 @@ import (
 
 func volumeCommonSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"name": &schema.Schema{
+		"name": {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
 		},
-		"pool": &schema.Schema{
+		"pool": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Default:  "default",
 			ForceNew: true,
 		},
-		"source": &schema.Schema{
+		"source": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 		},
-		"size": &schema.Schema{
+		"size": {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Computed: true,
 			ForceNew: true,
 		},
-		"format": &schema.Schema{
+		"format": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 		},
-		"base_volume_id": &schema.Schema{
+		"base_volume_id": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 		},
-		"base_volume_pool": &schema.Schema{
+		"base_volume_pool": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 		},
-		"base_volume_name": &schema.Schema{
+		"base_volume_name": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,

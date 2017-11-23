@@ -13,28 +13,28 @@ func resourceCloudInit() *schema.Resource {
 		Read:   resourceCloudInitRead,
 		Delete: resourceCloudInitDelete,
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"pool": &schema.Schema{
+			"pool": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "default",
 				ForceNew: true,
 			},
-			"local_hostname": &schema.Schema{
+			"local_hostname": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"user_data": &schema.Schema{
+			"user_data": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"ssh_authorized_key": &schema.Schema{
+			"ssh_authorized_key": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,

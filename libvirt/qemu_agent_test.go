@@ -38,11 +38,11 @@ func TestGetDomainInterfacesViaQemuAgentNoInterfaces(t *testing.T) {
 func TestGetDomainInterfacesViaQemuAgentIgnoreLoopbackDevice(t *testing.T) {
 	response := QemuAgentInterfacesResponse{
 		Interfaces: []QemuAgentInterface{
-			QemuAgentInterface{
+			{
 				Name:   "lo",
 				Hwaddr: "ho:me",
 				IPAddresses: []QemuAgentInterfaceIPAddress{
-					QemuAgentInterfaceIPAddress{
+					{
 						Type:    "ipv4",
 						Address: "127.0.0.1",
 						Prefix:  1,
@@ -69,11 +69,11 @@ func TestGetDomainInterfacesViaQemuAgentIgnoreLoopbackDevice(t *testing.T) {
 func TestGetDomainInterfacesViaQemuAgentIgnoreDevicesWithoutAddress(t *testing.T) {
 	response := QemuAgentInterfacesResponse{
 		Interfaces: []QemuAgentInterface{
-			QemuAgentInterface{
+			{
 				Name:   "eth1",
 				Hwaddr: "xy:yy:zz",
 				IPAddresses: []QemuAgentInterfaceIPAddress{
-					QemuAgentInterfaceIPAddress{
+					{
 						Type:    "ipv4",
 						Address: "",
 						Prefix:  1,
@@ -100,11 +100,11 @@ func TestGetDomainInterfacesViaQemuAgentIgnoreDevicesWithoutAddress(t *testing.T
 func TestGetDomainInterfacesViaQemuAgentUnknownIpAddressType(t *testing.T) {
 	response := QemuAgentInterfacesResponse{
 		Interfaces: []QemuAgentInterface{
-			QemuAgentInterface{
+			{
 				Name:   "eth2",
 				Hwaddr: "zy:yy:zz",
 				IPAddresses: []QemuAgentInterfaceIPAddress{
-					QemuAgentInterfaceIPAddress{
+					{
 						Type:    "ipv8",
 						Address: "i don't exist",
 						Prefix:  1,
@@ -136,16 +136,16 @@ func TestGetDomainInterfacesViaQemuAgent(t *testing.T) {
 
 	response := QemuAgentInterfacesResponse{
 		Interfaces: []QemuAgentInterface{
-			QemuAgentInterface{
+			{
 				Name:   device,
 				Hwaddr: mac,
 				IPAddresses: []QemuAgentInterfaceIPAddress{
-					QemuAgentInterfaceIPAddress{
+					{
 						Type:    "ipv4",
 						Address: ipv4Addr,
 						Prefix:  1,
 					},
-					QemuAgentInterfaceIPAddress{
+					{
 						Type:    "ipv6",
 						Address: ipv6Addr,
 						Prefix:  1,

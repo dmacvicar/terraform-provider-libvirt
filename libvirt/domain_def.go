@@ -36,13 +36,13 @@ func newDomainDef() libvirtxml.Domain {
 		CPU: &libvirtxml.DomainCPU{},
 		Devices: &libvirtxml.DomainDeviceList{
 			Graphics: []libvirtxml.DomainGraphic{
-				libvirtxml.DomainGraphic{
+				{
 					Type:     "spice",
 					AutoPort: "yes",
 				},
 			},
 			Channels: []libvirtxml.DomainChannel{
-				libvirtxml.DomainChannel{
+				{
 					Type: "unix",
 					Target: &libvirtxml.DomainChannelTarget{
 						Type: "virtio",
@@ -51,7 +51,7 @@ func newDomainDef() libvirtxml.Domain {
 				},
 			},
 			RNGs: []libvirtxml.DomainRNG{
-				libvirtxml.DomainRNG{
+				{
 					Model: "virtio",
 					Backend: &libvirtxml.DomainRNGBackend{
 						Model: "random",

@@ -6,25 +6,25 @@ import (
 
 func consoleSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"type": &schema.Schema{
+		"type": {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
 			ForceNew: true,
 		},
-		"source_path": &schema.Schema{
+		"source_path": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
 			ForceNew: true,
 		},
-		"target_port": &schema.Schema{
+		"target_port": {
 			Type:     schema.TypeString,
 			Optional: false,
 			Required: true,
 			ForceNew: true,
 		},
-		"target_type": &schema.Schema{
+		"target_type": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
