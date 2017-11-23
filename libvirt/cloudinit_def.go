@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -149,17 +148,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 	}
 
 	isoDestination := filepath.Join(tmpDir, ci.Name)
-	cmd := exec.Command(
-		"genisoimage",
-		"-output",
-		isoDestination,
-		"-volid",
-		"cidata",
-		"-joliet",
-		"-rock",
-		filepath.Join(tmpDir, USERDATA),
-		filepath.Join(tmpDir, METADATA))
-
+	cmd := GenIsoCmd(isoDestination, tmpDir, USERDATA, METADATA)
 	log.Printf("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {
 		return "", fmt.Errorf("Error while starting the creation of CloudInit's ISO image: %s", err)
