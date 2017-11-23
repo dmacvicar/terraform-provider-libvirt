@@ -161,8 +161,6 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 		d.SetPartial("running")
 	}
 
-	d.Partial(false)
-
 	if d.HasChange("autostart") {
 		err = network.SetAutostart(d.Get("autostart").(bool))
 		if err != nil {
@@ -170,7 +168,7 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 		}
 		d.SetPartial("autostart")
 	}
-
+	d.Partial(false)
 	return nil
 }
 
