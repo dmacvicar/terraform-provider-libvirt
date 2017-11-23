@@ -297,7 +297,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	cmdlinesCount := d.Get("cmdline.#").(int)
-	cmdlineArgs := make([]string, 0)
+	var cmdlineArgs []string
 	for i := 0; i < cmdlinesCount; i++ {
 		cmdlineKey := fmt.Sprintf("cmdline.%d", i)
 		cmdlineMap := d.Get(cmdlineKey).(map[string]interface{})
