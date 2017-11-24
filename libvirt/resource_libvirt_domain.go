@@ -171,19 +171,19 @@ func resourceLibvirtDomain() *schema.Resource {
 				Default:  "/usr/bin/qemu-system-x86_64",
 				Optional: true,
 			},
-			"kernel": &schema.Schema{
+			"kernel": {
 				Type:     schema.TypeString,
 				Required: false,
 				Optional: true,
 				ForceNew: false,
 			},
-			"initrd": &schema.Schema{
+			"initrd": {
 				Type:     schema.TypeString,
 				Required: false,
 				Optional: true,
 				ForceNew: false,
 			},
-			"cmdline": &schema.Schema{
+			"cmdline": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Required: false,
