@@ -167,7 +167,7 @@ read-only.
   domain. However, `libvirt` can  manage this automatically (and this is the recommended solution)
   if a mapping for the firmware to a _variables file_ exists in `/etc/libvirt/qemu.conf:nvram`.
   In that case, `libvirt` will copy that variables file into a file specific for this domain.
-s  * `template` - (Optional) path to the file used to override variables from the master NVRAM
+  * `template` - (Optional) path to the file used to override variables from the master NVRAM
   store.
 
 So you should typically use the firmware as this,
