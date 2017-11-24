@@ -202,6 +202,24 @@ func TestCreateCloudIsoViaPlugin(t *testing.T) {
 				  }`),
 				ExpectError: regexp.MustCompile("Error merging UserData with UserDataRaw: yaml: unmarshal errors"),
 			},
+
+			{
+				Config: fmt.Sprintf(`
+		      resource "libvirt_cloudinit" "test3" {
+			               name = "test3.iso"
+			               local_hostname = "tango12"
+			               pool =           "default"
+			    }`),
+
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit.test3", "name", "test3.iso"),
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit.test3", "local_hostname", "tango12"),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit.test3", &volume),
+				),
+				ExpectNonEmptyPlan: true,
+			},
 		},
 	})
 }
