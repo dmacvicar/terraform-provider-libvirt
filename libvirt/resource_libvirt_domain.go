@@ -298,9 +298,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	var cmdlineArgs []string
 	for i := 0; i < d.Get("cmdline.#").(int); i++ {
-		cmdlineKey := fmt.Sprintf("cmdline.%d", i)
-		cmdlineMap := d.Get(cmdlineKey).(map[string]interface{})
-		for k, v := range cmdlineMap {
+		for k, v := range d.Get(fmt.Sprintf("cmdline.%d", i)).(map[string]interface{}) {
 			cmdlineArgs = append(cmdlineArgs, fmt.Sprintf("%s=%v", k, v))
 		}
 	}
