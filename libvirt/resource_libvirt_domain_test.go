@@ -142,7 +142,6 @@ func TestShutoffDomain(t *testing.T) {
 					testAccCheckLibvirtVolumeExists("libvirt_volume.acceptance-test-volume", &volume),
 					testAccCheckLibvirtDomainStateEqual("libvirt_domain.acceptance-test-domain", &domain, "shutoff"),
 				),
-				ExpectNonEmptyPlan: true,
 			},
 		},
 	})
@@ -173,7 +172,6 @@ func TestShutoffMultiDomainsRunning(t *testing.T) {
 					testAccCheckLibvirtDomainStateEqual("libvirt_domain.domainoff", &domain, "shutoff"),
 					testAccCheckLibvirtDomainStateEqual("libvirt_domain.domainok", &domain2, "running"),
 				),
-				ExpectNonEmptyPlan: true,
 			},
 		},
 	})

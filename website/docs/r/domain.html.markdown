@@ -31,7 +31,7 @@ The following arguments are supported:
   will be created.
 * `memory` - (Optional) The amount of memory in MiB. If not specified the domain
   will be created with 512 MiB of memory be used.
-* `domain_shutoff` - (Optional) Use `true` to turn off the instance. If not specified,
+* `domain_shutoff` - (Optional) Use `true` to turn off the libvirt-domain. If not specified,
   false is assumed and the instance, will be started at next apply.
 * `disk` - (Optional) An array of one or more disks to attach to the domain. The
   `disk` object structure is documented [below](#handling-disks).
