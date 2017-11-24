@@ -79,12 +79,6 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
-			"running": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-				ForceNew: false,
-			},
 			"domain_shutoff": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -885,12 +879,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	// or it will show as changed
 	d.Set("emulator", domainDef.Devices.Emulator)
 
-	running, err := isDomainRunning(*domain)
-	if err != nil {
-		return err
-	}
-	d.Set("running", running)
-
 	var disks []map[string]interface{}
 	for _, diskDef := range domainDef.Devices.Disks {
 		// network drives do not have a volume associated
@@ -1248,12 +1236,7 @@ func destroyDomainByUserRequest(d *schema.ResourceData, domain *libvirt.Domain) 
 			return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
 		}
 	}
-	statusDomain, err := isDomainRunning(*domain)
-	if err != nil {
-		return err
-	}
 
-	d.Set("running", statusDomain)
 	return nil
 }
 
