@@ -93,6 +93,7 @@ You can use it in the same way as the kernel.
 
 * `cmdline` - (Optional) Arguments to the kernel
 
+```hcl
 resource "libvirt_domain" "domain-suse" {
   name = "suse"
   memory = "1024"
