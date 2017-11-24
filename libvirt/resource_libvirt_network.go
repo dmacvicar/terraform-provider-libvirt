@@ -41,7 +41,6 @@ func resourceLibvirtNetwork() *schema.Resource {
 		Read:   resourceLibvirtNetworkRead,
 		Delete: resourceLibvirtNetworkDelete,
 		Exists: resourceLibvirtNetworkExists,
-		Update: resourceLibvirtNetworkUpdate,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -121,36 +120,6 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 	defer network.Free()
 
 	return err == nil, err
-}
-
-func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
-	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
-	}
-	network, err := virConn.LookupNetworkByUUIDString(d.Id())
-	if err != nil {
-		return err
-	}
-	defer network.Free()
-
-	d.Partial(true)
-
-	active, err := network.IsActive()
-	if err != nil {
-		return err
-	}
-
-	if !active {
-		log.Printf("[DEBUG] Activating network")
-		if err := network.Create(); err != nil {
-			return err
-		}
-	}
-
-	d.Partial(false)
-
-	return nil
 }
 
 func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) error {
