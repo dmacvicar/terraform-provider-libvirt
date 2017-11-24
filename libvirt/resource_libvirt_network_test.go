@@ -87,8 +87,6 @@ func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
 		if rs.Type != "libvirt_network" {
 			continue
 		}
-
-		// Try to find the server
 		_, err := virtConn.LookupNetworkByUUIDString(rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf(
