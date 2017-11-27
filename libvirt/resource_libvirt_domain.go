@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -170,6 +171,27 @@ func resourceLibvirtDomain() *schema.Resource {
 				Default:  "/usr/bin/qemu-system-x86_64",
 				Optional: true,
 			},
+			"kernel": {
+				Type:     schema.TypeString,
+				Required: false,
+				Optional: true,
+				ForceNew: false,
+			},
+			"initrd": {
+				Type:     schema.TypeString,
+				Required: false,
+				Optional: true,
+				ForceNew: false,
+			},
+			"cmdline": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Required: false,
+				ForceNew: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeMap,
+				},
+			},
 		},
 	}
 }
@@ -266,6 +288,22 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			}
 		}
 	}
+
+	if kernel, ok := d.GetOk("kernel"); ok {
+		domainDef.OS.Kernel = kernel.(string)
+	}
+	if initrd, ok := d.GetOk("initrd"); ok {
+		domainDef.OS.Initrd = initrd.(string)
+	}
+
+	var cmdlineArgs []string
+	for i := 0; i < d.Get("cmdline.#").(int); i++ {
+		for k, v := range d.Get(fmt.Sprintf("cmdline.%d", i)).(map[string]interface{}) {
+			cmdlineArgs = append(cmdlineArgs, fmt.Sprintf("%s=%v", k, v))
+		}
+	}
+	sort.Strings(cmdlineArgs)
+	domainDef.OS.KernelArgs = strings.Join(cmdlineArgs, " ")
 
 	if cpu, ok := d.GetOk("cpu"); ok {
 		cpuMap := cpu.(map[string]interface{})
@@ -862,6 +900,14 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("arch", domainDef.OS.Type.Arch)
 	d.Set("autostart", autostart)
 	d.Set("arch", domainDef.OS.Type.Arch)
+
+	cmdLines, err := splitKernelCmdLine(domainDef.OS.KernelArgs)
+	if err != nil {
+		return err
+	}
+	d.Set("cmdline", cmdLines)
+	d.Set("kernel", domainDef.OS.Kernel)
+	d.Set("initrd", domainDef.OS.Initrd)
 
 	caps, err := getHostCapabilities(virConn)
 	if err != nil {
