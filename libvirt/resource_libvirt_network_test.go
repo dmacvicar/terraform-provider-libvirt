@@ -2,10 +2,11 @@ package libvirt
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/libvirt/libvirt-go"
-	"testing"
 )
 
 func TestNetworkAutostart(t *testing.T) {
@@ -17,13 +18,13 @@ func TestNetworkAutostart(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-					resource "libvirt_network" "test_net" {
-					  name = "networktest"
-					  mode = "nat"
-					  domain = "k8s.local"
-					  addresses = ["10.17.3.0/24"]
-			      autostart = true
-			    }`),
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					autostart = true
+				}`),
 				Check: resource.ComposeTestCheckFunc(
 					networkExists("libvirt_network.test_net", &network),
 					resource.TestCheckResourceAttr("libvirt_network.test_net", "autostart", "true"),
@@ -31,13 +32,13 @@ func TestNetworkAutostart(t *testing.T) {
 			},
 			{
 				Config: fmt.Sprintf(`
-					resource "libvirt_network" "test_net" {
-					  name = "networktest"
-					  mode = "nat"
-					  domain = "k8s.local"
-					  addresses = ["10.17.3.0/24"]
-			      autostart = false
-			    }`),
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					autostart = false
+				}`),
 				Check: resource.ComposeTestCheckFunc(
 					networkExists("libvirt_network.test_net", &network),
 					resource.TestCheckResourceAttr("libvirt_network.test_net", "autostart", "false"),
