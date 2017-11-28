@@ -12,21 +12,21 @@ import (
 func TestAccLibvirtIgnition_Basic(t *testing.T) {
 	var volume libvirt.StorageVol
 	var config = fmt.Sprintf(`
-	    data "ignition_systemd_unit" "acceptance-test-systemd" {
-    		name = "example.service"
-    		content = "[Service]\nType=oneshot\nExecStart=/usr/bin/echo Hello World\n\n[Install]\nWantedBy=multi-user.target"
-	    }
+	data "ignition_systemd_unit" "acceptance-test-systemd" {
+		name    = "example.service"
+		content = "[Service]\nType=oneshot\nExecStart=/usr/bin/echo Hello World\n\n[Install]\nWantedBy=multi-user.target"
+	}
 
-	    data "ignition_config" "acceptance-test-config" {
-    		systemd = [
-        		"${data.ignition_systemd_unit.acceptance-test-systemd.id}",
-    		]
-	    }
+	data "ignition_config" "acceptance-test-config" {
+		systemd = [
+		"${data.ignition_systemd_unit.acceptance-test-systemd.id}",
+		]
+	}
 
-	    resource "libvirt_ignition" "ignition" {
-	    	name = "ignition"
-	    	content = "${data.ignition_config.acceptance-test-config.rendered}"
-	    }
+	resource "libvirt_ignition" "ignition" {
+		name    = "ignition"
+		content = "${data.ignition_config.acceptance-test-config.rendered}"
+	}
 	`)
 
 	resource.Test(t, resource.TestCase{

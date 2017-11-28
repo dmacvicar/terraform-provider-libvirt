@@ -85,10 +85,10 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 	var volume libvirt.StorageVol
 
 	const testAccCheckLibvirtVolumeConfigBasic = `
-		resource "libvirt_volume" "terraform-acceptance-test-1" {
-		    name = "terraform-test"
-		    size =  1073741824
-		}`
+	resource "libvirt_volume" "terraform-acceptance-test-1" {
+		name = "terraform-test"
+		size =  1073741824
+	}`
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -125,10 +125,10 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 	}
 
 	const testAccCheckLibvirtVolumeConfigSource = `
-		resource "libvirt_volume" "terraform-acceptance-test-2" {
-		    name = "terraform-test"
-		    source = "%s"
-		}`
+	resource "libvirt_volume" "terraform-acceptance-test-2" {
+		name   = "terraform-test"
+		source = "%s"
+	}`
 	config := fmt.Sprintf(testAccCheckLibvirtVolumeConfigSource, url)
 
 	resource.Test(t, resource.TestCase{
@@ -152,11 +152,11 @@ func TestAccLibvirtVolume_Format(t *testing.T) {
 	var volume libvirt.StorageVol
 
 	const testAccCheckLibvirtVolumeConfigFormat = `
-		resource "libvirt_volume" "terraform-acceptance-test-3" {
-		    name = "terraform-test"
-		    format = "raw"
-		    size =  1073741824
-		}`
+	resource "libvirt_volume" "terraform-acceptance-test-3" {
+		name   = "terraform-test"
+		format = "raw"
+		size   =  1073741824
+	}`
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },

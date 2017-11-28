@@ -2,15 +2,16 @@ package libvirt
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
-	libvirt "github.com/libvirt/libvirt-go"
-	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform/terraform"
+	libvirt "github.com/libvirt/libvirt-go"
+	"gopkg.in/yaml.v2"
 )
 
 func TestNewCloudInitDef(t *testing.T) {
@@ -176,12 +177,12 @@ func TestCreateCloudIsoViaPlugin(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-		      resource "libvirt_cloudinit" "test" {
-			               name = "test.iso"
-			               local_hostname = "tango1"
-			               pool =           "default"
-  			             user_data =      "#cloud-config\nssh_authorized_keys: []\n"
-			    }`),
+				resource "libvirt_cloudinit" "test" {
+					name           = "test.iso"
+					local_hostname = "tango1"
+					pool           = "default"
+					user_data      = "#cloud-config\nssh_authorized_keys: []\n"
+				}`),
 
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
@@ -194,12 +195,12 @@ func TestCreateCloudIsoViaPlugin(t *testing.T) {
 			// 2nd tests Invalid  userdata
 			{
 				Config: fmt.Sprintf(`
-				  resource "libvirt_cloudinit" "test" {
-									   name = "commoninit2.iso"
-									   local_hostname = "samba2"
-									   pool =           "default"
-									   user_data =      "invalidgino"
-				  }`),
+				resource "libvirt_cloudinit" "test" {
+					name           = "commoninit2.iso"
+					local_hostname = "samba2"
+					pool           = "default"
+					user_data      = "invalidgino"
+				}`),
 				ExpectError: regexp.MustCompile("Error merging UserData with UserDataRaw: yaml: unmarshal errors"),
 			},
 		},
