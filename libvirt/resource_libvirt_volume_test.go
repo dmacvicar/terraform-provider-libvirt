@@ -2,6 +2,7 @@ package libvirt
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
@@ -104,6 +105,32 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_volume.terraform-acceptance-test-1", "size", "1073741824"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtVolume_UniqueName(t *testing.T) {
+	const config = `
+	resource "libvirt_volume" "terraform-acceptance-test-1" {
+		name = "terraform-test"
+		size =  1073741824
+	}
+
+	resource "libvirt_volume" "terraform-acceptance-test-2" {
+		name = "terraform-test"
+		size =  1073741824
+	}
+	`
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      config,
+				ExpectError: regexp.MustCompile(`storage volume 'terraform-test' already exists`),
 			},
 		},
 	})
