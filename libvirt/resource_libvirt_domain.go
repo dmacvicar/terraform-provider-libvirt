@@ -79,12 +79,6 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
-			"running": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-				ForceNew: false,
-			},
 			"cloudinit": {
 				Type:     schema.TypeString,
 				Required: false,
@@ -905,13 +899,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	// Emulator is the same as the default don't set it in domainDef
 	// or it will show as changed
 	d.Set("emulator", domainDef.Devices.Emulator)
-
-	running, err := domainIsRunning(*domain)
-	if err != nil {
-		return err
-	}
-	d.Set("running", running)
-
 	var disks []map[string]interface{}
 	for _, diskDef := range domainDef.Devices.Disks {
 		// network drives do not have a volume associated

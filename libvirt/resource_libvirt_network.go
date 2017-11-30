@@ -79,12 +79,6 @@ func resourceLibvirtNetwork() *schema.Resource {
 				Optional: true,
 				Required: false,
 			},
-			"running": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  true,
-				ForceNew: false,
-			},
 			"dns_forwarder": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -157,8 +151,6 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 		if err := network.Create(); err != nil {
 			return err
 		}
-		d.Set("running", true)
-		d.SetPartial("running")
 	}
 
 	if d.HasChange("autostart") {
@@ -376,12 +368,6 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	if networkDef.Domain != nil {
 		d.Set("domain", networkDef.Domain.Name)
 	}
-
-	active, err := network.IsActive()
-	if err != nil {
-		return err
-	}
-	d.Set("running", active)
 
 	autostart, err := network.GetAutostart()
 	if err != nil {
