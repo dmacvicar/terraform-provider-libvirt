@@ -20,3 +20,6 @@ mkdir /pool-default
 chmod a+rwx /pool-default
 virsh pool-define pool.xml
 virsh pool-start default
+echo -e 'user = "root"\ngroup = "root"' >> /etc/libvirt/qemu.conf
+systemctl restart libvirtd
+

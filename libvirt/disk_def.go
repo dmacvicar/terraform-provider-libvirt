@@ -24,21 +24,6 @@ func newDefDisk(i int) libvirtxml.DomainDisk {
 	}
 }
 
-func newCDROM() libvirtxml.DomainDisk {
-	return libvirtxml.DomainDisk{
-		Type:   "file",
-		Device: "cdrom",
-		Target: &libvirtxml.DomainDiskTarget{
-			Dev: "hda",
-			Bus: "ide",
-		},
-		Driver: &libvirtxml.DomainDiskDriver{
-			Name: "qemu",
-			Type: "raw",
-		},
-	}
-}
-
 func randomWWN(strlen int) string {
 	const chars = "abcdef0123456789"
 	result := make([]byte, strlen)
