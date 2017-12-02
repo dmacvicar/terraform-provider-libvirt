@@ -46,6 +46,15 @@ func updateHost(n *libvirt.Network, ip, mac, name string) error {
 	return n.Update(libvirt.NETWORK_UPDATE_COMMAND_MODIFY, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, xmlDesc, libvirt.NETWORK_UPDATE_AFFECT_CURRENT)
 }
 
+// Tries to update first, if that fails, it will add it
+func updateOrAddHost(n *libvirt.Network, ip, mac, name string) error {
+	err := updateHost(n, ip, mac, name)
+	if virErr, ok := err.(libvirt.Error); ok && virErr.Code == libvirt.ERR_OPERATION_INVALID && virErr.Domain == libvirt.FROM_NETWORK {
+		return addHost(n, ip, mac, name)
+	}
+	return err
+}
+
 func getHostArchitecture(virConn *libvirt.Connect) (string, error) {
 	type HostCapabilities struct {
 		XMLName xml.Name `xml:"capabilities"`
