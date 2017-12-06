@@ -64,6 +64,9 @@ func resourceLibvirtVolume() *schema.Resource {
 		Read:   resourceLibvirtVolumeRead,
 		Delete: resourceLibvirtVolumeDelete,
 		Schema: volumeCommonSchema(),
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 	}
 }
 
