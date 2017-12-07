@@ -178,3 +178,39 @@ func TestAccLibvirtVolume_Format(t *testing.T) {
 		},
 	})
 }
+
+func TestAccLibvirtVolume_Import(t *testing.T) {
+	var volume libvirt.StorageVol
+
+	const testAccCheckLibvirtVolumeConfigImport = `
+	resource "libvirt_volume" "terraform-acceptance-test-4" {
+		name   = "terraform-test"
+		format = "raw"
+		size   =  1073741824
+	}`
+
+	resourceName := "libvirt_volume.terraform-acceptance-test-4"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCheckLibvirtVolumeConfigImport,
+				ResourceName: resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-3", &volume),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume.terraform-acceptance-test-3", "name", "terraform-test"),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume.terraform-acceptance-test-3", "size", "1073741824"),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume.terraform-acceptance-test-3", "format", "raw"),
+				),
+			},
+		},
+	})
+}
