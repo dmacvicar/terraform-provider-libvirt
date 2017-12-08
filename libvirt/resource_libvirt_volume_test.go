@@ -196,11 +196,15 @@ func TestAccLibvirtVolume_Import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
 		Steps: []resource.TestStep{
-			{
+			resource.TestStep{
 				Config: testAccCheckLibvirtVolumeConfigImport,
+			},
+			resource.TestStep{
 				ResourceName: resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+			}
+			resource.TestStep{
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-3", &volume),
 					resource.TestCheckResourceAttr(
@@ -210,7 +214,7 @@ func TestAccLibvirtVolume_Import(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_volume.terraform-acceptance-test-3", "format", "raw"),
 				),
-			},
+			}
 		},
 	})
 }
