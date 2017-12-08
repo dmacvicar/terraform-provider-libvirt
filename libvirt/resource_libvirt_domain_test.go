@@ -872,6 +872,67 @@ func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, fir
 	})
 }
 
+// we want to destroy (shutdown volume after creation)
+func TestShutoffDomain(t *testing.T) {
+	var domain libvirt.Domain
+	var volume libvirt.StorageVol
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+			            resource "libvirt_volume" "acceptance-test-volume" {
+			                    name = "terraform-test"
+			            }
+			            resource "libvirt_domain" "acceptance-test-domain" {
+			                    name = "terraform-test"
+													domain_shutoff = true
+			                    disk {
+			                            volume_id = "${libvirt_volume.acceptance-test-volume.id}"
+			                    }
+			            }`),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.acceptance-test-volume", &volume),
+					testAccCheckLibvirtDomainStateEqual("libvirt_domain.acceptance-test-domain", &domain, "shutoff"),
+				),
+			},
+		},
+	})
+}
+
+func TestShutoffMultiDomainsRunning(t *testing.T) {
+	var domain libvirt.Domain
+	var domain2 libvirt.Domain
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+   					resource "libvirt_domain" "domainoff" {
+	               name = "domainfalse"
+	               vcpu = 1
+	               domain_shutoff = true
+	          }
+            resource "libvirt_domain" "domainok" {
+	               name = "domaintrue"
+	               vcpu = 1
+	               domain_shutoff = false
+	          }
+      `),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainStateEqual("libvirt_domain.domainoff", &domain, "shutoff"),
+					testAccCheckLibvirtDomainStateEqual("libvirt_domain.domainok", &domain2, "running"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_MachineType(t *testing.T) {
 	var domain libvirt.Domain
 
@@ -922,4 +983,47 @@ func TestAccLibvirtDomain_ArchType(t *testing.T) {
 			},
 		},
 	})
+}
+
+func testAccCheckLibvirtDomainStateEqual(n string, domain *libvirt.Domain, exptectedState string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No libvirt domain ID is set")
+		}
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		retrieveDomain, err := virConn.LookupDomainByUUIDString(rs.Primary.ID)
+
+		if err != nil {
+			return err
+		}
+
+		realID, err := retrieveDomain.GetUUIDString()
+		if err != nil {
+			return err
+		}
+
+		if realID != rs.Primary.ID {
+			return fmt.Errorf("Libvirt domain not found")
+		}
+
+		*domain = *retrieveDomain
+		state, err := domainGetState(*domain)
+		if err != nil {
+			return fmt.Errorf("could not get domain state: %s", err)
+		}
+
+		if state != exptectedState {
+			return fmt.Errorf("Domain state should be == %s, but is %s", exptectedState, state)
+		}
+
+		return nil
+	}
 }

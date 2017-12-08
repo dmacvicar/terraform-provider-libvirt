@@ -79,6 +79,13 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"domain_shutoff": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+				ForceNew: false,
+				Required: false,
+			},
 			"cloudinit": {
 				Type:     schema.TypeString,
 				Required: false,
@@ -745,7 +752,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			}
 		}
 	}
-
+	destroyDomainByUserRequest(d, domain)
 	return nil
 }
 
@@ -1178,4 +1185,30 @@ func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml
 	}
 
 	return disk, nil
+}
+
+func destroyDomainByUserRequest(d *schema.ResourceData, domain *libvirt.Domain) error {
+	if !d.Get("domain_shutoff").(bool) {
+		return nil
+	}
+
+	domainID, err := domain.GetUUIDString()
+
+	if err != nil {
+		return fmt.Errorf("Error retrieving libvirt domain id: %s", err)
+	}
+
+	log.Printf("Destroying libvirt domain %s", domainID)
+	state, _, err := domain.GetState()
+	if err != nil {
+		return fmt.Errorf("Couldn't get info about domain: %s", err)
+	}
+
+	if state == libvirt.DOMAIN_RUNNING || state == libvirt.DOMAIN_PAUSED {
+		if err := domain.Destroy(); err != nil {
+			return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
+		}
+	}
+
+	return nil
 }
