@@ -450,6 +450,24 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			if !strings.HasSuffix(url.Path, ".qcow2") {
 				disk.Driver.Type = "raw"
 			}
+		} else if _, ok := diskMap["file"].(string); ok {
+			// support for local disks, e.g. CDs
+			disk.Type = "file"
+			disk.Source = &libvirtxml.DomainDiskSource{
+				File: diskMap["file"].(string),
+			}
+
+			if strings.HasSuffix(diskMap["file"].(string), ".iso") {
+				disk.Device = "cdrom"
+				disk.Target = &libvirtxml.DomainDiskTarget{
+					Dev: "hda",
+					Bus: "ide",
+				}
+				disk.Driver = &libvirtxml.DomainDiskDriver{
+					Name: "qemu",
+					Type: "raw",
+				}
+			}
 		}
 
 		disks = append(disks, disk)
@@ -899,7 +917,10 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	// Emulator is the same as the default don't set it in domainDef
 	// or it will show as changed
 	d.Set("emulator", domainDef.Devices.Emulator)
-	var disks []map[string]interface{}
+	var (
+		disks []map[string]interface{}
+		disk  map[string]interface{}
+	)
 	for _, diskDef := range domainDef.Devices.Disks {
 		// network drives do not have a volume associated
 		if diskDef.Type == "network" {
@@ -914,10 +935,14 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			if err != nil {
 				return err
 			}
-			disk := map[string]interface{}{
+			disk = map[string]interface{}{
 				"url": url.String(),
 			}
 			disks = append(disks, disk)
+		} else if diskDef.Device == "cdrom" {
+			disk = map[string]interface{}{
+				"file": diskDef.Source.File,
+			}
 		} else {
 			var virVol *libvirt.StorageVol
 			if len(diskDef.Source.File) > 0 {
@@ -942,11 +967,11 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				return fmt.Errorf("Error retrieving volume for disk: %s", err)
 			}
 
-			disk := map[string]interface{}{
+			disk = map[string]interface{}{
 				"volume_id": virVolKey,
 			}
-			disks = append(disks, disk)
 		}
+		disks = append(disks, disk)
 	}
 	d.Set("disks", disks)
 	var filesystems []map[string]interface{}

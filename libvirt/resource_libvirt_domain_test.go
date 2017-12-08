@@ -290,9 +290,15 @@ func TestAccLibvirtDomainKernelInitrdCmdline(t *testing.T) {
 func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	var domain libvirt.Domain
 
+	currentDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+
 	var config = fmt.Sprintf(`
-	resource "libvirt_volume" "acceptance-test-volume" {
-		name = "terraform-test"
+	resource "libvirt_network" "acceptance-test-network" {
+		name      = "terraform-test"
+		addresses = ["10.17.3.0/24"]
 	}
 
 	resource "libvirt_domain" "acceptance-test-domain" {
@@ -303,11 +309,12 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 		network_interface = {
 			network_name = "default"
 			mac          = "52:54:00:A9:F5:17"
+			wait_for_lease = 1
 		}
 		disk {
-			volume_id = "${libvirt_volume.acceptance-test-volume.id}"
+			file = "%s/testdata/tcl.iso"
 		}
-	}`)
+	}`, currentDir)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
