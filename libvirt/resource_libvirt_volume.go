@@ -105,11 +105,14 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		return pool.Refresh(0)
 	})
 
-	volumeDef := newDefVolume()
-
-	if name, ok := d.GetOk("name"); ok {
-		volumeDef.Name = name.(string)
+	// Check whether the storage volume already exists. Its name needs to be
+	// unique.
+	if _, err := pool.LookupStorageVolByName(d.Get("name").(string)); err == nil {
+		return fmt.Errorf("storage volume '%s' already exists", d.Get("name").(string))
 	}
+
+	volumeDef := newDefVolume()
+	volumeDef.Name = d.Get("name").(string)
 
 	volumeFormat := "qcow2"
 	if _, ok := d.GetOk("format"); ok {
@@ -134,19 +137,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 		if _, ok := d.GetOk("base_volume_name"); ok {
 			return fmt.Errorf("'base_volume_name' can't be specified when also 'source' is given")
-		}
-
-		// Check if we already have this image in the pool
-		if len(volumeDef.Name) > 0 {
-			if v, err := pool.LookupStorageVolByName(volumeDef.Name); err != nil {
-				log.Printf("could not find image %s in pool %s", volumeDef.Name, poolName)
-			} else {
-				volume = v
-				volumeDef, err = newDefVolumeFromLibvirt(volume)
-				if err != nil {
-					return fmt.Errorf("could not get a volume definition from XML for %s: %s", volumeDef.Name, err)
-				}
-			}
 		}
 
 		if img, err = newImage(source.(string)); err != nil {
