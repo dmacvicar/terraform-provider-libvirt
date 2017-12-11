@@ -422,6 +422,10 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				return fmt.Errorf("Error retrieving volume file: %s", err)
 			}
 
+			if !strings.HasSuffix(diskVolumeFile, ".qcow2") {
+				disk.Driver.Type = "raw"
+			}
+
 			disk.Source = &libvirtxml.DomainDiskSource{
 				File: diskVolumeFile,
 			}
