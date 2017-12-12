@@ -21,7 +21,7 @@ const domWaitLeaseDone = "all-addresses-obtained"
 
 var errDomainInvalidState = errors.New("invalid state for domain")
 
-func domainWaitForLeases(domain *libvirt.Domain, waitForLeases map[libvirtxml.DomainInterface]struct{},
+func domainWaitForLeases(domain *libvirt.Domain, waitForLeases []*libvirtxml.DomainInterface,
 	timeout time.Duration, domainDef libvirtxml.Domain, virConn *libvirt.Connect) error {
 	waitFunc := func() (interface{}, string, error) {
 
@@ -41,8 +41,8 @@ func domainWaitForLeases(domain *libvirt.Domain, waitForLeases map[libvirtxml.Do
 		}
 
 		// check we have IPs for all the interfaces we are waiting for
-		for iface := range waitForLeases {
-			found, ignore, err := domainIfaceHasAddress(*domain, iface, domainDef, virConn)
+		for _, iface := range waitForLeases {
+			found, ignore, err := domainIfaceHasAddress(*domain, *iface, domainDef, virConn)
 			if err != nil {
 				return false, "", err
 			}
