@@ -307,8 +307,8 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 			network_name = "default"
 		}
 		network_interface = {
-			network_name = "default"
-			mac          = "52:54:00:A9:F5:17"
+			network_name   = "default"
+			mac            = "52:54:00:A9:F5:17"
 			wait_for_lease = 1
 		}
 		disk {

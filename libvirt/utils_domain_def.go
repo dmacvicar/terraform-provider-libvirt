@@ -2,9 +2,10 @@ package libvirt
 
 import (
 	"fmt"
-	libvirtxml "github.com/libvirt/libvirt-go-xml"
 	"log"
 	"strings"
+
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 func getGuestForArchType(caps libvirtxml.Caps, arch string, virttype string) (libvirtxml.CapsGuest, error) {
