@@ -184,9 +184,9 @@ func TestAccLibvirtVolume_Import(t *testing.T) {
 
 	const testAccCheckLibvirtVolumeConfigImport = `
 	resource "libvirt_volume" "terraform-acceptance-test-4" {
-		name   = "terraform-test"
-		format = "raw"
-		size   =  1073741824
+			name   = "terraform-test"
+			format = "raw"
+			size   =  1073741824
 	}`
 
 	resourceName := "libvirt_volume.terraform-acceptance-test-4"
@@ -201,20 +201,15 @@ func TestAccLibvirtVolume_Import(t *testing.T) {
 			},
 			resource.TestStep{
 				ResourceName: resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
-			}
-			resource.TestStep{
+				ImportState:  true,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-3", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-4", &volume),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-3", "name", "terraform-test"),
+						"libvirt_volume.terraform-acceptance-test-4", "name", "terraform-test"),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-3", "size", "1073741824"),
-					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-3", "format", "raw"),
+						"libvirt_volume.terraform-acceptance-test-4", "size", "1073741824"),
 				),
-			}
+			},
 		},
 	})
 }

@@ -98,3 +98,35 @@ func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
 
 	return nil
 }
+
+func TestAccLibvirtNetwork_Import(t *testing.T) {
+	var network libvirt.Network
+
+	const config = fmt.Sprintf(`
+	resource "libvirt_network" "test_net" {
+		name      = "networktest"
+		mode      = "nat"
+		domain    = "k8s.local"
+		addresses = ["10.17.3.0/24"]
+	}`
+
+	resourceName := "libvirt_network.test_net"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+			},
+			resource.TestStep{
+				ResourceName: resourceName,
+				ImportState:  true,
+				Check: resource.ComposeTestCheckFunc(
+					networkExists("libvirt_network.test_net", &network),
+				),
+			},
+		},
+	})
+}
