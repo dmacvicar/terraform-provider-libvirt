@@ -923,3 +923,39 @@ func TestAccLibvirtDomain_ArchType(t *testing.T) {
 		},
 	})
 }
+
+func TestAccLibvirtDomain_Import(t *testing.T) {
+	var domain libvirt.Domain
+	var config = fmt.Sprintf(`
+	resource "libvirt_domain" "acceptance-test-domain-2" {
+		name   = "terraform-test"
+		memory = 384
+		vcpu   = 2
+	}`)
+
+	resourceName := "libvirt_domain.acceptance-test-domain-2"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+			},
+			resource.TestStep{
+				ResourceName: resourceName,
+				ImportState:  true,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain-2", &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain-2", "name", "terraform-test"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain-2", "memory", "384"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain-2", "vcpu", "2"),
+				),
+			},
+		},
+	})
+}
