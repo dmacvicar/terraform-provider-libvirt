@@ -102,7 +102,7 @@ func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
 func TestAccLibvirtNetwork_Import(t *testing.T) {
 	var network libvirt.Network
 
-	const config = fmt.Sprintf(`
+	const config = `
 	resource "libvirt_network" "test_net" {
 		name      = "networktest"
 		mode      = "nat"
