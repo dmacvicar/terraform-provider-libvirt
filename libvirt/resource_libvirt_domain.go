@@ -714,19 +714,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				"file": diskDef.Source.File,
 			}
 		} else {
-			var virVol *libvirt.StorageVol
-			if len(diskDef.Source.File) > 0 {
-				virVol, err = virConn.LookupStorageVolByPath(diskDef.Source.File)
-			} else {
-				virPool, err := virConn.LookupStoragePoolByName(diskDef.Source.Pool)
-				if err != nil {
-					return fmt.Errorf("Error retrieving pool for disk: %s", err)
-				}
-				defer virPool.Free()
-
-				virVol, err = virPool.LookupStorageVolByName(diskDef.Source.Volume)
-			}
-
+			virVol, err := virConn.LookupStorageVolByPath(diskDef.Source.File)
 			if err != nil {
 				return fmt.Errorf("Error retrieving volume for disk: %s", err)
 			}
