@@ -51,7 +51,7 @@ func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	cloudInit := newCloudInitDef()
-	cloudInit.Metadata.LocalHostname = d.Get("local_hostname").(string)
+	cloudInit.MetaData.LocalHostname = d.Get("local_hostname").(string)
 	cloudInit.UserDataRaw = d.Get("user_data").(string)
 
 	if _, ok := d.GetOk("ssh_authorized_key"); ok {
@@ -94,7 +94,7 @@ func resourceCloudInitRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("pool", ci.PoolName)
 	d.Set("name", ci.Name)
-	d.Set("local_hostname", ci.Metadata.LocalHostname)
+	d.Set("local_hostname", ci.MetaData.LocalHostname)
 	d.Set("user_data", ci.UserDataRaw)
 
 	if len(ci.UserData.SSHAuthorizedKeys) == 1 {
