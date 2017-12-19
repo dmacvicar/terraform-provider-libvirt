@@ -19,35 +19,37 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// USERDATA is the filename expected by cloud-init
-const USERDATA string = "user-data"
+// userData is the filename expected by cloud-init
+const userData string = "user-data"
 
-// METADATA is the filename expected by cloud-init
-const METADATA string = "meta-data"
+// metaData is the filename expected by cloud-init
+const metaData string = "meta-data"
 
-// CloudInitUserData struct
-type CloudInitUserData struct {
+type defCloudInitUserData struct {
 	SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }
 
+type defCloudInitMetaData struct {
+	LocalHostname string `yaml:"local-hostname,omitempty"`
+	InstanceID    string `yaml:"instance-id"`
+}
+
 type defCloudInit struct {
-	Name     string
-	PoolName string
-	Metadata struct {
-		LocalHostname string `yaml:"local-hostname,omitempty"`
-		InstanceID    string `yaml:"instance-id"`
-	}
+	Name        string
+	PoolName    string
+	MetaData    defCloudInitMetaData
 	UserDataRaw string `yaml:"user_data"`
-	UserData    CloudInitUserData
+	UserData    defCloudInitUserData
 }
 
 // Creates a new cloudinit with the defaults
 // the provider uses
 func newCloudInitDef() defCloudInit {
-	ci := defCloudInit{}
-	ci.Metadata.InstanceID = fmt.Sprintf("created-at-%s", time.Now().String())
-
-	return ci
+	return defCloudInit{
+		MetaData: defCloudInitMetaData{
+			InstanceID: fmt.Sprintf("created-at-%s", time.Now().String()),
+		},
+	}
 }
 
 // Create a ISO file based on the contents of the CloudInit instance and
@@ -157,8 +159,8 @@ func (ci *defCloudInit) createISO() (string, error) {
 		"cidata",
 		"-joliet",
 		"-rock",
-		filepath.Join(tmpDir, USERDATA),
-		filepath.Join(tmpDir, METADATA))
+		filepath.Join(tmpDir, userData),
+		filepath.Join(tmpDir, metaData))
 
 	log.Printf("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {
@@ -189,17 +191,17 @@ func (ci *defCloudInit) createFiles() (string, error) {
 	userdata := fmt.Sprintf("#cloud-config\n%s", mergedUserData)
 
 	if err = ioutil.WriteFile(
-		filepath.Join(tmpDir, USERDATA),
+		filepath.Join(tmpDir, userData),
 		[]byte(userdata),
 		os.ModePerm); err != nil {
 		return "", fmt.Errorf("Error while writing user-data to file: %s", err)
 	}
 
-	metadata, err := yaml.Marshal(&ci.Metadata)
+	metadata, err := yaml.Marshal(&ci.MetaData)
 	if err != nil {
 		return "", fmt.Errorf("Error dumping cloudinit's meta data: %s", err)
 	}
-	if err = ioutil.WriteFile(filepath.Join(tmpDir, METADATA), metadata, os.ModePerm); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(tmpDir, metaData), metadata, os.ModePerm); err != nil {
 		return "", fmt.Errorf("Error while writing meta-data to file: %s", err)
 	}
 
@@ -271,7 +273,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 		if f.Name() == "/user_dat." {
 			data, err := ioutil.ReadAll(f.Sys().(io.Reader))
 			if err != nil {
-				return ci, fmt.Errorf("Error while reading %s: %s", USERDATA, err)
+				return ci, fmt.Errorf("Error while reading %s: %s", userData, err)
 			}
 			if err := yaml.Unmarshal(data, &ci.UserData); err != nil {
 				return ci, fmt.Errorf("Error while unmarshalling user-data: %s", err)
@@ -288,9 +290,9 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 		if f.Name() == "/meta_dat." {
 			data, err := ioutil.ReadAll(f.Sys().(io.Reader))
 			if err != nil {
-				return ci, fmt.Errorf("Error while reading %s: %s", METADATA, err)
+				return ci, fmt.Errorf("Error while reading %s: %s", metaData, err)
 			}
-			if err := yaml.Unmarshal(data, &ci.Metadata); err != nil {
+			if err := yaml.Unmarshal(data, &ci.MetaData); err != nil {
 				return ci, fmt.Errorf("Error while unmarshalling user-data: %s", err)
 			}
 		}
@@ -339,7 +341,7 @@ func downloadISO(virConn *libvirt.Connect, volume libvirt.StorageVol) (*os.File,
 }
 
 // Convert a UserData instance to a map with string as key and interface as value
-func convertUserDataToMap(data CloudInitUserData) (map[string]interface{}, error) {
+func convertUserDataToMap(data defCloudInitUserData) (map[string]interface{}, error) {
 	userDataMap := make(map[string]interface{})
 
 	// This is required to get the right names expected by cloud-init
@@ -353,7 +355,7 @@ func convertUserDataToMap(data CloudInitUserData) (map[string]interface{}, error
 	return userDataMap, err
 }
 
-func mergeUserDataIntoUserDataRaw(userData CloudInitUserData, userDataRaw string) (string, error) {
+func mergeUserDataIntoUserDataRaw(userData defCloudInitUserData, userDataRaw string) (string, error) {
 	userDataMap, err := convertUserDataToMap(userData)
 	if err != nil {
 		return "", err
