@@ -1,9 +1,10 @@
 package libvirt
 
 import (
+	"os"
+
 	libvirt "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
-	"os"
 )
 
 func newFilesystemDef() libvirtxml.DomainFilesystem {

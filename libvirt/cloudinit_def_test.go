@@ -17,7 +17,7 @@ import (
 func TestNewCloudInitDef(t *testing.T) {
 	ci := newCloudInitDef()
 
-	if ci.Metadata.InstanceID == "" {
+	if ci.MetaData.InstanceID == "" {
 		t.Error("Expected metadata InstanceID not to be empty")
 	}
 }
@@ -47,7 +47,7 @@ func TestCreateFiles(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	for _, file := range []string{USERDATA, METADATA} {
+	for _, file := range []string{userData, metaData} {
 		check, err := exists(filepath.Join(dir, file))
 		if !check {
 			t.Errorf("%s not found: %v", file, err)
@@ -74,7 +74,7 @@ func TestCreateISONoExteralTool(t *testing.T) {
 }
 
 func TestConvertUserDataToMapPreservesCloudInitNames(t *testing.T) {
-	ud := CloudInitUserData{
+	ud := defCloudInitUserData{
 		SSHAuthorizedKeys: []string{"key1"},
 	}
 
@@ -90,7 +90,7 @@ func TestConvertUserDataToMapPreservesCloudInitNames(t *testing.T) {
 }
 
 func TestMergeEmptyUserDataIntoUserDataRaw(t *testing.T) {
-	ud := CloudInitUserData{}
+	ud := defCloudInitUserData{}
 
 	var userDataRaw = `
 new-key: new-value-set-by-extra
@@ -119,7 +119,7 @@ ssh_authorized_keys:
 }
 
 func TestMergeUserDataIntoEmptyUserDataRaw(t *testing.T) {
-	ud := CloudInitUserData{
+	ud := defCloudInitUserData{
 		SSHAuthorizedKeys: []string{"key1"},
 	}
 	var userDataRaw string
@@ -142,7 +142,7 @@ func TestMergeUserDataIntoEmptyUserDataRaw(t *testing.T) {
 
 func TestMergeUserDataIntoUserDataRawGivesPrecedenceToRawData(t *testing.T) {
 	udKey := "user-data-key"
-	ud := CloudInitUserData{
+	ud := defCloudInitUserData{
 		SSHAuthorizedKeys: []string{udKey},
 	}
 

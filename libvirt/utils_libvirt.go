@@ -32,13 +32,6 @@ func addHost(n *libvirt.Network, ip, mac, name string) error {
 	return n.Update(libvirt.NETWORK_UPDATE_COMMAND_ADD_LAST, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, xmlDesc, libvirt.NETWORK_UPDATE_AFFECT_CURRENT)
 }
 
-// Removes a static host from the network
-func removeHost(n *libvirt.Network, ip, mac, name string) error {
-	xmlDesc := getHostXMLDesc(ip, mac, name)
-	log.Printf("Removing host with XML:\n%s", xmlDesc)
-	return n.Update(libvirt.NETWORK_UPDATE_COMMAND_DELETE, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, xmlDesc, libvirt.NETWORK_UPDATE_AFFECT_CURRENT)
-}
-
 // Update a static host from the network
 func updateHost(n *libvirt.Network, ip, mac, name string) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)
