@@ -144,12 +144,12 @@ func resourceLibvirtDomain() *schema.Resource {
 			"machine": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  "pc",
+				Computed: true,
 			},
 			"arch": {
 				Type:     schema.TypeString,
 				Optional: true,
-				Default:  "x86_64",
+				Computed: true,
 			},
 			"boot_device": {
 				Type:     schema.TypeList,
@@ -161,8 +161,8 @@ func resourceLibvirtDomain() *schema.Resource {
 			},
 			"emulator": {
 				Type:     schema.TypeString,
-				Default:  "/usr/bin/qemu-system-x86_64",
 				Optional: true,
+				Computed: true,
 			},
 			"kernel": {
 				Type:     schema.TypeString,
@@ -230,10 +230,11 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	domainDef, err := newDomainDefForConnection(virConn)
+	domainDef, err := newDomainDefForConnection(virConn, d)
 	if err != nil {
 		return err
 	}
+
 	if name, ok := d.GetOk("name"); ok {
 		domainDef.Name = name.(string)
 	}
@@ -306,10 +307,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			}
 		}
 	}
-
-	domainDef.OS.Type.Arch = d.Get("arch").(string)
-	domainDef.OS.Type.Machine = d.Get("machine").(string)
-	domainDef.Devices.Emulator = d.Get("emulator").(string)
 
 	if firmware, ok := d.GetOk("firmware"); ok {
 		firmwareFile := firmware.(string)
@@ -871,7 +868,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("[DEBUG] read: obtained XML desc for domain:\n%s", xmlDesc)
 
-	domainDef, err := newDomainDefForConnection(virConn)
+	domainDef, err := newDomainDefForConnection(virConn, d)
 	if err != nil {
 		return err
 	}
@@ -894,7 +891,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("cpu", domainDef.CPU)
 	d.Set("arch", domainDef.OS.Type.Arch)
 	d.Set("autostart", autostart)
-	d.Set("arch", domainDef.OS.Type.Arch)
 
 	cmdLines, err := splitKernelCmdLine(domainDef.OS.KernelArgs)
 	if err != nil {
@@ -1116,7 +1112,7 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
 	}
 
-	domainDef, err := newDomainDefForConnection(virConn)
+	domainDef, err := newDomainDefForConnection(virConn, d)
 	if err != nil {
 		return err
 	}
