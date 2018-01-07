@@ -150,7 +150,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 
 	isoDestination := filepath.Join(tmpDir, ci.Name)
 	cmd := exec.Command(
-		"genisoimage",
+		"mkisofs",
 		"-output",
 		isoDestination,
 		"-volid",
