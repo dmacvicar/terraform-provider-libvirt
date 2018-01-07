@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"net/url"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -310,9 +309,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	if firmware, ok := d.GetOk("firmware"); ok {
 		firmwareFile := firmware.(string)
-		if _, err := os.Stat(firmwareFile); os.IsNotExist(err) {
-			return fmt.Errorf("could not find firmware file '%s'", firmwareFile)
-		}
 		domainDef.OS.Loader = &libvirtxml.DomainLoader{
 			Path:     firmwareFile,
 			Readonly: "yes",
@@ -324,15 +320,9 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			nvramMap := nvram.(map[string]interface{})
 
 			nvramFile := nvramMap["file"].(string)
-			if _, err := os.Stat(nvramFile); os.IsNotExist(err) {
-				return fmt.Errorf("could not find nvram file '%s'", nvramFile)
-			}
 			nvramTemplateFile := ""
 			if nvramTemplate, ok := nvramMap["template"]; ok {
 				nvramTemplateFile = nvramTemplate.(string)
-				if _, err := os.Stat(nvramTemplateFile); os.IsNotExist(err) {
-					return fmt.Errorf("could not find nvram template file '%s'", nvramTemplateFile)
-				}
 			}
 			domainDef.OS.NVRam = &libvirtxml.DomainNVRam{
 				NVRam:    nvramFile,
