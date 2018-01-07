@@ -36,5 +36,9 @@ The following arguments are supported:
   be merged automatically with the values specified in other arguments
   (like `local_hostname`, `ssh_authorized_key`, etc). The contents of
   `user_data` will take precedence over the ones defined by the other keys.
+* `meta_data` - (Optional) Raw cloud-init meta data. This content will
+  be merged automatically with the values specified in other arguments
+  (like `local_hostname`, `ssh_authorized_key`, etc). The contents of
+  `meta_data` will take precedence over the ones defined by the other keys.
 
 Any change of the above fields will cause a new resource to be created.
