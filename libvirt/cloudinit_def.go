@@ -25,6 +25,10 @@ const userData string = "user-data"
 // metaData is the filename expected by cloud-init
 const metaData string = "meta-data"
 
+// networkConfig is the filename expected by cloud-init
+const networkConfig string = "network-config"
+
+// CloudInitUserData struct
 type defCloudInitUserData struct {
 	SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }
@@ -35,11 +39,12 @@ type defCloudInitMetaData struct {
 }
 
 type defCloudInit struct {
-	Name        string
-	PoolName    string
-	MetaData    defCloudInitMetaData
-	UserDataRaw string `yaml:"user_data"`
-	UserData    defCloudInitUserData
+	Name             string
+	PoolName         string
+	MetaData         defCloudInitMetaData
+	UserDataRaw      string `yaml:"user_data"`
+	UserData         defCloudInitUserData
+	NetworkConfigRaw string `yaml:"network_config"`
 }
 
 // Creates a new cloudinit with the defaults
@@ -160,7 +165,8 @@ func (ci *defCloudInit) createISO() (string, error) {
 		"-joliet",
 		"-rock",
 		filepath.Join(tmpDir, userData),
-		filepath.Join(tmpDir, metaData))
+		filepath.Join(tmpDir, metaData),
+		filepath.Join(tmpDir, networkConfig))
 
 	log.Printf("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {
@@ -203,6 +209,14 @@ func (ci *defCloudInit) createFiles() (string, error) {
 	}
 	if err = ioutil.WriteFile(filepath.Join(tmpDir, metaData), metadata, os.ModePerm); err != nil {
 		return "", fmt.Errorf("Error while writing meta-data to file: %s", err)
+	}
+
+	networkconfig := fmt.Sprintf("%s", ci.NetworkConfigRaw)
+	if err = ioutil.WriteFile(
+		filepath.Join(tmpDir, networkConfig),
+		[]byte(networkconfig),
+		os.ModePerm); err != nil {
+		return "", fmt.Errorf("Error while writing network-config to file: %s", err)
 	}
 
 	log.Print("ISO contents created")
@@ -295,6 +309,16 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 			if err := yaml.Unmarshal(data, &ci.MetaData); err != nil {
 				return ci, fmt.Errorf("Error while unmarshalling user-data: %s", err)
 			}
+		}
+
+		//TODO: the iso9660 has a bug... ?
+		if f.Name() == "/network_." {
+			data, err := ioutil.ReadAll(f.Sys().(io.Reader))
+			if err != nil {
+				return ci, fmt.Errorf("Error while reading %s: %s", networkConfig, err)
+			}
+
+			ci.NetworkConfigRaw = fmt.Sprintf("%s", data)
 		}
 	}
 
