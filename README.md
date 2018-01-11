@@ -13,12 +13,12 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 - [How to contribute](doc/CONTRIBUTING.md)
 
 ## Webiste Docs
-- [Libvirt Provider](website/docs/index.html.mardown)
-- [CloudInit](website/docs/r/cloudinit.html.mardown)
-- [CoreOS Ignition](website/docs/r/coreos_ignition.html.mardown)
-- [Domains](website/docs/r/domain.html.mardown)
-- [Networks](website/docs/r/network.html.mardown)
-- [Volumes](website/docs/r/volume.html.mardown)
+- [Libvirt Provider](website/docs/index.html.markdown)
+- [CloudInit](website/docs/r/cloudinit.html.markdown)
+- [CoreOS Ignition](website/docs/r/coreos_ignition.html.markdown)
+- [Domains](website/docs/r/domain.html.markdown)
+- [Networks](website/docs/r/network.html.markdown)
+- [Volumes](website/docs/r/volume.html.markdown)
 
 
 ## Installing
