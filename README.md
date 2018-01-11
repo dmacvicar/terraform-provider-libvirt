@@ -12,7 +12,7 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 - [Building from source](#building-from-source)
 - [How to contribute](doc/CONTRIBUTING.md)
 
-## Webiste Docs
+## Website Docs
 - [Libvirt Provider](website/docs/index.html.markdown)
 - [CloudInit](website/docs/r/cloudinit.html.markdown)
 - [CoreOS Ignition](website/docs/r/coreos_ignition.html.markdown)
