@@ -17,7 +17,7 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 - [CloudInit](website/docs/r/cloudinit.html.markdown)
 - [CoreOS Ignition](website/docs/r/coreos_ignition.html.markdown)
 - [Domains](website/docs/r/domain.html.markdown)
-- [Networks](website/docs/r/network.html.markdown)
+- [Networks](website/docs/r/network.markdown)
 - [Volumes](website/docs/r/volume.html.markdown)
 
 
