@@ -27,6 +27,8 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 
 * libvirt 1.2.14 or newer on the hypervisor
 * latest [golang](https://golang.org/dl/) version
+* `mkisofs` is required to use the [CloudInit](website/docs/r/cloudinit.html.markdown)
+  feature.
 
 [Copied from the Terraform documentation](https://www.terraform.io/docs/plugins/basics.html):
 > To install a plugin, put the binary somewhere on your filesystem, then configure Terraform to be able to find it. The configuration where plugins are defined is ~/.terraformrc for Unix-like systems and %APPDATA%/terraform.rc for Windows.
