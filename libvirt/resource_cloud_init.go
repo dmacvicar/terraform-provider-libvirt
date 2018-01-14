@@ -34,6 +34,11 @@ func resourceCloudInit() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"network_config": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"ssh_authorized_key": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -53,6 +58,7 @@ func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
 	cloudInit := newCloudInitDef()
 	cloudInit.Metadata.LocalHostname = d.Get("local_hostname").(string)
 	cloudInit.UserDataRaw = d.Get("user_data").(string)
+	cloudInit.NetworkConfigRaw = d.Get("network_config").(string)
 
 	if _, ok := d.GetOk("ssh_authorized_key"); ok {
 		sshKey := d.Get("ssh_authorized_key").(string)
@@ -96,6 +102,7 @@ func resourceCloudInitRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", ci.Name)
 	d.Set("local_hostname", ci.Metadata.LocalHostname)
 	d.Set("user_data", ci.UserDataRaw)
+	d.Set("network_config", ci.NetworkConfigRaw)
 
 	if len(ci.UserData.SSHAuthorizedKeys) == 1 {
 		d.Set("ssh_authorized_key", ci.UserData.SSHAuthorizedKeys[0])

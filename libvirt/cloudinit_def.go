@@ -25,6 +25,9 @@ const USERDATA string = "user-data"
 // METADATA is the filename expected by cloud-init
 const METADATA string = "meta-data"
 
+// NETWORKCONFIG is the filename expected by cloud-init
+const NETWORKCONFIG string = "network-config"
+
 // CloudInitUserData struct
 type CloudInitUserData struct {
 	SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
@@ -39,6 +42,7 @@ type defCloudInit struct {
 	}
 	UserDataRaw string `yaml:"user_data"`
 	UserData    CloudInitUserData
+	NetworkConfigRaw string `yaml:"network_config"`
 }
 
 // Creates a new cloudinit with the defaults
@@ -158,7 +162,8 @@ func (ci *defCloudInit) createISO() (string, error) {
 		"-joliet",
 		"-rock",
 		filepath.Join(tmpDir, USERDATA),
-		filepath.Join(tmpDir, METADATA))
+		filepath.Join(tmpDir, METADATA),
+	        filepath.Join(tmpDir, NETWORKCONFIG))
 
 	log.Printf("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {
@@ -201,6 +206,15 @@ func (ci *defCloudInit) createFiles() (string, error) {
 	}
 	if err = ioutil.WriteFile(filepath.Join(tmpDir, METADATA), metadata, os.ModePerm); err != nil {
 		return "", fmt.Errorf("Error while writing meta-data to file: %s", err)
+	}
+
+	networkConfig := fmt.Sprintf("%s", ci.NetworkConfigRaw)
+
+	if err = ioutil.WriteFile(
+		filepath.Join(tmpDir, NETWORKCONFIG),
+		[]byte(networkConfig),
+		os.ModePerm); err != nil {
+		return "", fmt.Errorf("Error while writing network-config to file: %s", err)
 	}
 
 	log.Print("ISO contents created")
@@ -294,6 +308,17 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 				return ci, fmt.Errorf("Error while unmarshalling user-data: %s", err)
 			}
 		}
+
+                //TODO: the iso9660 has a bug... ?
+                if f.Name() == "/network_confi." {
+                        data, err := ioutil.ReadAll(f.Sys().(io.Reader))
+                        if err != nil {
+                                return ci, fmt.Errorf("Error while reading %s: %s", METADATA, err)
+                        }
+
+			ci.NetworkConfigRaw = fmt.Sprintf("%s", data)
+                }
+
 	}
 
 	log.Printf("Read cloud-init from file: %+v", ci)
