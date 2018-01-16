@@ -120,6 +120,10 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	}
 	volumeDef.Target.Format.Type = volumeFormat
 
+	if volumeFormat == "qcow2" {
+		volumeDef.Name = fmt.Sprintf("%s.qcow2", volumeDef.Name)
+	}
+
 	var (
 		img    image
 		volume *libvirt.StorageVol
