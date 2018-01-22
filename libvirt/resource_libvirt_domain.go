@@ -117,6 +117,14 @@ func resourceLibvirtDomain() *schema.Resource {
 					Schema: networkInterfaceCommonSchema(),
 				},
 			},
+			"ip_address": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Computed: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 			"graphics": {
 				Type:     schema.TypeMap,
 				Optional: true,
@@ -1082,6 +1090,14 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	log.Printf("[DEBUG] read: ifaces for '%s':\n%s", domainDef.Name, spew.Sdump(netIfaces))
 	d.Set("network_interface", netIfaces)
+
+	var ipAddresses []string
+	for _, iface := range ifacesWithAddr {
+		for _, addr := range iface.Addrs {
+			ipAddresses = append(ipAddresses, addr.Addr)
+		}
+	}
+	d.Set("ip_address", ipAddresses)
 
 	if len(ifacesWithAddr) > 0 {
 		d.SetConnInfo(map[string]string{
