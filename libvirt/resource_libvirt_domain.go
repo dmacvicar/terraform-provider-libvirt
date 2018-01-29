@@ -126,7 +126,6 @@ func resourceLibvirtDomain() *schema.Resource {
 			"graphics": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
-				Computed: true,
 			},
 			"video_type": &schema.Schema{
 				Type:     schema.TypeString,
@@ -255,7 +254,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	} else {
 		if graphics, ok := d.GetOk("graphics"); ok {
 			graphicsMap := graphics.(map[string]interface{})
-			newGraphicsMap := make(map[string]string)
+			newGraphicsMap := make(map[string]interface{})
 			log.Printf("[DEBUG] graphicsMap = %s", spew.Sdump(graphicsMap))
 			domainDef.Devices.Graphics = []libvirtxml.DomainGraphic{
 				libvirtxml.DomainGraphic{},
@@ -318,6 +317,9 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				newGraphicsMap["listen_type"] = "address"
 			}
 			d.Set("graphics",newGraphicsMap)
+			log.Printf("[DEBUG] resourceLibvirtDomainCreate graphics\n%s",spew.Sdump(newGraphicsMap))
+			log.Printf("[DEBUG] resourceLibvirtDomainCreate d\n%s",spew.Sdump(d))
+			
 		}
 
 		videoType := ""
@@ -957,8 +959,11 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		if len(graphicsInstance.Listeners) > 0 {
 			graphicsMap["listen_address"] = graphicsInstance.Listeners[0].Address
 			graphicsMap["graphics.listen_type"] = graphicsInstance.Listeners[0].Type
+		} else {
+			log.Printf("[DEBUG] No listeners for graphics")
 		}
 		d.Set("graphics",graphicsMap)
+		log.Printf("[DEBUG] resourceLibvirtDomainRead graphics\n%s",spew.Sdump(graphicsMap))
 	}
 
 	if len(domainDef.Devices.Videos) > 0 {
