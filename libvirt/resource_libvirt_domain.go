@@ -120,7 +120,11 @@ func resourceLibvirtDomain() *schema.Resource {
 			"graphics": {
 				Type:     schema.TypeMap,
 				Optional: true,
-				Required: false,
+			},
+			"video_type": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
 			},
 			"console": {
 				Type:     schema.TypeList,
@@ -259,26 +263,102 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error retrieving host architecture: %s", err)
 	}
 
+	// Setup graphics and video
 	if arch == "s390x" || arch == "ppc64" {
 		domainDef.Devices.Graphics = nil
 	} else {
 		if graphics, ok := d.GetOk("graphics"); ok {
 			graphicsMap := graphics.(map[string]interface{})
+			newGraphicsMap := make(map[string]interface{})
+			log.Printf("[DEBUG] graphicsMap = %s", spew.Sdump(graphicsMap))
 			domainDef.Devices.Graphics = []libvirtxml.DomainGraphic{
 				{},
 			}
-			if graphicsType, ok := graphicsMap["type"]; ok {
-				domainDef.Devices.Graphics[0].Type = graphicsType.(string)
+
+			// Check that we supoort the graphics type and set to spice if not specified
+			// a a default
+			if graphicsType, ok := graphicsMap["type"].(string); ok {
+				if !(graphicsType == "vnc" || graphicsType == "spice") {
+					return fmt.Errorf("[ERROR] We only support graphics types of spice or vnc, not: %s", graphicsType)
+				}
+				domainDef.Devices.Graphics[0].Type = graphicsType
+				newGraphicsMap["type"] = graphicsType
+			} else {
+				domainDef.Devices.Graphics[0].Type = "spice"
+				newGraphicsMap["type"] = "spice"
 			}
-			if autoport, ok := graphicsMap["autoport"]; ok {
-				domainDef.Devices.Graphics[0].AutoPort = autoport.(string)
+
+			autoPort, autoPortOk := graphicsMap["autoport"]
+			listenPort, listenPortOk := graphicsMap["listen_port"]
+
+			// If both autoport is yes and port are set then we should fail
+			if autoPort == "yes" && listenPortOk {
+				return fmt.Errorf("[ERROR] autoport and listen_port cannot be used at the same time")
 			}
-			if listenType, ok := graphicsMap["listen_type"]; ok {
+
+			// If neither are set use autoport and store for read back
+			if !autoPortOk && !listenPortOk {
+				log.Printf("[INFO] No graphics.autoport or graphics.listen_port set using default autoport = yes")
+				domainDef.Devices.Graphics[0].AutoPort = "yes"
+				newGraphicsMap["autoport"] = "yes"
+			} else {
+				// Otherwise use autoport and/or port as specified
+				if autoPortOk {
+					domainDef.Devices.Graphics[0].AutoPort = autoPort.(string)
+				}
+
+				if listenPortOk {
+					domainDef.Devices.Graphics[0].Port, _ = strconv.Atoi(listenPort.(string))
+				}
+			}
+
+			if listenType, ok := graphicsMap["listen_type"]; !ok || listenType == "address" {
+				var listenAddress string
+
+				if _, ok := graphicsMap["listen_address"]; ok {
+					listenAddress = graphicsMap["listen_address"].(string)
+					newGraphicsMap["listen_address"] = graphicsMap["listen_address"].(string)
+				} else {
+					listenAddress = "127.0.0.1"
+					newGraphicsMap["listen_address"] = "127.0.0.1"
+				}
+
 				domainDef.Devices.Graphics[0].Listeners = []libvirtxml.DomainGraphicListener{
-					{
-						Type: listenType.(string),
+					libvirtxml.DomainGraphicListener{
+						Type:    "address",
+						Address: listenAddress,
 					},
 				}
+				newGraphicsMap["listen_type"] = "address"
+			}
+			d.Set("graphics",newGraphicsMap)
+			log.Printf("[DEBUG] resourceLibvirtDomainCreate graphics\n%s",spew.Sdump(newGraphicsMap))
+			log.Printf("[DEBUG] resourceLibvirtDomainCreate d\n%s",spew.Sdump(d))
+			
+		}
+
+		videoType := ""
+		if _, ok := d.GetOk("video_type"); ok {
+			videoType = d.Get("video_type").(string)
+		} else {
+			if _, ok := d.GetOk("graphics"); ok {
+				// From https://libvirt.org/formatdomain.html#elementsVideo
+				// "For backwards compatibility, if no video is set but there is a graphics in domain xml,
+				// then libvirt will add a default video according to the guest type."
+				// So we need to add it first or it will be a surprise later and trigger a rebuild
+				log.Printf("[INFO] You have not provided a video type but have specified graphics, adding default cirrus video")
+				d.Set("video_type", "cirrus")
+				videoType = "cirrus"
+			}
+		}
+
+		if videoType != "" {
+			domainDef.Devices.Videos = []libvirtxml.DomainVideo{
+				libvirtxml.DomainVideo{
+					Model: libvirtxml.DomainVideoModel{
+						Type: videoType,
+					},
+				},
 			}
 		}
 	}
@@ -914,10 +994,47 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	// Emulator is the same as the default don't set it in domainDef
 	// or it will show as changed
 	d.Set("emulator", domainDef.Devices.Emulator)
+
+	// Parse in the graphics structure
+	if domainDef.Devices.Graphics != nil {
+		graphicsInstance := domainDef.Devices.Graphics[0]
+		graphicsMap := make(map[string]string)
+		graphicsMap["type"] = graphicsInstance.Type
+
+		// Add either the port or autoport but not both
+		if graphicsInstance.AutoPort == "yes" {
+			graphicsMap["autoport"] = "yes"
+			log.Printf("[DEBUG] Autoport is set")
+		} else {
+			graphicsMap["listen_port"] = strconv.Itoa(graphicsInstance.Port)
+			graphicsMap["autoport"] = "no"
+		}
+
+		if len(graphicsInstance.Listeners) > 0 {
+			graphicsMap["listen_address"] = graphicsInstance.Listeners[0].Address
+			graphicsMap["graphics.listen_type"] = graphicsInstance.Listeners[0].Type
+		} else {
+			log.Printf("[DEBUG] No listeners for graphics")
+		}
+		d.Set("graphics",graphicsMap)
+		log.Printf("[DEBUG] resourceLibvirtDomainRead graphics\n%s",spew.Sdump(graphicsMap))
+	}
+
+	if len(domainDef.Devices.Videos) > 0 {
+		d.Set("video_type", domainDef.Devices.Videos[0].Model.Type)
+	}
+
+	running, err := isDomainRunning(*domain)
+	if err != nil {
+		return err
+	}
+	d.Set("running", running)
+
 	var (
 		disks []map[string]interface{}
 		disk  map[string]interface{}
 	)
+
 	for _, diskDef := range domainDef.Devices.Disks {
 		// network drives do not have a volume associated
 		if diskDef.Type == "network" {
