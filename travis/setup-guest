@@ -14,9 +14,12 @@ done
 
 add-apt-repository -y ppa:gophers/archive
 apt-get -qq update
-apt-get install -y qemu libvirt-bin libvirt-dev golang-1.9 ovmf
+apt-get install -y qemu libvirt-bin libvirt-dev golang-1.9 ovmf genisoimage
 echo -e "<pool type='dir'>\n<name>default</name>\n<target>\n<path>/pool-default</path>\n</target>\n</pool>" > pool.xml
 mkdir /pool-default
 chmod a+rwx /pool-default
 virsh pool-define pool.xml
 virsh pool-start default
+echo -e 'user = "root"\ngroup = "root"' >> /etc/libvirt/qemu.conf
+systemctl restart libvirtd
+

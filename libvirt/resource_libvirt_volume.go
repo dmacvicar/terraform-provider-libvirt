@@ -13,44 +13,44 @@ import (
 
 func volumeCommonSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"name": &schema.Schema{
+		"name": {
 			Type:     schema.TypeString,
 			Required: true,
 			ForceNew: true,
 		},
-		"pool": &schema.Schema{
+		"pool": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Default:  "default",
 			ForceNew: true,
 		},
-		"source": &schema.Schema{
+		"source": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 		},
-		"size": &schema.Schema{
+		"size": {
 			Type:     schema.TypeInt,
 			Optional: true,
 			Computed: true,
 			ForceNew: true,
 		},
-		"format": &schema.Schema{
+		"format": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 		},
-		"base_volume_id": &schema.Schema{
+		"base_volume_id": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 		},
-		"base_volume_pool": &schema.Schema{
+		"base_volume_pool": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 		},
-		"base_volume_name": &schema.Schema{
+		"base_volume_name": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
@@ -82,7 +82,7 @@ func remoteImageSize(url string) (int, error) {
 func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	poolName := "default"
@@ -90,8 +90,8 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		poolName = d.Get("pool").(string)
 	}
 
-	PoolSync.AcquireLock(poolName)
-	defer PoolSync.ReleaseLock(poolName)
+	poolMutexKV.Lock(poolName)
+	defer poolMutexKV.Unlock(poolName)
 
 	pool, err := virConn.LookupStoragePoolByName(poolName)
 	if err != nil {
@@ -101,15 +101,18 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	WaitForSuccess("Error refreshing pool for volume", func() error {
+	WaitForSuccess("error refreshing pool for volume", func() error {
 		return pool.Refresh(0)
 	})
 
-	volumeDef := newDefVolume()
-
-	if name, ok := d.GetOk("name"); ok {
-		volumeDef.Name = name.(string)
+	// Check whether the storage volume already exists. Its name needs to be
+	// unique.
+	if _, err := pool.LookupStorageVolByName(d.Get("name").(string)); err == nil {
+		return fmt.Errorf("storage volume '%s' already exists", d.Get("name").(string))
 	}
+
+	volumeDef := newDefVolume()
+	volumeDef.Name = d.Get("name").(string)
 
 	volumeFormat := "qcow2"
 	if _, ok := d.GetOk("format"); ok {
@@ -119,34 +122,21 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	var (
 		img    image
-		volume *libvirt.StorageVol = nil
+		volume *libvirt.StorageVol
 	)
 
 	// an source image was given, this mean we can't choose size
 	if source, ok := d.GetOk("source"); ok {
 		// source and size conflict
 		if _, ok := d.GetOk("size"); ok {
-			return fmt.Errorf("'size' can't be specified when also 'source' is given (the size will be set to the size of the source image.")
+			return fmt.Errorf("'size' can't be specified when also 'source' is given (the size will be set to the size of the source image")
 		}
 		if _, ok := d.GetOk("base_volume_id"); ok {
-			return fmt.Errorf("'base_volume_id' can't be specified when also 'source' is given.")
+			return fmt.Errorf("'base_volume_id' can't be specified when also 'source' is given")
 		}
 
 		if _, ok := d.GetOk("base_volume_name"); ok {
-			return fmt.Errorf("'base_volume_name' can't be specified when also 'source' is given.")
-		}
-
-		// Check if we already have this image in the pool
-		if len(volumeDef.Name) > 0 {
-			if v, err := pool.LookupStorageVolByName(volumeDef.Name); err != nil {
-				log.Printf("Could not find image %s in pool %s", volumeDef.Name, poolName)
-			} else {
-				volume = v
-				volumeDef, err = newDefVolumeFromLibvirt(volume)
-				if err != nil {
-					return fmt.Errorf("could not get a volume definition from XML for %s: %s.", volumeDef.Name, err)
-				}
-			}
+			return fmt.Errorf("'base_volume_name' can't be specified when also 'source' is given")
 		}
 
 		if img, err = newImage(source.(string)); err != nil {
@@ -154,47 +144,47 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		}
 
 		// update the image in the description, even if the file has not changed
-		if size, err := img.Size(); err != nil {
+		size, err := img.Size()
+		if err != nil {
 			return err
-		} else {
-			log.Printf("Image %s image is: %d bytes", img, size)
-			volumeDef.Capacity.Unit = "B"
-			volumeDef.Capacity.Value = size
 		}
+		log.Printf("Image %s image is: %d bytes", img, size)
+		volumeDef.Capacity.Unit = "B"
+		volumeDef.Capacity.Value = size
 	} else {
 		_, noSize := d.GetOk("size")
 		_, noBaseVol := d.GetOk("base_volume_id")
 
 		if noSize && noBaseVol {
-			return fmt.Errorf("'size' needs to be specified if no 'source' or 'base_volume_id' is given.")
+			return fmt.Errorf("'size' needs to be specified if no 'source' or 'base_volume_id' is given")
 		}
 		volumeDef.Capacity.Value = uint64(d.Get("size").(int))
 	}
 
-	if baseVolumeId, ok := d.GetOk("base_volume_id"); ok {
+	if baseVolumeID, ok := d.GetOk("base_volume_id"); ok {
 		if _, ok := d.GetOk("size"); ok {
-			return fmt.Errorf("'size' can't be specified when also 'base_volume_id' is given (the size will be set to the size of the backing image.")
+			return fmt.Errorf("'size' can't be specified when also 'base_volume_id' is given (the size will be set to the size of the backing image")
 		}
 
 		if _, ok := d.GetOk("base_volume_name"); ok {
-			return fmt.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given.")
+			return fmt.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given")
 		}
 
 		volume = nil
-		baseVolume, err := virConn.LookupStorageVolByKey(baseVolumeId.(string))
+		baseVolume, err := virConn.LookupStorageVolByKey(baseVolumeID.(string))
 		if err != nil {
-			return fmt.Errorf("Can't retrieve volume %s", baseVolumeId.(string))
+			return fmt.Errorf("Can't retrieve volume %s", baseVolumeID.(string))
 		}
 		backingStoreDef, err := newDefBackingStoreFromLibvirt(baseVolume)
 		if err != nil {
-			return fmt.Errorf("Could not retrieve backing store %s", baseVolumeId.(string))
+			return fmt.Errorf("Could not retrieve backing store %s", baseVolumeID.(string))
 		}
 		volumeDef.BackingStore = &backingStoreDef
 	}
 
 	if baseVolumeName, ok := d.GetOk("base_volume_name"); ok {
 		if _, ok := d.GetOk("size"); ok {
-			return fmt.Errorf("'size' can't be specified when also 'base_volume_name' is given (the size will be set to the size of the backing image.")
+			return fmt.Errorf("'size' can't be specified when also 'base_volume_name' is given (the size will be set to the size of the backing image")
 		}
 
 		volume = nil
@@ -219,13 +209,13 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if volume == nil {
-		volumeDefXml, err := xml.Marshal(volumeDef)
+		volumeDefXML, err := xml.Marshal(volumeDef)
 		if err != nil {
 			return fmt.Errorf("Error serializing libvirt volume: %s", err)
 		}
 
 		// create the volume
-		v, err := pool.StorageVolCreateXML(string(volumeDefXml), 0)
+		v, err := pool.StorageVolCreateXML(string(volumeDefXML), 0)
 		if err != nil {
 			return fmt.Errorf("Error creating libvirt volume: %s", err)
 		}
@@ -262,7 +252,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	volume, err := virConn.LookupStorageVolByKey(d.Id())
@@ -271,52 +261,52 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
 			return fmt.Errorf("Can't retrieve volume %s", d.Id())
 		}
+		volID := d.Id()
 
-		log.Printf("[INFO] Volume %s not found, attempting to start its pool")
+		log.Printf("[INFO] Volume %s not found, attempting to start its pool", d.Id())
 
-		volId := d.Id()
 		volPoolName := d.Get("pool").(string)
 		volPool, err := virConn.LookupStoragePoolByName(volPoolName)
 		if err != nil {
-			return fmt.Errorf("Error retrieving pool %s for volume %s: %s", volPoolName, volId, err)
+			return fmt.Errorf("Error retrieving pool %s for volume %s: %s", volPoolName, volID, err)
 		}
 		defer volPool.Free()
 
 		active, err := volPool.IsActive()
 		if err != nil {
-			return fmt.Errorf("Error retrieving status of pool %s for volume %s: %s", volPoolName, volId, err)
+			return fmt.Errorf("error retrieving status of pool %s for volume %s: %s", volPoolName, volID, err)
 		}
 		if active {
-			return fmt.Errorf("Can't retrieve volume %s", d.Id())
+			return fmt.Errorf("can't retrieve volume %s", d.Id())
 		}
 
 		err = volPool.Create(0)
 		if err != nil {
-			return fmt.Errorf("Error starting pool %s: %s", volPoolName, err)
+			return fmt.Errorf("error starting pool %s: %s", volPoolName, err)
 		}
 
 		// attempt a new lookup
 		volume, err = virConn.LookupStorageVolByKey(d.Id())
 		if err != nil {
-			return fmt.Errorf("Second attempt: Can't retrieve volume %s", d.Id())
+			return fmt.Errorf("second attempt: Can't retrieve volume %s", d.Id())
 		}
 	}
 	defer volume.Free()
 
 	volName, err := volume.GetName()
 	if err != nil {
-		return fmt.Errorf("Error retrieving volume name: %s", err)
+		return fmt.Errorf("error retrieving volume name: %s", err)
 	}
 
 	volPool, err := volume.LookupPoolByVolume()
 	if err != nil {
-		return fmt.Errorf("Error retrieving pool for volume: %s", err)
+		return fmt.Errorf("error retrieving pool for volume: %s", err)
 	}
 	defer volPool.Free()
 
 	volPoolName, err := volPool.GetName()
 	if err != nil {
-		return fmt.Errorf("Error retrieving pool name: %s", err)
+		return fmt.Errorf("error retrieving pool name: %s", err)
 	}
 
 	d.Set("pool", volPoolName)
@@ -324,7 +314,7 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 
 	info, err := volume.GetInfo()
 	if err != nil {
-		return fmt.Errorf("Error retrieving volume name: %s", err)
+		return fmt.Errorf("error retrieving volume name: %s", err)
 	}
 	d.Set("size", info.Capacity)
 
@@ -334,7 +324,7 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	return RemoveVolume(virConn, d.Id())

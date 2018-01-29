@@ -31,8 +31,6 @@ The following arguments are supported:
   will be created.
 * `memory` - (Optional) The amount of memory in MiB. If not specified the domain
   will be created with 512 MiB of memory be used.
-* `running` - (Optional) Use `false` to turn off the instance. If not specified,
-  true is assumed and the instance, if stopped, will be started at next apply.
 * `disk` - (Optional) An array of one or more disks to attach to the domain. The
   `disk` object structure is documented [below](#handling-disks).
 * `network_interface` - (Optional) An array of one or more network interfaces to
@@ -58,6 +56,100 @@ The following arguments are supported:
 * `boot_device` - (Optional) A list of devices (dev) which defines boot order. Example
    [below](#define-boot-device-order).
 * `emulator` - (Optional) The path of the emulator to use
+
+### Kernel and boot arguments
+
+* `kernel` - (Optional) The path of the kernel to boot
+
+If you are using a qcow2 volume, you can pass the id of the volume (eg. `${libvirt_volume.kernel.id}`)
+as they are local to the hypervisor.
+
+Given that you can define a volume from a remote http file, this means, you can also have remote kernels.
+
+```hcl
+resource "libvirt_volume" "kernel" {
+  source = "http://download.opensuse.org/tumbleweed/repo/oss/boot/x86_64/loader/linux"
+  name = "kernel"
+  pool = "default"
+  format = "raw"
+}
+
+resource "libvirt_domain" "domain-suse" {
+  name = "suse"
+  memory = "1024"
+  vcpu = 1
+
+  kernel = "${libvirt_volume.kernel.id}"
+
+  // ...
+}
+```
+
+* `kernel` - (Optional) The path of the initrd to boot.
+
+You can use it in the same way as the kernel.
+
+* `cmdline` - (Optional) Arguments to the kernel
+
+```hcl
+resource "libvirt_domain" "domain-suse" {
+  name = "suse"
+  memory = "1024"
+  vcpu = 1
+
+  kernel = "${libvirt_volume.kernel.id}"
+
+  cmdline {
+    arg1 = "value1"
+    arg2 = "value2"
+  }
+}
+```
+
+Also note that the `cmd` block is actually a list of maps, so it is possible to
+declare several of them by using either the literal list and map syntax as in
+the following examples:
+
+```hcl
+resource "libvirt_domain" "my_machine" {
+  //...
+
+  cmdline {
+    arg1 = "value1"
+  }
+  cmdline {
+    arg2 = "value2"
+  }
+}
+```
+
+```hcl
+resource "libvirt_domain" "my_machine" {
+  ...
+  cmdline = [
+    {
+      arg1 = "value1"
+    },
+    {
+      arg2 = "value2"
+    }
+  ]
+}
+```
+The kernel supports passing the same option multiple times. If you need this, use separate cmdline blocks.
+
+```hcl
+resource "libvirt_domain" "my_machine" {
+  //...
+
+  cmdline {
+    arg1 = "value1"
+  }
+  cmdline {
+    arg1 = "value2"
+  }
+}
+```
 
 ### UEFI images
 
@@ -143,7 +235,12 @@ resource "libvirt_domain" "my_machine" {
 
 The `disk` block supports:
 
-* `volume_id` - (Required) The volume id to use for this disk.
+* `volume_id` - (Optional) The volume id to use for this disk.
+* `url` - (Optional) The http url to use as the block device for this disk (read-only)
+* `file` - (Optional) The filename to use as the block device for this disk (read-only)
+
+While `volume_id`, `url` and `file` are optional, it is intended that you use one of them.
+
 * `scsi` - (Optional) Use a scsi controller for this disk.  The controller
 model is set to `virtio-scsi`
 * `wwn` - (Optional) Specify a WWN to use for the disk if the disk is using
@@ -166,6 +263,14 @@ resource "libvirt_domain" "domain1" {
   disk {
     volume_id = "${libvirt_volume.mydisk.id}"
     scsi = "yes"
+  }
+
+  disk {
+    url = "http://foo.com/install.iso"
+  }
+
+  disk {
+    file = "/absolute/path/to/disk.iso"
   }
 }
 ```

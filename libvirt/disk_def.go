@@ -1,38 +1,25 @@
 package libvirt
 
 import (
+	"fmt"
 	"math/rand"
 
 	"github.com/libvirt/libvirt-go-xml"
 )
 
-const OUI = "05abcd"
+const oui = "05abcd"
 
-func newDefDisk() libvirtxml.DomainDisk {
+func newDefDisk(i int) libvirtxml.DomainDisk {
 	return libvirtxml.DomainDisk{
 		Type:   "file",
 		Device: "disk",
 		Target: &libvirtxml.DomainDiskTarget{
 			Bus: "virtio",
+			Dev: fmt.Sprintf("vd%s", DiskLetterForIndex(i)),
 		},
 		Driver: &libvirtxml.DomainDiskDriver{
 			Name: "qemu",
 			Type: "qcow2",
-		},
-	}
-}
-
-func newCDROM() libvirtxml.DomainDisk {
-	return libvirtxml.DomainDisk{
-		Type:   "file",
-		Device: "cdrom",
-		Target: &libvirtxml.DomainDiskTarget{
-			Dev: "hda",
-			Bus: "ide",
-		},
-		Driver: &libvirtxml.DomainDiskDriver{
-			Name: "qemu",
-			Type: "raw",
 		},
 	}
 }
@@ -43,5 +30,5 @@ func randomWWN(strlen int) string {
 	for i := 0; i < strlen; i++ {
 		result[i] = chars[rand.Intn(len(chars))]
 	}
-	return OUI + string(result)
+	return oui + string(result)
 }

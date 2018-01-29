@@ -12,18 +12,18 @@ func resourceIgnition() *schema.Resource {
 		Read:   resourceIgnitionRead,
 		Delete: resourceIgnitionDelete,
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"pool": &schema.Schema{
+			"pool": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "default",
 				ForceNew: true,
 			},
-			"content": &schema.Schema{
+			"content": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -36,7 +36,7 @@ func resourceIgnitionCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] creating ignition file")
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	ignition := newIgnitionDef()
@@ -66,7 +66,7 @@ func resourceIgnitionCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceIgnitionRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	ign, err := newIgnitionDefFromRemoteVol(virConn, d.Id())
@@ -83,7 +83,7 @@ func resourceIgnitionRead(d *schema.ResourceData, meta interface{}) error {
 func resourceIgnitionDelete(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	key, err := getIgnitionVolumeKeyFromTerraformID(d.Id())

@@ -1,14 +1,19 @@
 package libvirt
 
 import (
+	"github.com/hashicorp/terraform/helper/mutexkv"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 )
 
+// Global poolMutexKV
+var poolMutexKV = mutexkv.NewMutexKV()
+
+// Provider libvirt
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"uri": &schema.Schema{
+			"uri": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("LIBVIRT_DEFAULT_URI", nil),
@@ -30,7 +35,7 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	config := Config{
-		Uri: d.Get("uri").(string),
+		URI: d.Get("uri").(string),
 	}
 
 	return config.Client()

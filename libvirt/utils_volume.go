@@ -50,15 +50,15 @@ func (i *localImage) Import(copier func(io.Reader) error, vol libvirtxml.Storage
 		return fmt.Errorf("Error while opening %s: %s", i.path, err)
 	}
 
-	if fi, err := file.Stat(); err != nil {
+	fi, err := file.Stat()
+	if err != nil {
 		return err
-	} else {
-		// we can skip the upload if the modification times are the same
-		if vol.Target.Timestamps != nil && vol.Target.Timestamps.Mtime != "" {
-			if fi.ModTime() == timeFromEpoch(vol.Target.Timestamps.Mtime) {
-				log.Printf("Modification time is the same: skipping image copy")
-				return nil
-			}
+	}
+	// we can skip the upload if the modification times are the same
+	if vol.Target.Timestamps != nil && vol.Target.Timestamps.Mtime != "" {
+		if fi.ModTime() == timeFromEpoch(vol.Target.Timestamps.Mtime) {
+			log.Printf("Modification time is the same: skipping image copy")
+			return nil
 		}
 	}
 
@@ -106,11 +106,12 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 		req.Header.Set("If-Modified-Since", timeFromEpoch(vol.Target.Timestamps.Mtime).UTC().Format(http.TimeFormat))
 	}
 	response, err := client.Do(req)
-	defer response.Body.Close()
 
 	if err != nil {
 		return fmt.Errorf("Error while downloading %s: %s", i.url.String(), err)
 	}
+
+	defer response.Body.Close()
 	if response.StatusCode == http.StatusNotModified {
 		return nil
 	}

@@ -71,11 +71,11 @@ func TestGetCanonicalMachineName(t *testing.T) {
 	virttype := "hvm"
 	machine := "pc"
 
-	caps,err := getHostCapabilities(conn)
+	caps, err := getHostCapabilities(conn)
 	if err != nil {
 		t.Error(err)
 	}
-	
+
 	name, err := getCanonicalMachineName(caps, arch, virttype, machine)
 
 	if err != nil {
@@ -93,7 +93,7 @@ func TestGetOriginalMachineName(t *testing.T) {
 	virttype := "hvm"
 	machine := "pc"
 
-	caps,err := getHostCapabilities(conn)
+	caps, err := getHostCapabilities(conn)
 	if err != nil {
 		t.Error(err)
 	}
@@ -117,7 +117,7 @@ func TestGetHostCapabilties(t *testing.T) {
 	start := time.Now()
 	conn := connect(t)
 	defer conn.Close()
-	caps,err := getHostCapabilities(conn)
+	caps, err := getHostCapabilities(conn)
 	if err != nil {
 		t.Errorf("Can't get host capabilties")
 	}

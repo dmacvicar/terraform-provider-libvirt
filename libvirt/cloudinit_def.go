@@ -19,10 +19,13 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// names of the files expected by cloud-init
+// USERDATA is the filename expected by cloud-init
 const USERDATA string = "user-data"
+
+// METADATA is the filename expected by cloud-init
 const METADATA string = "meta-data"
 
+// CloudInitUserData struct
 type CloudInitUserData struct {
 	SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
 }
@@ -62,8 +65,8 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	}
 	defer pool.Free()
 
-	PoolSync.AcquireLock(ci.PoolName)
-	defer PoolSync.ReleaseLock(ci.PoolName)
+	poolMutexKV.Lock(ci.PoolName)
+	defer poolMutexKV.Unlock(ci.PoolName)
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
@@ -95,13 +98,13 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	volumeDef.Capacity.Value = size
 	volumeDef.Target.Format.Type = "raw"
 
-	volumeDefXml, err := xml.Marshal(volumeDef)
+	volumeDefXML, err := xml.Marshal(volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error serializing libvirt volume: %s", err)
 	}
 
 	// create the volume
-	volume, err := pool.StorageVolCreateXML(string(volumeDefXml), 0)
+	volume, err := pool.StorageVolCreateXML(string(volumeDefXML), 0)
 	if err != nil {
 		return "", fmt.Errorf("Error creating libvirt volume for cloudinit device %s: %s", ci.Name, err)
 	}
@@ -147,7 +150,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 
 	isoDestination := filepath.Join(tmpDir, ci.Name)
 	cmd := exec.Command(
-		"genisoimage",
+		"mkisofs",
 		"-output",
 		isoDestination,
 		"-volid",
@@ -157,7 +160,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 		filepath.Join(tmpDir, USERDATA),
 		filepath.Join(tmpDir, METADATA))
 
-	log.Print("About to execute cmd: %+v", cmd)
+	log.Printf("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {
 		return "", fmt.Errorf("Error while starting the creation of CloudInit's ISO image: %s", err)
 	}

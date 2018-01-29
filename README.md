@@ -2,34 +2,63 @@
 
 ![alpha](https://img.shields.io/badge/stability%3F-beta-yellow.svg) [![Build Status](https://travis-ci.org/dmacvicar/terraform-provider-libvirt.svg?branch=master)](https://travis-ci.org/dmacvicar/terraform-provider-libvirt) [![Coverage Status](https://coveralls.io/repos/github/dmacvicar/terraform-provider-libvirt/badge.svg?branch=master)](https://coveralls.io/github/dmacvicar/terraform-provider-libvirt?branch=master)
 
-This provider is still being actively developed. To see what is left or planned, see the [issues list](https://github.com/dmacvicar/terraform-provider-libvirt/issues).
-
+___
 This is a terraform provider that lets you provision
 servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraform.io/).
 
-## Requirements
+## Table of Content
+- [Installing](#Installing)
+- [Quickstart](#using-the-provider)
+- [Building from source](#building-from-source)
+- [How to contribute](doc/CONTRIBUTING.md)
 
-* libvirt 1.2.14 or newer on the hypervisor
+## Website Docs
+- [Libvirt Provider](website/docs/index.html.markdown)
+- [CloudInit](website/docs/r/cloudinit.html.markdown)
+- [CoreOS Ignition](website/docs/r/coreos_ignition.html.markdown)
+- [Domains](website/docs/r/domain.html.markdown)
+- [Networks](website/docs/r/network.markdown)
+- [Volumes](website/docs/r/volume.html.markdown)
 
-The provider uses `virDomainInterfaceAddresses` which was added in 1.2.14. If you need a stable server distribution with a recent libvirt version, try [openSUSE Leap](https://www.opensuse.org/) or [Ubuntu](http://www.ubuntu.com/server) (from version 15.10 Wily Werewolf on).
-
-In the future, I may try to support older libvirt versions if I find a way to elegantely conditional compile the code and get the IP addresses with alternative methods.
 
 ## Installing
+
+###### Requirements
+
+* libvirt 1.2.14 or newer on the hypervisor
+* latest [golang](https://golang.org/dl/) version
+* `mkisofs` is required to use the [CloudInit](website/docs/r/cloudinit.html.markdown)
+  feature.
 
 [Copied from the Terraform documentation](https://www.terraform.io/docs/plugins/basics.html):
 > To install a plugin, put the binary somewhere on your filesystem, then configure Terraform to be able to find it. The configuration where plugins are defined is ~/.terraformrc for Unix-like systems and %APPDATA%/terraform.rc for Windows.
 
 If you are using opensuse/SUSE distro, add the repo and download the package (check the repo according your distro)
-
 ```console
 
-DISTRO=openSUSE_Leap_42.1
+DISTRO=openSUSE_Leap_42.3
 zypper addrepo http://download.opensuse.org/repositories/Virtualization:containers/$DISTRO/Virtualization:containers.repo
 zypper refresh
 zypper install terraform-provider-libvirt
-
 ```
+
+On debian systems you can use ```alien``` for converting the rpms
+
+## Building from source
+
+This project uses [glide](https://github.com/Masterminds/glide) to vendor all its
+dependencies.
+
+You do not have to interact with `glide` since the vendored packages are **already included in the repo**.
+
+Ensure you have the latest version of Go installed on your system, terraform usually
+takes advantage of features available only inside of the latest stable release.
+
+You need also need libvirt-dev(el) package installed.
+
+Run `go install` to build the binary. You will now find the binary at
+`$GOPATH/bin/terraform-provider-libvirt`.
+
 
 ## Using the provider
 
@@ -57,54 +86,25 @@ resource "libvirt_domain" "terraform_test" {
 Now you can see the plan, apply it, and then destroy the infrastructure:
 
 ```console
+$ terraform init
 $ terraform plan
 $ terraform apply
 $ terraform destroy
 ```
 
-## Building from source
+Look at more advanced examples [here](examples/)
 
-This project uses [glide](https://github.com/Masterminds/glide) to vendor all its
-dependencies.
+## Troubleshooting (aka you have a problem)
 
-Run `go install` to build the binary. You will now find the binary at
-`$GOPATH/bin/terraform-provider-libvirt`.
+Have a look at [TROUBLESHOOTING](doc/TROUBLESHOOTING.md), and feel free to add a PR if you find out something is missing.
 
-## Running
-
-1.  create the example file libvirt.tf in your working directory
-2.  terraform plan
-3.  terraform apply
-
-## Running acceptance tests
-
-You need to define the LIBVIRT_DEFAULT_URI and TF_ACC variables:
-
-```console
-export LIBVIRT_DEFAULT_URI=qemu:///system
-export TF_ACC=1
-go test ./...
-```
-
-## Known Problems
-
-* There is a [bug in libvirt](https://bugzilla.redhat.com/show_bug.cgi?id=1293804) that seems to be causing
-  problems to unlink volumes. Tracked [here](https://github.com/dmacvicar/terraform-provider-libvirt/issues/6).
-
-  If you see something like:
-
-  ```console
-  cannot unlink file '/var/lib/libvirt/images/XXXXXXXXXXXX': Permission denied
-  ```
-  It is probably related and fixed in libvirt 1.3.3 (already available in openSUSE Tumbleweed).
-
-* On Ubuntu distros SELinux is enforced by qemu even if it is disabled globally, this might cause unexpected `Could not open '/var/lib/libvirt/images/<FILE_NAME>': Permission denied` errors. Double check that `security_driver = "none"` is uncommented in `/etc/libvirt/qemu.conf` and issue `sudo systemctl restart libvirt-bin` to restart the daemon.
-
-## Author
+## Authors
 
 * Duncan Mac-Vicar P. <dmacvicar@suse.de>
 
-The structure and boilerplate is inspired from the [Softlayer](https://github.com/finn-no/terraform-provider-softlayer) and [Google](https://github.com/hashicorp/terraform/tree/master/builtin/providers/google) Terraform provider sources.
+See also the list of [contributors](https://github.com/dmacvicar/terraform-provider-libvirt/graphs/contributors) who participated in this project.
+
+The structure and boilerplate is inspired from the [Softlayer](https://github.com/finn-no/terraform-provider-softlayer) and [Google](https://github.com/terraform-providers/terraform-provider-google) Terraform provider sources.
 
 ## License
 

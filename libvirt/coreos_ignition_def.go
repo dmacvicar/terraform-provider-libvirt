@@ -38,8 +38,8 @@ func (ign *defIgnition) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	}
 	defer pool.Free()
 
-	PoolSync.AcquireLock(ign.PoolName)
-	defer PoolSync.ReleaseLock(ign.PoolName)
+	poolMutexKV.Lock(ign.PoolName)
+	defer poolMutexKV.Unlock(ign.PoolName)
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
@@ -75,13 +75,13 @@ func (ign *defIgnition) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	volumeDef.Capacity.Value = size
 	volumeDef.Target.Format.Type = "raw"
 
-	volumeDefXml, err := xml.Marshal(volumeDef)
+	volumeDefXML, err := xml.Marshal(volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error serializing libvirt volume: %s", err)
 	}
 
 	// create the volume
-	volume, err := pool.StorageVolCreateXML(string(volumeDefXml), 0)
+	volume, err := pool.StorageVolCreateXML(string(volumeDefXML), 0)
 	if err != nil {
 		return "", fmt.Errorf("Error creating libvirt volume for Ignition %s: %s", ign.Name, err)
 	}
@@ -131,7 +131,7 @@ func (ign *defIgnition) createFile() (string, error) {
 	file = true
 	if _, err := os.Stat(ign.Content); err != nil {
 		var js map[string]interface{}
-		if err_conf := json.Unmarshal([]byte(ign.Content), &js); err_conf != nil {
+		if errConf := json.Unmarshal([]byte(ign.Content), &js); errConf != nil {
 			return "", fmt.Errorf("coreos_ignition 'content' is neither a file "+
 				"nor a valid json object %s", ign.Content)
 		}

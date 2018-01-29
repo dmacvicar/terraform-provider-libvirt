@@ -6,55 +6,55 @@ import (
 
 func networkInterfaceCommonSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"network_id": &schema.Schema{
+		"network_id": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 			Computed: true,
 		},
-		"network_name": &schema.Schema{
+		"network_name": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 			Computed: true,
 		},
-		"bridge": &schema.Schema{
+		"bridge": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 		},
-		"vepa": &schema.Schema{
+		"vepa": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 		},
-		"macvtap": &schema.Schema{
+		"macvtap": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 		},
-		"passthrough": &schema.Schema{
+		"passthrough": {
 			Type:     schema.TypeString,
 			Optional: true,
 			ForceNew: true,
 		},
-		"hostname": &schema.Schema{
+		"hostname": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
 			ForceNew: false,
 		},
-		"mac": &schema.Schema{
+		"mac": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Computed: true,
 			ForceNew: true,
 		},
-		"wait_for_lease": &schema.Schema{
+		"wait_for_lease": {
 			Type:     schema.TypeBool,
 			Optional: true,
 		},
-		"addresses": &schema.Schema{
+		"addresses": {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,

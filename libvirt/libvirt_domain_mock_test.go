@@ -2,10 +2,10 @@ package libvirt
 
 import "github.com/libvirt/libvirt-go"
 
-type LibVirtDomainMock struct {
+type DomainMock struct {
 	QemuAgentCommandResponse string
 }
 
-func (d LibVirtDomainMock) QemuAgentCommand(command string, timeout libvirt.DomainQemuAgentCommandTimeout, flags uint32) (string, error) {
+func (d DomainMock) QemuAgentCommand(command string, timeout libvirt.DomainQemuAgentCommandTimeout, flags uint32) (string, error) {
 	return d.QemuAgentCommandResponse, nil
 }

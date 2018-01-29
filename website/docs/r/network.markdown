@@ -74,6 +74,8 @@ The following arguments are supported:
    one or mode of these blocks in your network definition.  You must specify one or
    both of `address` and `domain`.  You can use either of the forms below to
    specify dns_forwarders:
+* `autostart` - (Optional) Set to `true` to start the network on host boot up.
+  If not specified `false` is assumed.
 
 ```hcl
 resource "libvirt_network" "my_network" {

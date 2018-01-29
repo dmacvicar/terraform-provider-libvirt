@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"regexp"
+	"net/url"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
@@ -16,16 +18,16 @@ import (
 func TestAccLibvirtDomain_Basic(t *testing.T) {
 	var domain libvirt.Domain
 	var config = fmt.Sprintf(`
-            resource "libvirt_domain" "acceptance-test-domain-1" {
-                    name = "terraform-test"
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain-1" {
+		name = "terraform-test"
+	}`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain-1", &domain),
@@ -44,18 +46,18 @@ func TestAccLibvirtDomain_Basic(t *testing.T) {
 func TestAccLibvirtDomain_Detailed(t *testing.T) {
 	var domain libvirt.Domain
 	var config = fmt.Sprintf(`
-            resource "libvirt_domain" "acceptance-test-domain-2" {
-                    name = "terraform-test"
-                    memory = 384
-                    vcpu = 2
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain-2" {
+		name   = "terraform-test"
+		memory = 384
+		vcpu   = 2
+	}`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain-2", &domain),
@@ -76,35 +78,35 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 	var volume libvirt.StorageVol
 
 	var configVolAttached = fmt.Sprintf(`
-            resource "libvirt_volume" "acceptance-test-volume" {
-                    name = "terraform-test"
-            }
+	resource "libvirt_volume" "acceptance-test-volume" {
+		name = "terraform-test"
+	}
 
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test"
-                    disk {
-                            volume_id = "${libvirt_volume.acceptance-test-volume.id}"
-                    }
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name = "terraform-test"
+		disk {
+			volume_id = "${libvirt_volume.acceptance-test-volume.id}"
+		}
+	}`)
 
 	var configVolDettached = fmt.Sprintf(`
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test"
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name = "terraform-test"
+	}`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: configVolAttached,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
 					testAccCheckLibvirtVolumeExists("libvirt_volume.acceptance-test-volume", &volume),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: configVolDettached,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -120,36 +122,36 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 	var volume libvirt.StorageVol
 
 	var configVolAttached = fmt.Sprintf(`
-            resource "libvirt_volume" "acceptance-test-volume1" {
-                    name = "terraform-test-vol1"
-            }
+	resource "libvirt_volume" "acceptance-test-volume1" {
+		name = "terraform-test-vol1"
+	}
 
-            resource "libvirt_volume" "acceptance-test-volume2" {
-                    name = "terraform-test-vol2"
-            }
+	resource "libvirt_volume" "acceptance-test-volume2" {
+		name = "terraform-test-vol2"
+	}
 
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test-domain"
-                    disk {
-                            volume_id = "${libvirt_volume.acceptance-test-volume1.id}"
-                    }
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name = "terraform-test-domain"
+		disk {
+			volume_id = "${libvirt_volume.acceptance-test-volume1.id}"
+		}
 
-                    disk {
-                            volume_id = "${libvirt_volume.acceptance-test-volume2.id}"
-                    }
-            }`)
+		disk {
+			volume_id = "${libvirt_volume.acceptance-test-volume2.id}"
+		}
+	}`)
 
 	var configVolDettached = fmt.Sprintf(`
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test-domain"
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name = "terraform-test-domain"
+	}`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: configVolAttached,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -157,7 +159,7 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 					testAccCheckLibvirtVolumeExists("libvirt_volume.acceptance-test-volume2", &volume),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: configVolDettached,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -172,25 +174,25 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 	var domain libvirt.Domain
 	var configScsi = fmt.Sprintf(`
-            resource "libvirt_volume" "acceptance-test-volume1" {
-                    name = "terraform-test-vol1"
-            }
+	resource "libvirt_volume" "acceptance-test-volume1" {
+		name = "terraform-test-vol1"
+	}
 
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test-domain"
-                    disk {
-                            volume_id = "${libvirt_volume.acceptance-test-volume1.id}"
-                            scsi = "yes"
-                            wwn = "000000123456789a"
-                    }
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name = "terraform-test-domain"
+		disk {
+			volume_id = "${libvirt_volume.acceptance-test-volume1.id}"
+			scsi      = "yes"
+			wwn       = "000000123456789a"
+		}
+	}`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: configScsi,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -202,27 +204,20 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 
 }
 
-func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
+func TestAccLibvirtDomainURLDisk(t *testing.T) {
 	var domain libvirt.Domain
+	u, err := url.Parse("http://download.opensuse.org/tumbleweed/iso/openSUSE-Tumbleweed-DVD-x86_64-Current.iso")
+	if err != nil {
+		t.Error(err)
+	}
 
-	var config = fmt.Sprintf(`
-            resource "libvirt_volume" "acceptance-test-volume" {
-                    name = "terraform-test"
-            }
-
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test"
-                    network_interface = {
-                            network_name = "default"
-                    }
-                    network_interface = {
-                            network_name = "default"
-                            mac = "52:54:00:A9:F5:17"
-                    }
-                    disk {
-                            volume_id = "${libvirt_volume.acceptance-test-volume.id}"
-                    }
-            }`)
+	var configURL = fmt.Sprintf(`
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name = "terraform-test-domain"
+		disk {
+			url = "%s"
+		}
+	}`, u.String())
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -230,6 +225,104 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
+				Config: configURL,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtURLDisk(u, &domain),
+				),
+			},
+		},
+	})
+
+}
+
+func TestAccLibvirtDomainKernelInitrdCmdline(t *testing.T) {
+	var domain libvirt.Domain
+	var kernel libvirt.StorageVol
+	var initrd libvirt.StorageVol
+
+	var config = fmt.Sprintf(`
+	resource "libvirt_volume" "kernel" {
+		source = "testdata/tetris.elf"
+		name   = "kernel"
+		pool   = "default"
+		format = "raw"
+	}
+
+	resource "libvirt_volume" "initrd" {
+		source = "testdata/initrd.img"
+		name   = "initrd"
+		pool   = "default"
+		format = "raw"
+	}
+
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name   = "terraform-test-domain"
+		kernel = "${libvirt_volume.kernel.id}"
+		initrd = "${libvirt_volume.initrd.id}"
+		cmdline {
+			foo = 1
+			bar = "bye"
+		}
+		cmdline {
+			foo = 2
+		}
+	}`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtVolumeExists("libvirt_volume.kernel", &kernel),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.initrd", &initrd),
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtDomainKernelInitrdCmdline(&domain, &kernel, &initrd),
+				),
+			},
+		},
+	})
+
+}
+
+func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
+	var domain libvirt.Domain
+
+	currentDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+
+	var config = fmt.Sprintf(`
+	resource "libvirt_network" "acceptance-test-network" {
+		name      = "terraform-test"
+		addresses = ["10.17.3.0/24"]
+	}
+
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name              = "terraform-test"
+		network_interface = {
+			network_name = "default"
+		}
+		network_interface = {
+			network_name = "default"
+			mac          = "52:54:00:A9:F5:17"
+			wait_for_lease = 1
+		}
+		disk {
+			file = "%s/testdata/tcl.iso"
+		}
+	}`, currentDir)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -243,6 +336,64 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
+	var domain libvirt.Domain
+	var network libvirt.Network
+
+	var configWithDomain = fmt.Sprintf(`
+	    resource "libvirt_network" "acceptance-test-network" {
+		    name = "acceptance-test-network"
+		    mode = "nat"
+		    domain = "acceptance-test-network-local"
+		    addresses = ["192.0.0.0/24"]
+	    }
+            resource "libvirt_domain" "acceptance-test-domain" {
+                    name = "terraform-test"
+                    network_interface {
+                            network_id = "${libvirt_network.acceptance-test-network.id}"
+                            hostname = "terraform-test"
+                            addresses = ["192.0.0.2"]
+                    }
+            }`)
+
+	var configWithoutDomain = fmt.Sprintf(`
+	    resource "libvirt_network" "acceptance-test-network" {
+		    name = "acceptance-test-network"
+		    mode = "nat"
+		    domain = "acceptance-test-network-local"
+		    addresses = ["192.0.0.0/24"]
+	    }`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: configWithDomain,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtNetworkExists("libvirt_network.acceptance-test-network", &network),
+				),
+			},
+			resource.TestStep{
+				Config: configWithoutDomain,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDestroyLeavesIPs("libvirt_network.acceptance-test-network",
+						"192.0.0.2", &network),
+				),
+			},
+			resource.TestStep{
+				Config:             configWithDomain,
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_VideoVGA(t *testing.T) {
 	var domain libvirt.Domain
 
@@ -250,7 +401,6 @@ func TestAccLibvirtDomain_VideoVGA(t *testing.T) {
             resource "libvirt_volume" "acceptance-test-graphics" {
                     name = "terraform-test"
             }
-
             resource "libvirt_domain" "acceptance-test-domain" {
                     name = "terraform-test"
                     video_type = "vga"
@@ -279,86 +429,29 @@ func TestAccLibvirtDomain_VideoVGA(t *testing.T) {
 	})
 }
 
-func TestAccLibvirtDomain_GraphicsSDLFail(t *testing.T) {
-	var config = fmt.Sprintf(`
-            resource "libvirt_volume" "acceptance-test-graphics" {
-                    name = "terraform-test"
-            }
-
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test"
-                    graphics {
-                            type = "sdl"
-                    }
-            }`)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtDomainDestroy,
-		Steps: []resource.TestStep{
-			resource.TestStep{
-				Config:      config,
-				ExpectError: regexp.MustCompile(".*We only support graphics types of spice or vnc, not: sdl.*"),
-			},
-		},
-	},
-	)
-}
-
-func TestAccLibvirtDomain_GraphicsPortAutoPortFail(t *testing.T) {
-	var config = fmt.Sprintf(`
-            resource "libvirt_volume" "acceptance-test-graphics" {
-                    name = "terraform-test"
-            }
-
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test"
-                    graphics {
-                            type = "spice"
-                            autoport = "yes"
-                            listen_port = "5901"
-                    }
-            }`)
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtDomainDestroy,
-		Steps: []resource.TestStep{
-			resource.TestStep{
-				Config:      config,
-				ExpectError: regexp.MustCompile(".*autoport and listen_port cannot be used at the same time.*"),
-			},
-		},
-	},
-	)
-}
-
-func TestAccLibvirtDomain_GraphicsSpiceAndDefVideo(t *testing.T) {
+func TestAccLibvirtDomain_Graphics(t *testing.T) {
 	var domain libvirt.Domain
 
 	var config = fmt.Sprintf(`
-            resource "libvirt_volume" "acceptance-test-graphics" {
-                    name = "terraform-test"
-            }
+	resource "libvirt_volume" "acceptance-test-graphics" {
+		name = "terraform-test"
+	}
 
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test"
-                    graphics {
-                            type = "spice"
-                            autoport = "yes"
-                            listen_type = "address"
-                            listen_address = "127.0.0.1"
-                    }
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name = "terraform-test"
+		graphics {
+			type        = "spice"
+			autoport    = "yes"
+			listen_type = "none"
+		}
+	}`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -500,26 +593,26 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 	var volume libvirt.StorageVol
 
 	var config = fmt.Sprintf(`
-	    data "ignition_systemd_unit" "acceptance-test-systemd" {
-    		name = "example.service"
-    		content = "[Service]\nType=oneshot\nExecStart=/usr/bin/echo Hello World\n\n[Install]\nWantedBy=multi-user.target"
-	    }
+	data "ignition_systemd_unit" "acceptance-test-systemd" {
+		name    = "example.service"
+		content = "[Service]\nType=oneshot\nExecStart=/usr/bin/echo Hello World\n\n[Install]\nWantedBy=multi-user.target"
+	}
 
-	    data "ignition_config" "acceptance-test-config" {
-    		systemd = [
-        		"${data.ignition_systemd_unit.acceptance-test-systemd.id}",
-    		]
-	    }
+	data "ignition_config" "acceptance-test-config" {
+		systemd = [
+		"${data.ignition_systemd_unit.acceptance-test-systemd.id}",
+		]
+	}
 
-	    resource "libvirt_ignition" "ignition" {
-	    	name = "ignition"
-	    	content = "${data.ignition_config.acceptance-test-config.rendered}"
-	    }
+	resource "libvirt_ignition" "ignition" {
+		name    = "ignition"
+		content = "${data.ignition_config.acceptance-test-config.rendered}"
+	}
 
-	    resource "libvirt_domain" "acceptance-test-domain" {
-		name = "terraform-test-domain"
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name            = "terraform-test-domain"
 		coreos_ignition = "${libvirt_ignition.ignition.id}"
-	    }
+	}
 	`)
 
 	resource.Test(t, resource.TestCase{
@@ -543,19 +636,19 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 	var domain libvirt.Domain
 
 	var config = fmt.Sprintf(`
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test"
-                    cpu {
-                            mode = "custom"
-                    }
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name = "terraform-test"
+		cpu {
+			mode = "custom"
+		}
+	}`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -571,16 +664,16 @@ func TestAccLibvirtDomain_Autostart(t *testing.T) {
 	var domain libvirt.Domain
 
 	var config = fmt.Sprintf(`
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test"
-                    autostart = true
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name      = "terraform-test"
+		autostart = true
+	}`)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -595,26 +688,26 @@ func TestAccLibvirtDomain_Filesystems(t *testing.T) {
 	var domain libvirt.Domain
 
 	var config = fmt.Sprintf(`
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test"
-                    filesystem {
-                      source = "/tmp"
-                      target = "tmp"
-                      readonly = false
-                    }
-                    filesystem {
-                      source = "/proc"
-                      target = "proc"
-                      readonly = true
-                    }
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name = "terraform-test"
+		filesystem {
+			source   = "/tmp"
+			target   = "tmp"
+			readonly = false
+		}
+		filesystem {
+			source   = "/proc"
+			target   = "proc"
+			readonly = true
+		}
+	}`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -640,27 +733,27 @@ func TestAccLibvirtDomain_Consoles(t *testing.T) {
 	var domain libvirt.Domain
 
 	var config = fmt.Sprintf(`
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test"
-                    console {
-                      type = "pty"
-                      target_port = "0"
-                      source_path = "/dev/pts/1"
-                    }
-                    console {
-                      type = "pty"
-                      target_port = "0"
-                      target_type = "virtio"
-                      source_path = "/dev/pts/2"
-                    }
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name = "terraform-test"
+		console {
+			type        = "pty"
+			target_port = "0"
+			source_path = "/dev/pts/1"
+		}
+		console {
+			type        = "pty"
+			target_port = "0"
+			target_type = "virtio"
+			source_path = "/dev/pts/2"
+		}
+	}`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -725,12 +818,12 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.Domain) resource.
 
 		log.Printf("The ID is %s", rs.Primary.ID)
 
-		realId, err := retrieveDomain.GetUUIDString()
+		realID, err := retrieveDomain.GetUUIDString()
 		if err != nil {
 			return err
 		}
 
-		if realId != rs.Primary.ID {
+		if realID != rs.Primary.ID {
 			return fmt.Errorf("Libvirt domain not found")
 		}
 
@@ -804,15 +897,117 @@ func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.Test
 	}
 }
 
+func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		xmlDesc, err := domain.GetXMLDesc(0)
+		if err != nil {
+			return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+		}
+
+		domainDef := newDomainDef()
+		err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
+		if err != nil {
+			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+		}
+
+		disks := domainDef.Devices.Disks
+		for _, disk := range disks {
+			if disk.Type != "network" {
+				return fmt.Errorf("Disk type is not network")
+			}
+			if disk.Source.Protocol != u.Scheme {
+				return fmt.Errorf("Disk protocol is not %s", u.Scheme)
+			}
+			if disk.Source.Name != u.Path {
+				return fmt.Errorf("Disk name is not %s", u.Path)
+			}
+			if len(disk.Source.Hosts) < 1 {
+				return fmt.Errorf("Disk has no hosts defined")
+			}
+			if disk.Source.Hosts[0].Name != u.Hostname() {
+				return fmt.Errorf("Disk hostname is not %s", u.Hostname())
+			}
+		}
+		return nil
+	}
+}
+
+func testAccCheckLibvirtDestroyLeavesIPs(n string, ip string, network *libvirt.Network) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No libvirt network ID is set")
+		}
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		retrieveNetwork, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
+
+		if err != nil {
+			return err
+		}
+
+		networkDef, err := newDefNetworkfromLibvirt(retrieveNetwork)
+
+		for _, ips := range networkDef.IPs {
+			for _, dhcpHost := range ips.DHCP.Hosts {
+				if dhcpHost.IP == ip {
+					return nil
+				}
+			}
+		}
+		return fmt.Errorf("Hostname with ip '%s' does not have a dhcp entry in network", ip)
+	}
+}
+
+func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel *libvirt.StorageVol, initrd *libvirt.StorageVol) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		xmlDesc, err := domain.GetXMLDesc(0)
+		if err != nil {
+			return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+		}
+
+		domainDef := newDomainDef()
+		err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
+		if err != nil {
+			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+		}
+
+		key, err := kernel.GetKey()
+		if err != nil {
+			return fmt.Errorf("Can't get kernel volume id")
+		}
+		if domainDef.OS.Kernel != key {
+			return fmt.Errorf("Kernel is not set correctly: '%s' vs '%s'", domainDef.OS.Kernel, key)
+		}
+
+		key, err = initrd.GetKey()
+		if err != nil {
+			return fmt.Errorf("Can't get initrd volume id")
+		}
+		if domainDef.OS.Initrd != key {
+			return fmt.Errorf("Initrd is not set correctly: '%s' vs '%s'", domainDef.OS, key)
+		}
+		if domainDef.OS.KernelArgs != "bar=bye foo=1 foo=2" {
+			return fmt.Errorf("Kernel args not set correctly: '%s'", domainDef.OS.KernelArgs)
+		}
+		return nil
+	}
+}
+
 func createNvramFile() (string, error) {
 	// size of an accepted, valid, nvram backing store
-	nvram_dummy_buffer := make([]byte, 131072)
+	NVRAMDummyBuffer := make([]byte, 131072)
 	file, err := ioutil.TempFile("/tmp", "nvram")
 	if err != nil {
 		return "", err
 	}
 	file.Chmod(0777)
-	_, err = file.Write(nvram_dummy_buffer)
+	_, err = file.Write(NVRAMDummyBuffer)
 	if err != nil {
 		return "", err
 	}
@@ -822,77 +1017,102 @@ func createNvramFile() (string, error) {
 	return file.Name(), nil
 }
 
-func TestAccLibvirtDomain_FirmwareNoTemplate(t *testing.T) {
-	nvram_path, err := createNvramFile()
+func TestAccLibvirtDomainFirmware(t *testing.T) {
+	NVRAMPath, err := createNvramFile()
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	firmware := fmt.Sprintf("/usr/share/qemu/ovmf-x86_64-code.bin")
+	if _, err := os.Stat(firmware); os.IsNotExist(err) {
+		firmware = "/usr/share/ovmf/OVMF.fd"
+		if _, err := os.Stat(firmware); os.IsNotExist(err) {
+			t.Skip("Can't test domain custom firmware: OVMF firmware not found: %s")
+		}
+	}
+
+	template := fmt.Sprintf("/usr/share/qemu/ovmf-x86_64-vars.bin")
+	if _, err := os.Stat(template); os.IsNotExist(err) {
+		template = "/usr/share/qemu/OVMF.fd"
+		if _, err := os.Stat(template); os.IsNotExist(err) {
+			t.Skip("Can't test domain custom firmware template: OVMF template not found: %s")
+		}
+	}
+
+	t.Run("No Template", func(t *testing.T) {
+		subtestAccLibvirtDomainFirmwareNoTemplate(t, NVRAMPath, firmware)
+	})
+	t.Run("With Template", func(t *testing.T) {
+		subtestAccLibvirtDomainFirmwareTemplate(t, NVRAMPath, firmware, template)
+	})
+}
+
+func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, firmware string) {
 	var domain libvirt.Domain
 	var config = fmt.Sprintf(`
-            resource "libvirt_domain" "acceptance-test-domain" {
-                name = "terraform-test-firmware-no-template"
-	            firmware = "/usr/share/ovmf/OVMF.fd"
-                nvram {
-                    file = "%s"
-  	            }
-            }`, nvram_path)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name     = "terraform-test-firmware-no-template"
+		firmware = "%s"
+		nvram {
+			file = "%s"
+		}
+	}`, firmware, NVRAMPath)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "name", "terraform-test-firmware-no-template"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.file", nvram_path),
+						"libvirt_domain.acceptance-test-domain", "nvram.file", NVRAMPath),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "firmware", "/usr/share/ovmf/OVMF.fd"),
+						"libvirt_domain.acceptance-test-domain", "firmware", firmware),
 				),
 			},
 		},
 	})
 }
 
-func TestAccLibvirtDomain_FirmwareTemplate(t *testing.T) {
-	nvram_path, err := createNvramFile()
+func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, firmware string, template string) {
+	NVRAMPath, err := createNvramFile()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var domain libvirt.Domain
 	var config = fmt.Sprintf(`
-            resource "libvirt_domain" "acceptance-test-domain" {
-                name = "terraform-test-firmware-with-template"
-                firmware = "/usr/share/ovmf/OVMF.fd"
-                nvram {
-                	file = "%s"
-                	template = "/usr/share/qemu/OVMF.fd"
-                }
-            }`, nvram_path)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name     = "terraform-test-firmware-with-template"
+		firmware = "%s"
+		nvram {
+			file     = "%s"
+			template = "%s"
+		}
+	}`, firmware, NVRAMPath, template)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.acceptance-test-domain", "name", "terraform-test-firmware-with-template"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.file", nvram_path),
+						"libvirt_domain.acceptance-test-domain", "nvram.file", NVRAMPath),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "nvram.template", "/usr/share/qemu/OVMF.fd"),
+						"libvirt_domain.acceptance-test-domain", "nvram.template", template),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "firmware", "/usr/share/ovmf/OVMF.fd"),
+						"libvirt_domain.acceptance-test-domain", "firmware", firmware),
 				),
 			},
 		},
@@ -905,16 +1125,16 @@ func TestAccLibvirtDomain_MachineType(t *testing.T) {
 	// Using machine type of pc as this is earliest QEMU target
 	// and so most likely to be available
 	var config = fmt.Sprintf(`
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test"
-                    machine = "pc"
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name    = "terraform-test"
+		machine = "pc"
+	}`)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -930,17 +1150,17 @@ func TestAccLibvirtDomain_ArchType(t *testing.T) {
 
 	// Using i686 as architecture in case anyone running tests on an i686 only host
 	var config = fmt.Sprintf(`
-            resource "libvirt_domain" "acceptance-test-domain" {
-                    name = "terraform-test"
-                    arch  = "i686"
-            }`)
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name  = "terraform-test"
+		arch  = "i686"
+	}`)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -949,4 +1169,40 @@ func TestAccLibvirtDomain_ArchType(t *testing.T) {
 			},
 		},
 	})
+}
+
+func testAccCheckLibvirtNetworkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No libvirt network ID is set")
+		}
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		retrieveNetwork, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
+
+		if err != nil {
+			return err
+		}
+
+		log.Printf("The ID is %s", rs.Primary.ID)
+
+		realID, err := retrieveNetwork.GetUUIDString()
+		if err != nil {
+			return err
+		}
+
+		if realID != rs.Primary.ID {
+			return fmt.Errorf("Libvirt network not found")
+		}
+
+		network = retrieveNetwork
+
+		return nil
+	}
 }

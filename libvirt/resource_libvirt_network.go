@@ -43,29 +43,29 @@ func resourceLibvirtNetwork() *schema.Resource {
 		Exists: resourceLibvirtNetworkExists,
 		Update: resourceLibvirtNetworkUpdate,
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"domain": &schema.Schema{
+			"domain": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"mode": &schema.Schema{ // can be "none", "nat" (default), "route", "bridge"
+			"mode": { // can be "none", "nat" (default), "route", "bridge"
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Default:  netModeNat,
 			},
-			"bridge": &schema.Schema{
+			"bridge": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
-			"addresses": &schema.Schema{
+			"addresses": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Required: false,
@@ -74,13 +74,12 @@ func resourceLibvirtNetwork() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
-			"running": &schema.Schema{
+			"autostart": {
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default:  true,
-				ForceNew: false,
+				Required: false,
 			},
-			"dns_forwarder": &schema.Schema{
+			"dns_forwarder": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Required: false,
@@ -95,13 +94,13 @@ func resourceLibvirtNetwork() *schema.Resource {
 
 func dnsForwarderSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"address": &schema.Schema{
+		"address": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
 			ForceNew: true,
 		},
-		"domain": &schema.Schema{
+		"domain": {
 			Type:     schema.TypeString,
 			Optional: true,
 			Required: false,
@@ -113,7 +112,7 @@ func dnsForwarderSchema() map[string]*schema.Schema {
 func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return false, fmt.Errorf("The libvirt connection was nil.")
+		return false, fmt.Errorf(LibVirtConIsNil)
 	}
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
 	if err != nil {
@@ -132,7 +131,7 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
 	if err != nil {
@@ -152,12 +151,16 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 		if err := network.Create(); err != nil {
 			return err
 		}
-		d.Set("running", true)
-		d.SetPartial("running")
 	}
 
+	if d.HasChange("autostart") {
+		err = network.SetAutostart(d.Get("autostart").(bool))
+		if err != nil {
+			return fmt.Errorf("Error setting autostart for network: %s", err)
+		}
+		d.SetPartial("autostart")
+	}
 	d.Partial(false)
-
 	return nil
 }
 
@@ -165,7 +168,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	// see https://libvirt.org/formatnetwork.html
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	networkDef := newNetworkDef()
@@ -237,7 +240,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 
 				dni.DHCP = &libvirtxml.NetworkDHCP{
 					Ranges: []libvirtxml.NetworkDHCPRange{
-						libvirtxml.NetworkDHCPRange{
+						{
 							Start: start.String(),
 							End:   end.String(),
 						},
@@ -248,12 +251,12 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			networkDef.IPs = ipsPtrsLst
 		}
 
-		if dns_forward_count, ok := d.GetOk("dns_forwarder.#"); ok {
+		if dnsForwardCount, ok := d.GetOk("dns_forwarder.#"); ok {
 			dns := libvirtxml.NetworkDNS{
 				Forwarders: []libvirtxml.NetworkDNSForwarder{},
 			}
 
-			for i := 0; i < dns_forward_count.(int); i++ {
+			for i := 0; i < dnsForwardCount.(int); i++ {
 				forward := libvirtxml.NetworkDNSForwarder{}
 				forwardPrefix := fmt.Sprintf("dns_forwarder.%d", i)
 				if address, ok := d.GetOk(forwardPrefix + ".address"); ok {
@@ -331,13 +334,20 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error waiting for network to reach ACTIVE state: %s", err)
 	}
 
+	if autostart, ok := d.GetOk("autostart"); ok {
+		err = network.SetAutostart(autostart.(bool))
+		if err != nil {
+			return fmt.Errorf("Error setting autostart for network: %s", err)
+		}
+	}
+
 	return resourceLibvirtNetworkRead(d, meta)
 }
 
 func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
@@ -359,12 +369,11 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("domain", networkDef.Domain.Name)
 	}
 
-	active, err := network.IsActive()
+	autostart, err := network.GetAutostart()
 	if err != nil {
-		return err
+		return fmt.Errorf("Error reading network autostart setting: %s", err)
 	}
-	d.Set("running", active)
-
+	d.Set("autostart", autostart)
 	addresses := []string{}
 	for _, address := range networkDef.IPs {
 		// we get the host interface IP (ie, 10.10.8.1) but we want the network CIDR (ie, 10.10.8.0/24)
@@ -396,7 +405,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf("The libvirt connection was nil.")
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 	log.Printf("[DEBUG] Deleting network ID %s", d.Id())
 

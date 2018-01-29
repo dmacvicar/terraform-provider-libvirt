@@ -7,7 +7,7 @@ import (
 	"github.com/libvirt/libvirt-go-xml"
 )
 
-// Check if the network has a DHCP server managed by libvirt
+// HasDHCP checks if the network has a DHCP server managed by libvirt
 func HasDHCP(net libvirtxml.Network) bool {
 	if net.Forward != nil {
 		if net.Forward.Mode == "nat" || net.Forward.Mode == "route" || net.Forward.Mode == "" {
@@ -27,13 +27,13 @@ func newDefNetworkFromXML(s string) (libvirtxml.Network, error) {
 	return networkDef, nil
 }
 
-func newDefNetworkfromLibvirt(network LibVirtNetwork) (libvirtxml.Network, error) {
-	networkXmlDesc, err := network.GetXMLDesc(0)
+func newDefNetworkfromLibvirt(network Network) (libvirtxml.Network, error) {
+	networkXMLDesc, err := network.GetXMLDesc(0)
 	if err != nil {
 		return libvirtxml.Network{}, fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
 	}
 	networkDef := libvirtxml.Network{}
-	err = xml.Unmarshal([]byte(networkXmlDesc), &networkDef)
+	err = xml.Unmarshal([]byte(networkXMLDesc), &networkDef)
 	if err != nil {
 		return libvirtxml.Network{}, fmt.Errorf("Error reading libvirt network XML description: %s", err)
 	}
@@ -52,7 +52,7 @@ func newNetworkDef() libvirtxml.Network {
 		  </forward>
 		</network>`
 	if d, err := newDefNetworkFromXML(defNetworkXML); err != nil {
-		panic(fmt.Sprint("Unexpected error while parsing default network definition: %s", err))
+		panic(fmt.Sprintf("Unexpected error while parsing default network definition: %s", err))
 	} else {
 		return d
 	}
