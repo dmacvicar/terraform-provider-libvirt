@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"os"
+
 	libvirt "github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
-	"os"
 )
 
 func TestGetHostXMLDesc(t *testing.T) {
