@@ -4,10 +4,13 @@ import (
 	"github.com/hashicorp/terraform/helper/mutexkv"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
+
+	libvirt "github.com/libvirt/libvirt-go"
 )
 
 // Global poolMutexKV
 var poolMutexKV = mutexkv.NewMutexKV()
+var LibvirtClient *libvirt.Connect
 
 // Provider libvirt
 func Provider() terraform.ResourceProvider {

@@ -18,13 +18,17 @@ type Client struct {
 
 // Client libvirt, generate libvirt client given URI
 func (c *Config) Client() (*Client, error) {
-	conn, err := libvirt.NewConnect(c.URI)
-	if err != nil {
-		return nil, err
+	var err error
+
+	if LibvirtClient == nil {
+		LibvirtClient, err = libvirt.NewConnect(c.URI)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	client := &Client{
-		libvirt: conn,
+		libvirt: LibvirtClient,
 	}
 
 	log.Println("[INFO] Created libvirt client")
