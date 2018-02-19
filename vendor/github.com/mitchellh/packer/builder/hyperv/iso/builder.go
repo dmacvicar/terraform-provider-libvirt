@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	hypervcommon "github.com/hashicorp/packer/builder/hyperv/common"
@@ -13,9 +14,9 @@ import (
 	"github.com/hashicorp/packer/common/powershell/hyperv"
 	"github.com/hashicorp/packer/helper/communicator"
 	"github.com/hashicorp/packer/helper/config"
+	"github.com/hashicorp/packer/helper/multistep"
 	"github.com/hashicorp/packer/packer"
 	"github.com/hashicorp/packer/template/interpolate"
-	"github.com/mitchellh/multistep"
 )
 
 const (
@@ -73,6 +74,7 @@ type Config struct {
 	BootCommand                    []string `mapstructure:"boot_command"`
 	SwitchName                     string   `mapstructure:"switch_name"`
 	SwitchVlanId                   string   `mapstructure:"switch_vlan_id"`
+	MacAddress                     string   `mapstructure:"mac_address"`
 	VlanId                         string   `mapstructure:"vlan_id"`
 	Cpu                            uint     `mapstructure:"cpu"`
 	Generation                     uint     `mapstructure:"generation"`
@@ -82,9 +84,21 @@ type Config struct {
 	EnableVirtualizationExtensions bool     `mapstructure:"enable_virtualization_extensions"`
 	TempPath                       string   `mapstructure:"temp_path"`
 
+	// A separate path can be used for storing the VM's disk image. The purpose is to enable
+	// reading and writing to take place on different physical disks (read from VHD temp path
+	// write to regular temp path while exporting the VM) to eliminate a single-disk bottleneck.
+	VhdTempPath string `mapstructure:"vhd_temp_path"`
+
 	Communicator string `mapstructure:"communicator"`
 
+	AdditionalDiskSize []uint `mapstructure:"disk_additional_size"`
+
 	SkipCompaction bool `mapstructure:"skip_compaction"`
+
+	SkipExport bool `mapstructure:"skip_export"`
+
+	// Use differencing disk
+	DifferencingDisk bool `mapstructure:"differencing_disk"`
 
 	ctx interpolate.Context
 }
@@ -119,9 +133,12 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 	errs = packer.MultiErrorAppend(errs, b.config.SSHConfig.Prepare(&b.config.ctx)...)
 	errs = packer.MultiErrorAppend(errs, b.config.ShutdownConfig.Prepare(&b.config.ctx)...)
 
-	err = b.checkDiskSize()
-	if err != nil {
-		errs = packer.MultiErrorAppend(errs, err)
+	if len(b.config.ISOConfig.ISOUrls) < 1 || (strings.ToLower(filepath.Ext(b.config.ISOConfig.ISOUrls[0])) != ".vhd" && strings.ToLower(filepath.Ext(b.config.ISOConfig.ISOUrls[0])) != ".vhdx") {
+		//We only create a new hard drive if an existing one to copy from does not exist
+		err = b.checkDiskSize()
+		if err != nil {
+			errs = packer.MultiErrorAppend(errs, err)
+		}
 	}
 
 	err = b.checkRamSize()
@@ -143,7 +160,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 		b.config.Cpu = 1
 	}
 
-	if b.config.Generation != 2 {
+	if b.config.Generation < 1 || b.config.Generation > 2 {
 		b.config.Generation = 1
 	}
 
@@ -154,10 +171,16 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 		}
 	}
 
+	if len(b.config.AdditionalDiskSize) > 64 {
+		err = errors.New("VM's currently support a maximun of 64 additional SCSI attached disks.")
+		errs = packer.MultiErrorAppend(errs, err)
+	}
+
 	log.Println(fmt.Sprintf("Using switch %s", b.config.SwitchName))
 	log.Println(fmt.Sprintf("%s: %v", "SwitchName", b.config.SwitchName))
 
 	// Errors
+
 	if b.config.GuestAdditionsMode == "" {
 		if b.config.GuestAdditionsPath != "" {
 			b.config.GuestAdditionsMode = "attach"
@@ -296,7 +319,8 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 
 	steps := []multistep.Step{
 		&hypervcommon.StepCreateTempDir{
-			TempPath: b.config.TempPath,
+			TempPath:    b.config.TempPath,
+			VhdTempPath: b.config.VhdTempPath,
 		},
 		&hypervcommon.StepOutputDir{
 			Force: b.config.PackerForce,
@@ -334,6 +358,10 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			EnableDynamicMemory:            b.config.EnableDynamicMemory,
 			EnableSecureBoot:               b.config.EnableSecureBoot,
 			EnableVirtualizationExtensions: b.config.EnableVirtualizationExtensions,
+			AdditionalDiskSize:             b.config.AdditionalDiskSize,
+			DifferencingDisk:               b.config.DifferencingDisk,
+			SkipExport:                     b.config.SkipExport,
+			OutputDir:                      b.config.OutputDir,
 		},
 		&hypervcommon.StepEnableIntegrationService{},
 
@@ -399,6 +427,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		&hypervcommon.StepExportVm{
 			OutputDir:      b.config.OutputDir,
 			SkipCompaction: b.config.SkipCompaction,
+			SkipExport:     b.config.SkipExport,
 		},
 
 		// the clean up actions for each step will be executed reverse order

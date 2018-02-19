@@ -305,7 +305,14 @@ func testConfig(t *testing.T) map[string]interface{} {
 		"source_image": "foo",
 		"ssh_username": "root",
 		"image_family": "bar",
-		"zone":         "us-east1-a",
+		"image_labels": map[string]string{
+			"label-1": "value-1",
+			"label-2": "value-2",
+		},
+		"image_licenses": []string{
+			"test-license",
+		},
+		"zone": "us-east1-a",
 	}
 }
 

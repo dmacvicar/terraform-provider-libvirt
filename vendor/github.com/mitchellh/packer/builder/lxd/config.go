@@ -2,20 +2,22 @@ package lxd
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/hashicorp/packer/common"
 	"github.com/hashicorp/packer/helper/config"
 	"github.com/hashicorp/packer/packer"
 	"github.com/hashicorp/packer/template/interpolate"
 	"github.com/mitchellh/mapstructure"
-	"time"
 )
 
 type Config struct {
 	common.PackerConfig `mapstructure:",squash"`
-	OutputImage         string `mapstructure:"output_image"`
-	ContainerName       string `mapstructure:"container_name"`
-	CommandWrapper      string `mapstructure:"command_wrapper"`
-	Image               string `mapstructure:"image"`
+	OutputImage         string            `mapstructure:"output_image"`
+	ContainerName       string            `mapstructure:"container_name"`
+	CommandWrapper      string            `mapstructure:"command_wrapper"`
+	Image               string            `mapstructure:"image"`
+	PublishProperties   map[string]string `mapstructure:"publish_properties"`
 	InitTimeout         time.Duration
 
 	ctx interpolate.Context

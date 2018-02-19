@@ -49,7 +49,7 @@ Optional:
 
 -   `ami_groups` (array of strings) - A list of groups that have access to
     launch the imported AMI. By default no groups have permission to launch the
-    AMI. `all` will make the AMI publically accessible. AWS currently doesn't
+    AMI. `all` will make the AMI publicly accessible. AWS currently doesn't
     accept any value other than "all".
 
 -   `ami_name` (string) - The name of the ami within the console. If not
@@ -69,6 +69,8 @@ Optional:
 
 -   `mfa_code` (string) - The MFA [TOTP](https://en.wikipedia.org/wiki/Time-based_One-time_Password_Algorithm)
     code. This should probably be a user variable since it changes all the time.
+
+-   `role_name` (string) - The name of the role to use when not using the default role, 'vmimport'
 
 -   `s3_key_name` (string) - The name of the key in `s3_bucket_name` where the
     OVA file will be copied to for import. If not specified, this will default
@@ -102,6 +104,38 @@ Here is a basic example. This assumes that the builder has produced an OVA artif
     "Description": "packer amazon-import {{timestamp}}"
   }
 }
+```
+
+## VMWare Example
+
+This is an example that uses `vmware-iso` builder and exports the `.ova` file using ovftool.
+
+``` json
+"post-processors" : [
+     [
+     {
+      "type": "shell-local",
+      "inline": [ "/usr/bin/ovftool <packer-output-directory>/<vmware-name>.vmx <packer-output-directory>/<vmware-name>.ova" ]
+     },
+     {
+         "files": [
+           "<packer-output-directory>/<vmware-name>.ova"
+         ],
+         "type": "artifice"
+     },
+     {
+      "type": "amazon-import",
+      "access_key": "YOUR KEY HERE",
+      "secret_key": "YOUR SECRET KEY HERE",
+      "region": "us-east-1",
+      "s3_bucket_name": "importbucket",
+      "license_type": "BYOL",
+      "tags": {
+        "Description": "packer amazon-import {{timestamp}}"
+      }
+     }
+    ]
+  ]
 ```
 
 -&gt; **Note:** Packer can also read the access key and secret access key from

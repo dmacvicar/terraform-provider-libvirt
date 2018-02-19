@@ -111,6 +111,25 @@ func TestValidationStringInSlice(t *testing.T) {
 	})
 }
 
+func TestValidationStringMatch(t *testing.T) {
+	runTestCases(t, []testCase{
+		{
+			val: "foobar",
+			f:   StringMatch(regexp.MustCompile(".*foo.*"), ""),
+		},
+		{
+			val:         "bar",
+			f:           StringMatch(regexp.MustCompile(".*foo.*"), ""),
+			expectedErr: regexp.MustCompile("expected value of [\\w]+ to match regular expression " + regexp.QuoteMeta(`".*foo.*"`)),
+		},
+		{
+			val:         "bar",
+			f:           StringMatch(regexp.MustCompile(".*foo.*"), "value must contain foo"),
+			expectedErr: regexp.MustCompile("invalid value for [\\w]+ \\(value must contain foo\\)"),
+		},
+	})
+}
+
 func TestValidationRegexp(t *testing.T) {
 	runTestCases(t, []testCase{
 		{
@@ -195,6 +214,38 @@ func TestValidateListUniqueStrings(t *testing.T) {
 			val:         []interface{}{"foo", "bar", "foo", "baz", "bar"},
 			f:           ValidateListUniqueStrings,
 			expectedErr: regexp.MustCompile("duplicate entry - (?:foo|bar)"),
+		},
+	})
+}
+
+func TestValidationNoZeroValues(t *testing.T) {
+	runTestCases(t, []testCase{
+		{
+			val: "foo",
+			f:   NoZeroValues,
+		},
+		{
+			val: 1,
+			f:   NoZeroValues,
+		},
+		{
+			val: float64(1),
+			f:   NoZeroValues,
+		},
+		{
+			val:         "",
+			f:           NoZeroValues,
+			expectedErr: regexp.MustCompile("must not be empty"),
+		},
+		{
+			val:         0,
+			f:           NoZeroValues,
+			expectedErr: regexp.MustCompile("must not be zero"),
+		},
+		{
+			val:         float64(0),
+			f:           NoZeroValues,
+			expectedErr: regexp.MustCompile("must not be zero"),
 		},
 	})
 }

@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/hashicorp/terraform/tfdiags"
+
 	"github.com/hashicorp/terraform/config"
 	"github.com/hashicorp/terraform/terraform"
 )
@@ -44,6 +46,12 @@ func (c *ValidateCommand) Run(args []string) int {
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf(
 			"Unable to locate directory %v\n", err.Error()))
+	}
+
+	// Check for user-supplied plugin path
+	if c.pluginPath, err = c.loadPluginPath(); err != nil {
+		c.Ui.Error(fmt.Sprintf("Error loading plugin path: %s", err))
+		return 1
 	}
 
 	rtnCode := c.validate(dir, checkVars)
@@ -89,23 +97,27 @@ Options:
 }
 
 func (c *ValidateCommand) validate(dir string, checkVars bool) int {
+	var diags tfdiags.Diagnostics
+
 	cfg, err := config.LoadDir(dir)
 	if err != nil {
-		c.Ui.Error(fmt.Sprintf(
-			"Error loading files %v\n", err.Error()))
+		diags = diags.Append(err)
+		c.showDiagnostics(err)
 		return 1
 	}
-	err = cfg.Validate()
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf(
-			"Error validating: %v\n", err.Error()))
+
+	diags = diags.Append(cfg.Validate())
+
+	if diags.HasErrors() {
+		c.showDiagnostics(diags)
 		return 1
 	}
 
 	if checkVars {
-		mod, err := c.Module(dir)
-		if err != nil {
-			c.Ui.Error(fmt.Sprintf("Failed to load root config module: %s", err))
+		mod, modDiags := c.Module(dir)
+		diags = diags.Append(modDiags)
+		if modDiags.HasErrors() {
+			c.showDiagnostics(diags)
 			return 1
 		}
 
@@ -114,13 +126,17 @@ func (c *ValidateCommand) validate(dir string, checkVars bool) int {
 
 		tfCtx, err := terraform.NewContext(opts)
 		if err != nil {
-			c.Ui.Error(fmt.Sprintf("Error: %v\n", err.Error()))
+			diags = diags.Append(err)
+			c.showDiagnostics(diags)
 			return 1
 		}
 
-		if !validateContext(tfCtx, c.Ui) {
-			return 1
-		}
+		diags = diags.Append(tfCtx.Validate())
+	}
+
+	c.showDiagnostics(diags)
+	if diags.HasErrors() {
+		return 1
 	}
 
 	return 0

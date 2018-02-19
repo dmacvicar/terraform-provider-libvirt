@@ -1,13 +1,14 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"regexp"
 	"strings"
 
+	"github.com/hashicorp/packer/helper/multistep"
 	"github.com/hashicorp/packer/packer"
-	"github.com/mitchellh/multistep"
 )
 
 // This step cleans up the VMX by removing or changing this prior to
@@ -21,9 +22,10 @@ import (
 //   <nothing>
 type StepCleanVMX struct {
 	RemoveEthernetInterfaces bool
+	VNCEnabled               bool
 }
 
-func (s StepCleanVMX) Run(state multistep.StateBag) multistep.StepAction {
+func (s StepCleanVMX) Run(_ context.Context, state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
 	vmxPath := state.Get("vmx_path").(string)
 
@@ -59,8 +61,10 @@ func (s StepCleanVMX) Run(state multistep.StateBag) multistep.StepAction {
 		vmxData[ide+"clientdevice"] = "TRUE"
 	}
 
-	ui.Message("Disabling VNC server...")
-	vmxData["remotedisplay.vnc.enabled"] = "FALSE"
+	if s.VNCEnabled {
+		ui.Message("Disabling VNC server...")
+		vmxData["remotedisplay.vnc.enabled"] = "FALSE"
+	}
 
 	if s.RemoveEthernetInterfaces {
 		ui.Message("Removing Ethernet Interfaces...")

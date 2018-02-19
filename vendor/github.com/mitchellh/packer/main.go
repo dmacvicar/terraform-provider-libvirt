@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/hashicorp/go-uuid"
@@ -78,7 +79,9 @@ func realMain() int {
 
 		// Enable checkpoint for panic reporting
 		if config, _ := loadConfig(); config != nil && !config.DisableCheckpoint {
-			packer.CheckpointReporter.Enable(config.DisableCheckpointSignature)
+			packer.CheckpointReporter = packer.NewCheckpointReporter(
+				config.DisableCheckpointSignature,
+			)
 		}
 
 		// Create the configuration for panicwrap and wrap our executable
@@ -86,6 +89,7 @@ func realMain() int {
 		wrapConfig.Writer = io.MultiWriter(logTempFile, logWriter)
 		wrapConfig.Stdout = outW
 		wrapConfig.DetectDuration = 500 * time.Millisecond
+		wrapConfig.ForwardSignals = []os.Signal{syscall.SIGTERM}
 		exitStatus, err := panicwrap.Wrap(&wrapConfig)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Couldn't start Packer: %s", err)
@@ -144,7 +148,9 @@ func wrappedMain() int {
 	// Fire off the checkpoint.
 	go runCheckpoint(config)
 	if !config.DisableCheckpoint {
-		packer.CheckpointReporter.Enable(config.DisableCheckpointSignature)
+		packer.CheckpointReporter = packer.NewCheckpointReporter(
+			config.DisableCheckpointSignature,
+		)
 	}
 
 	cacheDir := os.Getenv("PACKER_CACHE_DIR")
@@ -271,7 +277,9 @@ func loadConfig() (*config, error) {
 	}
 
 	configFilePath := os.Getenv("PACKER_CONFIG")
-	if configFilePath == "" {
+	if configFilePath != "" {
+		log.Printf("'PACKER_CONFIG' set, loading config from environment.")
+	} else {
 		var err error
 		configFilePath, err = packer.ConfigFile()
 

@@ -33,7 +33,7 @@ the settings here.
   "source_path": "source.pvm",
   "ssh_username": "packer",
   "ssh_password": "packer",
-  "ssh_wait_timeout": "30s",
+  "ssh_timeout": "30s",
   "shutdown_command": "echo 'packer' | sudo -S shutdown -P now"
 }
 ```
@@ -230,6 +230,9 @@ proper key:
 In addition to the special keys, each command to type is treated as a
 [template engine](/docs/templates/engine.html). The
 available variables are:
+
+For more examples of various boot commands, see the sample projects from our
+[community templates page](/community-tools.html#templates).
 
 ## prlctl Commands
 

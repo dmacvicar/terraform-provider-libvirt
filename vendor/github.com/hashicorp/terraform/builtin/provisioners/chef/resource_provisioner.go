@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -370,18 +371,29 @@ func applyFn(ctx context.Context) error {
 }
 
 func validateFn(c *terraform.ResourceConfig) (ws []string, es []error) {
-	usePolicyFile, ok := c.Get("use_policyfile")
-	if !ok {
-		usePolicyFile = false
+	usePolicyFile := false
+	if usePolicyFileRaw, ok := c.Get("use_policyfile"); ok {
+		switch usePolicyFileRaw := usePolicyFileRaw.(type) {
+		case bool:
+			usePolicyFile = usePolicyFileRaw
+		case string:
+			usePolicyFileBool, err := strconv.ParseBool(usePolicyFileRaw)
+			if err != nil {
+				return ws, append(es, errors.New("\"use_policyfile\" must be a boolean"))
+			}
+			usePolicyFile = usePolicyFileBool
+		default:
+			return ws, append(es, errors.New("\"use_policyfile\" must be a boolean"))
+		}
 	}
 
-	if !usePolicyFile.(bool) && !c.IsSet("run_list") {
+	if !usePolicyFile && !c.IsSet("run_list") {
 		es = append(es, errors.New("\"run_list\": required field is not set"))
 	}
-	if usePolicyFile.(bool) && !c.IsSet("policy_name") {
+	if usePolicyFile && !c.IsSet("policy_name") {
 		es = append(es, errors.New("using policyfile, but \"policy_name\" not set"))
 	}
-	if usePolicyFile.(bool) && !c.IsSet("policy_group") {
+	if usePolicyFile && !c.IsSet("policy_group") {
 		es = append(es, errors.New("using policyfile, but \"policy_group\" not set"))
 	}
 
@@ -436,7 +448,7 @@ func (p *provisioner) deployConfigFiles(o terraform.UIOutput, comm communicator.
 	// Check if the run_list was also in the attributes and if so log a warning
 	// that it will be overwritten with the value of the run_list argument.
 	if _, found := fb["run_list"]; found {
-		log.Printf("[WARNING] Found a 'run_list' specified in the configured attributes! " +
+		log.Printf("[WARN] Found a 'run_list' specified in the configured attributes! " +
 			"This value will be overwritten by the value of the `run_list` argument!")
 	}
 
@@ -557,6 +569,25 @@ func (p *provisioner) configureVaultsFunc(gemCmd string, knifeCmd string, confDi
 			p.UserName,
 			path.Join(confDir, p.UserName+".pem"),
 		)
+
+		// if client gets recreated, remove (old) client (with old keys) from vaults/items
+		// otherwise, the (new) client (with new keys) will not be able to decrypt the vault
+		if p.RecreateClient {
+			for vault, items := range p.Vaults {
+				for _, item := range items {
+					deleteCmd := fmt.Sprintf("%s vault remove %s %s -C \"%s\" -M client %s",
+						knifeCmd,
+						vault,
+						item,
+						p.NodeName,
+						options,
+					)
+					if err := p.runCommand(o, comm, deleteCmd); err != nil {
+						return err
+					}
+				}
+			}
+		}
 
 		for vault, items := range p.Vaults {
 			for _, item := range items {

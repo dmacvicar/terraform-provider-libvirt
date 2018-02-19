@@ -103,7 +103,7 @@ Optional Parameters:
     files. The command should read and write on stdin and stdout, respectively.
     Defaults to `/usr/lib/sftp-server -e`.
 
--   `skip_version_check` (bool) - Check if ansible is installed prior to running.
+-   `skip_version_check` (boolean) - Check if ansible is installed prior to running.
     Set this to `true`, for example, if you're going to install ansible during
     the packer run.
 
@@ -250,7 +250,7 @@ SSH servers only allow you to attempt to authenticate a certain number of times.
     googlecompute: fatal: [default]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: Warning: Permanently added '[127.0.0.1]:62684' (RSA) to the list of known hosts.\r\nReceived disconnect from 127.0.0.1 port 62684:2: too many authentication failures\r\nAuthentication failed.\r\n", "unreachable": true}
 ```
 
-To unload all keys from your `ssh-agent`, run: 
+To unload all keys from your `ssh-agent`, run:
 
 ```console
 $ ssh-add -D

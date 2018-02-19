@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform/helper/copy"
 	"github.com/hashicorp/terraform/terraform"
@@ -828,6 +830,56 @@ func TestPlan_detailedExitcode_emptyDiff(t *testing.T) {
 	args := []string{"-detailed-exitcode"}
 	if code := c.Run(args); code != 0 {
 		t.Fatalf("bad: %d\n\n%s", code, ui.ErrorWriter.String())
+	}
+}
+
+func TestPlan_shutdown(t *testing.T) {
+	cancelled := make(chan struct{})
+
+	shutdownCh := make(chan struct{})
+	p := testProvider()
+	ui := new(cli.MockUi)
+	c := &PlanCommand{
+		Meta: Meta{
+			testingOverrides: metaOverridesForProvider(p),
+			Ui:               ui,
+			ShutdownCh:       shutdownCh,
+		},
+	}
+
+	p.StopFn = func() error {
+		close(cancelled)
+		return nil
+	}
+
+	var once sync.Once
+
+	p.DiffFn = func(
+		*terraform.InstanceInfo,
+		*terraform.InstanceState,
+		*terraform.ResourceConfig) (*terraform.InstanceDiff, error) {
+
+		once.Do(func() {
+			shutdownCh <- struct{}{}
+		})
+
+		return &terraform.InstanceDiff{
+			Attributes: map[string]*terraform.ResourceAttrDiff{
+				"ami": &terraform.ResourceAttrDiff{
+					New: "bar",
+				},
+			},
+		}, nil
+	}
+
+	if code := c.Run([]string{testFixturePath("apply-shutdown")}); code != 0 {
+		t.Fatalf("bad: %d\n\n%s", code, ui.ErrorWriter.String())
+	}
+
+	select {
+	case <-cancelled:
+	case <-time.After(5 * time.Second):
+		t.Fatal("command not cancelled")
 	}
 }
 

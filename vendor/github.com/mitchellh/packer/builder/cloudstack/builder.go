@@ -5,8 +5,8 @@ import (
 
 	"github.com/hashicorp/packer/common"
 	"github.com/hashicorp/packer/helper/communicator"
+	"github.com/hashicorp/packer/helper/multistep"
 	"github.com/hashicorp/packer/packer"
-	"github.com/mitchellh/multistep"
 	"github.com/xanzy/go-cloudstack/cloudstack"
 )
 
@@ -100,6 +100,11 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	if rawErr, ok := state.GetOk("error"); ok {
 		ui.Error(rawErr.(error).Error())
 		return nil, rawErr.(error)
+	}
+
+	// If there was no template created, just return
+	if _, ok := state.GetOk("template"); !ok {
+		return nil, nil
 	}
 
 	// Build the artifact and return it

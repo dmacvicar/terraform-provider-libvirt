@@ -64,7 +64,8 @@ builder.
     base image automatically decides the brand. On the Joyent public cloud a
     valid `source_machine_image` could for example be
     `70e3ae72-96b6-11e6-9056-9737fd4d0764` for version 16.3.1 of the 64bit
-    SmartOS base image (a 'joyent' brand image).
+    SmartOS base image (a 'joyent' brand image). `source_machine_image_filter` can
+    be used to populate this UUID.
 
 -   `source_machine_package` (string) - The Triton package to use while building
     the image. Does not affect (and does not have to be the same) as the package
@@ -91,6 +92,9 @@ builder.
     of `triton_key_id` is stored. For example `/home/soandso/.ssh/id_rsa`. If
     this is not specified, the SSH agent is used to sign requests with the
     `triton_key_id` specified.
+    
+-   `triton_user` (string) - The username of a user who has access to your Triton
+    account. 
 
 -   `source_machine_firewall_enabled` (boolean) - Whether or not the firewall of
     the VM used to create an image of is enabled. The Triton firewall only
@@ -133,9 +137,22 @@ builder.
     information about the image. Maximum 128 characters.
 -   `image_tags` (object of key/value strings) - Tag applied to the image.
 
+-   `source_machine_image_filter` (object) - Filters used to populate the `source_machine_image` field.
+    Example:
+
+    ``` json
+    {
+      "source_machine_image_filter": {
+        "name": "ubuntu-16.04",
+        "type": "lx-dataset",
+        "most_recent": true
+      }
+    }
+    ```
+
 ## Basic Example
 
-Below is a minimal example to create an joyent-brand image on the Joyent public
+Below is a minimal example to create an image on the Joyent public
 cloud:
 
 ``` json
@@ -149,7 +166,11 @@ cloud:
 
       "source_machine_name": "image-builder",
       "source_machine_package": "g4-highcpu-128M",
-      "source_machine_image": "f6acf198-2037-11e7-8863-8fdd4ce58b6a",
+      "source_machine_image_filter": {
+        "name": "ubuntu-16.04",
+        "type": "lx-dataset",
+        "most_recent": "true"
+      },
 
       "ssh_username": "root",
 

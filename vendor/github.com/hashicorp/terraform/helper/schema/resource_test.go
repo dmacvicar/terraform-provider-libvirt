@@ -226,7 +226,7 @@ func TestResourceDiff_Timeout_diff(t *testing.T) {
 	var s *terraform.InstanceState = nil
 	conf := terraform.NewResourceConfig(raw)
 
-	actual, err := r.Diff(s, conf)
+	actual, err := r.Diff(s, conf, nil)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -251,6 +251,44 @@ func TestResourceDiff_Timeout_diff(t *testing.T) {
 
 	if !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("Not equal in Timeout Diff:\n\texpected: %#v\n\tactual: %#v", expected.Meta, actual.Meta)
+	}
+}
+
+func TestResourceDiff_CustomizeFunc(t *testing.T) {
+	r := &Resource{
+		Schema: map[string]*Schema{
+			"foo": &Schema{
+				Type:     TypeInt,
+				Optional: true,
+			},
+		},
+	}
+
+	var called bool
+
+	r.CustomizeDiff = func(d *ResourceDiff, m interface{}) error {
+		called = true
+		return nil
+	}
+
+	raw, err := config.NewRawConfig(
+		map[string]interface{}{
+			"foo": 42,
+		})
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	var s *terraform.InstanceState
+	conf := terraform.NewResourceConfig(raw)
+
+	_, err = r.Diff(s, conf, nil)
+	if err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if !called {
+		t.Fatalf("diff customization not called")
 	}
 }
 
@@ -591,14 +629,14 @@ func TestResourceInternalValidate(t *testing.T) {
 		Writable bool
 		Err      bool
 	}{
-		{
+		0: {
 			nil,
 			true,
 			true,
 		},
 
 		// No optional and no required
-		{
+		1: {
 			&Resource{
 				Schema: map[string]*Schema{
 					"foo": &Schema{
@@ -613,7 +651,7 @@ func TestResourceInternalValidate(t *testing.T) {
 		},
 
 		// Update undefined for non-ForceNew field
-		{
+		2: {
 			&Resource{
 				Create: func(d *ResourceData, meta interface{}) error { return nil },
 				Schema: map[string]*Schema{
@@ -628,7 +666,7 @@ func TestResourceInternalValidate(t *testing.T) {
 		},
 
 		// Update defined for ForceNew field
-		{
+		3: {
 			&Resource{
 				Create: func(d *ResourceData, meta interface{}) error { return nil },
 				Update: func(d *ResourceData, meta interface{}) error { return nil },
@@ -645,7 +683,7 @@ func TestResourceInternalValidate(t *testing.T) {
 		},
 
 		// non-writable doesn't need Update, Create or Delete
-		{
+		4: {
 			&Resource{
 				Schema: map[string]*Schema{
 					"goo": &Schema{
@@ -659,7 +697,7 @@ func TestResourceInternalValidate(t *testing.T) {
 		},
 
 		// non-writable *must not* have Create
-		{
+		5: {
 			&Resource{
 				Create: func(d *ResourceData, meta interface{}) error { return nil },
 				Schema: map[string]*Schema{
@@ -674,7 +712,7 @@ func TestResourceInternalValidate(t *testing.T) {
 		},
 
 		// writable must have Read
-		{
+		6: {
 			&Resource{
 				Create: func(d *ResourceData, meta interface{}) error { return nil },
 				Update: func(d *ResourceData, meta interface{}) error { return nil },
@@ -691,7 +729,7 @@ func TestResourceInternalValidate(t *testing.T) {
 		},
 
 		// writable must have Delete
-		{
+		7: {
 			&Resource{
 				Create: func(d *ResourceData, meta interface{}) error { return nil },
 				Read:   func(d *ResourceData, meta interface{}) error { return nil },
@@ -765,6 +803,53 @@ func TestResourceInternalValidate(t *testing.T) {
 			true,
 			false,
 		},
+
+		11: { // ID should be allowed in data source
+			&Resource{
+				Read: func(d *ResourceData, meta interface{}) error { return nil },
+				Schema: map[string]*Schema{
+					"id": &Schema{
+						Type:     TypeString,
+						Optional: true,
+					},
+				},
+			},
+			false,
+			false,
+		},
+
+		12: { // Deprecated ID should be allowed in resource
+			&Resource{
+				Create: func(d *ResourceData, meta interface{}) error { return nil },
+				Read:   func(d *ResourceData, meta interface{}) error { return nil },
+				Update: func(d *ResourceData, meta interface{}) error { return nil },
+				Delete: func(d *ResourceData, meta interface{}) error { return nil },
+				Schema: map[string]*Schema{
+					"id": &Schema{
+						Type:       TypeString,
+						Optional:   true,
+						Deprecated: "Use x_id instead",
+					},
+				},
+			},
+			true,
+			false,
+		},
+
+		13: { // non-writable must not define CustomizeDiff
+			&Resource{
+				Read: func(d *ResourceData, meta interface{}) error { return nil },
+				Schema: map[string]*Schema{
+					"goo": &Schema{
+						Type:     TypeInt,
+						Optional: true,
+					},
+				},
+				CustomizeDiff: func(*ResourceDiff, interface{}) error { return nil },
+			},
+			false,
+			true,
+		},
 	}
 
 	for i, tc := range cases {
@@ -775,8 +860,11 @@ func TestResourceInternalValidate(t *testing.T) {
 			}
 
 			err := tc.In.InternalValidate(sm, tc.Writable)
-			if err != nil != tc.Err {
-				t.Fatalf("%d: bad: %s", i, err)
+			if err != nil && !tc.Err {
+				t.Fatalf("%d: expected validation to pass: %s", i, err)
+			}
+			if err == nil && tc.Err {
+				t.Fatalf("%d: expected validation to fail", i)
 			}
 		})
 	}

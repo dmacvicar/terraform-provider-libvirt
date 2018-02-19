@@ -18,21 +18,35 @@ import (
 )
 
 type Communicator struct {
-	ContainerID  string
-	HostDir      string
-	ContainerDir string
-	Version      *version.Version
-	Config       *Config
-	lock         sync.Mutex
+	ContainerID   string
+	HostDir       string
+	ContainerDir  string
+	Version       *version.Version
+	Config        *Config
+	ContainerUser string
+	lock          sync.Mutex
 }
 
 func (c *Communicator) Start(remote *packer.RemoteCmd) error {
-	var cmd *exec.Cmd
-	if c.Config.Pty {
-		cmd = exec.Command("docker", "exec", "-i", "-t", c.ContainerID, "/bin/sh", "-c", fmt.Sprintf("(%s)", remote.Command))
-	} else {
-		cmd = exec.Command("docker", "exec", "-i", c.ContainerID, "/bin/sh", "-c", fmt.Sprintf("(%s)", remote.Command))
+	dockerArgs := []string{
+		"exec",
+		"-i",
+		c.ContainerID,
+		"/bin/sh",
+		"-c",
+		fmt.Sprintf("(%s)", remote.Command),
 	}
+
+	if c.Config.Pty {
+		dockerArgs = append(dockerArgs[:2], append([]string{"-t"}, dockerArgs[2:]...)...)
+	}
+
+	if c.Config.ExecUser != "" {
+		dockerArgs = append(dockerArgs[:2],
+			append([]string{"-u", c.Config.ExecUser}, dockerArgs[2:]...)...)
+	}
+
+	cmd := exec.Command("docker", dockerArgs...)
 
 	var (
 		stdin_w io.WriteCloser
@@ -91,6 +105,21 @@ func (c *Communicator) uploadReader(dst string, src io.Reader) error {
 
 // uploadFile uses docker cp to copy the file from the host to the container
 func (c *Communicator) uploadFile(dst string, src io.Reader, fi *os.FileInfo) error {
+	// find out if it's a directory
+	testDirectoryCommand := fmt.Sprintf(`test -d "%s"`, dst)
+	cmd := &packer.RemoteCmd{Command: testDirectoryCommand}
+
+	err := c.Start(cmd)
+
+	if err != nil {
+		log.Printf("Unable to check whether remote path is a dir: %s", err)
+		return err
+	}
+	cmd.Wait()
+	if cmd.ExitStatus == 0 {
+		log.Printf("path is a directory; copying file into directory.")
+		dst = filepath.Join(dst, filepath.Base((*fi).Name()))
+	}
 
 	// command format: docker cp /path/to/infile containerid:/path/to/outfile
 	log.Printf("Copying to %s on container %s.", dst, c.ContainerID)
@@ -139,6 +168,10 @@ func (c *Communicator) uploadFile(dst string, src io.Reader, fi *os.FileInfo) er
 
 	if err := localCmd.Wait(); err != nil {
 		return fmt.Errorf("Failed to upload to '%s' in container: %s. %s.", dst, stderrOut, err)
+	}
+
+	if err := c.fixDestinationOwner(dst); err != nil {
+		return err
 	}
 
 	return nil
@@ -192,6 +225,10 @@ func (c *Communicator) UploadDir(dst string, src string, exclude []string) error
 	// Wait for the copy to complete
 	if err := localCmd.Wait(); err != nil {
 		return fmt.Errorf("Failed to upload to '%s' in container: %s. %s.", dst, stderrOut, err)
+	}
+
+	if err := c.fixDestinationOwner(dst); err != nil {
+		return err
 	}
 
 	return nil
@@ -296,4 +333,26 @@ func (c *Communicator) run(cmd *exec.Cmd, remote *packer.RemoteCmd, stdin io.Wri
 
 	// Set the exit status which triggers waiters
 	remote.SetExited(exitStatus)
+}
+
+// TODO Workaround for #5307. Remove once #5409 is fixed.
+func (c *Communicator) fixDestinationOwner(destination string) error {
+	if !c.Config.FixUploadOwner {
+		return nil
+	}
+
+	owner := c.ContainerUser
+	if owner == "" {
+		owner = "root"
+	}
+
+	chownArgs := []string{
+		"docker", "exec", "--user", "root", c.ContainerID, "/bin/sh", "-c",
+		fmt.Sprintf("chown -R %s %s", owner, destination),
+	}
+	if output, err := exec.Command(chownArgs[0], chownArgs[1:]...).CombinedOutput(); err != nil {
+		return fmt.Errorf("Failed to set owner of the uploaded file: %s, %s", err, output)
+	}
+
+	return nil
 }

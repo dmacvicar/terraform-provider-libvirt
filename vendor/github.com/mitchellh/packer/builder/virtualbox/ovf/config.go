@@ -38,6 +38,7 @@ type Config struct {
 	SourcePath           string   `mapstructure:"source_path"`
 	TargetPath           string   `mapstructure:"target_path"`
 	VMName               string   `mapstructure:"vm_name"`
+	KeepRegistered       bool     `mapstructure:"keep_registered"`
 	SkipExport           bool     `mapstructure:"skip_export"`
 
 	ctx interpolate.Context
@@ -96,10 +97,16 @@ func NewConfig(raws ...interface{}) (*Config, []string, error) {
 	if c.SourcePath == "" {
 		errs = packer.MultiErrorAppend(errs, fmt.Errorf("source_path is required"))
 	} else {
-		c.SourcePath, err = common.DownloadableURL(c.SourcePath)
+		c.SourcePath, err = common.ValidatedURL(c.SourcePath)
 		if err != nil {
 			errs = packer.MultiErrorAppend(errs, fmt.Errorf("source_path is invalid: %s", err))
 		}
+		fileOK := common.FileExistsLocally(c.SourcePath)
+		if !fileOK {
+			packer.MultiErrorAppend(errs,
+				fmt.Errorf("Source file needs to exist at time of config validation!"))
+		}
+
 	}
 
 	validMode := false

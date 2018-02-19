@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	plugin "github.com/hashicorp/go-plugin"
+	terraformProvider "github.com/hashicorp/terraform/builtin/providers/terraform"
 	tfplugin "github.com/hashicorp/terraform/plugin"
 	"github.com/hashicorp/terraform/plugin/discovery"
 	"github.com/hashicorp/terraform/terraform"
@@ -25,12 +26,25 @@ import (
 // each that satisfies the given constraints.
 type multiVersionProviderResolver struct {
 	Available discovery.PluginMetaSet
+
+	// Internal is a map that overrides the usual plugin selection process
+	// for internal plugins. These plugins do not support version constraints
+	// (will produce an error if one is set). This should be used only in
+	// exceptional circumstances since it forces the provider's release
+	// schedule to be tied to that of Terraform Core.
+	Internal map[string]terraform.ResourceProviderFactory
 }
 
-func choosePlugins(avail discovery.PluginMetaSet, reqd discovery.PluginRequirements) map[string]discovery.PluginMeta {
+func choosePlugins(avail discovery.PluginMetaSet, internal map[string]terraform.ResourceProviderFactory, reqd discovery.PluginRequirements) map[string]discovery.PluginMeta {
 	candidates := avail.ConstrainVersions(reqd)
 	ret := map[string]discovery.PluginMeta{}
 	for name, metas := range candidates {
+		// If the provider is in our internal map then we ignore any
+		// discovered plugins for it since these are dealt with separately.
+		if _, isInternal := internal[name]; isInternal {
+			continue
+		}
+
 		if len(metas) == 0 {
 			continue
 		}
@@ -45,8 +59,17 @@ func (r *multiVersionProviderResolver) ResolveProviders(
 	factories := make(map[string]terraform.ResourceProviderFactory, len(reqd))
 	var errs []error
 
-	chosen := choosePlugins(r.Available, reqd)
+	chosen := choosePlugins(r.Available, r.Internal, reqd)
 	for name, req := range reqd {
+		if factory, isInternal := r.Internal[name]; isInternal {
+			if !req.Versions.Unconstrained() {
+				errs = append(errs, fmt.Errorf("provider.%s: this provider is built in to Terraform and so it does not support version constraints", name))
+				continue
+			}
+			factories[name] = factory
+			continue
+		}
+
 		if newest, available := chosen[name]; available {
 			digest, err := newest.SHA256()
 			if err != nil {
@@ -94,6 +117,17 @@ func (m *Meta) storePluginPath(pluginPath []string) error {
 		return nil
 	}
 
+	path := filepath.Join(m.DataDir(), PluginPathFile)
+
+	// remove the plugin dir record if the path was set to an empty string
+	if len(pluginPath) == 1 && (pluginPath[0] == "") {
+		err := os.Remove(path)
+		if !os.IsNotExist(err) {
+			return err
+		}
+		return nil
+	}
+
 	js, err := json.MarshalIndent(pluginPath, "", "  ")
 	if err != nil {
 		return err
@@ -102,7 +136,7 @@ func (m *Meta) storePluginPath(pluginPath []string) error {
 	// if this fails, so will WriteFile
 	os.MkdirAll(m.DataDir(), 0755)
 
-	return ioutil.WriteFile(filepath.Join(m.DataDir(), PluginPathFile), js, 0644)
+	return ioutil.WriteFile(path, js, 0644)
 }
 
 // Load the user-defined plugin search path into Meta.pluginPath if the file
@@ -168,6 +202,17 @@ func (m *Meta) pluginDirs(includeAutoInstalled bool) []string {
 	return dirs
 }
 
+func (m *Meta) pluginCache() discovery.PluginCache {
+	dir := m.PluginCacheDir
+	if dir == "" {
+		return nil // cache disabled
+	}
+
+	dir = filepath.Join(dir, pluginMachineName)
+
+	return discovery.NewLocalPluginCache(dir)
+}
+
 // providerPluginSet returns the set of valid providers that were discovered in
 // the defined search paths.
 func (m *Meta) providerPluginSet() discovery.PluginMetaSet {
@@ -175,13 +220,16 @@ func (m *Meta) providerPluginSet() discovery.PluginMetaSet {
 
 	// Add providers defined in the legacy .terraformrc,
 	if m.PluginOverrides != nil {
+		for k, v := range m.PluginOverrides.Providers {
+			log.Printf("[DEBUG] found plugin override in .terraformrc: %q, %q", k, v)
+		}
 		plugins = plugins.OverridePaths(m.PluginOverrides.Providers)
 	}
 
 	plugins, _ = plugins.ValidateVersions()
 
 	for p := range plugins {
-		log.Printf("[DEBUG] found valid plugin: %q", p.Name)
+		log.Printf("[DEBUG] found valid plugin: %q, %q, %q", p.Name, p.Version, p.Path)
 	}
 
 	return plugins
@@ -207,13 +255,17 @@ func (m *Meta) providerPluginManuallyInstalledSet() discovery.PluginMetaSet {
 
 	// Add providers defined in the legacy .terraformrc,
 	if m.PluginOverrides != nil {
+		for k, v := range m.PluginOverrides.Providers {
+			log.Printf("[DEBUG] found plugin override in .terraformrc: %q, %q", k, v)
+		}
+
 		plugins = plugins.OverridePaths(m.PluginOverrides.Providers)
 	}
 
 	plugins, _ = plugins.ValidateVersions()
 
 	for p := range plugins {
-		log.Printf("[DEBUG] found valid plugin: %q", p.Name)
+		log.Printf("[DEBUG] found valid plugin: %q, %q, %q", p.Name, p.Version, p.Path)
 	}
 
 	return plugins
@@ -222,6 +274,15 @@ func (m *Meta) providerPluginManuallyInstalledSet() discovery.PluginMetaSet {
 func (m *Meta) providerResolver() terraform.ResourceProviderResolver {
 	return &multiVersionProviderResolver{
 		Available: m.providerPluginSet(),
+		Internal:  m.internalProviders(),
+	}
+}
+
+func (m *Meta) internalProviders() map[string]terraform.ResourceProviderFactory {
+	return map[string]terraform.ResourceProviderFactory{
+		"terraform": func() (terraform.ResourceProvider, error) {
+			return terraformProvider.Provider(), nil
+		},
 	}
 }
 
@@ -229,13 +290,16 @@ func (m *Meta) providerResolver() terraform.ResourceProviderResolver {
 func (m *Meta) missingPlugins(avail discovery.PluginMetaSet, reqd discovery.PluginRequirements) discovery.PluginRequirements {
 	missing := make(discovery.PluginRequirements)
 
-	for n, r := range reqd {
-		log.Printf("[DEBUG] plugin requirements: %q=%q", n, r.Versions)
-	}
-
 	candidates := avail.ConstrainVersions(reqd)
+	internal := m.internalProviders()
 
 	for name, versionSet := range reqd {
+		// internal providers can't be missing
+		if _, ok := internal[name]; ok {
+			continue
+		}
+
+		log.Printf("[DEBUG] plugin requirements: %q=%q", name, versionSet.Versions)
 		if metas := candidates[name]; metas.Count() == 0 {
 			missing[name] = versionSet
 		}

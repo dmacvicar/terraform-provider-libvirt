@@ -1710,7 +1710,7 @@ func (d *Domain) MemoryStats(nrStats uint32, flags uint32) ([]DomainMemoryStat, 
 		return []DomainMemoryStat{}, GetLastError()
 	}
 
-	out := make([]DomainMemoryStat, result)
+	out := make([]DomainMemoryStat, 0)
 	for i := 0; i < int(result); i++ {
 		out = append(out, DomainMemoryStat{
 			Tag: int32(ptr[i].tag),
@@ -2860,6 +2860,8 @@ type DomainJobInfo struct {
 	MemBps                    uint64
 	MemDirtyRateSet           bool
 	MemDirtyRate              uint64
+	MemPageSizeSet            bool
+	MemPageSize               uint64
 	MemIterationSet           bool
 	MemIteration              uint64
 	DiskTotalSet              bool
@@ -2991,6 +2993,10 @@ func getDomainJobInfoFieldInfo(params *DomainJobInfo) map[string]typedParamsFiel
 		C.VIR_DOMAIN_JOB_MEMORY_DIRTY_RATE: typedParamsFieldInfo{
 			set: &params.MemDirtyRateSet,
 			ul:  &params.MemDirtyRate,
+		},
+		C.VIR_DOMAIN_JOB_MEMORY_PAGE_SIZE: typedParamsFieldInfo{
+			set: &params.MemPageSizeSet,
+			ul:  &params.MemPageSize,
 		},
 		C.VIR_DOMAIN_JOB_MEMORY_ITERATION: typedParamsFieldInfo{
 			set: &params.MemIterationSet,
@@ -4497,4 +4503,37 @@ func (d *Domain) ManagedSaveGetXMLDesc(flags uint32) (string, error) {
 	xml := C.GoString(ret)
 	C.free(unsafe.Pointer(ret))
 	return xml, nil
+}
+
+type DomainLifecycle int
+
+const (
+	DOMAIN_LIFECYCLE_POWEROFF = DomainLifecycle(C.VIR_DOMAIN_LIFECYCLE_POWEROFF)
+	DOMAIN_LIFECYCLE_REBOOT   = DomainLifecycle(C.VIR_DOMAIN_LIFECYCLE_REBOOT)
+	DOMAIN_LIFECYCLE_CRASH    = DomainLifecycle(C.VIR_DOMAIN_LIFECYCLE_CRASH)
+)
+
+type DomainLifecycleAction int
+
+const (
+	DOMAIN_LIFECYCLE_ACTION_DESTROY          = DomainLifecycleAction(C.VIR_DOMAIN_LIFECYCLE_ACTION_DESTROY)
+	DOMAIN_LIFECYCLE_ACTION_RESTART          = DomainLifecycleAction(C.VIR_DOMAIN_LIFECYCLE_ACTION_RESTART)
+	DOMAIN_LIFECYCLE_ACTION_RESTART_RENAME   = DomainLifecycleAction(C.VIR_DOMAIN_LIFECYCLE_ACTION_RESTART_RENAME)
+	DOMAIN_LIFECYCLE_ACTION_PRESERVE         = DomainLifecycleAction(C.VIR_DOMAIN_LIFECYCLE_ACTION_PRESERVE)
+	DOMAIN_LIFECYCLE_ACTION_COREDUMP_DESTROY = DomainLifecycleAction(C.VIR_DOMAIN_LIFECYCLE_ACTION_COREDUMP_DESTROY)
+	DOMAIN_LIFECYCLE_ACTION_COREDUMP_RESTART = DomainLifecycleAction(C.VIR_DOMAIN_LIFECYCLE_ACTION_COREDUMP_RESTART)
+)
+
+// See also https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainSetLifecycleAction
+func (d *Domain) SetLifecycleAction(lifecycleType uint32, action uint32, flags uint32) error {
+	if C.LIBVIR_VERSION_NUMBER < 3009000 {
+		return GetNotImplementedError("virDomainSetLifecycleAction")
+	}
+
+	ret := C.virDomainSetLifecycleActionCompat(d.ptr, C.uint(lifecycleType), C.uint(action), C.uint(flags))
+	if ret == -1 {
+		return GetLastError()
+	}
+
+	return nil
 }

@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -10,19 +11,20 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/hashicorp/packer/common/uuid"
 	"github.com/hashicorp/packer/helper/communicator"
+	"github.com/hashicorp/packer/helper/multistep"
 	"github.com/hashicorp/packer/packer"
-	"github.com/mitchellh/multistep"
 )
 
 type StepSecurityGroup struct {
-	CommConfig       *communicator.Config
-	SecurityGroupIds []string
-	VpcId            string
+	CommConfig            *communicator.Config
+	SecurityGroupIds      []string
+	VpcId                 string
+	TemporarySGSourceCidr string
 
 	createdGroupId string
 }
 
-func (s *StepSecurityGroup) Run(state multistep.StateBag) multistep.StepAction {
+func (s *StepSecurityGroup) Run(_ context.Context, state multistep.StateBag) multistep.StepAction {
 	ec2conn := state.Get("ec2").(*ec2.EC2)
 	ui := state.Get("ui").(packer.Ui)
 
@@ -78,15 +80,15 @@ func (s *StepSecurityGroup) Run(state multistep.StateBag) multistep.StepAction {
 		IpProtocol: aws.String("tcp"),
 		FromPort:   aws.Int64(int64(port)),
 		ToPort:     aws.Int64(int64(port)),
-		CidrIp:     aws.String("0.0.0.0/0"),
+		CidrIp:     aws.String(s.TemporarySGSourceCidr),
 	}
 
 	// We loop and retry this a few times because sometimes the security
 	// group isn't available immediately because AWS resources are eventually
 	// consistent.
 	ui.Say(fmt.Sprintf(
-		"Authorizing access to port %d on the temporary security group...",
-		port))
+		"Authorizing access to port %d from %s in the temporary security group...",
+		port, s.TemporarySGSourceCidr))
 	for i := 0; i < 5; i++ {
 		_, err = ec2conn.AuthorizeSecurityGroupIngress(req)
 		if err == nil {
@@ -157,6 +159,7 @@ func waitUntilSecurityGroupExists(c *ec2.EC2, input *ec2.DescribeSecurityGroupsI
 	w := request.Waiter{
 		Name:        "DescribeSecurityGroups",
 		MaxAttempts: 40,
+		Delay:       request.ConstantWaiterDelay(5 * time.Second),
 		Acceptors: []request.WaiterAcceptor{
 			{
 				State:    request.SuccessWaiterState,

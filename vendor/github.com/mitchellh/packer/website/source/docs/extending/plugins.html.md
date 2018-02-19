@@ -17,9 +17,9 @@ writing plugins that are simply distributed with Packer. For example, all the
 builders, provisioners, and more that ship with Packer are implemented
 as Plugins that are simply hardcoded to load with Packer.
 
-This page will cover how to install and use plugins. If you're interested in
-developing plugins, the documentation for that is available the [developing
-plugins](/docs/extending/plugins.html) page.
+This section will cover how to install and use plugins. If you're interested in
+developing plugins, the documentation for that is available below, in the [developing
+plugins](#developing-plugins) section.
 
 Because Packer is so young, there is no official listing of available Packer
 plugins. Plugins are best found via Google. Typically, searching "packer plugin
@@ -32,11 +32,11 @@ Packer plugins are completely separate, standalone applications that the core of
 Packer starts and communicates with.
 
 These plugin applications aren't meant to be run manually. Instead, Packer core
-executes these plugin applications in a certain way and communicates with them.
-For example, the VMware builder is actually a standalone binary named
-`packer-builder-vmware`. The next time you run a Packer build, look at your
-process list and you should see a handful of `packer-` prefixed applications
-running.
+executes them as a sub-process, run as a sub-command (`packer plugin`) and
+communicates with them. For example, the VMware builder is actually run as
+`packer plugin packer-builder-vmware`. The next time you run a Packer build,
+look at your process list and you should see a handful of `packer-` prefixed
+applications running.
 
 ## Installing Plugins
 
@@ -124,7 +124,7 @@ There are two steps involved in creating a plugin:
     plugin, implement the `packer.Builder` interface.
 
 2.  Serve the interface by calling the appropriate plugin serving method in your
-    main method. In the case of a builder, this is `plugin.ServeBuilder`.
+    main method. In the case of a builder, this is `plugin.RegisterBuilder`.
 
 A basic example is shown below. In this example, assume the `Builder` struct
 implements the `packer.Builder` interface:
@@ -138,11 +138,11 @@ import (
 type Builder struct{}
 
 func main() {
-  plugin.ServeBuilder(new(Builder))
+  plugin.RegisterBuilder(new(Builder))
 }
 ```
 
-**That's it!** `plugin.ServeBuilder` handles all the nitty gritty of
+**That's it!** `plugin.RegisterBuilder` handles all the nitty gritty of
 communicating with Packer core and serving your builder over RPC. It can't get
 much easier than that.
 
@@ -153,12 +153,10 @@ using standard installation procedures.
 The specifics of how to implement each type of interface are covered in the
 relevant subsections available in the navigation to the left.
 
-~&gt; **Lock your dependencies!** Unfortunately, Go's dependency management
-story is fairly sad. There are various unofficial methods out there for locking
-dependencies, and using one of them is highly recommended since the Packer
-codebase will continue to improve, potentially breaking APIs along the way until
-there is a stable release. By locking your dependencies, your plugins will
-continue to work with the version of Packer you lock to.
+~&gt; **Lock your dependencies!** Using `govendor` is highly recommended since
+the Packer codebase will continue to improve, potentially breaking APIs along
+the way until there is a stable release. By locking your dependencies, your
+plugins will continue to work with the version of Packer you lock to.
 
 ### Logging and Debugging
 

@@ -6,15 +6,16 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	vmwcommon "github.com/hashicorp/packer/builder/vmware/common"
 	"github.com/hashicorp/packer/common"
 	"github.com/hashicorp/packer/helper/communicator"
 	"github.com/hashicorp/packer/helper/config"
+	"github.com/hashicorp/packer/helper/multistep"
 	"github.com/hashicorp/packer/packer"
 	"github.com/hashicorp/packer/template/interpolate"
-	"github.com/mitchellh/multistep"
 )
 
 const BuilderIdESX = "mitchellh.vmware-esx"
@@ -37,22 +38,43 @@ type Config struct {
 	vmwcommon.ToolsConfig    `mapstructure:",squash"`
 	vmwcommon.VMXConfig      `mapstructure:",squash"`
 
-	AdditionalDiskSize  []uint   `mapstructure:"disk_additional_size"`
-	BootCommand         []string `mapstructure:"boot_command"`
-	DiskName            string   `mapstructure:"vmdk_name"`
-	DiskSize            uint     `mapstructure:"disk_size"`
-	DiskTypeId          string   `mapstructure:"disk_type_id"`
-	Format              string   `mapstructure:"format"`
-	GuestOSType         string   `mapstructure:"guest_os_type"`
+	// disk drives
+	AdditionalDiskSize []uint `mapstructure:"disk_additional_size"`
+	DiskAdapterType    string `mapstructure:"disk_adapter_type"`
+	DiskName           string `mapstructure:"vmdk_name"`
+	DiskSize           uint   `mapstructure:"disk_size"`
+	DiskTypeId         string `mapstructure:"disk_type_id"`
+	Format             string `mapstructure:"format"`
+
+	// cdrom drive
+	CdromAdapterType string `mapstructure:"cdrom_adapter_type"`
+
+	// platform information
+	GuestOSType string `mapstructure:"guest_os_type"`
+	Version     string `mapstructure:"version"`
+	VMName      string `mapstructure:"vm_name"`
+
+	// Network adapter and type
+	NetworkAdapterType string `mapstructure:"network_adapter_type"`
+	Network            string `mapstructure:"network"`
+
+	// device presence
+	Sound bool `mapstructure:"sound"`
+	USB   bool `mapstructure:"usb"`
+
+	// communication ports
+	Serial   string `mapstructure:"serial"`
+	Parallel string `mapstructure:"parallel"`
+
+	// booting a guest
 	KeepRegistered      bool     `mapstructure:"keep_registered"`
 	OVFToolOptions      []string `mapstructure:"ovftool_options"`
 	SkipCompaction      bool     `mapstructure:"skip_compaction"`
 	SkipExport          bool     `mapstructure:"skip_export"`
-	VMName              string   `mapstructure:"vm_name"`
 	VMXDiskTemplatePath string   `mapstructure:"vmx_disk_template_path"`
 	VMXTemplatePath     string   `mapstructure:"vmx_template_path"`
-	Version             string   `mapstructure:"version"`
 
+	// remote vsphere
 	RemoteType           string `mapstructure:"remote_type"`
 	RemoteDatastore      string `mapstructure:"remote_datastore"`
 	RemoteCacheDatastore string `mapstructure:"remote_cache_datastore"`
@@ -109,6 +131,11 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 		b.config.DiskSize = 40000
 	}
 
+	if b.config.DiskAdapterType == "" {
+		// Default is lsilogic
+		b.config.DiskAdapterType = "lsilogic"
+	}
+
 	if b.config.DiskTypeId == "" {
 		// Default is growable virtual disk split in 2GB files.
 		b.config.DiskTypeId = "1"
@@ -149,12 +176,25 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 	if b.config.RemotePort == 0 {
 		b.config.RemotePort = 22
 	}
+
 	if b.config.VMXTemplatePath != "" {
 		if err := b.validateVMXTemplatePath(); err != nil {
 			errs = packer.MultiErrorAppend(
 				errs, fmt.Errorf("vmx_template_path is invalid: %s", err))
 		}
 
+	}
+
+	if b.config.Network == "" {
+		b.config.Network = "nat"
+	}
+
+	if !b.config.Sound {
+		b.config.Sound = false
+	}
+
+	if !b.config.USB {
+		b.config.USB = false
 	}
 
 	// Remote configuration validation
@@ -177,6 +217,12 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 		warnings = append(warnings,
 			"A shutdown_command was not specified. Without a shutdown command, Packer\n"+
 				"will forcibly halt the virtual machine, which may result in data loss.")
+	}
+
+	if b.config.Headless && b.config.DisableVNC {
+		warnings = append(warnings,
+			"Headless mode uses VNC to retrieve output. Since VNC has been disabled,\n"+
+				"you won't be able to see any output.")
 	}
 
 	if errs != nil && len(errs.Errors) > 0 {
@@ -259,6 +305,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			HTTPPortMax: b.config.HTTPPortMax,
 		},
 		&vmwcommon.StepConfigureVNC{
+			Enabled:            !b.config.DisableVNC,
 			VNCBindAddress:     b.config.VNCBindAddress,
 			VNCPortMin:         b.config.VNCPortMin,
 			VNCPortMax:         b.config.VNCPortMax,
@@ -273,6 +320,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			Headless:           b.config.Headless,
 		},
 		&vmwcommon.StepTypeBootCommand{
+			VNCEnabled:  !b.config.DisableVNC,
 			BootCommand: b.config.BootCommand,
 			VMName:      b.config.VMName,
 			Ctx:         b.config.ctx,
@@ -303,6 +351,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		},
 		&vmwcommon.StepCleanVMX{
 			RemoveEthernetInterfaces: b.config.VMXConfig.VMXRemoveEthernet,
+			VNCEnabled:               !b.config.DisableVNC,
 		},
 		&StepUploadVMX{
 			RemoteType: b.config.RemoteType,
@@ -334,7 +383,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 
 	// Compile the artifact list
 	var files []string
-	if b.config.RemoteType != "" && b.config.Format != "" {
+	if b.config.RemoteType != "" && b.config.Format != "" && !b.config.SkipExport {
 		dir = new(vmwcommon.LocalOutputDir)
 		dir.SetOutputDir(exportOutputPath)
 		files, err = dir.ListFiles()
@@ -351,11 +400,17 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		builderId = BuilderIdESX
 	}
 
+	config := make(map[string]string)
+	config[ArtifactConfKeepRegistered] = strconv.FormatBool(b.config.KeepRegistered)
+	config[ArtifactConfFormat] = b.config.Format
+	config[ArtifactConfSkipExport] = strconv.FormatBool(b.config.SkipExport)
+
 	return &Artifact{
 		builderId: builderId,
 		id:        b.config.VMName,
 		dir:       dir,
 		f:         files,
+		config:    config,
 	}, nil
 }
 

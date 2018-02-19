@@ -6,10 +6,13 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hashicorp/hcl2/hcl"
+
 	"github.com/hashicorp/terraform/backend"
 	"github.com/hashicorp/terraform/config"
 	"github.com/hashicorp/terraform/config/module"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform/tfdiags"
 )
 
 // ImportCommand is a cli.Command implementation that imports resources
@@ -41,6 +44,7 @@ func (c *ImportCommand) Run(args []string) int {
 	cmdFlags.StringVar(&c.Meta.provider, "provider", "", "provider")
 	cmdFlags.BoolVar(&c.Meta.stateLock, "lock", true, "lock state")
 	cmdFlags.DurationVar(&c.Meta.stateLockTimeout, "lock-timeout", 0, "lock timeout")
+	cmdFlags.BoolVar(&c.Meta.allowMissingConfig, "allow-missing-config", false, "allow missing config")
 	cmdFlags.Usage = func() { c.Ui.Error(c.Help()) }
 	if err := cmdFlags.Parse(args); err != nil {
 		return 1
@@ -70,13 +74,29 @@ func (c *ImportCommand) Run(args []string) int {
 		return 1
 	}
 
+	var diags tfdiags.Diagnostics
+
 	// Load the module
 	var mod *module.Tree
 	if configPath != "" {
-		var err error
-		mod, err = c.Module(configPath)
-		if err != nil {
-			c.Ui.Error(fmt.Sprintf("Failed to load root config module: %s", err))
+		if empty, _ := config.IsEmptyDir(configPath); empty {
+			diags = diags.Append(&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "No Terraform configuration files",
+				Detail: fmt.Sprintf(
+					"The directory %s does not contain any Terraform configuration files (.tf or .tf.json). To specify a different configuration directory, use the -config=\"...\" command line option.",
+					configPath,
+				),
+			})
+			c.showDiagnostics(diags)
+			return 1
+		}
+
+		var modDiags tfdiags.Diagnostics
+		mod, modDiags = c.Module(configPath)
+		diags = diags.Append(modDiags)
+		if modDiags.HasErrors() {
+			c.showDiagnostics(diags)
 			return 1
 		}
 	}
@@ -88,11 +108,15 @@ func (c *ImportCommand) Run(args []string) int {
 	targetMod := mod.Child(addr.Path)
 	if targetMod == nil {
 		modulePath := addr.WholeModuleAddress().String()
-		if modulePath == "" {
-			c.Ui.Error(importCommandMissingConfigMsg)
-		} else {
-			c.Ui.Error(fmt.Sprintf(importCommandMissingModuleFmt, modulePath))
-		}
+		diags = diags.Append(&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Import to non-existent module",
+			Detail: fmt.Sprintf(
+				"%s is not defined in the configuration. Please add configuration for this module before importing into it.",
+				modulePath,
+			),
+		})
+		c.showDiagnostics(diags)
 		return 1
 	}
 	rcs := targetMod.Config().Resources
@@ -103,11 +127,19 @@ func (c *ImportCommand) Run(args []string) int {
 			break
 		}
 	}
-	if rc == nil {
+	if !c.Meta.allowMissingConfig && rc == nil {
 		modulePath := addr.WholeModuleAddress().String()
 		if modulePath == "" {
 			modulePath = "the root module"
 		}
+
+		c.showDiagnostics(diags)
+
+		// This is not a diagnostic because currently our diagnostics printer
+		// doesn't support having a code example in the detail, and there's
+		// a code example in this message.
+		// TODO: Improve the diagnostics printer so we can use it for this
+		// message.
 		c.Ui.Error(fmt.Sprintf(
 			importCommandMissingResourceFmt,
 			addr, modulePath, addr.Type, addr.Name,
@@ -165,7 +197,8 @@ func (c *ImportCommand) Run(args []string) int {
 		},
 	})
 	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error importing: %s", err))
+		diags = diags.Append(err)
+		c.showDiagnostics(diags)
 		return 1
 	}
 
@@ -181,6 +214,15 @@ func (c *ImportCommand) Run(args []string) int {
 	}
 
 	c.Ui.Output(c.Colorize().Color("[reset][green]\n" + importCommandSuccessMsg))
+
+	if c.Meta.allowMissingConfig && rc == nil {
+		c.Ui.Output(c.Colorize().Color("[reset][yellow]\n" + importCommandAllowMissingResourceMsg))
+	}
+
+	c.showDiagnostics(diags)
+	if diags.HasErrors() {
+		return 1
+	}
 
 	return 0
 }
@@ -202,11 +244,13 @@ Usage: terraform import [options] ADDR ID
   determine the ID syntax to use. It typically matches directly to the ID
   that the provider uses.
 
-  In the current state of Terraform import, the resource is only imported
-  into your state file. Once it is imported, you must manually write
-  configuration for the new resource or Terraform will mark it for destruction.
-  Future versions of Terraform will expand the functionality of Terraform
-  import.
+  The current implementation of Terraform import can only import resources
+  into the state. It does not generate configuration. A future version of
+  Terraform will also generate configuration.
+
+  Because of this, prior to running terraform import it is necessary to write
+  a resource configuration block for the resource manually, to which the
+  imported object will be attached.
 
   This command will not modify your infrastructure, but it will make
   network requests to inspect parts of your infrastructure relevant to
@@ -214,41 +258,43 @@ Usage: terraform import [options] ADDR ID
 
 Options:
 
-  -backup=path        Path to backup the existing state file before
-                      modifying. Defaults to the "-state-out" path with
-                      ".backup" extension. Set to "-" to disable backup.
+  -backup=path            Path to backup the existing state file before
+                          modifying. Defaults to the "-state-out" path with
+                          ".backup" extension. Set to "-" to disable backup.
 
-  -config=path        Path to a directory of Terraform configuration files
-                      to use to configure the provider. Defaults to pwd.
-                      If no config files are present, they must be provided
-                      via the input prompts or env vars.
+  -config=path            Path to a directory of Terraform configuration files
+                          to use to configure the provider. Defaults to pwd.
+                          If no config files are present, they must be provided
+                          via the input prompts or env vars.
 
-  -input=true         Ask for input for variables if not directly set.
+  -allow-missing-config   Allow import when no resource configuration block exists.
 
-  -lock=true          Lock the state file when locking is supported.
+  -input=true             Ask for input for variables if not directly set.
 
-  -lock-timeout=0s    Duration to retry a state lock.
+  -lock=true              Lock the state file when locking is supported.
 
-  -no-color           If specified, output won't contain any color.
+  -lock-timeout=0s        Duration to retry a state lock.
 
-  -provider=provider  Specific provider to use for import. This is used for
-                      specifying aliases, such as "aws.eu". Defaults to the
-                      normal provider prefix of the resource being imported.
+  -no-color               If specified, output won't contain any color.
 
-  -state=PATH         Path to the source state file. Defaults to the configured
-                      backend, or "terraform.tfstate"
+  -provider=provider      Specific provider to use for import. This is used for
+                          specifying aliases, such as "aws.eu". Defaults to the
+                          normal provider prefix of the resource being imported.
 
-  -state-out=PATH     Path to the destination state file to write to. If this
-                      isn't specified, the source state file will be used. This
-                      can be a new or existing path.
+  -state=PATH             Path to the source state file. Defaults to the configured
+                          backend, or "terraform.tfstate"
 
-  -var 'foo=bar'      Set a variable in the Terraform configuration. This
-                      flag can be set multiple times. This is only useful
-                      with the "-config" flag.
+  -state-out=PATH         Path to the destination state file to write to. If this
+                          isn't specified, the source state file will be used. This
+                          can be a new or existing path.
 
-  -var-file=foo       Set variables in the Terraform configuration from
-                      a file. If "terraform.tfvars" or any ".auto.tfvars"
-                      files are present, they will be automatically loaded.
+  -var 'foo=bar'          Set a variable in the Terraform configuration. This
+                          flag can be set multiple times. This is only useful
+                          with the "-config" flag.
+
+  -var-file=foo           Set variables in the Terraform configuration from
+                          a file. If "terraform.tfvars" or any ".auto.tfvars"
+                          files are present, they will be automatically loaded.
 
 
 `
@@ -276,18 +322,7 @@ const importCommandResourceModeMsg = `Error: resource address must refer to a ma
 Data resources cannot be imported.
 `
 
-const importCommandMissingConfigMsg = `Error: no configuration files in this directory.
-
-"terraform import" can only be run in a Terraform configuration directory.
-Create one or more .tf files in this directory to import here.
-`
-
-const importCommandMissingModuleFmt = `Error: %s does not exist in the configuration.
-
-Please add the configuration for the module before importing resources into it.
-`
-
-const importCommandMissingResourceFmt = `Error: resource address %q does not exist in the configuration.
+const importCommandMissingResourceFmt = `[reset][bold][red]Error:[reset][bold] resource address %q does not exist in the configuration.[reset]
 
 Before importing this resource, please create its configuration in %s. For example:
 
@@ -300,9 +335,13 @@ const importCommandSuccessMsg = `Import successful!
 
 The resources that were imported are shown above. These resources are now in
 your Terraform state and will henceforth be managed by Terraform.
+`
 
-Import does not generate configuration, so the next step is to ensure that
-the resource configurations match the current (or desired) state of the
-imported resources. You can use the output from "terraform plan" to verify that
-the configuration is correct and complete.
+const importCommandAllowMissingResourceMsg = `Import does not generate resource configuration, you must create a resource
+configuration block that matches the current or desired state manually.
+
+If there is no matching resource configuration block for the imported
+resource, Terraform will delete the resource on the next "terraform apply".
+It is recommended that you run "terraform plan" to verify that the
+configuration is correct and complete.
 `
