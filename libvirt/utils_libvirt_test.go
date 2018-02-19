@@ -47,6 +47,10 @@ func connect(t *testing.T) *libvirt.Connect {
 }
 
 func TestGetHostArchitecture(t *testing.T) {
+	if !testAccEnabled() {
+		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
+		return
+	}
 
 	conn := connect(t)
 	defer conn.Close()
@@ -65,6 +69,10 @@ func TestGetHostArchitecture(t *testing.T) {
 }
 
 func TestGetCanonicalMachineName(t *testing.T) {
+	if !testAccEnabled() {
+		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
+		return
+	}
 
 	conn := connect(t)
 	defer conn.Close()
@@ -88,6 +96,11 @@ func TestGetCanonicalMachineName(t *testing.T) {
 }
 
 func TestGetOriginalMachineName(t *testing.T) {
+	if !testAccEnabled() {
+		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
+		return
+	}
+
 	conn := connect(t)
 	defer conn.Close()
 	arch := "x86_64"
@@ -115,6 +128,11 @@ func TestGetOriginalMachineName(t *testing.T) {
 }
 
 func TestGetHostCapabilties(t *testing.T) {
+	if !testAccEnabled() {
+		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
+		return
+	}
+
 	start := time.Now()
 	conn := connect(t)
 	defer conn.Close()

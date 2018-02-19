@@ -2,6 +2,7 @@ package libvirt
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -34,4 +35,9 @@ func testAccPreCheck(t *testing.T) {
 	if v := os.Getenv("LIBVIRT_DEFAULT_URI"); v == "" {
 		t.Fatal("LIBVIRT_DEFAULT_URI must be set for acceptance tests")
 	}
+}
+
+func testAccEnabled() bool {
+	v := os.Getenv("TF_ACC")
+	return v == "1" || strings.ToLower(v) == "true"
 }
