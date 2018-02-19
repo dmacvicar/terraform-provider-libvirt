@@ -1,8 +1,11 @@
 package libvirt
 
 import (
+	"bytes"
 	"errors"
+	"log"
 	"net"
+	"os"
 	"testing"
 	"time"
 )
@@ -60,9 +63,12 @@ func TestWaitForSuccessEverythingFine(t *testing.T) {
 func TestWaitForSuccessBrokenFunction(t *testing.T) {
 	waitSleep := WaitSleepInterval
 	waitTimeout := WaitTimeout
+	var b bytes.Buffer
+	log.SetOutput(&b)
 	defer func() {
 		WaitSleepInterval = waitSleep
 		WaitTimeout = waitTimeout
+		log.SetOutput(os.Stderr)
 	}()
 
 	WaitTimeout = 1 * time.Second
