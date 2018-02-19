@@ -7,7 +7,7 @@ install:
 	go install
 
 test:
-	bash travis/run-tests-acceptance
+	go test -v -covermode=count -coverprofile=profile.cov ./libvirt
 
 vet:
 	@echo "go vet ."
