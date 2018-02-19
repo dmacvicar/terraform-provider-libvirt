@@ -9,6 +9,9 @@ install:
 test:
 	go test -v -covermode=count -coverprofile=profile.cov ./libvirt
 
+testacc:
+	./travis/run-tests-acceptance
+
 vet:
 	@echo "go vet ."
 	@go vet $$(go list ./... | grep -v vendor/) ; if [ $$? -eq 1 ]; then \
