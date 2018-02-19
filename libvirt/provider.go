@@ -10,6 +10,8 @@ import (
 
 // Global poolMutexKV
 var poolMutexKV = mutexkv.NewMutexKV()
+
+// LibvirtClient global variable holding the connection to the libvirtd daemon
 var LibvirtClient *libvirt.Connect
 
 // Provider libvirt
