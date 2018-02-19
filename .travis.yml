@@ -9,6 +9,9 @@ install:        true
 before_script:
   - go get github.com/mattn/goveralls
   - go get github.com/golang/lint/golint
+apt:
+  packages:
+    - libvirt-dev
 script:
   - make gofmtcheck
   - make vet
