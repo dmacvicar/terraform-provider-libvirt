@@ -12,24 +12,19 @@ func init() {
 }
 
 func TestSplitKernelCmdLine(t *testing.T) {
-	e := []map[string]string{{"foo": "bar"}, {"foo": "bar", "key": "val"}}
-	r, err := splitKernelCmdLine("foo=bar foo=bar key=val")
+	e := []map[string]string{
+		{"foo": "bar"},
+		{
+			"foo":  "bar",
+			"key":  "val",
+			"root": "UUID=aa52d618-a2c4-4aad-aeb7-68d9e3a2c91d"},
+		{"_": "nosplash rw"}}
+	r, err := splitKernelCmdLine("foo=bar foo=bar key=val root=UUID=aa52d618-a2c4-4aad-aeb7-68d9e3a2c91d nosplash rw")
 	if !reflect.DeepEqual(r, e) {
 		t.Fatalf("got='%s' expected='%s'", spew.Sdump(r), spew.Sdump(e))
 	}
 	if err != nil {
 		t.Error(err)
-	}
-}
-
-func TestSplitKernelInvalidCmdLine(t *testing.T) {
-	v := "foo=barfoo=bar"
-	r, err := splitKernelCmdLine(v)
-	if r != nil {
-		t.Fatalf("got='%s' expected='%s'", spew.Sdump(r), err)
-	}
-	if err == nil {
-		t.Errorf("Expected error for parsing '%s'", v)
 	}
 }
 

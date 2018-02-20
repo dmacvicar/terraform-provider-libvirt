@@ -85,7 +85,7 @@ resource "libvirt_domain" "domain-suse" {
 }
 ```
 
-* `kernel` - (Optional) The path of the initrd to boot.
+* `initrd` - (Optional) The path of the initrd to boot.
 
 You can use it in the same way as the kernel.
 
@@ -102,9 +102,14 @@ resource "libvirt_domain" "domain-suse" {
   cmdline {
     arg1 = "value1"
     arg2 = "value2"
+    "_" = "rw nosplash"
   }
 }
 ```
+
+Kernel params that don't have a keyword identifier can be specified using the
+special `"_"` keyword. Multiple keyword-less params have to be specified using
+the same `"_"` keyword, like in the example above.
 
 Also note that the `cmd` block is actually a list of maps, so it is possible to
 declare several of them by using either the literal list and map syntax as in
@@ -150,6 +155,10 @@ resource "libvirt_domain" "my_machine" {
   }
 }
 ```
+
+~> **Note well:** `kernel` and `initrd` have to be specified at the same time; `cmdline`
+   arguments can be specified only when `kernel` and `initrd` have been defined.
+   Otherwise libvirt will refuse to start the domain.
 
 ### UEFI images
 
