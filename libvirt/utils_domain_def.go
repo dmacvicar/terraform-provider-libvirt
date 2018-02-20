@@ -70,10 +70,7 @@ func splitKernelCmdLine(cmdLine string) ([]map[string]string, error) {
 			continue
 		}
 
-		kv := strings.Split(argVal, "=")
-		if len(kv) != 2 {
-			return nil, fmt.Errorf("Can't parse kernel command line: '%s'", cmdLine)
-		}
+		kv := strings.SplitN(argVal, "=", 2)
 		k, v := kv[0], kv[1]
 		// if the key is duplicate, start a new map
 		if _, ok := currCmdLine[k]; ok {
