@@ -12,8 +12,8 @@ func init() {
 }
 
 func TestSplitKernelCmdLine(t *testing.T) {
-	e := []map[string]string{{"foo": "bar"}, {"foo": "bar", "key": "val"}}
-	r, err := splitKernelCmdLine("foo=bar foo=bar key=val")
+	e := []map[string]string{{"foo": "bar"}, {"foo": "bar", "key": "val"}, {"_": "nosplash rw"}}
+	r, err := splitKernelCmdLine("foo=bar foo=bar key=val nosplash rw")
 	if !reflect.DeepEqual(r, e) {
 		t.Fatalf("got='%s' expected='%s'", spew.Sdump(r), spew.Sdump(e))
 	}

@@ -60,8 +60,16 @@ func splitKernelCmdLine(cmdLine string) ([]map[string]string, error) {
 	}
 
 	currCmdLine := make(map[string]string)
+	keylessCmdLineArgs := []string{}
+
 	argVals := strings.Split(cmdLine, " ")
 	for _, argVal := range argVals {
+		if !strings.Contains(argVal, "=") {
+			// keyless cmd line (eg: nosplash)
+			keylessCmdLineArgs = append(keylessCmdLineArgs, argVal)
+			continue
+		}
+
 		kv := strings.Split(argVal, "=")
 		if len(kv) != 2 {
 			return nil, fmt.Errorf("Can't parse kernel command line: '%s'", cmdLine)
@@ -76,6 +84,11 @@ func splitKernelCmdLine(cmdLine string) ([]map[string]string, error) {
 	}
 	if len(currCmdLine) > 0 {
 		cmdLines = append(cmdLines, currCmdLine)
+	}
+	if len(keylessCmdLineArgs) > 0 {
+		cl := make(map[string]string)
+		cl["_"] = strings.Join(keylessCmdLineArgs, " ")
+		cmdLines = append(cmdLines, cl)
 	}
 	return cmdLines, nil
 }
