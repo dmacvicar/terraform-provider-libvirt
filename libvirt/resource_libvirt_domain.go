@@ -992,7 +992,14 @@ func setCmdlineArgs(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	var cmdlineArgs []string
 	for i := 0; i < d.Get("cmdline.#").(int); i++ {
 		for k, v := range d.Get(fmt.Sprintf("cmdline.%d", i)).(map[string]interface{}) {
-			cmdlineArgs = append(cmdlineArgs, fmt.Sprintf("%s=%v", k, v))
+			var cmd string
+			if k == "_" {
+				// keyless cmd (eg: nosplash)
+				cmd = fmt.Sprintf("%v", v)
+			} else {
+				cmd = fmt.Sprintf("%s=%v", k, v)
+			}
+			cmdlineArgs = append(cmdlineArgs, cmd)
 		}
 	}
 	sort.Strings(cmdlineArgs)
