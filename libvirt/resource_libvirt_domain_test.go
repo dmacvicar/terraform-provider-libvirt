@@ -871,7 +871,7 @@ func TestAccLibvirtDomainFirmware(t *testing.T) {
 	if _, err := os.Stat(firmware); os.IsNotExist(err) {
 		firmware = "/usr/share/ovmf/OVMF.fd"
 		if _, err := os.Stat(firmware); os.IsNotExist(err) {
-			t.Skip("Can't test domain custom firmware: OVMF firmware not found: %s")
+			t.Skipf("Can't test domain custom firmware: OVMF firmware not found: %s", err)
 		}
 	}
 
@@ -879,7 +879,7 @@ func TestAccLibvirtDomainFirmware(t *testing.T) {
 	if _, err := os.Stat(template); os.IsNotExist(err) {
 		template = "/usr/share/qemu/OVMF.fd"
 		if _, err := os.Stat(template); os.IsNotExist(err) {
-			t.Skip("Can't test domain custom firmware template: OVMF template not found: %s")
+			t.Skipf("Can't test domain custom firmware template: OVMF template not found: %s", err)
 		}
 	}
 
