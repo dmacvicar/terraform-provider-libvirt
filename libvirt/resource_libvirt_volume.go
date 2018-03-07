@@ -188,8 +188,8 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		if _, ok := d.GetOk("base_volume_pool"); ok {
 			baseVolumePoolName := d.Get("base_volume_pool").(string)
 
-			poolMutexKV.Lock(baseVolumePoolName)
-			defer poolMutexKV.Unlock(baseVolumePoolName)
+			client.poolMutexKV.Lock(baseVolumePoolName)
+			defer client.poolMutexKV.Unlock(baseVolumePoolName)
 
 			baseVolumePool, err = client.libvirt.LookupStoragePoolByName(baseVolumePoolName)
 			if err != nil {
@@ -267,9 +267,9 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 
 		volPoolName := d.Get("pool").(string)
 
-		poolMutexKV.Lock(volPoolName)
-		defer poolMutexKV.Unlock(volPoolName)
-
+		client.poolMutexKV.Lock(volPoolName)
+		defer client.poolMutexKV.Unlock(volPoolName)
+	
 		volPool, err := virConn.LookupStoragePoolByName(volPoolName)
 		if err != nil {
 			return fmt.Errorf("Error retrieving pool %s for volume %s: %v", volPoolName, volID, err)

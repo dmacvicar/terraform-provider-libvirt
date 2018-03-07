@@ -482,7 +482,18 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 	resource "libvirt_domain" "acceptance-test-domain" {
 		name = "terraform-test"
 		cpu {
-			mode = "custom"
+			mode = "host-passthrough"
+			vendor = "Intel"
+
+			feature {
+				policy = "require"
+				name = "pcid"
+			}
+
+			feature {
+				policy = "forbid"
+				name = "nopcid"
+			}
 		}
 	}`)
 
@@ -496,7 +507,15 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain", "cpu.mode", "custom"),
+						"libvirt_domain.acceptance-test-domain", "cpu.0.mode", "host-passthrough"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "cpu.0.feature.0.policy", "require"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "cpu.0.feature.0.name", "pcid"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "cpu.0.feature.1.policy", "forbid"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain.acceptance-test-domain", "cpu.0.feature.1.name", "invpcid"),
 				),
 			},
 		},
@@ -833,7 +852,7 @@ func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel
 			return fmt.Errorf("Can't get initrd volume id")
 		}
 		if domainDef.OS.Initrd != key {
-			return fmt.Errorf("Initrd is not set correctly: '%s' vs '%s'", domainDef.OS, key)
+			return fmt.Errorf("Initrd is not set correctly: '%s' vs '%s'", domainDef.OS.Initrd, key)
 		}
 		if domainDef.OS.Cmdline != "bar=bye foo=1 foo=2" {
 			return fmt.Errorf("Kernel args not set correctly: '%s'", domainDef.OS.Cmdline)

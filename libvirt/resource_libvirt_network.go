@@ -373,7 +373,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		// so we need some transformations...
 		addr := net.ParseIP(address.Address)
 		if addr == nil {
-			return fmt.Errorf("Error parsing IP '%s': %s", address, err)
+			return fmt.Errorf("Error parsing IP '%s': %s", address.Address, err)
 		}
 		bits := net.IPv6len * 8
 		if addr.To4() != nil {
