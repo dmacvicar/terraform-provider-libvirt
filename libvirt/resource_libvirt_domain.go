@@ -407,6 +407,18 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			}
 		}
 
+		if _, ok := diskMap["driver_type"].(string); ok {
+			disk.Driver.Type = diskMap["driver_type"].(string)
+		}
+
+		// support scsi drive for virtio-scsi
+		if scsiDisk {
+			disk.Target = &libvirtxml.DomainDiskTarget{
+				Bus: "scsi",
+				Dev: fmt.Sprintf("sd%s", DiskLetterForIndex(i)),
+			}
+		}
+
 		if _, ok := diskMap["volume_id"].(string); ok {
 			volumeKey := diskMap["volume_id"].(string)
 
