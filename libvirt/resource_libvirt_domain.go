@@ -158,6 +158,11 @@ func resourceLibvirtDomain() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
+						"readonly": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
 					},
 				},
 			},
@@ -706,27 +711,35 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				return err
 			}
 			disk = map[string]interface{}{
-				"url": url.String(),
+				"url":      url.String(),
+				"readonly": diskDef.ReadOnly,
 			}
 			disks = append(disks, disk)
 		} else if diskDef.Device == "cdrom" {
 			disk = map[string]interface{}{
-				"file": diskDef.Source.File,
+				"file":     diskDef.Source.File,
+				"readonly": diskDef.ReadOnly,
 			}
 		} else {
-			virVol, err := virConn.LookupStorageVolByPath(diskDef.Source.File)
-			if err != nil {
-				return fmt.Errorf("Error retrieving volume for disk: %s", err)
-			}
-			defer virVol.Free()
+			if diskDef.ReadOnly == nil {
+				virVol, err := virConn.LookupStorageVolByPath(diskDef.Source.File)
+				if err != nil {
+					return fmt.Errorf("Error retrieving volume for disk: %s", err)
+				}
+				defer virVol.Free()
 
-			virVolKey, err := virVol.GetKey()
-			if err != nil {
-				return fmt.Errorf("Error retrieving volume for disk: %s", err)
-			}
+				virVolKey, err := virVol.GetKey()
+				if err != nil {
+					return fmt.Errorf("Error retrieving volume for disk: %s", err)
+				}
 
-			disk = map[string]interface{}{
-				"volume_id": virVolKey,
+				disk = map[string]interface{}{
+					"volume_id": virVolKey,
+				}
+			} else {
+				disk = map[string]interface{}{
+					"readonly": diskDef.ReadOnly,
+				}
 			}
 		}
 		disks = append(disks, disk)
@@ -1095,6 +1108,12 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 			} else {
 				disk.WWN = randomWWN(10)
 			}
+		}
+
+		if d.Get(prefix + ".readonly").(bool) {
+			disk.ReadOnly = &libvirtxml.DomainDiskReadOnly{}
+		} else {
+			disk.ReadOnly = nil
 		}
 
 		if volumeKey, ok := d.GetOk(prefix + ".volume_id"); ok {
