@@ -708,7 +708,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			disk = map[string]interface{}{
 				"url": url.String(),
 			}
-			disks = append(disks, disk)
 		} else if diskDef.Device == "cdrom" {
 			disk = map[string]interface{}{
 				"file": diskDef.Source.File,
