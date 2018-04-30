@@ -29,6 +29,7 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 * latest [golang](https://golang.org/dl/) version
 * `mkisofs` is required to use the [CloudInit](website/docs/r/cloudinit.html.markdown)
   feature.
+* `cgo` is required by the [libvirt-go](https://github.com/libvirt/libvirt-go) package. `export CGO_ENABLED="1"`
 
 [Copied from the Terraform documentation](https://www.terraform.io/docs/plugins/basics.html):
 > To install a plugin, put the binary somewhere on your filesystem, then configure Terraform to be able to find it. The configuration where plugins are defined is ~/.terraformrc for Unix-like systems and %APPDATA%/terraform.rc for Windows.
