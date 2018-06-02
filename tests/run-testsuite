@@ -1,0 +1,53 @@
+#! /usr/bin/ruby
+
+require 'yaml'
+require 'fileutils'
+
+ENV['TF_LOG'] = 'TRACE'
+config = YAML.load_file(File.join(__dir__, 'testsuite.yml'))
+LIST_TESTS = config['integration_tests']
+tf_workspace = 'tf_workspace'
+
+def main!(tf_workspace)
+  LIST_TESTS.each do |test|
+    tests_dir = Dir.pwd
+    FileUtils.mkdir_p tf_workspace
+    FileUtils.cp test, tf_workspace
+    Dir.chdir tf_workspace
+    terraform_tests
+    Dir.chdir tests_dir
+    FileUtils.rm_rf(tf_workspace)
+  end
+end
+
+def terraform_tests
+  Terraform.init
+  Terraform.apply
+  Terraform.destroy
+end
+
+# perform basic operation with terraform
+module Terraform
+  def self.init
+    puts `terraform init`
+    puts
+  end
+
+  def self.apply
+    puts `terraform apply`
+    puts
+  end
+
+  def self.destroy
+    puts `terraform destroy -force`
+    puts
+  end
+end
+
+def cleanup
+   'puts cleanup_resources'
+end
+
+
+main!(tf_workspace)
+cleanup
