@@ -93,6 +93,13 @@ func resourceLibvirtDomain() *schema.Resource {
 					},
 				},
 			},
+			"running": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+				ForceNew: false,
+				Required: false,
+			},
 			"cloudinit": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -517,6 +524,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	destroyDomainByUserRequest(d, domain)
 	return nil
 }
 
@@ -533,11 +541,11 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	}
 	defer domain.Free()
 
-	running, err := domainIsRunning(*domain)
+	domainRunningNow, err := domainIsRunning(*domain)
 	if err != nil {
 		return err
 	}
-	if !running {
+	if !domainRunningNow {
 		err = domain.Create()
 		if err != nil {
 			return fmt.Errorf("Error creating libvirt domain: %s", err)
@@ -1351,6 +1359,32 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 		}
 
 		domainDef.Devices.Interfaces = append(domainDef.Devices.Interfaces, netIface)
+	}
+
+	return nil
+}
+
+func destroyDomainByUserRequest(d *schema.ResourceData, domain *libvirt.Domain) error {
+	if d.Get("running").(bool) {
+		return nil
+	}
+
+	domainID, err := domain.GetUUIDString()
+
+	if err != nil {
+		return fmt.Errorf("Error retrieving libvirt domain id: %s", err)
+	}
+
+	log.Printf("Destroying libvirt domain %s", domainID)
+	state, _, err := domain.GetState()
+	if err != nil {
+		return fmt.Errorf("Couldn't get info about domain: %s", err)
+	}
+
+	if state == libvirt.DOMAIN_RUNNING || state == libvirt.DOMAIN_PAUSED {
+		if err := domain.Destroy(); err != nil {
+			return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
+		}
 	}
 
 	return nil
