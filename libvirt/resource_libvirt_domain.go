@@ -1284,6 +1284,11 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 			}
 			networkDef, err := newDefNetworkfromLibvirt(network)
 			if !HasDHCP(networkDef) {
+				netIface.Type = "network"
+				netIface.Source = &libvirtxml.DomainInterfaceSource{
+					Network: networkName,
+				}
+				domainDef.Devices.Interfaces = append(domainDef.Devices.Interfaces, netIface)
 				continue
 			}
 
