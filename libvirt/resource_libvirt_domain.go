@@ -1283,50 +1283,51 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 				return fmt.Errorf("Error retrieving network name: %s", err)
 			}
 			networkDef, err := newDefNetworkfromLibvirt(network)
-			if !HasDHCP(networkDef) {
-				continue
+
+			// only for DHCP, we update the host table of the network
+			if HasDHCP(networkDef) {
+				hostname := domainDef.Name
+				if hostnameI, ok := d.GetOk(prefix + ".hostname"); ok {
+					hostname = hostnameI.(string)
+				}
+				if addresses, ok := d.GetOk(prefix + ".addresses"); ok {
+					// some IP(s) provided
+					for _, addressI := range addresses.([]interface{}) {
+						address := addressI.(string)
+						ip := net.ParseIP(address)
+						if ip == nil {
+							return fmt.Errorf("Could not parse addresses '%s'", address)
+						}
+
+						log.Printf("[INFO] Adding IP/MAC/host=%s/%s/%s to %s", ip.String(), mac, hostname, networkName)
+						if err := updateOrAddHost(network, ip.String(), mac, hostname); err != nil {
+							return err
+						}
+					}
+				} else {
+					// no IPs provided: if the hostname has been provided, wait until we get an IP
+					wait := false
+					for _, iface := range *waitForLeases {
+						if iface == &netIface {
+							wait = true
+							break
+						}
+					}
+					if !wait {
+						return fmt.Errorf("Cannot map '%s': we are not waiting for DHCP lease and no IP has been provided", hostname)
+					}
+					// the resource specifies a hostname but not an IP, so we must wait until we
+					// have a valid lease and then read the IP we have been assigned, so we can
+					// do the mapping
+					log.Printf("[DEBUG] Do not have an IP for '%s' yet: will wait until DHCP provides one...", hostname)
+					partialNetIfaces[strings.ToUpper(mac)] = &pendingMapping{
+						mac:      strings.ToUpper(mac),
+						hostname: hostname,
+						network:  network,
+					}
+				}
 			}
 
-			hostname := domainDef.Name
-			if hostnameI, ok := d.GetOk(prefix + ".hostname"); ok {
-				hostname = hostnameI.(string)
-			}
-			if addresses, ok := d.GetOk(prefix + ".addresses"); ok {
-				// some IP(s) provided
-				for _, addressI := range addresses.([]interface{}) {
-					address := addressI.(string)
-					ip := net.ParseIP(address)
-					if ip == nil {
-						return fmt.Errorf("Could not parse addresses '%s'", address)
-					}
-
-					log.Printf("[INFO] Adding IP/MAC/host=%s/%s/%s to %s", ip.String(), mac, hostname, networkName)
-					if err := updateOrAddHost(network, ip.String(), mac, hostname); err != nil {
-						return err
-					}
-				}
-			} else {
-				// no IPs provided: if the hostname has been provided, wait until we get an IP
-				wait := false
-				for _, iface := range *waitForLeases {
-					if iface == &netIface {
-						wait = true
-						break
-					}
-				}
-				if !wait {
-					return fmt.Errorf("Cannot map '%s': we are not waiting for DHCP lease and no IP has been provided", hostname)
-				}
-				// the resource specifies a hostname but not an IP, so we must wait until we
-				// have a valid lease and then read the IP we have been assigned, so we can
-				// do the mapping
-				log.Printf("[DEBUG] Do not have an IP for '%s' yet: will wait until DHCP provides one...", hostname)
-				partialNetIfaces[strings.ToUpper(mac)] = &pendingMapping{
-					mac:      strings.ToUpper(mac),
-					hostname: hostname,
-					network:  network,
-				}
-			}
 			netIface.Type = "network"
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
 				Network: networkName,
