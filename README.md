@@ -61,8 +61,13 @@ takes advantage of features available only inside of the latest stable release.
 
 You need also need libvirt-dev(el) package installed.
 
-Run `go install` to build the binary. You will now find the binary at
-`$GOPATH/bin/terraform-provider-libvirt`.
+```console
+go get github.com/dmacvicar/terraform-provider-libvirt
+cd $GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt
+go install
+```
+
+You will now find the binary at `$GOPATH/bin/terraform-provider-libvirt`.
 
 
 ## Using the provider
