@@ -1,6 +1,6 @@
 # Terraform provider for libvirt
 
-- [![Gitter chat](https://badges.gitter.im/terraform-provider-libvirt/Lobby.png)](https://gitter.im/terraform-provider-libvirt/Lobby)
+- [![Gitter chat](https://badges.gitter.im/terraform-provider-libvirt/Lobby.png)](https://gitter.im/terraform-provider-libvirt/Lobby) ([IRC gateway](https://irc.gitter.im/))
 - Planning board: [Github Projects](https://github.com/dmacvicar/terraform-provider-libvirt/projects/1)
 
 
