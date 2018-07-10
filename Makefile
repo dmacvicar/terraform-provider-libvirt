@@ -27,4 +27,8 @@ golint:
 gofmtcheck:
 	bash travis/run-gofmt
 
+
+clean:
+	./travis/cleanup.sh
+
 .PHONY: build install test vet fmt golint
