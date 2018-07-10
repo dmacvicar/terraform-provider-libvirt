@@ -1,0 +1,6 @@
+---
+integration_tests: [
+"volume.tf",
+#  add here new terraform tests.tf files
+# "new_terraform_teststf"
+]
