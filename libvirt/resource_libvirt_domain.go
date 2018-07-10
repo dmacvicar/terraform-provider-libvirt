@@ -1235,7 +1235,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 			mac = strings.ToUpper(macI.(string))
 		} else {
 			var err error
-			mac, err = RandomMACAddress()
+			mac, err = randomMACAddress()
 			if err != nil {
 				return fmt.Errorf("Error generating mac address: %s", err)
 			}

@@ -48,6 +48,124 @@ func TestNetworkAutostart(t *testing.T) {
 	})
 }
 
+func TestNetworkDNS(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dns {
+						enabled = true
+						local_only = true
+
+						forwarders = [
+							"8.8.8.8",
+							"my.domain.com -> 10.10.0.67",
+							"hello.com"
+						]
+
+						host {
+							address = "10.17.3.2"
+							name = ["server1.com", "server2.com"]
+						}
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.enabled", "true"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.local_only", "true"),
+
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.forwarders.#", "3"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.forwarders.0", "8.8.8.8"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.forwarders.1", "my.domain.com -> 10.10.0.67"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.forwarders.2", "hello.com"),
+
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.host.0.address", "10.17.3.2"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.host.0.name.#", "2"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.host.0.name.0", "server1.com"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.host.0.name.1", "server2.com"),
+				),
+			},
+		},
+	})
+}
+
+func TestNetworkDHCP(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dhcp {
+						enabled = false
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dhcp.0.enabled", "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestNetworkStaticRoutes(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					routes = [
+						"192.168.7.0/24 -> 127.0.0.1",
+						"192.168.9.1/24 -> 127.0.0.1",
+						"192.168.17.1/32 -> 127.0.0.1",
+						"2001:db9:4:1::/64 -> ::1"
+					]
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "route.0.address", "192.168.7.0"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "route.0.prefix", "24"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "route.0.family", "ipv4"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "route.0.gateway", "127.0.0.1"),
+
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "route.1.address", "192.168.9.0"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "route.1.prefix", "24"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "route.1.family", "ipv4"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "route.1.gateway", "127.0.0.1"),
+
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "route.2.address", "192.168.17.1"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "route.2.prefix", "32"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "route.2.family", "ipv4"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "route.2.gateway", "127.0.0.1"),
+				),
+			},
+		},
+	})
+}
+
+/*************************
+ * tests helpers
+ ************************/
+
 func networkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]

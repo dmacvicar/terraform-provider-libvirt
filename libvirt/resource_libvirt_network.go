@@ -78,25 +78,81 @@ func resourceLibvirtNetwork() *schema.Resource {
 				Optional: true,
 				Required: false,
 			},
-			"dns_forwarder": {
+			"dhcp": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"address": {
-							Type:     schema.TypeString,
+						"enabled": {
+							Type:     schema.TypeBool,
+							Default:  true,
 							Optional: true,
 							Required: false,
-							ForceNew: true,
-						},
-						"domain": {
-							Type:     schema.TypeString,
-							Optional: true,
-							Required: false,
-							ForceNew: true,
 						},
 					},
+				},
+			},
+			"dns": {
+				Type:     schema.TypeList,
+				Optional: true,
+				ForceNew: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:     schema.TypeBool,
+							Default:  true,
+							Optional: true,
+							Required: false,
+						},
+						"local_only": {
+							Type:     schema.TypeBool,
+							Default:  false,
+							Optional: true,
+							Required: false,
+						},
+						"forwarders": {
+							Type:     schema.TypeList,
+							Optional: true,
+							ForceNew: true,
+							Elem: &schema.Schema{
+								Type: schema.TypeString,
+							},
+						},
+						"host": {
+							Type:     schema.TypeList,
+							Optional: true,
+							ForceNew: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"address": {
+										Type:     schema.TypeString,
+										Optional: true,
+										Required: false,
+										ForceNew: true,
+									},
+									"name": {
+										Type:     schema.TypeList,
+										Optional: true,
+										ForceNew: true,
+										Elem: &schema.Schema{
+											Type: schema.TypeString,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"routes": {
+				Type:     schema.TypeList,
+				Optional: true,
+				ForceNew: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
 				},
 			},
 		},
@@ -167,8 +223,17 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 
 	networkDef := newNetworkDef()
 	networkDef.Name = d.Get("name").(string)
-	networkDef.Domain = &libvirtxml.NetworkDomain{
-		Name: d.Get("domain").(string),
+
+	if domain, ok := d.GetOk("domain"); ok {
+		networkDef.Domain = &libvirtxml.NetworkDomain{
+			Name: domain.(string),
+		}
+
+		if dnsLocalOnly, ok := d.GetOk("dns.0.local_only"); ok {
+			if dnsLocalOnly.(bool) {
+				networkDef.Domain.LocalOnly = "yes" // this "boolean" must be "yes"|"no"
+			}
+		}
 	}
 
 	// use a bridge provided by the user, or create one otherwise (libvirt will assign on automatically when empty)
@@ -195,77 +260,128 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			networkDef.Forward.NAT = nil
 		}
 
-		// some network modes require a DHCP/DNS server
-		// set the addresses for DHCP
+		// set the addresses
 		if addresses, ok := d.GetOk("addresses"); ok {
 			ipsPtrsLst := []libvirtxml.NetworkIP{}
 			for _, addressI := range addresses.([]interface{}) {
-				address := addressI.(string)
+				// get the IP address entry for this subnet (with a guessed DHCP range)
+				dni, dhcp, err := setNetworkIP(addressI.(string))
+				if err != nil {
+					return err
+				}
+				if d.Get("dhcp.0.enabled").(bool) {
+					dni.DHCP = dhcp
+				}
+
+				ipsPtrsLst = append(ipsPtrsLst, *dni)
+			}
+			networkDef.IPs = ipsPtrsLst
+		}
+
+		// set static routes
+		if routes, ok := d.GetOk("routes"); ok {
+			for _, routeI := range routes.([]interface{}) {
+				route := libvirtxml.NetworkRoute{}
+
+				routeComponents := strings.Split(routeI.(string), "->")
+				if len(routeComponents) != 2 {
+					return fmt.Errorf("Error parsing address '%s'", routeI.(string))
+				}
+
+				address := strings.TrimSpace(routeComponents[0])
+				gateway := strings.TrimSpace(routeComponents[1])
+
+				// parse the address
 				_, ipNet, err := net.ParseCIDR(address)
 				if err != nil {
-					return fmt.Errorf("Error parsing addresses definition '%s': %s", address, err)
+					return fmt.Errorf("Error parsing address '%s': %s", address, err)
 				}
 				ones, bits := ipNet.Mask.Size()
 				family := "ipv4"
 				if bits == (net.IPv6len * 8) {
 					family = "ipv6"
 				}
-				ipsRange := 2 ^ bits - 2 ^ ones
-				if ipsRange < 4 {
-					return fmt.Errorf("Netmask seems to be too strict: only %d IPs available (%s)", ipsRange-3, family)
+				route.Address = ipNet.IP.String()
+				route.Prefix = strconv.Itoa(ones)
+				route.Family = family
+
+				// parse and check the gateway
+				parsedGateway := net.ParseIP(gateway)
+				if parsedGateway == nil {
+					return fmt.Errorf("Could not parse IP address '%s'", parsedGateway)
 				}
+				route.Gateway = parsedGateway.String()
 
-				// we should calculate the range served by DHCP. For example, for
-				// 192.168.121.0/24 we will serve 192.168.121.2 - 192.168.121.254
-				start, end := NetworkRange(ipNet)
-
-				// skip the .0, (for the network),
-				start[len(start)-1]++
-
-				// assign the .1 to the host interface
-				dni := libvirtxml.NetworkIP{
-					Address: start.String(),
-					Prefix:  strconv.Itoa(ones),
-					Family:  family,
-				}
-
-				start[len(start)-1]++ // then skip the .1
-				end[len(end)-1]--     // and skip the .255 (for broadcast)
-
-				dni.DHCP = &libvirtxml.NetworkDHCP{
-					Ranges: []libvirtxml.NetworkDHCPRange{
-						{
-							Start: start.String(),
-							End:   end.String(),
-						},
-					},
-				}
-				ipsPtrsLst = append(ipsPtrsLst, dni)
+				networkDef.Routes = append(networkDef.Routes, route)
 			}
-			networkDef.IPs = ipsPtrsLst
 		}
 
-		if dnsForwardCount, ok := d.GetOk("dns_forwarder.#"); ok {
-			dns := libvirtxml.NetworkDNS{
-				Forwarders: []libvirtxml.NetworkDNSForwarder{},
+		if _, ok := d.GetOk("dns.0"); ok {
+			dnsPrefix := "dns.0"
+			dns := libvirtxml.NetworkDNS{}
+
+			if d.Get(dnsPrefix + ".enabled").(bool) {
+				dns.Enable = "yes"
 			}
 
-			for i := 0; i < dnsForwardCount.(int); i++ {
-				forward := libvirtxml.NetworkDNSForwarder{}
-				forwardPrefix := fmt.Sprintf("dns_forwarder.%d", i)
-				if address, ok := d.GetOk(forwardPrefix + ".address"); ok {
-					ip := net.ParseIP(address.(string))
-					if ip == nil {
-						return fmt.Errorf("Could not parse address '%s'", address)
+			if forwarders, ok := d.GetOk(dnsPrefix + ".forwarders"); ok {
+				dns.Forwarders = []libvirtxml.NetworkDNSForwarder{}
+
+				for _, forwardersI := range forwarders.([]interface{}) {
+					forwarderSpec := forwardersI.(string)
+					ip := ""
+					domain := ""
+
+					forwarderComponents := strings.Split(forwarderSpec, "->")
+					if len(forwarderComponents) == 1 {
+						// the first element can be an IP or a domain: we must identify the class
+						target := strings.TrimSpace(forwarderComponents[0])
+						parsedIP := net.ParseIP(target)
+						if parsedIP != nil {
+							ip = parsedIP.String()
+						} else {
+							domain = target
+						}
+					} else if len(forwarderComponents) == 2 {
+						domain = strings.TrimSpace(forwarderComponents[0])
+						ip = strings.TrimSpace(forwarderComponents[1])
+					} else {
+						return fmt.Errorf("Error parsing forwarder '%s'", forwarders.(string))
 					}
-					forward.Addr = ip.String()
+
+					parsedIP := net.ParseIP(ip)
+					if parsedIP == nil {
+						return fmt.Errorf("Could not parse address in forwarder specification '%s'", forwarderSpec)
+					}
+
+					dns.Forwarders = append(dns.Forwarders, libvirtxml.NetworkDNSForwarder{Addr: parsedIP.String(), Domain: domain})
 				}
-				if domain, ok := d.GetOk(forwardPrefix + ".domain"); ok {
-					forward.Domain = domain.(string)
-				}
-				dns.Forwarders = append(dns.Forwarders, forward)
 			}
-			networkDef.DNS = &dns
+
+			if _, ok := d.GetOk(dnsPrefix + ".host"); ok {
+				dns.Host = &libvirtxml.NetworkDNSHost{}
+				hostPrefix := dnsPrefix + ".host"
+
+				if address, ok := d.GetOk(hostPrefix + ".address"); ok {
+					parsedIP := net.ParseIP(address.(string))
+					if parsedIP == nil {
+						return fmt.Errorf("Could not parse IP address '%s'", parsedIP)
+					}
+					dns.Host.IP = parsedIP.String()
+				}
+
+				if dnsHostCount, ok := d.GetOk(hostPrefix + ".name.#"); ok {
+					dns.Host.Hostnames = []libvirtxml.NetworkDNSHostHostname{}
+
+					for i := 0; i < dnsHostCount.(int); i++ {
+						dnsHostNamePrefix := fmt.Sprintf(dnsPrefix+".name.%d", i)
+						if name, ok := d.GetOk(dnsHostNamePrefix); ok {
+							hostname := libvirtxml.NetworkDNSHostHostname{Hostname: name.(string)}
+							dns.Host.Hostnames = append(dns.Host.Hostnames, hostname)
+						}
+					}
+				}
+			}
 		}
 
 	} else if networkDef.Forward.Mode == netModeBridge {
@@ -368,6 +484,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		return fmt.Errorf("Error reading network autostart setting: %s", err)
 	}
 	d.Set("autostart", autostart)
+
 	addresses := []string{}
 	for _, address := range networkDef.IPs {
 		// we get the host interface IP (ie, 10.10.8.1) but we want the network CIDR (ie, 10.10.8.0/24)
@@ -390,7 +507,10 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("addresses", addresses)
 	}
 
-	// TODO: get any other parameters from the network and save them
+	// TODO: get any other parameters from the network and save them (ie, DNS forwarders...)
+
+	d.Set("dns.0.local_only", networkDef.Domain != nil && strings.ToLower(networkDef.Domain.LocalOnly) == "yes")
+	d.Set("dns.0.enabled", networkDef.DNS != nil && strings.ToLower(networkDef.DNS.Enable) == "yes")
 
 	log.Printf("[DEBUG] Network ID %s successfully read", d.Id())
 	return nil
@@ -442,6 +562,50 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error waiting for network to reach NOT-EXISTS state: %s", err)
 	}
 	return nil
+}
+
+func setNetworkIP(address string) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHCP, error) {
+	_, ipNet, err := net.ParseCIDR(address)
+	if err != nil {
+		return nil, nil, fmt.Errorf("Error parsing addresses definition '%s': %s", address, err)
+	}
+	ones, bits := ipNet.Mask.Size()
+	family := "ipv4"
+	if bits == (net.IPv6len * 8) {
+		family = "ipv6"
+	}
+	ipsRange := 2 ^ bits - 2 ^ ones
+	if ipsRange < 4 {
+		return nil, nil, fmt.Errorf("Netmask seems to be too strict: only %d IPs available (%s)", ipsRange-3, family)
+	}
+
+	// we should calculate the range served by DHCP. For example, for
+	// 192.168.121.0/24 we will serve 192.168.121.2 - 192.168.121.254
+	start, end := networkRange(ipNet)
+
+	// skip the .0, (for the network),
+	start[len(start)-1]++
+
+	// assign the .1 to the host interface
+	dni := &libvirtxml.NetworkIP{
+		Address: start.String(),
+		Prefix:  strconv.Itoa(ones),
+		Family:  family,
+	}
+
+	start[len(start)-1]++ // then skip the .1
+	end[len(end)-1]--     // and skip the .255 (for broadcast)
+
+	dhcp := &libvirtxml.NetworkDHCP{
+		Ranges: []libvirtxml.NetworkDHCPRange{
+			{
+				Start: start.String(),
+				End:   end.String(),
+			},
+		},
+	}
+
+	return dni, dhcp, nil
 }
 
 func waitForNetworkActive(network libvirt.Network) resource.StateRefreshFunc {

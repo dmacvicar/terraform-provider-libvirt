@@ -6,7 +6,7 @@ import (
 )
 
 func TestRandomMACAddress(t *testing.T) {
-	mac, err := RandomMACAddress()
+	mac, err := randomMACAddress()
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}

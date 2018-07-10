@@ -29,7 +29,7 @@ func TestIPsRange(t *testing.T) {
 		t.Errorf("When parsing network: %s", err)
 	}
 
-	start, end := NetworkRange(net)
+	start, end := networkRange(net)
 	if start.String() != "192.168.18.0" {
 		t.Errorf("unexpected range start for '%s': %s", net, start)
 	}
