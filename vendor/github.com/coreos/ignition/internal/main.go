@@ -38,6 +38,7 @@ func main() {
 		root         string
 		stage        stages.Name
 		version      bool
+		logToStdout  bool
 	}{}
 
 	flag.BoolVar(&flags.clearCache, "clear-cache", false, "clear any cached config")
@@ -47,6 +48,7 @@ func main() {
 	flag.StringVar(&flags.root, "root", "/", "root of the filesystem")
 	flag.Var(&flags.stage, "stage", fmt.Sprintf("execution stage. %v", stages.Names()))
 	flag.BoolVar(&flags.version, "version", false, "print the version and exit")
+	flag.BoolVar(&flags.logToStdout, "log-to-stdout", false, "log to stdout instead of the system log when set")
 
 	flag.Parse()
 
@@ -65,7 +67,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	logger := log.New()
+	logger := log.New(flags.logToStdout)
 	defer logger.Close()
 
 	logger.Info(version.String)

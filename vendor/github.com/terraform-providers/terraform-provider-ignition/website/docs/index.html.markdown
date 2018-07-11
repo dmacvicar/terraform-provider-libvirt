@@ -14,6 +14,13 @@ The ignition provider is what we call a _logical provider_ and doesn't manage an
 
 Use the navigation to the left to read about the available resources.
 
+## Ignition versions
+
+The current Ignition version supported by this provider is the `2.1.0`. For older versions you should use previous [releases](https://github.com/terraform-providers/terraform-provider-ignition/releases) of this provider:
+
+* terraform-provider-ignition `<= 0.2.0` - ignition `2.0.0`
+* terraform-provider-ignition `1.0.0 =>` - ignition `2.1.0`
+
 ## Example Usage
 
 This config will write a single service unit (shown below) with the contents of an example service. This unit will be enabled as a dependency of multi-user.target and therefore start on boot

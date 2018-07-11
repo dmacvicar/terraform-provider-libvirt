@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/coreos/ignition/config/types"
-
-	keys "github.com/coreos/update-ssh-keys/authorized_keys_d"
+	keys "github.com/coreos/ignition/internal/authorized_keys_d"
+	"github.com/coreos/ignition/internal/config/types"
+	"github.com/coreos/ignition/internal/distro"
 )
 
 // EnsureUser ensures that the user exists as described. If the user does not
@@ -50,13 +50,13 @@ func (u Util) EnsureUser(c types.PasswdUser) error {
 
 	var cmd string
 	if exists {
-		cmd = "usermod"
+		cmd = distro.UsermodCmd()
 
 		if c.HomeDir != "" {
 			args = append(args, "--home", c.HomeDir, "--move-home")
 		}
 	} else {
-		cmd = "useradd"
+		cmd = distro.UseraddCmd()
 
 		if c.HomeDir != "" {
 			args = append(args, "--home-dir", c.HomeDir)
@@ -99,7 +99,7 @@ func (u Util) EnsureUser(c types.PasswdUser) error {
 	}
 
 	if c.Gecos != "" {
-		args = append(args, "--comment", fmt.Sprintf("%q", c.Gecos))
+		args = append(args, "--comment", c.Gecos)
 	}
 
 	if c.PrimaryGroup != "" {
@@ -122,16 +122,16 @@ func (u Util) EnsureUser(c types.PasswdUser) error {
 }
 
 // golang--
-func translateV2_1UsercreateGroupSliceToPasswdUserGroupSlice(groups []types.UsercreateGroup) []types.PasswdUserGroup {
-	newGroups := make([]types.PasswdUserGroup, len(groups))
+func translateV2_1UsercreateGroupSliceToPasswdUserGroupSlice(groups []types.UsercreateGroup) []types.Group {
+	newGroups := make([]types.Group, len(groups))
 	for i, g := range groups {
-		newGroups[i] = types.PasswdUserGroup(g)
+		newGroups[i] = types.Group(g)
 	}
 	return newGroups
 }
 
 func (u Util) CheckIfUserExists(c types.PasswdUser) (bool, error) {
-	code, err := u.LogCmd(exec.Command("chroot", u.DestDir, "id", c.Name),
+	code, err := u.LogCmd(exec.Command(distro.ChrootCmd(), u.DestDir, distro.IdCmd(), c.Name),
 		"checking if user %q exists", c.Name)
 	if err != nil {
 		if code == 1 {
@@ -144,7 +144,7 @@ func (u Util) CheckIfUserExists(c types.PasswdUser) (bool, error) {
 }
 
 // golang--
-func translateV2_1PasswdUserGroupSliceToStringSlice(groups []types.PasswdUserGroup) []string {
+func translateV2_1PasswdUserGroupSliceToStringSlice(groups []types.Group) []string {
 	newGroups := make([]string, len(groups))
 	for i, g := range groups {
 		newGroups[i] = string(g)
@@ -220,7 +220,7 @@ func (u Util) SetPasswordHash(c types.PasswdUser) error {
 
 	args = append(args, c.Name)
 
-	_, err := u.LogCmd(exec.Command("usermod", args...),
+	_, err := u.LogCmd(exec.Command(distro.UsermodCmd(), args...),
 		"setting password for %q", c.Name)
 	return err
 }
@@ -246,7 +246,7 @@ func (u Util) CreateGroup(g types.PasswdGroup) error {
 
 	args = append(args, g.Name)
 
-	_, err := u.LogCmd(exec.Command("groupadd", args...),
+	_, err := u.LogCmd(exec.Command(distro.GroupaddCmd(), args...),
 		"adding group %q", g.Name)
 	return err
 }

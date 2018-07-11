@@ -15,52 +15,18 @@
 package types
 
 import (
-	"encoding/json"
 	"reflect"
 	"testing"
+
+	"github.com/coreos/ignition/config/validate/report"
 )
-
-func TestPathUnmarshalJSON(t *testing.T) {
-	type in struct {
-		data string
-	}
-	type out struct {
-		device Path
-		err    error
-	}
-
-	tests := []struct {
-		in  in
-		out out
-	}{
-		{
-			in:  in{data: `"/path"`},
-			out: out{device: Path("/path")},
-		},
-		{
-			in:  in{data: `"bad"`},
-			out: out{device: Path("bad"), err: ErrPathRelative},
-		},
-	}
-
-	for i, test := range tests {
-		var device Path
-		err := json.Unmarshal([]byte(test.in.data), &device)
-		if !reflect.DeepEqual(test.out.err, err) {
-			t.Errorf("#%d: bad error: want %v, got %v", i, test.out.err, err)
-		}
-		if !reflect.DeepEqual(test.out.device, device) {
-			t.Errorf("#%d: bad device: want %#v, got %#v", i, test.out.device, device)
-		}
-	}
-}
 
 func TestPathAssertValid(t *testing.T) {
 	type in struct {
 		device Path
 	}
 	type out struct {
-		err error
+		rep report.Report
 	}
 
 	tests := []struct {
@@ -85,14 +51,14 @@ func TestPathAssertValid(t *testing.T) {
 		},
 		{
 			in:  in{device: Path("relative/path")},
-			out: out{err: ErrPathRelative},
+			out: out{rep: report.ReportFromError(ErrPathRelative, report.EntryError)},
 		},
 	}
 
 	for i, test := range tests {
-		err := test.in.device.AssertValid()
-		if !reflect.DeepEqual(test.out.err, err) {
-			t.Errorf("#%d: bad error: want %v, got %v", i, test.out.err, err)
+		rep := test.in.device.Validate()
+		if !reflect.DeepEqual(test.out.rep, rep) {
+			t.Errorf("#%d: bad report: want %v, got %v", i, test.out.rep, rep)
 		}
 	}
 }

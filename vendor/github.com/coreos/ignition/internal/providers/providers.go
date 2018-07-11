@@ -17,8 +17,8 @@ package providers
 import (
 	"errors"
 
-	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/config/validate/report"
+	"github.com/coreos/ignition/internal/config/types"
 	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/resource"
 )
@@ -28,4 +28,4 @@ var (
 )
 
 type FuncFetchConfig func(f resource.Fetcher) (types.Config, report.Report, error)
-type FuncNewFetcher func(logger *log.Logger, client *resource.HttpClient) (resource.Fetcher, error)
+type FuncNewFetcher func(logger *log.Logger) (resource.Fetcher, error)

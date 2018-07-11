@@ -1,0 +1,10 @@
+rules:
+  - name: commit title
+    description: all commit titles must have a scope and be no more than 72 characters
+    expression:  |-
+      .commits all(((.title test "^[a-z0-9/*_.-]+: [[:alnum:] -'.:/_,-]+$") and (.title length < 73)) or (.title test "^Revert"))
+
+  - name: commit description
+    description: all commit descriptions must have lines no longer than 72 characters
+    expression: |-
+      .commits all(.description lines all(. length < 73))

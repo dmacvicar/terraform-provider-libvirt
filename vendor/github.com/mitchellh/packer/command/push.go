@@ -15,6 +15,8 @@ import (
 	"github.com/hashicorp/packer/helper/flag-kv"
 	"github.com/hashicorp/packer/helper/flag-slice"
 	"github.com/hashicorp/packer/template"
+
+	"github.com/posener/complete"
 )
 
 // archiveTemplateEntry is the name the template always takes within the slug.
@@ -254,10 +256,9 @@ func (c *PushCommand) Run(args []string) int {
 	c.Ui.Message("\n-----------------------------------------------------------------------\n" +
 		"Deprecation warning: The Packer and Artifact Registry features of Atlas\n" +
 		"will no longer be actively developed or maintained and will be fully\n" +
-		"decommissioned on Friday, March 30, 2018. Please see our guide on\n" +
-		"building immutable infrastructure with Packer on CI/CD for ideas on\n" +
-		"implementing these features yourself:\n" +
-		"https://www.packer.io/guides/packer-on-cicd/\n" +
+		"decommissioned. Please see our guide on building immutable\n" +
+		"infrastructure with Packer on CI/CD for ideas on implementing\n" +
+		"these features yourself: https://www.packer.io/guides/packer-on-cicd/\n" +
 		"-----------------------------------------------------------------------\n",
 	)
 
@@ -333,6 +334,20 @@ Options:
 
 func (*PushCommand) Synopsis() string {
 	return "push a template and supporting files to a Packer build service"
+}
+
+func (*PushCommand) AutocompleteArgs() complete.Predictor {
+	return complete.PredictNothing
+}
+
+func (*PushCommand) AutocompleteFlags() complete.Flags {
+	return complete.Flags{
+		"-name":      complete.PredictNothing,
+		"-token":     complete.PredictNothing,
+		"-sensitive": complete.PredictNothing,
+		"-var":       complete.PredictNothing,
+		"-var-file":  complete.PredictNothing,
+	}
 }
 
 func (c *PushCommand) upload(

@@ -80,6 +80,54 @@ func TestParseConfig(t *testing.T) {
 			},
 		},
 		{
+			"block {}",
+			0,
+			&Body{
+				Attributes: Attributes{},
+				Blocks: Blocks{
+					&Block{
+						Type:   "block",
+						Labels: nil,
+						Body: &Body{
+							Attributes: Attributes{},
+							Blocks:     Blocks{},
+
+							SrcRange: hcl.Range{
+								Start: hcl.Pos{Line: 1, Column: 7, Byte: 6},
+								End:   hcl.Pos{Line: 1, Column: 9, Byte: 8},
+							},
+							EndRange: hcl.Range{
+								Start: hcl.Pos{Line: 1, Column: 9, Byte: 8},
+								End:   hcl.Pos{Line: 1, Column: 9, Byte: 8},
+							},
+						},
+
+						TypeRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+							End:   hcl.Pos{Line: 1, Column: 6, Byte: 5},
+						},
+						LabelRanges: nil,
+						OpenBraceRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 7, Byte: 6},
+							End:   hcl.Pos{Line: 1, Column: 8, Byte: 7},
+						},
+						CloseBraceRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 8, Byte: 7},
+							End:   hcl.Pos{Line: 1, Column: 9, Byte: 8},
+						},
+					},
+				},
+				SrcRange: hcl.Range{
+					Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+					End:   hcl.Pos{Line: 1, Column: 9, Byte: 8},
+				},
+				EndRange: hcl.Range{
+					Start: hcl.Pos{Line: 1, Column: 9, Byte: 8},
+					End:   hcl.Pos{Line: 1, Column: 9, Byte: 8},
+				},
+			},
+		},
+		{
 			"block {}block {}\n",
 			1, // missing newline after block definition
 			&Body{
@@ -177,6 +225,59 @@ func TestParseConfig(t *testing.T) {
 				EndRange: hcl.Range{
 					Start: hcl.Pos{Line: 2, Column: 1, Byte: 15},
 					End:   hcl.Pos{Line: 2, Column: 1, Byte: 15},
+				},
+			},
+		},
+		{
+			"block foo {}\n",
+			0,
+			&Body{
+				Attributes: Attributes{},
+				Blocks: Blocks{
+					&Block{
+						Type:   "block",
+						Labels: []string{"foo"},
+						Body: &Body{
+							Attributes: Attributes{},
+							Blocks:     Blocks{},
+
+							SrcRange: hcl.Range{
+								Start: hcl.Pos{Line: 1, Column: 11, Byte: 10},
+								End:   hcl.Pos{Line: 1, Column: 13, Byte: 12},
+							},
+							EndRange: hcl.Range{
+								Start: hcl.Pos{Line: 1, Column: 13, Byte: 12},
+								End:   hcl.Pos{Line: 1, Column: 13, Byte: 12},
+							},
+						},
+
+						TypeRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+							End:   hcl.Pos{Line: 1, Column: 6, Byte: 5},
+						},
+						LabelRanges: []hcl.Range{
+							{
+								Start: hcl.Pos{Line: 1, Column: 7, Byte: 6},
+								End:   hcl.Pos{Line: 1, Column: 10, Byte: 9},
+							},
+						},
+						OpenBraceRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 11, Byte: 10},
+							End:   hcl.Pos{Line: 1, Column: 12, Byte: 11},
+						},
+						CloseBraceRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 12, Byte: 11},
+							End:   hcl.Pos{Line: 1, Column: 13, Byte: 12},
+						},
+					},
+				},
+				SrcRange: hcl.Range{
+					Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+					End:   hcl.Pos{Line: 2, Column: 1, Byte: 13},
+				},
+				EndRange: hcl.Range{
+					Start: hcl.Pos{Line: 2, Column: 1, Byte: 13},
+					End:   hcl.Pos{Line: 2, Column: 1, Byte: 13},
 				},
 			},
 		},
@@ -406,6 +507,47 @@ block "valid" {}
 			},
 		},
 		{
+			"a = 1",
+			0,
+			&Body{
+				Attributes: Attributes{
+					"a": {
+						Name: "a",
+						Expr: &LiteralValueExpr{
+							Val: cty.NumberIntVal(1),
+
+							SrcRange: hcl.Range{
+								Start: hcl.Pos{Line: 1, Column: 5, Byte: 4},
+								End:   hcl.Pos{Line: 1, Column: 6, Byte: 5},
+							},
+						},
+
+						SrcRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+							End:   hcl.Pos{Line: 1, Column: 6, Byte: 5},
+						},
+						NameRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+							End:   hcl.Pos{Line: 1, Column: 2, Byte: 1},
+						},
+						EqualsRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 3, Byte: 2},
+							End:   hcl.Pos{Line: 1, Column: 4, Byte: 3},
+						},
+					},
+				},
+				Blocks: Blocks{},
+				SrcRange: hcl.Range{
+					Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+					End:   hcl.Pos{Line: 1, Column: 6, Byte: 5},
+				},
+				EndRange: hcl.Range{
+					Start: hcl.Pos{Line: 1, Column: 6, Byte: 5},
+					End:   hcl.Pos{Line: 1, Column: 6, Byte: 5},
+				},
+			},
+		},
+		{
 			"a = \"hello ${true}\"\n",
 			0,
 			&Body{
@@ -573,10 +715,21 @@ block "valid" {}
 						Expr: &TemplateExpr{
 							Parts: []Expression{
 								&LiteralValueExpr{
-									Val: cty.StringVal("hello $$"),
+									Val: cty.StringVal("hello $"),
 
 									SrcRange: hcl.Range{
 										Start: hcl.Pos{Line: 1, Column: 6, Byte: 5},
+										End:   hcl.Pos{Line: 1, Column: 13, Byte: 12},
+									},
+								},
+								// This parses oddly due to how the scanner
+								// handles escaping of the $ sequence, but it's
+								// functionally equivalent to a single literal.
+								&LiteralValueExpr{
+									Val: cty.StringVal("$"),
+
+									SrcRange: hcl.Range{
+										Start: hcl.Pos{Line: 1, Column: 13, Byte: 12},
 										End:   hcl.Pos{Line: 1, Column: 14, Byte: 13},
 									},
 								},
@@ -614,6 +767,56 @@ block "valid" {}
 			},
 		},
 		{
+			"a = \"hello $\"\n",
+			0, // unterminated template interpolation sequence
+			&Body{
+				Attributes: Attributes{
+					"a": {
+						Name: "a",
+						Expr: &TemplateExpr{
+							Parts: []Expression{
+								&LiteralValueExpr{
+									Val: cty.StringVal("hello $"),
+
+									SrcRange: hcl.Range{
+										Start: hcl.Pos{Line: 1, Column: 6, Byte: 5},
+										End:   hcl.Pos{Line: 1, Column: 13, Byte: 12},
+									},
+								},
+							},
+
+							SrcRange: hcl.Range{
+								Start: hcl.Pos{Line: 1, Column: 5, Byte: 4},
+								End:   hcl.Pos{Line: 1, Column: 14, Byte: 13},
+							},
+						},
+
+						SrcRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+							End:   hcl.Pos{Line: 1, Column: 14, Byte: 13},
+						},
+						NameRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+							End:   hcl.Pos{Line: 1, Column: 2, Byte: 1},
+						},
+						EqualsRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 3, Byte: 2},
+							End:   hcl.Pos{Line: 1, Column: 4, Byte: 3},
+						},
+					},
+				},
+				Blocks: Blocks{},
+				SrcRange: hcl.Range{
+					Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+					End:   hcl.Pos{Line: 2, Column: 1, Byte: 14},
+				},
+				EndRange: hcl.Range{
+					Start: hcl.Pos{Line: 2, Column: 1, Byte: 14},
+					End:   hcl.Pos{Line: 2, Column: 1, Byte: 14},
+				},
+			},
+		},
+		{
 			"a = \"hello %%\"\n",
 			0,
 			&Body{
@@ -623,10 +826,21 @@ block "valid" {}
 						Expr: &TemplateExpr{
 							Parts: []Expression{
 								&LiteralValueExpr{
-									Val: cty.StringVal("hello %%"),
+									Val: cty.StringVal("hello %"),
 
 									SrcRange: hcl.Range{
 										Start: hcl.Pos{Line: 1, Column: 6, Byte: 5},
+										End:   hcl.Pos{Line: 1, Column: 13, Byte: 12},
+									},
+								},
+								// This parses oddly due to how the scanner
+								// handles escaping of the $ sequence, but it's
+								// functionally equivalent to a single literal.
+								&LiteralValueExpr{
+									Val: cty.StringVal("%"),
+
+									SrcRange: hcl.Range{
+										Start: hcl.Pos{Line: 1, Column: 13, Byte: 12},
 										End:   hcl.Pos{Line: 1, Column: 14, Byte: 13},
 									},
 								},
@@ -660,6 +874,56 @@ block "valid" {}
 				EndRange: hcl.Range{
 					Start: hcl.Pos{Line: 2, Column: 1, Byte: 15},
 					End:   hcl.Pos{Line: 2, Column: 1, Byte: 15},
+				},
+			},
+		},
+		{
+			"a = \"hello %\"\n",
+			0, // unterminated template control sequence
+			&Body{
+				Attributes: Attributes{
+					"a": {
+						Name: "a",
+						Expr: &TemplateExpr{
+							Parts: []Expression{
+								&LiteralValueExpr{
+									Val: cty.StringVal("hello %"),
+
+									SrcRange: hcl.Range{
+										Start: hcl.Pos{Line: 1, Column: 6, Byte: 5},
+										End:   hcl.Pos{Line: 1, Column: 13, Byte: 12},
+									},
+								},
+							},
+
+							SrcRange: hcl.Range{
+								Start: hcl.Pos{Line: 1, Column: 5, Byte: 4},
+								End:   hcl.Pos{Line: 1, Column: 14, Byte: 13},
+							},
+						},
+
+						SrcRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+							End:   hcl.Pos{Line: 1, Column: 14, Byte: 13},
+						},
+						NameRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+							End:   hcl.Pos{Line: 1, Column: 2, Byte: 1},
+						},
+						EqualsRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 3, Byte: 2},
+							End:   hcl.Pos{Line: 1, Column: 4, Byte: 3},
+						},
+					},
+				},
+				Blocks: Blocks{},
+				SrcRange: hcl.Range{
+					Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+					End:   hcl.Pos{Line: 2, Column: 1, Byte: 14},
+				},
+				EndRange: hcl.Range{
+					Start: hcl.Pos{Line: 2, Column: 1, Byte: 14},
+					End:   hcl.Pos{Line: 2, Column: 1, Byte: 14},
 				},
 			},
 		},
@@ -1117,6 +1381,89 @@ block "valid" {}
 			},
 		},
 		{
+			"a = <<EOT\nHello\nEOT\nb = \"Hi\"",
+			0,
+			&Body{
+				Attributes: Attributes{
+					"a": {
+						Name: "a",
+						Expr: &TemplateExpr{
+							Parts: []Expression{
+								&LiteralValueExpr{
+									Val: cty.StringVal("Hello\n"),
+
+									SrcRange: hcl.Range{
+										Start: hcl.Pos{Line: 1, Column: 6, Byte: 5},
+										End:   hcl.Pos{Line: 1, Column: 12, Byte: 11},
+									},
+								},
+							},
+
+							SrcRange: hcl.Range{
+								Start: hcl.Pos{Line: 1, Column: 5, Byte: 4},
+								End:   hcl.Pos{Line: 3, Column: 4, Byte: 19},
+							},
+						},
+
+						SrcRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+							End:   hcl.Pos{Line: 3, Column: 4, Byte: 19},
+						},
+						NameRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+							End:   hcl.Pos{Line: 1, Column: 2, Byte: 1},
+						},
+						EqualsRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 3, Byte: 2},
+							End:   hcl.Pos{Line: 1, Column: 4, Byte: 3},
+						},
+					},
+					"b": {
+						Name: "b",
+						Expr: &TemplateExpr{
+							Parts: []Expression{
+								&LiteralValueExpr{
+									Val: cty.StringVal("Hi"),
+
+									SrcRange: hcl.Range{
+										Start: hcl.Pos{Line: 4, Column: 24, Byte: 5},
+										End:   hcl.Pos{Line: 4, Column: 9, Byte: 28},
+									},
+								},
+							},
+
+							SrcRange: hcl.Range{
+								Start: hcl.Pos{Line: 4, Column: 5, Byte: 24},
+								End:   hcl.Pos{Line: 4, Column: 9, Byte: 28},
+							},
+						},
+
+						SrcRange: hcl.Range{
+							Start: hcl.Pos{Line: 4, Column: 1, Byte: 20},
+							End:   hcl.Pos{Line: 4, Column: 9, Byte: 28},
+						},
+						NameRange: hcl.Range{
+							Start: hcl.Pos{Line: 4, Column: 1, Byte: 20},
+							End:   hcl.Pos{Line: 4, Column: 2, Byte: 21},
+						},
+						EqualsRange: hcl.Range{
+							Start: hcl.Pos{Line: 4, Column: 3, Byte: 22},
+							End:   hcl.Pos{Line: 4, Column: 4, Byte: 23},
+						},
+					},
+				},
+				Blocks: Blocks{},
+				SrcRange: hcl.Range{
+					Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+					End:   hcl.Pos{Line: 4, Column: 9, Byte: 28},
+				},
+				EndRange: hcl.Range{
+					Start: hcl.Pos{Line: 4, Column: 9, Byte: 28},
+					End:   hcl.Pos{Line: 4, Column: 9, Byte: 28},
+				},
+			},
+		},
+		{
 			"a = foo.bar\n",
 			0,
 			&Body{
@@ -1171,6 +1518,72 @@ block "valid" {}
 				EndRange: hcl.Range{
 					Start: hcl.Pos{Line: 2, Column: 1, Byte: 12},
 					End:   hcl.Pos{Line: 2, Column: 1, Byte: 12},
+				},
+			},
+		},
+		{
+			"a = foo.0.1.baz\n",
+			1, // Chaining legacy index syntax is not supported
+			&Body{
+				Attributes: Attributes{
+					"a": {
+						Name: "a",
+						Expr: &ScopeTraversalExpr{
+							Traversal: hcl.Traversal{
+								hcl.TraverseRoot{
+									Name: "foo",
+
+									SrcRange: hcl.Range{
+										Start: hcl.Pos{Line: 1, Column: 5, Byte: 4},
+										End:   hcl.Pos{Line: 1, Column: 8, Byte: 7},
+									},
+								},
+								hcl.TraverseIndex{
+									Key: cty.DynamicVal,
+
+									SrcRange: hcl.Range{
+										Start: hcl.Pos{Line: 1, Column: 8, Byte: 7},
+										End:   hcl.Pos{Line: 1, Column: 12, Byte: 11},
+									},
+								},
+								hcl.TraverseAttr{
+									Name: "baz",
+
+									SrcRange: hcl.Range{
+										Start: hcl.Pos{Line: 1, Column: 8, Byte: 7},
+										End:   hcl.Pos{Line: 1, Column: 12, Byte: 11},
+									},
+								},
+							},
+
+							SrcRange: hcl.Range{
+								Start: hcl.Pos{Line: 1, Column: 5, Byte: 4},
+								End:   hcl.Pos{Line: 1, Column: 16, Byte: 15},
+							},
+						},
+
+						SrcRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+							End:   hcl.Pos{Line: 1, Column: 16, Byte: 15},
+						},
+						NameRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+							End:   hcl.Pos{Line: 1, Column: 2, Byte: 1},
+						},
+						EqualsRange: hcl.Range{
+							Start: hcl.Pos{Line: 1, Column: 3, Byte: 2},
+							End:   hcl.Pos{Line: 1, Column: 4, Byte: 3},
+						},
+					},
+				},
+				Blocks: Blocks{},
+				SrcRange: hcl.Range{
+					Start: hcl.Pos{Line: 1, Column: 1, Byte: 0},
+					End:   hcl.Pos{Line: 2, Column: 1, Byte: 16},
+				},
+				EndRange: hcl.Range{
+					Start: hcl.Pos{Line: 2, Column: 1, Byte: 16},
+					End:   hcl.Pos{Line: 2, Column: 1, Byte: 16},
 				},
 			},
 		},

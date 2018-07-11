@@ -21,17 +21,20 @@ type StepCreateVM struct {
 	HarddrivePath                  string
 	RamSize                        uint
 	DiskSize                       uint
+	DiskBlockSize                  uint
 	Generation                     uint
 	Cpu                            uint
 	EnableMacSpoofing              bool
 	EnableDynamicMemory            bool
 	EnableSecureBoot               bool
+	SecureBootTemplate             string
 	EnableVirtualizationExtensions bool
 	AdditionalDiskSize             []uint
 	DifferencingDisk               bool
 	MacAddress                     string
 	SkipExport                     bool
 	OutputDir                      string
+	FixedVHD                       bool
 }
 
 func (s *StepCreateVM) Run(_ context.Context, state multistep.StateBag) multistep.StepAction {
@@ -64,8 +67,9 @@ func (s *StepCreateVM) Run(_ context.Context, state multistep.StateBag) multiste
 	// convert the MB to bytes
 	ramSize := int64(s.RamSize * 1024 * 1024)
 	diskSize := int64(s.DiskSize * 1024 * 1024)
+	diskBlockSize := int64(s.DiskBlockSize * 1024 * 1024)
 
-	err := driver.CreateVirtualMachine(s.VMName, path, harddrivePath, vhdPath, ramSize, diskSize, s.SwitchName, s.Generation, s.DifferencingDisk)
+	err := driver.CreateVirtualMachine(s.VMName, path, harddrivePath, vhdPath, ramSize, diskSize, diskBlockSize, s.SwitchName, s.Generation, s.DifferencingDisk, s.FixedVHD)
 	if err != nil {
 		err := fmt.Errorf("Error creating virtual machine: %s", err)
 		state.Put("error", err)
@@ -100,7 +104,7 @@ func (s *StepCreateVM) Run(_ context.Context, state multistep.StateBag) multiste
 	}
 
 	if s.Generation == 2 {
-		err = driver.SetVirtualMachineSecureBoot(s.VMName, s.EnableSecureBoot)
+		err = driver.SetVirtualMachineSecureBoot(s.VMName, s.EnableSecureBoot, s.SecureBootTemplate)
 		if err != nil {
 			err := fmt.Errorf("Error setting secure boot: %s", err)
 			state.Put("error", err)
@@ -124,7 +128,7 @@ func (s *StepCreateVM) Run(_ context.Context, state multistep.StateBag) multiste
 		for index, size := range s.AdditionalDiskSize {
 			diskSize := int64(size * 1024 * 1024)
 			diskFile := fmt.Sprintf("%s-%d.vhdx", s.VMName, index)
-			err = driver.AddVirtualMachineHardDrive(s.VMName, vhdPath, diskFile, diskSize, "SCSI")
+			err = driver.AddVirtualMachineHardDrive(s.VMName, vhdPath, diskFile, diskSize, diskBlockSize, "SCSI")
 			if err != nil {
 				err := fmt.Errorf("Error creating and attaching additional disk drive: %s", err)
 				state.Put("error", err)
@@ -163,4 +167,6 @@ func (s *StepCreateVM) Cleanup(state multistep.StateBag) {
 	if err != nil {
 		ui.Error(fmt.Sprintf("Error deleting virtual machine: %s", err))
 	}
+
+	// TODO: Clean up created VHDX
 }

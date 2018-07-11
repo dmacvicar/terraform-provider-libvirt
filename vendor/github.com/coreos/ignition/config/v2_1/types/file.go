@@ -15,14 +15,10 @@
 package types
 
 import (
-	"errors"
 	"fmt"
 
+	"github.com/coreos/ignition/config/errors"
 	"github.com/coreos/ignition/config/validate/report"
-)
-
-var (
-	ErrCompressionInvalid = errors.New("invalid compression method")
 )
 
 func (f File) ValidateMode() report.Report {
@@ -42,7 +38,7 @@ func (fc FileContents) ValidateCompression() report.Report {
 	case "", "gzip":
 	default:
 		r.Add(report.Entry{
-			Message: ErrCompressionInvalid.Error(),
+			Message: errors.ErrCompressionInvalid.Error(),
 			Kind:    report.EntryError,
 		})
 	}

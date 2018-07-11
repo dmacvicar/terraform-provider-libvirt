@@ -15,7 +15,7 @@
 package stages
 
 import (
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/internal/config/types"
 	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/registry"
 	"github.com/coreos/ignition/internal/resource"

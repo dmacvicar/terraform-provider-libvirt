@@ -37,6 +37,12 @@ func TestDetect(t *testing.T) {
 			"git::https://github.com/hashicorp/consul.git",
 			false,
 		},
+		{
+			"./foo/archive//*",
+			"/bar",
+			"file:///bar/foo/archive//*",
+			false,
+		},
 	}
 
 	for i, tc := range cases {

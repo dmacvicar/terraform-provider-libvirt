@@ -31,9 +31,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/coreos/ignition/config/types"
+	configErrors "github.com/coreos/ignition/config/errors"
+	"github.com/coreos/ignition/internal/distro"
 	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/systemd"
+	"github.com/coreos/ignition/internal/util"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -56,26 +58,12 @@ var (
 	// config is being fetched
 	ConfigHeaders = http.Header{
 		"Accept-Encoding": []string{"identity"},
-		"Accept":          []string{"application/vnd.coreos.ignition+json; version=2.1.0, application/vnd.coreos.ignition+json; version=1; q=0.5, */*; q=0.1"},
+		"Accept":          []string{"application/vnd.coreos.ignition+json; version=2.2.0, application/vnd.coreos.ignition+json; version=1; q=0.5, */*; q=0.1"},
 	}
 )
 
-// ErrHashMismatch is returned when the calculated hash for a fetched object
-// doesn't match the expected sum of the object.
-type ErrHashMismatch struct {
-	Calculated string
-	Expected   string
-}
-
-func (e ErrHashMismatch) Error() string {
-	return fmt.Sprintf("hash verification failed (calculated %s but expected %s)",
-		e.Calculated, e.Expected)
-}
-
 const (
-	oemDevicePath = "/dev/disk/by-label/OEM" // Device link where oem partition is found.
-	oemDirPath    = "/usr/share/oem"         // OEM dir within root fs to consider for pxe scenarios.
-	oemMountPath  = "/mnt/oem"               // Mountpoint where oem partition is mounted when present.
+	oemMountPath = "/mnt/oem" // Mountpoint where oem partition is mounted when present.
 )
 
 // Fetcher holds settings for fetching resources from URLs
@@ -83,15 +71,19 @@ type Fetcher struct {
 	// The logger object to use when logging information.
 	Logger *log.Logger
 
-	// Client is the http client that will be used when fetching http(s)
+	// client is the http client that will be used when fetching http(s)
 	// resources. If left nil, one will be created and used, but this means any
 	// timeouts Ignition was configured to used will be ignored.
-	Client *HttpClient
+	client *HttpClient
 
 	// The AWS Session to use when fetching resources from S3. If left nil, the
 	// first S3 object that is fetched will initialize the field. This can be
 	// used to set credentials.
 	AWSSession *session.Session
+
+	// The region where the EC2 machine trying to fetch is.
+	// This is used as a hint to fetch the S3 bucket from the right partition and region.
+	S3RegionHint string
 }
 
 type FetchOptions struct {
@@ -226,12 +218,11 @@ func (f *Fetcher) FetchFromTFTP(u url.URL, dest *os.File, opts FetchOptions) err
 // FetchFromHTTP fetches a resource from u via HTTP(S) into dest, returning an
 // error if one is encountered.
 func (f *Fetcher) FetchFromHTTP(u url.URL, dest *os.File, opts FetchOptions) error {
-	if f.Client == nil {
-		f.Logger.Warning("Fetcher http client not initialized, ignoring any possible timeouts")
-		c := NewHttpClient(f.Logger, types.Timeouts{})
-		f.Client = &c
+	ctx := context.Background()
+	if f.client == nil {
+		f.newHttpClient()
 	}
-	dataReader, status, err := f.Client.getReaderWithHeader(u.String(), opts.Headers)
+	dataReader, status, err := f.client.getReaderWithHeader(ctx, u.String(), opts.Headers)
 	if err != nil {
 		return err
 	}
@@ -272,8 +263,8 @@ func (f *Fetcher) FetchFromOEM(u url.URL, dest *os.File, opts FetchOptions) erro
 		return ErrPathNotAbsolute
 	}
 
-	// check if present under oemDirPath, if so use it.
-	absPath := filepath.Join(oemDirPath, path)
+	// check if present in OEM lookaside dir, if so use it.
+	absPath := filepath.Join(distro.OEMLookasideDir(), path)
 
 	if fi, err := os.Open(absPath); err == nil {
 		defer fi.Close()
@@ -284,7 +275,7 @@ func (f *Fetcher) FetchFromOEM(u url.URL, dest *os.File, opts FetchOptions) erro
 	}
 
 	f.Logger.Info("oem config not found in %q, trying %q",
-		oemDirPath, oemMountPath)
+		distro.OEMLookasideDir(), oemMountPath)
 
 	// try oemMountPath, requires mounting it.
 	if err := f.mountOEM(); err != nil {
@@ -313,9 +304,9 @@ func (f *Fetcher) FetchFromS3(u url.URL, dest *os.File, opts FetchOptions) error
 		return ErrCompressionUnsupported
 	}
 	ctx := context.Background()
-	if f.Client != nil && f.Client.timeout != 0 {
+	if f.client != nil && f.client.timeout != 0 {
 		var cancelFn context.CancelFunc
-		ctx, cancelFn = context.WithTimeout(ctx, f.Client.timeout)
+		ctx, cancelFn = context.WithTimeout(ctx, f.client.timeout)
 		defer cancelFn()
 	}
 
@@ -330,8 +321,12 @@ func (f *Fetcher) FetchFromS3(u url.URL, dest *os.File, opts FetchOptions) error
 	}
 	sess := f.AWSSession.Copy()
 
-	// Determine the region this bucket is in
-	region, err := s3manager.GetBucketRegion(ctx, sess, u.Host, "us-east-1")
+	// Determine the partition and region this bucket is in
+	regionHint := "us-east-1"
+	if f.S3RegionHint != "" {
+		regionHint = f.S3RegionHint
+	}
+	region, err := s3manager.GetBucketRegion(ctx, sess, u.Host, regionHint)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == "NotFound" {
 			return fmt.Errorf("couldn't determine the region for bucket %q: %v", u.Host, err)
@@ -361,7 +356,7 @@ func (f *Fetcher) FetchFromS3(u url.URL, dest *os.File, opts FetchOptions) error
 		}
 		calculatedSum := opts.Hash.Sum(nil)
 		if !bytes.Equal(calculatedSum, opts.ExpectedSum) {
-			return ErrHashMismatch{
+			return util.ErrHashMismatch{
 				Calculated: hex.EncodeToString(calculatedSum),
 				Expected:   hex.EncodeToString(opts.ExpectedSum),
 			}
@@ -395,7 +390,7 @@ func (f *Fetcher) uncompress(r io.Reader, opts FetchOptions) (io.ReadCloser, err
 	case "gzip":
 		return gzip.NewReader(r)
 	default:
-		return nil, types.ErrCompressionInvalid
+		return nil, configErrors.ErrCompressionInvalid
 	}
 }
 
@@ -420,7 +415,7 @@ func (f *Fetcher) decompressCopyHashAndVerify(dest io.Writer, src io.Reader, opt
 	if opts.Hash != nil {
 		calculatedSum := opts.Hash.Sum(nil)
 		if !bytes.Equal(calculatedSum, opts.ExpectedSum) {
-			return ErrHashMismatch{
+			return util.ErrHashMismatch{
 				Calculated: hex.EncodeToString(calculatedSum),
 				Expected:   hex.EncodeToString(opts.ExpectedSum),
 			}
@@ -433,7 +428,7 @@ func (f *Fetcher) decompressCopyHashAndVerify(dest io.Writer, src io.Reader, opt
 // mountOEM waits for the presence of and mounts the oem partition at
 // oemMountPath.
 func (f *Fetcher) mountOEM() error {
-	dev := []string{oemDevicePath}
+	dev := []string{distro.OEMDevicePath()}
 	if err := systemd.WaitOnDevices(dev, "oem-cmdline"); err != nil {
 		f.Logger.Err("failed to wait for oem device: %v", err)
 		return err
@@ -448,10 +443,10 @@ func (f *Fetcher) mountOEM() error {
 		func() error {
 			return syscall.Mount(dev[0], oemMountPath, "ext4", 0, "")
 		},
-		"mounting %q at %q", oemDevicePath, oemMountPath,
+		"mounting %q at %q", distro.OEMDevicePath(), oemMountPath,
 	); err != nil {
 		return fmt.Errorf("failed to mount device %q at %q: %v",
-			oemDevicePath, oemMountPath, err)
+			distro.OEMDevicePath(), oemMountPath, err)
 	}
 
 	return nil

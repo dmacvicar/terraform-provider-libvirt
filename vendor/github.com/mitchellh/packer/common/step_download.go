@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/packer/helper/multistep"
+	"github.com/hashicorp/packer/helper/useragent"
 	"github.com/hashicorp/packer/packer"
 )
 
@@ -63,7 +64,7 @@ func (s *StepDownload) Run(_ context.Context, state multistep.StateBag) multiste
 	ui.Say(fmt.Sprintf("Downloading or copying %s", s.Description))
 
 	// First try to use any already downloaded file
-	// If it fails, proceed to regualar download logic
+	// If it fails, proceed to regular download logic
 
 	var downloadConfigs = make([]*DownloadConfig, len(s.Url))
 	var finalPath string
@@ -91,7 +92,7 @@ func (s *StepDownload) Run(_ context.Context, state multistep.StateBag) multiste
 			CopyFile:   false,
 			Hash:       HashForType(s.ChecksumType),
 			Checksum:   checksum,
-			UserAgent:  "Packer",
+			UserAgent:  useragent.String(),
 		}
 		downloadConfigs[i] = config
 

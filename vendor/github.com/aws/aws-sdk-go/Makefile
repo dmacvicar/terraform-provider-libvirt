@@ -13,6 +13,7 @@ SDK_ONLY_PKGS=$(shell go list ./... | grep -v "/vendor/")
 SDK_UNIT_TEST_ONLY_PKGS=$(shell go list -tags ${UNIT_TEST_TAGS} ./... | grep -v "/vendor/")
 SDK_GO_1_4=$(shell go version | grep "go1.4")
 SDK_GO_1_5=$(shell go version | grep "go1.5")
+SDK_GO_1_6=$(shell go version | grep "go1.6")
 SDK_GO_VERSION=$(shell go version | awk '''{print $$3}''' | tr -d '''\n''')
 
 all: get-deps generate unit
@@ -35,9 +36,12 @@ help:
 	@echo "  get-deps-tests          to get the SDK's test dependencies"
 	@echo "  get-deps-verify         to get the SDK's verification dependencies"
 
-generate: gen-test gen-endpoints gen-services
+generate: cleanup-models gen-test gen-endpoints gen-services
 
-gen-test: gen-protocol-test
+gen-test: gen-protocol-test gen-codegen-test
+
+gen-codegen-test:
+	go generate ./private/model/api/codegentest/service
 
 gen-services:
 	go generate ./service
@@ -47,6 +51,10 @@ gen-protocol-test:
 
 gen-endpoints:
 	go generate ./models/endpoints/
+
+cleanup-models:
+	@echo "Cleaning up stale model versions"
+	@./cleanup_models.sh
 
 build:
 	@echo "go build SDK and vendor packages"
@@ -59,6 +67,18 @@ unit: get-deps-tests build verify
 unit-with-race-cover: get-deps-tests build verify
 	@echo "go test SDK and vendor packages"
 	@go test -tags ${UNIT_TEST_TAGS} -race -cpu=1,2,4 $(SDK_UNIT_TEST_ONLY_PKGS)
+
+ci-test: ci-test-generate unit-with-race-cover ci-test-generate-validate
+
+ci-test-generate: get-deps
+	@echo "CI test generated code"
+	@if [ \( -z "${SDK_GO_1_6}" \) -a \( -z "${SDK_GO_1_5}" \) ]; then  make generate; else echo "skipping generate"; fi
+
+ci-test-generate-validate:
+	@echo "CI test validate no generated code changes"
+	@gitstatus=`if [ \( -z "${SDK_GO_1_6}" \) -a \( -z "${SDK_GO_1_5}" \) ]; then  git status --porcelain; else echo "skipping validation"; fi`; \
+	echo "$$gitstatus"; \
+	if [ "$$gitstatus" != "" ] && [ "$$gitstatus" != "skipping validation" ]; then git diff; exit 1; fi
 
 integration: get-deps-tests integ-custom smoke-tests performance
 
@@ -74,7 +94,7 @@ smoke-tests: get-deps-tests
 performance: get-deps-tests
 	AWS_TESTING_LOG_RESULTS=${log-detailed} AWS_TESTING_REGION=$(region) AWS_TESTING_DB_TABLE=$(table) gucumber -go-tags "integration" ./awstesting/performance
 
-sandbox-tests: sandbox-test-go15 sandbox-test-go15-novendorexp sandbox-test-go16 sandbox-test-go17 sandbox-test-go18 sandbox-test-gotip
+sandbox-tests: sandbox-test-go15 sandbox-test-go15-novendorexp sandbox-test-go16 sandbox-test-go17 sandbox-test-go18 sandbox-test-go19 sandbox-test-gotip
 
 sandbox-build-go15:
 	docker build -f ./awstesting/sandbox/Dockerfile.test.go1.5 -t "aws-sdk-go-1.5" .
@@ -110,6 +130,20 @@ sandbox-go18: sandbox-build-go18
 	docker run -i -t aws-sdk-go-1.8 bash
 sandbox-test-go18: sandbox-build-go18
 	docker run -t aws-sdk-go-1.8
+
+sandbox-build-go19:
+	docker build -f ./awstesting/sandbox/Dockerfile.test.go1.8 -t "aws-sdk-go-1.9" .
+sandbox-go19: sandbox-build-go19
+	docker run -i -t aws-sdk-go-1.9 bash
+sandbox-test-go19: sandbox-build-go19
+	docker run -t aws-sdk-go-1.9
+
+sandbox-build-go110:
+	docker build -f ./awstesting/sandbox/Dockerfile.test.go1.8 -t "aws-sdk-go-1.10" .
+sandbox-go110: sandbox-build-go110
+	docker run -i -t aws-sdk-go-1.10 bash
+sandbox-test-go110: sandbox-build-go110
+	docker run -t aws-sdk-go-1.10
 
 sandbox-build-gotip:
 	@echo "Run make update-aws-golang-tip, if this test fails because missing aws-golang:tip container"

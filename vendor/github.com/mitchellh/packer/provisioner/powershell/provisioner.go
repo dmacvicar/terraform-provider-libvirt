@@ -17,6 +17,7 @@ import (
 
 	"github.com/hashicorp/packer/common"
 	"github.com/hashicorp/packer/common/uuid"
+	commonhelper "github.com/hashicorp/packer/helper/common"
 	"github.com/hashicorp/packer/helper/config"
 	"github.com/hashicorp/packer/packer"
 	"github.com/hashicorp/packer/template/interpolate"
@@ -55,6 +56,11 @@ type Config struct {
 	// The remote path where the local powershell script will be uploaded to.
 	// This should be set to a writable file that is in a pre-existing directory.
 	RemotePath string `mapstructure:"remote_path"`
+
+	// The remote path where the file containing the environment variables
+	// will be uploaded to. This should be set to a writable file that is
+	// in a pre-existing directory.
+	RemoteEnvVarPath string `mapstructure:"remote_env_var_path"`
 
 	// The command used to execute the script. The '{{ .Path }}' variable
 	// should be used to specify where the script goes, {{ .Vars }}
@@ -99,11 +105,21 @@ type Provisioner struct {
 }
 
 type ExecuteCommandTemplate struct {
-	Vars string
-	Path string
+	Vars          string
+	Path          string
+	WinRMPassword string
+}
+
+type EnvVarsTemplate struct {
+	WinRMPassword string
 }
 
 func (p *Provisioner) Prepare(raws ...interface{}) error {
+	//Create passthrough for winrm password so we can fill it in once we know it
+	p.config.ctx.Data = &EnvVarsTemplate{
+		WinRMPassword: `{{.WinRMPassword}}`,
+	}
+
 	err := config.Decode(&p.config, &config.DecodeOpts{
 		Interpolate:        true,
 		InterpolateContext: &p.config.ctx,
@@ -146,6 +162,11 @@ func (p *Provisioner) Prepare(raws ...interface{}) error {
 	if p.config.RemotePath == "" {
 		uuid := uuid.TimeOrderedUUID()
 		p.config.RemotePath = fmt.Sprintf(`c:/Windows/Temp/script-%s.ps1`, uuid)
+	}
+
+	if p.config.RemoteEnvVarPath == "" {
+		uuid := uuid.TimeOrderedUUID()
+		p.config.RemoteEnvVarPath = fmt.Sprintf(`c:/Windows/Temp/packer-ps-env-vars-%s.ps1`, uuid)
 	}
 
 	if p.config.Scripts == nil {
@@ -248,6 +269,8 @@ func (p *Provisioner) Provision(ui packer.Ui, comm packer.Communicator) error {
 			ui.Error(fmt.Sprintf("Unable to extract inline scripts into a file: %s", err))
 		}
 		scripts = append(scripts, temp)
+		// Remove temp script containing the inline commands when done
+		defer os.Remove(temp)
 	}
 
 	for _, path := range scripts {
@@ -338,15 +361,15 @@ func (p *Provisioner) retryable(f func() error) error {
 	}
 }
 
-// Enviroment variables required within the remote environment are uploaded within a PS script and
+// Environment variables required within the remote environment are uploaded within a PS script and
 // then enabled by 'dot sourcing' the script immediately prior to execution of the main command
-func (p *Provisioner) prepareEnvVars(elevated bool) (envVarPath string, err error) {
+func (p *Provisioner) prepareEnvVars(elevated bool) (err error) {
 	// Collate all required env vars into a plain string with required formatting applied
 	flattenedEnvVars := p.createFlattenedEnvVars(elevated)
 	// Create a powershell script on the target build fs containing the flattened env vars
-	envVarPath, err = p.uploadEnvVars(flattenedEnvVars)
+	err = p.uploadEnvVars(flattenedEnvVars)
 	if err != nil {
-		return "", err
+		return err
 	}
 	return
 }
@@ -358,13 +381,22 @@ func (p *Provisioner) createFlattenedEnvVars(elevated bool) (flattened string) {
 	// Always available Packer provided env vars
 	envVars["PACKER_BUILD_NAME"] = p.config.PackerBuildName
 	envVars["PACKER_BUILDER_TYPE"] = p.config.PackerBuilderType
+
 	httpAddr := common.GetHTTPAddr()
 	if httpAddr != "" {
 		envVars["PACKER_HTTP_ADDR"] = httpAddr
 	}
 
+	// interpolate environment variables
+	p.config.ctx.Data = &EnvVarsTemplate{
+		WinRMPassword: getWinRMPassword(p.config.PackerBuildName),
+	}
 	// Split vars into key/value components
 	for _, envVar := range p.config.Vars {
+		envVar, err := interpolate.Render(envVar, &p.config.ctx)
+		if err != nil {
+			return
+		}
 		keyValue := strings.SplitN(envVar, "=", 2)
 		// Escape chars special to PS in each env var value
 		escapedEnvVarValue := psEscape.Replace(keyValue[1])
@@ -393,15 +425,13 @@ func (p *Provisioner) createFlattenedEnvVars(elevated bool) (flattened string) {
 	return
 }
 
-func (p *Provisioner) uploadEnvVars(flattenedEnvVars string) (envVarPath string, err error) {
+func (p *Provisioner) uploadEnvVars(flattenedEnvVars string) (err error) {
 	// Upload all env vars to a powershell script on the target build file system
 	envVarReader := strings.NewReader(flattenedEnvVars)
-	uuid := uuid.TimeOrderedUUID()
-	envVarPath = fmt.Sprintf(`${env:SYSTEMROOT}\Temp\packer-env-vars-%s.ps1`, uuid)
-	log.Printf("Uploading env vars to %s", envVarPath)
-	err = p.communicator.Upload(envVarPath, envVarReader, nil)
+	log.Printf("Uploading env vars to %s", p.config.RemoteEnvVarPath)
+	err = p.communicator.Upload(p.config.RemoteEnvVarPath, envVarReader, nil)
 	if err != nil {
-		return "", fmt.Errorf("Error uploading ps script containing env vars: %s", err)
+		return fmt.Errorf("Error uploading ps script containing env vars: %s", err)
 	}
 	return
 }
@@ -417,14 +447,15 @@ func (p *Provisioner) createCommandText() (command string, err error) {
 
 func (p *Provisioner) createCommandTextNonPrivileged() (command string, err error) {
 	// Prepare everything needed to enable the required env vars within the remote environment
-	envVarPath, err := p.prepareEnvVars(false)
+	err = p.prepareEnvVars(false)
 	if err != nil {
 		return "", err
 	}
 
 	p.config.ctx.Data = &ExecuteCommandTemplate{
-		Path: p.config.RemotePath,
-		Vars: envVarPath,
+		Path:          p.config.RemotePath,
+		Vars:          p.config.RemoteEnvVarPath,
+		WinRMPassword: getWinRMPassword(p.config.PackerBuildName),
 	}
 	command, err = interpolate.Render(p.config.ExecuteCommand, &p.config.ctx)
 
@@ -436,16 +467,22 @@ func (p *Provisioner) createCommandTextNonPrivileged() (command string, err erro
 	return command, nil
 }
 
+func getWinRMPassword(buildName string) string {
+	winRMPass, _ := commonhelper.RetrieveSharedState("winrm_password", buildName)
+	return winRMPass
+}
+
 func (p *Provisioner) createCommandTextPrivileged() (command string, err error) {
 	// Prepare everything needed to enable the required env vars within the remote environment
-	envVarPath, err := p.prepareEnvVars(true)
+	err = p.prepareEnvVars(true)
 	if err != nil {
 		return "", err
 	}
 
 	p.config.ctx.Data = &ExecuteCommandTemplate{
-		Path: p.config.RemotePath,
-		Vars: envVarPath,
+		Path:          p.config.RemotePath,
+		Vars:          p.config.RemoteEnvVarPath,
+		WinRMPassword: getWinRMPassword(p.config.PackerBuildName),
 	}
 	command, err = interpolate.Render(p.config.ElevatedExecuteCommand, &p.config.ctx)
 	if err != nil {
@@ -482,7 +519,7 @@ func (p *Provisioner) generateElevatedRunner(command string) (uploadedPath strin
 	// Only use %ENVVAR% format for environment variables when setting
 	// the log file path; Do NOT use $env:ENVVAR format as it won't be
 	// expanded correctly in the elevatedTemplate
-	logFile := `%SYSTEMROOT%\Temp\` + taskName + ".out"
+	logFile := `%SYSTEMROOT%/Temp/` + taskName + ".out"
 	command += fmt.Sprintf(" > %s 2>&1", logFile)
 
 	// elevatedTemplate wraps the command in a single quoted XML text
@@ -501,6 +538,12 @@ func (p *Provisioner) generateElevatedRunner(command string) (uploadedPath strin
 		log.Printf("Elevated user %s converted to %s after escaping chars special to PowerShell",
 			p.config.ElevatedUser, escapedElevatedUser)
 	}
+	// Replace ElevatedPassword for winrm users who used this feature
+	p.config.ctx.Data = &EnvVarsTemplate{
+		WinRMPassword: getWinRMPassword(p.config.PackerBuildName),
+	}
+
+	p.config.ElevatedPassword, _ = interpolate.Render(p.config.ElevatedPassword, &p.config.ctx)
 
 	// Escape chars special to PowerShell in the ElevatedPassword string
 	escapedElevatedPassword := psEscape.Replace(p.config.ElevatedPassword)
@@ -524,14 +567,11 @@ func (p *Provisioner) generateElevatedRunner(command string) (uploadedPath strin
 		return "", err
 	}
 	uuid := uuid.TimeOrderedUUID()
-	path := fmt.Sprintf(`${env:TEMP}\packer-elevated-shell-%s.ps1`, uuid)
+	path := fmt.Sprintf(`C:/Windows/Temp/packer-elevated-shell-%s.ps1`, uuid)
 	log.Printf("Uploading elevated shell wrapper for command [%s] to [%s]", command, path)
 	err = p.communicator.Upload(path, &buffer, nil)
 	if err != nil {
 		return "", fmt.Errorf("Error preparing elevated powershell script: %s", err)
 	}
-
-	// CMD formatted Path required for this op
-	path = fmt.Sprintf("%s-%s.ps1", "%TEMP%\\packer-elevated-shell", uuid)
 	return path, err
 }

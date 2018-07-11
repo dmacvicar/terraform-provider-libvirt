@@ -30,7 +30,6 @@ builder.
 -   `client_secret` (string) The password or secret for your service principal.
 
 -   `subscription_id` (string) Subscription under which the build will be performed. **The service principal specified in `client_id` must have full access to this subscription, unless build_resource_group_name option is specified in which case it needs to have owner access to the existing resource group specified in build_resource_group_name parameter.**
--   `capture_container_name` (string) Destination container name. Essentially the "directory" where your VHD will be organized in Azure.  The captured VHD's URL will be `https://<storage_account>.blob.core.windows.net/system/Microsoft.Compute/Images/<capture_container_name>/<capture_name_prefix>.xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.vhd`.
 
 -   `image_publisher` (string) PublisherName for your base image. See [documentation](https://azure.microsoft.com/en-us/documentation/articles/resource-groups-vm-searching/) for details.
 
@@ -141,18 +140,51 @@ Providing `temp_resource_group_name` or `location` in combination with `build_re
     account type for a managed image.  Valid values are Standard_LRS
     and Premium\_LRS.  The default is Standard\_LRS.
 
--   `object_id` (string) Specify an OAuth Object ID to protect WinRM certificates
-    created at runtime. This variable is required when creating images based on
-    Windows; this variable is not used by non-Windows builds. See `Windows`
-    behavior for `os_type`, below.
-
 -   `os_disk_size_gb` (number) Specify the size of the OS disk in GB (gigabytes).  Values of zero or less than zero are
     ignored.
+
+-   `disk_additional_size` (array of integers) - The size(s) of any additional
+    hard disks for the VM in gigabytes. If this is not specified then the VM
+    will only contain an OS disk. The number of additional disks and maximum size of a disk depends on the configuration of your VM. See [Windows](https://docs.microsoft.com/en-us/azure/virtual-machines/windows/about-disks-and-vhds) or [Linux](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/about-disks-and-vhds) for more information.
+
+	For VHD builds the final artifacts will be named `PREFIX-dataDisk-<n>.UUID.vhd` and stored in the specified capture container along side the OS disk. The additional disks are included in the deployment template `PREFIX-vmTemplate.UUID`.
+	
+	For Managed build the final artifacts are included in the managed image. The additional disk will have the same storage account type as the OS disk, as specified with the `managed_image_storage_account_type` setting.
 
 -   `os_type` (string) If either `Linux` or `Windows` is specified Packer will
     automatically configure authentication credentials for the provisioned machine. For
     `Linux` this configures an SSH authorized key. For `Windows` this
     configures a WinRM certificate.
+
+-   `plan_info` (object) - Used for creating images from Marketplace images.  Please refer to [Deploy an image with
+     Marketplace terms](https://aka.ms/azuremarketplaceapideployment) for more details.  Not all Marketplace images
+     support programmatic deployment, and support is controlled by the image publisher.
+
+     An example plan_info object is defined below.
+
+     ```json
+     {
+        "plan_info": {
+            "plan_name": "rabbitmq",
+            "plan_product": "rabbitmq",
+            "plan_publisher": "bitnami"
+        }
+     }
+     ```
+
+     `plan_name` (string) - The plan name, required.
+     `plan_product` (string) - The plan product, required.
+     `plan_publisher` (string) - The plan publisher, required.
+     `plan_promotion_code` (string) - Some images accept a promotion code, optional.
+
+     Images created from the Marketplace with `plan_info` **must** specify `plan_info` whenever the image is deployed.
+     The builder automatically adds tags to the image to ensure this information is not lost.  The following tags are
+     added.
+
+       1. PlanName
+       1. PlanProduct
+       1. PlanPublisher
+       1. PlanPromotionCode
 
 -   `temp_compute_name` (string) temporary name assigned to the VM.  If this value is not set, a random value will be
     assigned.  Knowing the resource group and VM name allows one to execute commands to update the VM during a Packer
@@ -182,6 +214,9 @@ Providing `temp_resource_group_name` or `location` in combination with `build_re
     [pricing](https://azure.microsoft.com/en-us/pricing/details/virtual-machines/) information. Defaults to `Standard_A1`.
 
     CLI example `azure vm sizes -l westus`
+
+-   `async_resourcegroup_delete` (boolean) If you want packer to delete the temporary resource group asynchronously set this value. It's a boolean value
+     and defaults to false. **Important** Setting this true means that your builds are faster, however any failed deletes are not reported.
 
 ## Basic Example
 
@@ -336,9 +371,13 @@ The Azure builder creates the following random values at runtime.
 -   Compute Name: a random 15-character name prefixed with pkrvm; the name of the VM.
 -   Deployment Name: a random 15-character name prefixed with pkfdp; the name of the deployment.
 -   KeyVault Name: a random 15-character name prefixed with pkrkv.
+-   NIC Name: a random 15-character name prefixed with pkrni.
+-   Public IP Name: a random 15-character name prefixed with pkrip.
 -   OS Disk Name: a random 15-character name prefixed with pkros.
 -   Resource Group Name: a random 33-character name prefixed with packer-Resource-Group-.
+-   Subnet Name: a random 15-character name prefixed with pkrsn.
 -   SSH Key Pair: a 2,048-bit asymmetric key pair; can be overridden by the user.
+-   Virtual Network Name: a random 15-character name prefixed with pkrvn.
 
 The default alphabet used for random values is **0123456789bcdfghjklmnpqrstvwxyz**. The alphabet was reduced (no
 vowels) to prevent running afoul of Azure decency controls.
@@ -368,8 +407,6 @@ A Windows build requires two templates and two deployments. Unfortunately, the K
 the same time hence the need for two templates and deployments. The time required to deploy a KeyVault template is
 minimal, so overall impact is small.
 
-> The KeyVault certificate is protected using the object\_id of the SPN. This is why Windows builds require object\_id,
-> and an SPN. The KeyVault is deleted when the resource group is deleted.
 
 See the [examples/azure](https://github.com/hashicorp/packer/tree/master/examples/azure) folder in the packer project
 for more examples.

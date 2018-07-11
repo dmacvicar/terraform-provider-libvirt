@@ -20,7 +20,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/coreos/ignition/config/types"
+	configUtil "github.com/coreos/ignition/config/util"
+	"github.com/coreos/ignition/internal/config/types"
 
 	"github.com/vincent-petithory/dataurl"
 )
@@ -38,7 +39,7 @@ func FileFromSystemdUnit(unit types.Unit) (*FetchOp, error) {
 	return &FetchOp{
 		Path: filepath.Join(SystemdUnitsPath(), string(unit.Name)),
 		Url:  *u,
-		Mode: DefaultFilePermissions,
+		Mode: configUtil.IntToPtr(int(DefaultFilePermissions)),
 	}, nil
 }
 
@@ -50,11 +51,11 @@ func FileFromNetworkdUnit(unit types.Networkdunit) (*FetchOp, error) {
 	return &FetchOp{
 		Path: filepath.Join(NetworkdUnitsPath(), string(unit.Name)),
 		Url:  *u,
-		Mode: DefaultFilePermissions,
+		Mode: configUtil.IntToPtr(int(DefaultFilePermissions)),
 	}, nil
 }
 
-func FileFromUnitDropin(unit types.Unit, dropin types.Dropin) (*FetchOp, error) {
+func FileFromSystemdUnitDropin(unit types.Unit, dropin types.SystemdDropin) (*FetchOp, error) {
 	u, err := url.Parse(dataurl.EncodeBytes([]byte(dropin.Contents)))
 	if err != nil {
 		return nil, err
@@ -62,7 +63,19 @@ func FileFromUnitDropin(unit types.Unit, dropin types.Dropin) (*FetchOp, error) 
 	return &FetchOp{
 		Path: filepath.Join(SystemdDropinsPath(string(unit.Name)), string(dropin.Name)),
 		Url:  *u,
-		Mode: DefaultFilePermissions,
+		Mode: configUtil.IntToPtr(int(DefaultFilePermissions)),
+	}, nil
+}
+
+func FileFromNetworkdUnitDropin(unit types.Networkdunit, dropin types.NetworkdDropin) (*FetchOp, error) {
+	u, err := url.Parse(dataurl.EncodeBytes([]byte(dropin.Contents)))
+	if err != nil {
+		return nil, err
+	}
+	return &FetchOp{
+		Path: filepath.Join(NetworkdDropinsPath(string(unit.Name)), string(dropin.Name)),
+		Url:  *u,
+		Mode: configUtil.IntToPtr(int(DefaultFilePermissions)),
 	}, nil
 }
 

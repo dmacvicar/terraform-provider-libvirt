@@ -13,4 +13,5 @@ hash schematyper 2>/dev/null || {
 }
 
 echo "Generating schema..."
-schematyper --package=types schema/ignition.json -o config/types/schema.go --root-type=Config
+schematyper --package=types schema/ignition.json -o internal/config/types/schema.go --root-type=Config
+cp internal/config/types/schema.go $(find config -name \*_experimental -type d)/types/schema.go

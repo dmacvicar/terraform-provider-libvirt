@@ -8,8 +8,8 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -170,6 +170,50 @@ func TestClient_testInterface(t *testing.T) {
 	// Test that it knows it is exited
 	if !c.Exited() {
 		t.Fatal("should say client has exited")
+	}
+}
+
+func TestClient_grpc_servercrash(t *testing.T) {
+	process := helperProcess("test-grpc")
+	c := NewClient(&ClientConfig{
+		Cmd:              process,
+		HandshakeConfig:  testHandshake,
+		Plugins:          testPluginMap,
+		AllowedProtocols: []Protocol{ProtocolGRPC},
+	})
+	defer c.Kill()
+
+	if _, err := c.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	if v := c.Protocol(); v != ProtocolGRPC {
+		t.Fatalf("bad: %s", v)
+	}
+
+	// Grab the RPC client
+	client, err := c.Client()
+	if err != nil {
+		t.Fatalf("err should be nil, got %s", err)
+	}
+
+	// Grab the impl
+	raw, err := client.Dispense("test")
+	if err != nil {
+		t.Fatalf("err should be nil, got %s", err)
+	}
+
+	_, ok := raw.(testInterface)
+	if !ok {
+		t.Fatalf("bad: %#v", raw)
+	}
+
+	c.process.Kill()
+
+	select {
+	case <-c.doneCtx.Done():
+	case <-time.After(time.Second * 2):
+		t.Fatal("Context was not closed")
 	}
 }
 
@@ -517,6 +561,33 @@ func TestClient_Stderr(t *testing.T) {
 	}
 }
 
+func TestClient_StderrJSON(t *testing.T) {
+	stderr := new(bytes.Buffer)
+	process := helperProcess("stderr-json")
+	c := NewClient(&ClientConfig{
+		Cmd:             process,
+		Stderr:          stderr,
+		HandshakeConfig: testHandshake,
+	})
+	defer c.Kill()
+
+	if _, err := c.Start(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	for !c.Exited() {
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	if !strings.Contains(stderr.String(), "[\"HELLO\"]\n") {
+		t.Fatalf("bad log data: '%s'", stderr.String())
+	}
+
+	if !strings.Contains(stderr.String(), "12345\n") {
+		t.Fatalf("bad log data: '%s'", stderr.String())
+	}
+}
+
 func TestClient_Stdin(t *testing.T) {
 	// Overwrite stdin for this test with a temporary file
 	tf, err := ioutil.TempFile("", "terraform")
@@ -781,22 +852,30 @@ func TestClient_ping(t *testing.T) {
 	}
 }
 
-func TestClient_Logger(t *testing.T) {
-	buffer := bytes.NewBuffer([]byte{})
-	stderr := io.MultiWriter(os.Stderr, buffer)
+func TestClient_logger(t *testing.T) {
+	t.Run("net/rpc", func(t *testing.T) { testClient_logger(t, "netrpc") })
+	t.Run("grpc", func(t *testing.T) { testClient_logger(t, "grpc") })
+}
+
+func testClient_logger(t *testing.T, proto string) {
+	var buffer bytes.Buffer
+	mutex := new(sync.Mutex)
+	stderr := io.MultiWriter(os.Stderr, &buffer)
 	// Custom hclog.Logger
 	clientLogger := hclog.New(&hclog.LoggerOptions{
 		Name:   "test-logger",
 		Level:  hclog.Trace,
 		Output: stderr,
+		Mutex:  mutex,
 	})
 
-	process := helperProcess("test-interface-logger")
+	process := helperProcess("test-interface-logger-" + proto)
 	c := NewClient(&ClientConfig{
-		Cmd:             process,
-		HandshakeConfig: testHandshake,
-		Plugins:         testPluginMap,
-		Logger:          clientLogger,
+		Cmd:              process,
+		HandshakeConfig:  testHandshake,
+		Plugins:          testPluginMap,
+		Logger:           clientLogger,
+		AllowedProtocols: []Protocol{ProtocolNetRPC, ProtocolGRPC},
 	})
 	defer c.Kill()
 
@@ -817,22 +896,40 @@ func TestClient_Logger(t *testing.T) {
 		t.Fatalf("bad: %#v", raw)
 	}
 
-	// Discard everything else, and capture the
-	// output we care about
-	buffer.Reset()
-	impl.PrintKV("foo", "bar")
-	line, err := buffer.ReadString('\n')
-	if err != nil {
-		t.Fatal(err)
+	{
+		// Discard everything else, and capture the output we care about
+		mutex.Lock()
+		buffer.Reset()
+		mutex.Unlock()
+		impl.PrintKV("foo", "bar")
+		time.Sleep(100 * time.Millisecond)
+		mutex.Lock()
+		line, err := buffer.ReadString('\n')
+		mutex.Unlock()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(line, "foo=bar") {
+			t.Fatalf("bad: %q", line)
+		}
 	}
-	re, err := regexp.Compile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}-\d{4} \[[A-Z ]+\].*foo=bar`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	re.MatchString(line)
-	matched := re.MatchString(line)
-	if !matched {
-		t.Fatalf("incorrect log output from plugin on PrintKV; got: %s", line)
+
+	{
+		// Try an integer type
+		mutex.Lock()
+		buffer.Reset()
+		mutex.Unlock()
+		impl.PrintKV("foo", 12)
+		time.Sleep(100 * time.Millisecond)
+		mutex.Lock()
+		line, err := buffer.ReadString('\n')
+		mutex.Unlock()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(line, "foo=12") {
+			t.Fatalf("bad: %q", line)
+		}
 	}
 
 	// Kill it

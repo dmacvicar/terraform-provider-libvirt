@@ -15,9 +15,16 @@
 package types
 
 import (
-	"encoding/json"
 	"errors"
 	"path"
+
+	"github.com/coreos/ignition/config/validate/report"
+)
+
+var (
+	ErrSystemdUnitInvalidExt   = errors.New("invalid systemd unit extension")
+	ErrSystemdDropInInvalidExt = errors.New("invalid systemd unit extension")
+	ErrNetworkdUnitInvalidExt  = errors.New("invalid networkd unit extension")
 )
 
 type SystemdUnit struct {
@@ -34,44 +41,24 @@ type SystemdUnitDropIn struct {
 }
 
 type SystemdUnitName string
-type systemdUnitName SystemdUnitName
 
-func (n *SystemdUnitName) UnmarshalJSON(data []byte) error {
-	tn := systemdUnitName(*n)
-	if err := json.Unmarshal(data, &tn); err != nil {
-		return err
-	}
-	*n = SystemdUnitName(tn)
-	return n.AssertValid()
-}
-
-func (n SystemdUnitName) AssertValid() error {
+func (n SystemdUnitName) Validate() report.Report {
 	switch path.Ext(string(n)) {
 	case ".service", ".socket", ".device", ".mount", ".automount", ".swap", ".target", ".path", ".timer", ".snapshot", ".slice", ".scope":
-		return nil
+		return report.Report{}
 	default:
-		return errors.New("invalid systemd unit extension")
+		return report.ReportFromError(ErrSystemdUnitInvalidExt, report.EntryError)
 	}
 }
 
 type SystemdUnitDropInName string
-type systemdUnitDropInName SystemdUnitDropInName
 
-func (n *SystemdUnitDropInName) UnmarshalJSON(data []byte) error {
-	tn := systemdUnitDropInName(*n)
-	if err := json.Unmarshal(data, &tn); err != nil {
-		return err
-	}
-	*n = SystemdUnitDropInName(tn)
-	return n.AssertValid()
-}
-
-func (n SystemdUnitDropInName) AssertValid() error {
+func (n SystemdUnitDropInName) Validate() report.Report {
 	switch path.Ext(string(n)) {
 	case ".conf":
-		return nil
+		return report.Report{}
 	default:
-		return errors.New("invalid systemd unit drop-in extension")
+		return report.ReportFromError(ErrSystemdDropInInvalidExt, report.EntryError)
 	}
 }
 
@@ -81,22 +68,12 @@ type NetworkdUnit struct {
 }
 
 type NetworkdUnitName string
-type networkdUnitName NetworkdUnitName
 
-func (n *NetworkdUnitName) UnmarshalJSON(data []byte) error {
-	tn := networkdUnitName(*n)
-	if err := json.Unmarshal(data, &tn); err != nil {
-		return err
-	}
-	*n = NetworkdUnitName(tn)
-	return n.AssertValid()
-}
-
-func (n NetworkdUnitName) AssertValid() error {
+func (n NetworkdUnitName) Validate() report.Report {
 	switch path.Ext(string(n)) {
 	case ".link", ".netdev", ".network":
-		return nil
+		return report.Report{}
 	default:
-		return errors.New("invalid networkd unit extension")
+		return report.ReportFromError(ErrNetworkdUnitInvalidExt, report.EntryError)
 	}
 }

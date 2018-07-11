@@ -13,6 +13,7 @@ func TestBzip2Decompressor(t *testing.T) {
 			false,
 			nil,
 			"d3b07384d113edec49eaa6238ad5ff00",
+			nil,
 		},
 
 		{
@@ -21,6 +22,7 @@ func TestBzip2Decompressor(t *testing.T) {
 			true,
 			nil,
 			"",
+			nil,
 		},
 	}
 

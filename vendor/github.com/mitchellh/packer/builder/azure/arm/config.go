@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/arm/compute"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/masterzen/winrm"
@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/packer/builder/azure/common/constants"
 	"github.com/hashicorp/packer/builder/azure/pkcs12"
 	"github.com/hashicorp/packer/common"
+	commonhelper "github.com/hashicorp/packer/helper/common"
 	"github.com/hashicorp/packer/helper/communicator"
 	"github.com/hashicorp/packer/helper/config"
 	"github.com/hashicorp/packer/packer"
@@ -56,6 +57,13 @@ var (
 	reManagedDiskName      = regexp.MustCompile(validManagedDiskName)
 	reResourceGroupName    = regexp.MustCompile(validResourceGroupNameRe)
 )
+
+type PlanInformation struct {
+	PlanName          string `mapstructure:"plan_name"`
+	PlanProduct       string `mapstructure:"plan_product"`
+	PlanPublisher     string `mapstructure:"plan_publisher"`
+	PlanPromotionCode string `mapstructure:"plan_promotion_code"`
+}
 
 type Config struct {
 	common.PackerConfig `mapstructure:",squash"`
@@ -107,10 +115,14 @@ type Config struct {
 	VirtualNetworkResourceGroupName   string `mapstructure:"virtual_network_resource_group_name"`
 	CustomDataFile                    string `mapstructure:"custom_data_file"`
 	customData                        string
+	PlanInfo                          PlanInformation `mapstructure:"plan_info"`
 
 	// OS
 	OSType       string `mapstructure:"os_type"`
 	OSDiskSizeGB int32  `mapstructure:"os_disk_size_gb"`
+
+	// Additional Disks
+	AdditionalDiskSize []int32 `mapstructure:"disk_additional_size"`
 
 	// Runtime Values
 	UserName               string
@@ -119,9 +131,13 @@ type Config struct {
 	tmpCertificatePassword string
 	tmpResourceGroupName   string
 	tmpComputeName         string
+	tmpNicName             string
+	tmpPublicIPAddressName string
 	tmpDeploymentName      string
 	tmpKeyVaultName        string
 	tmpOSDiskName          string
+	tmpSubnetName          string
+	tmpVirtualNetworkName  string
 	tmpWinRMCertificateUrl string
 
 	useDeviceLogin bool
@@ -135,6 +151,9 @@ type Config struct {
 
 	Comm communicator.Config `mapstructure:",squash"`
 	ctx  *interpolate.Context
+
+	//Cleanup
+	AsyncResourceGroupDelete bool `mapstructure:"async_resourcegroup_delete"`
 }
 
 type keyVaultCertificate struct {
@@ -173,7 +192,7 @@ func (c *Config) toImageParameters() *compute.Image {
 			},
 		},
 		Location: to.StringPtr(c.Location),
-		Tags:     &c.AzureTags,
+		Tags:     c.AzureTags,
 	}
 }
 
@@ -342,6 +361,9 @@ func setRuntimeValues(c *Config) {
 	var tempName = NewTempName()
 
 	c.tmpAdminPassword = tempName.AdminPassword
+	// store so that we can access this later during provisioning
+	commonhelper.SetSharedState("winrm_password", c.tmpAdminPassword, c.PackerConfig.PackerBuildName)
+
 	c.tmpCertificatePassword = tempName.CertificatePassword
 	if c.TempComputeName == "" {
 		c.tmpComputeName = tempName.ComputeName
@@ -355,7 +377,11 @@ func setRuntimeValues(c *Config) {
 	} else if c.TempResourceGroupName != "" && c.BuildResourceGroupName == "" {
 		c.tmpResourceGroupName = c.TempResourceGroupName
 	}
+	c.tmpNicName = tempName.NicName
+	c.tmpPublicIPAddressName = tempName.PublicIPAddressName
 	c.tmpOSDiskName = tempName.OSDiskName
+	c.tmpSubnetName = tempName.SubnetName
+	c.tmpVirtualNetworkName = tempName.VirtualNetworkName
 	c.tmpKeyVaultName = tempName.KeyVaultName
 }
 
@@ -399,7 +425,7 @@ func setCloudEnvironment(c *Config) error {
 	name := strings.ToUpper(c.CloudEnvironmentName)
 	envName, ok := lookup[name]
 	if !ok {
-		return fmt.Errorf("There is no cloud envionment matching the name '%s'!", c.CloudEnvironmentName)
+		return fmt.Errorf("There is no cloud environment matching the name '%s'!", c.CloudEnvironmentName)
 	}
 
 	env, err := azure.EnvironmentFromName(envName)
@@ -427,7 +453,7 @@ func provideDefaultValues(c *Config) {
 	}
 
 	if c.ManagedImageStorageAccountType == "" {
-		c.managedImageStorageAccountType = compute.StandardLRS
+		c.managedImageStorageAccountType = compute.StorageAccountTypesStandardLRS
 	}
 
 	if c.ImagePublisher != "" && c.ImageVersion == "" {
@@ -467,9 +493,6 @@ func assertRequiredParametersSet(c *Config, errs *packer.MultiError) {
 	// readable by the ObjectID of the App.  There may be another way to handle
 	// this case, but I am not currently aware of it - send feedback.
 	isUseDeviceLogin := func(c *Config) bool {
-		if c.OSType == constants.Target_Windows {
-			return false
-		}
 
 		return c.SubscriptionID != "" &&
 			c.ClientID == "" &&
@@ -601,7 +624,7 @@ func assertRequiredParametersSet(c *Config, errs *packer.MultiError) {
 	}
 
 	if !xor(c.Location != "", c.BuildResourceGroupName != "") {
-		errs = packer.MultiErrorAppend(errs, fmt.Errorf("Must specify either a location to create the resource group in or an existing build_resource_group_name."))
+		errs = packer.MultiErrorAppend(errs, fmt.Errorf("Specify either a location to create the resource group in or an existing build_resource_group_name, but not both."))
 	}
 
 	if c.ManagedImageName == "" && c.ManagedImageResourceGroupName == "" {
@@ -645,6 +668,23 @@ func assertRequiredParametersSet(c *Config, errs *packer.MultiError) {
 	}
 
 	/////////////////////////////////////////////
+	// Plan Info
+	if c.PlanInfo.PlanName != "" || c.PlanInfo.PlanProduct != "" || c.PlanInfo.PlanPublisher != "" || c.PlanInfo.PlanPromotionCode != "" {
+		if c.PlanInfo.PlanName == "" || c.PlanInfo.PlanProduct == "" || c.PlanInfo.PlanPublisher == "" {
+			errs = packer.MultiErrorAppend(errs, fmt.Errorf("if either plan_name, plan_product, plan_publisher, or plan_promotion_code are defined then plan_name, plan_product, and plan_publisher must be defined"))
+		} else {
+			if c.AzureTags == nil {
+				c.AzureTags = make(map[string]*string)
+			}
+
+			c.AzureTags["PlanInfo"] = &c.PlanInfo.PlanName
+			c.AzureTags["PlanProduct"] = &c.PlanInfo.PlanProduct
+			c.AzureTags["PlanPublisher"] = &c.PlanInfo.PlanPublisher
+			c.AzureTags["PlanPromotionCode"] = &c.PlanInfo.PlanPromotionCode
+		}
+	}
+
+	/////////////////////////////////////////////
 	// OS
 	if strings.EqualFold(c.OSType, constants.Target_Linux) {
 		c.OSType = constants.Target_Linux
@@ -657,10 +697,10 @@ func assertRequiredParametersSet(c *Config, errs *packer.MultiError) {
 	}
 
 	switch c.ManagedImageStorageAccountType {
-	case "", string(compute.StandardLRS):
-		c.managedImageStorageAccountType = compute.StandardLRS
-	case string(compute.PremiumLRS):
-		c.managedImageStorageAccountType = compute.PremiumLRS
+	case "", string(compute.StorageAccountTypesStandardLRS):
+		c.managedImageStorageAccountType = compute.StorageAccountTypesStandardLRS
+	case string(compute.StorageAccountTypesPremiumLRS):
+		c.managedImageStorageAccountType = compute.StorageAccountTypesPremiumLRS
 	default:
 		errs = packer.MultiErrorAppend(errs, fmt.Errorf("The managed_image_storage_account_type %q is invalid", c.ManagedImageStorageAccountType))
 	}

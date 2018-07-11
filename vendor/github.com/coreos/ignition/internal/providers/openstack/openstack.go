@@ -20,6 +20,7 @@
 package openstack
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -29,17 +30,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/coreos/ignition/config"
-	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/config/validate/report"
+	"github.com/coreos/ignition/internal/config"
+	"github.com/coreos/ignition/internal/config/types"
+	"github.com/coreos/ignition/internal/distro"
 	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/resource"
-
-	"golang.org/x/net/context"
 )
 
 const (
-	diskByLabelPath         = "/dev/disk/by-label/"
 	configDriveUserdataPath = "/openstack/latest/user_data"
 )
 
@@ -73,11 +72,11 @@ func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
 	}
 
 	go dispatch("config drive (config-2)", func() ([]byte, error) {
-		return fetchConfigFromDevice(f.Logger, ctx, diskByLabelPath+"config-2")
+		return fetchConfigFromDevice(f.Logger, ctx, filepath.Join(distro.DiskByLabelDir(), "config-2"))
 	})
 
 	go dispatch("config drive (CONFIG-2)", func() ([]byte, error) {
-		return fetchConfigFromDevice(f.Logger, ctx, diskByLabelPath+"CONFIG-2")
+		return fetchConfigFromDevice(f.Logger, ctx, filepath.Join(distro.DiskByLabelDir(), "CONFIG-2"))
 	})
 
 	go dispatch("metadata service", func() ([]byte, error) {
@@ -114,7 +113,7 @@ func fetchConfigFromDevice(logger *log.Logger, ctx context.Context, path string)
 	}
 	defer os.Remove(mnt)
 
-	cmd := exec.Command("/usr/bin/mount", "-o", "ro", "-t", "auto", path, mnt)
+	cmd := exec.Command(distro.MountCmd(), "-o", "ro", "-t", "auto", path, mnt)
 	if _, err := logger.LogCmd(cmd, "mounting config drive"); err != nil {
 		return nil, err
 	}

@@ -18,8 +18,8 @@
 package vmware
 
 import (
-	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/config/validate/report"
+	"github.com/coreos/ignition/internal/config/types"
 	"github.com/coreos/ignition/internal/providers"
 	"github.com/coreos/ignition/internal/providers/util"
 	"github.com/coreos/ignition/internal/resource"
@@ -52,30 +52,30 @@ func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
 func fetchRawConfig(f resource.Fetcher) (config, error) {
 	info := rpcvmx.NewConfig()
 
+	var ovfData string
+	var ovfEncoding string
+
 	ovfEnv, err := info.String("ovfenv", "")
 	if err != nil {
-		f.Logger.Debug("failed to fetch ovfenv: %v. Continuing...", err)
+		f.Logger.Warning("failed to fetch ovfenv: %v. Continuing...", err)
 	} else if ovfEnv != "" {
 		f.Logger.Debug("using OVF environment from guestinfo")
 		env, err := ovf.ReadEnvironment([]byte(ovfEnv))
 		if err != nil {
-			f.Logger.Err("failed to parse OVF environment: %v", err)
-			return config{}, err
+			f.Logger.Warning("failed to parse OVF environment: %v. Continuing...", err)
 		}
 
-		return config{
-			data:     env.Properties["guestinfo.coreos.config.data"],
-			encoding: env.Properties["guestinfo.coreos.config.data.encoding"],
-		}, nil
+		ovfData = env.Properties["guestinfo.coreos.config.data"]
+		ovfEncoding = env.Properties["guestinfo.coreos.config.data.encoding"]
 	}
 
-	data, err := info.String("coreos.config.data", "")
+	data, err := info.String("coreos.config.data", ovfData)
 	if err != nil {
 		f.Logger.Debug("failed to fetch config: %v", err)
 		return config{}, err
 	}
 
-	encoding, err := info.String("coreos.config.data.encoding", "")
+	encoding, err := info.String("coreos.config.data.encoding", ovfEncoding)
 	if err != nil {
 		f.Logger.Debug("failed to fetch config encoding: %v", err)
 		return config{}, err

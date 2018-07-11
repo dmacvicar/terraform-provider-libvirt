@@ -1,5 +1,5 @@
-hash: 6eec76e4402bfa71b48e3a91a7319e9dc8351be41dfe67bdb41e6d6471384f06
-updated: 2017-06-12T16:06:09.001848756-07:00
+hash: 6cec3b8e033abff84f106f33e57a381886d30d53c863cc1621d4405c4725efeb
+updated: 2018-02-15T18:15:43.70808531Z
 imports:
 - name: github.com/ajeddeloh/go-json
   version: 73d058cf8437a1989030afe571eeab9f90eebbbd
@@ -38,21 +38,16 @@ imports:
   subpackages:
   - semver
 - name: github.com/coreos/go-systemd
-  version: 7c9533367ef925dc1078d75e5b7141e10da2c4e8
+  version: 40e2722dffead74698ca12a750f64ef313ddce05
   subpackages:
   - dbus
   - unit
-- name: github.com/coreos/update-ssh-keys
-  version: 96fe9efc1f6eb103d34fdfa5902cb3bb47ebaa81
-  subpackages:
-  - authorized_keys_d
-  - authorized_keys_d/as_user
-  - src/authorized_keys_d
-  - src/authorized_keys_d/as_user
 - name: github.com/go-ini/ini
-  version: d3de07a94d22b4a0972deb4b96d790c2c0ce8333
+  version: c787282c39ac1fc618827141a1f762240def08a3
 - name: github.com/godbus/dbus
-  version: 012f3c27dcbdbe5d1285634e604e4ef869d83f7d
+  version: a389bdde4dd695d414e47b755e95e72b7826432c
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/jmespath/go-jmespath
   version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/pin/tftp
@@ -67,10 +62,14 @@ imports:
   subpackages:
   - rpcvmx
   - vmcheck
+- name: github.com/spf13/cobra
+  version: 7b2c5ac9fc04fc5efafb60700713d4fa609b777b
+- name: github.com/spf13/pflag
+  version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/vincent-petithory/dataurl
   version: 9a301d65acbb728fcc3ace14f45f511a4cfeea9c
 - name: github.com/vmware/vmw-guestinfo
-  version: 0b8dbcdd226303bf776dcac49c2d5f3b8a8190fd
+  version: 25eff159a728be87e103a0b8045e08273f4dbec4
   subpackages:
   - bdoor
   - message
@@ -81,11 +80,6 @@ imports:
   version: 03efcb870d84809319ea509714dd6d19a1498483
   subpackages:
   - errorutil
-- name: golang.org/x/net
-  version: 075e191f18186a8ff2becaf64478e30f4545cdad
-  subpackages:
-  - context
-  - context/ctxhttp
 testImports:
 - name: github.com/davecgh/go-spew
   version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9

@@ -22,8 +22,8 @@ package vmware
 import (
 	"errors"
 
-	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/config/validate/report"
+	"github.com/coreos/ignition/internal/config/types"
 	"github.com/coreos/ignition/internal/resource"
 )
 

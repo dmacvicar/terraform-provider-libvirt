@@ -60,7 +60,10 @@ func (n Disk) Validate() report.Report {
 func (n Disk) partitionNumbersCollide() bool {
 	m := map[int][]Partition{}
 	for _, p := range n.Partitions {
-		m[p.Number] = append(m[p.Number], p)
+		if p.Number != 0 {
+			// a number of 0 means next available number, multiple devices can specify this
+			m[p.Number] = append(m[p.Number], p)
+		}
 	}
 	for _, n := range m {
 		if len(n) > 1 {

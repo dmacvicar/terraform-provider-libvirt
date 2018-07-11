@@ -15,9 +15,10 @@
 package types
 
 import (
-	"encoding/json"
 	"errors"
 	"os"
+
+	"github.com/coreos/ignition/config/validate/report"
 )
 
 var (
@@ -33,20 +34,10 @@ type File struct {
 	Uid      int      `json:"uid,omitempty"`
 	Gid      int      `json:"gid,omitempty"`
 }
-type fileMode FileMode
 
-func (m *FileMode) UnmarshalJSON(data []byte) error {
-	tm := fileMode(*m)
-	if err := json.Unmarshal(data, &tm); err != nil {
-		return err
-	}
-	*m = FileMode(tm)
-	return m.AssertValid()
-}
-
-func (m FileMode) AssertValid() error {
+func (m FileMode) Validate() report.Report {
 	if (m &^ 07777) != 0 {
-		return ErrFileIllegalMode
+		return report.ReportFromError(ErrFileIllegalMode, report.EntryError)
 	}
-	return nil
+	return report.Report{}
 }

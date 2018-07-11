@@ -5,12 +5,10 @@ language: go
 go_import_path: github.com/coreos/ignition
 
 go:
-  - 1.7
   - 1.8
+  - 1.9
 
 env:
-  global:
-   - GO15VENDOREXPERIMENT=1
   matrix:
    - TARGET=amd64
    - TARGET=arm64 GIMME_ARCH=arm64 GIMME_CGO_ENABLED=1
@@ -40,6 +38,11 @@ script:
                 GOARCH="${TARGET}" ./test;
         elif [ "${TARGET}" == "arm64" ]; then
                 export CGO_LDFLAGS="-L ${PWD}";
-                GOARCH="${TARGET}" ./build;
-                file "bin/${TARGET}/ignition" | egrep 'aarch64';
+                GOARCH="${TARGET}" ./build && file "bin/${TARGET}/ignition" | egrep 'aarch64';
+        fi
+  -     if [ "${TARGET}" == "amd64" ]; then
+                GOARCH="${TARGET}" ./build_blackbox_tests;
+        elif [ "${TARGET}" == "arm64" ]; then
+                export CGO_LDFLAGS="-L ${PWD}";
+                GOARCH="${TARGET}" ./build_blackbox_tests && file "tests.test" | egrep 'aarch64';
         fi

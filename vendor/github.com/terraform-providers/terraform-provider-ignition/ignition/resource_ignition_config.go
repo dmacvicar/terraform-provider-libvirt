@@ -129,7 +129,7 @@ func renderConfig(d *schema.ResourceData, c *cache) (string, error) {
 		return "", err
 	}
 
-	bytes, err := json.MarshalIndent(i, "  ", "  ")
+	bytes, err := json.Marshal(i)
 
 	if err != nil {
 		return "", err

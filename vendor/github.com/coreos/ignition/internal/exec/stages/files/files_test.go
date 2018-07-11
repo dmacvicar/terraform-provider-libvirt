@@ -19,7 +19,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/internal/config/types"
 	"github.com/coreos/ignition/internal/exec/util"
 	"github.com/coreos/ignition/internal/log"
 )
@@ -92,7 +92,7 @@ func TestMapEntriesToFilesystems(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		logger := log.New()
+		logger := log.New(false)
 		files, err := stage{Util: util.Util{Logger: &logger}}.mapEntriesToFilesystems(test.in.config)
 		if !reflect.DeepEqual(test.out.err, err) {
 			t.Errorf("#%d: bad error: want %v, got %v", i, test.out.err, err)

@@ -57,15 +57,23 @@ type StoragePoolSourceFormat struct {
 }
 type StoragePoolSourceHost struct {
 	Name string `xml:"name,attr"`
+	Port string `xml:"port,attr,omitempty"`
 }
 
 type StoragePoolSourceDevice struct {
-	Path          string `xml:"path,attr"`
-	PartSeparator string `xml:"part_separator,attr,omitempty"`
+	Path          string                              `xml:"path,attr"`
+	PartSeparator string                              `xml:"part_separator,attr,omitempty"`
+	FreeExtents   []StoragePoolSourceDeviceFreeExtent `xml:"freeExtent"`
+}
+
+type StoragePoolSourceDeviceFreeExtent struct {
+	Start uint64 `xml:"start,attr"`
+	End   uint64 `xml:"end,attr"`
 }
 
 type StoragePoolSourceAuthSecret struct {
-	Usage string `xml:"usage,attr"`
+	Usage string `xml:"usage,attr,omitempty"`
+	UUID  string `xml:"uuid,attr,omitempty"`
 }
 
 type StoragePoolSourceAuth struct {
@@ -82,47 +90,97 @@ type StoragePoolSourceProduct struct {
 	Name string `xml:"name,attr"`
 }
 
-type StoragePoolSourceAdapterParentAddrAddress struct {
-	Domain string `xml:"domain,attr"`
-	Bus    string `xml:"bus,attr"`
-	Slot   string `xml:"slot,attr"`
-	Addr   string `xml:"addr,attr"`
+type StoragePoolPCIAddress struct {
+	Domain   *uint `xml:"domain,attr"`
+	Bus      *uint `xml:"bus,attr"`
+	Slot     *uint `xml:"slot,attr"`
+	Function *uint `xml:"function,attr"`
 }
 
 type StoragePoolSourceAdapterParentAddr struct {
-	UniqueID uint64                                     `xml:"unique_id,attr"`
-	Address  *StoragePoolSourceAdapterParentAddrAddress `xml:"address"`
+	UniqueID uint64                 `xml:"unique_id,attr"`
+	Address  *StoragePoolPCIAddress `xml:"address"`
 }
 
 type StoragePoolSourceAdapter struct {
-	Type       string                              `xml:"type,attr"`
+	Type       string                              `xml:"type,attr,omitempty"`
 	Name       string                              `xml:"name,attr,omitempty"`
 	Parent     string                              `xml:"parent,attr,omitempty"`
+	Managed    string                              `xml:"managed,attr,omitempty"`
 	WWNN       string                              `xml:"wwnn,attr,omitempty"`
 	WWPN       string                              `xml:"wwpn,attr,omitempty"`
 	ParentAddr *StoragePoolSourceAdapterParentAddr `xml:"parentaddr"`
 }
 
+type StoragePoolSourceDir struct {
+	Path string `xml:"path,attr"`
+}
+
+type StoragePoolSourceInitiator struct {
+	IQN StoragePoolSourceInitiatorIQN `xml:"iqn"`
+}
+
+type StoragePoolSourceInitiatorIQN struct {
+	Name string `xml:"name,attr,omitempty"`
+}
+
 type StoragePoolSource struct {
-	Host    *StoragePoolSourceHost    `xml:"host"`
-	Device  *StoragePoolSourceDevice  `xml:"device"`
-	Auth    *StoragePoolSourceAuth    `xml:"auth"`
-	Vendor  *StoragePoolSourceVendor  `xml:"vendor"`
-	Product *StoragePoolSourceProduct `xml:"product"`
-	Format  *StoragePoolSourceFormat  `xml:"format"`
-	Adapter *StoragePoolSourceAdapter `xml:"adapter"`
+	Name      string                      `xml:"name,omitempty"`
+	Dir       *StoragePoolSourceDir       `xml:"dir"`
+	Host      []StoragePoolSourceHost     `xml:"host"`
+	Device    []StoragePoolSourceDevice   `xml:"device"`
+	Auth      *StoragePoolSourceAuth      `xml:"auth"`
+	Vendor    *StoragePoolSourceVendor    `xml:"vendor"`
+	Product   *StoragePoolSourceProduct   `xml:"product"`
+	Format    *StoragePoolSourceFormat    `xml:"format"`
+	Adapter   *StoragePoolSourceAdapter   `xml:"adapter"`
+	Initiator *StoragePoolSourceInitiator `xml:"initiator"`
 }
 
 type StoragePool struct {
 	XMLName    xml.Name           `xml:"pool"`
 	Type       string             `xml:"type,attr"`
-	Name       string             `xml:"name"`
+	Name       string             `xml:"name,omitempty"`
 	UUID       string             `xml:"uuid,omitempty"`
-	Allocation *StoragePoolSize   `xml:"allocation,omitempty"`
-	Capacity   *StoragePoolSize   `xml:"capacity,omitempty"`
-	Available  *StoragePoolSize   `xml:"available,omitempty"`
+	Allocation *StoragePoolSize   `xml:"allocation"`
+	Capacity   *StoragePoolSize   `xml:"capacity"`
+	Available  *StoragePoolSize   `xml:"available"`
 	Target     *StoragePoolTarget `xml:"target"`
 	Source     *StoragePoolSource `xml:"source"`
+}
+
+func (a *StoragePoolPCIAddress) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	marshalUintAttr(&start, "domain", a.Domain, "0x%04x")
+	marshalUintAttr(&start, "bus", a.Bus, "0x%02x")
+	marshalUintAttr(&start, "slot", a.Slot, "0x%02x")
+	marshalUintAttr(&start, "function", a.Function, "0x%x")
+	e.EncodeToken(start)
+	e.EncodeToken(start.End())
+	return nil
+}
+
+func (a *StoragePoolPCIAddress) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	for _, attr := range start.Attr {
+		if attr.Name.Local == "domain" {
+			if err := unmarshalUintAttr(attr.Value, &a.Domain, 0); err != nil {
+				return err
+			}
+		} else if attr.Name.Local == "bus" {
+			if err := unmarshalUintAttr(attr.Value, &a.Bus, 0); err != nil {
+				return err
+			}
+		} else if attr.Name.Local == "slot" {
+			if err := unmarshalUintAttr(attr.Value, &a.Slot, 0); err != nil {
+				return err
+			}
+		} else if attr.Name.Local == "function" {
+			if err := unmarshalUintAttr(attr.Value, &a.Function, 0); err != nil {
+				return err
+			}
+		}
+	}
+	d.Skip()
+	return nil
 }
 
 func (s *StoragePool) Unmarshal(doc string) error {

@@ -120,8 +120,12 @@ is assumed to be the path to the file containing the JSON.
 
 ### Windows Example
 
-Running WinRM requires that it is opened in the firewall and that the VM enables WinRM for the
-user used to connect in a startup-script.
+Before you can provision using the winrm communicator, you need to navigate to
+https://console.cloud.google.com/networking/firewalls/list to allow traffic
+through google's firewall on the winrm port (tcp:5986).
+
+Once this is set up, the following is a complete working packer config after
+setting a valid `account_file` and `project_id`:
 
 ``` {.json}
 {
@@ -210,6 +214,9 @@ builder.
 -   `address` (string) - The name of a pre-allocated static external IP address.
     Note, must be the name and not the actual IP address.
 
+-   `disable_default_service_account` (bool) - If true, the default service account will not be used if `service_account_email`
+    is not specified. Set this value to true and omit `service_account_email` to provision a VM with no service account.
+
 -   `disk_name` (string) - The name of the disk, if unset the instance name will be
     used.
 
@@ -263,10 +270,13 @@ builder.
     If preemptible is true this can only be `TERMINATE`. If preemptible
     is false, it defaults to `MIGRATE`
 
--   `preemptible` (boolean) - If true, launch a preembtible instance.
+-   `preemptible` (boolean) - If true, launch a preemptible instance.
 
 -   `region` (string) - The region in which to launch the instance. Defaults to
     to the region hosting the specified `zone`.
+
+-   `service_account_email` (string) - The service account to be used for launched instance. Defaults to
+    the project's default service account unless `disable_default_service_account` is true.
 
 -   `scopes` (array of strings) - The service account scopes for launched instance.
     Defaults to:

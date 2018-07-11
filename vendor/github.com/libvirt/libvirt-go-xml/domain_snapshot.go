@@ -28,18 +28,14 @@ package libvirtxml
 import "encoding/xml"
 
 type DomainSnapshotDiskDriver struct {
-	Type string `xml:"type,attr"`
-}
-
-type DomainSnapshotDiskSource struct {
-	File string `xml:"file,attr"`
+	Type string `xml:"type,attr,omitempty"`
 }
 
 type DomainSnapshotDisk struct {
 	Name     string                    `xml:"name,attr"`
 	Snapshot string                    `xml:"snapshot,attr,omitempty"`
 	Driver   *DomainSnapshotDiskDriver `xml:"driver"`
-	Source   *DomainSnapshotDiskSource `xml:"source"`
+	Source   *DomainDiskSource         `xml:"source"`
 }
 
 type DomainSnapshotDisks struct {
@@ -48,6 +44,7 @@ type DomainSnapshotDisks struct {
 
 type DomainSnapshotMemory struct {
 	Snapshot string `xml:"snapshot,attr"`
+	File     string `xml:"file,attr,omitempty"`
 }
 
 type DomainSnapshotParent struct {
@@ -64,6 +61,64 @@ type DomainSnapshot struct {
 	Memory       *DomainSnapshotMemory `xml:"memory"`
 	Disks        *DomainSnapshotDisks  `xml:"disks"`
 	Domain       *Domain               `xml:"domain"`
+	Active       *uint                 `xml:"active"`
+}
+
+type domainSnapshotDisk DomainSnapshotDisk
+
+func (a *DomainSnapshotDisk) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	start.Name.Local = "disk"
+	if a.Source != nil {
+		if a.Source.File != nil {
+			start.Attr = append(start.Attr, xml.Attr{
+				xml.Name{Local: "type"}, "file",
+			})
+		} else if a.Source.Block != nil {
+			start.Attr = append(start.Attr, xml.Attr{
+				xml.Name{Local: "type"}, "block",
+			})
+		} else if a.Source.Dir != nil {
+			start.Attr = append(start.Attr, xml.Attr{
+				xml.Name{Local: "type"}, "dir",
+			})
+		} else if a.Source.Network != nil {
+			start.Attr = append(start.Attr, xml.Attr{
+				xml.Name{Local: "type"}, "network",
+			})
+		} else if a.Source.Volume != nil {
+			start.Attr = append(start.Attr, xml.Attr{
+				xml.Name{Local: "type"}, "volume",
+			})
+		}
+	}
+	disk := domainSnapshotDisk(*a)
+	return e.EncodeElement(disk, start)
+}
+
+func (a *DomainSnapshotDisk) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	typ, ok := getAttr(start.Attr, "type")
+	if !ok {
+		typ = "file"
+	}
+	a.Source = &DomainDiskSource{}
+	if typ == "file" {
+		a.Source.File = &DomainDiskSourceFile{}
+	} else if typ == "block" {
+		a.Source.Block = &DomainDiskSourceBlock{}
+	} else if typ == "network" {
+		a.Source.Network = &DomainDiskSourceNetwork{}
+	} else if typ == "dir" {
+		a.Source.Dir = &DomainDiskSourceDir{}
+	} else if typ == "volume" {
+		a.Source.Volume = &DomainDiskSourceVolume{}
+	}
+	disk := domainSnapshotDisk(*a)
+	err := d.DecodeElement(&disk, &start)
+	if err != nil {
+		return err
+	}
+	*a = DomainSnapshotDisk(disk)
+	return nil
 }
 
 func (s *DomainSnapshot) Unmarshal(doc string) error {

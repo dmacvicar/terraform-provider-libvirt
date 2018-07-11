@@ -15,9 +15,15 @@
 package types
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
+
+	"github.com/coreos/ignition/config/validate/report"
+)
+
+var (
+	ErrPartitionLabelTooLong = errors.New("partition labels may not exceed 36 characters")
 )
 
 type Partition struct {
@@ -29,59 +35,30 @@ type Partition struct {
 }
 
 type PartitionLabel string
-type partitionLabel PartitionLabel
 
-func (n *PartitionLabel) UnmarshalJSON(data []byte) error {
-	tn := partitionLabel(*n)
-	if err := json.Unmarshal(data, &tn); err != nil {
-		return err
-	}
-	*n = PartitionLabel(tn)
-	return n.AssertValid()
-}
-
-func (n PartitionLabel) AssertValid() error {
+func (n PartitionLabel) Validate() report.Report {
 	// http://en.wikipedia.org/wiki/GUID_Partition_Table#Partition_entries:
 	// 56 (0x38) 	72 bytes 	Partition name (36 UTF-16LE code units)
 
 	// XXX(vc): note GPT calls it a name, we're using label for consistency
 	// with udev naming /dev/disk/by-partlabel/*.
 	if len(string(n)) > 36 {
-		return fmt.Errorf("partition labels may not exceed 36 characters")
+		return report.ReportFromError(ErrPartitionLabelTooLong, report.EntryError)
 	}
-	return nil
+	return report.Report{}
 }
 
 type PartitionDimension uint64
 
-func (n *PartitionDimension) UnmarshalJSON(data []byte) error {
-	var pd uint64
-	if err := json.Unmarshal(data, &pd); err != nil {
-		return err
-	}
-	*n = PartitionDimension(pd)
-	return nil
-}
-
 type PartitionTypeGUID string
-type partitionTypeGUID PartitionTypeGUID
 
-func (d *PartitionTypeGUID) UnmarshalJSON(data []byte) error {
-	td := partitionTypeGUID(*d)
-	if err := json.Unmarshal(data, &td); err != nil {
-		return err
-	}
-	*d = PartitionTypeGUID(td)
-	return d.AssertValid()
-}
-
-func (d PartitionTypeGUID) AssertValid() error {
+func (d PartitionTypeGUID) Validate() report.Report {
 	ok, err := regexp.MatchString("^(|[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12})$", string(d))
 	if err != nil {
-		return fmt.Errorf("error matching type-guid regexp: %v", err)
+		return report.ReportFromError(fmt.Errorf("error matching type-guid regexp: %v", err), report.EntryError)
 	}
 	if !ok {
-		return fmt.Errorf(`partition type-guid must have the form "01234567-89AB-CDEF-EDCB-A98765432101", got: %q`, string(d))
+		return report.ReportFromError(fmt.Errorf(`partition type-guid must have the form "01234567-89AB-CDEF-EDCB-A98765432101", got: %q`, string(d)), report.EntryError)
 	}
-	return nil
+	return report.Report{}
 }

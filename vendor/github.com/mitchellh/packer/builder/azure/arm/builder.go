@@ -1,6 +1,7 @@
 package arm
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -9,13 +10,13 @@ import (
 	"strings"
 	"time"
 
+	armstorage "github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2017-10-01/storage"
+	"github.com/Azure/azure-sdk-for-go/storage"
+	"github.com/Azure/go-autorest/autorest/adal"
+	"github.com/dgrijalva/jwt-go"
 	packerAzureCommon "github.com/hashicorp/packer/builder/azure/common"
-
 	"github.com/hashicorp/packer/builder/azure/common/constants"
 	"github.com/hashicorp/packer/builder/azure/common/lin"
-
-	"github.com/Azure/azure-sdk-for-go/arm/storage"
-	"github.com/Azure/go-autorest/autorest/adal"
 	packerCommon "github.com/hashicorp/packer/common"
 	"github.com/hashicorp/packer/helper/communicator"
 	"github.com/hashicorp/packer/helper/multistep"
@@ -23,17 +24,15 @@ import (
 )
 
 type Builder struct {
-	config   *Config
-	stateBag multistep.StateBag
-	runner   multistep.Runner
+	config    *Config
+	stateBag  multistep.StateBag
+	runner    multistep.Runner
+	ctxCancel context.CancelFunc
 }
 
 const (
-	DefaultNicName             = "packerNic"
-	DefaultPublicIPAddressName = "packerPublicIP"
-	DefaultSasBlobContainer    = "system/Microsoft.Compute"
-	DefaultSasBlobPermission   = "r"
-	DefaultSecretName          = "packerKeyVaultSecret"
+	DefaultSasBlobContainer = "system/Microsoft.Compute"
+	DefaultSecretName       = "packerKeyVaultSecret"
 )
 
 func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
@@ -53,7 +52,12 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 }
 
 func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packer.Artifact, error) {
+
 	ui.Say("Running builder ...")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	b.ctxCancel = cancel
+	defer cancel()
 
 	if err := newConfigRetriever().FillParameters(b.config); err != nil {
 		return nil, err
@@ -87,9 +91,18 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	if err := resolver.Resolve(b.config); err != nil {
 		return nil, err
 	}
+	if b.config.ObjectID == "" {
+		b.config.ObjectID = getObjectIdFromToken(ui, spnCloud)
+	} else {
+		ui.Message("You have provided Object_ID which is no longer needed, azure packer builder determines this dynamically from the authentication token")
+	}
+
+	if b.config.ObjectID == "" && b.config.OSType != constants.Target_Linux {
+		return nil, fmt.Errorf("could not determine the ObjectID for the user, which is required for Windows builds")
+	}
 
 	if b.config.isManagedImage() {
-		group, err := azureClient.GroupsClient.Get(b.config.ManagedImageResourceGroupName)
+		group, err := azureClient.GroupsClient.Get(ctx, b.config.ManagedImageResourceGroupName)
 		if err != nil {
 			return nil, fmt.Errorf("Cannot locate the managed image resource group %s.", b.config.ManagedImageResourceGroupName)
 		}
@@ -97,14 +110,28 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		b.config.manageImageLocation = *group.Location
 
 		// If a managed image already exists it cannot be overwritten.
-		_, err = azureClient.ImagesClient.Get(b.config.ManagedImageResourceGroupName, b.config.ManagedImageName, "")
+		_, err = azureClient.ImagesClient.Get(ctx, b.config.ManagedImageResourceGroupName, b.config.ManagedImageName, "")
 		if err == nil {
-			return nil, fmt.Errorf("A managed image named %s already exists in the resource group %s.", b.config.ManagedImageName, b.config.ManagedImageResourceGroupName)
+			if b.config.PackerForce {
+				ui.Say(fmt.Sprintf("the managed image named %s already exists, but deleting it due to -force flag", b.config.ManagedImageName))
+				f, err := azureClient.ImagesClient.Delete(ctx, b.config.ManagedImageResourceGroupName, b.config.ManagedImageName)
+				if err == nil {
+					err = f.WaitForCompletion(ctx, azureClient.ImagesClient.Client)
+				}
+				if err != nil {
+					return nil, fmt.Errorf("failed to delete the managed image named %s : %s", b.config.ManagedImageName, azureClient.LastError.Error())
+				}
+			} else {
+				return nil, fmt.Errorf("the managed image named %s already exists in the resource group %s, use the -force option to automatically delete it.", b.config.ManagedImageName, b.config.ManagedImageResourceGroupName)
+			}
 		}
+	} else {
+		// User is not using Managed Images to build, warning message here that this path is being deprecated
+		ui.Error("Warning: You are using Azure Packer Builder to create VHDs which is being deprecated, consider using Managed Images. Learn more http://aka.ms/packermanagedimage")
 	}
 
 	if b.config.BuildResourceGroupName != "" {
-		group, err := azureClient.GroupsClient.Get(b.config.BuildResourceGroupName)
+		group, err := azureClient.GroupsClient.Get(ctx, b.config.BuildResourceGroupName)
 		if err != nil {
 			return nil, fmt.Errorf("Cannot locate the existing build resource resource group %s.", b.config.BuildResourceGroupName)
 		}
@@ -113,7 +140,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	}
 
 	if b.config.StorageAccount != "" {
-		account, err := b.getBlobAccount(azureClient, b.config.ResourceGroupName, b.config.StorageAccount)
+		account, err := b.getBlobAccount(ctx, azureClient, b.config.ResourceGroupName, b.config.StorageAccount)
 		if err != nil {
 			return nil, err
 		}
@@ -151,10 +178,12 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			},
 			&packerCommon.StepProvision{},
 			NewStepGetOSDisk(azureClient, ui),
+			NewStepGetAdditionalDisks(azureClient, ui),
 			NewStepPowerOffCompute(azureClient, ui),
 			NewStepCaptureImage(azureClient, ui),
 			NewStepDeleteResourceGroup(azureClient, ui),
 			NewStepDeleteOSDisk(azureClient, ui),
+			NewStepDeleteAdditionalDisks(azureClient, ui),
 		}
 	} else if b.config.OSType == constants.Target_Windows {
 		keyVaultDeploymentName := b.stateBag.Get(constants.ArmKeyVaultDeploymentName).(string)
@@ -167,6 +196,10 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			NewStepValidateTemplate(azureClient, ui, b.config, GetVirtualMachineDeployment),
 			NewStepDeployTemplate(azureClient, ui, b.config, deploymentName, GetVirtualMachineDeployment),
 			NewStepGetIPAddress(azureClient, ui, endpointConnectType),
+			&StepSaveWinRMPassword{
+				Password:  b.config.tmpAdminPassword,
+				BuildName: b.config.PackerBuildName,
+			},
 			&communicator.StepConnectWinRM{
 				Config: &b.config.Comm,
 				Host: func(stateBag multistep.StateBag) (string, error) {
@@ -181,10 +214,12 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			},
 			&packerCommon.StepProvision{},
 			NewStepGetOSDisk(azureClient, ui),
+			NewStepGetAdditionalDisks(azureClient, ui),
 			NewStepPowerOffCompute(azureClient, ui),
 			NewStepCaptureImage(azureClient, ui),
 			NewStepDeleteResourceGroup(azureClient, ui),
 			NewStepDeleteOSDisk(azureClient, ui),
+			NewStepDeleteAdditionalDisks(azureClient, ui),
 		}
 	} else {
 		return nil, fmt.Errorf("Builder does not support the os_type '%s'", b.config.OSType)
@@ -225,9 +260,11 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		return NewArtifact(
 			template.(*CaptureTemplate),
 			func(name string) string {
-				month := time.Now().AddDate(0, 1, 0).UTC()
 				blob := azureClient.BlobStorageClient.GetContainerReference(DefaultSasBlobContainer).GetBlobReference(name)
-				sasUrl, _ := blob.GetSASURI(month, DefaultSasBlobPermission)
+				options := storage.BlobSASOptions{}
+				options.BlobServiceSASPermissions.Read = true
+				options.Expiry = time.Now().AddDate(0, 1, 0).UTC() // one month
+				sasUrl, _ := blob.GetSASURI(options)
 				return sasUrl
 			})
 	}
@@ -265,6 +302,10 @@ func (b *Builder) isPrivateNetworkCommunication() bool {
 }
 
 func (b *Builder) Cancel() {
+	if b.ctxCancel != nil {
+		log.Printf("Cancelling Azure builder...")
+		b.ctxCancel()
+	}
 	if b.runner != nil {
 		log.Println("Cancelling the step runner...")
 		b.runner.Cancel()
@@ -279,8 +320,8 @@ func canonicalizeLocation(location string) string {
 	return strings.Replace(location, " ", "", -1)
 }
 
-func (b *Builder) getBlobAccount(client *AzureClient, resourceGroupName string, storageAccountName string) (*storage.Account, error) {
-	account, err := client.AccountsClient.GetProperties(resourceGroupName, storageAccountName)
+func (b *Builder) getBlobAccount(ctx context.Context, client *AzureClient, resourceGroupName string, storageAccountName string) (*armstorage.Account, error) {
+	account, err := client.AccountsClient.GetProperties(ctx, resourceGroupName, storageAccountName)
 	if err != nil {
 		return nil, err
 	}
@@ -292,15 +333,15 @@ func (b *Builder) configureStateBag(stateBag multistep.StateBag) {
 	stateBag.Put(constants.AuthorizedKey, b.config.sshAuthorizedKey)
 	stateBag.Put(constants.PrivateKey, b.config.sshPrivateKey)
 
-	stateBag.Put(constants.ArmTags, &b.config.AzureTags)
+	stateBag.Put(constants.ArmTags, b.config.AzureTags)
 	stateBag.Put(constants.ArmComputeName, b.config.tmpComputeName)
 	stateBag.Put(constants.ArmDeploymentName, b.config.tmpDeploymentName)
 	if b.config.OSType == constants.Target_Windows {
 		stateBag.Put(constants.ArmKeyVaultDeploymentName, fmt.Sprintf("kv%s", b.config.tmpDeploymentName))
 	}
 	stateBag.Put(constants.ArmKeyVaultName, b.config.tmpKeyVaultName)
-	stateBag.Put(constants.ArmNicName, DefaultNicName)
-	stateBag.Put(constants.ArmPublicIPAddressName, DefaultPublicIPAddressName)
+	stateBag.Put(constants.ArmNicName, b.config.tmpNicName)
+	stateBag.Put(constants.ArmPublicIPAddressName, b.config.tmpPublicIPAddressName)
 	if b.config.TempResourceGroupName != "" && b.config.BuildResourceGroupName != "" {
 		stateBag.Put(constants.ArmDoubleResourceGroupNameSet, true)
 	}
@@ -316,6 +357,7 @@ func (b *Builder) configureStateBag(stateBag multistep.StateBag) {
 	stateBag.Put(constants.ArmIsManagedImage, b.config.isManagedImage())
 	stateBag.Put(constants.ArmManagedImageResourceGroupName, b.config.ManagedImageResourceGroupName)
 	stateBag.Put(constants.ArmManagedImageName, b.config.ManagedImageName)
+	stateBag.Put(constants.ArmAsyncResourceGroupDelete, b.config.AsyncResourceGroupDelete)
 }
 
 // Parameters that are only known at runtime after querying Azure.
@@ -339,10 +381,17 @@ func (b *Builder) getServicePrincipalTokens(say func(string)) (*adal.ServicePrin
 	var err error
 
 	if b.config.useDeviceLogin {
-		servicePrincipalToken, err = packerAzureCommon.Authenticate(*b.config.cloudEnvironment, b.config.TenantID, say)
+		say("Getting auth token for Service management endpoint")
+		servicePrincipalToken, err = packerAzureCommon.Authenticate(*b.config.cloudEnvironment, b.config.TenantID, say, b.config.cloudEnvironment.ServiceManagementEndpoint)
 		if err != nil {
 			return nil, nil, err
 		}
+		say("Getting token for Vault resource")
+		servicePrincipalTokenVault, err = packerAzureCommon.Authenticate(*b.config.cloudEnvironment, b.config.TenantID, say, strings.TrimRight(b.config.cloudEnvironment.KeyVaultEndpoint, "/"))
+		if err != nil {
+			return nil, nil, err
+		}
+
 	} else {
 		auth := NewAuthenticate(*b.config.cloudEnvironment, b.config.ClientID, b.config.ClientSecret, b.config.TenantID)
 
@@ -353,11 +402,39 @@ func (b *Builder) getServicePrincipalTokens(say func(string)) (*adal.ServicePrin
 
 		servicePrincipalTokenVault, err = auth.getServicePrincipalTokenWithResource(
 			strings.TrimRight(b.config.cloudEnvironment.KeyVaultEndpoint, "/"))
-
 		if err != nil {
 			return nil, nil, err
 		}
+
+	}
+
+	err = servicePrincipalToken.EnsureFresh()
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = servicePrincipalTokenVault.EnsureFresh()
+
+	if err != nil {
+		return nil, nil, err
 	}
 
 	return servicePrincipalToken, servicePrincipalTokenVault, nil
+}
+
+func getObjectIdFromToken(ui packer.Ui, token *adal.ServicePrincipalToken) string {
+	claims := jwt.MapClaims{}
+	var p jwt.Parser
+
+	var err error
+
+	_, _, err = p.ParseUnverified(token.OAuthToken(), claims)
+
+	if err != nil {
+		ui.Error(fmt.Sprintf("Failed to parse the token,Error: %s", err.Error()))
+		return ""
+	}
+	return claims["oid"].(string)
+
 }

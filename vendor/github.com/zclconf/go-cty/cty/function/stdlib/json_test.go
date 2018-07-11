@@ -45,6 +45,10 @@ func TestJSONEncode(t *testing.T) {
 			cty.UnknownVal(cty.String),
 		},
 		{
+			cty.ObjectVal(map[string]cty.Value{"dunno": cty.UnknownVal(cty.Bool), "false": cty.False}),
+			cty.UnknownVal(cty.String),
+		},
+		{
 			cty.DynamicVal,
 			cty.UnknownVal(cty.String),
 		},
