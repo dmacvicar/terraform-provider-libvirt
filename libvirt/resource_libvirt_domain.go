@@ -411,7 +411,10 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error retrieving host architecture: %s", err)
 	}
 
-	setGraphics(d, &domainDef, arch)
+	if err := setGraphics(d, &domainDef, arch); err != nil {
+		return err
+	}
+
 	setConsoles(d, &domainDef)
 	setCmdlineArgs(d, &domainDef)
 	setFirmware(d, &domainDef)
@@ -672,7 +675,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("arch", domainDef.OS.Type.Arch)
 	d.Set("autostart", autostart)
 
-	cmdLines, err := splitKernelCmdLine(domainDef.OS.KernelArgs)
+	cmdLines, err := splitKernelCmdLine(domainDef.OS.Cmdline)
 	if err != nil {
 		return err
 	}
@@ -700,15 +703,15 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	)
 	for _, diskDef := range domainDef.Devices.Disks {
 		// network drives do not have a volume associated
-		if diskDef.Type == "network" {
-			if len(diskDef.Source.Hosts) < 1 {
+		if diskDef.Source.Network != nil {
+			if len(diskDef.Source.Network.Hosts) < 1 {
 				return fmt.Errorf("Network disk does not contain any hosts")
 			}
 			url, err := url.Parse(fmt.Sprintf("%s://%s:%s%s",
-				diskDef.Source.Protocol,
-				diskDef.Source.Hosts[0].Name,
-				diskDef.Source.Hosts[0].Port,
-				diskDef.Source.Name))
+				diskDef.Source.Network.Protocol,
+				diskDef.Source.Network.Hosts[0].Name,
+				diskDef.Source.Network.Hosts[0].Port,
+				diskDef.Source.Network.Name))
 			if err != nil {
 				return err
 			}
@@ -720,7 +723,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				"file": diskDef.Source.File,
 			}
 		} else {
-			virVol, err := virConn.LookupStorageVolByPath(diskDef.Source.File)
+			virVol, err := virConn.LookupStorageVolByPath(diskDef.Source.File.File)
 			if err != nil {
 				return fmt.Errorf("Error retrieving volume for disk: %s", err)
 			}
@@ -742,7 +745,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	for _, fsDef := range domainDef.Devices.Filesystems {
 		fs := map[string]interface{}{
 			"accessmode": fsDef.AccessMode,
-			"source":     fsDef.Source.Dir,
+			"source":     fsDef.Source.Mount.Dir,
 			"target":     fsDef.Target.Dir,
 			"readonly":   fsDef.ReadOnly,
 		}
@@ -792,57 +795,51 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		netIface["addresses"] = addressesForMac(mac)
 		log.Printf("[DEBUG] read: addresses for '%s': %+v", mac, netIface["addresses"])
 
-		switch networkInterfaceDef.Type {
-		case "network":
-			{
-				network, err := virConn.LookupNetworkByName(networkInterfaceDef.Source.Network)
-				if err != nil {
-					return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network)
-				}
-				defer network.Free()
+		if networkInterfaceDef.Source.Network != nil {
+			network, err := virConn.LookupNetworkByName(networkInterfaceDef.Source.Network.Network)
+			if err != nil {
+				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
+			}
+			defer network.Free()
 
-				netIface["network_id"], err = network.GetUUIDString()
-				if err != nil {
-					return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network)
-				}
+			netIface["network_id"], err = network.GetUUIDString()
+			if err != nil {
+				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
+			}
 
-				networkDef, err := newDefNetworkfromLibvirt(network)
-				if err != nil {
-					return err
-				}
+			networkDef, err := newDefNetworkfromLibvirt(network)
+			if err != nil {
+				return err
+			}
 
-				netIface["network_name"] = networkInterfaceDef.Source.Network
+			netIface["network_name"] = networkInterfaceDef.Source.Network
 
-				// try to look for this MAC in the DHCP configuration for this VM
-				if HasDHCP(networkDef) {
-				hostnameSearch:
-					for _, ip := range networkDef.IPs {
-						if ip.DHCP != nil {
-							for _, host := range ip.DHCP.Hosts {
-								if strings.ToUpper(host.MAC) == netIface["mac"] {
-									log.Printf("[DEBUG] read: hostname for '%s': '%s'", netIface["mac"], host.Name)
-									netIface["hostname"] = host.Name
-									break hostnameSearch
-								}
+			// try to look for this MAC in the DHCP configuration for this VM
+			if HasDHCP(networkDef) {
+			hostnameSearch:
+				for _, ip := range networkDef.IPs {
+					if ip.DHCP != nil {
+						for _, host := range ip.DHCP.Hosts {
+							if strings.ToUpper(host.MAC) == netIface["mac"] {
+								log.Printf("[DEBUG] read: hostname for '%s': '%s'", netIface["mac"], host.Name)
+								netIface["hostname"] = host.Name
+								break hostnameSearch
 							}
 						}
 					}
 				}
-
 			}
-		case "bridge":
+		} else if networkInterfaceDef.Source.Bridge != nil {
 			netIface["bridge"] = networkInterfaceDef.Source.Bridge
 			netIface["network_name"] = networkInterfaceDef.Source.Network
-		case "direct":
-			{
-				switch networkInterfaceDef.Source.Mode {
-				case "vepa":
-					netIface["vepa"] = networkInterfaceDef.Source.Dev
-				case "bridge":
-					netIface["macvtap"] = networkInterfaceDef.Source.Dev
-				case "passthrough":
-					netIface["passthrough"] = networkInterfaceDef.Source.Dev
-				}
+		} else if networkInterfaceDef.Source.Direct != nil {
+			switch networkInterfaceDef.Source.Direct.Mode {
+			case "vepa":
+				netIface["vepa"] = networkInterfaceDef.Source.Direct.Dev
+			case "bridge":
+				netIface["macvtap"] = networkInterfaceDef.Source.Direct.Dev
+			case "passthrough":
+				netIface["passthrough"] = networkInterfaceDef.Source.Direct.Dev
 			}
 		}
 		netIfaces = append(netIfaces, netIface)
@@ -917,7 +914,6 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 
 func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml.DomainDisk, error) {
 	disk := libvirtxml.DomainDisk{
-		Type:   "file",
 		Device: "cdrom",
 		Target: &libvirtxml.DomainDiskTarget{
 			Dev: "hda",
@@ -939,7 +935,9 @@ func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml
 	}
 
 	disk.Source = &libvirtxml.DomainDiskSource{
-		File: diskVolumeFile,
+		File: &libvirtxml.DomainDiskSourceFile{
+			File: diskVolumeFile,
+		},
 	}
 
 	return disk, nil
@@ -967,31 +965,58 @@ func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain) err
 	return nil
 }
 
-func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch string) {
+func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch string) error {
 	if arch == "s390x" || arch == "ppc64" {
 		domainDef.Devices.Graphics = nil
-		return
+		return nil
 	}
 
 	prefix := "graphics.0"
 	if _, ok := d.GetOk(prefix); ok {
 		domainDef.Devices.Graphics = []libvirtxml.DomainGraphic{{}}
-		if graphicsType, ok := d.GetOk(prefix + ".type"); ok {
-			domainDef.Devices.Graphics[0].Type = graphicsType.(string)
+		graphicsType, ok := d.GetOk(prefix + ".type")
+		if !ok {
+			return fmt.Errorf("Missing graphics type for domain")
 		}
-		if d.Get(prefix + ".autoport").(bool) {
-			domainDef.Devices.Graphics[0].AutoPort = "yes"
-		} else {
-			domainDef.Devices.Graphics[0].AutoPort = "no"
-		}
+
+		autoport := d.Get(prefix + ".autoport").(bool)
+		listener := libvirtxml.DomainGraphicListener{}
+
 		if listenType, ok := d.GetOk(prefix + ".listen_type"); ok {
-			domainDef.Devices.Graphics[0].Listeners = []libvirtxml.DomainGraphicListener{
-				{
-					Type: listenType.(string),
-				},
+			switch listenType {
+			case "address":
+				listener.Address = &libvirtxml.DomainGraphicListenerAddress{}
+			case "network":
+				listener.Network = &libvirtxml.DomainGraphicListenerNetwork{}
+			case "socket":
+				listener.Socket = &libvirtxml.DomainGraphicListenerSocket{}
 			}
+		} else {
+			listenType = "none"
+		}
+
+		switch graphicsType {
+		case "spice":
+			domainDef.Devices.Graphics[0] = libvirtxml.DomainGraphic{
+				Spice: &libvirtxml.DomainGraphicSpice{},
+			}
+			domainDef.Devices.Graphics[0].Spice.AutoPort = FormatBoolYesNo(autoport)
+			domainDef.Devices.Graphics[0].Spice.Listeners = []libvirtxml.DomainGraphicListener{
+				listener,
+			}
+		case "vnc":
+			domainDef.Devices.Graphics[0] = libvirtxml.DomainGraphic{
+				VNC: &libvirtxml.DomainGraphicVNC{},
+			}
+			domainDef.Devices.Graphics[0].VNC.AutoPort = FormatBoolYesNo(autoport)
+			domainDef.Devices.Graphics[0].VNC.Listeners = []libvirtxml.DomainGraphicListener{
+				listener,
+			}
+		default:
+			return fmt.Errorf("This provider only supports vnc/spice as graphics type. Provided: '%s'", graphicsType)
 		}
 	}
+	return nil
 }
 
 func setCmdlineArgs(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
@@ -1009,7 +1034,7 @@ func setCmdlineArgs(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 		}
 	}
 	sort.Strings(cmdlineArgs)
-	domainDef.OS.KernelArgs = strings.Join(cmdlineArgs, " ")
+	domainDef.OS.Cmdline = strings.Join(cmdlineArgs, " ")
 }
 
 func setFirmware(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
@@ -1055,7 +1080,6 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	for i := 0; i < d.Get("console.#").(int); i++ {
 		console := libvirtxml.DomainConsole{}
 		prefix := fmt.Sprintf("console.%d", i)
-		console.Type = d.Get(prefix + ".type").(string)
 		consoleTargetPortInt, err := strconv.Atoi(d.Get(prefix + ".target_port").(string))
 		if err == nil {
 			consoleTargetPort := uint(consoleTargetPortInt)
@@ -1065,7 +1089,9 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 		}
 		if sourcePath, ok := d.GetOk(prefix + ".source_path"); ok {
 			console.Source = &libvirtxml.DomainChardevSource{
-				Path: sourcePath.(string),
+				Dev: &libvirtxml.DomainChardevSourceDev{
+					Path: sourcePath.(string),
+				},
 			}
 		}
 		if targetType, ok := d.GetOk(prefix + ".target_type"); ok {
@@ -1105,24 +1131,27 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 			}
 
 			disk.Source = &libvirtxml.DomainDiskSource{
-				File: diskVolumeFile,
+				File: &libvirtxml.DomainDiskSourceFile{
+					File: diskVolumeFile,
+				},
 			}
 		} else if rawURL, ok := d.GetOk(prefix + ".url"); ok {
 			// Support for remote, read-only http disks
 			// useful for booting CDs
-			disk.Type = "network"
 			url, err := url.Parse(rawURL.(string))
 			if err != nil {
 				return err
 			}
 
 			disk.Source = &libvirtxml.DomainDiskSource{
-				Protocol: url.Scheme,
-				Name:     url.Path,
-				Hosts: []libvirtxml.DomainDiskSourceHost{
-					{
-						Name: url.Hostname(),
-						Port: url.Port(),
+				Network: &libvirtxml.DomainDiskSourceNetwork{
+					Protocol: url.Scheme,
+					Name:     url.Path,
+					Hosts: []libvirtxml.DomainDiskSourceHost{
+						{
+							Name: url.Hostname(),
+							Port: url.Port(),
+						},
 					},
 				},
 			}
@@ -1134,9 +1163,10 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 			}
 		} else if file, ok := d.GetOk(prefix + ".file"); ok {
 			// support for local disks, e.g. CDs
-			disk.Type = "file"
 			disk.Source = &libvirtxml.DomainDiskSource{
-				File: file.(string),
+				File: &libvirtxml.DomainDiskSourceFile{
+					File: file.(string),
+				},
 			}
 
 			if strings.HasSuffix(file.(string), ".iso") {
@@ -1177,7 +1207,9 @@ func setFilesystems(d *schema.ResourceData, domainDef *libvirtxml.Domain) error 
 		}
 		if sourceDir, ok := d.GetOk(prefix + ".source"); ok {
 			fs.Source = &libvirtxml.DomainFilesystemSource{
-				Dir: sourceDir.(string),
+				Mount: &libvirtxml.DomainFilesystemSourceMount{
+					Dir: sourceDir.(string),
+				},
 			}
 		} else {
 			return fmt.Errorf("Filesystem entry must have a 'source' set")
@@ -1255,9 +1287,10 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 		if n, ok := d.GetOk(prefix + ".network_name"); ok {
 			// when using a "network_name" we do not try to do anything: we just
 			// connect to that network
-			netIface.Type = "network"
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
-				Network: n.(string),
+				Network: &libvirtxml.DomainInterfaceSourceNetwork{
+					Network: n.(string),
+				},
 			}
 		} else if networkUUID, ok := d.GetOk(prefix + ".network_id"); ok {
 			// when using a "network_id" we are referring to a "network resource"
@@ -1318,32 +1351,37 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 				}
 			}
 
-			netIface.Type = "network"
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
-				Network: networkName,
+				Network: &libvirtxml.DomainInterfaceSourceNetwork{
+					Network: networkName,
+				},
 			}
 		} else if bridgeNameI, ok := d.GetOk(prefix + ".bridge"); ok {
-			netIface.Type = "bridge"
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
-				Bridge: bridgeNameI.(string),
+				Bridge: &libvirtxml.DomainInterfaceSourceBridge{
+					Bridge: bridgeNameI.(string),
+				},
 			}
 		} else if devI, ok := d.GetOk(prefix + ".vepa"); ok {
-			netIface.Type = "direct"
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
-				Dev:  devI.(string),
-				Mode: "vepa",
+				Direct: &libvirtxml.DomainInterfaceSourceDirect{
+					Dev:  devI.(string),
+					Mode: "vepa",
+				},
 			}
 		} else if devI, ok := d.GetOk(prefix + ".macvtap"); ok {
-			netIface.Type = "direct"
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
-				Dev:  devI.(string),
-				Mode: "bridge",
+				Direct: &libvirtxml.DomainInterfaceSourceDirect{
+					Dev:  devI.(string),
+					Mode: "bridge",
+				},
 			}
 		} else if devI, ok := d.GetOk(prefix + ".passthrough"); ok {
-			netIface.Type = "direct"
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
-				Dev:  devI.(string),
-				Mode: "passthrough",
+				Direct: &libvirtxml.DomainInterfaceSourceDirect{
+					Dev:  devI.(string),
+					Mode: "passthrough",
+				},
 			}
 		} else {
 			// no network has been specified: we are on our own

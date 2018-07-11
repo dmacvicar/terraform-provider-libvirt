@@ -9,9 +9,9 @@ import (
 
 const oui = "05abcd"
 
+// note, source is not initialized
 func newDefDisk(i int) libvirtxml.DomainDisk {
 	return libvirtxml.DomainDisk{
-		Type:   "file",
 		Device: "disk",
 		Target: &libvirtxml.DomainDiskTarget{
 			Bus: "virtio",
