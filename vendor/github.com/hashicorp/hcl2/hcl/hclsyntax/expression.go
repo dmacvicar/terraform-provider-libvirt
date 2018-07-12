@@ -2,6 +2,7 @@ package hclsyntax
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/hashicorp/hcl2/hcl"
 	"github.com/zclconf/go-cty/cty"
@@ -45,6 +46,51 @@ func (e *LiteralValueExpr) Range() hcl.Range {
 
 func (e *LiteralValueExpr) StartRange() hcl.Range {
 	return e.SrcRange
+}
+
+// Implementation for hcl.AbsTraversalForExpr.
+func (e *LiteralValueExpr) AsTraversal() hcl.Traversal {
+	// This one's a little weird: the contract for AsTraversal is to interpret
+	// an expression as if it were traversal syntax, and traversal syntax
+	// doesn't have the special keywords "null", "true", and "false" so these
+	// are expected to be treated like variables in that case.
+	// Since our parser already turned them into LiteralValueExpr by the time
+	// we get here, we need to undo this and infer the name that would've
+	// originally led to our value.
+	// We don't do anything for any other values, since they don't overlap
+	// with traversal roots.
+
+	if e.Val.IsNull() {
+		// In practice the parser only generates null values of the dynamic
+		// pseudo-type for literals, so we can safely assume that any null
+		// was orignally the keyword "null".
+		return hcl.Traversal{
+			hcl.TraverseRoot{
+				Name:     "null",
+				SrcRange: e.SrcRange,
+			},
+		}
+	}
+
+	switch e.Val {
+	case cty.True:
+		return hcl.Traversal{
+			hcl.TraverseRoot{
+				Name:     "true",
+				SrcRange: e.SrcRange,
+			},
+		}
+	case cty.False:
+		return hcl.Traversal{
+			hcl.TraverseRoot{
+				Name:     "false",
+				SrcRange: e.SrcRange,
+			},
+		}
+	default:
+		// No traversal is possible for any other value.
+		return nil
+	}
 }
 
 // ScopeTraversalExpr is an Expression that retrieves a value from the scope
@@ -100,6 +146,20 @@ func (e *RelativeTraversalExpr) Range() hcl.Range {
 
 func (e *RelativeTraversalExpr) StartRange() hcl.Range {
 	return e.SrcRange
+}
+
+// Implementation for hcl.AbsTraversalForExpr.
+func (e *RelativeTraversalExpr) AsTraversal() hcl.Traversal {
+	// We can produce a traversal only if our source can.
+	st, diags := hcl.AbsTraversalForExpr(e.Source)
+	if diags.HasErrors() {
+		return nil
+	}
+
+	ret := make(hcl.Traversal, len(st)+len(e.Traversal))
+	copy(ret, st)
+	copy(ret[len(st):], e.Traversal)
+	return ret
 }
 
 // FunctionCallExpr is an Expression that calls a function from the EvalContext
@@ -356,6 +416,21 @@ func (e *FunctionCallExpr) Range() hcl.Range {
 
 func (e *FunctionCallExpr) StartRange() hcl.Range {
 	return hcl.RangeBetween(e.NameRange, e.OpenParenRange)
+}
+
+// Implementation for hcl.ExprCall.
+func (e *FunctionCallExpr) ExprCall() *hcl.StaticCall {
+	ret := &hcl.StaticCall{
+		Name:      e.Name,
+		NameRange: e.NameRange,
+		Arguments: make([]hcl.Expression, len(e.Args)),
+		ArgsRange: hcl.RangeBetween(e.OpenParenRange, e.CloseParenRange),
+	}
+	// Need to convert our own Expression objects into hcl.Expression.
+	for i, arg := range e.Args {
+		ret.Arguments[i] = arg
+	}
+	return ret
 }
 
 type ConditionalExpr struct {
@@ -646,6 +721,72 @@ func (e *ObjectConsExpr) Range() hcl.Range {
 
 func (e *ObjectConsExpr) StartRange() hcl.Range {
 	return e.OpenRange
+}
+
+// Implementation for hcl.ExprMap
+func (e *ObjectConsExpr) ExprMap() []hcl.KeyValuePair {
+	ret := make([]hcl.KeyValuePair, len(e.Items))
+	for i, item := range e.Items {
+		ret[i] = hcl.KeyValuePair{
+			Key:   item.KeyExpr,
+			Value: item.ValueExpr,
+		}
+	}
+	return ret
+}
+
+// ObjectConsKeyExpr is a special wrapper used only for ObjectConsExpr keys,
+// which deals with the special case that a naked identifier in that position
+// must be interpreted as a literal string rather than evaluated directly.
+type ObjectConsKeyExpr struct {
+	Wrapped Expression
+}
+
+func (e *ObjectConsKeyExpr) literalName() string {
+	// This is our logic for deciding whether to behave like a literal string.
+	// We lean on our AbsTraversalForExpr implementation here, which already
+	// deals with some awkward cases like the expression being the result
+	// of the keywords "null", "true" and "false" which we'd want to interpret
+	// as keys here too.
+	return hcl.ExprAsKeyword(e.Wrapped)
+}
+
+func (e *ObjectConsKeyExpr) walkChildNodes(w internalWalkFunc) {
+	// We only treat our wrapped expression as a real expression if we're
+	// not going to interpret it as a literal.
+	if e.literalName() == "" {
+		e.Wrapped = w(e.Wrapped).(Expression)
+	}
+}
+
+func (e *ObjectConsKeyExpr) Value(ctx *hcl.EvalContext) (cty.Value, hcl.Diagnostics) {
+	if ln := e.literalName(); ln != "" {
+		return cty.StringVal(ln), nil
+	}
+	return e.Wrapped.Value(ctx)
+}
+
+func (e *ObjectConsKeyExpr) Range() hcl.Range {
+	return e.Wrapped.Range()
+}
+
+func (e *ObjectConsKeyExpr) StartRange() hcl.Range {
+	return e.Wrapped.StartRange()
+}
+
+// Implementation for hcl.AbsTraversalForExpr.
+func (e *ObjectConsKeyExpr) AsTraversal() hcl.Traversal {
+	// We can produce a traversal only if our wrappee can.
+	st, diags := hcl.AbsTraversalForExpr(e.Wrapped)
+	if diags.HasErrors() {
+		return nil
+	}
+
+	return st
+}
+
+func (e *ObjectConsKeyExpr) UnwrapExpression() Expression {
+	return e.Wrapped
 }
 
 // ForExpr represents iteration constructs:
@@ -1029,7 +1170,7 @@ func (e *SplatExpr) Value(ctx *hcl.EvalContext) (cty.Value, hcl.Diagnostics) {
 	// both to tuples/lists and to other values, and in the latter case
 	// the value will be treated as an implicit single-value list. We'll
 	// deal with that here first.
-	if !(sourceVal.Type().IsTupleType() || sourceVal.Type().IsListType()) {
+	if !(sourceVal.Type().IsTupleType() || sourceVal.Type().IsListType() || sourceVal.Type().IsSetType()) {
 		sourceVal = cty.ListVal([]cty.Value{sourceVal})
 	}
 
@@ -1086,13 +1227,24 @@ func (e *SplatExpr) StartRange() hcl.Range {
 // assigns it a value.
 type AnonSymbolExpr struct {
 	SrcRange hcl.Range
-	values   map[*hcl.EvalContext]cty.Value
+
+	// values and its associated lock are used to isolate concurrent
+	// evaluations of a symbol from one another. It is the calling application's
+	// responsibility to ensure that the same splat expression is not evalauted
+	// concurrently within the _same_ EvalContext, but it is fine and safe to
+	// do cuncurrent evaluations with distinct EvalContexts.
+	values     map[*hcl.EvalContext]cty.Value
+	valuesLock sync.RWMutex
 }
 
 func (e *AnonSymbolExpr) Value(ctx *hcl.EvalContext) (cty.Value, hcl.Diagnostics) {
 	if ctx == nil {
 		return cty.DynamicVal, nil
 	}
+
+	e.valuesLock.RLock()
+	defer e.valuesLock.RUnlock()
+
 	val, exists := e.values[ctx]
 	if !exists {
 		return cty.DynamicVal, nil
@@ -1103,6 +1255,9 @@ func (e *AnonSymbolExpr) Value(ctx *hcl.EvalContext) (cty.Value, hcl.Diagnostics
 // setValue sets a temporary local value for the expression when evaluated
 // in the given context, which must be non-nil.
 func (e *AnonSymbolExpr) setValue(ctx *hcl.EvalContext, val cty.Value) {
+	e.valuesLock.Lock()
+	defer e.valuesLock.Unlock()
+
 	if e.values == nil {
 		e.values = make(map[*hcl.EvalContext]cty.Value)
 	}
@@ -1113,6 +1268,9 @@ func (e *AnonSymbolExpr) setValue(ctx *hcl.EvalContext, val cty.Value) {
 }
 
 func (e *AnonSymbolExpr) clearValue(ctx *hcl.EvalContext) {
+	e.valuesLock.Lock()
+	defer e.valuesLock.Unlock()
+
 	if e.values == nil {
 		return
 	}

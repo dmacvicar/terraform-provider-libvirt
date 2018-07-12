@@ -27,7 +27,7 @@ The following arguments are supported:
 
 * `path` - (Required) The absolute path to the directory.
 
-* `mode` - (Optional) The list of partitions and their configuration for this particular disk..
+* `mode` - (Optional) The directory's permission mode. Note that the mode must be properly specified as a decimal value (i.e. 0755 -> 493).
 
 * `uid` - (Optional) The user ID of the owner.
 

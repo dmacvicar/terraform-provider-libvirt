@@ -18,10 +18,9 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/coreos/ignition/internal/distro"
 	"github.com/coreos/ignition/internal/log"
 )
-
-const sgdiskPath = "/sbin/sgdisk"
 
 type Operation struct {
 	logger *log.Logger
@@ -32,8 +31,8 @@ type Operation struct {
 
 type Partition struct {
 	Number   int
-	Offset   uint64 // 512-byte sectors
-	Length   uint64 // 512-byte sectors
+	Offset   uint64 // device logical sectors (probably 512 bytes or 4 KiB)
+	Length   uint64 // device logical sectors (probably 512 bytes or 4 KiB)
 	Label    string
 	TypeGUID string
 	GUID     string
@@ -58,10 +57,10 @@ func (op *Operation) WipeTable(wipe bool) {
 // Commit commits an partitioning operation.
 func (op *Operation) Commit() error {
 	if op.wipe {
-		cmd := exec.Command(sgdiskPath, "--zap-all", op.dev)
+		cmd := exec.Command(distro.SgdiskCmd(), "--zap-all", op.dev)
 		if _, err := op.logger.LogCmd(cmd, "wiping table on %q", op.dev); err != nil {
 			op.logger.Info("potential error encountered while wiping table... retrying")
-			cmd = exec.Command(sgdiskPath, "--zap-all", op.dev)
+			cmd = exec.Command(distro.SgdiskCmd(), "--zap-all", op.dev)
 			if _, err := op.logger.LogCmd(cmd, "wiping table on %q", op.dev); err != nil {
 				return fmt.Errorf("wipe failed: %v", err)
 			}
@@ -81,7 +80,7 @@ func (op *Operation) Commit() error {
 			}
 		}
 		opts = append(opts, op.dev)
-		cmd := exec.Command(sgdiskPath, opts...)
+		cmd := exec.Command(distro.SgdiskCmd(), opts...)
 		if _, err := op.logger.LogCmd(cmd, "creating %d partitions on %q", len(op.parts), op.dev); err != nil {
 			return fmt.Errorf("create partitions failed: %v", err)
 		}

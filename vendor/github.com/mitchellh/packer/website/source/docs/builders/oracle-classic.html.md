@@ -78,11 +78,19 @@ This builder currently only works with the SSH communicator.
 
  -  `ssh_username` (string) - The username that Packer will use to SSH into the
     instance; defaults to `opc`, the default oracle user, which has sudo
-    priveliges. If you have already configured users on your machine, you may
+    privileges. If you have already configured users on your machine, you may
     prompt Packer to use one of those instead. For more detail, see the
     [documentation](https://docs.oracle.com/en/cloud/iaas/compute-iaas-cloud/stcsg/accessing-oracle-linux-instance-using-ssh.html).
 
  -  `image_name` (string) - The name to assign to the resulting custom image.
+
+ - `snapshot_timeout` (string) - How long to wait for a snapshot to be
+    created. Expects a positive golang Time.Duration string, which is
+    a sequence of decimal numbers and a unit suffix; valid suffixes are `ns`
+    (nanoseconds), `us` (microseconds), `ms` (milliseconds), `s` (seconds), `m`
+    (minutes), and `h` (hours). Examples of valid inputs: `100ms`, `250ms`, `1s`,
+    `2.5s`, `2.5m`, `1m30s`.
+    Example: `"snapshot_timeout": "15m"`. Default: `20m`.
 
 ## Basic Example
 
@@ -110,6 +118,66 @@ obfuscated; you will need to add a working `username`, `password`,
         {
             "type": "shell",
             "inline": ["echo hello"]
+        }
+    ]
+}
+```
+
+## Basic Example -- Windows
+
+Attributes file is optional for connecting via ssh, but required for winrm.
+
+The following file contains the bare minimum necessary to get winRM working;
+you have to give it the password to give to the "Administrator" user, which 
+will be the one winrm connects to. You must also whitelist your computer
+to connect via winRM -- the empty braces below whitelist any computer to access
+winRM but you can make it more secure by only allowing your build machine 
+access. See the [docs](https://docs.oracle.com/en/cloud/iaas/compute-iaas-cloud/stcsg/automating-instance-initialization-using-opc-init.html#GUID-A0A107D6-3B38-47F4-8FC8-96D50D99379B)
+for more details on how to define a trusted host.
+
+Save this file as `windows_attributes.json`:
+
+```{.json}
+{
+    "userdata": {
+        "administrator_password": "password",
+        "winrm": {}
+    }
+}
+```
+
+Following is a minimal but working Packer config that references this attributes
+file:
+
+```{.json}
+{
+    "variables": {
+        "opc_username": "{{ env `OPC_USERNAME`}}",
+        "opc_password": "{{ env `OPC_PASSWORD`}}",
+        "opc_identity_domain": "{{env `OPC_IDENTITY_DOMAIN`}}",
+        "opc_api_endpoint": "{{ env `OPC_ENDPOINT`}}"
+    },
+    "builders": [
+        {
+            "type": "oracle-classic",
+            "username": "{{ user `opc_username`}}",
+            "password": "{{ user `opc_password`}}",
+            "identity_domain": "{{ user `opc_identity_domain`}}",
+            "api_endpoint": "{{ user `opc_api_endpoint`}}",
+            "source_image_list": "/Compute-{{ user `opc_identity_domain` }}/{{ user `opc_username`}}/Microsoft_Windows_Server_2012_R2-17.3.6-20170930-124649",
+            "attributes_file": "./windows_attributes.json",
+            "shape": "oc3",
+            "image_name": "Packer_Windows_Demo_{{timestamp}}",
+            "dest_image_list": "Packer_Windows_Demo",
+            "communicator": "winrm",
+            "winrm_username": "Administrator",
+            "winrm_password": "password"
+        }
+    ],
+    "provisioners": [
+        {
+          "type": "powershell",
+          "inline": "Write-Output(\"HELLO WORLD\")"
         }
     ]
 }

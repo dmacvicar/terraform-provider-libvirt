@@ -1,6 +1,7 @@
 package getter
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -20,6 +21,7 @@ func TestHttpGetter_header(t *testing.T) {
 
 	g := new(HttpGetter)
 	dst := tempDir(t)
+	defer os.RemoveAll(dst)
 
 	var u url.URL
 	u.Scheme = "http"
@@ -44,6 +46,7 @@ func TestHttpGetter_meta(t *testing.T) {
 
 	g := new(HttpGetter)
 	dst := tempDir(t)
+	defer os.RemoveAll(dst)
 
 	var u url.URL
 	u.Scheme = "http"
@@ -68,11 +71,37 @@ func TestHttpGetter_metaSubdir(t *testing.T) {
 
 	g := new(HttpGetter)
 	dst := tempDir(t)
+	defer os.RemoveAll(dst)
 
 	var u url.URL
 	u.Scheme = "http"
 	u.Host = ln.Addr().String()
 	u.Path = "/meta-subdir"
+
+	// Get it!
+	if err := g.Get(dst, &u); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Verify the main file exists
+	mainPath := filepath.Join(dst, "sub.tf")
+	if _, err := os.Stat(mainPath); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+}
+
+func TestHttpGetter_metaSubdirGlob(t *testing.T) {
+	ln := testHttpServer(t)
+	defer ln.Close()
+
+	g := new(HttpGetter)
+	dst := tempDir(t)
+	defer os.RemoveAll(dst)
+
+	var u url.URL
+	u.Scheme = "http"
+	u.Host = ln.Addr().String()
+	u.Path = "/meta-subdir-glob"
 
 	// Get it!
 	if err := g.Get(dst, &u); err != nil {
@@ -92,6 +121,7 @@ func TestHttpGetter_none(t *testing.T) {
 
 	g := new(HttpGetter)
 	dst := tempDir(t)
+	defer os.RemoveAll(dst)
 
 	var u url.URL
 	u.Scheme = "http"
@@ -110,6 +140,7 @@ func TestHttpGetter_file(t *testing.T) {
 
 	g := new(HttpGetter)
 	dst := tempFile(t)
+	defer os.RemoveAll(dst)
 
 	var u url.URL
 	u.Scheme = "http"
@@ -134,6 +165,7 @@ func TestHttpGetter_auth(t *testing.T) {
 
 	g := new(HttpGetter)
 	dst := tempDir(t)
+	defer os.RemoveAll(dst)
 
 	var u url.URL
 	u.Scheme = "http"
@@ -159,6 +191,7 @@ func TestHttpGetter_authNetrc(t *testing.T) {
 
 	g := new(HttpGetter)
 	dst := tempDir(t)
+	defer os.RemoveAll(dst)
 
 	var u url.URL
 	u.Scheme = "http"
@@ -182,6 +215,39 @@ func TestHttpGetter_authNetrc(t *testing.T) {
 	}
 }
 
+// test round tripper that only returns an error
+type errRoundTripper struct{}
+
+func (errRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	return nil, errors.New("test round tripper")
+}
+
+// verify that the default httpClient no longer comes from http.DefaultClient
+func TestHttpGetter_cleanhttp(t *testing.T) {
+	ln := testHttpServer(t)
+	defer ln.Close()
+
+	// break the default http client
+	http.DefaultClient.Transport = errRoundTripper{}
+	defer func() {
+		http.DefaultClient.Transport = http.DefaultTransport
+	}()
+
+	g := new(HttpGetter)
+	dst := tempDir(t)
+	defer os.RemoveAll(dst)
+
+	var u url.URL
+	u.Scheme = "http"
+	u.Host = ln.Addr().String()
+	u.Path = "/header"
+
+	// Get it!
+	if err := g.Get(dst, &u); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+}
+
 func testHttpServer(t *testing.T) net.Listener {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -194,6 +260,7 @@ func testHttpServer(t *testing.T) net.Listener {
 	mux.HandleFunc("/meta", testHttpHandlerMeta)
 	mux.HandleFunc("/meta-auth", testHttpHandlerMetaAuth)
 	mux.HandleFunc("/meta-subdir", testHttpHandlerMetaSubdir)
+	mux.HandleFunc("/meta-subdir-glob", testHttpHandlerMetaSubdirGlob)
 
 	var server http.Server
 	server.Handler = mux
@@ -232,6 +299,10 @@ func testHttpHandlerMetaAuth(w http.ResponseWriter, r *http.Request) {
 
 func testHttpHandlerMetaSubdir(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf(testHttpMetaStr, testModuleURL("basic//subdir").String())))
+}
+
+func testHttpHandlerMetaSubdirGlob(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte(fmt.Sprintf(testHttpMetaStr, testModuleURL("basic//sub*").String())))
 }
 
 func testHttpHandlerNone(w http.ResponseWriter, r *http.Request) {

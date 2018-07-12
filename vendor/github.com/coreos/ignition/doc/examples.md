@@ -1,6 +1,6 @@
 # Example Configs
 
-Each of these examples is written in version 2.1.0 of the config. Ensure that any configuration is compatible with the version that Ignition accepts. Compatibility requires the major versions to match and the spec version be less than or equal to the version Ignition accepts.
+Each of these examples is written in version 2.2.0 of the config. Ensure that any configuration is compatible with the version that Ignition accepts. Compatibility requires the major versions to match and the spec version be less than or equal to the version Ignition accepts.
 
 ## Services
 
@@ -10,7 +10,7 @@ This config will write a single service unit (shown below) with the contents of 
 
 ```json ignition
 {
-  "ignition": { "version": "2.1.0" },
+  "ignition": { "version": "2.2.0" },
   "systemd": {
     "units": [{
       "name": "example.service",
@@ -38,7 +38,7 @@ This config will add a [systemd unit drop-in](https://coreos.com/os/docs/latest/
 
 ```json ignition
 {
-  "ignition": { "version": "2.1.0" },
+  "ignition": { "version": "2.2.0" },
   "systemd": {
     "units": [{
       "name": "systemd-networkd.service",
@@ -60,20 +60,20 @@ Environment=SYSTEMD_LOG_LEVEL=debug
 
 ## Reformat the Root Filesystem
 
-This example Ignition configuration will locate the device with the "ROOT" filesystem label (the root filesystem) and reformat it to btrfs, recreating the filesystem label. The `force` option is set to ensure that `mkfs.btrfs` ignores any existing filesystem.
-
 ### Btrfs
+
+This example Ignition configuration will locate the device with the "ROOT" filesystem label (the root filesystem) and reformat it to btrfs, recreating the filesystem label. The `wipeFilesystem` option is set to ensure that Ignition ignores any existing filesystem.
 
 ```json ignition
 {
-  "ignition": { "version": "2.1.0" },
+  "ignition": { "version": "2.2.0" },
   "storage": {
     "filesystems": [{
       "mount": {
         "device": "/dev/disk/by-label/ROOT",
         "format": "btrfs",
         "wipeFilesystem": true,
-        "options": [ "--label=ROOT" ]
+        "label": "ROOT"
       }
     }]
   }
@@ -82,23 +82,23 @@ This example Ignition configuration will locate the device with the "ROOT" files
 
 ### XFS
 
+This example Ignition configuration will locate the device with the "ROOT" filesystem label (the root filesystem) and reformat it to XFS, recreating the filesystem label. The `wipeFilesystem` option is set to ensure that Ignition ignores any existing filesystem.
+
 ```json ignition
 {
-  "ignition": { "version": "2.1.0" },
+  "ignition": { "version": "2.2.0" },
   "storage": {
     "filesystems": [{
       "mount": {
         "device": "/dev/disk/by-label/ROOT",
         "format": "xfs",
         "wipeFilesystem": true,
-        "options": [ "-L", "ROOT" ]
+        "label": "ROOT"
       }
     }]
   }
 }
 ```
-
-The create options are forwarded to the underlying `mkfs.$format` utility. The respective `mkfs.$format` manual pages document the available options.
 
 ## Create Files on the Root Filesystem
 
@@ -106,11 +106,12 @@ In many cases it is useful to write files to the root filesystem. This example w
 
 ```json ignition
 {
-  "ignition": { "version": "2.1.0" },
+  "ignition": { "version": "2.2.0" },
   "storage": {
     "files": [{
       "filesystem": "root",
       "path": "/foo/bar",
+      "mode": 420,
       "contents": { "source": "data:,example%20file%0A" }
     }]
   }
@@ -120,15 +121,14 @@ In many cases it is useful to write files to the root filesystem. This example w
 The config makes use of the universally-defined "root" filesystem. This filesystem is defined within Ignition itself and roughly looks like the following. The "root" filesystem allows additional configs to reference the root filesystem, regardless of its type (e.g. btrfs, tmpfs, ext4).
 
 ```json ignition
-{
-  "ignition": { "version": "2.1.0" },
-  "storage": {
-    "filesystems": [{
-      "name": "root",
-      "path": "/sysroot"
-    }]
-  }
+...
+"storage": {
+  "filesystems": [{
+    "name": "root",
+    "path": "/sysroot"
+  }]
 }
+...
 ```
 
 ## Create Files from Remote Contents
@@ -137,11 +137,12 @@ There are cases where it is desirable to write a file to disk, but with the cont
 
 ```json ignition
 {
-  "ignition": { "version": "2.1.0" },
+  "ignition": { "version": "2.2.0" },
   "storage": {
     "files": [{
       "filesystem": "root",
       "path": "/foo/bar",
+      "mode": 420,
       "contents": {
         "source": "http://example.com/asset",
         "verification": { "hash": "sha512-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" }
@@ -159,7 +160,7 @@ In many scenarios, it may be useful to have an external data volume. This config
 
 ```json ignition
 {
-  "ignition": { "version": "2.1.0" },
+  "ignition": { "version": "2.2.0" },
   "storage": {
     "disks": [
       {
@@ -195,7 +196,7 @@ In many scenarios, it may be useful to have an external data volume. This config
       "mount": {
         "device": "/dev/md/data",
         "format": "ext4",
-        "create": { "options": [ "-L", "DATA" ] }
+        "label": "DATA"
       }
     }]
   },
@@ -228,7 +229,7 @@ In some cloud environments, there is a limit on the size of the config which may
 ```json ignition
 {
   "ignition": {
-    "version": "2.1.0",
+    "version": "2.2.0",
     "config": {
       "replace": {
         "source": "http://example.com/config.json",
@@ -247,7 +248,7 @@ Setting the hostname of a system is as simple as writing `/etc/hostname`:
 
 ```json ignition
 {
-  "ignition": { "version": "2.1.0" },
+  "ignition": { "version": "2.2.0" },
   "storage": {
     "files": [{
       "filesystem": "root",
@@ -265,7 +266,7 @@ Users can be added to an OS with the `passwd.users` key which takes a list of ob
 
 ```json ignition
 {
-  "ignition": { "version": "2.1.0" },
+  "ignition": { "version": "2.2.0" },
   "passwd": {
     "users": [
       {

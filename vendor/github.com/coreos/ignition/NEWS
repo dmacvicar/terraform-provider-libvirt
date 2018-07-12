@@ -1,3 +1,128 @@
+12-Mar-2018 IGNITION v0.23.0
+
+  Changes
+
+    - Latest experimental package has been moved from config/types to
+      config/v2_3_experimental.
+    - Each config package's Parse function will now transparently handle any
+      configs of a lesser version than itself (e.g. config/v2_2 will handle a
+      2.0.0 config).
+    - Validation in config/v1 reworked to use config/validate.
+    - Common error types from the config package moved to config/errors.
+
+09-Feb-2018 IGNITION v0.22.0
+
+  Changes
+
+    - Mark the 2.2.0 config spec as stable
+    - No longer accept configs with version 2.2.0-experimental
+    - Create new 2.3.0-experimental config spec from 2.2.0
+
+26-Jan-2018 IGNITION v0.21.0
+
+  Features
+
+    - Add support for networkd drop-ins
+    - Add new program, ignition-validate, for validating Ignition configs
+    - Add "overwrite" field to "files", "directories", and "links" sections for
+      deleting preexisting items at the node's path
+    - Add "options" field to "raid" section for specifying arbitrary mdadm
+      options
+    - Add "append" field to "files" section for appending to preexisting files
+    - Add support for specifying additional certificate authorities to use when
+      fetching objects over HTTPS
+
+  Changes
+
+    - Validate that partition labels don't contain colons, as sgdisk will
+      silently truncate the label
+    - Remove "-validate" flag from Ignition that was introduced in v0.20.0
+    - Warn when the mode for a file or directory is unset
+    - Log retries of HTTP fetches at info loglevel so messages appear on console
+
+  Bug Fixes
+
+    - Fix issue where unspecified fields in an appended config could "unset"
+      fields specified in a config earlier in the chain
+    - Use timeouts specified in a config when fetching other configs referenced
+      by it
+
+12-Jan-2018 IGNITION v0.20.1
+
+  Changes
+
+    - Add support for fetching S3 objects from non-default AWS partitions when
+      running in one such partition
+
+13-Dec-2017 IGNITION v0.20.0
+
+  Features
+
+    - Add validate flag for validating Ignition configs without running any
+      stages
+    - Add support for reading user configs from initramfs
+
+  Changes
+
+    - Move update-ssh-keys from dependency into internal library
+    - Move constants such as paths for invoked binaries into dedicated package
+      to allow for easy overriding at link time
+    - Read base and default configs from initramfs instead of hardcoding them
+    - Use the golang DNS resolver instead of the default glibc DNS resolver
+
+22-Sep-2017 IGNITION v0.19.0
+
+  Features
+
+    - Add support for CloudStack network metadata
+    - Add blackbox tests for TFTP URLs
+    - Remove dependency on kpartx for blackbox tests
+
+  Changes
+
+    - Stop adding extra quotes around GECOS field when creating users
+
+  Bug Fixes
+
+    - Fix regression in validation logic causing inaccurate line and column
+      reporting
+    - Fix regression in validation logic where JSON syntax errors were not
+      reported correctly
+    - Add warning if a non-existent filesystem is specified when creating links
+      and directories
+    - Fix udev race causing systemd units depending on the Ignition disks stage and 
+      a device unit to fail when no filesystems are created
+    - Fix udev race where symlinks are deleted before Ignition can create its own
+      copy
+
+08-Sep-2017 IGNITION v0.18.0
+
+  Features
+
+    - On VMWare allow guest variables to override values specified in the OVF
+      environment
+    - Add partial support for CloudStack
+    - Add blackbox tests
+    - Add support for Oracle OCI provider
+
+  Changes
+
+    - Chmod pre-existing directories to match defined permissions in config
+    - Chown pre-existing links to match defined owner in config
+    - Add "--homehost any" arguments to mdadm raid creation to ensure consistent
+      device name under /dev/md
+    - On GCE, don't bind-mount docker binary into Google Cloud SDK container
+    - On GCE, remove gcutil alias
+
+  Bug Fixes
+
+    - Properly error out when a user or group set by name in the config cannot
+      be resolved to an id
+    - Fix typo in gcloud alias preventing connection to the docker daemon in
+      some cases
+    - Fix partition number validation where multiple partitions on a disk were
+      unable to specify 0 for the next available partition number
+
 28-Jul-2017 IGNITION v0.17.2
 
   Bug Fixes

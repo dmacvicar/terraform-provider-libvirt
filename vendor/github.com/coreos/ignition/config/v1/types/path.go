@@ -15,9 +15,10 @@
 package types
 
 import (
-	"encoding/json"
 	"errors"
 	"path"
+
+	"github.com/coreos/ignition/config/validate/report"
 )
 
 var (
@@ -26,18 +27,9 @@ var (
 
 type Path string
 
-func (d *Path) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-	*d = Path(s)
-	return d.AssertValid()
-}
-
-func (d Path) AssertValid() error {
+func (d Path) Validate() report.Report {
 	if !path.IsAbs(string(d)) {
-		return ErrPathRelative
+		return report.ReportFromError(ErrPathRelative, report.EntryError)
 	}
-	return nil
+	return report.Report{}
 }

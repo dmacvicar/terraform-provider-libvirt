@@ -171,7 +171,17 @@ func domainGetIfacesInfo(domain libvirt.Domain, domainDef libvirtxml.Domain,
 
 	// get all the interfaces attached to libvirt networks
 	log.Print("[DEBUG] no interfaces could be obtained with qemu-agent: falling back to the libvirt API")
-	interfaces, err := domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+
+	domainRunningNow, err := domainIsRunning(domain)
+	if err != nil {
+		return interfaces, err
+	}
+	if !domainRunningNow {
+		log.Print("[DEBUG] no interfaces could be obtained with libvirt API: domain not running")
+		return interfaces, nil
+	}
+
+	interfaces, err = domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
 	if err != nil {
 		switch err.(type) {
 		default:
@@ -196,7 +206,7 @@ func getDomainInterfacesFromNetworks(domain libvirtxml.Domain,
 	var macAddresses []string
 
 	for _, networkInterface := range domain.Devices.Interfaces {
-		networkNames = append(networkNames, networkInterface.Source.Network)
+		networkNames = append(networkNames, networkInterface.Source.Network.Network)
 		macAddresses = append(macAddresses, strings.ToUpper(networkInterface.MAC.Address))
 	}
 

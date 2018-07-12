@@ -24,16 +24,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/config/validate/report"
+	"github.com/coreos/ignition/internal/config/types"
+	"github.com/coreos/ignition/internal/distro"
 	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/providers/util"
 	"github.com/coreos/ignition/internal/resource"
 )
 
 const (
-	configDevice = "/dev/disk/by-id/ata-Virtual_CD"
-	configPath   = "/CustomData.bin"
+	configDeviceID = "ata-Virtual_CD"
+	configPath     = "/CustomData.bin"
 )
 
 // These constants come from <cdrom.h>.
@@ -51,9 +52,11 @@ const (
 )
 
 func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
+	devicePath := filepath.Join(distro.DiskByIDDir(), configDeviceID)
+
 	logger := f.Logger
 	logger.Debug("waiting for config DVD...")
-	waitForCdrom(logger)
+	waitForCdrom(logger, devicePath)
 
 	mnt, err := ioutil.TempDir("", "ignition-azure")
 	if err != nil {
@@ -63,14 +66,14 @@ func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
 
 	logger.Debug("mounting config device")
 	if err := logger.LogOp(
-		func() error { return syscall.Mount(configDevice, mnt, "udf", syscall.MS_RDONLY, "") },
-		"mounting %q at %q", configDevice, mnt,
+		func() error { return syscall.Mount(devicePath, mnt, "udf", syscall.MS_RDONLY, "") },
+		"mounting %q at %q", devicePath, mnt,
 	); err != nil {
-		return types.Config{}, report.Report{}, fmt.Errorf("failed to mount device %q at %q: %v", configDevice, mnt, err)
+		return types.Config{}, report.Report{}, fmt.Errorf("failed to mount device %q at %q: %v", devicePath, mnt, err)
 	}
 	defer logger.LogOp(
 		func() error { return syscall.Unmount(mnt, 0) },
-		"unmounting %q at %q", configDevice, mnt,
+		"unmounting %q at %q", devicePath, mnt,
 	)
 
 	logger.Debug("reading config")
@@ -82,15 +85,15 @@ func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
 	return util.ParseConfig(logger, rawConfig)
 }
 
-func waitForCdrom(logger *log.Logger) {
-	for !isCdromPresent(logger) {
+func waitForCdrom(logger *log.Logger, devicePath string) {
+	for !isCdromPresent(logger, devicePath) {
 		time.Sleep(time.Second)
 	}
 }
 
-func isCdromPresent(logger *log.Logger) bool {
+func isCdromPresent(logger *log.Logger, devicePath string) bool {
 	logger.Debug("opening config device")
-	device, err := os.Open(configDevice)
+	device, err := os.Open(devicePath)
 	if err != nil {
 		logger.Info("failed to open config device: %v", err)
 		return false

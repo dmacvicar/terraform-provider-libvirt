@@ -15,41 +15,42 @@
 package v1
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"fmt"
-
+	"github.com/coreos/ignition/config/errors"
+	"github.com/coreos/ignition/config/util"
 	"github.com/coreos/ignition/config/v1/types"
+	"github.com/coreos/ignition/config/validate/report"
 
-	"go4.org/errorutil"
+	json "github.com/ajeddeloh/go-json"
 )
 
-var (
-	ErrVersion     = errors.New("incorrect config version")
-	ErrCloudConfig = errors.New("not a config (found coreos-cloudconfig)")
-	ErrEmpty       = errors.New("not a config (empty)")
-	ErrScript      = errors.New("not a config (found coreos-cloudinit script)")
-)
-
-func Parse(rawConfig []byte) (config types.Config, err error) {
-	if err = json.Unmarshal(rawConfig, &config); err == nil {
-		if config.Version != types.Version {
-			err = ErrVersion
-		}
-	} else if isEmpty(rawConfig) {
-		err = ErrEmpty
+func Parse(rawConfig []byte) (types.Config, report.Report, error) {
+	if isEmpty(rawConfig) {
+		return types.Config{}, report.Report{}, errors.ErrEmpty
 	} else if isCloudConfig(rawConfig) {
-		err = ErrCloudConfig
+		return types.Config{}, report.Report{}, errors.ErrCloudConfig
 	} else if isScript(rawConfig) {
-		err = ErrScript
-	}
-	if serr, ok := err.(*json.SyntaxError); ok {
-		line, col, highlight := errorutil.HighlightBytePosition(bytes.NewReader(rawConfig), serr.Offset)
-		err = fmt.Errorf("error at line %d, column %d\n%s%v", line, col, highlight, err)
+		return types.Config{}, report.Report{}, errors.ErrScript
 	}
 
-	return
+	var err error
+	var config types.Config
+
+	err = json.Unmarshal(rawConfig, &config)
+	if err != nil {
+		rpt, err := util.HandleParseErrors(rawConfig)
+		// HandleParseErrors always returns an error
+		return types.Config{}, rpt, err
+	}
+
+	if config.Version != types.Version {
+		return types.Config{}, report.Report{}, errors.ErrInvalid
+	}
+
+	rpt := util.ValidateConfig(rawConfig, config)
+	if rpt.IsFatal() {
+		return types.Config{}, rpt, errors.ErrInvalid
+	}
+	return config, rpt, nil
 }
 
 func isEmpty(userdata []byte) bool {

@@ -84,6 +84,10 @@ type CognitoIdentityProviderAPI interface {
 	AdminDeleteUserAttributesWithContext(aws.Context, *cognitoidentityprovider.AdminDeleteUserAttributesInput, ...request.Option) (*cognitoidentityprovider.AdminDeleteUserAttributesOutput, error)
 	AdminDeleteUserAttributesRequest(*cognitoidentityprovider.AdminDeleteUserAttributesInput) (*request.Request, *cognitoidentityprovider.AdminDeleteUserAttributesOutput)
 
+	AdminDisableProviderForUser(*cognitoidentityprovider.AdminDisableProviderForUserInput) (*cognitoidentityprovider.AdminDisableProviderForUserOutput, error)
+	AdminDisableProviderForUserWithContext(aws.Context, *cognitoidentityprovider.AdminDisableProviderForUserInput, ...request.Option) (*cognitoidentityprovider.AdminDisableProviderForUserOutput, error)
+	AdminDisableProviderForUserRequest(*cognitoidentityprovider.AdminDisableProviderForUserInput) (*request.Request, *cognitoidentityprovider.AdminDisableProviderForUserOutput)
+
 	AdminDisableUser(*cognitoidentityprovider.AdminDisableUserInput) (*cognitoidentityprovider.AdminDisableUserOutput, error)
 	AdminDisableUserWithContext(aws.Context, *cognitoidentityprovider.AdminDisableUserInput, ...request.Option) (*cognitoidentityprovider.AdminDisableUserOutput, error)
 	AdminDisableUserRequest(*cognitoidentityprovider.AdminDisableUserInput) (*request.Request, *cognitoidentityprovider.AdminDisableUserOutput)
@@ -108,6 +112,10 @@ type CognitoIdentityProviderAPI interface {
 	AdminInitiateAuthWithContext(aws.Context, *cognitoidentityprovider.AdminInitiateAuthInput, ...request.Option) (*cognitoidentityprovider.AdminInitiateAuthOutput, error)
 	AdminInitiateAuthRequest(*cognitoidentityprovider.AdminInitiateAuthInput) (*request.Request, *cognitoidentityprovider.AdminInitiateAuthOutput)
 
+	AdminLinkProviderForUser(*cognitoidentityprovider.AdminLinkProviderForUserInput) (*cognitoidentityprovider.AdminLinkProviderForUserOutput, error)
+	AdminLinkProviderForUserWithContext(aws.Context, *cognitoidentityprovider.AdminLinkProviderForUserInput, ...request.Option) (*cognitoidentityprovider.AdminLinkProviderForUserOutput, error)
+	AdminLinkProviderForUserRequest(*cognitoidentityprovider.AdminLinkProviderForUserInput) (*request.Request, *cognitoidentityprovider.AdminLinkProviderForUserOutput)
+
 	AdminListDevices(*cognitoidentityprovider.AdminListDevicesInput) (*cognitoidentityprovider.AdminListDevicesOutput, error)
 	AdminListDevicesWithContext(aws.Context, *cognitoidentityprovider.AdminListDevicesInput, ...request.Option) (*cognitoidentityprovider.AdminListDevicesOutput, error)
 	AdminListDevicesRequest(*cognitoidentityprovider.AdminListDevicesInput) (*request.Request, *cognitoidentityprovider.AdminListDevicesOutput)
@@ -115,6 +123,10 @@ type CognitoIdentityProviderAPI interface {
 	AdminListGroupsForUser(*cognitoidentityprovider.AdminListGroupsForUserInput) (*cognitoidentityprovider.AdminListGroupsForUserOutput, error)
 	AdminListGroupsForUserWithContext(aws.Context, *cognitoidentityprovider.AdminListGroupsForUserInput, ...request.Option) (*cognitoidentityprovider.AdminListGroupsForUserOutput, error)
 	AdminListGroupsForUserRequest(*cognitoidentityprovider.AdminListGroupsForUserInput) (*request.Request, *cognitoidentityprovider.AdminListGroupsForUserOutput)
+
+	AdminListUserAuthEvents(*cognitoidentityprovider.AdminListUserAuthEventsInput) (*cognitoidentityprovider.AdminListUserAuthEventsOutput, error)
+	AdminListUserAuthEventsWithContext(aws.Context, *cognitoidentityprovider.AdminListUserAuthEventsInput, ...request.Option) (*cognitoidentityprovider.AdminListUserAuthEventsOutput, error)
+	AdminListUserAuthEventsRequest(*cognitoidentityprovider.AdminListUserAuthEventsInput) (*request.Request, *cognitoidentityprovider.AdminListUserAuthEventsOutput)
 
 	AdminRemoveUserFromGroup(*cognitoidentityprovider.AdminRemoveUserFromGroupInput) (*cognitoidentityprovider.AdminRemoveUserFromGroupOutput, error)
 	AdminRemoveUserFromGroupWithContext(aws.Context, *cognitoidentityprovider.AdminRemoveUserFromGroupInput, ...request.Option) (*cognitoidentityprovider.AdminRemoveUserFromGroupOutput, error)
@@ -128,9 +140,17 @@ type CognitoIdentityProviderAPI interface {
 	AdminRespondToAuthChallengeWithContext(aws.Context, *cognitoidentityprovider.AdminRespondToAuthChallengeInput, ...request.Option) (*cognitoidentityprovider.AdminRespondToAuthChallengeOutput, error)
 	AdminRespondToAuthChallengeRequest(*cognitoidentityprovider.AdminRespondToAuthChallengeInput) (*request.Request, *cognitoidentityprovider.AdminRespondToAuthChallengeOutput)
 
+	AdminSetUserMFAPreference(*cognitoidentityprovider.AdminSetUserMFAPreferenceInput) (*cognitoidentityprovider.AdminSetUserMFAPreferenceOutput, error)
+	AdminSetUserMFAPreferenceWithContext(aws.Context, *cognitoidentityprovider.AdminSetUserMFAPreferenceInput, ...request.Option) (*cognitoidentityprovider.AdminSetUserMFAPreferenceOutput, error)
+	AdminSetUserMFAPreferenceRequest(*cognitoidentityprovider.AdminSetUserMFAPreferenceInput) (*request.Request, *cognitoidentityprovider.AdminSetUserMFAPreferenceOutput)
+
 	AdminSetUserSettings(*cognitoidentityprovider.AdminSetUserSettingsInput) (*cognitoidentityprovider.AdminSetUserSettingsOutput, error)
 	AdminSetUserSettingsWithContext(aws.Context, *cognitoidentityprovider.AdminSetUserSettingsInput, ...request.Option) (*cognitoidentityprovider.AdminSetUserSettingsOutput, error)
 	AdminSetUserSettingsRequest(*cognitoidentityprovider.AdminSetUserSettingsInput) (*request.Request, *cognitoidentityprovider.AdminSetUserSettingsOutput)
+
+	AdminUpdateAuthEventFeedback(*cognitoidentityprovider.AdminUpdateAuthEventFeedbackInput) (*cognitoidentityprovider.AdminUpdateAuthEventFeedbackOutput, error)
+	AdminUpdateAuthEventFeedbackWithContext(aws.Context, *cognitoidentityprovider.AdminUpdateAuthEventFeedbackInput, ...request.Option) (*cognitoidentityprovider.AdminUpdateAuthEventFeedbackOutput, error)
+	AdminUpdateAuthEventFeedbackRequest(*cognitoidentityprovider.AdminUpdateAuthEventFeedbackInput) (*request.Request, *cognitoidentityprovider.AdminUpdateAuthEventFeedbackOutput)
 
 	AdminUpdateDeviceStatus(*cognitoidentityprovider.AdminUpdateDeviceStatusInput) (*cognitoidentityprovider.AdminUpdateDeviceStatusOutput, error)
 	AdminUpdateDeviceStatusWithContext(aws.Context, *cognitoidentityprovider.AdminUpdateDeviceStatusInput, ...request.Option) (*cognitoidentityprovider.AdminUpdateDeviceStatusOutput, error)
@@ -143,6 +163,10 @@ type CognitoIdentityProviderAPI interface {
 	AdminUserGlobalSignOut(*cognitoidentityprovider.AdminUserGlobalSignOutInput) (*cognitoidentityprovider.AdminUserGlobalSignOutOutput, error)
 	AdminUserGlobalSignOutWithContext(aws.Context, *cognitoidentityprovider.AdminUserGlobalSignOutInput, ...request.Option) (*cognitoidentityprovider.AdminUserGlobalSignOutOutput, error)
 	AdminUserGlobalSignOutRequest(*cognitoidentityprovider.AdminUserGlobalSignOutInput) (*request.Request, *cognitoidentityprovider.AdminUserGlobalSignOutOutput)
+
+	AssociateSoftwareToken(*cognitoidentityprovider.AssociateSoftwareTokenInput) (*cognitoidentityprovider.AssociateSoftwareTokenOutput, error)
+	AssociateSoftwareTokenWithContext(aws.Context, *cognitoidentityprovider.AssociateSoftwareTokenInput, ...request.Option) (*cognitoidentityprovider.AssociateSoftwareTokenOutput, error)
+	AssociateSoftwareTokenRequest(*cognitoidentityprovider.AssociateSoftwareTokenInput) (*request.Request, *cognitoidentityprovider.AssociateSoftwareTokenOutput)
 
 	ChangePassword(*cognitoidentityprovider.ChangePasswordInput) (*cognitoidentityprovider.ChangePasswordOutput, error)
 	ChangePasswordWithContext(aws.Context, *cognitoidentityprovider.ChangePasswordInput, ...request.Option) (*cognitoidentityprovider.ChangePasswordOutput, error)
@@ -168,6 +192,10 @@ type CognitoIdentityProviderAPI interface {
 	CreateIdentityProviderWithContext(aws.Context, *cognitoidentityprovider.CreateIdentityProviderInput, ...request.Option) (*cognitoidentityprovider.CreateIdentityProviderOutput, error)
 	CreateIdentityProviderRequest(*cognitoidentityprovider.CreateIdentityProviderInput) (*request.Request, *cognitoidentityprovider.CreateIdentityProviderOutput)
 
+	CreateResourceServer(*cognitoidentityprovider.CreateResourceServerInput) (*cognitoidentityprovider.CreateResourceServerOutput, error)
+	CreateResourceServerWithContext(aws.Context, *cognitoidentityprovider.CreateResourceServerInput, ...request.Option) (*cognitoidentityprovider.CreateResourceServerOutput, error)
+	CreateResourceServerRequest(*cognitoidentityprovider.CreateResourceServerInput) (*request.Request, *cognitoidentityprovider.CreateResourceServerOutput)
+
 	CreateUserImportJob(*cognitoidentityprovider.CreateUserImportJobInput) (*cognitoidentityprovider.CreateUserImportJobOutput, error)
 	CreateUserImportJobWithContext(aws.Context, *cognitoidentityprovider.CreateUserImportJobInput, ...request.Option) (*cognitoidentityprovider.CreateUserImportJobOutput, error)
 	CreateUserImportJobRequest(*cognitoidentityprovider.CreateUserImportJobInput) (*request.Request, *cognitoidentityprovider.CreateUserImportJobOutput)
@@ -192,6 +220,10 @@ type CognitoIdentityProviderAPI interface {
 	DeleteIdentityProviderWithContext(aws.Context, *cognitoidentityprovider.DeleteIdentityProviderInput, ...request.Option) (*cognitoidentityprovider.DeleteIdentityProviderOutput, error)
 	DeleteIdentityProviderRequest(*cognitoidentityprovider.DeleteIdentityProviderInput) (*request.Request, *cognitoidentityprovider.DeleteIdentityProviderOutput)
 
+	DeleteResourceServer(*cognitoidentityprovider.DeleteResourceServerInput) (*cognitoidentityprovider.DeleteResourceServerOutput, error)
+	DeleteResourceServerWithContext(aws.Context, *cognitoidentityprovider.DeleteResourceServerInput, ...request.Option) (*cognitoidentityprovider.DeleteResourceServerOutput, error)
+	DeleteResourceServerRequest(*cognitoidentityprovider.DeleteResourceServerInput) (*request.Request, *cognitoidentityprovider.DeleteResourceServerOutput)
+
 	DeleteUser(*cognitoidentityprovider.DeleteUserInput) (*cognitoidentityprovider.DeleteUserOutput, error)
 	DeleteUserWithContext(aws.Context, *cognitoidentityprovider.DeleteUserInput, ...request.Option) (*cognitoidentityprovider.DeleteUserOutput, error)
 	DeleteUserRequest(*cognitoidentityprovider.DeleteUserInput) (*request.Request, *cognitoidentityprovider.DeleteUserOutput)
@@ -215,6 +247,14 @@ type CognitoIdentityProviderAPI interface {
 	DescribeIdentityProvider(*cognitoidentityprovider.DescribeIdentityProviderInput) (*cognitoidentityprovider.DescribeIdentityProviderOutput, error)
 	DescribeIdentityProviderWithContext(aws.Context, *cognitoidentityprovider.DescribeIdentityProviderInput, ...request.Option) (*cognitoidentityprovider.DescribeIdentityProviderOutput, error)
 	DescribeIdentityProviderRequest(*cognitoidentityprovider.DescribeIdentityProviderInput) (*request.Request, *cognitoidentityprovider.DescribeIdentityProviderOutput)
+
+	DescribeResourceServer(*cognitoidentityprovider.DescribeResourceServerInput) (*cognitoidentityprovider.DescribeResourceServerOutput, error)
+	DescribeResourceServerWithContext(aws.Context, *cognitoidentityprovider.DescribeResourceServerInput, ...request.Option) (*cognitoidentityprovider.DescribeResourceServerOutput, error)
+	DescribeResourceServerRequest(*cognitoidentityprovider.DescribeResourceServerInput) (*request.Request, *cognitoidentityprovider.DescribeResourceServerOutput)
+
+	DescribeRiskConfiguration(*cognitoidentityprovider.DescribeRiskConfigurationInput) (*cognitoidentityprovider.DescribeRiskConfigurationOutput, error)
+	DescribeRiskConfigurationWithContext(aws.Context, *cognitoidentityprovider.DescribeRiskConfigurationInput, ...request.Option) (*cognitoidentityprovider.DescribeRiskConfigurationOutput, error)
+	DescribeRiskConfigurationRequest(*cognitoidentityprovider.DescribeRiskConfigurationInput) (*request.Request, *cognitoidentityprovider.DescribeRiskConfigurationOutput)
 
 	DescribeUserImportJob(*cognitoidentityprovider.DescribeUserImportJobInput) (*cognitoidentityprovider.DescribeUserImportJobOutput, error)
 	DescribeUserImportJobWithContext(aws.Context, *cognitoidentityprovider.DescribeUserImportJobInput, ...request.Option) (*cognitoidentityprovider.DescribeUserImportJobOutput, error)
@@ -256,6 +296,14 @@ type CognitoIdentityProviderAPI interface {
 	GetIdentityProviderByIdentifierWithContext(aws.Context, *cognitoidentityprovider.GetIdentityProviderByIdentifierInput, ...request.Option) (*cognitoidentityprovider.GetIdentityProviderByIdentifierOutput, error)
 	GetIdentityProviderByIdentifierRequest(*cognitoidentityprovider.GetIdentityProviderByIdentifierInput) (*request.Request, *cognitoidentityprovider.GetIdentityProviderByIdentifierOutput)
 
+	GetSigningCertificate(*cognitoidentityprovider.GetSigningCertificateInput) (*cognitoidentityprovider.GetSigningCertificateOutput, error)
+	GetSigningCertificateWithContext(aws.Context, *cognitoidentityprovider.GetSigningCertificateInput, ...request.Option) (*cognitoidentityprovider.GetSigningCertificateOutput, error)
+	GetSigningCertificateRequest(*cognitoidentityprovider.GetSigningCertificateInput) (*request.Request, *cognitoidentityprovider.GetSigningCertificateOutput)
+
+	GetUICustomization(*cognitoidentityprovider.GetUICustomizationInput) (*cognitoidentityprovider.GetUICustomizationOutput, error)
+	GetUICustomizationWithContext(aws.Context, *cognitoidentityprovider.GetUICustomizationInput, ...request.Option) (*cognitoidentityprovider.GetUICustomizationOutput, error)
+	GetUICustomizationRequest(*cognitoidentityprovider.GetUICustomizationInput) (*request.Request, *cognitoidentityprovider.GetUICustomizationOutput)
+
 	GetUser(*cognitoidentityprovider.GetUserInput) (*cognitoidentityprovider.GetUserOutput, error)
 	GetUserWithContext(aws.Context, *cognitoidentityprovider.GetUserInput, ...request.Option) (*cognitoidentityprovider.GetUserOutput, error)
 	GetUserRequest(*cognitoidentityprovider.GetUserInput) (*request.Request, *cognitoidentityprovider.GetUserOutput)
@@ -263,6 +311,10 @@ type CognitoIdentityProviderAPI interface {
 	GetUserAttributeVerificationCode(*cognitoidentityprovider.GetUserAttributeVerificationCodeInput) (*cognitoidentityprovider.GetUserAttributeVerificationCodeOutput, error)
 	GetUserAttributeVerificationCodeWithContext(aws.Context, *cognitoidentityprovider.GetUserAttributeVerificationCodeInput, ...request.Option) (*cognitoidentityprovider.GetUserAttributeVerificationCodeOutput, error)
 	GetUserAttributeVerificationCodeRequest(*cognitoidentityprovider.GetUserAttributeVerificationCodeInput) (*request.Request, *cognitoidentityprovider.GetUserAttributeVerificationCodeOutput)
+
+	GetUserPoolMfaConfig(*cognitoidentityprovider.GetUserPoolMfaConfigInput) (*cognitoidentityprovider.GetUserPoolMfaConfigOutput, error)
+	GetUserPoolMfaConfigWithContext(aws.Context, *cognitoidentityprovider.GetUserPoolMfaConfigInput, ...request.Option) (*cognitoidentityprovider.GetUserPoolMfaConfigOutput, error)
+	GetUserPoolMfaConfigRequest(*cognitoidentityprovider.GetUserPoolMfaConfigInput) (*request.Request, *cognitoidentityprovider.GetUserPoolMfaConfigOutput)
 
 	GlobalSignOut(*cognitoidentityprovider.GlobalSignOutInput) (*cognitoidentityprovider.GlobalSignOutOutput, error)
 	GlobalSignOutWithContext(aws.Context, *cognitoidentityprovider.GlobalSignOutInput, ...request.Option) (*cognitoidentityprovider.GlobalSignOutOutput, error)
@@ -283,6 +335,10 @@ type CognitoIdentityProviderAPI interface {
 	ListIdentityProviders(*cognitoidentityprovider.ListIdentityProvidersInput) (*cognitoidentityprovider.ListIdentityProvidersOutput, error)
 	ListIdentityProvidersWithContext(aws.Context, *cognitoidentityprovider.ListIdentityProvidersInput, ...request.Option) (*cognitoidentityprovider.ListIdentityProvidersOutput, error)
 	ListIdentityProvidersRequest(*cognitoidentityprovider.ListIdentityProvidersInput) (*request.Request, *cognitoidentityprovider.ListIdentityProvidersOutput)
+
+	ListResourceServers(*cognitoidentityprovider.ListResourceServersInput) (*cognitoidentityprovider.ListResourceServersOutput, error)
+	ListResourceServersWithContext(aws.Context, *cognitoidentityprovider.ListResourceServersInput, ...request.Option) (*cognitoidentityprovider.ListResourceServersOutput, error)
+	ListResourceServersRequest(*cognitoidentityprovider.ListResourceServersInput) (*request.Request, *cognitoidentityprovider.ListResourceServersOutput)
 
 	ListUserImportJobs(*cognitoidentityprovider.ListUserImportJobsInput) (*cognitoidentityprovider.ListUserImportJobsOutput, error)
 	ListUserImportJobsWithContext(aws.Context, *cognitoidentityprovider.ListUserImportJobsInput, ...request.Option) (*cognitoidentityprovider.ListUserImportJobsOutput, error)
@@ -312,6 +368,22 @@ type CognitoIdentityProviderAPI interface {
 	RespondToAuthChallengeWithContext(aws.Context, *cognitoidentityprovider.RespondToAuthChallengeInput, ...request.Option) (*cognitoidentityprovider.RespondToAuthChallengeOutput, error)
 	RespondToAuthChallengeRequest(*cognitoidentityprovider.RespondToAuthChallengeInput) (*request.Request, *cognitoidentityprovider.RespondToAuthChallengeOutput)
 
+	SetRiskConfiguration(*cognitoidentityprovider.SetRiskConfigurationInput) (*cognitoidentityprovider.SetRiskConfigurationOutput, error)
+	SetRiskConfigurationWithContext(aws.Context, *cognitoidentityprovider.SetRiskConfigurationInput, ...request.Option) (*cognitoidentityprovider.SetRiskConfigurationOutput, error)
+	SetRiskConfigurationRequest(*cognitoidentityprovider.SetRiskConfigurationInput) (*request.Request, *cognitoidentityprovider.SetRiskConfigurationOutput)
+
+	SetUICustomization(*cognitoidentityprovider.SetUICustomizationInput) (*cognitoidentityprovider.SetUICustomizationOutput, error)
+	SetUICustomizationWithContext(aws.Context, *cognitoidentityprovider.SetUICustomizationInput, ...request.Option) (*cognitoidentityprovider.SetUICustomizationOutput, error)
+	SetUICustomizationRequest(*cognitoidentityprovider.SetUICustomizationInput) (*request.Request, *cognitoidentityprovider.SetUICustomizationOutput)
+
+	SetUserMFAPreference(*cognitoidentityprovider.SetUserMFAPreferenceInput) (*cognitoidentityprovider.SetUserMFAPreferenceOutput, error)
+	SetUserMFAPreferenceWithContext(aws.Context, *cognitoidentityprovider.SetUserMFAPreferenceInput, ...request.Option) (*cognitoidentityprovider.SetUserMFAPreferenceOutput, error)
+	SetUserMFAPreferenceRequest(*cognitoidentityprovider.SetUserMFAPreferenceInput) (*request.Request, *cognitoidentityprovider.SetUserMFAPreferenceOutput)
+
+	SetUserPoolMfaConfig(*cognitoidentityprovider.SetUserPoolMfaConfigInput) (*cognitoidentityprovider.SetUserPoolMfaConfigOutput, error)
+	SetUserPoolMfaConfigWithContext(aws.Context, *cognitoidentityprovider.SetUserPoolMfaConfigInput, ...request.Option) (*cognitoidentityprovider.SetUserPoolMfaConfigOutput, error)
+	SetUserPoolMfaConfigRequest(*cognitoidentityprovider.SetUserPoolMfaConfigInput) (*request.Request, *cognitoidentityprovider.SetUserPoolMfaConfigOutput)
+
 	SetUserSettings(*cognitoidentityprovider.SetUserSettingsInput) (*cognitoidentityprovider.SetUserSettingsOutput, error)
 	SetUserSettingsWithContext(aws.Context, *cognitoidentityprovider.SetUserSettingsInput, ...request.Option) (*cognitoidentityprovider.SetUserSettingsOutput, error)
 	SetUserSettingsRequest(*cognitoidentityprovider.SetUserSettingsInput) (*request.Request, *cognitoidentityprovider.SetUserSettingsOutput)
@@ -328,6 +400,10 @@ type CognitoIdentityProviderAPI interface {
 	StopUserImportJobWithContext(aws.Context, *cognitoidentityprovider.StopUserImportJobInput, ...request.Option) (*cognitoidentityprovider.StopUserImportJobOutput, error)
 	StopUserImportJobRequest(*cognitoidentityprovider.StopUserImportJobInput) (*request.Request, *cognitoidentityprovider.StopUserImportJobOutput)
 
+	UpdateAuthEventFeedback(*cognitoidentityprovider.UpdateAuthEventFeedbackInput) (*cognitoidentityprovider.UpdateAuthEventFeedbackOutput, error)
+	UpdateAuthEventFeedbackWithContext(aws.Context, *cognitoidentityprovider.UpdateAuthEventFeedbackInput, ...request.Option) (*cognitoidentityprovider.UpdateAuthEventFeedbackOutput, error)
+	UpdateAuthEventFeedbackRequest(*cognitoidentityprovider.UpdateAuthEventFeedbackInput) (*request.Request, *cognitoidentityprovider.UpdateAuthEventFeedbackOutput)
+
 	UpdateDeviceStatus(*cognitoidentityprovider.UpdateDeviceStatusInput) (*cognitoidentityprovider.UpdateDeviceStatusOutput, error)
 	UpdateDeviceStatusWithContext(aws.Context, *cognitoidentityprovider.UpdateDeviceStatusInput, ...request.Option) (*cognitoidentityprovider.UpdateDeviceStatusOutput, error)
 	UpdateDeviceStatusRequest(*cognitoidentityprovider.UpdateDeviceStatusInput) (*request.Request, *cognitoidentityprovider.UpdateDeviceStatusOutput)
@@ -340,6 +416,10 @@ type CognitoIdentityProviderAPI interface {
 	UpdateIdentityProviderWithContext(aws.Context, *cognitoidentityprovider.UpdateIdentityProviderInput, ...request.Option) (*cognitoidentityprovider.UpdateIdentityProviderOutput, error)
 	UpdateIdentityProviderRequest(*cognitoidentityprovider.UpdateIdentityProviderInput) (*request.Request, *cognitoidentityprovider.UpdateIdentityProviderOutput)
 
+	UpdateResourceServer(*cognitoidentityprovider.UpdateResourceServerInput) (*cognitoidentityprovider.UpdateResourceServerOutput, error)
+	UpdateResourceServerWithContext(aws.Context, *cognitoidentityprovider.UpdateResourceServerInput, ...request.Option) (*cognitoidentityprovider.UpdateResourceServerOutput, error)
+	UpdateResourceServerRequest(*cognitoidentityprovider.UpdateResourceServerInput) (*request.Request, *cognitoidentityprovider.UpdateResourceServerOutput)
+
 	UpdateUserAttributes(*cognitoidentityprovider.UpdateUserAttributesInput) (*cognitoidentityprovider.UpdateUserAttributesOutput, error)
 	UpdateUserAttributesWithContext(aws.Context, *cognitoidentityprovider.UpdateUserAttributesInput, ...request.Option) (*cognitoidentityprovider.UpdateUserAttributesOutput, error)
 	UpdateUserAttributesRequest(*cognitoidentityprovider.UpdateUserAttributesInput) (*request.Request, *cognitoidentityprovider.UpdateUserAttributesOutput)
@@ -351,6 +431,10 @@ type CognitoIdentityProviderAPI interface {
 	UpdateUserPoolClient(*cognitoidentityprovider.UpdateUserPoolClientInput) (*cognitoidentityprovider.UpdateUserPoolClientOutput, error)
 	UpdateUserPoolClientWithContext(aws.Context, *cognitoidentityprovider.UpdateUserPoolClientInput, ...request.Option) (*cognitoidentityprovider.UpdateUserPoolClientOutput, error)
 	UpdateUserPoolClientRequest(*cognitoidentityprovider.UpdateUserPoolClientInput) (*request.Request, *cognitoidentityprovider.UpdateUserPoolClientOutput)
+
+	VerifySoftwareToken(*cognitoidentityprovider.VerifySoftwareTokenInput) (*cognitoidentityprovider.VerifySoftwareTokenOutput, error)
+	VerifySoftwareTokenWithContext(aws.Context, *cognitoidentityprovider.VerifySoftwareTokenInput, ...request.Option) (*cognitoidentityprovider.VerifySoftwareTokenOutput, error)
+	VerifySoftwareTokenRequest(*cognitoidentityprovider.VerifySoftwareTokenInput) (*request.Request, *cognitoidentityprovider.VerifySoftwareTokenOutput)
 
 	VerifyUserAttribute(*cognitoidentityprovider.VerifyUserAttributeInput) (*cognitoidentityprovider.VerifyUserAttributeOutput, error)
 	VerifyUserAttributeWithContext(aws.Context, *cognitoidentityprovider.VerifyUserAttributeInput, ...request.Option) (*cognitoidentityprovider.VerifyUserAttributeOutput, error)

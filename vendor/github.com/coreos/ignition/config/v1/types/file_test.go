@@ -15,18 +15,18 @@
 package types
 
 import (
-	"encoding/json"
 	"reflect"
 	"testing"
+
+	"github.com/coreos/ignition/config/validate/report"
 )
 
-func TestFileModeUnmarshalJSON(t *testing.T) {
+func TestFileModeValidate(t *testing.T) {
 	type in struct {
-		data string
+		data FileMode
 	}
 	type out struct {
-		mode FileMode
-		err  error
+		rep report.Report
 	}
 
 	tests := []struct {
@@ -34,23 +34,19 @@ func TestFileModeUnmarshalJSON(t *testing.T) {
 		out out
 	}{
 		{
-			in:  in{data: `420`},
-			out: out{mode: FileMode(420)},
+			in:  in{data: 420},
+			out: out{},
 		},
 		{
-			in:  in{data: `9999`},
-			out: out{mode: FileMode(9999), err: ErrFileIllegalMode},
+			in:  in{data: 9999},
+			out: out{rep: report.ReportFromError(ErrFileIllegalMode, report.EntryError)},
 		},
 	}
 
 	for i, test := range tests {
-		var mode FileMode
-		err := json.Unmarshal([]byte(test.in.data), &mode)
-		if !reflect.DeepEqual(test.out.err, err) {
-			t.Errorf("#%d: bad error: want %v, got %v", i, test.out.err, err)
-		}
-		if !reflect.DeepEqual(test.out.mode, mode) {
-			t.Errorf("#%d: bad mode: want %#o, got %#o", i, test.out.mode, mode)
+		rep := test.in.data.Validate()
+		if !reflect.DeepEqual(test.out.rep, rep) {
+			t.Errorf("#%d: bad report: want %v, got %v", i, test.out.rep, rep)
 		}
 	}
 }
@@ -60,7 +56,7 @@ func TestFileAssertValid(t *testing.T) {
 		mode FileMode
 	}
 	type out struct {
-		err error
+		rep report.Report
 	}
 
 	tests := []struct {
@@ -85,14 +81,14 @@ func TestFileAssertValid(t *testing.T) {
 		},
 		{
 			in:  in{mode: FileMode(010000)},
-			out: out{err: ErrFileIllegalMode},
+			out: out{rep: report.ReportFromError(ErrFileIllegalMode, report.EntryError)},
 		},
 	}
 
 	for i, test := range tests {
-		err := test.in.mode.AssertValid()
-		if !reflect.DeepEqual(test.out.err, err) {
-			t.Errorf("#%d: bad error: want %v, got %v", i, test.out.err, err)
+		rep := test.in.mode.Validate()
+		if !reflect.DeepEqual(test.out.rep, rep) {
+			t.Errorf("#%d: bad report: want %v, got %v", i, test.out.rep, rep)
 		}
 	}
 }

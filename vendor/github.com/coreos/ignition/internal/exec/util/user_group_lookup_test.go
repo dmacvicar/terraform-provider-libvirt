@@ -71,7 +71,7 @@ func TestUserLookup(t *testing.T) {
 	}
 	defer os.RemoveAll(td)
 
-	logger := log.New()
+	logger := log.New(true)
 	defer logger.Close()
 
 	u := &Util{
@@ -108,7 +108,7 @@ func TestGroupLookup(t *testing.T) {
 	}
 	defer os.RemoveAll(td)
 
-	logger := log.New()
+	logger := log.New(true)
 	defer logger.Close()
 
 	u := &Util{

@@ -42,18 +42,17 @@ data "ignition_file" "hello" {
 
 The following arguments are supported:
 
-* `filesystem` - (Optional) The internal identifier of the filesystem. This matches the last filesystem with the given identifier. This should be a valid name from a _ignition\_filesystem_ resource.
+* `filesystem` - (Required) The internal identifier of the filesystem. This matches the last filesystem with the given identifier. This should be a valid name from a _ignition\_filesystem_ resource.
 
-* `path` - (Optional) The absolute path to the file.
+* `path` - (Required) The absolute path to the file.
 
 * `content` - (Optional) Block to provide the file content inline.
 
 * `source` - (Optional) Block to retrieve the file content from a remote location.
 
-	__Note__: `content` and `source` are mutually exclusive
+	__Note__: `content` and `source` are mutually exclusive.
 
-* `mode` - (Optional) The list of partitions and their configuration for
-this particular disk..
+* `mode` - (Optional) The file's permission mode. The mode must be properly specified as a decimal value (i.e. 0644 -> 420).
 
 * `uid` - (Optional) The user ID of the owner.
 

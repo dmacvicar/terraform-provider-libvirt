@@ -18,6 +18,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/coreos/ignition/config/errors"
 	"github.com/coreos/ignition/config/v2_1/types"
 )
 
@@ -37,11 +38,15 @@ func TestParse(t *testing.T) {
 	}{
 		{
 			in:  in{config: []byte(`{"ignitionVersion": 1}`)},
-			out: out{err: ErrInvalid},
+			out: out{config: types.Config{Ignition: types.Ignition{Version: types.MaxVersion.String()}}},
 		},
 		{
 			in:  in{config: []byte(`{"ignition": {"version": "1.0.0"}}`)},
-			out: out{err: ErrInvalid},
+			out: out{err: errors.ErrInvalid},
+		},
+		{
+			in:  in{config: []byte(`{"ignition": {"version": "2.0.0"}}`)},
+			out: out{config: types.Config{Ignition: types.Ignition{Version: types.MaxVersion.String()}}},
 		},
 		{
 			in:  in{config: []byte(`{"ignition": {"version": "2.1.0"}}`)},
@@ -49,48 +54,48 @@ func TestParse(t *testing.T) {
 		},
 		{
 			in:  in{config: []byte(`{"ignition": {"version": "2.2.0"}}`)},
-			out: out{err: ErrInvalid},
+			out: out{err: errors.ErrUnknownVersion},
 		},
 		{
 			in:  in{config: []byte(`{"ignition": {"version": "invalid.semver"}}`)},
-			out: out{err: ErrInvalid},
+			out: out{err: errors.ErrInvalid},
 		},
 		{
 			in:  in{config: []byte(`{}`)},
-			out: out{err: ErrInvalid},
+			out: out{err: errors.ErrInvalid},
 		},
 		{
 			in:  in{config: []byte{}},
-			out: out{err: ErrEmpty},
+			out: out{err: errors.ErrEmpty},
 		},
 		{
 			in:  in{config: []byte("#cloud-config")},
-			out: out{err: ErrCloudConfig},
+			out: out{err: errors.ErrCloudConfig},
 		},
 		{
 			in:  in{config: []byte("#cloud-config ")},
-			out: out{err: ErrCloudConfig},
+			out: out{err: errors.ErrCloudConfig},
 		},
 		{
 			in:  in{config: []byte("#cloud-config\n\r")},
-			out: out{err: ErrCloudConfig},
+			out: out{err: errors.ErrCloudConfig},
 		},
 		{
 			in: in{config: []byte{0x1f, 0x8b, 0x08, 0x00, 0x03, 0xd6, 0x79, 0x56,
 				0x00, 0x03, 0x53, 0x4e, 0xce, 0xc9, 0x2f, 0x4d, 0xd1, 0x4d, 0xce,
 				0xcf, 0x4b, 0xcb, 0x4c, 0xe7, 0x02, 0x00, 0x05, 0x56, 0xb3, 0xb8,
 				0x0e, 0x00, 0x00, 0x00}},
-			out: out{err: ErrCloudConfig},
+			out: out{err: errors.ErrCloudConfig},
 		},
 		{
 			in:  in{config: []byte("#!/bin/sh")},
-			out: out{err: ErrScript},
+			out: out{err: errors.ErrScript},
 		},
 		{
 			in: in{config: []byte{0x1f, 0x8b, 0x08, 0x00, 0x48, 0xda, 0x79, 0x56,
 				0x00, 0x03, 0x53, 0x56, 0xd4, 0x4f, 0xca, 0xcc, 0xd3, 0x2f, 0xce,
 				0xe0, 0x02, 0x00, 0x1d, 0x9d, 0xfb, 0x04, 0x0a, 0x00, 0x00, 0x00}},
-			out: out{err: ErrScript},
+			out: out{err: errors.ErrScript},
 		},
 	}
 

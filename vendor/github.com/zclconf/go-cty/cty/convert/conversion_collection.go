@@ -44,6 +44,90 @@ func conversionCollectionToList(ety cty.Type, conv conversion) conversion {
 	}
 }
 
+// conversionCollectionToSet returns a conversion that will apply the given
+// conversion to all of the elements of a collection (something that supports
+// ForEachElement and LengthInt) and then returns the result as a set.
+//
+// "conv" can be nil if the elements are expected to already be of the
+// correct type and just need to be re-wrapped into a set. (For example,
+// if we're converting from a list into a set of the same element type.)
+func conversionCollectionToSet(ety cty.Type, conv conversion) conversion {
+	return func(val cty.Value, path cty.Path) (cty.Value, error) {
+		elems := make([]cty.Value, 0, val.LengthInt())
+		i := int64(0)
+		path = append(path, nil)
+		it := val.ElementIterator()
+		for it.Next() {
+			_, val := it.Element()
+			var err error
+
+			path[len(path)-1] = cty.IndexStep{
+				Key: cty.NumberIntVal(i),
+			}
+
+			if conv != nil {
+				val, err = conv(val, path)
+				if err != nil {
+					return cty.NilVal, err
+				}
+			}
+			elems = append(elems, val)
+
+			i++
+		}
+
+		if len(elems) == 0 {
+			return cty.SetValEmpty(ety), nil
+		}
+
+		return cty.SetVal(elems), nil
+	}
+}
+
+// conversionCollectionToMap returns a conversion that will apply the given
+// conversion to all of the elements of a collection (something that supports
+// ForEachElement and LengthInt) and then returns the result as a map.
+//
+// "conv" can be nil if the elements are expected to already be of the
+// correct type and just need to be re-wrapped into a map.
+func conversionCollectionToMap(ety cty.Type, conv conversion) conversion {
+	return func(val cty.Value, path cty.Path) (cty.Value, error) {
+		elems := make(map[string]cty.Value, 0)
+		path = append(path, nil)
+		it := val.ElementIterator()
+		for it.Next() {
+			key, val := it.Element()
+			var err error
+
+			path[len(path)-1] = cty.IndexStep{
+				Key: key,
+			}
+
+			keyStr, err := Convert(key, cty.String)
+			if err != nil {
+				// Should never happen, because keys can only be numbers or
+				// strings and both can convert to string.
+				return cty.DynamicVal, path.NewErrorf("cannot convert key type %s to string for map", key.Type().FriendlyName())
+			}
+
+			if conv != nil {
+				val, err = conv(val, path)
+				if err != nil {
+					return cty.NilVal, err
+				}
+			}
+
+			elems[keyStr.AsString()] = val
+		}
+
+		if len(elems) == 0 {
+			return cty.MapValEmpty(ety), nil
+		}
+
+		return cty.MapVal(elems), nil
+	}
+}
+
 // conversionTupleToList returns a conversion that will take a value of the
 // given tuple type and return a list of the given element type.
 //

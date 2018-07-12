@@ -23,6 +23,17 @@ func TestDiskLetterForIndex(t *testing.T) {
 	}
 }
 
+func TestFormatBoolYesNo(t *testing.T) {
+
+	if FormatBoolYesNo(true) != "yes" {
+		t.Errorf("Expected 'yes'")
+	}
+
+	if FormatBoolYesNo(false) != "no" {
+		t.Errorf("Expected 'no'")
+	}
+}
+
 func TestIPsRange(t *testing.T) {
 	_, net, err := net.ParseCIDR("192.168.18.1/24")
 	if err != nil {

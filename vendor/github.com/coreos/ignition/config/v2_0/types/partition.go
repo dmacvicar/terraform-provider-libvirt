@@ -17,6 +17,7 @@ package types
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/coreos/ignition/config/validate/report"
 )
@@ -39,6 +40,9 @@ func (n PartitionLabel) Validate() report.Report {
 	// with udev naming /dev/disk/by-partlabel/*.
 	if len(string(n)) > 36 {
 		return report.ReportFromError(fmt.Errorf("partition labels may not exceed 36 characters"), report.EntryError)
+	}
+	if strings.Contains(string(n), ":") {
+		return report.ReportFromError(fmt.Errorf("partition label will be truncated to text before the colon"), report.EntryWarning)
 	}
 	return report.Report{}
 }

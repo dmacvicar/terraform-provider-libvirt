@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -eu
+
+NAME="ignition"
+ORG_PATH="github.com/coreos"
+REPO_PATH="${ORG_PATH}/${NAME}"
+VERSION=$(git describe --dirty)
+GLDFLAGS=${GLDFLAGS:-}
+GLDFLAGS+="-X github.com/coreos/ignition/internal/version.Raw=${VERSION}"
+
+if [[ -n "$(git status -s)" ]]; then
+    echo "git repo not clean"
+    exit 1
+fi
+
+if [ ! -h gopath/src/${REPO_PATH} ]; then
+	mkdir -p gopath/src/${ORG_PATH}
+	ln -s ../../../.. gopath/src/${REPO_PATH} || exit 255
+fi
+
+eval $(go env)
+
+export GOBIN=${PWD}/bin/releases
+export GOPATH=${PWD}/gopath
+export CGO_ENABLED=0
+
+build_release() {
+    export NAME="ignition-validate-${1}"
+    echo "building ${NAME}"
+    go build -ldflags "${GLDFLAGS}" -o ${GOBIN}/${NAME} ${REPO_PATH}/validate
+}
+
+export GOOS=linux
+export GOARCH=amd64
+build_release x86_64-unknown-linux-gnu
+
+export GOOS=darwin
+export GOARCH=amd64
+build_release x86_64-apple-darwin
+
+export GOOS=windows
+export GOARCH=amd64
+build_release x86_64-pc-windows-gnu.exe
+
+export GOOS=linux
+export GOARCH=arm64
+build_release aarch64-unknown-linux-gnu

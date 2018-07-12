@@ -3,18 +3,18 @@
 The Ignition configuration is a JSON document conforming to the following specification, with **_italicized_** entries being optional:
 
 * **ignition** (object): metadata about the configuration itself.
-  * **version** (string): the semantic version number of the spec. The spec version must be compatible with the latest version (`2.0.0`). Compatibility requires the major versions to match and the spec version be less than or equal to the latest version.
+  * **version** (string): the semantic version number of the spec. The spec version must be compatible with the latest version (`2.1.0`). Compatibility requires the major versions to match and the spec version be less than or equal to the latest version.
   * **_config_** (objects): options related to the configuration.
     * **_append_** (list of objects): a list of the configs to be appended to the current config.
-      * **source** (string): the URL of the config. Supported schemes are http, https, s3, and tftp. Note: When using http, it is advisable to use the verification option to ensure the contents haven't been modified.
+      * **source** (string): the URL of the config. Supported schemes are `http`, `https`, `s3`, `tftp`, and [`data`][rfc2397]. Note: When using `http`, it is advisable to use the verification option to ensure the contents haven't been modified.
       * **_verification_** (object): options related to the verification of the config.
-        * **_hash_** (string): the hash of the config, in the form `<type>-<value>` where type is sha512.
+        * **_hash_** (string): the hash of the config, in the form `<type>-<value>` where type is `sha512`.
     * **_replace_** (object): the config that will replace the current.
-      * **source** (string): the URL of the config. Supported schemes are http, https, s3, and tftp. Note: When using http, it is advisable to use the verification option to ensure the contents haven't been modified.
+      * **source** (string): the URL of the config. Supported schemes are `http`, `https`, `s3`, `tftp`, and [`data`][rfc2397]. Note: When using `http`, it is advisable to use the verification option to ensure the contents haven't been modified.
       * **_verification_** (object): options related to the verification of the config.
-        * **_hash_** (string): the hash of the config, in the form `<type>-<value>` where type is sha512.
-  * **_timeouts_** (object): options relating to http timeouts when fetching files over http or https.
-    * **_httpResponseHeaders_** (integer) the time to wait (in seconds) for the server's repsonse headers (but not the body) after making a request. 0 indicates no timeout. Default is 10 seconds.
+        * **_hash_** (string): the hash of the config, in the form `<type>-<value>` where type is `sha512`.
+  * **_timeouts_** (object): options relating to `http` timeouts when fetching files over `http` or `https`.
+    * **_httpResponseHeaders_** (integer) the time to wait (in seconds) for the server's response headers (but not the body) after making a request. 0 indicates no timeout. Default is 10 seconds.
     * **_httpTotal_** (integer) the time limit (in seconds) for the operation (connection, request, and response), including retries. 0 indicates no timeout. Default is 0.
 * **_storage_** (object): describes the desired state of the system's storage devices.
   * **_disks_** (list of objects): the list of disks to be configured and their options.
@@ -23,8 +23,8 @@ The Ignition configuration is a JSON document conforming to the following specif
     * **_partitions_** (list of objects): the list of partitions and their configuration for this particular disk.
       * **_label_** (string): the PARTLABEL for the partition.
       * **_number_** (integer): the partition number, which dictates it's position in the partition table (one-indexed). If zero, use the next available partition slot.
-      * **_size_** (integer): the size of the partition (in sectors). If zero, the partition will fill the remainder of the disk.
-      * **_start_** (integer): the start of the partition (in sectors). If zero, the partition will be positioned at the earliest available part of the disk.
+      * **_size_** (integer): the size of the partition (in device logical sectors, 512 or 4096 bytes). If zero, the partition will be made as large as possible.
+      * **_start_** (integer): the start of the partition (in device logical sectors). If zero, the partition will be positioned at the start of the largest block available.
       * **_typeGuid_** (string): the GPT [partition type GUID][part-types]. If omitted, the default will be 0FC63DAF-8483-4772-8E79-3D69D8477DE4 (Linux filesystem data).
       * **_guid_** (string): the GPT unique partition GUID.
   * **_raid_** (list of objects): the list of RAID arrays to be configured.
@@ -50,9 +50,9 @@ The Ignition configuration is a JSON document conforming to the following specif
     * **path** (string): the absolute path to the file.
     * **_contents_** (object): options related to the contents of the file.
       * **_compression_** (string): the type of compression used on the contents (null or gzip). Compression cannot be used with S3.
-      * **_source_** (string): the URL of the file contents. Supported schemes are http, https, tftp, s3, and [data][rfc2397]. When using http, it is advisable to use the verification option to ensure the contents haven't been modified.
+      * **_source_** (string): the URL of the file contents. Supported schemes are `http`, `https`, `tftp`, `s3`, and [`data`][rfc2397]. When using `http`, it is advisable to use the verification option to ensure the contents haven't been modified.
       * **_verification_** (object): options related to the verification of the file contents.
-        * **_hash_** (string): the hash of the config, in the form `<type>-<value>` where type is sha512.
+        * **_hash_** (string): the hash of the config, in the form `<type>-<value>` where type is `sha512`.
     * **_mode_** (integer): the file's permission mode. Note that the mode must be properly specified as a **decimal** value (i.e. 0644 -> 420).
     * **_user_** (object): specifies the file's owner.
       * **_id_** (integer): the user ID of the owner.
@@ -73,7 +73,7 @@ The Ignition configuration is a JSON document conforming to the following specif
   * **_links_** (list of objects): the list of links to be created
     * **filesystem** (string): the internal identifier of the filesystem in which to write the link. This matches the last filesystem with the given identifier.
     * **path** (string): the absolute path to the link
-    * **_user_** (object): specifies the symbolic links's owner.
+    * **_user_** (object): specifies the symbolic link's owner.
       * **_id_** (integer): the user ID of the owner.
       * **_name_** (string): the user name of the owner.
     * **_group_** (object): specifies the group of the owner.

@@ -13,6 +13,7 @@ func TestZipDecompressor(t *testing.T) {
 			true,
 			nil,
 			"",
+			nil,
 		},
 
 		{
@@ -21,6 +22,7 @@ func TestZipDecompressor(t *testing.T) {
 			false,
 			nil,
 			"d3b07384d113edec49eaa6238ad5ff00",
+			nil,
 		},
 
 		{
@@ -29,6 +31,7 @@ func TestZipDecompressor(t *testing.T) {
 			false,
 			[]string{"file"},
 			"",
+			nil,
 		},
 
 		{
@@ -37,6 +40,7 @@ func TestZipDecompressor(t *testing.T) {
 			false,
 			[]string{"file1", "file2"},
 			"",
+			nil,
 		},
 
 		{
@@ -45,6 +49,7 @@ func TestZipDecompressor(t *testing.T) {
 			true,
 			nil,
 			"",
+			nil,
 		},
 
 		{
@@ -53,6 +58,7 @@ func TestZipDecompressor(t *testing.T) {
 			false,
 			[]string{"file1", "subdir/", "subdir/child"},
 			"",
+			nil,
 		},
 
 		{
@@ -61,6 +67,7 @@ func TestZipDecompressor(t *testing.T) {
 			false,
 			[]string{"file1", "subdir/"},
 			"",
+			nil,
 		},
 
 		{
@@ -69,6 +76,17 @@ func TestZipDecompressor(t *testing.T) {
 			false,
 			[]string{"file1", "subdir/", "subdir/child"},
 			"",
+			nil,
+		},
+
+		// Tests that a zip can't contain references with "..".
+		{
+			"outside_parent.zip",
+			true,
+			true,
+			nil,
+			"",
+			nil,
 		},
 	}
 

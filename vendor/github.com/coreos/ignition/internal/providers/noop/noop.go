@@ -17,13 +17,13 @@
 package noop
 
 import (
-	"github.com/coreos/ignition/config"
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/config/errors"
 	"github.com/coreos/ignition/config/validate/report"
+	"github.com/coreos/ignition/internal/config/types"
 	"github.com/coreos/ignition/internal/resource"
 )
 
 func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
 	f.Logger.Debug("noop provider fetching empty config")
-	return types.Config{}, report.Report{}, config.ErrEmpty
+	return types.Config{}, report.Report{}, errors.ErrEmpty
 }

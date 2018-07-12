@@ -81,7 +81,7 @@ builder.
     cluster will be used. This may be required for some OpenStack clusters.
 
 -   `cacert` (string) - Custom CA certificate file path.
-    If ommited the OS\_CACERT environment variable can be used.
+    If omitted the OS\_CACERT environment variable can be used.
 
 -   `config_drive` (boolean) - Whether or not nova should use ConfigDrive for
     cloud-init metadata.
@@ -113,10 +113,13 @@ builder.
     done over an insecure connection. By default this is false.
 
 -   `key` (string) - Client private key file path for SSL client authentication.
-    If ommited the OS\_KEY environment variable can be used.
+    If omitted the OS\_KEY environment variable can be used.
 
 -   `metadata` (object of key/value strings) - Glance metadata that will be
     applied to the image.
+
+-   `instance_name` (string) - Name that is applied to the server instance
+    created by Packer. If this isn't specified, the default is same as `image_name`.
 
 -   `instance_metadata` (object of key/value strings) - Metadata that is
     applied to the server instance created by Packer. Also called server

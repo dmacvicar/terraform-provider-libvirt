@@ -27,6 +27,10 @@ tested by HashiCorp.
 
 [Google Cloud](/docs/providers/google/index.html)
 
+[Oracle Cloud Platform](/docs/providers/oraclepaas/index.html)
+
 [Oracle Public Cloud](/docs/providers/opc/index.html)
+
+[VMware NSX-T](/docs/providers/nsxt/index.html)
 
 [VMware vSphere](/docs/providers/vsphere/index.html)

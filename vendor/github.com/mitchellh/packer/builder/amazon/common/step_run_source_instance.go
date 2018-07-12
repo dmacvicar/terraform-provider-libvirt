@@ -24,6 +24,7 @@ type StepRunSourceInstance struct {
 	Ctx                               interpolate.Context
 	Debug                             bool
 	EbsOptimized                      bool
+	EnableT2Unlimited                 bool
 	ExpectedRootDevice                string
 	IamInstanceProfile                string
 	InstanceInitiatedShutdownBehavior string
@@ -39,7 +40,7 @@ type StepRunSourceInstance struct {
 	instanceId string
 }
 
-func (s *StepRunSourceInstance) Run(_ context.Context, state multistep.StateBag) multistep.StepAction {
+func (s *StepRunSourceInstance) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	ec2conn := state.Get("ec2").(*ec2.EC2)
 	var keyName string
 	if name, ok := state.GetOk("keyPair"); ok {
@@ -88,7 +89,7 @@ func (s *StepRunSourceInstance) Run(_ context.Context, state multistep.StateBag)
 		s.Tags["Name"] = "Packer Builder"
 	}
 
-	ec2Tags, err := s.Tags.EC2Tags(s.Ctx, *ec2conn.Config.Region, s.SourceAMI)
+	ec2Tags, err := s.Tags.EC2Tags(s.Ctx, *ec2conn.Config.Region, state)
 	if err != nil {
 		err := fmt.Errorf("Error tagging source instance: %s", err)
 		state.Put("error", err)
@@ -96,7 +97,7 @@ func (s *StepRunSourceInstance) Run(_ context.Context, state multistep.StateBag)
 		return multistep.ActionHalt
 	}
 
-	volTags, err := s.VolumeTags.EC2Tags(s.Ctx, *ec2conn.Config.Region, s.SourceAMI)
+	volTags, err := s.VolumeTags.EC2Tags(s.Ctx, *ec2conn.Config.Region, state)
 	if err != nil {
 		err := fmt.Errorf("Error tagging volumes: %s", err)
 		state.Put("error", err)
@@ -114,6 +115,11 @@ func (s *StepRunSourceInstance) Run(_ context.Context, state multistep.StateBag)
 		BlockDeviceMappings: s.BlockDevices.BuildLaunchDevices(),
 		Placement:           &ec2.Placement{AvailabilityZone: &s.AvailabilityZone},
 		EbsOptimized:        &s.EbsOptimized,
+	}
+
+	if s.EnableT2Unlimited {
+		creditOption := "unlimited"
+		runOpts.CreditSpecification = &ec2.CreditSpecificationRequest{CpuCredits: &creditOption}
 	}
 
 	// Collect tags for tagging on resource creation
@@ -185,7 +191,7 @@ func (s *StepRunSourceInstance) Run(_ context.Context, state multistep.StateBag)
 	describeInstance := &ec2.DescribeInstancesInput{
 		InstanceIds: []*string{aws.String(instanceId)},
 	}
-	if err := ec2conn.WaitUntilInstanceRunning(describeInstance); err != nil {
+	if err := ec2conn.WaitUntilInstanceRunningWithContext(ctx, describeInstance); err != nil {
 		err := fmt.Errorf("Error waiting for instance (%s) to become ready: %s", instanceId, err)
 		state.Put("error", err)
 		ui.Error(err.Error())
@@ -259,7 +265,7 @@ func (s *StepRunSourceInstance) Run(_ context.Context, state multistep.StateBag)
 		if len(volumeIds) > 0 && s.VolumeTags.IsSet() {
 			ui.Say("Adding tags to source EBS Volumes")
 
-			volumeTags, err := s.VolumeTags.EC2Tags(s.Ctx, *ec2conn.Config.Region, s.SourceAMI)
+			volumeTags, err := s.VolumeTags.EC2Tags(s.Ctx, *ec2conn.Config.Region, state)
 			if err != nil {
 				err := fmt.Errorf("Error tagging source EBS Volumes on %s: %s", *instance.InstanceId, err)
 				state.Put("error", err)

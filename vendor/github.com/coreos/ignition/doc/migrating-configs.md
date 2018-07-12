@@ -2,6 +2,162 @@
 
 Occasionally, there are changes made to Ignition's configuration that break backward compatibility. While this is not a concern for running machines (since Ignition only runs one time during first boot), it is a concern for those who maintain configuration files. This document serves to detail each of the breaking changes and tries to provide some reasoning for the change. This does not cover all of the changes to the spec - just those that need to be considered when migrating from one version to the next.
 
+## From Version 2.1.0 to 2.2.0
+
+There are not any breaking changes between versions 2.1.0 and versions 2.2.0 of the configuration specification. Any valid 2.1.0 configuration can be updated to a 2.2.0 configuration by simply changing the version string in the config.
+
+The 2.2.0 version of the configuration is greatly improved over version 2.1.0, with many new fields and behaviors added to the specification.
+
+The following is a list of notable new features, deprecations, and changes.
+
+### File appending
+
+The `files` section of the config has gained a new field called `append`. When this field is set to `true`, if there's a file at the path then the contents will be appended to the existing file.
+
+```json ignition
+{
+  "ignition": { "version": "2.2.0" },
+  "storage": {
+    "files": [{
+      "filesystem": "root",
+      "path": "/etc/hosts",
+      "append": true,
+      "mode": 420,
+      "contents": {
+        "source": "data:,10.0.0.2%20myname"
+      }
+    }]
+  }
+}
+```
+
+### Node overwriting
+
+The `files`, `directories`, and `links` sections of the config have each gained a new field called `overwrite`. When this field is set to `true`, any preexisting nodes at the path of the thing to be created will be overwritten. This field defaults to `true` for files, and `false` for directories and links.
+
+```json ignition
+{
+ "ignition": { "version": "2.2.0" },
+ "storage": {
+   "links": [{
+     "filesystem": "root",
+     "path": "/etc/localtime",
+     "target": "/usr/share/zoneinfo/US/Pacific",
+     "overwrite": true
+   }]
+ }
+}
+```
+
+### Custom RAID options
+
+The `raid` section has gained a new field called `options`, that allows arbitrary mdadm arguments to be specified. These arguments are passed directly on to mdadm when raid arrays are being created.
+
+```json ignition
+{
+  "ignition": { "version": "2.2.0" },
+  "storage": {
+    "disks": [
+      {
+        "device": "/dev/sdb",
+        "wipeTable": true,
+        "partitions": [{
+          "label": "raid.1.1",
+          "number": 1,
+          "size": 20480,
+          "start": 0
+        }]
+      },
+      {
+        "device": "/dev/sdc",
+        "wipeTable": true,
+        "partitions": [{
+          "label": "raid.1.2",
+          "number": 1,
+          "size": 20480,
+          "start": 0
+        }]
+      }
+    ],
+    "raid": [{
+      "devices": [
+        "/dev/disk/by-partlabel/raid.1.1",
+        "/dev/disk/by-partlabel/raid.1.2"
+      ],
+      "level": "stripe",
+      "name": "data",
+      "options": [
+        "--verbose"
+      ]
+    }],
+    "filesystems": [{
+      "mount": {
+        "device": "/dev/md/data",
+        "format": "ext4",
+        "label": "DATA"
+      }
+    }]
+  },
+  "systemd": {
+    "units": [{
+      "name": "var-lib-data.mount",
+      "enable": true,
+      "contents": "[Mount]\nWhat=/dev/md/data\nWhere=/var/lib/data\nType=ext4\n\n[Install]\nWantedBy=local-fs.target"
+    }]
+  }
+}
+```
+
+### Custom certificate authorities
+
+The `ignition` section has gained a new section named `security`, which can be used to specify custom certificate authorities to be used when fetching objects over `https`. These are used in addition to the system pool. These are not added to the system pool for the booted machine, and will only impact Ignition.
+
+```json ignition
+{
+  "ignition": {
+    "version": "2.2.0-experimental",
+    "config": {
+      "append": [{
+        "source": "https://s3.com/securely-fetched-config.ign"
+      }]
+    },
+    "security": {
+      "tls": {
+        "certificateAuthorities": [
+          {
+            "source": "http://www.example.com/root.pem",
+            "verification": {
+              "hash": "sha512-ab800f66a7544c0a8dbed0c57b38a3c1487c3369e2e9e90704d0c07743557ab2a28c528720566ffc64e3dfd5df1a557a4979b33009f5fd493fea02a7e30041d2"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+### networkd dropins
+
+With the release of systemd v232, networkd dropins are now supported as a means of configuring existing networkd units. The `networkd` section has gained a `dropins` field to reflect this.
+
+```json ignition
+{
+  "ignition": {
+    "version": "2.2.0-experimental"
+  },
+  "networkd": {
+    "units": [{
+      "name": "zz-default.network",
+      "dropins": [{
+        "name": "disable-dhcp.conf",
+        "contents": "data:,%5BNetwork%5D%0ADHCP%3Dno"
+      }]
+    }]
+  }
+}
+```
+
 ## From Version 2.0.0 to 2.1.0
 
 There are not any breaking changes between versions 2.0.0 and versions 2.1.0 of the configuration specification. Any valid 2.0.0 configuration can be updated to a 2.1.0 configuration by simply changing the version string in the config.
@@ -106,7 +262,7 @@ Version 2.0.0 of the configuration specification included an object named `creat
 ```json ignition
 {
   "ignition": {
-    "version": "2.1.0"
+    "version": "2.0.0"
   },
   "storage": {
     "filesystems": [
@@ -161,7 +317,7 @@ Similar to the `create` object in the `filesystems` section, version 2.0.0 of th
 ```json ignition
 {
   "ignition": {
-    "version": "2.1.0"
+    "version": "2.0.0"
   },
   "passwd": {
     "users": [
@@ -172,7 +328,7 @@ Similar to the `create` object in the `filesystems` section, version 2.0.0 of th
           "gecos": "user creation test",
           "noCreateHome": true,
           "noUserGroup": true
-        },
+        }
       }
     ]
   }
@@ -234,6 +390,7 @@ The following shows this particular change to the files section:
 
 ```json ignition
 {
+  "ignitionVersion": 1,
   "storage": {
     "filesystems": [
       {
@@ -252,12 +409,17 @@ The following shows this particular change to the files section:
 
 ```json ignition
 {
+  "ignition": {
+    "version": "2.0.0"
+  },
   "storage": {
     "filesystems": [
       {
         "name": "example",
-        "device": "/dev/sdb1",
-        "format": "ext4"
+        "mount": {
+          "device": "/dev/sdb1",
+          "format": "ext4"
+	}
       }
     ],
     "files": [

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package astjson
 
 import (
 	"io"
 
 	json "github.com/ajeddeloh/go-json"
-	"github.com/coreos/ignition/config/validate"
+	"github.com/coreos/ignition/config/validate/astnode"
 	"go4.org/errorutil"
 )
 
@@ -40,16 +40,16 @@ func (n JsonNode) LiteralValue() interface{} {
 	return n.Value
 }
 
-func (n JsonNode) SliceChild(index int) (validate.AstNode, bool) {
+func (n JsonNode) SliceChild(index int) (astnode.AstNode, bool) {
 	if slice, ok := n.Value.([]json.Node); ok {
 		return JsonNode(slice[index]), true
 	}
 	return JsonNode{}, false
 }
 
-func (n JsonNode) KeyValueMap() (map[string]validate.AstNode, bool) {
+func (n JsonNode) KeyValueMap() (map[string]astnode.AstNode, bool) {
 	if kvmap, ok := n.Value.(map[string]json.Node); ok {
-		newKvmap := map[string]validate.AstNode{}
+		newKvmap := map[string]astnode.AstNode{}
 		for k, v := range kvmap {
 			newKvmap[k] = JsonNode(v)
 		}

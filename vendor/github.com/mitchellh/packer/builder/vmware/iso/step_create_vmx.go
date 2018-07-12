@@ -446,7 +446,7 @@ func (s *stepCreateVMX) Run(_ context.Context, state multistep.StateBag) multist
 		templateData.SCSI_Present = "TRUE"
 		templateData.CDROMType = "scsi"
 	default:
-		err := fmt.Errorf("Error procesing VMX template: %s", cdromAdapterType)
+		err := fmt.Errorf("Error processing VMX template: %s", cdromAdapterType)
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
@@ -462,26 +462,45 @@ func (s *stepCreateVMX) Run(_ context.Context, state multistep.StateBag) multist
 	network := config.Network
 	driver := state.Get("driver").(vmwcommon.Driver).GetVmwareDriver()
 
-	// read netmap config
-	netmap, err := driver.NetworkMapper()
-	if err != nil {
-		state.Put("error", err)
-		ui.Error(err.Error())
-		return multistep.ActionHalt
-	}
+	// check to see if the driver implements a network mapper for mapping
+	// the network-type to its device-name.
+	if driver.NetworkMapper != nil {
 
-	// try and convert the specified network to a device
-	device, err := netmap.NameIntoDevice(network)
+		// read network map configuration into a NetworkNameMapper.
+		netmap, err := driver.NetworkMapper()
+		if err != nil {
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
 
-	// success. so we know that it's an actual network type inside netmap.conf
-	if err == nil {
-		templateData.Network_Type = network
-		templateData.Network_Device = device
-		// we were unable to find the type, so assume it's a custom network device.
+		// try and convert the specified network to a device.
+		devices, err := netmap.NameIntoDevices(network)
+
+		if err == nil && len(devices) > 0 {
+			// If multiple devices exist, for example for network "nat", VMware chooses
+			// the actual device. Only type "custom" allows the exact choice of a
+			// specific virtual network (see below). We allow VMware to choose the device
+			// and for device-specific operations like GuestIP, try to go over all
+			// devices that match a name (e.g. "nat").
+			// https://pubs.vmware.com/workstation-9/index.jsp?topic=%2Fcom.vmware.ws.using.doc%2FGUID-3B504F2F-7A0B-415F-AE01-62363A95D052.html
+			templateData.Network_Type = network
+			templateData.Network_Device = ""
+		} else {
+			// otherwise, we were unable to find the type, so assume it's a custom device
+			templateData.Network_Type = "custom"
+			templateData.Network_Device = network
+		}
+
+		// if NetworkMapper is nil, then we're using something like ESX, so fall
+		// back to the previous logic of using "nat" despite it not mattering to ESX.
 	} else {
-		templateData.Network_Type = "custom"
+		templateData.Network_Type = "nat"
 		templateData.Network_Device = network
+
+		network = "nat"
 	}
+
 	// store the network so that we can later figure out what ip address to bind to
 	state.Put("vmnetwork", network)
 
@@ -491,7 +510,7 @@ func (s *stepCreateVMX) Run(_ context.Context, state multistep.StateBag) multist
 	} else {
 		serial, err := unformat_serial(config.Serial)
 		if err != nil {
-			err := fmt.Errorf("Error procesing VMX template: %s", err)
+			err := fmt.Errorf("Error processing VMX template: %s", err)
 			state.Put("error", err)
 			ui.Error(err.Error())
 			return multistep.ActionHalt
@@ -527,7 +546,7 @@ func (s *stepCreateVMX) Run(_ context.Context, state multistep.StateBag) multist
 			break
 
 		default:
-			err := fmt.Errorf("Error procesing VMX template: %v", serial)
+			err := fmt.Errorf("Error processing VMX template: %v", serial)
 			state.Put("error", err)
 			ui.Error(err.Error())
 			return multistep.ActionHalt
@@ -540,7 +559,7 @@ func (s *stepCreateVMX) Run(_ context.Context, state multistep.StateBag) multist
 	} else {
 		parallel, err := unformat_parallel(config.Parallel)
 		if err != nil {
-			err := fmt.Errorf("Error procesing VMX template: %s", err)
+			err := fmt.Errorf("Error processing VMX template: %s", err)
 			state.Put("error", err)
 			ui.Error(err.Error())
 			return multistep.ActionHalt
@@ -564,7 +583,7 @@ func (s *stepCreateVMX) Run(_ context.Context, state multistep.StateBag) multist
 			break
 
 		default:
-			err := fmt.Errorf("Error procesing VMX template: %v", parallel)
+			err := fmt.Errorf("Error processing VMX template: %v", parallel)
 			state.Put("error", err)
 			ui.Error(err.Error())
 			return multistep.ActionHalt
@@ -576,7 +595,7 @@ func (s *stepCreateVMX) Run(_ context.Context, state multistep.StateBag) multist
 	/// render the .vmx template
 	vmxContents, err := interpolate.Render(vmxTemplate, &ctx)
 	if err != nil {
-		err := fmt.Errorf("Error procesing VMX template: %s", err)
+		err := fmt.Errorf("Error processing VMX template: %s", err)
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
@@ -702,7 +721,6 @@ tools.upgrade.policy = "upgradeAtPowerCycle"
 // USB
 usb.pciSlotNumber = "32"
 usb.present = "{{ .Usb_Present }}"
-usb_xhci.present = "TRUE"
 
 // Serial
 serial0.present = "{{ .Serial_Present }}"

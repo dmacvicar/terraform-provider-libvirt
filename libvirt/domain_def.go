@@ -8,9 +8,9 @@ import (
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
+// note source and target are not initialized
 func newFilesystemDef() libvirtxml.DomainFilesystem {
 	return libvirtxml.DomainFilesystem{
-		Type:       "mount",  // This is the only type used by qemu/kvm
 		AccessMode: "mapped", // A safe default value
 		ReadOnly:   &libvirtxml.DomainFilesystemReadOnly{},
 	}
@@ -37,16 +37,17 @@ func newDomainDef() libvirtxml.Domain {
 		Devices: &libvirtxml.DomainDeviceList{
 			Graphics: []libvirtxml.DomainGraphic{
 				{
-					Type:     "spice",
-					AutoPort: "yes",
+					Spice: &libvirtxml.DomainGraphicSpice{
+						AutoPort: "yes",
+					},
 				},
 			},
 			Channels: []libvirtxml.DomainChannel{
 				{
-					Type: "unix",
 					Target: &libvirtxml.DomainChannelTarget{
-						Type: "virtio",
-						Name: "org.qemu.guest_agent.0",
+						VirtIO: &libvirtxml.DomainChannelTargetVirtIO{
+							Name: "org.qemu.guest_agent.0",
+						},
 					},
 				},
 			},
@@ -54,7 +55,7 @@ func newDomainDef() libvirtxml.Domain {
 				{
 					Model: "virtio",
 					Backend: &libvirtxml.DomainRNGBackend{
-						Model: "random",
+						Random: &libvirtxml.DomainRNGBackendRandom{},
 					},
 				},
 			},

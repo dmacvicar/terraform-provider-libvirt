@@ -23,36 +23,9 @@ func TestPredictions(t *testing.T) {
 			want:      []string{"TestPredictions", "Example"},
 		},
 		{
-			name:      "predict tests not found",
-			predictor: predictTest,
-			last:      "X",
-		},
-		{
 			name:      "predict benchmark ok",
 			predictor: predictBenchmark,
 			want:      []string{"BenchmarkFake"},
-		},
-		{
-			name:      "predict benchmarks not found",
-			predictor: predictBenchmark,
-			last:      "X",
-		},
-		{
-			name:      "predict local ok",
-			predictor: complete.PredictFunc(predictPackages),
-			last:      ".",
-			want:      []string{"./"},
-		},
-		{
-			name:      "predict system ok",
-			predictor: complete.PredictFunc(predictPackages),
-			last:      "github.com/posener/complete/goc",
-			want:      []string{"github.com/posener/complete/gocomplete/"},
-		},
-		{
-			name:      "predict packages not found",
-			predictor: complete.PredictFunc(predictPackages),
-			last:      "X",
 		},
 	}
 

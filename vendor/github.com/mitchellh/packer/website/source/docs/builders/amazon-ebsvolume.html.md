@@ -64,32 +64,41 @@ builder.
 
     -   `device_name` (string) - The device name exposed to the instance (for
         example, `/dev/sdh` or `xvdh`). Required when specifying `volume_size`.
+
     -   `delete_on_termination` (boolean) - Indicates whether the EBS volume is
-        deleted on instance termination
+        deleted on instance termination.
+
     -   `encrypted` (boolean) - Indicates whether to encrypt the volume or not
+
     -   `kms_key_id` (string) - The ARN for the KMS encryption key. When
         specifying `kms_key_id`, `encrypted` needs to be set to `true`.
+
     -   `iops` (number) - The number of I/O operations per second (IOPS) that the
         volume supports. See the documentation on
         [IOPs](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_EbsBlockDevice.html)
         for more information
+
     -   `no_device` (boolean) - Suppresses the specified device included in the
         block device mapping of the AMI
+
     -   `snapshot_id` (string) - The ID of the snapshot
+
     -   `virtual_name` (string) - The virtual device name. See the documentation on
         [Block Device
         Mapping](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_BlockDeviceMapping.html)
         for more information
+
     -   `volume_size` (number) - The size of the volume, in GiB. Required if not
         specifying a `snapshot_id`
+
     -   `volume_type` (string) - The volume type. `gp2` for General Purpose (SSD)
         volumes, `io1` for Provisioned IOPS (SSD) volumes, and `standard` for Magnetic
         volumes
+
     -   `tags` (map) - Tags to apply to the volume. These are retained after the
-        builder completes. This is a \[template engine\]
-        (/docs/templates/engine.html) where the `SourceAMI`
-        variable is replaced with the source AMI ID and `BuildRegion` variable
-        is replaced with the value of `region`.
+        builder completes. This is a
+        [template engine](/docs/templates/engine.html),
+        see [Build template data](#build-template-data) for more information.
 
 -   `associate_public_ip_address` (boolean) - If using a non-default VPC, public
     IP addresses are not provided by default. If this is toggled, your new
@@ -111,6 +120,30 @@ builder.
     Note: you must make sure enhanced networking is enabled on your instance. See [Amazon's
     documentation on enabling enhanced networking](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/enhanced-networking.html#enabling_enhanced_networking). Default `false`.
 
+-   `enable_t2_unlimited` (boolean) - Enabling T2 Unlimited allows the source
+    instance to burst additional CPU beyond its available [CPU Credits]
+    (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-credits-baseline-concepts.html)
+    for as long as the demand exists.
+    This is in contrast to the standard configuration that only allows an
+    instance to consume up to its available CPU Credits.
+    See the AWS documentation for [T2 Unlimited]
+    (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-unlimited.html)
+    and the 'T2 Unlimited Pricing' section of the [Amazon EC2 On-Demand
+    Pricing](https://aws.amazon.com/ec2/pricing/on-demand/) document for more
+    information.
+    By default this option is disabled and Packer will set up a [T2
+    Standard](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/t2-std.html)
+    instance instead.
+
+    To use T2 Unlimited you must use a T2 instance type e.g. t2.micro.
+    Additionally, T2 Unlimited cannot be used in conjunction with Spot
+    Instances e.g. when the `spot_price` option has been configured.
+    Attempting to do so will cause an error.
+
+    !&gt; **Warning!** Additional costs may be incurred by enabling T2
+    Unlimited - even for instances that would usually qualify for the
+    [AWS Free Tier](https://aws.amazon.com/free/).
+
 -   `iam_instance_profile` (string) - The name of an [IAM instance
     profile](https://docs.aws.amazon.com/IAM/latest/UserGuide/instance-profiles.html)
     to launch the EC2 instance with.
@@ -126,9 +159,8 @@ builder.
 -   `run_tags` (object of key/value strings) - Tags to apply to the instance
     that is *launched* to create the AMI. These tags are *not* applied to the
     resulting AMI unless they're duplicated in `tags`. This is a
-    [template engine](/docs/templates/engine.html)
-    where the `SourceAMI` variable is replaced with the source AMI ID and
-    `BuildRegion` variable is replaced with the value of `region`.
+    [template engine](/docs/templates/engine.html),
+    see [Build template data](#build-template-data) for more information.
 
 -   `security_group_id` (string) - The ID (*not* the name) of the security group
     to assign to the instance. By default this is not set and Packer will
@@ -148,12 +180,6 @@ builder.
 -   `shutdown_behavior` (string) - Automatically terminate instances on shutdown
     in case Packer exits ungracefully. Possible values are `stop` and `terminate`.
     Defaults to `stop`.
-
--   `skip_metadata_api_check` - (boolean) Skip the AWS Metadata API check.
-    Useful for AWS API implementations that do not have a metadata API
-    endpoint. Setting to `true` prevents Packer from authenticating via the
-    Metadata API. You may need to use other authentication methods like static
-    credentials, configuration variables, or environment variables.
 
 -   `skip_region_validation` (boolean) - Set to `true` if you want to skip
     validation of the region configuration option. Defaults to `false`.
@@ -198,6 +224,12 @@ builder.
     -   `most_recent` (boolean) - Selects the newest created image when true.
         This is most useful for selecting a daily distro build.
 
+    You may set this in place of `source_ami` or in conjunction with it. If you
+    set this in conjunction with `source_ami`, the `source_ami` will be added to
+    the filter. The provided `source_ami` must meet all of the filtering criteria
+    provided in `source_ami_filter`; this pins the AMI returned by the filter,
+    but will cause Packer to fail if the `source_ami` does not exist.
+
 -   `spot_price` (string) - The maximum hourly price to pay for a spot instance
     to create the AMI. Spot instances are a type of instance that EC2 starts
     when the current spot price is less than the maximum price you specify. Spot
@@ -224,8 +256,8 @@ builder.
     [`ssh_private_key_file`](/docs/templates/communicator.html#ssh_private_key_file)
     must be specified with this.
 
--   `ssh_private_ip` (boolean) - *Deprecated* use `ssh_interface` instead. If `true`,
-    then SSH will always use the private IP if available. Also works for WinRM.
+-   `ssh_private_ip` (boolean) - No longer supported. See
+    [`ssh_interface`](#ssh_interface). A fixer exists to migrate.
 
 -   `ssh_interface` (string) - One of `public_ip`, `private_ip`,
     `public_dns` or `private_dns`. If set, either the public IP address,
@@ -327,6 +359,15 @@ If you need to access the instance to debug for some reason, run the builder
 with the `-debug` flag. In debug mode, the Amazon builder will save the private
 key in the current directory and will output the DNS or IP information as well.
 You can use this information to access the instance as it is running.
+
+## Build template data
+
+The available variables are:
+
+- `BuildRegion` - The region (for example `eu-central-1`) where Packer is building the AMI.
+- `SourceAMI` - The source AMI ID (for example `ami-a2412fcd`) used to build the AMI.
+- `SourceAMIName` - The source AMI Name (for example `ubuntu/images/ebs-ssd/ubuntu-xenial-16.04-amd64-server-20180306`) used to build the AMI.
+- `SourceAMITags` - The source AMI Tags, as a `map[string]string` object.
 
 -&gt; **Note:** Packer uses pre-built AMIs as the source for building images.
 These source AMIs may include volumes that are not flagged to be destroyed on

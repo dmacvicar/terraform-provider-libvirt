@@ -28,7 +28,7 @@
 //    their request parameters, response elements, possible errors, and examples
 //    of requests and responses.
 //
-//    * AWS Storage Gateway Regions and Endpoints (http://docs.aws.amazon.com/general/latest/general/latest/gr/rande.html#sg_region):
+//    * AWS Storage Gateway Regions and Endpoints: (http://docs.aws.amazon.com/general/latest/gr/rande.html#sg_region)
 //    Provides a list of each region and endpoints available for use with AWS
 //    Storage Gateway.
 //
@@ -63,7 +63,7 @@
 //
 // Using the Client
 //
-// To AWS Storage Gateway with the SDK use the New function to create
+// To contact AWS Storage Gateway with the SDK use the New function to create
 // a new service client. With that client you can make API requests to the service.
 // These clients are safe to use concurrently.
 //

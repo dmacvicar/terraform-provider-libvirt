@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"regexp"
+	"time"
 
 	"github.com/hashicorp/packer/common"
 	"github.com/hashicorp/packer/helper/communicator"
@@ -27,11 +29,12 @@ type Config struct {
 	apiEndpointURL *url.URL
 
 	// Image
-	ImageName       string `mapstructure:"image_name"`
-	Shape           string `mapstructure:"shape"`
-	SourceImageList string `mapstructure:"source_image_list"`
-	DestImageList   string `mapstructure:"dest_image_list"`
-	// Attributes and Atributes file are both optional and mutually exclusive.
+	ImageName       string        `mapstructure:"image_name"`
+	Shape           string        `mapstructure:"shape"`
+	SourceImageList string        `mapstructure:"source_image_list"`
+	SnapshotTimeout time.Duration `mapstructure:"snapshot_timeout"`
+	DestImageList   string        `mapstructure:"dest_image_list"`
+	// Attributes and Attributes file are both optional and mutually exclusive.
 	Attributes     string `mapstructure:"attributes"`
 	AttributesFile string `mapstructure:"attributes_file"`
 	// Optional; if you don't enter anything, the image list description
@@ -71,6 +74,10 @@ func NewConfig(raws ...interface{}) (*Config, error) {
 		c.Comm.SSHUsername = "opc"
 	}
 
+	if c.SnapshotTimeout == 0 {
+		c.SnapshotTimeout = 20 * time.Minute
+	}
+
 	// Validate that all required fields are present
 	var errs *packer.MultiError
 	required := map[string]string{
@@ -88,6 +95,21 @@ func NewConfig(raws ...interface{}) (*Config, error) {
 		}
 	}
 
+	// Object names can contain only alphanumeric characters, hyphens, underscores, and periods
+	reValidObject := regexp.MustCompile("^[a-zA-Z0-9-._/]+$")
+	var objectValidation = []struct {
+		name  string
+		value string
+	}{
+		{"dest_image_list", c.DestImageList},
+		{"image_name", c.ImageName},
+	}
+	for _, ov := range objectValidation {
+		if !reValidObject.MatchString(ov.value) {
+			errs = packer.MultiErrorAppend(errs, fmt.Errorf("%s can contain only alphanumeric characters, hyphens, underscores, and periods.", ov.name))
+		}
+	}
+
 	if c.Attributes != "" && c.AttributesFile != "" {
 		errs = packer.MultiErrorAppend(errs, fmt.Errorf("Only one of user_data or user_data_file can be specified."))
 	} else if c.AttributesFile != "" {
@@ -98,10 +120,6 @@ func NewConfig(raws ...interface{}) (*Config, error) {
 
 	if es := c.Comm.Prepare(&c.ctx); len(es) > 0 {
 		errs = packer.MultiErrorAppend(errs, es...)
-	}
-	if c.Comm.Type == "winrm" {
-		err = fmt.Errorf("winRM is not supported with the oracle-classic builder yet.")
-		errs = packer.MultiErrorAppend(errs, err)
 	}
 
 	if errs != nil && len(errs.Errors) > 0 {
@@ -127,7 +145,7 @@ func NewConfig(raws ...interface{}) (*Config, error) {
 		err = json.Unmarshal(fidata, &data)
 		c.attribs = data
 		if err != nil {
-			err = fmt.Errorf("Problem parsing json from attrinutes_file: %s", err)
+			err = fmt.Errorf("Problem parsing json from attributes_file: %s", err)
 			packer.MultiErrorAppend(errs, err)
 		}
 		c.attribs = data

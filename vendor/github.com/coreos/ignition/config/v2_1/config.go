@@ -15,102 +15,52 @@
 package v2_1
 
 import (
-	"bytes"
-	"errors"
-	"reflect"
-
+	"github.com/coreos/go-semver/semver"
+	"github.com/coreos/ignition/config/errors"
+	"github.com/coreos/ignition/config/util"
+	"github.com/coreos/ignition/config/v2_0"
 	"github.com/coreos/ignition/config/v2_1/types"
-	"github.com/coreos/ignition/config/validate"
-	astjson "github.com/coreos/ignition/config/validate/astjson"
 	"github.com/coreos/ignition/config/validate/report"
 
 	json "github.com/ajeddeloh/go-json"
-	"go4.org/errorutil"
-)
-
-var (
-	ErrCloudConfig = errors.New("not a config (found coreos-cloudconfig)")
-	ErrEmpty       = errors.New("not a config (empty)")
-	ErrScript      = errors.New("not a config (found coreos-cloudinit script)")
-	ErrDeprecated  = errors.New("config format deprecated")
-	ErrInvalid     = errors.New("config is not valid")
 )
 
 func Parse(rawConfig []byte) (types.Config, report.Report, error) {
 	if isEmpty(rawConfig) {
-		return types.Config{}, report.Report{}, ErrEmpty
+		return types.Config{}, report.Report{}, errors.ErrEmpty
 	} else if isCloudConfig(rawConfig) {
-		return types.Config{}, report.Report{}, ErrCloudConfig
+		return types.Config{}, report.Report{}, errors.ErrCloudConfig
 	} else if isScript(rawConfig) {
-		return types.Config{}, report.Report{}, ErrScript
+		return types.Config{}, report.Report{}, errors.ErrScript
 	}
 
 	var err error
 	var config types.Config
 
-	// These errors are fatal and the config should not be further validated
-	if err = json.Unmarshal(rawConfig, &config); err == nil {
-		versionReport := config.Ignition.Validate()
-		if versionReport.IsFatal() {
-			return types.Config{}, versionReport, ErrInvalid
+	err = json.Unmarshal(rawConfig, &config)
+
+	version, semverErr := semver.NewVersion(config.Ignition.Version)
+
+	if err != nil || semverErr != nil || version.LessThan(types.MaxVersion) {
+		// We can fail unmarshaling if it's an older config. Attempt to parse
+		// it as such.
+		config, rpt, err := v2_0.Parse(rawConfig)
+		if err != nil {
+			return types.Config{}, rpt, err
 		}
+		return TranslateFromV2_0(config), rpt, err
 	}
 
-	// Handle json syntax and type errors first, since they are fatal but have offset info
-	if serr, ok := err.(*json.SyntaxError); ok {
-		line, col, highlight := errorutil.HighlightBytePosition(bytes.NewReader(rawConfig), serr.Offset)
-		return types.Config{},
-			report.Report{
-				Entries: []report.Entry{{
-					Kind:      report.EntryError,
-					Message:   serr.Error(),
-					Line:      line,
-					Column:    col,
-					Highlight: highlight,
-				}},
-			},
-			ErrInvalid
+	if *version != types.MaxVersion {
+		return types.Config{}, report.Report{}, errors.ErrUnknownVersion
 	}
 
-	if terr, ok := err.(*json.UnmarshalTypeError); ok {
-		line, col, highlight := errorutil.HighlightBytePosition(bytes.NewReader(rawConfig), terr.Offset)
-		return types.Config{},
-			report.Report{
-				Entries: []report.Entry{{
-					Kind:      report.EntryError,
-					Message:   terr.Error(),
-					Line:      line,
-					Column:    col,
-					Highlight: highlight,
-				}},
-			},
-			ErrInvalid
+	rpt := util.ValidateConfig(rawConfig, config)
+	if rpt.IsFatal() {
+		return types.Config{}, rpt, errors.ErrInvalid
 	}
 
-	// Handle other fatal errors (i.e. invalid version)
-	if err != nil {
-		return types.Config{}, report.ReportFromError(err, report.EntryError), err
-	}
-
-	// Unmarshal again to a json.Node to get offset information for building a report
-	var ast json.Node
-	var r report.Report
-	configValue := reflect.ValueOf(config)
-	if err := json.Unmarshal(rawConfig, &ast); err != nil {
-		r.Add(report.Entry{
-			Kind:    report.EntryWarning,
-			Message: "Ignition could not unmarshal your config for reporting line numbers. This should never happen. Please file a bug.",
-		})
-		r.Merge(validate.ValidateWithoutSource(configValue))
-	} else {
-		r.Merge(validate.Validate(configValue, astjson.FromJsonRoot(ast), bytes.NewReader(rawConfig), true))
-	}
-
-	if r.IsFatal() {
-		return types.Config{}, r, ErrInvalid
-	}
-
-	return config, r, nil
+	return config, rpt, nil
 }
 
 func isEmpty(userdata []byte) bool {

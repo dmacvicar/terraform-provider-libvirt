@@ -15,9 +15,9 @@
 package util
 
 import (
-	"github.com/coreos/ignition/config"
-	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/config/validate/report"
+	"github.com/coreos/ignition/internal/config"
+	"github.com/coreos/ignition/internal/config/types"
 	"github.com/coreos/ignition/internal/log"
 )
 

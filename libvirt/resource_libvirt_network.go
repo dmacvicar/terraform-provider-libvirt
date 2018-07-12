@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strconv"
 	"strings"
 	"time"
 
@@ -225,7 +224,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 				// assign the .1 to the host interface
 				dni := libvirtxml.NetworkIP{
 					Address: start.String(),
-					Prefix:  strconv.Itoa(ones),
+					Prefix:  uint(ones),
 					Family:  family,
 				}
 
@@ -381,10 +380,9 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 			bits = net.IPv4len * 8
 		}
 
-		prefix, _ := strconv.Atoi(address.Prefix)
-		mask := net.CIDRMask(prefix, bits)
+		mask := net.CIDRMask(int(address.Prefix), bits)
 		network := addr.Mask(mask)
-		addresses = append(addresses, fmt.Sprintf("%s/%s", network, address.Prefix))
+		addresses = append(addresses, fmt.Sprintf("%s/%d", network, address.Prefix))
 	}
 	if len(addresses) > 0 {
 		d.Set("addresses", addresses)

@@ -27,8 +27,8 @@ func getCanonicalMachineName(caps libvirtxml.Caps, arch string, virttype string,
 
 	for _, machine := range guest.Arch.Machines {
 		if machine.Name == targetmachine {
-			if machine.Canonical != nil {
-				return *machine.Canonical, nil
+			if machine.Canonical != "" {
+				return machine.Canonical, nil
 			}
 			return machine.Name, nil
 		}
@@ -43,7 +43,7 @@ func getOriginalMachineName(caps libvirtxml.Caps, arch string, virttype string, 
 	}
 
 	for _, machine := range guest.Arch.Machines {
-		if machine.Canonical != nil && *machine.Canonical == targetmachine {
+		if machine.Canonical != "" && machine.Canonical == targetmachine {
 			return machine.Name, nil
 		}
 	}

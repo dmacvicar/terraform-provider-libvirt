@@ -58,30 +58,32 @@ type Driver interface {
 }
 
 type InstanceConfig struct {
-	AcceleratorType   string
-	AcceleratorCount  int64
-	Address           string
-	Description       string
-	DiskSizeGb        int64
-	DiskType          string
-	Image             *Image
-	Labels            map[string]string
-	MachineType       string
-	Metadata          map[string]string
-	Name              string
-	Network           string
-	NetworkProjectId  string
-	OmitExternalIP    bool
-	OnHostMaintenance string
-	Preemptible       bool
-	Region            string
-	Scopes            []string
-	Subnetwork        string
-	Tags              []string
-	Zone              string
+	AcceleratorType              string
+	AcceleratorCount             int64
+	Address                      string
+	Description                  string
+	DisableDefaultServiceAccount bool
+	DiskSizeGb                   int64
+	DiskType                     string
+	Image                        *Image
+	Labels                       map[string]string
+	MachineType                  string
+	Metadata                     map[string]string
+	Name                         string
+	Network                      string
+	NetworkProjectId             string
+	OmitExternalIP               bool
+	OnHostMaintenance            string
+	Preemptible                  bool
+	Region                       string
+	ServiceAccountEmail          string
+	Scopes                       []string
+	Subnetwork                   string
+	Tags                         []string
+	Zone                         string
 }
 
-// WindowsPasswordConfig is the data structue that GCE needs to encrypt the created
+// WindowsPasswordConfig is the data structure that GCE needs to encrypt the created
 // windows password.
 type WindowsPasswordConfig struct {
 	key      *rsa.PrivateKey

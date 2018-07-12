@@ -10,4 +10,4 @@ go:
   - 1.9
 
 script:
-  go test -timeout 1m -v
+  go test -timeout 10m -tags xmlroundtrip -v

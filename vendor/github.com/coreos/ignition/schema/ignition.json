@@ -24,10 +24,10 @@
   ],
   "definitions": {
     "verification": {
-        "type": "object",
-        "properties": {
-            "hash": { "type": ["string", "null"] }
-        }
+      "type": "object",
+      "properties": {
+        "hash": { "type": ["string", "null"] }
+      }
     },
     "ignition": {
       "type": "object",
@@ -40,6 +40,9 @@
         },
         "timeouts": {
           "$ref": "#/definitions/ignition/definitions/timeouts"
+        },
+        "security": {
+          "$ref": "#/definitions/ignition/definitions/security"
         }
       },
       "definitions": {
@@ -57,7 +60,34 @@
             }
           }
         },
+        "security": {
+          "type": "object",
+          "properties": {
+            "tls": {
+              "type": "object",
+              "properties": {
+                "certificateAuthorities": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/ignition/definitions/ca-reference"
+                  }
+                }
+              }
+            }
+          }
+        },
         "config-reference": {
+          "type": ["object", "null"],
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "verification": {
+              "$ref": "#/definitions/verification"
+            }
+          }
+        },
+        "ca-reference": {
           "type": ["object", "null"],
           "properties": {
             "source": {
@@ -156,6 +186,12 @@
               "items": {
                 "type": "string"
               }
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         },
@@ -182,10 +218,13 @@
               "type": "object",
               "properties": {
                 "mode": {
-                  "type": "integer"
+                  "type": ["integer", "null"]
                 },
                 "contents": {
                   "$ref": "#/definitions/storage/definitions/file-contents"
+                },
+                "append": {
+                    "type": "boolean"
                 }
               }
             }
@@ -193,17 +232,17 @@
         },
         "directory": {
           "allOf": [
-              {
-                "$ref": "#/definitions/storage/definitions/node"
-              },
-              {
-                "type": "object",
-                "properties": {
-                    "mode": {
-                        "type": "integer"
-                    }
+            {
+              "$ref": "#/definitions/storage/definitions/node"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "type": ["integer", "null"]
                 }
               }
+            }
           ]
         },
         "link": {
@@ -257,10 +296,10 @@
               "type": "string"
             },
             "options": {
-                "type": "array",
-                "items": {
-                    "type": "string"
-                }
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "wipeFilesystem": {
               "type": "boolean"
@@ -310,25 +349,28 @@
             "path": {
               "type": "string"
             },
+            "overwrite": {
+              "type": ["boolean", "null"]
+            },
             "user": {
-              "type": "object",
+              "type": ["object", "null"],
               "properties": {
                 "id": {
                   "type": ["integer", "null"]
                 },
                 "name": {
-                    "type": "string"
+                  "type": "string"
                 }
               }
             },
             "group": {
-              "type": "object",
+              "type": ["object", "null"],
               "properties": {
                 "id": {
                   "type": ["integer", "null"]
                 },
                 "name": {
-                    "type": "string"
+                  "type": "string"
                 }
               }
             }
@@ -398,6 +440,23 @@
       },
       "definitions": {
         "networkdunit": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "contents": {
+              "type": "string"
+            },
+            "dropins": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/networkd/definitions/dropin"
+              }
+            }
+          }
+        },
+        "dropin": {
           "type": "object",
           "properties": {
             "name": {

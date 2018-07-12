@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -eu
+
+# Use the stubs, not the system user{mod,add} binaries. Since we don't know how exactly the bb
+# tests will be run and where the stubs will be located, rely on the bb test caller setting up
+# their PATH to include them. We don't need to include `id` because it gets copied into the
+# system
+GLDFLAGS="-X github.com/coreos/ignition/internal/distro.useraddCmd=useradd-stub "
+GLDFLAGS+="-X github.com/coreos/ignition/internal/distro.usermodCmd=usermod-stub "
+
+if [ "${HELPERS:-CL}" == "HOST" ]; then
+	GLDFLAGS+="-X github.com/coreos/ignition/internal/distro.mdadmCmd=$(sudo which mdadm) "
+	GLDFLAGS+="-X github.com/coreos/ignition/internal/distro.mountCmd=$(sudo which mount) "
+	GLDFLAGS+="-X github.com/coreos/ignition/internal/distro.sgdiskCmd=$(sudo which sgdisk) "
+	GLDFLAGS+="-X github.com/coreos/ignition/internal/distro.udevadmCmd=$(sudo which udevadm) "
+	GLDFLAGS+="-X github.com/coreos/ignition/internal/distro.chrootCmd=$(sudo which chroot) "
+
+	GLDFLAGS+="-X github.com/coreos/ignition/internal/distro.btrfsMkfsCmd=$(sudo which mkfs.btrfs) "
+	GLDFLAGS+="-X github.com/coreos/ignition/internal/distro.ext4MkfsCmd=$(sudo which mkfs.ext4) "
+	GLDFLAGS+="-X github.com/coreos/ignition/internal/distro.swapMkfsCmd=$(sudo which mkswap) "
+	GLDFLAGS+="-X github.com/coreos/ignition/internal/distro.vfatMkfsCmd=$(sudo which mkfs.vfat) "
+	GLDFLAGS+="-X github.com/coreos/ignition/internal/distro.xfsMkfsCmd=$(sudo which mkfs.xfs) "
+fi
+
+. build
+
+PKG=$(cd gopath/src/${REPO_PATH}; go list ./tests/...)
+
+echo "Compiling tests..."
+for p in ${PKG}; do
+	go test -c $p
+done
+
+for D in tests/stubs/*; do
+	if [ -d "${D}" ]; then
+		echo "Building ${D}"
+		if [ "$GOHOSTARCH" == "$GOARCH" ]; then
+			go install ${REPO_PATH}/${D}
+		else
+			# Don't try to go install things when cross compiling because
+			# go install disallows it.
+			go build ${REPO_PATH}/${D}
+		fi
+	fi
+done
+
+echo "Success"

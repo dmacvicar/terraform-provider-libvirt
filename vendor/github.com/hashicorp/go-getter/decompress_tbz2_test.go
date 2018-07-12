@@ -15,6 +15,7 @@ func TestTarBzip2Decompressor(t *testing.T) {
 			true,
 			nil,
 			"",
+			nil,
 		},
 
 		{
@@ -23,6 +24,7 @@ func TestTarBzip2Decompressor(t *testing.T) {
 			false,
 			nil,
 			"d3b07384d113edec49eaa6238ad5ff00",
+			nil,
 		},
 
 		{
@@ -31,6 +33,7 @@ func TestTarBzip2Decompressor(t *testing.T) {
 			false,
 			[]string{"file"},
 			"",
+			nil,
 		},
 
 		{
@@ -39,6 +42,7 @@ func TestTarBzip2Decompressor(t *testing.T) {
 			false,
 			[]string{"file1", "file2"},
 			"",
+			nil,
 		},
 
 		{
@@ -47,6 +51,7 @@ func TestTarBzip2Decompressor(t *testing.T) {
 			true,
 			nil,
 			"",
+			nil,
 		},
 
 		// Tests when the file is listed before the parent folder
@@ -56,6 +61,7 @@ func TestTarBzip2Decompressor(t *testing.T) {
 			false,
 			orderingPaths,
 			"",
+			nil,
 		},
 	}
 

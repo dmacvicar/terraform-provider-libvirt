@@ -384,8 +384,7 @@ func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
 				),
 			},
 			resource.TestStep{
-				Config:             configWithDomain,
-				ExpectNonEmptyPlan: true,
+				Config: configWithDomain,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
 				),
@@ -756,19 +755,19 @@ func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.Tes
 
 		disks := domainDef.Devices.Disks
 		for _, disk := range disks {
-			if disk.Type != "network" {
+			if disk.Source.Network == nil {
 				return fmt.Errorf("Disk type is not network")
 			}
-			if disk.Source.Protocol != u.Scheme {
+			if disk.Source.Network.Protocol != u.Scheme {
 				return fmt.Errorf("Disk protocol is not %s", u.Scheme)
 			}
-			if disk.Source.Name != u.Path {
+			if disk.Source.Network.Name != u.Path {
 				return fmt.Errorf("Disk name is not %s", u.Path)
 			}
-			if len(disk.Source.Hosts) < 1 {
+			if len(disk.Source.Network.Hosts) < 1 {
 				return fmt.Errorf("Disk has no hosts defined")
 			}
-			if disk.Source.Hosts[0].Name != u.Hostname() {
+			if disk.Source.Network.Hosts[0].Name != u.Hostname() {
 				return fmt.Errorf("Disk hostname is not %s", u.Hostname())
 			}
 		}
@@ -836,8 +835,8 @@ func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel
 		if domainDef.OS.Initrd != key {
 			return fmt.Errorf("Initrd is not set correctly: '%s' vs '%s'", domainDef.OS, key)
 		}
-		if domainDef.OS.KernelArgs != "bar=bye foo=1 foo=2" {
-			return fmt.Errorf("Kernel args not set correctly: '%s'", domainDef.OS.KernelArgs)
+		if domainDef.OS.Cmdline != "bar=bye foo=1 foo=2" {
+			return fmt.Errorf("Kernel args not set correctly: '%s'", domainDef.OS.Cmdline)
 		}
 		return nil
 	}
@@ -1062,16 +1061,16 @@ func TestShutoffDomain(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-			            resource "libvirt_volume" "acceptance-test-volume" {
-			                    name = "terraform-test"
-			            }
-			            resource "libvirt_domain" "acceptance-test-domain" {
-			                    name = "terraform-test"
-													running = false
-			                    disk {
-			                            volume_id = "${libvirt_volume.acceptance-test-volume.id}"
-			                    }
-			            }`),
+			    resource "libvirt_volume" "acceptance-test-volume" {
+			    	name = "terraform-test"
+			    }
+			    resource "libvirt_domain" "acceptance-test-domain" {
+			    	name = "terraform-test"
+					running = false
+			    	disk {
+			    		volume_id = "${libvirt_volume.acceptance-test-volume.id}"
+			    		}
+			    }`),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
 					testAccCheckLibvirtVolumeExists("libvirt_volume.acceptance-test-volume", &volume),
@@ -1091,17 +1090,16 @@ func TestShutoffMultiDomainsRunning(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-   					resource "libvirt_domain" "domainoff" {
-	               name = "domainfalse"
-	               vcpu = 1
-	               running = false
-	          }
-            resource "libvirt_domain" "domainok" {
-	               name = "domaintrue"
-	               vcpu = 1
-	               running = true
-	          }
-      `),
+   				resource "libvirt_domain" "domainoff" {
+					name = "domainfalse"
+					vcpu = 1
+					running = false
+				}
+				resource "libvirt_domain" "domainok" {
+					name = "domaintrue"
+					vcpu = 1
+					running = true
+				}`),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainStateEqual("libvirt_domain.domainoff", &domain, "shutoff"),
 					testAccCheckLibvirtDomainStateEqual("libvirt_domain.domainok", &domain2, "running"),

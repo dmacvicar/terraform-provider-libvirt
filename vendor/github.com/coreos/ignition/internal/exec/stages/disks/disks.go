@@ -24,7 +24,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/coreos/ignition/config/types"
+	"github.com/coreos/ignition/internal/config/types"
+	"github.com/coreos/ignition/internal/distro"
 	"github.com/coreos/ignition/internal/exec/stages"
 	"github.com/coreos/ignition/internal/exec/util"
 	"github.com/coreos/ignition/internal/log"
@@ -72,6 +73,15 @@ func (stage) Name() string {
 }
 
 func (s stage) Run(config types.Config) bool {
+	// Interacting with disks/paritions/raids/filesystems in general can cause
+	// udev races. If we do not need to  do anything, we also do not need to
+	// do the udevadm settle and can just return here.
+	if len(config.Storage.Disks) == 0 &&
+		len(config.Storage.Raid) == 0 &&
+		len(config.Storage.Filesystems) == 0 {
+		return true
+	}
+
 	if err := s.createPartitions(config); err != nil {
 		s.Logger.Crit("create partitions failed: %v", err)
 		return false
@@ -84,6 +94,38 @@ func (s stage) Run(config types.Config) bool {
 
 	if err := s.createFilesystems(config); err != nil {
 		s.Logger.Crit("failed to create filesystems: %v", err)
+		return false
+	}
+
+	// udevd registers an IN_CLOSE_WRITE inotify watch on block device
+	// nodes, and synthesizes udev "change" events when the watch fires.
+	// mkfs.btrfs triggers multiple such events, the first of which
+	// occurs while there is no recognizable filesystem on the
+	// partition. Thus, if an existing partition is reformatted as
+	// btrfs while keeping the same filesystem label, there will be a
+	// synthesized uevent that deletes the /dev/disk/by-label symlink
+	// and a second one that restores it. If we didn't account for this,
+	// a systemd unit that depended on the by-label symlink (e.g.
+	// systemd-fsck-root.service) could have the symlink deleted out
+	// from under it.
+	//
+	// There's no way to fix this completely. We can't wait for the
+	// restoring uevent to propagate, since we can't determine which
+	// specific uevents were triggered by the mkfs. We can wait for
+	// udev to settle, though it's conceivable that the deleting uevent
+	// has already been processed and the restoring uevent is still
+	// sitting in the inotify queue. In practice the uevent queue will
+	// be the slow one, so this should be good enough.
+	//
+	// Test case: boot failure in coreos.ignition.*.btrfsroot kola test.
+	//
+	// Additionally, partitioning (and possibly creating raid) suffers
+	// the same problem. To be safe, always settle.
+	if _, err := s.Logger.LogCmd(
+		exec.Command(distro.UdevadmCmd(), "settle"),
+		"waiting for udev to settle",
+	); err != nil {
+		s.Logger.Crit("udevadm settle failed: %v", err)
 		return false
 	}
 
@@ -200,12 +242,11 @@ func (s stage) createRaids(config types.Config) error {
 	}
 
 	for _, md := range config.Storage.Raid {
-		// FIXME(vc): this is utterly flummoxed by a preexisting md.Name, the magic of device-resident md metadata really interferes with us.
-		// It's as if what ignition really needs is to turn off automagic md probing/running before getting started.
 		args := []string{
 			"--create", md.Name,
 			"--force",
 			"--run",
+			"--homehost", "any",
 			"--level", md.Level,
 			"--raid-devices", fmt.Sprintf("%d", len(md.Devices)-md.Spares),
 		}
@@ -214,12 +255,16 @@ func (s stage) createRaids(config types.Config) error {
 			args = append(args, "--spare-devices", fmt.Sprintf("%d", md.Spares))
 		}
 
+		for _, o := range md.Options {
+			args = append(args, string(o))
+		}
+
 		for _, dev := range md.Devices {
 			args = append(args, util.DeviceAlias(string(dev)))
 		}
 
 		if _, err := s.Logger.LogCmd(
-			exec.Command("/sbin/mdadm", args...),
+			exec.Command(distro.MdadmCmd(), args...),
 			"creating %q", md.Name,
 		); err != nil {
 			return fmt.Errorf("mdadm failed: %v", err)
@@ -257,34 +302,6 @@ func (s stage) createFilesystems(config types.Config) error {
 		if err := s.createFilesystem(fs); err != nil {
 			return err
 		}
-	}
-
-	// udevd registers an IN_CLOSE_WRITE inotify watch on block device
-	// nodes, and synthesizes udev "change" events when the watch fires.
-	// mkfs.btrfs triggers multiple such events, the first of which
-	// occurs while there is no recognizable filesystem on the
-	// partition. Thus, if an existing partition is reformatted as
-	// btrfs while keeping the same filesystem label, there will be a
-	// synthesized uevent that deletes the /dev/disk/by-label symlink
-	// and a second one that restores it. If we didn't account for this,
-	// a systemd unit that depended on the by-label symlink (e.g.
-	// systemd-fsck-root.service) could have the symlink deleted out
-	// from under it.
-	//
-	// There's no way to fix this completely. We can't wait for the
-	// restoring uevent to propagate, since we can't determine which
-	// specific uevents were triggered by the mkfs. We can wait for
-	// udev to settle, though it's conceivable that the deleting uevent
-	// has already been processed and the restoring uevent is still
-	// sitting in the inotify queue. In practice the uevent queue will
-	// be the slow one, so this should be good enough.
-	//
-	// Test case: boot failure in coreos.ignition.*.btrfsroot kola test.
-	if _, err := s.Logger.LogCmd(
-		exec.Command("/bin/udevadm", "settle"),
-		"waiting for udev to settle",
-	); err != nil {
-		return fmt.Errorf("udevadm settle failed: %v", err)
 	}
 
 	return nil
@@ -327,7 +344,7 @@ func (s stage) createFilesystem(fs types.Mount) error {
 	}
 	switch fs.Format {
 	case "btrfs":
-		mkfs = "/sbin/mkfs.btrfs"
+		mkfs = distro.BtrfsMkfsCmd()
 		args = append(args, "--force")
 		if fs.UUID != nil {
 			args = append(args, []string{"-U", canonicalizeFilesystemUUID(fs.Format, *fs.UUID)}...)
@@ -336,7 +353,7 @@ func (s stage) createFilesystem(fs types.Mount) error {
 			args = append(args, []string{"-L", *fs.Label}...)
 		}
 	case "ext4":
-		mkfs = "/sbin/mkfs.ext4"
+		mkfs = distro.Ext4MkfsCmd()
 		args = append(args, "-F")
 		if fs.UUID != nil {
 			args = append(args, []string{"-U", canonicalizeFilesystemUUID(fs.Format, *fs.UUID)}...)
@@ -345,7 +362,7 @@ func (s stage) createFilesystem(fs types.Mount) error {
 			args = append(args, []string{"-L", *fs.Label}...)
 		}
 	case "xfs":
-		mkfs = "/sbin/mkfs.xfs"
+		mkfs = distro.XfsMkfsCmd()
 		args = append(args, "-f")
 		if fs.UUID != nil {
 			args = append(args, []string{"-m", "uuid=" + canonicalizeFilesystemUUID(fs.Format, *fs.UUID)}...)
@@ -354,7 +371,7 @@ func (s stage) createFilesystem(fs types.Mount) error {
 			args = append(args, []string{"-L", *fs.Label}...)
 		}
 	case "swap":
-		mkfs = "/sbin/mkswap"
+		mkfs = distro.SwapMkfsCmd()
 		args = append(args, "-f")
 		if fs.UUID != nil {
 			args = append(args, []string{"-U", canonicalizeFilesystemUUID(fs.Format, *fs.UUID)}...)
@@ -363,7 +380,7 @@ func (s stage) createFilesystem(fs types.Mount) error {
 			args = append(args, []string{"-L", *fs.Label}...)
 		}
 	case "vfat":
-		mkfs = "/sbin/mkfs.vfat"
+		mkfs = distro.VfatMkfsCmd()
 		// There is no force flag for mkfs.vfat, it always destroys any data on
 		// the device at which it is pointed.
 		if fs.UUID != nil {

@@ -26,6 +26,16 @@ func TestObjectTypeEquals(t *testing.T) {
 			true,
 		},
 		{
+			// Attribute names should be normalized
+			Object(map[string]Type{
+				"h\u00e9llo": String, // precombined é
+			}),
+			Object(map[string]Type{
+				"he\u0301llo": String, // e with combining acute accent
+			}),
+			true,
+		},
+		{
 			Object(map[string]Type{
 				"person": Object(map[string]Type{
 					"name": String,

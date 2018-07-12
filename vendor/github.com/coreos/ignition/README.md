@@ -8,5 +8,11 @@ Odds are good that you don't want to invoke Ignition directly. In fact, it isn't
 
 Use the [bug tracker][issues] to report bugs.
 
+## Config Validation
+
+To validate a config for Ignition there are binaries for a cli tool called ignition-validate available [on the releases page][releases], and an online validator available [on the CoreOS website][online-validator].
+
 [getting started]: doc/getting-started.md
 [issues]: https://github.com/coreos/bugs/issues/new?labels=component/ignition
+[releases]: https://github.com/coreos/ignition/releases
+[online-validator]: https://coreos.com/validate/

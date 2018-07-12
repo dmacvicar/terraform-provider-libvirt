@@ -22,8 +22,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/coreos/ignition/config/types"
 	"github.com/coreos/ignition/config/validate/report"
+	"github.com/coreos/ignition/internal/config/types"
+	"github.com/coreos/ignition/internal/distro"
 	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/providers"
 	"github.com/coreos/ignition/internal/providers/util"
@@ -31,7 +32,6 @@ import (
 )
 
 const (
-	cmdlinePath    = "/proc/cmdline"
 	cmdlineUrlFlag = "coreos.config.url"
 )
 
@@ -56,7 +56,7 @@ func FetchConfig(f resource.Fetcher) (types.Config, report.Report, error) {
 }
 
 func readCmdline(logger *log.Logger) (*url.URL, error) {
-	args, err := ioutil.ReadFile(cmdlinePath)
+	args, err := ioutil.ReadFile(distro.KernelCmdlinePath())
 	if err != nil {
 		logger.Err("couldn't read cmdline: %v", err)
 		return nil, err

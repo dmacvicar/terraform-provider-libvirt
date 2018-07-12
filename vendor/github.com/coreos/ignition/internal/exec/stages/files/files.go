@@ -23,12 +23,12 @@ import (
 	"sort"
 	"syscall"
 
-	"github.com/coreos/ignition/config/types"
+	configUtil "github.com/coreos/ignition/config/util"
+	"github.com/coreos/ignition/internal/config/types"
 	"github.com/coreos/ignition/internal/exec/stages"
 	"github.com/coreos/ignition/internal/exec/util"
 	"github.com/coreos/ignition/internal/log"
 	"github.com/coreos/ignition/internal/resource"
-	internalUtil "github.com/coreos/ignition/internal/util"
 )
 
 const (
@@ -118,21 +118,25 @@ type fileEntry types.File
 func (tmp fileEntry) create(l *log.Logger, u util.Util) error {
 	f := types.File(tmp)
 
-	if f.User.ID == nil {
-		f.User.ID = internalUtil.IntToPtr(0)
-	}
-	if f.Group.ID == nil {
-		f.Group.ID = internalUtil.IntToPtr(0)
-	}
-
 	fetchOp := u.PrepareFetch(l, f)
 	if fetchOp == nil {
 		return fmt.Errorf("failed to resolve file %q", f.Path)
 	}
 
+	msg := "writing file %q"
+	if f.Append {
+		msg = "appending to file %q"
+	}
+
 	if err := l.LogOp(
-		func() error { return u.PerformFetch(fetchOp) },
-		"writing file %q", string(f.Path),
+		func() error {
+			err := u.DeletePathOnOverwrite(f.Node)
+			if err != nil {
+				return err
+			}
+
+			return u.PerformFetch(fetchOp)
+		}, msg, string(f.Path),
 	); err != nil {
 		return fmt.Errorf("failed to create file %q: %v", fetchOp.Path, err)
 	}
@@ -145,21 +149,24 @@ type dirEntry types.Directory
 func (tmp dirEntry) create(l *log.Logger, u util.Util) error {
 	d := types.Directory(tmp)
 
-	if d.User.ID == nil {
-		d.User.ID = internalUtil.IntToPtr(0)
-	}
-	if d.Group.ID == nil {
-		d.Group.ID = internalUtil.IntToPtr(0)
-	}
-
 	err := l.LogOp(func() error {
 		path := filepath.Clean(u.JoinPath(string(d.Path)))
+
+		err := u.DeletePathOnOverwrite(d.Node)
+		if err != nil {
+			return err
+		}
+
+		uid, gid, err := u.ResolveNodeUidAndGid(d.Node, 0, 0)
+		if err != nil {
+			return err
+		}
 
 		// Build a list of paths to create. Since os.MkdirAll only sets the mode for new directories and not the
 		// ownership, we need to determine which directories will be created so we don't chown something that already
 		// exists.
-		newPaths := []string{}
-		for p := path; p != "/"; p = filepath.Dir(p) {
+		newPaths := []string{path}
+		for p := filepath.Dir(path); p != "/"; p = filepath.Dir(p) {
 			_, err := os.Stat(p)
 			if err == nil {
 				break
@@ -170,18 +177,23 @@ func (tmp dirEntry) create(l *log.Logger, u util.Util) error {
 			newPaths = append(newPaths, p)
 		}
 
-		if err := os.MkdirAll(path, os.FileMode(d.Mode)); err != nil {
+		if d.Mode == nil {
+			d.Mode = configUtil.IntToPtr(0)
+		}
+
+		if err := os.MkdirAll(path, os.FileMode(*d.Mode)); err != nil {
 			return err
 		}
 
 		for _, newPath := range newPaths {
-			if err := os.Chmod(newPath, os.FileMode(d.Mode)); err != nil {
+			if err := os.Chmod(newPath, os.FileMode(*d.Mode)); err != nil {
 				return err
 			}
-			if err := os.Chown(newPath, *d.User.ID, *d.Group.ID); err != nil {
+			if err := os.Chown(newPath, uid, gid); err != nil {
 				return err
 			}
 		}
+
 		return nil
 	}, "creating directory %q", string(d.Path))
 	if err != nil {
@@ -196,16 +208,15 @@ type linkEntry types.Link
 func (tmp linkEntry) create(l *log.Logger, u util.Util) error {
 	s := types.Link(tmp)
 
-	if s.User.ID == nil {
-		s.User.ID = internalUtil.IntToPtr(0)
-	}
-	if s.Group.ID == nil {
-		s.Group.ID = internalUtil.IntToPtr(0)
-	}
-
 	if err := l.LogOp(
-		func() error { return u.WriteLink(s) },
-		"writing link %q -> %q", s.Path, s.Target,
+		func() error {
+			err := u.DeletePathOnOverwrite(s.Node)
+			if err != nil {
+				return err
+			}
+
+			return u.WriteLink(s)
+		}, "writing link %q -> %q", s.Path, s.Target,
 	); err != nil {
 		return fmt.Errorf("failed to create link %q: %v", s.Path, err)
 	}
@@ -223,7 +234,15 @@ func (lst ByDirectorySegments) Swap(i, j int) {
 }
 
 func (lst ByDirectorySegments) Less(i, j int) bool {
-	return lst[i].Depth() < lst[j].Depth()
+	return depth(lst[i].Node) < depth(lst[j].Node)
+}
+
+func depth(n types.Node) uint {
+	var count uint = 0
+	for p := filepath.Clean(string(n.Path)); p != "/"; count++ {
+		p = filepath.Dir(p)
+	}
+	return count
 }
 
 // mapEntriesToFilesystems builds a map of filesystems to files. If multiple
@@ -377,14 +396,14 @@ func (s stage) writeSystemdUnit(unit types.Unit) error {
 				continue
 			}
 
-			f, err := util.FileFromUnitDropin(unit, dropin)
+			f, err := util.FileFromSystemdUnitDropin(unit, dropin)
 			if err != nil {
-				s.Logger.Crit("error converting dropin: %v", err)
+				s.Logger.Crit("error converting systemd dropin: %v", err)
 				return err
 			}
 			if err := s.Logger.LogOp(
 				func() error { return s.PerformFetch(f) },
-				"writing drop-in %q at %q", dropin.Name, f.Path,
+				"writing systemd drop-in %q at %q", dropin.Name, f.Path,
 			); err != nil {
 				return err
 			}
@@ -410,10 +429,28 @@ func (s stage) writeSystemdUnit(unit types.Unit) error {
 	}, "processing unit %q", unit.Name)
 }
 
-// writeNetworkdUnit creates the specified unit. If the contents of the unit or
-// are empty, the unit is not created.
+// writeNetworkdUnit creates the specified unit and any dropins for that unit.
+// If the contents of the unit or are empty, the unit is not created. The same
+// applies to the unit's dropins.
 func (s stage) writeNetworkdUnit(unit types.Networkdunit) error {
 	return s.Logger.LogOp(func() error {
+		for _, dropin := range unit.Dropins {
+			if dropin.Contents == "" {
+				continue
+			}
+
+			f, err := util.FileFromNetworkdUnitDropin(unit, dropin)
+			if err != nil {
+				s.Logger.Crit("error converting networkd dropin: %v", err)
+				return err
+			}
+			if err := s.Logger.LogOp(
+				func() error { return s.PerformFetch(f) },
+				"writing networkd drop-in %q at %q", dropin.Name, f.Path,
+			); err != nil {
+				return err
+			}
+		}
 		if unit.Contents == "" {
 			return nil
 		}

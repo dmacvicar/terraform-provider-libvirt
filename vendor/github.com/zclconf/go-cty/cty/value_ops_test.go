@@ -101,6 +101,15 @@ func TestValueEquals(t *testing.T) {
 		},
 		{
 			ObjectVal(map[string]Value{
+				"h\u00e9llo": NumberIntVal(1), // precombined é
+			}),
+			ObjectVal(map[string]Value{
+				"he\u0301llo": NumberIntVal(1), // e with combining acute accent
+			}),
+			BoolVal(true),
+		},
+		{
+			ObjectVal(map[string]Value{
 				"num": NumberIntVal(1),
 			}),
 			ObjectVal(map[string]Value{}),
@@ -324,6 +333,15 @@ func TestValueEquals(t *testing.T) {
 			}),
 			MapVal(map[string]Value{
 				"num": NumberIntVal(1),
+			}),
+			BoolVal(true),
+		},
+		{
+			MapVal(map[string]Value{
+				"h\u00e9llo": NumberIntVal(1), // precombined é
+			}),
+			MapVal(map[string]Value{
+				"he\u0301llo": NumberIntVal(1), // e with combining acute accent
 			}),
 			BoolVal(true),
 		},
@@ -968,10 +986,17 @@ func TestValueGetAttr(t *testing.T) {
 			StringVal("hello"),
 		},
 		{
-			UnknownVal(Object(map[string]Type{
-				"greeting": String,
-			})),
+			ObjectVal(map[string]Value{
+				"greeting": StringVal("hello"),
+			}),
 			"greeting",
+			StringVal("hello"),
+		},
+		{
+			UnknownVal(Object(map[string]Type{
+				"gr\u00e9eting": String, // precombined é
+			})),
+			"gre\u0301eting", // e with combining acute accent
 			UnknownVal(String),
 		},
 		{
@@ -1025,6 +1050,11 @@ func TestValueIndex(t *testing.T) {
 		{
 			MapVal(map[string]Value{"greeting": StringVal("hello")}),
 			StringVal("greeting"),
+			StringVal("hello"),
+		},
+		{
+			MapVal(map[string]Value{"gr\u00e9eting": StringVal("hello")}), // precombined é
+			StringVal("gre\u0301eting"),                                   // e with combining acute accent
 			StringVal("hello"),
 		},
 		{
@@ -1173,6 +1203,11 @@ func TestValueHasIndex(t *testing.T) {
 		{
 			MapVal(map[string]Value{"greeting": StringVal("hello")}),
 			StringVal("greeting"),
+			True,
+		},
+		{
+			MapVal(map[string]Value{"gre\u0301eting": StringVal("hello")}), // e with combining acute accent
+			StringVal("gr\u00e9eting"),                                     // precombined é
 			True,
 		},
 		{
