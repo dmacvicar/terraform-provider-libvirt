@@ -9,22 +9,7 @@ import (
 )
 
 func main() {
-	defer func() {
-		if libvirt.LibvirtClient != nil {
-			alive, err := libvirt.LibvirtClient.IsAlive()
-			if err != nil {
-				log.Printf("[ERROR] cannot determine libvirt connection status: %v", err)
-			}
-			if alive {
-				ret, err := libvirt.LibvirtClient.Close()
-				if err != nil {
-					log.Printf("[ERROR] cannot close libvirt connection %d - %v", ret, err)
-				} else {
-					libvirt.LibvirtClient = nil
-				}
-			}
-		}
-	}()
+	defer libvirt.CleanupLibvirtConnections()
 
 	plugin.Serve(&plugin.ServeOpts{
 		ProviderFunc: libvirt.Provider,

@@ -76,8 +76,8 @@ func remoteImageSize(url string) (int, error) {
 }
 
 func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error {
-	virConn := meta.(*Client).libvirt
-	if virConn == nil {
+	client := meta.(*Client)
+	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
@@ -86,10 +86,10 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		poolName = d.Get("pool").(string)
 	}
 
-	poolMutexKV.Lock(poolName)
-	defer poolMutexKV.Unlock(poolName)
+	client.poolMutexKV.Lock(poolName)
+	defer client.poolMutexKV.Unlock(poolName)
 
-	pool, err := virConn.LookupStoragePoolByName(poolName)
+	pool, err := client.libvirt.LookupStoragePoolByName(poolName)
 	if err != nil {
 		return fmt.Errorf("can't find storage pool '%s'", poolName)
 	}
@@ -167,7 +167,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		}
 
 		volume = nil
-		baseVolume, err := virConn.LookupStorageVolByKey(baseVolumeID.(string))
+		baseVolume, err := client.libvirt.LookupStorageVolByKey(baseVolumeID.(string))
 		if err != nil {
 			return fmt.Errorf("Can't retrieve volume %s", baseVolumeID.(string))
 		}
@@ -187,7 +187,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		baseVolumePool := pool
 		if _, ok := d.GetOk("base_volume_pool"); ok {
 			baseVolumePoolName := d.Get("base_volume_pool").(string)
-			baseVolumePool, err = virConn.LookupStoragePoolByName(baseVolumePoolName)
+			baseVolumePool, err = client.libvirt.LookupStoragePoolByName(baseVolumePoolName)
 			if err != nil {
 				return fmt.Errorf("can't find storage pool '%s'", baseVolumePoolName)
 			}
@@ -236,7 +236,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	// upload source if present
 	if _, ok := d.GetOk("source"); ok {
-		err = img.Import(newCopier(virConn, volume, volumeDef.Capacity.Value), volumeDef)
+		err = img.Import(newCopier(client.libvirt, volume, volumeDef.Capacity.Value), volumeDef)
 		if err != nil {
 			return fmt.Errorf("Error while uploading source %s: %s", img.String(), err)
 		}
@@ -318,10 +318,10 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error {
-	virConn := meta.(*Client).libvirt
-	if virConn == nil {
+	client := meta.(*Client)
+	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	return RemoveVolume(virConn, d.Id())
+	return RemoveVolume(client, d.Id())
 }
