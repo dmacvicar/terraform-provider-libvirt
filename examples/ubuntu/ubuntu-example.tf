@@ -37,7 +37,7 @@ resource "libvirt_domain" "domain-ubuntu" {
   }
 
   # IMPORTANT
-  # Ubuntu can hang is a isa-serial is not present at boot time.
+  # Ubuntu can hang if an isa-serial is not present at boot time.
   # If you find your CPU 100% and never is available this is why
   console {
     type        = "pty"
