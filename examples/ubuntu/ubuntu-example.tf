@@ -57,7 +57,7 @@ resource "libvirt_domain" "domain-ubuntu" {
   graphics {
     type = "spice"
     listen_type = "address"
-    autoport = "yes"
+    autoport = true
   }
 }
 
