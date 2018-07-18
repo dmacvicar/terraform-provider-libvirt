@@ -1000,7 +1000,7 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 			domainDef.Devices.Graphics[0] = libvirtxml.DomainGraphic{
 				Spice: &libvirtxml.DomainGraphicSpice{},
 			}
-			domainDef.Devices.Graphics[0].Spice.AutoPort = FormatBoolYesNo(autoport)
+			domainDef.Devices.Graphics[0].Spice.AutoPort = formatBoolYesNo(autoport)
 			domainDef.Devices.Graphics[0].Spice.Listeners = []libvirtxml.DomainGraphicListener{
 				listener,
 			}
@@ -1008,7 +1008,7 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 			domainDef.Devices.Graphics[0] = libvirtxml.DomainGraphic{
 				VNC: &libvirtxml.DomainGraphicVNC{},
 			}
-			domainDef.Devices.Graphics[0].VNC.AutoPort = FormatBoolYesNo(autoport)
+			domainDef.Devices.Graphics[0].VNC.AutoPort = formatBoolYesNo(autoport)
 			domainDef.Devices.Graphics[0].VNC.Listeners = []libvirtxml.DomainGraphicListener{
 				listener,
 			}
@@ -1267,7 +1267,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 			mac = strings.ToUpper(macI.(string))
 		} else {
 			var err error
-			mac, err = RandomMACAddress()
+			mac, err = randomMACAddress()
 			if err != nil {
 				return fmt.Errorf("Error generating mac address: %s", err)
 			}

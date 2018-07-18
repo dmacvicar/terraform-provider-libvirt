@@ -97,7 +97,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	WaitForSuccess("error refreshing pool for volume", func() error {
+	waitForSuccess("error refreshing pool for volume", func() error {
 		return pool.Refresh(0)
 	})
 
@@ -323,5 +323,5 @@ func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	return RemoveVolume(virConn, d.Id())
+	return removeVolume(virConn, d.Id())
 }
