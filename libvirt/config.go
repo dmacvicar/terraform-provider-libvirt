@@ -1,9 +1,9 @@
 package libvirt
 
 import (
-	"log"
-
+	"github.com/hashicorp/terraform/helper/mutexkv"
 	libvirt "github.com/libvirt/libvirt-go"
+	"log"
 )
 
 // Config struct for the libvirt-provider
@@ -13,25 +13,22 @@ type Config struct {
 
 // Client libvirt
 type Client struct {
-	libvirt *libvirt.Connect
+	libvirt     *libvirt.Connect
+	poolMutexKV *mutexkv.MutexKV
 }
 
 // Client libvirt, generate libvirt client given URI
 func (c *Config) Client() (*Client, error) {
-	var err error
-
-	if LibvirtClient == nil {
-		LibvirtClient, err = libvirt.NewConnect(c.URI)
-		if err != nil {
-			return nil, err
-		}
+	libvirtClient, err := libvirt.NewConnect(c.URI)
+	if err != nil {
+		return nil, err
 	}
+	log.Println("[INFO] Created libvirt client")
 
 	client := &Client{
-		libvirt: LibvirtClient,
+		libvirt:     libvirtClient,
+		poolMutexKV: mutexkv.NewMutexKV(),
 	}
-
-	log.Println("[INFO] Created libvirt client")
 
 	return client, nil
 }

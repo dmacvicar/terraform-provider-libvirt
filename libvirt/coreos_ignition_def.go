@@ -31,15 +31,15 @@ func newIgnitionDef() defIgnition {
 // Create a ISO file based on the contents of the CloudInit instance and
 // uploads it to the libVirt pool
 // Returns a string holding terraform's internal ID of this resource
-func (ign *defIgnition) CreateAndUpload(virConn *libvirt.Connect) (string, error) {
-	pool, err := virConn.LookupStoragePoolByName(ign.PoolName)
+func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
+	pool, err := client.libvirt.LookupStoragePoolByName(ign.PoolName)
 	if err != nil {
 		return "", fmt.Errorf("can't find storage pool '%s'", ign.PoolName)
 	}
 	defer pool.Free()
 
-	poolMutexKV.Lock(ign.PoolName)
-	defer poolMutexKV.Unlock(ign.PoolName)
+	client.poolMutexKV.Lock(ign.PoolName)
+	defer client.poolMutexKV.Unlock(ign.PoolName)
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
@@ -88,7 +88,7 @@ func (ign *defIgnition) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	defer volume.Free()
 
 	// upload ignition file
-	err = img.Import(newCopier(virConn, volume, volumeDef.Capacity.Value), volumeDef)
+	err = img.Import(newCopier(client.libvirt, volume, volumeDef.Capacity.Value), volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error while uploading ignition file %s: %s", img.String(), err)
 	}

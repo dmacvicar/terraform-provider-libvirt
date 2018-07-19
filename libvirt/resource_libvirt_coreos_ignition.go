@@ -35,8 +35,8 @@ func resourceIgnition() *schema.Resource {
 
 func resourceIgnitionCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] creating ignition file")
-	virConn := meta.(*Client).libvirt
-	if virConn == nil {
+	client := meta.(*Client)
+	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
@@ -48,7 +48,7 @@ func resourceIgnitionCreate(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("[INFO] ignition: %+v", ignition)
 
-	key, err := ignition.CreateAndUpload(virConn)
+	key, err := ignition.CreateAndUpload(client)
 	if err != nil {
 		return err
 	}
@@ -82,8 +82,8 @@ func resourceIgnitionRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceIgnitionDelete(d *schema.ResourceData, meta interface{}) error {
-	virConn := meta.(*Client).libvirt
-	if virConn == nil {
+	client := meta.(*Client)
+	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
@@ -92,5 +92,5 @@ func resourceIgnitionDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return removeVolume(virConn, key)
+	return removeVolume(client, key)
 }
