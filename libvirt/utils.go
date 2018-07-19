@@ -64,7 +64,7 @@ func xmlMarshallIndented(b interface{}) (string, error) {
 }
 
 // removeVolume removes the volume identified by `key` from libvirt
-func removeVolume(virConn *libvirt.Connect, key string) error {
+func removeVolume(client *Client, key string) error {
 	volume, err := client.libvirt.LookupStorageVolByKey(key)
 	if err != nil {
 		return fmt.Errorf("Can't retrieve volume %s", key)
