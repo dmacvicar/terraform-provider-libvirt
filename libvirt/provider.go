@@ -1,18 +1,11 @@
 package libvirt
 
 import (
-	"github.com/hashicorp/terraform/helper/mutexkv"
+	"log"
+
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
-
-	libvirt "github.com/libvirt/libvirt-go"
 )
-
-// Global poolMutexKV
-var poolMutexKV = mutexkv.NewMutexKV()
-
-// LibvirtClient global variable holding the connection to the libvirtd daemon
-var LibvirtClient *libvirt.Connect
 
 // Provider libvirt
 func Provider() terraform.ResourceProvider {
@@ -38,10 +31,43 @@ func Provider() terraform.ResourceProvider {
 	}
 }
 
+// uri -> client for multi instance support
+// (we share the same client for the same uri)
+var globalClientMap = make(map[string]*Client)
+
+// CleanupLibvirtConnections closes libvirt clients for all URIs
+func CleanupLibvirtConnections() {
+	for uri, client := range globalClientMap {
+		log.Printf("[DEBUG] cleaning up connection for URI: %s", uri)
+		alive, err := client.libvirt.IsAlive()
+		if err != nil {
+			log.Printf("[ERROR] cannot determine libvirt connection status: %v", err)
+		}
+		if alive {
+			ret, err := client.libvirt.Close()
+			if err != nil {
+				log.Printf("[ERROR] cannot close libvirt connection %d - %v", ret, err)
+			}
+		}
+	}
+}
+
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	config := Config{
 		URI: d.Get("uri").(string),
 	}
+	log.Printf("[DEBUG] Configuring provider for '%s': %v", config.URI, d)
 
-	return config.Client()
+	if client, ok := globalClientMap[config.URI]; ok {
+		log.Printf("[DEBUG] Reusing client for uri: '%s'", config.URI)
+		return client, nil
+	}
+
+	client, err := config.Client()
+	if err != nil {
+		return nil, err
+	}
+	globalClientMap[config.URI] = client
+
+	return client, nil
 }

@@ -104,6 +104,10 @@ $ terraform destroy
 
 Look at more advanced examples [here](examples/)
 
+### Using multiple hypervisors / provider instances
+
+You can target different libvirt hosts instantiating the [provider multiple times](https://www.terraform.io/docs/configuration/providers.html#multiple-provider-instances). [Example](examples/multiple).
+
 ## Troubleshooting (aka you have a problem)
 
 Have a look at [TROUBLESHOOTING](doc/TROUBLESHOOTING.md), and feel free to add a PR if you find out something is missing.

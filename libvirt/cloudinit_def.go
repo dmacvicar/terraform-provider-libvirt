@@ -55,20 +55,20 @@ func newCloudInitDef() defCloudInit {
 // Create a ISO file based on the contents of the CloudInit instance and
 // uploads it to the libVirt pool
 // Returns a string holding terraform's internal ID of this resource
-func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.Connect) (string, error) {
+func (ci *defCloudInit) CreateAndUpload(client *Client) (string, error) {
 	iso, err := ci.createISO()
 	if err != nil {
 		return "", err
 	}
 
-	pool, err := virConn.LookupStoragePoolByName(ci.PoolName)
+	pool, err := client.libvirt.LookupStoragePoolByName(ci.PoolName)
 	if err != nil {
 		return "", fmt.Errorf("can't find storage pool '%s'", ci.PoolName)
 	}
 	defer pool.Free()
 
-	poolMutexKV.Lock(ci.PoolName)
-	defer poolMutexKV.Unlock(ci.PoolName)
+	client.poolMutexKV.Lock(ci.PoolName)
+	defer client.poolMutexKV.Unlock(ci.PoolName)
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
@@ -113,7 +113,7 @@ func (ci *defCloudInit) CreateAndUpload(virConn *libvirt.Connect) (string, error
 	defer volume.Free()
 
 	// upload ISO file
-	err = img.Import(newCopier(virConn, volume, uint64(size)), volumeDef)
+	err = img.Import(newCopier(client.libvirt, volume, uint64(size)), volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error while uploading cloudinit %s: %s", img.String(), err)
 	}

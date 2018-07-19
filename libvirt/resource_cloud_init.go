@@ -45,7 +45,8 @@ func resourceCloudInit() *schema.Resource {
 
 func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] creating cloudinit")
-	virConn := meta.(*Client).libvirt
+	client := meta.(*Client)
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -66,7 +67,7 @@ func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("[INFO] cloudInit: %+v", cloudInit)
 
-	key, err := cloudInit.CreateAndUpload(virConn)
+	key, err := cloudInit.CreateAndUpload(client)
 	if err != nil {
 		return err
 	}
@@ -105,8 +106,8 @@ func resourceCloudInitRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceCloudInitDelete(d *schema.ResourceData, meta interface{}) error {
-	virConn := meta.(*Client).libvirt
-	if virConn == nil {
+	client := meta.(*Client)
+	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
@@ -115,5 +116,5 @@ func resourceCloudInitDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return RemoveVolume(virConn, key)
+	return RemoveVolume(client, key)
 }
