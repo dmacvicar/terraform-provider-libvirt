@@ -15,7 +15,7 @@ func newDefDisk(i int) libvirtxml.DomainDisk {
 		Device: "disk",
 		Target: &libvirtxml.DomainDiskTarget{
 			Bus: "virtio",
-			Dev: fmt.Sprintf("vd%s", DiskLetterForIndex(i)),
+			Dev: fmt.Sprintf("vd%s", diskLetterForIndex(i)),
 		},
 		Driver: &libvirtxml.DomainDiskDriver{
 			Name: "qemu",

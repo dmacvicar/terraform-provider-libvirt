@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt"
 	"github.com/hashicorp/terraform/plugin"
-	"log"
 	"math/rand"
 	"time"
 )

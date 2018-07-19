@@ -15,8 +15,8 @@ var diskLetters = []rune("abcdefghijklmnopqrstuvwxyz")
 // LibVirtConIsNil is a global string error msg
 const LibVirtConIsNil string = "the libvirt connection was nil"
 
-// DiskLetterForIndex return diskLetters for index
-func DiskLetterForIndex(i int) string {
+// diskLetterForIndex return diskLetters for index
+func diskLetterForIndex(i int) string {
 
 	q := i / len(diskLetters)
 	r := i % len(diskLetters)
@@ -26,7 +26,7 @@ func DiskLetterForIndex(i int) string {
 		return fmt.Sprintf("%c", letter)
 	}
 
-	return fmt.Sprintf("%s%c", DiskLetterForIndex(q-1), letter)
+	return fmt.Sprintf("%s%c", diskLetterForIndex(q-1), letter)
 }
 
 // WaitSleepInterval time
@@ -35,8 +35,8 @@ var WaitSleepInterval = 1 * time.Second
 // WaitTimeout time
 var WaitTimeout = 5 * time.Minute
 
-// WaitForSuccess wait for success and timeout after 5 minutes.
-func WaitForSuccess(errorMessage string, f func() error) error {
+// waitForSuccess wait for success and timeout after 5 minutes.
+func waitForSuccess(errorMessage string, f func() error) error {
 	start := time.Now()
 	for {
 		err := f()
@@ -63,8 +63,8 @@ func xmlMarshallIndented(b interface{}) (string, error) {
 	return buf.String(), nil
 }
 
-// RemoveVolume removes the volume identified by `key` from libvirt
-func RemoveVolume(client *Client, key string) error {
+// removeVolume removes the volume identified by `key` from libvirt
+func removeVolume(client *Client, key string) error {
 	volume, err := client.libvirt.LookupStorageVolByKey(key)
 	if err != nil {
 		return fmt.Errorf("Can't retrieve volume %s", key)
@@ -87,7 +87,7 @@ func RemoveVolume(client *Client, key string) error {
 	client.poolMutexKV.Lock(poolName)
 	defer client.poolMutexKV.Unlock(poolName)
 
-	WaitForSuccess("Error refreshing pool for volume", func() error {
+	waitForSuccess("Error refreshing pool for volume", func() error {
 		return volPool.Refresh(0)
 	})
 
@@ -108,8 +108,8 @@ func RemoveVolume(client *Client, key string) error {
 
 }
 
-// FormatBoolYesNo is similar to strconv.FormatBool with yes/no instead of true/false
-func FormatBoolYesNo(b bool) string {
+// formatBoolYesNo is similar to strconv.FormatBool with yes/no instead of true/false
+func formatBoolYesNo(b bool) string {
 	if b {
 		return "yes"
 	}

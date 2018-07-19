@@ -216,7 +216,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 
 				// we should calculate the range served by DHCP. For example, for
 				// 192.168.121.0/24 we will serve 192.168.121.2 - 192.168.121.254
-				start, end := NetworkRange(ipNet)
+				start, end := networkRange(ipNet)
 
 				// skip the .0, (for the network),
 				start[len(start)-1]++

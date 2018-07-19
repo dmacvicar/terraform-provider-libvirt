@@ -15,8 +15,8 @@ const (
 	maxIfaceNum = 100
 )
 
-// RandomMACAddress returns a randomized MAC address
-func RandomMACAddress() (string, error) {
+// randomMACAddress returns a randomized MAC address
+func randomMACAddress() (string, error) {
 	buf := make([]byte, 6)
 	_, err := rand.Read(buf)
 	if err != nil {
@@ -37,8 +37,8 @@ func RandomMACAddress() (string, error) {
 		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
 }
 
-// RandomPort returns a random port
-func RandomPort() int {
+// randomPort returns a random port
+func randomPort() int {
 	const minPort = 1024
 	const maxPort = 65535
 
@@ -46,8 +46,8 @@ func RandomPort() int {
 	return rand.Intn(maxPort-minPort) + minPort
 }
 
-// FreeNetworkInterface returns a free network interface
-func FreeNetworkInterface(basename string) (string, error) {
+// freeNetworkInterface returns a free network interface
+func freeNetworkInterface(basename string) (string, error) {
 	for i := 0; i < maxIfaceNum; i++ {
 		ifaceName := fmt.Sprintf("%s%d", basename, i)
 		_, err := net.InterfaceByName(ifaceName)
@@ -58,8 +58,8 @@ func FreeNetworkInterface(basename string) (string, error) {
 	return "", fmt.Errorf("could not obtain a free network interface")
 }
 
-// NetworkRange calculates the first and last IP addresses in an IPNet
-func NetworkRange(network *net.IPNet) (net.IP, net.IP) {
+// networkRange calculates the first and last IP addresses in an IPNet
+func networkRange(network *net.IPNet) (net.IP, net.IP) {
 	netIP := network.IP.To4()
 	lastIP := net.IPv4(0, 0, 0, 0).To4()
 	if netIP == nil {
@@ -89,7 +89,7 @@ func (fws *fileWebServer) Start() error {
 	}
 
 	fws.Dir = dir
-	fws.Port = RandomPort()
+	fws.Port = randomPort()
 	fws.URL = fmt.Sprintf("http://127.0.0.1:%d", fws.Port)
 
 	handler := http.NewServeMux()

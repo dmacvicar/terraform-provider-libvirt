@@ -43,7 +43,7 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	WaitForSuccess("Error refreshing pool for volume", func() error {
+	waitForSuccess("Error refreshing pool for volume", func() error {
 		return pool.Refresh(0)
 	})
 

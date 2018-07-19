@@ -16,7 +16,7 @@ func TestDiskLetterForIndex(t *testing.T) {
 	names := []string{"a", "b", "c", "d", "e", "q", "y", "z", "aa", "ae", "ko"}
 
 	for i, diskNumber := range diskNumbers {
-		ret := DiskLetterForIndex(diskNumber)
+		ret := diskLetterForIndex(diskNumber)
 		if ret != names[i] {
 			t.Errorf("Expected %s, got %s for disk %d", names[i], ret, diskNumber)
 		}
@@ -25,11 +25,11 @@ func TestDiskLetterForIndex(t *testing.T) {
 
 func TestFormatBoolYesNo(t *testing.T) {
 
-	if FormatBoolYesNo(true) != "yes" {
+	if formatBoolYesNo(true) != "yes" {
 		t.Errorf("Expected 'yes'")
 	}
 
-	if FormatBoolYesNo(false) != "no" {
+	if formatBoolYesNo(false) != "no" {
 		t.Errorf("Expected 'no'")
 	}
 }
@@ -40,7 +40,7 @@ func TestIPsRange(t *testing.T) {
 		t.Errorf("When parsing network: %s", err)
 	}
 
-	start, end := NetworkRange(net)
+	start, end := networkRange(net)
 	if start.String() != "192.168.18.0" {
 		t.Errorf("unexpected range start for '%s': %s", net, start)
 	}
@@ -60,7 +60,7 @@ func TestWaitForSuccessEverythingFine(t *testing.T) {
 	WaitTimeout = 1 * time.Second
 	WaitSleepInterval = 1 * time.Nanosecond
 
-	err := WaitForSuccess(
+	err := waitForSuccess(
 		"boom",
 		func() error {
 			return nil
@@ -85,7 +85,7 @@ func TestWaitForSuccessBrokenFunction(t *testing.T) {
 	WaitTimeout = 1 * time.Second
 	WaitSleepInterval = 1 * time.Nanosecond
 
-	err := WaitForSuccess(
+	err := waitForSuccess(
 		"boom",
 		func() error {
 			return errors.New("something went wrong")
