@@ -4,6 +4,7 @@ set -x
 unset http_proxy
 export TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE=qemu
 export LIBVIRT_DEFAULT_URI="qemu:///system"
+export TF_SKIP_QEMU_AGENT="true"
 export TF_ACC=true
 
 go test -v -covermode=count -coverprofile=profile.cov -timeout=1200s ./libvirt

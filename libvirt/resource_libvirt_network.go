@@ -373,7 +373,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		// so we need some transformations...
 		addr := net.ParseIP(address.Address)
 		if addr == nil {
-			return fmt.Errorf("Error parsing IP '%s': %s", address, err)
+			return fmt.Errorf("Error parsing IP '%s': %s", address.Address, err)
 		}
 		bits := net.IPv6len * 8
 		if addr.To4() != nil {
@@ -382,7 +382,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 
 		mask := net.CIDRMask(int(address.Prefix), bits)
 		network := addr.Mask(mask)
-		addresses = append(addresses, fmt.Sprintf("%s/%s", network, address.Prefix))
+		addresses = append(addresses, fmt.Sprintf("%s/%d", network, address.Prefix))
 	}
 	if len(addresses) > 0 {
 		d.Set("addresses", addresses)

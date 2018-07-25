@@ -833,7 +833,7 @@ func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel
 			return fmt.Errorf("Can't get initrd volume id")
 		}
 		if domainDef.OS.Initrd != key {
-			return fmt.Errorf("Initrd is not set correctly: '%s' vs '%s'", domainDef.OS, key)
+			return fmt.Errorf("Initrd is not set correctly: '%s' vs '%s'", domainDef.OS.Initrd, key)
 		}
 		if domainDef.OS.Cmdline != "bar=bye foo=1 foo=2" {
 			return fmt.Errorf("Kernel args not set correctly: '%s'", domainDef.OS.Cmdline)
