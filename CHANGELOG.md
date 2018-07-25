@@ -1,4 +1,4 @@
-## 0.4 (Unreleased)
+## 0.4 (July 25, 2018)
 
 HIGHLIGHTS:
 
