@@ -41,6 +41,9 @@ func resourceLibvirtDomain() *schema.Resource {
 		Delete: resourceLibvirtDomainDelete,
 		Update: resourceLibvirtDomainUpdate,
 		Exists: resourceLibvirtDomainExists,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(5 * time.Minute),
 		},
