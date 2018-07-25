@@ -28,9 +28,6 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 
 ## Downloading
 
-*  Check that libvirt daemon 1.2.14 or newer is running on the hypervisor
-* `mkisofs` is required to use the [CloudInit](website/docs/r/cloudinit.html.markdown)
-
 Builds for openSUSE, CentOS, Ubuntu, Fedora are created with openSUSE's [OBS](https://build.opensuse.org). The build definitions are available for both the [stable](https://build.opensuse.org/package/show/home:dmacvicar:terraform-provider-libvirt:stable/terraform-provider-libvirt) and [master](https://build.opensuse.org/project/show/home:dmacvicar:terraform-provider-libvirt) branches.
 
 ## Using released builds
@@ -82,6 +79,9 @@ go install
 You will now find the binary at `$GOPATH/bin/terraform-provider-libvirt`.
 
 # Installing
+
+*  Check that libvirt daemon 1.2.14 or newer is running on the hypervisor
+* `mkisofs` is required to use the [CloudInit](website/docs/r/cloudinit.html.markdown)
 
 [Copied from the Terraform documentation](https://www.terraform.io/docs/plugins/basics.html):
 > To install a plugin, put the binary somewhere on your filesystem, then configure Terraform to be able to find it. The configuration where plugins are defined is ~/.terraformrc for Unix-like systems and %APPDATA%/terraform.rc for Windows.
