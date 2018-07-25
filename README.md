@@ -31,7 +31,7 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 *  Check that libvirt daemon 1.2.14 or newer is running on the hypervisor
 * `mkisofs` is required to use the [CloudInit](website/docs/r/cloudinit.html.markdown)
 
-Builds for openSUSE, CentOS, Ubuntu, Fedora are created with openSUSE's [OBS](https://build.opensuse.org]. The build definitions are available for both the [stable](https://build.opensuse.org/package/show/home:dmacvicar:terraform-provider-libvirt:stable/terraform-provider-libvirt) and [master](https://build.opensuse.org/project/show/home:dmacvicar:terraform-provider-libvirt) branches.
+Builds for openSUSE, CentOS, Ubuntu, Fedora are created with openSUSE's [OBS](https://build.opensuse.org). The build definitions are available for both the [stable](https://build.opensuse.org/package/show/home:dmacvicar:terraform-provider-libvirt:stable/terraform-provider-libvirt) and [master](https://build.opensuse.org/project/show/home:dmacvicar:terraform-provider-libvirt) branches.
 
 ## Using released builds
 
