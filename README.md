@@ -42,7 +42,7 @@ Builds for openSUSE, CentOS, Ubuntu, Fedora are created with openSUSE's [OBS](ht
 
 If you are using opensuse/SUSE distro, add the repo and download the package (check the repo according your distro)
 
-*NOTE*: This may not be the latest release.
+**NOTE**: This may not be the latest release.
 
 ```console
 
