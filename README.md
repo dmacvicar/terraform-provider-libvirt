@@ -11,8 +11,8 @@ This is a terraform provider that lets you provision
 servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraform.io/).
 
 ## Table of Content
-- [Downloading](#Downloading)
-- [Installing](#Installing)
+- [Downloading](#downloading)
+- [Installing](#installing)
 - [Quickstart](#using-the-provider)
 - [Building from source](#building-from-source)
 - [How to contribute](doc/CONTRIBUTING.md)
