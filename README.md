@@ -42,7 +42,7 @@ Builds for openSUSE, CentOS, Ubuntu, Fedora are created with openSUSE's [OBS](ht
 
 If you are using opensuse/SUSE distro, add the repo and download the package (check the repo according your distro)
 
-*NOTE*: This may not be the latest release.
+**NOTE**: This may not be the latest release.
 
 ```console
 
@@ -83,8 +83,15 @@ You will now find the binary at `$GOPATH/bin/terraform-provider-libvirt`.
 *  Check that libvirt daemon 1.2.14 or newer is running on the hypervisor
 * `mkisofs` is required to use the [CloudInit](website/docs/r/cloudinit.html.markdown)
 
-[Copied from the Terraform documentation](https://www.terraform.io/docs/plugins/basics.html):
-> To install a plugin, put the binary somewhere on your filesystem, then configure Terraform to be able to find it. The configuration where plugins are defined is ~/.terraformrc for Unix-like systems and %APPDATA%/terraform.rc for Windows.
+[Copied from the Terraform documentation](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins):
+
+At present Terraform can automatically install only the providers distributed by HashiCorp. Third-party providers can be manually installed by placing their plugin executables in one of the following locations depending on the host operating system:
+
+> On Linux and unix systems, in the sub-path `.terraform.d/plugins` in your user's home directory.
+
+> On Windows, in the sub-path `terraform.d/plugins` beneath your user's "Application Data" directory.
+
+terraform init will search this directory for additional plugins during plugin initialization.
 
 ## Using the provider
 
