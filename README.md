@@ -87,8 +87,9 @@ You will now find the binary at `$GOPATH/bin/terraform-provider-libvirt`.
 
 At present Terraform can automatically install only the providers distributed by HashiCorp. Third-party providers can be manually installed by placing their plugin executables in one of the following locations depending on the host operating system:
 
+> On Linux and unix systems, in the sub-path .terraform.d/plugins in your user's home directory.
+
 > On Windows, in the sub-path terraform.d/plugins beneath your user's "Application Data" directory.
-> On all other systems, in the sub-path .terraform.d/plugins in your user's home directory.
 
 terraform init will search this directory for additional plugins during plugin initialization.
 
