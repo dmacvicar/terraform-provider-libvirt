@@ -815,7 +815,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				return err
 			}
 
-			netIface["network_name"] = networkInterfaceDef.Source.Network
+			netIface["network_name"] = networkInterfaceDef.Source.Network.Network
 
 			// try to look for this MAC in the DHCP configuration for this VM
 			if HasDHCP(networkDef) {
