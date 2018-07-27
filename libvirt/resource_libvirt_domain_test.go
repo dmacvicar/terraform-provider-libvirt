@@ -371,6 +371,7 @@ func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config: configWithDomain,
+				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
 					testAccCheckLibvirtNetworkExists("libvirt_network.acceptance-test-network", &network),
