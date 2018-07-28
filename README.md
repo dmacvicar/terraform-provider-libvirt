@@ -4,8 +4,7 @@
 - Planning board: [Github Projects](https://github.com/dmacvicar/terraform-provider-libvirt/projects/1)
 
 
-![alpha](https://img.shields.io/badge/stability%3F-beta-yellow.svg) [![Build Status](https://travis-ci.org/dmacvicar/terraform-provider-libvirt.svg?branch=master)](https://travis-ci.org/dmacvicar/terraform-provider-libvirt) [![Coverage Status](https://coveralls.io/repos/github/dmacvicar/terraform-provider-libvirt/badge.svg?branch=master)](https://coveralls.io/github/dmacvicar/terraform-provider-libvirt?branch=master)
-
+![alpha](https://img.shields.io/badge/stability%3F-beta-yellow.svg) [![Build Status](https://travis-ci.org/dmacvicar/terraform-provider-libvirt.svg?branch=master)](https://travis-ci.org/dmacvicar/terraform-provider-libvirt)
 ___
 This is a terraform provider that lets you provision
 servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraform.io/).
@@ -15,7 +14,7 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 - [Installing](#installing)
 - [Quickstart](#using-the-provider)
 - [Building from source](#building-from-source)
-- [How to contribute](doc/CONTRIBUTING.md)
+- [How to contribute](CONTRIBUTING.md)
 
 ## Website Docs
 - [Libvirt Provider](website/docs/index.html.markdown)
