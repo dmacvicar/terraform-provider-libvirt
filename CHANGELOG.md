@@ -1,3 +1,10 @@
+## 0.4.1 (July 28, 2018)
+
+HIGHLIGHTS:
+
+* Fix broken ip address detection bug that was introduced in 0.4
+* Add support for importing domain, network, volumes (#336)
+
 ## 0.4 (July 25, 2018)
 
 HIGHLIGHTS:
