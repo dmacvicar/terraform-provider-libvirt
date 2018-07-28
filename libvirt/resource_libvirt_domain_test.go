@@ -370,7 +370,7 @@ func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: configWithDomain,
+				Config:             configWithDomain,
 				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
@@ -385,7 +385,7 @@ func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
 				),
 			},
 			resource.TestStep{
-				Config: configWithDomain,
+				Config:             configWithDomain,
 				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
