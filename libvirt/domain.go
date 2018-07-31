@@ -206,6 +206,10 @@ func getDomainInterfacesFromNetworks(domain libvirtxml.Domain,
 	var macAddresses []string
 
 	for _, networkInterface := range domain.Devices.Interfaces {
+		// only for devices with a network associated to it
+		if networkInterface.Source.Network == nil {
+			continue
+		}
 		networkNames = append(networkNames, networkInterface.Source.Network.Network)
 		macAddresses = append(macAddresses, strings.ToUpper(networkInterface.MAC.Address))
 	}
