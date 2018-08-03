@@ -1,3 +1,10 @@
+## 0.4.2 (August 3, 2018)
+
+HIGHLIGHTS:
+
+* Fix crashes when using network devices not associated with a
+  network name (regression introduced in 0.4)
+
 ## 0.4.1 (July 28, 2018)
 
 HIGHLIGHTS:
