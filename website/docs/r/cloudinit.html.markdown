@@ -36,5 +36,11 @@ The following arguments are supported:
   be merged automatically with the values specified in other arguments
   (like `local_hostname`, `ssh_authorized_key`, etc). The contents of
   `user_data` will take precedence over the ones defined by the other keys.
+* `network_config` - (Optional) Raw NoCloud network-config data.
+  The content of this will be placed into the network-config file directly
+  in the root of the iso. This allows you to specify static networking
+  configurations (such as static IPs and DNS) that are applied from early
+  boot.  See:
+  http://cloudinit.readthedocs.io/en/latest/topics/datasources/nocloud.html#datasource-nocloud
 
 Any change of the above fields will cause a new resource to be created.
