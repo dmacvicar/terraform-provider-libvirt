@@ -33,7 +33,10 @@ func newDomainDef() libvirtxml.Domain {
 			Placement: "static",
 			Value:     1,
 		},
-		CPU: &libvirtxml.DomainCPU{},
+		CPU: &libvirtxml.DomainCPU{
+			Mode:  "host-model",
+			Match: "minimum",
+		},
 		Devices: &libvirtxml.DomainDeviceList{
 			Graphics: []libvirtxml.DomainGraphic{
 				{

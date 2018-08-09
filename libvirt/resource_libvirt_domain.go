@@ -279,14 +279,42 @@ func resourceLibvirtDomain() *schema.Resource {
 				},
 			},
 			"cpu": {
-				Type:     schema.TypeMap,
+				Type:     schema.TypeList,
 				Optional: true,
+				MaxItems: 1,
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"mode": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
+						},
+						"model": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"vendor": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"feature": {
+							Type:     schema.TypeList,
+							Optional: true,
+							ForceNew: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"policy": {
+										Type:     schema.TypeString,
+										Required: true,
+										ForceNew: true,
+									},
+									"name": {
+										Type:     schema.TypeString,
+										Required: true,
+										ForceNew: true,
+									},
+								},
+							},
 						},
 					},
 				},
@@ -389,10 +417,22 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		domainDef.Name = name.(string)
 	}
 
-	if cpuMode, ok := d.GetOk("cpu.mode"); ok {
-		domainDef.CPU = &libvirtxml.DomainCPU{
-			Mode: cpuMode.(string),
+	if cpuMode, ok := d.GetOk("cpu.0.mode"); ok {
+		domainDef.CPU.Mode = cpuMode.(string)
+	}
+
+	if cpuModel, ok := d.GetOk("cpu.0.model"); ok {
+		domainDef.CPU.Model = &libvirtxml.DomainCPUModel{
+			Value: cpuModel.(string),
 		}
+	}
+
+	if cpuVendor, ok := d.GetOk("cpu.0.vendor"); ok {
+		domainDef.CPU.Vendor = cpuVendor.(string)
+	}
+
+	if err := setCPUFeatures(d, &domainDef); err != nil {
+		return err
 	}
 
 	domainDef.Memory = &libvirtxml.DomainMemory{
@@ -674,11 +714,28 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("memory", domainDef.Memory)
 	d.Set("firmware", domainDef.OS.Loader)
 	d.Set("nvram", domainDef.OS.NVRam)
-	d.Set("cpu", domainDef.CPU)
 	d.Set("arch", domainDef.OS.Type.Arch)
 	d.Set("autostart", autostart)
 
 	cmdLines, err := splitKernelCmdLine(domainDef.OS.Cmdline)
+
+	var features []map[string]interface{}
+	for _, featureDef := range domainDef.CPU.Features {
+		feat := map[string]interface{}{
+			"policy": featureDef.Policy,
+			"name":   featureDef.Name,
+		}
+		features = append(features, feat)
+	}
+
+	cpu := map[string]interface{}{
+		"mode":     domainDef.CPU.Mode,
+		"model":    domainDef.CPU.Model,
+		"vendor":   domainDef.CPU.Vendor,
+		"features": features,
+	}
+	d.Set("cpu", cpu)
+
 	if err != nil {
 		return err
 	}
@@ -1232,6 +1289,52 @@ func setFilesystems(d *schema.ResourceData, domainDef *libvirtxml.Domain) error 
 		domainDef.Devices.Filesystems = append(domainDef.Devices.Filesystems, fs)
 	}
 	log.Printf("filesystems: %+v\n", domainDef.Devices.Filesystems)
+	return nil
+}
+
+func setCPUFeatures(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
+	var allowedPolicies = map[string]bool{
+		"force":    true,
+		"require":  true,
+		"optional": true,
+		"disable":  true,
+		"forbid":   true,
+	}
+
+	for i := 0; i < d.Get("cpu.0.feature.#").(int); i++ {
+		feature := libvirtxml.DomainCPUFeature{}
+		prefix := fmt.Sprintf("cpu.0.feature.%d", i)
+
+		if policy, ok := d.GetOk(prefix + ".policy"); ok {
+			policyStr := strings.ToLower(policy.(string))
+			if _, found := allowedPolicies[policyStr]; !found {
+				return fmt.Errorf("Unknown feature policy: %s", policyStr)
+			}
+			feature.Policy = policyStr
+		} else {
+			return fmt.Errorf("Feature must have a 'policy' set")
+		}
+
+		if name, ok := d.GetOk(prefix + ".name"); ok {
+			feature.Name = name.(string)
+		} else {
+			return fmt.Errorf("Feature must have a 'name' set")
+		}
+
+		domainDef.CPU.Features = append(domainDef.CPU.Features, feature)
+	}
+	log.Printf("features: %+v\n", domainDef.CPU.Features)
+
+	// if any feature has been set, a valid CPU model is mandatory
+	if len(domainDef.CPU.Features) > 0 {
+		if domainDef.CPU.Model == nil {
+			domainDef.CPU.Model = &libvirtxml.DomainCPUModel{
+				Fallback: "allow",
+				Value:    "IvyBridge",
+			}
+		}
+	}
+
 	return nil
 }
 

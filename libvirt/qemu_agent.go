@@ -11,6 +11,7 @@ import (
 )
 
 const qemuGetIfaceWait = "qemu-agent-wait"
+const qemuGetIfaceErr = "qemu-agent-err"
 const qemuGetIfaceDone = "qemu-agent-done"
 
 // QemuAgentInterfacesResponse type
@@ -43,6 +44,11 @@ func qemuAgentInterfacesRefreshFunc(domain Domain, wait4ipv4 bool) resource.Stat
 			libvirt.DOMAIN_QEMU_AGENT_COMMAND_DEFAULT,
 			0)
 		if err != nil {
+			virErr := err.(libvirt.Error)
+			if virErr.Code == libvirt.ERR_OPERATION_INVALID {
+				log.Printf("[DEBUG] operation invalid (domain might be down): %s", err)
+				return interfaces, "", err
+			}
 			log.Printf("[DEBUG] command error: %s", err)
 			return interfaces, qemuGetIfaceWait, nil
 		}
