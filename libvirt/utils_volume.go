@@ -220,5 +220,4 @@ func removeVolume(client *Client, key string) error {
 	}
 
 	return nil
-
 }
