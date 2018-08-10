@@ -10,7 +10,7 @@ import (
 	libvirt "github.com/libvirt/libvirt-go"
 )
 
-func TestCreateCloudIsoViaPlugin(t *testing.T) {
+func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 	var volume libvirt.StorageVol
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },

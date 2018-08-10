@@ -17,7 +17,7 @@ func TestNewCloudInitDef(t *testing.T) {
 	}
 }
 
-func TestTerraformKeyOps(t *testing.T) {
+func TestCloudInitTerraformKeyOps(t *testing.T) {
 	ci := newCloudInitDef()
 
 	volKey := "volume-key"
@@ -33,7 +33,7 @@ func TestTerraformKeyOps(t *testing.T) {
 	}
 }
 
-func TestCreateFiles(t *testing.T) {
+func TestCloudInitCreateFiles(t *testing.T) {
 	ci := newCloudInitDef()
 
 	dir, err := ci.createFiles()
@@ -50,7 +50,7 @@ func TestCreateFiles(t *testing.T) {
 	}
 }
 
-func TestCreateISONoExteralTool(t *testing.T) {
+func TestCloudInitCreateISONoExteralTool(t *testing.T) {
 	path := os.Getenv("PATH")
 	defer os.Setenv("PATH", path)
 
@@ -68,7 +68,7 @@ func TestCreateISONoExteralTool(t *testing.T) {
 	}
 }
 
-func TestConvertUserDataToMapPreservesCloudInitNames(t *testing.T) {
+func TestCloudInitConvertUserDataToMapPreservesCloudInitNames(t *testing.T) {
 	ud := defCloudInitUserData{
 		SSHAuthorizedKeys: []string{"key1"},
 	}
@@ -84,7 +84,7 @@ func TestConvertUserDataToMapPreservesCloudInitNames(t *testing.T) {
 	}
 }
 
-func TestMergeEmptyUserDataIntoUserDataRaw(t *testing.T) {
+func TestCloudInitMergeEmptyUserDataIntoUserDataRaw(t *testing.T) {
 	ud := defCloudInitUserData{}
 
 	var userDataRaw = `
@@ -113,7 +113,7 @@ ssh_authorized_keys:
 	}
 }
 
-func TestMergeUserDataIntoEmptyUserDataRaw(t *testing.T) {
+func TestCloudInitMergeUserDataIntoEmptyUserDataRaw(t *testing.T) {
 	ud := defCloudInitUserData{
 		SSHAuthorizedKeys: []string{"key1"},
 	}
@@ -135,7 +135,7 @@ func TestMergeUserDataIntoEmptyUserDataRaw(t *testing.T) {
 	}
 }
 
-func TestMergeUserDataIntoUserDataRawGivesPrecedenceToRawData(t *testing.T) {
+func TestCloudInitMergeUserDataIntoUserDataRawGivesPrecedenceToRawData(t *testing.T) {
 	udKey := "user-data-key"
 	ud := defCloudInitUserData{
 		SSHAuthorizedKeys: []string{udKey},
