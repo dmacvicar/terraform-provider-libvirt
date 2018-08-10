@@ -37,6 +37,7 @@ type defCloudInitMetaData struct {
 type defCloudInit struct {
 	Name        string
 	PoolName    string
+	MetaDataRaw string `yaml:"meta_data"`
 	MetaData    defCloudInitMetaData
 	UserDataRaw string `yaml:"user_data"`
 	UserData    defCloudInitUserData
@@ -197,11 +198,16 @@ func (ci *defCloudInit) createFiles() (string, error) {
 		return "", fmt.Errorf("Error while writing user-data to file: %s", err)
 	}
 
-	metadata, err := yaml.Marshal(&ci.MetaData)
+	mergedMetaData, err := mergeMetaDataIntoMetaDataRaw(ci.MetaData, ci.MetaDataRaw)
 	if err != nil {
-		return "", fmt.Errorf("Error dumping cloudinit's meta data: %s", err)
+		return "", fmt.Errorf("Error merging Metadata with MetadataRaw: %v", err)
 	}
-	if err = ioutil.WriteFile(filepath.Join(tmpDir, metaData), metadata, os.ModePerm); err != nil {
+	metadata := fmt.Sprintf("%s", mergedMetaData)
+
+	if err = ioutil.WriteFile(
+		filepath.Join(tmpDir, metaData),
+		[]byte(metadata),
+		os.ModePerm); err != nil {
 		return "", fmt.Errorf("Error while writing meta-data to file: %s", err)
 	}
 
@@ -295,6 +301,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 			if err := yaml.Unmarshal(data, &ci.MetaData); err != nil {
 				return ci, fmt.Errorf("Error while unmarshalling user-data: %s", err)
 			}
+			ci.MetaDataRaw = fmt.Sprintf("%s", data)
 		}
 	}
 
@@ -371,6 +378,44 @@ func mergeUserDataIntoUserDataRaw(userData defCloudInitUserData, userDataRaw str
 	}
 
 	out, err := yaml.Marshal(userDataRawMap)
+	if err != nil {
+		return "", err
+	}
+
+	return string(out[:]), nil
+}
+
+// Convert a UserData instance to a map with string as key and interface as value
+func convertMetaDataToMap(data defCloudInitMetaData) (map[string]interface{}, error) {
+	metaDataMap := make(map[string]interface{})
+
+	// This is required to get the right names expected by cloud-init
+	// For example: SSHKeys -> ssh_authorized_keys
+	tmp, err := yaml.Marshal(&data)
+	if err != nil {
+		return metaDataMap, err
+	}
+
+	err = yaml.Unmarshal([]byte(tmp), &metaDataMap)
+	return metaDataMap, err
+}
+
+func mergeMetaDataIntoMetaDataRaw(metaData defCloudInitMetaData, metaDataRaw string) (string, error) {
+	metaDataMap, err := convertMetaDataToMap(metaData)
+	if err != nil {
+		return "", err
+	}
+
+	metaDataRawMap := make(map[string]interface{})
+	if err = yaml.Unmarshal([]byte(metaDataRaw), &metaDataRawMap); err != nil {
+		return "", err
+	}
+
+	if err = mergo.Merge(&metaDataRawMap, metaDataMap); err != nil {
+		return "", err
+	}
+
+	out, err := yaml.Marshal(metaDataRawMap)
 	if err != nil {
 		return "", err
 	}
