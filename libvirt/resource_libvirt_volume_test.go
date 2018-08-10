@@ -110,6 +110,46 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 	})
 }
 
+// The destroy function should always handle the case where the resource might already be destroyed
+// (manually, for example). If the resource is already destroyed, this should not return an error.
+// This allows Terraform users to manually delete resources without breaking Terraform.
+// This test should fail without a proper "Exists" implementation
+func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
+	var volume libvirt.StorageVol
+
+	const testAccCheckLibvirtVolumeConfigBasic = `
+	resource "libvirt_volume" "terraform-acceptance-test-1" {
+		name = "terraform-test"
+		size =  1073741824
+	}`
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCheckLibvirtVolumeConfigBasic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-1", &volume),
+				),
+			},
+			{
+				Config:  testAccCheckLibvirtVolumeConfigBasic,
+				Destroy: true,
+				PreConfig: func() {
+					client := testAccProvider.Meta().(*Client)
+					id, err := volume.GetKey()
+					if err != nil {
+						panic(err)
+					}
+					removeVolume(client, id)
+				},
+			},
+		},
+	})
+}
+
 func TestAccLibvirtVolume_UniqueName(t *testing.T) {
 	const config = `
 	resource "libvirt_volume" "terraform-acceptance-test-1" {

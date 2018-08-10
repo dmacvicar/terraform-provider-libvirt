@@ -16,6 +16,7 @@ func resourceLibvirtVolume() *schema.Resource {
 		Create: resourceLibvirtVolumeCreate,
 		Read:   resourceLibvirtVolumeRead,
 		Delete: resourceLibvirtVolumeDelete,
+		Exists: resourceLibvirtVolumeExists,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -249,46 +250,21 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
-	virConn := meta.(*Client).libvirt
+	client := meta.(*Client)
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	volume, err := virConn.LookupStorageVolByKey(d.Id())
+	volume, err := lookupVolumeReallyHard(client, d)
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
-			return fmt.Errorf("Can't retrieve volume %s", d.Id())
-		}
-		volID := d.Id()
+		return err
+	}
 
-		log.Printf("[INFO] Volume %s not found, attempting to start its pool", d.Id())
-
-		volPoolName := d.Get("pool").(string)
-		volPool, err := virConn.LookupStoragePoolByName(volPoolName)
-		if err != nil {
-			return fmt.Errorf("Error retrieving pool %s for volume %s: %s", volPoolName, volID, err)
-		}
-		defer volPool.Free()
-
-		active, err := volPool.IsActive()
-		if err != nil {
-			return fmt.Errorf("error retrieving status of pool %s for volume %s: %s", volPoolName, volID, err)
-		}
-		if active {
-			return fmt.Errorf("can't retrieve volume %s", d.Id())
-		}
-
-		err = volPool.Create(0)
-		if err != nil {
-			return fmt.Errorf("error starting pool %s: %s", volPoolName, err)
-		}
-
-		// attempt a new lookup
-		volume, err = virConn.LookupStorageVolByKey(d.Id())
-		if err != nil {
-			return fmt.Errorf("second attempt: Can't retrieve volume %s", d.Id())
-		}
+	if volume == nil {
+		log.Printf("Volume '%s' may have been deleted outside Terraform", d.Id())
+		d.SetId("")
+		return nil
 	}
 	defer volume.Free()
 
@@ -327,4 +303,21 @@ func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error
 	}
 
 	return removeVolume(client, d.Id())
+}
+
+func resourceLibvirtVolumeExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+	log.Printf("[DEBUG] Check if resource libvirt_volume exists")
+	client := meta.(*Client)
+
+	volume, err := lookupVolumeReallyHard(client, d)
+	if err != nil {
+		return false, err
+	}
+
+	if volume == nil {
+		return false, nil
+	}
+	defer volume.Free()
+
+	return true, nil
 }
