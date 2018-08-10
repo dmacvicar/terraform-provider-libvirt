@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
 )
@@ -227,33 +226,32 @@ func removeVolume(client *Client, key string) error {
 // it will try to start the pool if it does not find it
 //
 // You have to call volume.Free() on the returned volume
-func lookupVolumeReallyHard(client *Client, d *schema.ResourceData) (*libvirt.StorageVol, error) {
+func lookupVolumeReallyHard(client *Client, volPoolName string, key string) (*libvirt.StorageVol, error) {
 	virConn := client.libvirt
 	if virConn == nil {
 		return nil, fmt.Errorf(LibVirtConIsNil)
 	}
 
-	volume, err := virConn.LookupStorageVolByKey(d.Id())
+	volume, err := virConn.LookupStorageVolByKey(key)
 	if err != nil {
 		virErr := err.(libvirt.Error)
 		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
-			return nil, fmt.Errorf("Can't retrieve volume %s", d.Id())
+			return nil, fmt.Errorf("Can't retrieve volume %s", key)
 		}
-		log.Printf("[INFO] Volume %s not found, attempting to start its pool", d.Id())
+		log.Printf("[INFO] Volume %s not found, attempting to start its pool", key)
 
-		volPoolName := d.Get("pool").(string)
 		volPool, err := virConn.LookupStoragePoolByName(volPoolName)
 		if err != nil {
-			return nil, fmt.Errorf("Error retrieving pool %s for volume %s: %s", volPoolName, d.Id(), err)
+			return nil, fmt.Errorf("Error retrieving pool %s for volume %s: %s", volPoolName, key, err)
 		}
 		defer volPool.Free()
 
 		active, err := volPool.IsActive()
 		if err != nil {
-			return nil, fmt.Errorf("error retrieving status of pool %s for volume %s: %s", volPoolName, d.Id(), err)
+			return nil, fmt.Errorf("error retrieving status of pool %s for volume %s: %s", volPoolName, key, err)
 		}
 		if active {
-			log.Printf("Can't retrieve volume %s (and pool is active)", d.Id())
+			log.Printf("Can't retrieve volume %s (and pool is active)", key)
 			return nil, nil
 		}
 
@@ -263,11 +261,11 @@ func lookupVolumeReallyHard(client *Client, d *schema.ResourceData) (*libvirt.St
 		}
 
 		// attempt a new lookup
-		volume, err = virConn.LookupStorageVolByKey(d.Id())
+		volume, err = virConn.LookupStorageVolByKey(key)
 		if err != nil {
 			virErr := err.(libvirt.Error)
 			if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
-				return nil, fmt.Errorf("Can't retrieve volume %s", d.Id())
+				return nil, fmt.Errorf("Can't retrieve volume %s", key)
 			}
 			// does not exist, but no error
 			return nil, nil

@@ -12,6 +12,7 @@ func resourceCloudInit() *schema.Resource {
 		Create: resourceCloudInitCreate,
 		Read:   resourceCloudInitRead,
 		Delete: resourceCloudInitDelete,
+		Exists: resourceCloudInitExists,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -117,4 +118,30 @@ func resourceCloudInitDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return removeVolume(client, key)
+}
+
+func resourceCloudInitExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+	log.Printf("[DEBUG] Check if resource libvirt_cloudinit exists")
+	client := meta.(*Client)
+	if client.libvirt == nil {
+		return false, fmt.Errorf(LibVirtConIsNil)
+	}
+
+	key, err := getCloudInitVolumeKeyFromTerraformID(d.Id())
+	if err != nil {
+		return false, err
+	}
+
+	volPoolName := d.Get("pool").(string)
+	volume, err := lookupVolumeReallyHard(client, volPoolName, key)
+	if err != nil {
+		return false, err
+	}
+
+	if volume == nil {
+		return false, nil
+	}
+	defer volume.Free()
+
+	return true, nil
 }

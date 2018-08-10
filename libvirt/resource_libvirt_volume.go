@@ -256,7 +256,7 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	volume, err := lookupVolumeReallyHard(client, d)
+	volume, err := lookupVolumeReallyHard(client, d.Get("pool").(string), d.Id())
 	if err != nil {
 		return err
 	}
@@ -309,7 +309,8 @@ func resourceLibvirtVolumeExists(d *schema.ResourceData, meta interface{}) (bool
 	log.Printf("[DEBUG] Check if resource libvirt_volume exists")
 	client := meta.(*Client)
 
-	volume, err := lookupVolumeReallyHard(client, d)
+	volPoolName := d.Get("pool").(string)
+	volume, err := lookupVolumeReallyHard(client, volPoolName, d.Id())
 	if err != nil {
 		return false, err
 	}
