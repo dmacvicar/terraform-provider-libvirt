@@ -51,6 +51,47 @@ func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 	})
 }
 
+// The destroy function should always handle the case where the resource might already be destroyed
+// (manually, for example). If the resource is already destroyed, this should not return an error.
+// This allows Terraform users to manually delete resources without breaking Terraform.
+// This test should fail without a proper "Exists" implementation
+func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
+	var volume libvirt.StorageVol
+
+	const testAccCheckLibvirtCloudInitConfigBasic = `
+    	resource "libvirt_cloudinit" "test" {
+  	    	name           = "test.iso"
+			local_hostname = "tango1"
+			pool           = "default"
+			user_data      = "#cloud-config\nssh_authorized_keys: []\n"
+		}`
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCheckLibvirtCloudInitConfigBasic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit.test", &volume),
+				),
+			},
+			{
+				Config:  testAccCheckLibvirtCloudInitConfigBasic,
+				Destroy: true,
+				PreConfig: func() {
+					client := testAccProvider.Meta().(*Client)
+					id, err := volume.GetKey()
+					if err != nil {
+						panic(err)
+					}
+					removeVolume(client, id)
+				},
+			},
+		},
+	})
+}
+
 func testAccCheckCloudInitVolumeExists(n string, volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
