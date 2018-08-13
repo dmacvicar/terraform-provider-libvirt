@@ -120,6 +120,20 @@ Look at more advanced examples [here](examples/)
 
 You can target different libvirt hosts instantiating the [provider multiple times](https://www.terraform.io/docs/configuration/providers.html#multiple-provider-instances). [Example](examples/multiple).
 
+### Using qemu-agent
+
+From its documentation, [qemu-agent](https://wiki.libvirt.org/page/Qemu_guest_agent):
+
+>It is a daemon program running inside the domain which is supposed to help management applications with executing functions which need assistance of the guest OS.
+
+Until terraform-provider-libvirt 0.4.2, qemu-agent was used by default to get network configuration. However, if qemu-agent is not running, this creates a delay until connecting to it times-out.
+
+In current versions, we default to not to attempt connecting to it, and attempting to retrieve network interface information from the agent needs to be enabled explicitly with `TF_USE_QEMU_AGENT`. Note that you still need to make sure the agent is running in the OS, and that is unrelated to this option.
+
+`TF_SKIP_QEMU_AGENT` is deprecated and has no effect (except for a warning).
+
+Be aware that this variables may be subject to change again in future versions.
+
 ## Troubleshooting (aka you have a problem)
 
 Have a look at [TROUBLESHOOTING](doc/TROUBLESHOOTING.md), and feel free to add a PR if you find out something is missing.
