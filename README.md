@@ -27,29 +27,19 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 
 ## Downloading
 
-Builds for openSUSE, CentOS, Ubuntu, Fedora are created with openSUSE's [OBS](https://build.opensuse.org). The build definitions are available for both the [stable](https://build.opensuse.org/package/show/home:dmacvicar:terraform-provider-libvirt:stable/terraform-provider-libvirt) and [master](https://build.opensuse.org/project/show/home:dmacvicar:terraform-provider-libvirt) branches.
+Builds for openSUSE, CentOS, Ubuntu, Fedora are created with openSUSE's [OBS](https://build.opensuse.org). The build definitions are available for both the [stable](https://build.opensuse.org/package/show/systemsmanagement:terraform/terraform-provider-libvirt) and [master](https://build.opensuse.org/package/show/systemsmanagement:terraform:unstable/terraform-provider-libvirt) branches.
 
-## Using released builds
+## Using published binaries/builds
 
-* Head to the [releases section](https://github.com/dmacvicar/terraform-provider-libvirt/releases) and download the latest stable release build for your distribution.
+* *Stable releases*: Head to the [releases section](https://github.com/dmacvicar/terraform-provider-libvirt/releases) and download the latest stable release build for your distribution.
+* *git master builds*: Head to the [download area of the OBS project](https://download.opensuse.org/repositories/systemsmanagement:/terraform:/unstable/) and download the build for your distribution.
 
-## Using unstable builds
+## Using packages
 
-* Head to the [download area of the OBS project](https://download.opensuse.org/repositories/home:/dmacvicar:/terraform-provider-libvirt/) and download the build for your distribution.
+Follow the instructions for your distribution:
 
-## Using community packages
-
-If you are using opensuse/SUSE distro, add the repo and download the package (check the repo according your distro)
-
-**NOTE**: This may not be the latest release.
-
-```console
-
-DISTRO=openSUSE_Leap_42.3
-zypper addrepo http://download.opensuse.org/repositories/Virtualization:containers/$DISTRO/Virtualization:containers.repo
-zypper refresh
-zypper install terraform-provider-libvirt
-```
+* [Packages for stable releases](https://software.opensuse.org/download/package?project=systemsmanagement:terraform&package=terraform-provider-libvirt)
+* [Packages for current git master](https://software.opensuse.org/download/package?project=systemsmanagement:terraform:unstable&package=terraform-provider-libvirt)
 
 ## Building from source
 
