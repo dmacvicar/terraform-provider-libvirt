@@ -1,3 +1,15 @@
+## 0.4.3 (August 14, 2018)
+
+HIGHLIGHTS:
+
+* *IMPORTANT* qemu-agent is not used by default to gather network
+  interface information anymore. If you need to use, please set
+  the TF_USE_QEMU_AGENT environment variable.
+
+* Handle gracefully out-of-band destruction of volume and cloud-init
+  resources. Should provide a better end-user experience in day to day
+  operations.
+
 ## 0.4.2 (August 3, 2018)
 
 HIGHLIGHTS:
