@@ -732,7 +732,10 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			disk = map[string]interface{}{
 				"file": diskDef.Source.File,
 			}
-		} else {
+		} else if diskDef.Source.File != nil {
+			// LEGACY way of handling volumes using "file", which we replaced
+			// by the diskdef.Source.Volume once we realized it existed.
+			// This code will be removed in future versions of the provider.
 			virVol, err := virConn.LookupStorageVolByPath(diskDef.Source.File.File)
 			if err != nil {
 				return fmt.Errorf("Error retrieving volume for disk: %s", err)
@@ -747,7 +750,29 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			disk = map[string]interface{}{
 				"volume_id": virVolKey,
 			}
+		} else {
+			pool, err := virConn.LookupStoragePoolByName(diskDef.Source.Volume.Pool)
+			if err != nil {
+				return fmt.Errorf("Error retrieving pool for disk: %s", err)
+			}
+			defer pool.Free()
+
+			virVol, err := pool.LookupStorageVolByName(diskDef.Source.Volume.Volume)
+			if err != nil {
+				return fmt.Errorf("Error retrieving volume for disk: %s", err)
+			}
+			defer virVol.Free()
+
+			virVolKey, err := virVol.GetKey()
+			if err != nil {
+				return fmt.Errorf("Error retrieving volume key for disk: %s", err)
+			}
+
+			disk = map[string]interface{}{
+				"volume_id": virVolKey,
+			}
 		}
+
 		disks = append(disks, disk)
 	}
 	d.Set("disks", disks)
@@ -1134,14 +1159,26 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 			if err != nil {
 				return fmt.Errorf("Can't retrieve volume %s: %v", volumeKey.(string), err)
 			}
-			diskVolumeFile, err := diskVolume.GetPath()
+
+			diskVolumeName, err := diskVolume.GetName()
 			if err != nil {
-				return fmt.Errorf("Error retrieving volume file: %s", err)
+				return fmt.Errorf("Can't retrieve name for volume %s", volumeKey.(string))
+			}
+
+			diskPool, err := diskVolume.LookupPoolByVolume()
+			if err != nil {
+				return fmt.Errorf("Can't retrieve pool for volume %s", volumeKey.(string))
+			}
+
+			diskPoolName, err := diskPool.GetName()
+			if err != nil {
+				return fmt.Errorf("Can't retrieve name for pool of volume %s", volumeKey.(string))
 			}
 
 			disk.Source = &libvirtxml.DomainDiskSource{
-				File: &libvirtxml.DomainDiskSourceFile{
-					File: diskVolumeFile,
+				Volume: &libvirtxml.DomainDiskSourceVolume{
+					Pool:   diskPoolName,
+					Volume: diskVolumeName,
 				},
 			}
 		} else if rawURL, ok := d.GetOk(prefix + ".url"); ok {
