@@ -7,4 +7,4 @@ echo "--> Cleanup Networks"
 sudo virsh net-list --all | (grep -E "acceptance-test-network|test-net" || :) | awk '{print $1}' | xargs --no-run-if-empty -n1 -I{} sh -c 'sudo virsh net-destroy {}; sudo virsh net-undefine {}'
 
 echo "--> Cleanup Volumes"
-sudo virsh vol-list --pool default | (grep -E "terraform-acceptance-test|ignition" || :) | awk '{print $1}' | xargs --no-run-if-empty -n1 -I{} sh -c 'sudo virsh vol-delete --pool default {}'
+sudo virsh vol-list --pool default | (grep -E "terraform-acceptance-test|ignition|initrd" || :) | awk '{print $1}' | xargs --no-run-if-empty -n1 -I{} sh -c 'sudo virsh vol-delete --pool default {}'
