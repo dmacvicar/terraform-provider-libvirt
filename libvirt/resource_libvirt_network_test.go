@@ -156,6 +156,92 @@ func checkDNSForwarders(name string, expected []libvirtxml.NetworkDNSForwarder) 
 	}
 }
 
+func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dns {
+						hosts = [
+						  {
+							  hostname = "myhost1",
+							  ip = "1.1.1.1",
+						  },
+						  {
+							  hostname = "myhost1",
+							  ip = "1.1.1.2",
+						  },
+						  {
+							  hostname = "myhost2",
+							  ip = "1.1.1.1",
+						  },
+						]
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.hosts.0.hostname", "myhost1"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.hosts.0.ip", "1.1.1.1"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.hosts.1.hostname", "myhost1"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.hosts.1.ip", "1.1.1.2"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.hosts.2.hostname", "myhost2"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.hosts.2.ip", "1.1.1.1"),
+					checkDNSHosts("libvirt_network.test_net", []libvirtxml.NetworkDNSHost{
+						{
+							IP: "1.1.1.1",
+							Hostnames: []libvirtxml.NetworkDNSHostHostname{
+								{Hostname: "myhost1"},
+								{Hostname: "myhost2"},
+							},
+						},
+						{
+							IP: "1.1.1.2",
+							Hostnames: []libvirtxml.NetworkDNSHostHostname{
+								{Hostname: "myhost1"},
+							},
+						},
+					}),
+				),
+			},
+		},
+	})
+}
+
+func checkDNSHosts(name string, expected []libvirtxml.NetworkDNSHost) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		networkDef, err := getNetworkDef(s, name)
+		if err != nil {
+			return err
+		}
+		if networkDef.DNS == nil {
+			return fmt.Errorf("DNS block not found in networkDef")
+		}
+		actual := networkDef.DNS.Host
+		if len(expected) != len(actual) {
+			return fmt.Errorf("len(expected): %d != len(actual): %d", len(expected), len(actual))
+		}
+		for _, e := range expected {
+			found := false
+			for _, a := range actual {
+				if reflect.DeepEqual(a.IP, e.IP) && reflect.DeepEqual(a.Hostnames, e.Hostnames) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("Unable to find:%v in: %v", e, actual)
+			}
+		}
+		return nil
+	}
+}
+
 func networkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]

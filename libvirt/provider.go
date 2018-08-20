@@ -27,6 +27,10 @@ func Provider() terraform.ResourceProvider {
 			"libvirt_ignition":  resourceIgnition(),
 		},
 
+		DataSourcesMap: map[string]*schema.Resource{
+			"libvirt_network_dns_host_template": datasourceLibvirtNetworkDNSHostTemplate(),
+		},
+
 		ConfigureFunc: providerConfigure,
 	}
 }

@@ -115,6 +115,31 @@ func resourceLibvirtNetwork() *schema.Resource {
 								},
 							},
 						},
+						"hosts": {
+							Type:     schema.TypeList,
+							Optional: true,
+							ForceNew: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"ip": {
+										Type: schema.TypeString,
+										// This should be required, but Terraform does validation too early
+										// and therefore doesn't recognize that this is set when assigning from
+										// a rendered dns_host template.
+										Optional: true,
+										ForceNew: true,
+									},
+									"hostname": {
+										Type: schema.TypeString,
+										// This should be required, but Terraform does validation too early
+										// and therefore doesn't recognize that this is set when assigning from
+										// a rendered dns_host template.
+										Optional: true,
+										ForceNew: true,
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -243,11 +268,8 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		if err != nil {
 			return fmt.Errorf("Could not set DHCP from adresses '%s'", err)
 		}
+		var dnsForwarders []libvirtxml.NetworkDNSForwarder
 		if dnsForwardCount, ok := d.GetOk(dnsPrefix + ".forwarders.#"); ok {
-			dns := libvirtxml.NetworkDNS{
-				Forwarders: []libvirtxml.NetworkDNSForwarder{},
-			}
-
 			for i := 0; i < dnsForwardCount.(int); i++ {
 				forward := libvirtxml.NetworkDNSForwarder{}
 				forwardPrefix := fmt.Sprintf(dnsPrefix+".forwarders.%d", i)
@@ -261,7 +283,40 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 				if domain, ok := d.GetOk(forwardPrefix + ".domain"); ok {
 					forward.Domain = domain.(string)
 				}
-				dns.Forwarders = append(dns.Forwarders, forward)
+				dnsForwarders = append(dnsForwarders, forward)
+			}
+		}
+
+		dnsHostsMap := map[string][]string{}
+		if dnsHostCount, ok := d.GetOk(dnsPrefix + ".hosts.#"); ok {
+			for i := 0; i < dnsHostCount.(int); i++ {
+				hostPrefix := fmt.Sprintf(dnsPrefix+".hosts.%d", i)
+
+				address := d.Get(hostPrefix + ".ip").(string)
+				if net.ParseIP(address) == nil {
+					return fmt.Errorf("Could not parse address '%s'", address)
+				}
+
+				dnsHostsMap[address] = append(dnsHostsMap[address], d.Get(hostPrefix+".hostname").(string))
+			}
+		}
+
+		var dnsHosts []libvirtxml.NetworkDNSHost
+		for ip, hostnames := range dnsHostsMap {
+			dnsHostnames := []libvirtxml.NetworkDNSHostHostname{}
+			for _, hostname := range hostnames {
+				dnsHostnames = append(dnsHostnames, libvirtxml.NetworkDNSHostHostname{Hostname: hostname})
+			}
+			dnsHosts = append(dnsHosts, libvirtxml.NetworkDNSHost{
+				IP:        ip,
+				Hostnames: dnsHostnames,
+			})
+		}
+
+		if len(dnsForwarders) > 0 || len(dnsHosts) > 0 {
+			dns := libvirtxml.NetworkDNS{
+				Forwarders: dnsForwarders,
+				Host:       dnsHosts,
 			}
 			networkDef.DNS = &dns
 		}

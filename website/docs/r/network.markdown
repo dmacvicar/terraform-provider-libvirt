@@ -52,6 +52,19 @@ resource "libvirt_network" "kube_network" {
     #     domain = "my domain"
     #   }
     # ]
+
+    # (Optional) one or more DNS host entries.  Both of
+    # "ip" and "hostname" must be specified.  The format is:
+    # hosts = [
+    #   {
+    #     hostname = "my_hostname"
+    #     ip = "my.ip.address.1"
+    #   },
+    #   {
+    #     hostname = "my_hostname"
+    #     ip = "my.ip.address.2"
+    #   },
+    # ]
   }
 }
 ```
@@ -96,7 +109,26 @@ The following arguments are supported:
 Inside of `dns` section the following argument are supported:
 * `local_only` - (Optional) true/false: true means 'do not forward unresolved requests for this domain to the part DNS server
 * `forwarders` - (Optional) Either `address`, `domain`, or both must be set
+* `hosts` - (Optional) a DNS host entry block.  You can have one or more of these
+   blocks in your DNS definition. You must specify both `ip` and `hostname`.
 
+An advanced example of round-robin DNS (using DNS host templates) follows:
+
+```hcl
+resource "libvirt_network" "my_network" {
+  ...
+  dns = {
+    hosts = [ "${flatten(data.libvirt_network_dns_host_template.hosts.*.rendered)}" ]
+  }
+  ...
+}
+
+data "libvirt_network_dns_host_template" "hosts" {
+  count = "${var.host_count}"
+  ip = "${var.host_ips[count.index]}"
+  hostname = "my_host"
+}
+```
 
 * `dhcp` - (Optional) DHCP configuration. 
    You need to use it in conjuction with the adresses variable.
