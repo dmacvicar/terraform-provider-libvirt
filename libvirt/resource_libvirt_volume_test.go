@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"encoding/xml"
 	"fmt"
 	"regexp"
 	"testing"
@@ -8,12 +9,13 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	libvirt "github.com/libvirt/libvirt-go"
+	//	"github.com/libvirt/libvirt-go-xml"
 )
 
-func testAccCheckLibvirtVolumeDestroy(s *terraform.State) error {
+func testAccCheckLibvirtVolumeDestroy(state *terraform.State) error {
 	virConn := testAccProvider.Meta().(*Client).libvirt
 
-	for _, rs := range s.RootModule().Resources {
+	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "libvirt_volume" {
 			continue
 		}
@@ -29,13 +31,13 @@ func testAccCheckLibvirtVolumeDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckLibvirtVolumeExists(n string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+func testAccCheckLibvirtVolumeExists(name string, volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		rs, ok := s.RootModule().Resources[n]
+		rs, ok := s.RootModule().Resources[name]
 		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+			return fmt.Errorf("Not found: %s", name)
 		}
 
 		if rs.Primary.ID == "" {
@@ -82,6 +84,44 @@ func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.StorageVol
 	}
 }
 
+func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		resource, ok := s.RootModule().Resources[name]
+		if !ok {
+			return fmt.Errorf("Not found: %s", name)
+		}
+
+		if resource.Primary.ID == "" {
+			return fmt.Errorf("No libvirt volume key ID is set")
+		}
+
+		vol, err := virConn.LookupStorageVolByKey(resource.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		volXMLDesc, err := vol.GetXMLDesc(0)
+		if err != nil {
+			return fmt.Errorf("Error retrieving libvirt volume XML description: %s", err)
+		}
+
+		volumeDef := newDefVolume()
+		err = xml.Unmarshal([]byte(volXMLDesc), &volumeDef)
+		if err != nil {
+			return fmt.Errorf("Error reading libvirt volume XML description: %s", err)
+		}
+		// if volume is a backing store it has some xml attributes set
+		// if there is no backingstore this will panic
+		value := volumeDef.BackingStore.Path
+		if value == "" {
+			return fmt.Errorf("FAIL: the volume was supposed to be a backingstore, but it is not")
+		}
+		return nil
+	}
+}
+
 func TestAccLibvirtVolume_Basic(t *testing.T) {
 	var volume libvirt.StorageVol
 
@@ -104,6 +144,36 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 						"libvirt_volume.terraform-acceptance-test-1", "name", "terraform-test"),
 					resource.TestCheckResourceAttr(
 						"libvirt_volume.terraform-acceptance-test-1", "size", "1073741824"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtVolume_BackingStore(t *testing.T) {
+	var volume libvirt.StorageVol
+	var volume2 libvirt.StorageVol
+	const testAccCheckLibvirtVolumeConfigBasic = `
+	resource "libvirt_volume" "terraform-acceptance-test-3" {
+		name = "terraform-test3"
+		size =  1073741824
+	}
+	resource "libvirt_volume" "backing-store" {
+		name = "backing-store"
+		base_volume_id = "${libvirt_volume.terraform-acceptance-test-3.id}"
+        }
+	`
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCheckLibvirtVolumeConfigBasic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-3", &volume),
+					testAccCheckLibvirtVolumeIsBackingStore("libvirt_volume.backing-store", &volume2),
 				),
 			},
 		},
