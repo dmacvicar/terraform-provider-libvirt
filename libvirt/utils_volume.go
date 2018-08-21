@@ -160,7 +160,12 @@ func isQCOW2Header(buf []byte) (bool, error) {
 
 func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageVolume) error {
 	client := &http.Client{}
-	req, _ := http.NewRequest("GET", i.url.String(), nil)
+	req, err := http.NewRequest("GET", i.url.String(), nil)
+
+	if err != nil {
+		log.Printf("[DEBUG:] Error creating new request for source url %s: %s", i.url.String(), err)
+		return fmt.Errorf("Error while downloading %s: %s", i.url.String(), err)
+	}
 
 	if vol.Target.Timestamps != nil && vol.Target.Timestamps.Mtime != "" {
 		req.Header.Set("If-Modified-Since", timeFromEpoch(vol.Target.Timestamps.Mtime).UTC().Format(http.TimeFormat))
@@ -175,7 +180,7 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 	if response.StatusCode == http.StatusNotModified {
 		return nil
 	}
-
+	log.Printf("[DEBUG]: url resp status code %s\n", response.Status)
 	return copier(response.Body)
 }
 
@@ -212,13 +217,21 @@ func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64
 			stream.Free()
 		}()
 
-		volume.Upload(stream, 0, size, 0)
+		if err := volume.Upload(stream, 0, size, 0); err != nil {
+			stream.Abort()
+			return fmt.Errorf("Error while uploading volume %s", err)
+		}
 
 		sio := NewStreamIO(*stream)
 
 		bytesCopied, err = io.Copy(sio, src)
+		// if we get unexpected EOF this mean that connection was closed suddently from server side
+		// the problem is not on the plugin but on server hosting currupted images
+		if err == io.ErrUnexpectedEOF {
+			return fmt.Errorf("Error: transfer was unexpectedly closed from the server while downloading. Please try again later or check the server hosting sources")
+		}
 		if err != nil {
-			return err
+			return fmt.Errorf("Error while copying source to volume %s", err)
 		}
 		log.Printf("%d bytes uploaded\n", bytesCopied)
 		return nil
