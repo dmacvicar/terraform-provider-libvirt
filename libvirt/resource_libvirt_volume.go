@@ -4,8 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"log"
-	"net/http"
-	"strconv"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
