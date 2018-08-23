@@ -153,7 +153,7 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 	})
 }
 
-func TestAccLibvirtVolume_BackingStore(t *testing.T) {
+func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
 	var volume libvirt.StorageVol
 	var volume2 libvirt.StorageVol
 	const testAccCheckLibvirtVolumeConfigBasic = `
@@ -164,6 +164,36 @@ func TestAccLibvirtVolume_BackingStore(t *testing.T) {
 	resource "libvirt_volume" "backing-store" {
 		name = "backing-store"
 		base_volume_id = "${libvirt_volume.terraform-acceptance-test-3.id}"
+        }
+	`
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCheckLibvirtVolumeConfigBasic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-3", &volume),
+					testAccCheckLibvirtVolumeIsBackingStore("libvirt_volume.backing-store", &volume2),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
+	var volume libvirt.StorageVol
+	var volume2 libvirt.StorageVol
+	const testAccCheckLibvirtVolumeConfigBasic = `
+	resource "libvirt_volume" "terraform-acceptance-test-3" {
+		name = "terraform-test3"
+		size =  1073741824
+	}
+	resource "libvirt_volume" "backing-store" {
+		name = "backing-store"
+		base_volume_name = "${libvirt_volume.terraform-acceptance-test-3.name}"
         }
 	`
 
