@@ -4,8 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"log"
-	"net/http"
-	"strconv"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
@@ -65,18 +63,6 @@ func resourceLibvirtVolume() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 	}
-}
-
-func remoteImageSize(url string) (int, error) {
-	response, err := http.Head(url)
-	if err != nil {
-		return 0, err
-	}
-	length, err := strconv.Atoi(response.Header.Get("Content-Length"))
-	if err != nil {
-		return 0, err
-	}
-	return length, nil
 }
 
 func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error {
