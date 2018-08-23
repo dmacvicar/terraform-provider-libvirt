@@ -4,12 +4,12 @@ import (
 	"encoding/xml"
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	libvirt "github.com/libvirt/libvirt-go"
-	//	"github.com/libvirt/libvirt-go-xml"
 )
 
 func testAccCheckLibvirtVolumeDestroy(state *terraform.State) error {
@@ -106,7 +106,10 @@ func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirt.Storag
 		if err != nil {
 			return fmt.Errorf("Error retrieving libvirt volume XML description: %s", err)
 		}
-
+		// first test to avoid panic
+		if strings.Contains(volXMLDesc, "<backingStore>") == false {
+			return fmt.Errorf("FAIL: the volume was supposed to be a backingstore, but it is not")
+		}
 		volumeDef := newDefVolume()
 		err = xml.Unmarshal([]byte(volXMLDesc), &volumeDef)
 		if err != nil {
