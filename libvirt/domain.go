@@ -14,11 +14,7 @@ import (
 	"github.com/libvirt/libvirt-go-xml"
 )
 
-// deprecated, now defaults to not use it, but we warn the user
-const skipQemuAgentEnvVar = "TF_SKIP_QEMU_AGENT"
-
-// if explicitly enabled
-const useQemuAgentEnvVar = "TF_USE_QEMU_AGENT"
+const skipQemuEnvVar = "TF_SKIP_QEMU_AGENT"
 
 const domWaitLeaseStillWaiting = "waiting-addresses"
 const domWaitLeaseDone = "all-addresses-obtained"
@@ -150,8 +146,10 @@ func domainIsRunning(domain libvirt.Domain) (bool, error) {
 func domainGetIfacesInfo(domain libvirt.Domain, domainDef libvirtxml.Domain,
 	virConn *libvirt.Connect) ([]libvirt.DomainInterface, error) {
 
-	_, found := os.LookupEnv(useQemuAgentEnvVar)
+	_, found := os.LookupEnv(skipQemuEnvVar)
 	if found {
+		log.Printf("[DEBUG] %s defined in environment: skipping qemu-agent", skipQemuEnvVar)
+	} else {
 		// get all the interfaces using the qemu-agent, this includes also
 		// interfaces that are not attached to networks managed by libvirt
 		// (eg. bridges, macvtap,...)
@@ -163,13 +161,6 @@ func domainGetIfacesInfo(domain libvirt.Domain, domainDef libvirtxml.Domain,
 			// or macvtap. Hence it has the highest priority
 			return interfaces, nil
 		}
-	} else {
-		_, found = os.LookupEnv(skipQemuAgentEnvVar)
-		if found {
-			log.Printf("[DEBUG] %s is deprecated and qemu-agent is not used by default.", skipQemuAgentEnvVar)
-		}
-		log.Printf("[INFO] Set %s if you want to get network information from qemu-agent", useQemuAgentEnvVar)
-
 	}
 
 	log.Print("[DEBUG] getting domain addresses from networks")
