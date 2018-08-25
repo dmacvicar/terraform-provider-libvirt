@@ -3,6 +3,7 @@ package libvirt
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -20,6 +21,7 @@ type image interface {
 	Size() (uint64, error)
 	Import(func(io.Reader) error, libvirtxml.StorageVolume) error
 	String() string
+	IsQCOW2() (bool, error)
 }
 
 type localImage struct {
@@ -41,6 +43,20 @@ func (i *localImage) Size() (uint64, error) {
 		return 0, err
 	}
 	return uint64(fi.Size()), nil
+}
+
+func (i *localImage) IsQCOW2() (bool, error) {
+	file, err := os.Open(i.path)
+	defer file.Close()
+	if err != nil {
+		return false, fmt.Errorf("Error while opening %s: %s", i.path, err)
+	}
+	buf := make([]byte, 8)
+	_, err = io.ReadAtLeast(file, buf, 8)
+	if err != nil {
+		return false, err
+	}
+	return isQCOW2Header(buf)
 }
 
 func (i *localImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageVolume) error {
@@ -96,6 +112,50 @@ func (i *httpImage) Size() (uint64, error) {
 		return 0, err
 	}
 	return uint64(length), nil
+}
+
+func (i *httpImage) IsQCOW2() (bool, error) {
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", i.url.String(), nil)
+	req.Header.Set("Range", "bytes=0-7")
+	response, err := client.Do(req)
+
+	if err != nil {
+		return false, err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != 206 {
+		return false, fmt.Errorf(
+			"Can't retrieve partial header of resource to determine file type: %s - %s",
+			i.url.String(),
+			response.Status)
+	}
+
+	header, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return false, err
+	}
+
+	if len(header) < 8 {
+		return false, fmt.Errorf(
+			"Can't retrieve read header of resource to determine file type: %s - %d bytes read",
+			i.url.String(),
+			len(header))
+	}
+
+	return isQCOW2Header(header)
+}
+
+// Whether the buffer is the header of a qcow2 file
+func isQCOW2Header(buf []byte) (bool, error) {
+	if len(buf) < 8 {
+		return false, fmt.Errorf("Expected header of 8 bytes. Got %d", len(buf))
+	}
+	if buf[0] == 'Q' && buf[1] == 'F' && buf[2] == 'I' && buf[3] == 0xfb && buf[4] == 0x00 && buf[5] == 0x00 && buf[6] == 0x00 && buf[7] == 0x03 {
+		return true, nil
+	}
+	return false, nil
 }
 
 func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageVolume) error {
