@@ -42,7 +42,7 @@ func randomPort() int {
 	const minPort = 1024
 	const maxPort = 65535
 
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(maxPort-minPort) + minPort
 }
 
