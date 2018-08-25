@@ -2,6 +2,7 @@ package libvirt
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"testing"
 
@@ -185,7 +186,7 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 	}
 	defer fws.Stop()
 
-	content := []byte("this is a qcow image... well, it is not")
+	content := []byte("a fake image")
 	url, _, err := fws.AddFile(content)
 	if err != nil {
 		t.Fatal(err)
@@ -196,6 +197,7 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 		name   = "terraform-test"
 		source = "%s"
 	}`
+
 	config := fmt.Sprintf(testAccCheckLibvirtVolumeConfigSource, url)
 
 	resource.Test(t, resource.TestCase{
@@ -209,6 +211,58 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-2", &volume),
 					resource.TestCheckResourceAttr(
 						"libvirt_volume.terraform-acceptance-test-2", "name", "terraform-test"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtVolume_DownloadFromSourceFormat(t *testing.T) {
+	var volumeRaw libvirt.StorageVol
+	var volumeQCOW2 libvirt.StorageVol
+
+	qcow2Path, err := filepath.Abs("testdata/test.qcow2")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rawPath, err := filepath.Abs("testdata/initrd.img")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const testAccCheckLibvirtVolumeConfigSource = `
+	resource "libvirt_volume" "terraform-acceptance-test-raw" {
+		name   = "terraform-test-raw"
+		source = "%s"
+	}
+
+    resource "libvirt_volume" "terraform-acceptance-test-qcow2" {
+		name   = "terraform-test-qcow2"
+		source = "%s"
+	}`
+	config := fmt.Sprintf(testAccCheckLibvirtVolumeConfigSource,
+		fmt.Sprintf("file://%s", rawPath),
+		fmt.Sprintf("file://%s", qcow2Path))
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-raw", &volumeRaw),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-qcow2", &volumeQCOW2),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume.terraform-acceptance-test-raw", "name", "terraform-test-raw"),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume.terraform-acceptance-test-raw", "format", "raw"),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume.terraform-acceptance-test-qcow2", "name", "terraform-test-qcow2"),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume.terraform-acceptance-test-qcow2", "format", "qcow2"),
 				),
 			},
 		},
