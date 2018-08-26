@@ -168,7 +168,7 @@ func newIgnitionDefFromRemoteVol(virConn *libvirt.Connect, id string) (defIgniti
 
 	volume, err := virConn.LookupStorageVolByKey(key)
 	if err != nil {
-		return ign, fmt.Errorf("Can't retrieve volume %s", key)
+		return ign, fmt.Errorf("Can't retrieve volume %s: %v", key, err)
 	}
 	defer volume.Free()
 

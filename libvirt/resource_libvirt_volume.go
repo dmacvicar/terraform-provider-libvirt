@@ -159,7 +159,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		volume = nil
 		baseVolume, err := client.libvirt.LookupStorageVolByKey(baseVolumeID.(string))
 		if err != nil {
-			return fmt.Errorf("Can't retrieve volume %s", baseVolumeID.(string))
+			return fmt.Errorf("Can't retrieve volume %s: %v", baseVolumeID.(string), err)
 		}
 		backingStoreDef, err := newDefBackingStoreFromLibvirt(baseVolume)
 		if err != nil {
@@ -185,7 +185,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		}
 		baseVolume, err := baseVolumePool.LookupStorageVolByName(baseVolumeName.(string))
 		if err != nil {
-			return fmt.Errorf("Can't retrieve volume %s", baseVolumeName.(string))
+			return fmt.Errorf("Can't retrieve volume %s: %v", baseVolumeName.(string), err)
 		}
 		backingStoreDef, err := newDefBackingStoreFromLibvirt(baseVolume)
 		if err != nil {

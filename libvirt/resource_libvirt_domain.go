@@ -929,7 +929,7 @@ func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml
 
 	diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
 	if err != nil {
-		return disk, fmt.Errorf("Can't retrieve volume %s", volumeKey)
+		return disk, fmt.Errorf("Can't retrieve volume %s: %v", volumeKey, err)
 	}
 	diskVolumeFile, err := diskVolume.GetPath()
 	if err != nil {
@@ -1125,7 +1125,7 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 		if volumeKey, ok := d.GetOk(prefix + ".volume_id"); ok {
 			diskVolume, err := virConn.LookupStorageVolByKey(volumeKey.(string))
 			if err != nil {
-				return fmt.Errorf("Can't retrieve volume %s", volumeKey.(string))
+				return fmt.Errorf("Can't retrieve volume %s: %v", volumeKey.(string), err)
 			}
 			diskVolumeFile, err := diskVolume.GetPath()
 			if err != nil {
