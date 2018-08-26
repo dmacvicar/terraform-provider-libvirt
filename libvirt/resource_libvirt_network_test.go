@@ -2,12 +2,159 @@ package libvirt
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/libvirt/libvirt-go"
+	"github.com/libvirt/libvirt-go-xml"
 )
+
+func getNetworkDef(s *terraform.State, name string) (*libvirtxml.Network, error) {
+	var network *libvirt.Network
+	rs, ok := s.RootModule().Resources[name]
+	if !ok {
+		return nil, fmt.Errorf("Not found: %s", name)
+	}
+	if rs.Primary.ID == "" {
+		return nil, fmt.Errorf("No libvirt network ID is set")
+	}
+	virConn := testAccProvider.Meta().(*Client).libvirt
+	network, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
+	if err != nil {
+		return nil, err
+	}
+	networkDef, err := newDefNetworkfromLibvirt(network)
+	if err != nil {
+		return nil, fmt.Errorf("Error reading libvirt network XML description: %s", err)
+	}
+	return &networkDef, nil
+}
+
+func TestAccCheckLibvirtNetwork_LocalOnly(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dns {
+						local_only = true
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.local_only", "true"),
+					checkLocalOnly("libvirt_network.test_net", true),
+				),
+			},
+		},
+	})
+}
+
+func checkLocalOnly(name string, expectLocalOnly bool) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		networkDef, err := getNetworkDef(s, name)
+		if err != nil {
+			return err
+		}
+		if expectLocalOnly {
+			if networkDef.Domain == nil || networkDef.Domain.LocalOnly != "yes" {
+				return fmt.Errorf("networkDef.Domain.LocalOnly is not true")
+			}
+		} else {
+			if networkDef.Domain != nil && networkDef.Domain.LocalOnly != "no" {
+				return fmt.Errorf("networkDef.Domain.LocalOnly is true")
+			}
+		}
+		return nil
+	}
+}
+
+func TestAccCheckLibvirtNetwork_DNSForwarders(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dns {
+						forwarders = [
+						  {
+						    address = "8.8.8.8",
+					          },
+						  {
+						    address = "10.10.0.67",
+						    domain = "my.domain.com",
+						  },
+						  {
+						    domain = "hello.com",
+						  },
+						]
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.forwarders.#", "3"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.forwarders.0.address", "8.8.8.8"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.forwarders.1.address", "10.10.0.67"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.forwarders.1.domain", "my.domain.com"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dns.0.forwarders.2.domain", "hello.com"),
+					checkDNSForwarders("libvirt_network.test_net", []libvirtxml.NetworkDNSForwarder{
+						{
+							Addr: "8.8.8.8",
+						},
+						{
+							Addr:   "10.10.0.67",
+							Domain: "my.domain.com",
+						},
+						{
+							Domain: "hello.com",
+						},
+					}),
+				),
+			},
+		},
+	})
+}
+
+func checkDNSForwarders(name string, expected []libvirtxml.NetworkDNSForwarder) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		networkDef, err := getNetworkDef(s, name)
+		if err != nil {
+			return err
+		}
+		if networkDef.DNS == nil {
+			return fmt.Errorf("DNS block not found in networkDef")
+		}
+		actual := networkDef.DNS.Forwarders
+		if len(expected) != len(actual) {
+			return fmt.Errorf("len(expected): %d != len(actual): %d", len(expected), len(actual))
+		}
+		for _, e := range expected {
+			found := false
+			for _, a := range actual {
+				if reflect.DeepEqual(a, e) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("Unable to find %v in %v", e, actual)
+			}
+		}
+		return nil
+	}
+}
 
 func networkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
