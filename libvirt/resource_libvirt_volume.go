@@ -297,7 +297,7 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	if volumeDef.Target.Format.Type == "" {
+	if volumeDef.Target == nil || volumeDef.Target.Format == nil || volumeDef.Target.Format.Type == "" {
 		return fmt.Errorf("Volume has no format specified: %s", volName)
 	}
 	log.Printf("[DEBUG] Volume %s format: %s", volName, volumeDef.Target.Format.Type)
