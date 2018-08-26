@@ -106,9 +106,9 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		volume *libvirt.StorageVol
 	)
 
-	specifiedFormat, isFormatSpecified := d.GetOk("format")
-	if isFormatSpecified {
-		volumeDef.Target.Format.Type = specifiedFormat.(string)
+	givenFormat, isFormatGiven := d.GetOk("format")
+	if isFormatGiven {
+		volumeDef.Target.Format.Type = givenFormat.(string)
 	}
 
 	// an source image was given, this mean we can't choose size
@@ -138,7 +138,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			volumeDef.Target.Format.Type = "qcow2"
 		}
 
-		if isFormatSpecified && isQCOW2 && specifiedFormat != "qcow2" {
+		if isFormatGiven && isQCOW2 && givenFormat != "qcow2" {
 			return fmt.Errorf("Format other than QCOW2 explicitly specified for image detected as QCOW2 image: %s", img.String())
 		}
 
