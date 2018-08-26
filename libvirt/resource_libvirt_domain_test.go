@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	libvirt "github.com/libvirt/libvirt-go"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 func TestAccLibvirtDomain_Basic(t *testing.T) {
@@ -166,6 +167,60 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 					testAccCheckLibvirtVolumeDoesNotExists("libvirt_volume.acceptance-test-volume1", &volume),
 					testAccCheckLibvirtVolumeDoesNotExists("libvirt_volume.acceptance-test-volume2", &volume),
 				),
+			},
+		},
+	})
+}
+
+// tests that disk driver is set correctly for the volume format
+func TestAccLibvirtDomain_VolumeDriver(t *testing.T) {
+	var domain libvirt.Domain
+	var volumeRaw libvirt.StorageVol
+	var volumeQCOW2 libvirt.StorageVol
+
+	var config = fmt.Sprintf(`
+	resource "libvirt_volume" "acceptance-test-volume-raw" {
+		name = "terraform-test-raw"
+        format = "raw"
+	}
+
+	resource "libvirt_volume" "acceptance-test-volume-qcow2" {
+		name = "terraform-test-qcow2"
+        format = "qcow2"
+	}
+
+	resource "libvirt_domain" "acceptance-test-domain" {
+		name = "terraform-test-domain"
+		disk {
+			volume_id = "${libvirt_volume.acceptance-test-volume-raw.id}"
+		}
+
+		disk {
+			volume_id = "${libvirt_volume.acceptance-test-volume-qcow2.id}"
+		}
+	}`)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.acceptance-test-volume-raw", &volumeRaw),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.acceptance-test-volume-qcow2", &volumeQCOW2),
+					// Check that each disk has the appropriate driver
+					testAccCheckLibvirtDomainDescription(&domain, func(domainDef libvirtxml.Domain) error {
+						if domainDef.Devices.Disks[0].Driver.Type != "raw" {
+							return fmt.Errorf("Expected disk to have RAW driver")
+						}
+						if domainDef.Devices.Disks[1].Driver.Type != "qcow2" {
+							return fmt.Errorf("Expected disk to have QCOW2 driver")
+						}
+						return nil
+					})),
 			},
 		},
 	})
@@ -749,6 +804,21 @@ func TestHash(t *testing.T) {
 }
 
 func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.TestCheckFunc {
+	return testAccCheckLibvirtDomainDescription(domain, func(domainDef libvirtxml.Domain) error {
+		disks := domainDef.Devices.Disks
+		for _, disk := range disks {
+			if diskBus := disk.Target.Bus; diskBus != "scsi" {
+				return fmt.Errorf("Disk bus is not scsi")
+			}
+			if wwn := disk.WWN; wwn != n {
+				return fmt.Errorf("Disk wwn %s is not equal to %s", wwn, n)
+			}
+		}
+		return nil
+	})
+}
+
+func testAccCheckLibvirtDomainDescription(domain *libvirt.Domain, checkFunc func(libvirtxml.Domain) error) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		xmlDesc, err := domain.GetXMLDesc(0)
 		if err != nil {
@@ -761,16 +831,7 @@ func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.Test
 			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
 		}
 
-		disks := domainDef.Devices.Disks
-		for _, disk := range disks {
-			if diskBus := disk.Target.Bus; diskBus != "scsi" {
-				return fmt.Errorf("Disk bus is not scsi")
-			}
-			if wwn := disk.WWN; wwn != n {
-				return fmt.Errorf("Disk wwn %s is not equal to %s", wwn, n)
-			}
-		}
-		return nil
+		return checkFunc(domainDef)
 	}
 }
 

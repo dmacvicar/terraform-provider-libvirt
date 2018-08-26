@@ -1175,6 +1175,29 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 				return fmt.Errorf("Can't retrieve name for pool of volume %s", volumeKey.(string))
 			}
 
+			// find out the format of the volume in order to set the appropriate
+			// driver
+			volumeDef, err := newDefVolumeFromLibvirt(diskVolume)
+			if err != nil {
+				return err
+			}
+			if volumeDef.Target != nil && volumeDef.Target.Format != nil && volumeDef.Target.Format.Type != "" {
+				if volumeDef.Target.Format.Type == "qcow2" {
+					disk.Driver = &libvirtxml.DomainDiskDriver{
+						Name: "qemu",
+						Type: "qcow2",
+					}
+				}
+				if volumeDef.Target.Format.Type == "raw" {
+					disk.Driver = &libvirtxml.DomainDiskDriver{
+						Name: "qemu",
+						Type: "raw",
+					}
+				}
+			} else {
+				log.Printf("[WARN] Disk volume has no format specified: %s", volumeKey.(string))
+			}
+
 			disk.Source = &libvirtxml.DomainDiskSource{
 				Volume: &libvirtxml.DomainDiskSourceVolume{
 					Pool:   diskPoolName,
@@ -1201,6 +1224,7 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 					},
 				},
 			}
+
 			if strings.HasSuffix(url.Path, ".iso") {
 				disk.Device = "cdrom"
 			}
