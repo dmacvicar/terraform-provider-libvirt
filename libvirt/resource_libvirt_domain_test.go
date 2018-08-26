@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
@@ -205,7 +206,24 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 
 func TestAccLibvirtDomainURLDisk(t *testing.T) {
 	var domain libvirt.Domain
-	u, err := url.Parse("http://download.opensuse.org/tumbleweed/iso/openSUSE-Tumbleweed-DVD-x86_64-Current.iso")
+
+	fws := fileWebServer{}
+	if err := fws.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer fws.Stop()
+
+	isoPath, err := filepath.Abs("testdata/tcl.iso")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	u, err := fws.AddFile(isoPath)
+	if err != nil {
+		t.Error(err)
+	}
+
+	url, err := url.Parse(u)
 	if err != nil {
 		t.Error(err)
 	}
@@ -216,7 +234,7 @@ func TestAccLibvirtDomainURLDisk(t *testing.T) {
 		disk {
 			url = "%s"
 		}
-	}`, u.String())
+	}`, url.String())
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -227,7 +245,7 @@ func TestAccLibvirtDomainURLDisk(t *testing.T) {
 				Config: configURL,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain", &domain),
-					testAccCheckLibvirtURLDisk(u, &domain),
+					testAccCheckLibvirtURLDisk(url, &domain),
 				),
 			},
 		},
