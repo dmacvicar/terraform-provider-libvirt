@@ -187,7 +187,7 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 	defer fws.Stop()
 
 	content := []byte("a fake image")
-	url, _, err := fws.AddFile(content)
+	url, _, err := fws.AddContent(content)
 	if err != nil {
 		t.Fatal(err)
 	}

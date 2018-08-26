@@ -83,7 +83,7 @@ func TestRemoteImageDetermineType(t *testing.T) {
 	}
 	defer fws.Stop()
 
-	url, _, err := fws.AddFile(content)
+	url, _, err := fws.AddContent(content)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestRemoteImageDownload(t *testing.T) {
 	}
 	defer fws.Stop()
 
-	url, tmpfile, err := fws.AddFile(content)
+	url, tmpfile, err := fws.AddContent(content)
 	if err != nil {
 		t.Fatal(err)
 	}

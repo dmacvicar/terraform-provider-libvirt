@@ -104,7 +104,7 @@ func (fws *fileWebServer) Start() error {
 }
 
 // Adds a file (with some content) in the directory served by the fileWebServer
-func (fws *fileWebServer) AddFile(content []byte) (string, *os.File, error) {
+func (fws *fileWebServer) AddContent(content []byte) (string, *os.File, error) {
 	tmpfile, err := ioutil.TempFile(fws.Dir, "file-")
 	if err != nil {
 		return "", nil, err
