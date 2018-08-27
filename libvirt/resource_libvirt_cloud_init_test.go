@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	libvirt "github.com/libvirt/libvirt-go"
@@ -12,6 +13,9 @@ import (
 
 func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 	var volume libvirt.StorageVol
+	randomIsoName := acctest.RandString(10) + ".iso"
+	randomLocalHostname := acctest.RandString(5) + ".iso"
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
@@ -22,17 +26,17 @@ func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "libvirt_cloudinit" "test" {
-					name           = "test.iso"
-					local_hostname = "tango1"
+					name           = "%s"
+					local_hostname = "%s"
 					pool           = "default"
 					user_data      = "#cloud-config\nssh_authorized_keys: []\n"
-				}`),
+				}`, randomIsoName, randomLocalHostname),
 
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit.test", "name", "test.iso"),
+						"libvirt_cloudinit.test", "name", randomIsoName),
 					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit.test", "local_hostname", "tango1"),
+						"libvirt_cloudinit.test", "local_hostname", randomLocalHostname),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit.test", &volume),
 				),
 			},
@@ -57,14 +61,16 @@ func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 // This test should fail without a proper "Exists" implementation
 func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	var volume libvirt.StorageVol
+	randomIsoName := acctest.RandString(9) + ".iso"
+	randomLocalHostname := acctest.RandString(5) + ".iso"
 
-	const testAccCheckLibvirtCloudInitConfigBasic = `
+	testAccCheckLibvirtCloudInitConfigBasic := fmt.Sprintf(`
     	resource "libvirt_cloudinit" "test" {
-  	    	name           = "test.iso"
-			local_hostname = "tango1"
+  	  name           = "%s"
+			local_hostname = "%s"
 			pool           = "default"
 			user_data      = "#cloud-config\nssh_authorized_keys: []\n"
-		}`
+		}`, randomIsoName, randomLocalHostname)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
