@@ -348,6 +348,12 @@ func resourceLibvirtDomain() *schema.Resource {
 					Type: schema.TypeMap,
 				},
 			},
+			"qemu_agent": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Required: false,
+				Default:  false,
+			},
 		},
 	}
 }
@@ -494,7 +500,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	if len(waitForLeases) > 0 {
 		err = domainWaitForLeases(domain, waitForLeases, d.Timeout(schema.TimeoutCreate),
-			domainDef, virConn)
+			domainDef, virConn, d)
 		if err != nil {
 			return err
 		}
@@ -757,7 +763,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("filesystems", filesystems)
 
 	// lookup interfaces with addresses
-	ifacesWithAddr, err := domainGetIfacesInfo(*domain, domainDef, virConn)
+	ifacesWithAddr, err := domainGetIfacesInfo(*domain, domainDef, virConn, d)
 	if err != nil {
 		return fmt.Errorf("Error retrieving interface addresses: %s", err)
 	}
