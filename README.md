@@ -128,7 +128,7 @@ From its documentation, [qemu-agent](https://wiki.libvirt.org/page/Qemu_guest_ag
 
 Until terraform-provider-libvirt 0.4.2, qemu-agent was used by default to get network configuration. However, if qemu-agent is not running, this creates a delay until connecting to it times-out.
 
-In current versions, we default to not to attempt connecting to it, and attempting to retrieve network interface information from the agent needs to be enabled explicitly with `qemu_agent = true`, further details here. Note that you still need to make sure the agent is running in the OS, and that is unrelated to this option.
+In current versions, we default to not to attempt connecting to it, and attempting to retrieve network interface information from the agent needs to be enabled explicitly with `qemu_agent = true`, further details [here](https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/website/docs/r/domain.html.markdown). Note that you still need to make sure the agent is running in the OS, and that is unrelated to this option.
 
 Note: when using bridge network configurations youneed to enable the `qemu_agent = true`. otherwise you will not retrieve the ip adresses of domains. 
 

@@ -163,7 +163,7 @@ func domainGetIfacesInfo(domain libvirt.Domain, domainDef libvirtxml.Domain,
 			return interfaces, nil
 		}
 	} else {
-		log.Printf("[DEBUG] qemu-agent not used")
+		log.Printf("[DEBUG] qemu-agent is not used")
 	}
 
 	log.Print("[DEBUG] getting domain addresses from networks")
