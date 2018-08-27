@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	libvirt "github.com/libvirt/libvirt-go"
@@ -84,12 +85,8 @@ func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.StorageVol
 
 func TestAccLibvirtVolume_Basic(t *testing.T) {
 	var volume libvirt.StorageVol
-
-	const testAccCheckLibvirtVolumeConfigBasic = `
-	resource "libvirt_volume" "terraform-acceptance-test-1" {
-		name = "terraform-test"
-		size =  1073741824
-	}`
+	randomResourceName := acctest.RandString(10)
+	randomVolumeName := acctest.RandString(10)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -97,13 +94,17 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckLibvirtVolumeConfigBasic,
+				Config: fmt.Sprintf(`
+				resource "libvirt_volume" "%s" {
+					name = "%s"
+					size =  1073741824
+				}`, randomResourceName, randomVolumeName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-1", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume"+randomResourceName, &volume),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-1", "name", "terraform-test"),
+						"libvirt_volume."+randomResourceName, "name", randomVolumeName),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-1", "size", "1073741824"),
+						"libvirt_volume."+randomResourceName, "size", "1073741824"),
 				),
 			},
 		},
@@ -116,12 +117,13 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 // This test should fail without a proper "Exists" implementation
 func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 	var volume libvirt.StorageVol
-
-	const testAccCheckLibvirtVolumeConfigBasic = `
-	resource "libvirt_volume" "terraform-acceptance-test-1" {
-		name = "terraform-test"
+	randomResourceName := acctest.RandString(10)
+	randomVolumeName := acctest.RandString(10)
+	testAccCheckLibvirtVolumeConfigBasic := fmt.Sprintf(`
+	resource "libvirt_volume" "%s" {
+		name = "%s"
 		size =  1073741824
-	}`
+	}`, randomResourceName, randomVolumeName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -131,7 +133,7 @@ func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 			{
 				Config: testAccCheckLibvirtVolumeConfigBasic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-1", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomResourceName, &volume),
 				),
 			},
 			{
@@ -151,26 +153,27 @@ func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 }
 
 func TestAccLibvirtVolume_UniqueName(t *testing.T) {
-	const config = `
-	resource "libvirt_volume" "terraform-acceptance-test-1" {
-		name = "terraform-test"
-		size =  1073741824
-	}
-
-	resource "libvirt_volume" "terraform-acceptance-test-2" {
-		name = "terraform-test"
-		size =  1073741824
-	}
-	`
-
+	randomResourceName := acctest.RandString(10)
+	randomVolumeName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      config,
-				ExpectError: regexp.MustCompile(`storage volume 'terraform-test' already exists`),
+				Config: fmt.Sprintf(`
+					resource "libvirt_volume" "%s" {
+						name = "%s"
+						size =  1073741824
+					}
+
+					resource "libvirt_volume" "%s-2" {
+						name = "%s"
+						size =  1073741824
+					}
+					`, randomResourceName, randomVolumeName, randomResourceName, randomVolumeName),
+
+				ExpectError: regexp.MustCompile("storage volume '" + randomVolumeName + "' already exists"),
 			},
 		},
 	})
@@ -178,6 +181,8 @@ func TestAccLibvirtVolume_UniqueName(t *testing.T) {
 
 func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 	var volume libvirt.StorageVol
+	randomResourceName := acctest.RandString(10)
+	randomVolumeName := acctest.RandString(10)
 
 	fws := fileWebServer{}
 	if err := fws.Start(); err != nil {
@@ -190,25 +195,21 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	const testAccCheckLibvirtVolumeConfigSource = `
-	resource "libvirt_volume" "terraform-acceptance-test-2" {
-		name   = "terraform-test"
-		source = "%s"
-	}`
-	config := fmt.Sprintf(testAccCheckLibvirtVolumeConfigSource, url)
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: config,
+				Config: fmt.Sprintf(`
+				resource "libvirt_volume" "%s" {
+					name   = "%s"
+					source = "%s"
+				}`, randomResourceName, randomVolumeName, url),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-2", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeName, &volume),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-2", "name", "terraform-test"),
+						"libvirt_volume."+randomResourceName, "name", randomResourceName),
 				),
 			},
 		},
@@ -217,29 +218,28 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 
 func TestAccLibvirtVolume_Format(t *testing.T) {
 	var volume libvirt.StorageVol
-
-	const testAccCheckLibvirtVolumeConfigFormat = `
-	resource "libvirt_volume" "terraform-acceptance-test-3" {
-		name   = "terraform-test"
-		format = "raw"
-		size   =  1073741824
-	}`
-
+	randomResourceName := acctest.RandString(10)
+	randomVolumeName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckLibvirtVolumeConfigFormat,
+				Config: fmt.Sprintf(`
+				resource "libvirt_volume" "%s" {
+					name   = "%s"
+					format = "raw"
+					size   =  1073741824
+				}`, randomResourceName, randomVolumeName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-3", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomResourceName, &volume),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-3", "name", "terraform-test"),
+						"libvirt_volume."+randomResourceName, "name", randomVolumeName),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-3", "size", "1073741824"),
+						"libvirt_volume."+randomResourceName, "size", "1073741824"),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-3", "format", "raw"),
+						"libvirt_volume."+randomResourceName, "format", "raw"),
 				),
 			},
 		},
@@ -248,15 +248,8 @@ func TestAccLibvirtVolume_Format(t *testing.T) {
 
 func TestAccLibvirtVolume_Import(t *testing.T) {
 	var volume libvirt.StorageVol
-
-	const testAccCheckLibvirtVolumeConfigImport = `
-	resource "libvirt_volume" "terraform-acceptance-test-4" {
-			name   = "terraform-test"
-			format = "raw"
-			size   =  1073741824
-	}`
-
-	resourceName := "libvirt_volume.terraform-acceptance-test-4"
+	randomResourceName := acctest.RandString(10)
+	randomVolumeName := acctest.RandString(10)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -264,17 +257,22 @@ func TestAccLibvirtVolume_Import(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccCheckLibvirtVolumeConfigImport,
+				Config: fmt.Sprintf(`
+					resource "libvirt_volume" "%s" {
+							name   = "%s"
+							format = "raw"
+							size   =  1073741824
+					}`, randomResourceName, randomVolumeName),
 			},
 			resource.TestStep{
-				ResourceName: resourceName,
+				ResourceName: randomResourceName,
 				ImportState:  true,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtVolumeExists("libvirt_volume.terraform-acceptance-test-4", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomResourceName, &volume),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-4", "name", "terraform-test"),
+						"libvirt_volume."+randomResourceName, "name", randomVolumeName),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume.terraform-acceptance-test-4", "size", "1073741824"),
+						"libvirt_volume."+randomResourceName, "size", "1073741824"),
 				),
 			},
 		},

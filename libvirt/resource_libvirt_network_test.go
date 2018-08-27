@@ -13,6 +13,7 @@ import (
 func TestNetworkAutostart(t *testing.T) {
 	var network libvirt.Network
 	randomNetworkName := acctest.RandString(10)
+	randomResourceName := acctest.RandString(10)
 	randomDomainName := acctest.RandString(8)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -21,29 +22,29 @@ func TestNetworkAutostart(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-				resource "libvirt_network" "test_net" {
+				resource "libvirt_network" "%s" {
 					name      = "%s"
 					mode      = "nat"
 					domain    = "%s"
 					addresses = ["10.17.3.0/24"]
 					autostart = true
-				}`, randomNetworkName, randomDomainName),
+				}`, randomResourceName, randomNetworkName, randomDomainName),
 				Check: resource.ComposeTestCheckFunc(
-					networkExists("libvirt_network.test_net", &network),
-					resource.TestCheckResourceAttr("libvirt_network.test_net", "autostart", "true"),
+					networkExists("libvirt_network."+randomResourceName, &network),
+					resource.TestCheckResourceAttr("libvirt_network."+randomResourceName, "autostart", "true"),
 				),
 			},
 			{
 				Config: fmt.Sprintf(`
-				resource "libvirt_network" "test_net" {
+				resource "libvirt_network" "%s" {
 					name      = "%s"
 					mode      = "nat"
 					domain    = "%s"
 					addresses = ["10.17.3.0/24"]
 					autostart = false
-				}`, randomNetworkName, randomDomainName),
+				}`, randomResourceName, randomNetworkName, randomDomainName),
 				Check: resource.ComposeTestCheckFunc(
-					networkExists("libvirt_network.test_net", &network),
+					networkExists("libvirt_network."+randomResourceName, &network),
 					resource.TestCheckResourceAttr("libvirt_network.test_net", "autostart", "false"),
 				),
 			},
@@ -105,17 +106,16 @@ func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
 func TestAccLibvirtNetwork_Import(t *testing.T) {
 	var network libvirt.Network
 	randomNetworkName := acctest.RandString(8)
+	randomResourceName := acctest.RandString(10)
 	randomDomainName := acctest.RandString(8)
 	fmt.Printf("RANDOMNET %s, RANDOMDOMAIN %s", randomNetworkName, randomDomainName)
 	config := fmt.Sprintf(`
-	resource "libvirt_network" "test_net" {
+	resource "libvirt_network" "%s" {
 		name      = "%s"
 		mode      = "nat"
 		domain    = "%s"
 		addresses = ["10.17.3.0/24"]
-	}`, randomNetworkName, randomDomainName)
-
-	resourceName := "libvirt_network.test_net"
+	}`, randomResourceName, randomNetworkName, randomDomainName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -126,10 +126,10 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 				Config: config,
 			},
 			resource.TestStep{
-				ResourceName: resourceName,
+				ResourceName: randomResourceName,
 				ImportState:  true,
 				Check: resource.ComposeTestCheckFunc(
-					networkExists("libvirt_network.test_net", &network),
+					networkExists("libvirt_network."+randomResourceName, &network),
 				),
 			},
 		},
