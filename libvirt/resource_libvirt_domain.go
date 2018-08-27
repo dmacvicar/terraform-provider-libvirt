@@ -1183,12 +1183,14 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 			}
 			if volumeDef.Target != nil && volumeDef.Target.Format != nil && volumeDef.Target.Format.Type != "" {
 				if volumeDef.Target.Format.Type == "qcow2" {
+					log.Print("[DEBUG] Setting disk driver to 'qcow2' to match disk volume format")
 					disk.Driver = &libvirtxml.DomainDiskDriver{
 						Name: "qemu",
 						Type: "qcow2",
 					}
 				}
 				if volumeDef.Target.Format.Type == "raw" {
+					log.Print("[DEBUG] Setting disk driver to 'raw' to match disk volume format")
 					disk.Driver = &libvirtxml.DomainDiskDriver{
 						Name: "qemu",
 						Type: "raw",
