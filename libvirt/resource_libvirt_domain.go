@@ -353,6 +353,7 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				Required: false,
 				Default:  false,
+				ForceNew: false,
 			},
 		},
 	}
