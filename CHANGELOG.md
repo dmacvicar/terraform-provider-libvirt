@@ -1,3 +1,9 @@
+# 0.4.4 
+
+HIGHLIGHTS:
+
+* qemu-agent variable is not anymore env. variable, instead it is 
+  domain terraform variable
 ## 0.4.3 (August 14, 2018)
 
 HIGHLIGHTS:

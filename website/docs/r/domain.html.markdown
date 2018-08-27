@@ -58,7 +58,7 @@ The following arguments are supported:
 * `boot_device` - (Optional) A list of devices (dev) which defines boot order. Example
    [below](#define-boot-device-order).
 * `emulator` - (Optional) The path of the emulator to use
-
+* `qemu_agent` (Optional) By default is disabled, set to true for enabling it. More info [qemu-agent](https://wiki.libvirt.org/page/Qemu_guest_agent).
 ### Kernel and boot arguments
 
 * `kernel` - (Optional) The path of the kernel to boot
