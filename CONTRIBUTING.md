@@ -27,6 +27,7 @@ https://www.terraform.io/docs/plugins/provider.html
 
 Take a look at Terraform's docs about [writing acceptance tests](https://github.com/hashicorp/terraform/blob/master/.github/CONTRIBUTING.md#writing-an-acceptance-test).
 
+For resource names etc, use random names with the helper function. Take example from other testacc.
 
 ### Easy Issues for newbies:
 
