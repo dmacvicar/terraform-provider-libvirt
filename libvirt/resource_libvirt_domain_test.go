@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	libvirt "github.com/libvirt/libvirt-go"
@@ -16,26 +17,26 @@ import (
 
 func TestAccLibvirtDomain_Basic(t *testing.T) {
 	var domain libvirt.Domain
-	var config = fmt.Sprintf(`
-	resource "libvirt_domain" "acceptance-test-domain-1" {
-		name = "terraform-test"
-	}`)
-
+	randomResourceName := acctest.RandString(10)
+	randomDomainName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: config,
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+				}`, randomResourceName, randomDomainName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain-1", &domain),
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomResourceName, &domain),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain-1", "name", "terraform-test"),
+						"libvirt_domain."+randomResourceName, "name", randomDomainName),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain-1", "memory", "512"),
+						"libvirt_domain."+randomResourceName, "memory", "512"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain-1", "vcpu", "1"),
+						"libvirt_domain."+randomResourceName, "vcpu", "1"),
 				),
 			},
 		},
@@ -44,28 +45,28 @@ func TestAccLibvirtDomain_Basic(t *testing.T) {
 
 func TestAccLibvirtDomain_Detailed(t *testing.T) {
 	var domain libvirt.Domain
-	var config = fmt.Sprintf(`
-	resource "libvirt_domain" "acceptance-test-domain-2" {
-		name   = "terraform-test"
-		memory = 384
-		vcpu   = 2
-	}`)
-
+	randomResourceName := acctest.RandString(10)
+	randomDomainName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: config,
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name   = "%s"
+					memory = 384
+					vcpu   = 2
+				}`, randomResourceName, randomDomainName),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-domain-2", &domain),
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomResourceName, &domain),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain-2", "name", "terraform-test"),
+						"libvirt_domain."+randomResourceName, "name", randomDomainName),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain-2", "memory", "384"),
+						"libvirt_domain."+randomResourceName, "memory", "384"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.acceptance-test-domain-2", "vcpu", "2"),
+						"libvirt_domain."+randomResourceName, "vcpu", "2"),
 				),
 			},
 		},
