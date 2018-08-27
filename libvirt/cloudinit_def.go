@@ -222,7 +222,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 
 	volume, err := virConn.LookupStorageVolByKey(key)
 	if err != nil {
-		return ci, fmt.Errorf("Can't retrieve volume %s", key)
+		return ci, fmt.Errorf("Can't retrieve volume %s: %v", key, err)
 	}
 	defer volume.Free()
 

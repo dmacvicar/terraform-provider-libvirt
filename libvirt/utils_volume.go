@@ -182,7 +182,7 @@ func timeFromEpoch(str string) time.Time {
 func removeVolume(client *Client, key string) error {
 	volume, err := client.libvirt.LookupStorageVolByKey(key)
 	if err != nil {
-		return fmt.Errorf("Can't retrieve volume %s", key)
+		return fmt.Errorf("Can't retrieve volume %s: %v", key, err)
 	}
 	defer volume.Free()
 
