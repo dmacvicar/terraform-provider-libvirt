@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
@@ -106,21 +105,20 @@ func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirt.Storag
 		if err != nil {
 			return fmt.Errorf("Error retrieving libvirt volume XML description: %s", err)
 		}
-		// first test to avoid panic
-		if strings.Contains(volXMLDesc, "<backingStore>") == false {
-			return fmt.Errorf("FAIL: the volume was supposed to be a backingstore, but it is not")
-		}
+
 		volumeDef := newDefVolume()
 		err = xml.Unmarshal([]byte(volXMLDesc), &volumeDef)
 		if err != nil {
 			return fmt.Errorf("Error reading libvirt volume XML description: %s", err)
 		}
-		// if volume is a backing store it has some xml attributes set
-		// if there is no backingstore this will panic
+		if volumeDef.BackingStore == nil {
+			return fmt.Errorf("FAIL: the volume was supposed to be a backingstore, but it is not")
+		}
 		value := volumeDef.BackingStore.Path
 		if value == "" {
 			return fmt.Errorf("FAIL: the volume was supposed to be a backingstore, but it is not")
 		}
+
 		return nil
 	}
 }
@@ -194,7 +192,7 @@ func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 	resource "libvirt_volume" "backing-store" {
 		name = "backing-store"
 		base_volume_name = "${libvirt_volume.terraform-acceptance-test-3.name}"
-        }
+  }
 	`
 
 	resource.Test(t, resource.TestCase{
