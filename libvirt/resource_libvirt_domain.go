@@ -636,7 +636,6 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 	d.Partial(false)
 
-	// TODO
 	return nil
 }
 
