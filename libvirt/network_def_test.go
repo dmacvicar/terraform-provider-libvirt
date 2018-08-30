@@ -165,7 +165,6 @@ func TestNetworkFromLibvirt(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error %v", err)
 	}
-
 	if dn.Forward.Mode != "nat" {
 		t.Errorf("Wrong forward mode: %s", dn.Forward.Mode)
 	}
