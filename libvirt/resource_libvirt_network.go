@@ -222,11 +222,13 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 					return err
 				}
 				if d.Get("dhcp.0.enabled").(bool) {
+					log.Printf("[DEBUG]: dhcp.0.enabled.")
 					dni.DHCP = dhcp
+					log.Printf("[DEBUG]: dhcp values: %#v", dni.DHCP)
 				}
-
 				ipsPtrsLst = append(ipsPtrsLst, *dni)
 			}
+
 			networkDef.IPs = ipsPtrsLst
 		}
 
