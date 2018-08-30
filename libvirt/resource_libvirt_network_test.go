@@ -9,45 +9,6 @@ import (
 	"github.com/libvirt/libvirt-go"
 )
 
-func TestNetworkAutostart(t *testing.T) {
-	var network libvirt.Network
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
-		Steps: []resource.TestStep{
-			{
-				Config: fmt.Sprintf(`
-				resource "libvirt_network" "test_net" {
-					name      = "networktest"
-					mode      = "nat"
-					domain    = "k8s.local"
-					addresses = ["10.17.3.0/24"]
-					autostart = true
-				}`),
-				Check: resource.ComposeTestCheckFunc(
-					networkExists("libvirt_network.test_net", &network),
-					resource.TestCheckResourceAttr("libvirt_network.test_net", "autostart", "true"),
-				),
-			},
-			{
-				Config: fmt.Sprintf(`
-				resource "libvirt_network" "test_net" {
-					name      = "networktest"
-					mode      = "nat"
-					domain    = "k8s.local"
-					addresses = ["10.17.3.0/24"]
-					autostart = false
-				}`),
-				Check: resource.ComposeTestCheckFunc(
-					networkExists("libvirt_network.test_net", &network),
-					resource.TestCheckResourceAttr("libvirt_network.test_net", "autostart", "false"),
-				),
-			},
-		},
-	})
-}
-
 func networkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
@@ -77,6 +38,42 @@ func networkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
 
 		*network = *networkRetrived
 
+		return nil
+	}
+}
+
+func testAccCheckLibvirtNetworkDhcpStatus(name string, network *libvirt.Network, DhcpStatus string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return fmt.Errorf("Not found: %s", name)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No libvirt network ID is set")
+		}
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		network, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		networkDef, err := newDefNetworkfromLibvirt(network)
+		if err != nil {
+			return fmt.Errorf("Error reading libvirt network XML description: %s", err)
+		}
+		if DhcpStatus == "disabled" {
+			if HasDHCP(networkDef) {
+				return fmt.Errorf("the network should have DHCP disabled")
+			}
+		}
+		if DhcpStatus == "enabled" {
+			if !HasDHCP(networkDef) {
+				return fmt.Errorf("FAIL: the network should have DHCP enabled")
+			}
+		}
 		return nil
 	}
 }
@@ -125,6 +122,95 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 				ImportState:  true,
 				Check: resource.ComposeTestCheckFunc(
 					networkExists("libvirt_network.test_net", &network),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtNetwork_dhcpEnabled(t *testing.T) {
+	var network1 libvirt.Network
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				// dhcp is enabled true by default.
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network.test_net", &network1, "enabled"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtNetwork_dhcpDisabled(t *testing.T) {
+	var network1 libvirt.Network
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dhcp {
+						enabled = false
+					}
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dhcp.0.enabled", "false"),
+					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network.test_net", &network1, "disabled"),
+				),
+			},
+		},
+	})
+}
+func TestAccLibvirtNetwork_Autostart(t *testing.T) {
+	var network libvirt.Network
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					autostart = true
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					networkExists("libvirt_network.test_net", &network),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "autostart", "true"),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					autostart = false
+				}`),
+				Check: resource.ComposeTestCheckFunc(
+					networkExists("libvirt_network.test_net", &network),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "autostart", "false"),
 				),
 			},
 		},
