@@ -101,6 +101,22 @@ func resourceLibvirtNetwork() *schema.Resource {
 					},
 				},
 			},
+			"dhcp": {
+				Type:     schema.TypeList,
+				Optional: true,
+				ForceNew: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:     schema.TypeBool,
+							Default:  true,
+							Optional: true,
+							Required: false,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -196,53 +212,20 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			// there is no NAT when using a routed network
 			networkDef.Forward.NAT = nil
 		}
-
-		// some network modes require a DHCP/DNS server
-		// set the addresses for DHCP
+		// set the addresses
 		if addresses, ok := d.GetOk("addresses"); ok {
 			ipsPtrsLst := []libvirtxml.NetworkIP{}
 			for _, addressI := range addresses.([]interface{}) {
-				address := addressI.(string)
-				_, ipNet, err := net.ParseCIDR(address)
+				// get the IP address entry for this subnet (with a guessed DHCP range)
+				dni, dhcp, err := setNetworkIP(addressI.(string))
 				if err != nil {
-					return fmt.Errorf("Error parsing addresses definition '%s': %s", address, err)
+					return err
 				}
-				ones, bits := ipNet.Mask.Size()
-				family := "ipv4"
-				if bits == (net.IPv6len * 8) {
-					family = "ipv6"
-				}
-				ipsRange := 2 ^ bits - 2 ^ ones
-				if ipsRange < 4 {
-					return fmt.Errorf("Netmask seems to be too strict: only %d IPs available (%s)", ipsRange-3, family)
+				if d.Get("dhcp.0.enabled").(bool) {
+					dni.DHCP = dhcp
 				}
 
-				// we should calculate the range served by DHCP. For example, for
-				// 192.168.121.0/24 we will serve 192.168.121.2 - 192.168.121.254
-				start, end := networkRange(ipNet)
-
-				// skip the .0, (for the network),
-				start[len(start)-1]++
-
-				// assign the .1 to the host interface
-				dni := libvirtxml.NetworkIP{
-					Address: start.String(),
-					Prefix:  uint(ones),
-					Family:  family,
-				}
-
-				start[len(start)-1]++ // then skip the .1
-				end[len(end)-1]--     // and skip the .255 (for broadcast)
-
-				dni.DHCP = &libvirtxml.NetworkDHCP{
-					Ranges: []libvirtxml.NetworkDHCPRange{
-						{
-							Start: start.String(),
-							End:   end.String(),
-						},
-					},
-				}
-				ipsPtrsLst = append(ipsPtrsLst, dni)
+				ipsPtrsLst = append(ipsPtrsLst, *dni)
 			}
 			networkDef.IPs = ipsPtrsLst
 		}
@@ -469,4 +452,48 @@ func waitForNetworkDestroyed(virConn *libvirt.Connect, uuid string) resource.Sta
 		defer network.Free()
 		return virConn, "ACTIVE", err
 	}
+}
+
+func setNetworkIP(address string) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHCP, error) {
+	_, ipNet, err := net.ParseCIDR(address)
+	if err != nil {
+		return nil, nil, fmt.Errorf("Error parsing addresses definition '%s': %s", address, err)
+	}
+	ones, bits := ipNet.Mask.Size()
+	family := "ipv4"
+	if bits == (net.IPv6len * 8) {
+		family = "ipv6"
+	}
+	ipsRange := 2 ^ bits - 2 ^ ones
+	if ipsRange < 4 {
+		return nil, nil, fmt.Errorf("Netmask seems to be too strict: only %d IPs available (%s)", ipsRange-3, family)
+	}
+
+	// we should calculate the range served by DHCP. For example, for
+	// 192.168.121.0/24 we will serve 192.168.121.2 - 192.168.121.254
+	start, end := networkRange(ipNet)
+
+	// skip the .0, (for the network),
+	start[len(start)-1]++
+
+	// assign the .1 to the host interface
+	dni := &libvirtxml.NetworkIP{
+		Address: start.String(),
+		Prefix:  uint(ones),
+		Family:  family,
+	}
+
+	start[len(start)-1]++ // then skip the .1
+	end[len(end)-1]--     // and skip the .255 (for broadcast)
+
+	dhcp := &libvirtxml.NetworkDHCP{
+		Ranges: []libvirtxml.NetworkDHCPRange{
+			{
+				Start: start.String(),
+				End:   end.String(),
+			},
+		},
+	}
+
+	return dni, dhcp, nil
 }
