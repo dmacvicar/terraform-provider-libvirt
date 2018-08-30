@@ -731,7 +731,10 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			disk = map[string]interface{}{
 				"file": diskDef.Source.File,
 			}
-		} else {
+		} else if diskDef.Source.File != nil {
+			// LEGACY way of handling volumes using "file", which we replaced
+			// by the diskdef.Source.Volume once we realized it existed.
+			// This code will be removed in future versions of the provider.
 			virVol, err := virConn.LookupStorageVolByPath(diskDef.Source.File.File)
 			if err != nil {
 				return fmt.Errorf("Error retrieving volume for disk: %s", err)
@@ -746,7 +749,29 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			disk = map[string]interface{}{
 				"volume_id": virVolKey,
 			}
+		} else {
+			pool, err := virConn.LookupStoragePoolByName(diskDef.Source.Volume.Pool)
+			if err != nil {
+				return fmt.Errorf("Error retrieving pool for disk: %s", err)
+			}
+			defer pool.Free()
+
+			virVol, err := pool.LookupStorageVolByName(diskDef.Source.Volume.Volume)
+			if err != nil {
+				return fmt.Errorf("Error retrieving volume for disk: %s", err)
+			}
+			defer virVol.Free()
+
+			virVolKey, err := virVol.GetKey()
+			if err != nil {
+				return fmt.Errorf("Error retrieving volume key for disk: %s", err)
+			}
+
+			disk = map[string]interface{}{
+				"volume_id": virVolKey,
+			}
 		}
+
 		disks = append(disks, disk)
 	}
 	d.Set("disks", disks)
@@ -1133,14 +1158,51 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 			if err != nil {
 				return fmt.Errorf("Can't retrieve volume %s: %v", volumeKey.(string), err)
 			}
-			diskVolumeFile, err := diskVolume.GetPath()
+
+			diskVolumeName, err := diskVolume.GetName()
 			if err != nil {
-				return fmt.Errorf("Error retrieving volume file: %s", err)
+				return fmt.Errorf("Can't retrieve name for volume %s", volumeKey.(string))
+			}
+
+			diskPool, err := diskVolume.LookupPoolByVolume()
+			if err != nil {
+				return fmt.Errorf("Can't retrieve pool for volume %s", volumeKey.(string))
+			}
+
+			diskPoolName, err := diskPool.GetName()
+			if err != nil {
+				return fmt.Errorf("Can't retrieve name for pool of volume %s", volumeKey.(string))
+			}
+
+			// find out the format of the volume in order to set the appropriate
+			// driver
+			volumeDef, err := newDefVolumeFromLibvirt(diskVolume)
+			if err != nil {
+				return err
+			}
+			if volumeDef.Target != nil && volumeDef.Target.Format != nil && volumeDef.Target.Format.Type != "" {
+				if volumeDef.Target.Format.Type == "qcow2" {
+					log.Print("[DEBUG] Setting disk driver to 'qcow2' to match disk volume format")
+					disk.Driver = &libvirtxml.DomainDiskDriver{
+						Name: "qemu",
+						Type: "qcow2",
+					}
+				}
+				if volumeDef.Target.Format.Type == "raw" {
+					log.Print("[DEBUG] Setting disk driver to 'raw' to match disk volume format")
+					disk.Driver = &libvirtxml.DomainDiskDriver{
+						Name: "qemu",
+						Type: "raw",
+					}
+				}
+			} else {
+				log.Printf("[WARN] Disk volume has no format specified: %s", volumeKey.(string))
 			}
 
 			disk.Source = &libvirtxml.DomainDiskSource{
-				File: &libvirtxml.DomainDiskSourceFile{
-					File: diskVolumeFile,
+				Volume: &libvirtxml.DomainDiskSourceVolume{
+					Pool:   diskPoolName,
+					Volume: diskVolumeName,
 				},
 			}
 		} else if rawURL, ok := d.GetOk(prefix + ".url"); ok {
@@ -1163,6 +1225,7 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 					},
 				},
 			}
+
 			if strings.HasSuffix(url.Path, ".iso") {
 				disk.Device = "cdrom"
 			}

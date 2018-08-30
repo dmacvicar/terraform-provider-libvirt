@@ -19,7 +19,7 @@ func newDefDisk(i int) libvirtxml.DomainDisk {
 		},
 		Driver: &libvirtxml.DomainDiskDriver{
 			Name: "qemu",
-			Type: "qcow2",
+			Type: "raw",
 		},
 	}
 }

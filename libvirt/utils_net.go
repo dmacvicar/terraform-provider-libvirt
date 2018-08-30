@@ -42,7 +42,7 @@ func randomPort() int {
 	const minPort = 1024
 	const maxPort = 65535
 
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(maxPort-minPort) + minPort
 }
 
@@ -104,7 +104,7 @@ func (fws *fileWebServer) Start() error {
 }
 
 // Adds a file (with some content) in the directory served by the fileWebServer
-func (fws *fileWebServer) AddFile(content []byte) (string, *os.File, error) {
+func (fws *fileWebServer) AddContent(content []byte) (string, *os.File, error) {
 	tmpfile, err := ioutil.TempFile(fws.Dir, "file-")
 	if err != nil {
 		return "", nil, err
@@ -117,6 +117,16 @@ func (fws *fileWebServer) AddFile(content []byte) (string, *os.File, error) {
 	}
 
 	return fmt.Sprintf("%s/%s", fws.URL, path.Base(tmpfile.Name())), tmpfile, nil
+}
+
+// Symlinks a file into the directory server by the webserver
+func (fws *fileWebServer) AddFile(filePath string) (string, error) {
+	err := os.Symlink(filePath, path.Join(fws.Dir, path.Base(filePath)))
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/%s", fws.URL, path.Base(filePath)), nil
 }
 
 func (fws *fileWebServer) Stop() {

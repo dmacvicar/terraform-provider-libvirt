@@ -5,11 +5,33 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/libvirt/libvirt-go-xml"
 )
+
+func TestLocalImageDetermineType(t *testing.T) {
+	abspath, err := filepath.Abs("testdata/test.qcow2")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	url := fmt.Sprintf("file://%s", abspath)
+	image, err := newImage(url)
+	if err != nil {
+		t.Errorf("Could not create local image: %v", err)
+	}
+
+	qcow2, err := image.IsQCOW2()
+	if err != nil {
+		t.Errorf("Can't determine image type: %v", err)
+	}
+	if !qcow2 {
+		t.Errorf("Expected image to be recognized as QCOW2")
+	}
+}
 
 func TestLocalImageDownload(t *testing.T) {
 	content := []byte("this is a qcow image... well, it is not")
@@ -49,6 +71,37 @@ func TestLocalImageDownload(t *testing.T) {
 	t.Log("File not copied because modification time was the same")
 }
 
+func TestRemoteImageDetermineType(t *testing.T) {
+	content, err := ioutil.ReadFile("testdata/test.qcow2")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fws := fileWebServer{}
+	if err := fws.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer fws.Stop()
+
+	url, _, err := fws.AddContent(content)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	image, err := newImage(url)
+	if err != nil {
+		t.Errorf("Could not create local image: %v", err)
+	}
+
+	qcow2, err := image.IsQCOW2()
+	if err != nil {
+		t.Errorf("Can't determine image type: %v", err)
+	}
+	if !qcow2 {
+		t.Errorf("Expected image to be recognized as QCOW2")
+	}
+}
+
 func TestRemoteImageDownload(t *testing.T) {
 	content := []byte("this is a qcow image... well, it is not")
 	fws := fileWebServer{}
@@ -57,7 +110,7 @@ func TestRemoteImageDownload(t *testing.T) {
 	}
 	defer fws.Stop()
 
-	url, tmpfile, err := fws.AddFile(content)
+	url, tmpfile, err := fws.AddContent(content)
 	if err != nil {
 		t.Fatal(err)
 	}

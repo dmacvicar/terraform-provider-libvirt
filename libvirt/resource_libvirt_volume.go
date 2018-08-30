@@ -40,6 +40,7 @@ func resourceLibvirtVolume() *schema.Resource {
 			},
 			"format": {
 				Type:     schema.TypeString,
+				Computed: true,
 				Optional: true,
 				ForceNew: true,
 			},
@@ -100,16 +101,15 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	volumeDef := newDefVolume()
 	volumeDef.Name = d.Get("name").(string)
 
-	volumeFormat := "qcow2"
-	if _, ok := d.GetOk("format"); ok {
-		volumeFormat = d.Get("format").(string)
-	}
-	volumeDef.Target.Format.Type = volumeFormat
-
 	var (
 		img    image
 		volume *libvirt.StorageVol
 	)
+
+	givenFormat, isFormatGiven := d.GetOk("format")
+	if isFormatGiven {
+		volumeDef.Target.Format.Type = givenFormat.(string)
+	}
 
 	// an source image was given, this mean we can't choose size
 	if source, ok := d.GetOk("source"); ok {
@@ -127,6 +127,19 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 		if img, err = newImage(source.(string)); err != nil {
 			return err
+		}
+
+		// figure out the format of the image
+		isQCOW2, err := img.IsQCOW2()
+		if err != nil {
+			return fmt.Errorf("Error while determining image type for %s: %s", img.String(), err)
+		}
+		if isQCOW2 {
+			volumeDef.Target.Format.Type = "qcow2"
+		}
+
+		if isFormatGiven && isQCOW2 && givenFormat != "qcow2" {
+			return fmt.Errorf("Format other than QCOW2 explicitly specified for image detected as QCOW2 image: %s", img.String())
 		}
 
 		// update the image in the description, even if the file has not changed
@@ -278,6 +291,18 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("error retrieving volume name: %s", err)
 	}
 	d.Set("size", info.Capacity)
+
+	volumeDef, err := newDefVolumeFromLibvirt(volume)
+	if err != nil {
+		return err
+	}
+
+	if volumeDef.Target == nil || volumeDef.Target.Format == nil || volumeDef.Target.Format.Type == "" {
+		log.Printf("Volume has no format specified: %s", volName)
+	} else {
+		log.Printf("[DEBUG] Volume %s format: %s", volName, volumeDef.Target.Format.Type)
+		d.Set("format", volumeDef.Target.Format.Type)
+	}
 
 	return nil
 }
