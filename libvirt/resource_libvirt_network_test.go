@@ -66,18 +66,17 @@ func testAccCheckLibvirtNetworkDhcpStatus(name string, network *libvirt.Network,
 		}
 		if DhcpStatus == "disabled" {
 			for _, ips := range networkDef.IPs {
-				fmt.Printf("%#v", ips.DHCP)
 				// &libvirtxml.NetworkDHCP{..} should be nil when dhcp is disabled
 				if ips.DHCP != nil {
+					fmt.Printf("%#v", ips.DHCP)
 					return fmt.Errorf("the network should have DHCP disabled")
 				}
 			}
 		}
 		if DhcpStatus == "enabled" {
 			for _, ips := range networkDef.IPs {
-				fmt.Printf("%#v", ips.DHCP)
 				if ips.DHCP == nil {
-					return fmt.Errorf("the network should have DHCP disabled")
+					return fmt.Errorf("the network should have DHCP enabled")
 				}
 			}
 		}
@@ -135,7 +134,7 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 	})
 }
 
-func TestAccLibvirtNetwork_dhcpEnabled(t *testing.T) {
+func TestAccLibvirtNetwork_EnableDhcpAndDisableItAfter(t *testing.T) {
 	var network1 libvirt.Network
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -155,6 +154,7 @@ func TestAccLibvirtNetwork_dhcpEnabled(t *testing.T) {
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dhcp.0.enabled", "false"),
 					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network.test_net", &network1, "enabled"),
 				),
 			},

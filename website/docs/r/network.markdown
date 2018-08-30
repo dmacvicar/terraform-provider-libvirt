@@ -47,9 +47,10 @@ The following arguments are supported:
 
 * `name` - (Required) A unique name for the resource, required by libvirt.
   Changing this forces a new resource to be created.
-* `domain` - The domain used by the DNS server.
-* `addresses` - A list of (0 or 1) ipv4 and (0 or 1) ipv6 subnets in CIDR notation
+* `domain` - (Optional) The domain used by the DNS server.
+* `addresses` - (Optional) A list of (0 or 1) ipv4 and (0 or 1) ipv6 subnets in CIDR notation
   format for being served by the DHCP server. Address of subnet should be used.
+   No DHCP server will be started if this attributed is omitted.
 * `mode` -  One of:
     - `none`: the guests can talk to each other and the host OS, but cannot reach
     any other machines on the LAN.
@@ -105,6 +106,19 @@ resource "libvirt_network" "my_network" {
 }
 ```
 
+* `dhcp` - (Optional) DHCP configuration. 
+   You need to use it in conjuction with the adresses variable.
+  * `enabled` - (Optional) when false, disable the DHCP server
+```hcl
+				resource "libvirt_network" "test_net" {
+					name      = "networktest"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dhcp {
+						enabled = true
+					}
+```
 ## Attributes Reference
 
 * `id` - a unique identifier for the resource

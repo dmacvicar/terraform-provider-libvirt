@@ -147,7 +147,7 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 	}
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
 	if err != nil {
-		return err
+		return fmt.Errorf("Error by retrieving network ID during update: %s", err)
 	}
 	defer network.Free()
 
@@ -155,20 +155,20 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 
 	active, err := network.IsActive()
 	if err != nil {
-		return err
+		return fmt.Errorf("Error by getting network's status during update: %s", err)
 	}
 
 	if !active {
 		log.Printf("[DEBUG] Activating network")
 		if err := network.Create(); err != nil {
-			return err
+			return fmt.Errorf("Error by activating network during update: %s", err)
 		}
 	}
 
 	if d.HasChange("autostart") {
 		err = network.SetAutostart(d.Get("autostart").(bool))
 		if err != nil {
-			return fmt.Errorf("Error setting autostart for network: %s", err)
+			return fmt.Errorf("Error updating autostart for network: %s", err)
 		}
 		d.SetPartial("autostart")
 	}
@@ -212,26 +212,11 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			// there is no NAT when using a routed network
 			networkDef.Forward.NAT = nil
 		}
-		// set the addresses
-		if addresses, ok := d.GetOk("addresses"); ok {
-			ipsPtrsLst := []libvirtxml.NetworkIP{}
-			for _, addressI := range addresses.([]interface{}) {
-				// get the IP address entry for this subnet (with a guessed DHCP range)
-				dni, dhcp, err := setNetworkIP(addressI.(string))
-				if err != nil {
-					return err
-				}
-				if d.Get("dhcp.0.enabled").(bool) {
-					log.Printf("[DEBUG]: dhcp.0.enabled.")
-					dni.DHCP = dhcp
-					log.Printf("[DEBUG]: dhcp values: %#v", dni.DHCP)
-				}
-				ipsPtrsLst = append(ipsPtrsLst, *dni)
-			}
-
-			networkDef.IPs = ipsPtrsLst
+		// if addresses are given set dhcp for these
+		err := setDhcpByCIDRAdressesSubnets(d, &networkDef)
+		if err != nil {
+			return fmt.Errorf("Could not set DHCP from adresses '%s'", err)
 		}
-
 		if dnsForwardCount, ok := d.GetOk("dns_forwarder.#"); ok {
 			dns := libvirtxml.NetworkDNS{
 				Forwarders: []libvirtxml.NetworkDNSForwarder{},
@@ -454,6 +439,30 @@ func waitForNetworkDestroyed(virConn *libvirt.Connect, uuid string) resource.Sta
 		defer network.Free()
 		return virConn, "ACTIVE", err
 	}
+}
+
+func setDhcpByCIDRAdressesSubnets(d *schema.ResourceData, networkDef *libvirtxml.Network) error {
+	if addresses, ok := d.GetOk("addresses"); ok {
+		ipsPtrsLst := []libvirtxml.NetworkIP{}
+		for _, addressI := range addresses.([]interface{}) {
+			// get the IP address entry for this subnet (with a guessed DHCP range)
+			dni, dhcp, err := setNetworkIP(addressI.(string))
+			if err != nil {
+				return err
+			}
+			if d.Get("dhcp.0.enabled").(bool) {
+				dni.DHCP = dhcp
+			} else {
+				// if a network exist with enabled but an user want to disable
+				// dhcp, we need to set dhcp struct to nil.
+				dni.DHCP = nil
+			}
+
+			ipsPtrsLst = append(ipsPtrsLst, *dni)
+		}
+		networkDef.IPs = ipsPtrsLst
+	}
+	return nil
 }
 
 func setNetworkIP(address string) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHCP, error) {
