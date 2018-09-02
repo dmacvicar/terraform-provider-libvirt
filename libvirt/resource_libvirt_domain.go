@@ -864,7 +864,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				}
 			}
 		} else if networkInterfaceDef.Source.Bridge != nil {
-			netIface["bridge"] = networkInterfaceDef.Source.Bridge
+			netIface["bridge"] = networkInterfaceDef.Source.Bridge.Bridge
 		} else if networkInterfaceDef.Source.Direct != nil {
 			switch networkInterfaceDef.Source.Direct.Mode {
 			case "vepa":
