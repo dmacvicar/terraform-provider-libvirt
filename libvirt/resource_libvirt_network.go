@@ -75,6 +75,12 @@ func resourceLibvirtNetwork() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+			"enable_dhcp": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: true,
+				Default:  true,
+			},
 			"autostart": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -197,9 +203,11 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			networkDef.Forward.NAT = nil
 		}
 
-		// some network modes require a DHCP/DNS server
-		// set the addresses for DHCP
+		// set the addresses for the network, for the real host, and optionally also for DHCP
 		if addresses, ok := d.GetOk("addresses"); ok {
+			// check whether we want DHCP or not
+			enableDHCP := d.Get("enable_dhcp").(bool)
+
 			ipsPtrsLst := []libvirtxml.NetworkIP{}
 			for _, addressI := range addresses.([]interface{}) {
 				address := addressI.(string)
@@ -217,8 +225,9 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 					return fmt.Errorf("Netmask seems to be too strict: only %d IPs available (%s)", ipsRange-3, family)
 				}
 
-				// we should calculate the range served by DHCP. For example, for
-				// 192.168.121.0/24 we will serve 192.168.121.2 - 192.168.121.254
+				// we should calculate the range of the network. For example, for
+				// 192.168.121.0/24 the host will have 192.168.121.1.
+				// If DHCP is required, we will also serve 192.168.121.2 - 192.168.121.254
 				start, end := networkRange(ipNet)
 
 				// skip the .0, (for the network),
@@ -231,16 +240,18 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 					Family:  family,
 				}
 
-				start[len(start)-1]++ // then skip the .1
-				end[len(end)-1]--     // and skip the .255 (for broadcast)
+				if enableDHCP {
+					start[len(start)-1]++ // then skip the .1
+					end[len(end)-1]--     // and skip the .255 (for broadcast)
 
-				dni.DHCP = &libvirtxml.NetworkDHCP{
-					Ranges: []libvirtxml.NetworkDHCPRange{
-						{
-							Start: start.String(),
-							End:   end.String(),
+					dni.DHCP = &libvirtxml.NetworkDHCP{
+						Ranges: []libvirtxml.NetworkDHCPRange{
+							{
+								Start: start.String(),
+								End:   end.String(),
+							},
 						},
-					},
+					}
 				}
 				ipsPtrsLst = append(ipsPtrsLst, dni)
 			}

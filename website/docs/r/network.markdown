@@ -24,8 +24,14 @@ resource "libvirt_network" "kube_network" {
   #  the domain used by the DNS server in this network
   domain = "k8s.local"
 
-  # the addresses allowed for domains connected and served by the DHCP server
+  # the addresses allowed for domains connected
+  # also derived to define the host addresses
+  # also derived to define the addresses served by the DHCP server
   addresses = ["10.17.3.0/24", "2001:db8:ca2:2::1/64"]
+
+  # (optional) start a DHCP server or not
+  # defaults to true
+  # enable_dhcp = false
 
   # (optional) the bridge device defines the name of a bridge device
   # which will be used to construct the virtual network.
@@ -48,8 +54,16 @@ The following arguments are supported:
 * `name` - (Required) A unique name for the resource, required by libvirt.
   Changing this forces a new resource to be created.
 * `domain` - The domain used by the DNS server.
-* `addresses` - A list of (0 or 1) ipv4 and (0 or 1) ipv6 subnets in CIDR notation
-  format for being served by the DHCP server. Address of subnet should be used.
+* `addresses` - A list of (0 or 1) IPv4 and (0 or 1) IPv6 subnets in
+  CIDR notation.  This defines the subnets associated to that network.
+  This argument is also used to define the address on the real host,
+  by appending `.1` at the end.  Finally, if `enable_dhcp` is true,
+  this argument is also used to define the address range served by
+  the DHCP server, between `.2` and the last but one address
+  in the subnet (`.254` for a `/24`).
+* `enable_dhcp` - A boolean (`true` or `false`). If true, a DHCP server will
+  be put in place to serve addresses on that network. If not specified,
+  `true` is assumed.  For it to have an effect, `addresses` must be used.
 * `mode` -  One of:
     - `none`: the guests can talk to each other and the host OS, but cannot reach
     any other machines on the LAN.
