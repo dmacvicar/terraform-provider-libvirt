@@ -42,7 +42,7 @@ func networkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
 	}
 }
 
-func testAccCheckLibvirtNetworkDhcpStatus(name string, network *libvirt.Network, DhcpStatus string) resource.TestCheckFunc {
+func testAccCheckLibvirtNetworkDhcpStatus(name string, network *libvirt.Network, expectedDhcpStatus string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
@@ -64,7 +64,7 @@ func testAccCheckLibvirtNetworkDhcpStatus(name string, network *libvirt.Network,
 		if err != nil {
 			return fmt.Errorf("Error reading libvirt network XML description: %s", err)
 		}
-		if DhcpStatus == "disabled" {
+		if expectedDhcpStatus == "disabled" {
 			for _, ips := range networkDef.IPs {
 				// &libvirtxml.NetworkDHCP{..} should be nil when dhcp is disabled
 				if ips.DHCP != nil {
@@ -73,7 +73,7 @@ func testAccCheckLibvirtNetworkDhcpStatus(name string, network *libvirt.Network,
 				}
 			}
 		}
-		if DhcpStatus == "enabled" {
+		if expectedDhcpStatus == "enabled" {
 			for _, ips := range networkDef.IPs {
 				if ips.DHCP == nil {
 					return fmt.Errorf("the network should have DHCP enabled")
@@ -134,7 +134,7 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 	})
 }
 
-func TestAccLibvirtNetwork_EnableDhcpAndDisableItAfter(t *testing.T) {
+func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 	var network1 libvirt.Network
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -162,7 +162,7 @@ func TestAccLibvirtNetwork_EnableDhcpAndDisableItAfter(t *testing.T) {
 	})
 }
 
-func TestAccLibvirtNetwork_dhcpDisabled(t *testing.T) {
+func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 	var network1 libvirt.Network
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
