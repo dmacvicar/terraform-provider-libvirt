@@ -147,7 +147,7 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 	}
 	network, err := virConn.LookupNetworkByUUIDString(d.Id())
 	if err != nil {
-		return fmt.Errorf("Error by retrieving network ID during update: %s", err)
+		return fmt.Errorf("Can't retrieve network with ID '%s' during update: %s", d.Id(), err)
 	}
 	defer network.Free()
 
