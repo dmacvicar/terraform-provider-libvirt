@@ -1,12 +1,30 @@
 package libvirt
 
 import (
+	"encoding/xml"
+	"fmt"
 	"os"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
+
+// from existing domain return its  XMLdefintion
+func getXMLDomainDefFromLibvirt(domain *libvirt.Domain) (libvirtxml.Domain, error) {
+	domainXMLDesc, err := domain.GetXMLDesc(0)
+	if err != nil {
+		return libvirtxml.Domain{}, fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+	}
+
+	domainDef := newDomainDef()
+	err = xml.Unmarshal([]byte(domainXMLDesc), &domainDef)
+	if err != nil {
+		return libvirtxml.Domain{}, fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+	}
+
+	return domainDef, nil
+}
 
 // note source and target are not initialized
 func newFilesystemDef() libvirtxml.DomainFilesystem {
