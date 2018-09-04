@@ -154,7 +154,7 @@ func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 					}
 				}`),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("libvirt_network.test_net", "dhcp.0.enabled", "false"),
+					resource.TestCheckResourceAttr("libvirt_network.test_net", "dhcp.0.enabled", "true"),
 					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network.test_net", &network1, "enabled"),
 				),
 			},
