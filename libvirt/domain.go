@@ -226,7 +226,7 @@ func getDomainInterfacesFromNetworks(domain libvirtxml.Domain,
 		}
 		defer network.Free()
 
-		networkDef, err := newDefNetworkfromLibvirt(network)
+		networkDef, err := getXMLNetworkDefFromLibvirt(network)
 		macAddresses := make(map[string][]string)
 		for _, ips := range networkDef.IPs {
 			if ips.DHCP != nil {

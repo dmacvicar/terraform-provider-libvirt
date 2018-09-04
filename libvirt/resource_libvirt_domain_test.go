@@ -889,7 +889,7 @@ func testAccCheckLibvirtDestroyLeavesIPs(n string, ip string, network *libvirt.N
 			return err
 		}
 
-		networkDef, err := newDefNetworkfromLibvirt(retrieveNetwork)
+		networkDef, err := getXMLNetworkDefFromLibvirt(retrieveNetwork)
 
 		for _, ips := range networkDef.IPs {
 			for _, dhcpHost := range ips.DHCP.Hosts {

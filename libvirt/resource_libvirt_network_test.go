@@ -60,7 +60,7 @@ func testAccCheckLibvirtNetworkDhcpStatus(name string, network *libvirt.Network,
 			return err
 		}
 
-		networkDef, err := newDefNetworkfromLibvirt(network)
+		networkDef, err := getXMLNetworkDefFromLibvirt(network)
 		if err != nil {
 			return fmt.Errorf("Error reading libvirt network XML description: %s", err)
 		}

@@ -27,7 +27,7 @@ func newDefNetworkFromXML(s string) (libvirtxml.Network, error) {
 	return networkDef, nil
 }
 
-func newDefNetworkfromLibvirt(network Network) (libvirtxml.Network, error) {
+func getXMLNetworkDefFromLibvirt(network Network) (libvirtxml.Network, error) {
 	networkXMLDesc, err := network.GetXMLDesc(0)
 	if err != nil {
 		return libvirtxml.Network{}, fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)

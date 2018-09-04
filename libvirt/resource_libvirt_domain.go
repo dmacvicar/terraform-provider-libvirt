@@ -841,7 +841,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
 			}
 
-			networkDef, err := newDefNetworkfromLibvirt(network)
+			networkDef, err := getXMLNetworkDefFromLibvirt(network)
 			if err != nil {
 				return err
 			}
@@ -1376,7 +1376,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 			if err != nil {
 				return fmt.Errorf("Error retrieving network name: %s", err)
 			}
-			networkDef, err := newDefNetworkfromLibvirt(network)
+			networkDef, err := getXMLNetworkDefFromLibvirt(network)
 
 			// only for DHCP, we update the host table of the network
 			if HasDHCP(networkDef) {
