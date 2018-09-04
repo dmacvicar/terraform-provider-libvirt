@@ -1,7 +1,6 @@
 package libvirt
 
 import (
-	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -767,9 +766,10 @@ func testAccCheckLibvirtDomainExists(n string, domain *libvirt.Domain) resource.
 
 func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		xmlDesc, err := domain.GetXMLDesc(0)
+
+		domainDef, err := getXMLDomainDefFromLibvirt(domain)
 		if err != nil {
-			return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+			return fmt.Errorf("Error retrieving libvirt domain XML description from existing domain: %s", err)
 		}
 
 		ignitionKey, err := volume.GetKey()
@@ -777,12 +777,6 @@ func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol)
 			return err
 		}
 		ignStr := fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionKey)
-
-		domainDef := newDomainDef()
-		err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
-		if err != nil {
-			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
-		}
 
 		cmdLine := domainDef.QEMUCommandline.Args
 		for i, cmd := range cmdLine {
@@ -820,32 +814,20 @@ func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.Test
 
 func testAccCheckLibvirtDomainDescription(domain *libvirt.Domain, checkFunc func(libvirtxml.Domain) error) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		xmlDesc, err := domain.GetXMLDesc(0)
+		domainDef, err := getXMLDomainDefFromLibvirt(domain)
 		if err != nil {
-			return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+			return fmt.Errorf("Error retrieving libvirt domain XML description from existing domain: %s", err)
 		}
-
-		domainDef := newDomainDef()
-		err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
-		if err != nil {
-			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
-		}
-
 		return checkFunc(domainDef)
 	}
 }
 
 func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		xmlDesc, err := domain.GetXMLDesc(0)
-		if err != nil {
-			return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
-		}
 
-		domainDef := newDomainDef()
-		err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
+		domainDef, err := getXMLDomainDefFromLibvirt(domain)
 		if err != nil {
-			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+			return fmt.Errorf("Error getting libvirt XML defintion from existing libvirt domain: %s", err)
 		}
 
 		disks := domainDef.Devices.Disks
@@ -904,15 +886,10 @@ func testAccCheckLibvirtDestroyLeavesIPs(n string, ip string, network *libvirt.N
 
 func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel *libvirt.StorageVol, initrd *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		xmlDesc, err := domain.GetXMLDesc(0)
-		if err != nil {
-			return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
-		}
 
-		domainDef := newDomainDef()
-		err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
+		domainDef, err := getXMLDomainDefFromLibvirt(domain)
 		if err != nil {
-			return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+			return fmt.Errorf("Error retrieving libvirt domain XML description from existing domain: %s", err)
 		}
 
 		key, err := kernel.GetKey()
