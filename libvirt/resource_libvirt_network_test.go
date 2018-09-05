@@ -189,27 +189,11 @@ func networkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
 	}
 }
 
-func testAccCheckLibvirtNetworkDhcpStatus(name string, network *libvirt.Network, expectedDhcpStatus string) resource.TestCheckFunc {
+func testAccCheckLibvirtNetworkDhcpStatus(name string, expectedDhcpStatus string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[name]
-		if !ok {
-			return fmt.Errorf("Not found: %s", name)
-		}
-
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No libvirt network ID is set")
-		}
-
-		virConn := testAccProvider.Meta().(*Client).libvirt
-
-		network, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
+		networkDef, err := getNetworkDef(s, name)
 		if err != nil {
 			return err
-		}
-
-		networkDef, err := getXMLNetworkDefFromLibvirt(network)
-		if err != nil {
-			return fmt.Errorf("Error reading libvirt network XML description: %s", err)
 		}
 		if expectedDhcpStatus == "disabled" {
 			for _, ips := range networkDef.IPs {
@@ -282,7 +266,6 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
-	var network1 libvirt.Network
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -302,7 +285,7 @@ func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network.test_net", "dhcp.0.enabled", "true"),
-					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network.test_net", &network1, "enabled"),
+					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network.test_net", "enabled"),
 				),
 			},
 		},
@@ -310,7 +293,6 @@ func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
-	var network1 libvirt.Network
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -329,7 +311,7 @@ func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 				}`),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network.test_net", "dhcp.0.enabled", "false"),
-					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network.test_net", &network1, "disabled"),
+					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network.test_net", "disabled"),
 				),
 			},
 		},
