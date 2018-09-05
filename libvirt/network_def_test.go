@@ -131,7 +131,7 @@ func TestNetworkFromLibvirtError(t *testing.T) {
 		GetXMLDescError: errors.New("boom"),
 	}
 
-	_, err := newDefNetworkfromLibvirt(net)
+	_, err := getXMLNetworkDefFromLibvirt(net)
 	if err == nil {
 		t.Error("Expected error")
 	}
@@ -142,7 +142,7 @@ func TestNetworkFromLibvirtWrongResponse(t *testing.T) {
 		GetXMLDescReply: "wrong xml",
 	}
 
-	_, err := newDefNetworkfromLibvirt(net)
+	_, err := getXMLNetworkDefFromLibvirt(net)
 	if err == nil {
 		t.Error("Expected error")
 	}
@@ -161,7 +161,7 @@ func TestNetworkFromLibvirt(t *testing.T) {
 		</network>`,
 	}
 
-	dn, err := newDefNetworkfromLibvirt(net)
+	dn, err := getXMLNetworkDefFromLibvirt(net)
 	if err != nil {
 		t.Errorf("Unexpected error %v", err)
 	}

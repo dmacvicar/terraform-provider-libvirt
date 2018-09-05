@@ -322,7 +322,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	}
 	defer network.Free()
 
-	networkDef, err := newDefNetworkfromLibvirt(network)
+	networkDef, err := getXMLNetworkDefFromLibvirt(network)
 	if err != nil {
 		return fmt.Errorf("Error reading libvirt network XML description: %s", err)
 	}
