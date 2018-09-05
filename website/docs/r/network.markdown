@@ -34,12 +34,25 @@ resource "libvirt_network" "kube_network" {
   # (only necessary in "bridge" mode)
   # bridge = "br7"
 
-  # (Optional) one or more DNS forwarder entries.  One or both of
-  # "address" and "domain" must be specified.  The format is:
-  # dns_forwarder {
-  #   address = "my address"
-  #   domain = "my domain"
-  # }
+  # (Optional) DNS configuration
+  dns {
+    # (Optional, default false)
+    # true: DNS requests under this domain will only be resolved by the
+    # virtual network's own DNS server
+    # false: Unresolved requests will be forwarded to the host's
+    # upstream DNS server if the virtual network's DNS server does not
+    # have an answer.
+￼   local_only = true
+
+    # (Optional) one or more DNS forwarder entries.  One or both of
+    # "address" and "domain" must be specified.  The format is:
+    # forwarders = [
+    #   {
+    #     address = "my address"
+    #     domain = "my domain"
+    #   }
+    # ]
+  }
 }
 ```
 
@@ -76,40 +89,14 @@ The following arguments are supported:
 * `bridge` - (Optional) The bridge device defines the name of a bridge
    device which will be used to construct the virtual network (when not provided,
    it will be automatically obtained by libvirt in `none`, `nat` and `route` modes).
-*  `dns_forwarder` - (Optional) a DNS forwarder entry block.  You can have
-   one or mode of these blocks in your network definition.  You must specify one or
-   both of `address` and `domain`.  You can use either of the forms below to
-   specify dns_forwarders:
 * `autostart` - (Optional) Set to `true` to start the network on host boot up.
   If not specified `false` is assumed.
+* `dns` - (Optional) configuration of DNS specific settings for the network
 
-```hcl
-resource "libvirt_network" "my_network" {
-  ...
-  dns_forwarder {
-    address = "my address"
-  }
-  dns_forwarder {
-    address = "my address 1"
-    domain = "my domain"
-  }
-}
-```
+Inside of `dns` section the following argument are supported:
+* `local_only` - (Optional) true/false: true means 'do not forward unresolved requests for this domain to the part DNS server
+* `forwarders` - (Optional) Either `address`, `domain`, or both must be set
 
-```hcl
-resource "libvirt_network" "my_network" {
-  ...
-  dns_forwarder = [
-    {
-      address = "my address"
-    },
-    {
-      address = "my address 1"
-      domain = "my domain
-    }
-  ]
-}
-```
 
 * `dhcp` - (Optional) DHCP configuration. 
    You need to use it in conjuction with the adresses variable.

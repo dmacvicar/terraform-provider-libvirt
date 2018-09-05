@@ -18,6 +18,7 @@ const (
 	netModeNat      = "nat"
 	netModeRoute    = "route"
 	netModeBridge   = "bridge"
+	dnsPrefix       = "dns.0"
 )
 
 // a libvirt network resource
@@ -80,23 +81,39 @@ func resourceLibvirtNetwork() *schema.Resource {
 				Optional: true,
 				Required: false,
 			},
-			"dns_forwarder": {
+			"dns": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"address": {
-							Type:     schema.TypeString,
+						"local_only": {
+							Type:     schema.TypeBool,
+							Default:  false,
 							Optional: true,
 							Required: false,
-							ForceNew: true,
 						},
-						"domain": {
-							Type:     schema.TypeString,
+						"forwarders": {
+							Type:     schema.TypeList,
 							Optional: true,
-							Required: false,
 							ForceNew: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"address": {
+										Type:     schema.TypeString,
+										Optional: true,
+										Required: false,
+										ForceNew: true,
+									},
+									"domain": {
+										Type:     schema.TypeString,
+										Optional: true,
+										Required: false,
+										ForceNew: true,
+									},
+								},
+							},
 						},
 					},
 				},
@@ -185,8 +202,17 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 
 	networkDef := newNetworkDef()
 	networkDef.Name = d.Get("name").(string)
-	networkDef.Domain = &libvirtxml.NetworkDomain{
-		Name: d.Get("domain").(string),
+
+	if domain, ok := d.GetOk("domain"); ok {
+		networkDef.Domain = &libvirtxml.NetworkDomain{
+			Name: domain.(string),
+		}
+
+		if dnsLocalOnly, ok := d.GetOk(dnsPrefix + ".local_only"); ok {
+			if dnsLocalOnly.(bool) {
+				networkDef.Domain.LocalOnly = "yes" // this "boolean" must be "yes"|"no"
+			}
+		}
 	}
 
 	// use a bridge provided by the user, or create one otherwise (libvirt will assign on automatically when empty)
@@ -217,14 +243,14 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		if err != nil {
 			return fmt.Errorf("Could not set DHCP from adresses '%s'", err)
 		}
-		if dnsForwardCount, ok := d.GetOk("dns_forwarder.#"); ok {
+		if dnsForwardCount, ok := d.GetOk(dnsPrefix + ".forwarders.#"); ok {
 			dns := libvirtxml.NetworkDNS{
 				Forwarders: []libvirtxml.NetworkDNSForwarder{},
 			}
 
 			for i := 0; i < dnsForwardCount.(int); i++ {
 				forward := libvirtxml.NetworkDNSForwarder{}
-				forwardPrefix := fmt.Sprintf("dns_forwarder.%d", i)
+				forwardPrefix := fmt.Sprintf(dnsPrefix+".forwarders.%d", i)
 				if address, ok := d.GetOk(forwardPrefix + ".address"); ok {
 					ip := net.ParseIP(address.(string))
 					if ip == nil {
@@ -333,6 +359,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	// Domain as won't be present for bridged networks
 	if networkDef.Domain != nil {
 		d.Set("domain", networkDef.Domain.Name)
+		d.Set(dnsPrefix+".local_only", strings.ToLower(networkDef.Domain.LocalOnly) == "yes")
 	}
 
 	autostart, err := network.GetAutostart()
@@ -361,6 +388,17 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("addresses", addresses)
 	}
 
+	if networkDef.DNS != nil {
+		for i, forwarder := range networkDef.DNS.Forwarders {
+			key := fmt.Sprintf(dnsPrefix+".forwarders.%d", i)
+			if len(forwarder.Addr) > 0 {
+				d.Set(key+".address", forwarder.Addr)
+			}
+			if len(forwarder.Domain) > 0 {
+				d.Set(key+".domain", forwarder.Domain)
+			}
+		}
+	}
 	// TODO: get any other parameters from the network and save them
 
 	log.Printf("[DEBUG] Network ID %s successfully read", d.Id())
