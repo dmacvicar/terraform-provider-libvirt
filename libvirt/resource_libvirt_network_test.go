@@ -25,7 +25,7 @@ func getNetworkDef(s *terraform.State, name string) (*libvirtxml.Network, error)
 	if err != nil {
 		return nil, err
 	}
-	networkDef, err := newDefNetworkfromLibvirt(network)
+	networkDef, err := getXMLNetworkDefFromLibvirt(network)
 	if err != nil {
 		return nil, fmt.Errorf("Error reading libvirt network XML description: %s", err)
 	}
