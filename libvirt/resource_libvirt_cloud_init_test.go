@@ -37,7 +37,7 @@ func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
 					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit"+randomResourceName, "local_hostname", randomLocalHostname),
+						"libvirt_cloudinit."+randomResourceName, "local_hostname", randomLocalHostname),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
 				),
 			},
