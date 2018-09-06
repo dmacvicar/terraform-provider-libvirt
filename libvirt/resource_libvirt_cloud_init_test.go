@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	libvirt "github.com/libvirt/libvirt-go"
@@ -12,6 +13,10 @@ import (
 
 func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 	var volume libvirt.StorageVol
+	randomResourceName := acctest.RandString(10)
+	randomIsoName := acctest.RandString(10) + ".iso"
+	randomLocalHostname := acctest.RandString(5) + ".iso"
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
@@ -21,25 +26,25 @@ func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-				resource "libvirt_cloudinit" "test" {
-					name           = "test.iso"
-					local_hostname = "tango1"
+				resource "libvirt_cloudinit" "%s" {
+					name           = "%s"
+					local_hostname = "%s"
 					pool           = "default"
 					user_data      = "#cloud-config\nssh_authorized_keys: []\n"
-				}`),
+				}`, randomResourceName, randomIsoName, randomLocalHostname),
 
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit.test", "name", "test.iso"),
+						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
 					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit.test", "local_hostname", "tango1"),
-					testAccCheckCloudInitVolumeExists("libvirt_cloudinit.test", &volume),
+						"libvirt_cloudinit."+randomResourceName, "local_hostname", randomLocalHostname),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
 				),
 			},
 			// 2nd tests Invalid  userdata
 			{
 				Config: fmt.Sprintf(`
-				resource "libvirt_cloudinit" "test" {
+				resource "libvirt_cloudinit" "testfail" {
 					name           = "commoninit2.iso"
 					local_hostname = "samba2"
 					pool           = "default"
@@ -57,14 +62,17 @@ func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 // This test should fail without a proper "Exists" implementation
 func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	var volume libvirt.StorageVol
+	randomResourceName := acctest.RandString(10)
+	randomIsoName := acctest.RandString(9) + ".iso"
+	randomLocalHostname := acctest.RandString(5) + ".iso"
 
-	const testAccCheckLibvirtCloudInitConfigBasic = `
-    	resource "libvirt_cloudinit" "test" {
-  	    	name           = "test.iso"
-			local_hostname = "tango1"
+	testAccCheckLibvirtCloudInitConfigBasic := fmt.Sprintf(`
+    	resource "libvirt_cloudinit" "%s" {
+  	  name           = "%s"
+			local_hostname = "%s"
 			pool           = "default"
 			user_data      = "#cloud-config\nssh_authorized_keys: []\n"
-		}`
+		}`, randomResourceName, randomIsoName, randomLocalHostname)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -73,7 +81,7 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 			{
 				Config: testAccCheckLibvirtCloudInitConfigBasic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckCloudInitVolumeExists("libvirt_cloudinit.test", &volume),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
 				),
 			},
 			{

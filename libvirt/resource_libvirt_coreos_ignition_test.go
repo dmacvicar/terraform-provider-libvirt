@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	libvirt "github.com/libvirt/libvirt-go"
@@ -11,9 +12,11 @@ import (
 
 func TestAccLibvirtIgnition_Basic(t *testing.T) {
 	var volume libvirt.StorageVol
+	randomServiceName := acctest.RandString(10) + ".service"
+	randomIgnitionName := acctest.RandString(9)
 	var config = fmt.Sprintf(`
 	data "ignition_systemd_unit" "acceptance-test-systemd" {
-		name    = "example.service"
+		name    = "%s"
 		content = "[Service]\nType=oneshot\nExecStart=/usr/bin/echo Hello World\n\n[Install]\nWantedBy=multi-user.target"
 	}
 
@@ -24,10 +27,10 @@ func TestAccLibvirtIgnition_Basic(t *testing.T) {
 	}
 
 	resource "libvirt_ignition" "ignition" {
-		name    = "ignition"
+		name    = "%s"
 		content = "${data.ignition_config.acceptance-test-config.rendered}"
 	}
-	`)
+	`, randomServiceName, randomIgnitionName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -39,7 +42,7 @@ func TestAccLibvirtIgnition_Basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckIgnitionVolumeExists("libvirt_ignition.ignition", &volume),
 					resource.TestCheckResourceAttr(
-						"libvirt_ignition.ignition", "name", "ignition"),
+						"libvirt_ignition.ignition", "name", randomIgnitionName),
 					resource.TestCheckResourceAttr(
 						"libvirt_ignition.ignition", "pool", "default"),
 				),
