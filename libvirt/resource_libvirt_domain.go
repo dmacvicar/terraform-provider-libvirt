@@ -1,8 +1,6 @@
 package libvirt
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/xml"
 	"fmt"
 	"log"
@@ -27,11 +25,6 @@ type pendingMapping struct {
 
 func init() {
 	spew.Config.Indent = "\t"
-}
-
-func hash(s string) string {
-	sha := sha256.Sum256([]byte(s))
-	return hex.EncodeToString(sha[:])
 }
 
 func resourceLibvirtDomain() *schema.Resource {
