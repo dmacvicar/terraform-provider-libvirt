@@ -808,15 +808,6 @@ func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol)
 	}
 }
 
-func TestHash(t *testing.T) {
-	actual := hash("this is a test")
-	expected := "2e99758548972a8e8822ad47fa1017ff72f06f3ff6a016851f45c398732bc50c"
-
-	if actual != expected {
-		t.Errorf("Expected %s, got %s", expected, actual)
-	}
-}
-
 func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.TestCheckFunc {
 	return testAccCheckLibvirtDomainDescription(domain, func(domainDef libvirtxml.Domain) error {
 		disks := domainDef.Devices.Disks
