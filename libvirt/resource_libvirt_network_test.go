@@ -35,6 +35,7 @@ func getNetworkDef(s *terraform.State, name string) (*libvirtxml.Network, error)
 
 func TestAccCheckLibvirtNetwork_LocalOnly(t *testing.T) {
 	randomNetworkResource := acctest.RandString(10)
+	randomNetworkName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -43,13 +44,13 @@ func TestAccCheckLibvirtNetwork_LocalOnly(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "libvirt_network" "%s" {
-					name      = "networktest"
+					name      = "%s"
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
 					dns {
 						local_only = true
 					}
-				}`, randomNetworkResource),
+				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.local_only", "true"),
 					checkLocalOnly("libvirt_network."+randomNetworkResource, true),
@@ -80,6 +81,7 @@ func checkLocalOnly(name string, expectLocalOnly bool) resource.TestCheckFunc {
 
 func TestAccCheckLibvirtNetwork_DNSForwarders(t *testing.T) {
 	randomNetworkResource := acctest.RandString(10)
+	randomNetworkName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -88,7 +90,7 @@ func TestAccCheckLibvirtNetwork_DNSForwarders(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "libvirt_network" "%s" {
-					name      = "networktest"
+					name      = "%s"
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
 					dns {
@@ -105,7 +107,7 @@ func TestAccCheckLibvirtNetwork_DNSForwarders(t *testing.T) {
 						  },
 						]
 					}
-				}`, randomNetworkResource),
+				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.forwarders.#", "3"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.forwarders.0.address", "8.8.8.8"),
@@ -161,6 +163,7 @@ func checkDNSForwarders(name string, expected []libvirtxml.NetworkDNSForwarder) 
 
 func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 	randomNetworkResource := acctest.RandString(10)
+	randomNetworkName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -169,7 +172,7 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "libvirt_network" "%s" {
-					name      = "networktest"
+					name      = "%s"
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
 					dns {
@@ -188,7 +191,7 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 						  },
 						]
 					}
-				}`, randomNetworkResource),
+				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.hostname", "myhost1"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.ip", "1.1.1.1"),
@@ -326,6 +329,7 @@ func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
 func TestAccLibvirtNetwork_Import(t *testing.T) {
 	var network libvirt.Network
 	randomNetworkResource := acctest.RandString(10)
+	randomNetworkName := acctest.RandString(10)
 	resourceName := "libvirt_network." + randomNetworkResource
 
 	resource.Test(t, resource.TestCase{
@@ -336,11 +340,11 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 			resource.TestStep{
 				Config: fmt.Sprintf(`
 				resource "libvirt_network" "%s" {
-					name      = "networktest"
+					name      = "%s"
 					mode      = "nat"
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
-				}`, randomNetworkResource),
+				}`, randomNetworkResource, randomNetworkName),
 			},
 			resource.TestStep{
 				ResourceName: resourceName,
@@ -355,6 +359,7 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 
 func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 	randomNetworkResource := acctest.RandString(10)
+	randomNetworkName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -363,14 +368,14 @@ func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "libvirt_network" "%s" {
-					name      = "networktest"
+					name      = "%s"
 					mode      = "nat"
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
 					dhcp {
 						enabled = true
 					}
-				}`, randomNetworkResource),
+				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.enabled", "true"),
 					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network."+randomNetworkResource, "enabled"),
@@ -382,6 +387,7 @@ func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 
 func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 	randomNetworkResource := acctest.RandString(10)
+	randomNetworkName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -390,14 +396,14 @@ func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "libvirt_network" "%s" {
-					name      = "networktest"
+					name      = "%s"
 					mode      = "nat"
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
 					dhcp {
 						enabled = false
 					}
-				}`, randomNetworkResource),
+				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.enabled", "false"),
 					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network."+randomNetworkResource, "disabled"),
@@ -409,6 +415,7 @@ func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 	var network libvirt.Network
 	randomNetworkResource := acctest.RandString(10)
+	randomNetworkName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -417,12 +424,12 @@ func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "libvirt_network" "%s" {
-					name      = "networktest"
+					name      = "%s"
 					mode      = "nat"
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
 					autostart = true
-				}`, randomNetworkResource),
+				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					networkExists("libvirt_network."+randomNetworkResource, &network),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "autostart", "true"),
@@ -431,12 +438,12 @@ func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 			{
 				Config: fmt.Sprintf(`
 				resource "libvirt_network" "%s" {
-					name      = "networktest"
+					name      = "%s"
 					mode      = "nat"
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
 					autostart = false
-				}`, randomNetworkResource),
+				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					networkExists("libvirt_network."+randomNetworkResource, &network),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "autostart", "false"),
