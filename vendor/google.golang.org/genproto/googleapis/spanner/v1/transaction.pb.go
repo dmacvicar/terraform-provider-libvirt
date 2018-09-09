@@ -254,7 +254,7 @@ func (m *TransactionOptions) Reset()         { *m = TransactionOptions{} }
 func (m *TransactionOptions) String() string { return proto.CompactTextString(m) }
 func (*TransactionOptions) ProtoMessage()    {}
 func (*TransactionOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_transaction_ec0699010b3c5244, []int{0}
+	return fileDescriptor_transaction_1d57af638fc1a731, []int{0}
 }
 func (m *TransactionOptions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TransactionOptions.Unmarshal(m, b)
@@ -281,12 +281,14 @@ type isTransactionOptions_Mode interface {
 type TransactionOptions_ReadWrite_ struct {
 	ReadWrite *TransactionOptions_ReadWrite `protobuf:"bytes,1,opt,name=read_write,json=readWrite,proto3,oneof"`
 }
+
 type TransactionOptions_ReadOnly_ struct {
 	ReadOnly *TransactionOptions_ReadOnly `protobuf:"bytes,2,opt,name=read_only,json=readOnly,proto3,oneof"`
 }
 
 func (*TransactionOptions_ReadWrite_) isTransactionOptions_Mode() {}
-func (*TransactionOptions_ReadOnly_) isTransactionOptions_Mode()  {}
+
+func (*TransactionOptions_ReadOnly_) isTransactionOptions_Mode() {}
 
 func (m *TransactionOptions) GetMode() isTransactionOptions_Mode {
 	if m != nil {
@@ -395,7 +397,7 @@ func (m *TransactionOptions_ReadWrite) Reset()         { *m = TransactionOptions
 func (m *TransactionOptions_ReadWrite) String() string { return proto.CompactTextString(m) }
 func (*TransactionOptions_ReadWrite) ProtoMessage()    {}
 func (*TransactionOptions_ReadWrite) Descriptor() ([]byte, []int) {
-	return fileDescriptor_transaction_ec0699010b3c5244, []int{0, 0}
+	return fileDescriptor_transaction_1d57af638fc1a731, []int{0, 0}
 }
 func (m *TransactionOptions_ReadWrite) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TransactionOptions_ReadWrite.Unmarshal(m, b)
@@ -438,7 +440,7 @@ func (m *TransactionOptions_ReadOnly) Reset()         { *m = TransactionOptions_
 func (m *TransactionOptions_ReadOnly) String() string { return proto.CompactTextString(m) }
 func (*TransactionOptions_ReadOnly) ProtoMessage()    {}
 func (*TransactionOptions_ReadOnly) Descriptor() ([]byte, []int) {
-	return fileDescriptor_transaction_ec0699010b3c5244, []int{0, 1}
+	return fileDescriptor_transaction_1d57af638fc1a731, []int{0, 1}
 }
 func (m *TransactionOptions_ReadOnly) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TransactionOptions_ReadOnly.Unmarshal(m, b)
@@ -465,24 +467,32 @@ type isTransactionOptions_ReadOnly_TimestampBound interface {
 type TransactionOptions_ReadOnly_Strong struct {
 	Strong bool `protobuf:"varint,1,opt,name=strong,proto3,oneof"`
 }
+
 type TransactionOptions_ReadOnly_MinReadTimestamp struct {
 	MinReadTimestamp *timestamp.Timestamp `protobuf:"bytes,2,opt,name=min_read_timestamp,json=minReadTimestamp,proto3,oneof"`
 }
+
 type TransactionOptions_ReadOnly_MaxStaleness struct {
 	MaxStaleness *duration.Duration `protobuf:"bytes,3,opt,name=max_staleness,json=maxStaleness,proto3,oneof"`
 }
+
 type TransactionOptions_ReadOnly_ReadTimestamp struct {
 	ReadTimestamp *timestamp.Timestamp `protobuf:"bytes,4,opt,name=read_timestamp,json=readTimestamp,proto3,oneof"`
 }
+
 type TransactionOptions_ReadOnly_ExactStaleness struct {
 	ExactStaleness *duration.Duration `protobuf:"bytes,5,opt,name=exact_staleness,json=exactStaleness,proto3,oneof"`
 }
 
-func (*TransactionOptions_ReadOnly_Strong) isTransactionOptions_ReadOnly_TimestampBound()           {}
+func (*TransactionOptions_ReadOnly_Strong) isTransactionOptions_ReadOnly_TimestampBound() {}
+
 func (*TransactionOptions_ReadOnly_MinReadTimestamp) isTransactionOptions_ReadOnly_TimestampBound() {}
-func (*TransactionOptions_ReadOnly_MaxStaleness) isTransactionOptions_ReadOnly_TimestampBound()     {}
-func (*TransactionOptions_ReadOnly_ReadTimestamp) isTransactionOptions_ReadOnly_TimestampBound()    {}
-func (*TransactionOptions_ReadOnly_ExactStaleness) isTransactionOptions_ReadOnly_TimestampBound()   {}
+
+func (*TransactionOptions_ReadOnly_MaxStaleness) isTransactionOptions_ReadOnly_TimestampBound() {}
+
+func (*TransactionOptions_ReadOnly_ReadTimestamp) isTransactionOptions_ReadOnly_TimestampBound() {}
+
+func (*TransactionOptions_ReadOnly_ExactStaleness) isTransactionOptions_ReadOnly_TimestampBound() {}
 
 func (m *TransactionOptions_ReadOnly) GetTimestampBound() isTransactionOptions_ReadOnly_TimestampBound {
 	if m != nil {
@@ -690,7 +700,7 @@ func (m *Transaction) Reset()         { *m = Transaction{} }
 func (m *Transaction) String() string { return proto.CompactTextString(m) }
 func (*Transaction) ProtoMessage()    {}
 func (*Transaction) Descriptor() ([]byte, []int) {
-	return fileDescriptor_transaction_ec0699010b3c5244, []int{1}
+	return fileDescriptor_transaction_1d57af638fc1a731, []int{1}
 }
 func (m *Transaction) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Transaction.Unmarshal(m, b)
@@ -747,7 +757,7 @@ func (m *TransactionSelector) Reset()         { *m = TransactionSelector{} }
 func (m *TransactionSelector) String() string { return proto.CompactTextString(m) }
 func (*TransactionSelector) ProtoMessage()    {}
 func (*TransactionSelector) Descriptor() ([]byte, []int) {
-	return fileDescriptor_transaction_ec0699010b3c5244, []int{2}
+	return fileDescriptor_transaction_1d57af638fc1a731, []int{2}
 }
 func (m *TransactionSelector) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TransactionSelector.Unmarshal(m, b)
@@ -774,16 +784,20 @@ type isTransactionSelector_Selector interface {
 type TransactionSelector_SingleUse struct {
 	SingleUse *TransactionOptions `protobuf:"bytes,1,opt,name=single_use,json=singleUse,proto3,oneof"`
 }
+
 type TransactionSelector_Id struct {
 	Id []byte `protobuf:"bytes,2,opt,name=id,proto3,oneof"`
 }
+
 type TransactionSelector_Begin struct {
 	Begin *TransactionOptions `protobuf:"bytes,3,opt,name=begin,proto3,oneof"`
 }
 
 func (*TransactionSelector_SingleUse) isTransactionSelector_Selector() {}
-func (*TransactionSelector_Id) isTransactionSelector_Selector()        {}
-func (*TransactionSelector_Begin) isTransactionSelector_Selector()     {}
+
+func (*TransactionSelector_Id) isTransactionSelector_Selector() {}
+
+func (*TransactionSelector_Begin) isTransactionSelector_Selector() {}
 
 func (m *TransactionSelector) GetSelector() isTransactionSelector_Selector {
 	if m != nil {
@@ -911,10 +925,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/spanner/v1/transaction.proto", fileDescriptor_transaction_ec0699010b3c5244)
+	proto.RegisterFile("google/spanner/v1/transaction.proto", fileDescriptor_transaction_1d57af638fc1a731)
 }
 
-var fileDescriptor_transaction_ec0699010b3c5244 = []byte{
+var fileDescriptor_transaction_1d57af638fc1a731 = []byte{
 	// 537 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x94, 0xd1, 0x8a, 0xd3, 0x40,
 	0x14, 0x86, 0xd3, 0x6e, 0xb7, 0x74, 0x4f, 0xbb, 0xdd, 0xee, 0x2c, 0x8b, 0x35, 0x88, 0x4a, 0x45,

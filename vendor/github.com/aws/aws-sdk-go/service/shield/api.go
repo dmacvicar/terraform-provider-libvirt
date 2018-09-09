@@ -572,6 +572,8 @@ const opDeleteSubscription = "DeleteSubscription"
 //    }
 //
 // See also, https://docs.aws.amazon.com/goto/WebAPI/shield-2016-06-02/DeleteSubscription
+//
+// Deprecated: DeleteSubscription has been deprecated
 func (c *Shield) DeleteSubscriptionRequest(input *DeleteSubscriptionInput) (req *request.Request, output *DeleteSubscriptionOutput) {
 	if c.Client.Config.Logger != nil {
 		c.Client.Config.Logger.Log("This operation, DeleteSubscription, has been deprecated")
@@ -619,6 +621,8 @@ func (c *Shield) DeleteSubscriptionRequest(input *DeleteSubscriptionInput) (req 
 //   Exception indicating the specified resource does not exist.
 //
 // See also, https://docs.aws.amazon.com/goto/WebAPI/shield-2016-06-02/DeleteSubscription
+//
+// Deprecated: DeleteSubscription has been deprecated
 func (c *Shield) DeleteSubscription(input *DeleteSubscriptionInput) (*DeleteSubscriptionOutput, error) {
 	req, out := c.DeleteSubscriptionRequest(input)
 	return out, req.Send()
@@ -633,6 +637,8 @@ func (c *Shield) DeleteSubscription(input *DeleteSubscriptionInput) (*DeleteSubs
 // the context is nil a panic will occur. In the future the SDK may create
 // sub-contexts for http.Requests. See https://golang.org/pkg/context/
 // for more information on using Contexts.
+//
+// Deprecated: DeleteSubscriptionWithContext has been deprecated
 func (c *Shield) DeleteSubscriptionWithContext(ctx aws.Context, input *DeleteSubscriptionInput, opts ...request.Option) (*DeleteSubscriptionOutput, error) {
 	req, out := c.DeleteSubscriptionRequest(input)
 	req.SetContext(ctx)
@@ -1835,7 +1841,7 @@ type AttackDetail struct {
 
 	// The time the attack ended, in Unix time in seconds. For more information
 	// see timestamp (http://docs.aws.amazon.com/cli/latest/userguide/cli-using-param.html#parameter-types).
-	EndTime *time.Time `type:"timestamp" timestampFormat:"unix"`
+	EndTime *time.Time `type:"timestamp"`
 
 	// List of mitigation actions taken for the attack.
 	Mitigations []*Mitigation `type:"list"`
@@ -1845,7 +1851,7 @@ type AttackDetail struct {
 
 	// The time the attack started, in Unix time in seconds. For more information
 	// see timestamp (http://docs.aws.amazon.com/cli/latest/userguide/cli-using-param.html#parameter-types).
-	StartTime *time.Time `type:"timestamp" timestampFormat:"unix"`
+	StartTime *time.Time `type:"timestamp"`
 
 	// If applicable, additional detail about the resource being attacked, for example,
 	// IP address or URL.
@@ -1985,14 +1991,14 @@ type AttackSummary struct {
 
 	// The end time of the attack, in Unix time in seconds. For more information
 	// see timestamp (http://docs.aws.amazon.com/cli/latest/userguide/cli-using-param.html#parameter-types).
-	EndTime *time.Time `type:"timestamp" timestampFormat:"unix"`
+	EndTime *time.Time `type:"timestamp"`
 
 	// The ARN (Amazon Resource Name) of the resource that was attacked.
 	ResourceArn *string `type:"string"`
 
 	// The start time of the attack, in Unix time in seconds. For more information
 	// see timestamp (http://docs.aws.amazon.com/cli/latest/userguide/cli-using-param.html#parameter-types).
-	StartTime *time.Time `type:"timestamp" timestampFormat:"unix"`
+	StartTime *time.Time `type:"timestamp"`
 }
 
 // String returns the string representation
@@ -2303,6 +2309,7 @@ func (s DeleteProtectionOutput) GoString() string {
 	return s.String()
 }
 
+// Deprecated: DeleteSubscriptionInput has been deprecated
 type DeleteSubscriptionInput struct {
 	_ struct{} `deprecated:"true" type:"structure"`
 }
@@ -2317,6 +2324,7 @@ func (s DeleteSubscriptionInput) GoString() string {
 	return s.String()
 }
 
+// Deprecated: DeleteSubscriptionOutput has been deprecated
 type DeleteSubscriptionOutput struct {
 	_ struct{} `deprecated:"true" type:"structure"`
 }
@@ -3106,14 +3114,14 @@ type Subscription struct {
 	AutoRenew *string `type:"string" enum:"AutoRenew"`
 
 	// The date and time your subscription will end.
-	EndTime *time.Time `type:"timestamp" timestampFormat:"unix"`
+	EndTime *time.Time `type:"timestamp"`
 
 	// Specifies how many protections of a given type you can create.
 	Limits []*Limit `type:"list"`
 
 	// The start time of the subscription, in Unix time in seconds. For more information
 	// see timestamp (http://docs.aws.amazon.com/cli/latest/userguide/cli-using-param.html#parameter-types).
-	StartTime *time.Time `type:"timestamp" timestampFormat:"unix"`
+	StartTime *time.Time `type:"timestamp"`
 
 	// The length, in seconds, of the AWS Shield Advanced subscription for the account.
 	TimeCommitmentInSeconds *int64 `type:"long"`
@@ -3269,11 +3277,11 @@ type TimeRange struct {
 
 	// The start time, in Unix time in seconds. For more information see timestamp
 	// (http://docs.aws.amazon.com/cli/latest/userguide/cli-using-param.html#parameter-types).
-	FromInclusive *time.Time `type:"timestamp" timestampFormat:"unix"`
+	FromInclusive *time.Time `type:"timestamp"`
 
 	// The end time, in Unix time in seconds. For more information see timestamp
 	// (http://docs.aws.amazon.com/cli/latest/userguide/cli-using-param.html#parameter-types).
-	ToExclusive *time.Time `type:"timestamp" timestampFormat:"unix"`
+	ToExclusive *time.Time `type:"timestamp"`
 }
 
 // String returns the string representation

@@ -8,16 +8,26 @@
 //
 // The commands are:
 //
+// 	update      merge translations and generate catalog
 // 	extract     extracts strings to be translated from code
 // 	rewrite     rewrites fmt functions to use a message Printer
 // 	generate    generates code to insert translated messages
 //
-// Use "go help [command]" for more information about a command.
+// Use "gotext help [command]" for more information about a command.
 //
 // Additional help topics:
 //
 //
 // Use "gotext help [topic]" for more information about that topic.
+//
+//
+// Merge translations and generate catalog
+//
+// Usage:
+//
+// 	gotext update <package>* [-out <gofile>]
+//
+//
 //
 //
 // Extracts strings to be translated from code

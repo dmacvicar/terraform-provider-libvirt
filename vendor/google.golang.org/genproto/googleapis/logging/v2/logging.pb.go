@@ -53,7 +53,7 @@ func (m *DeleteLogRequest) Reset()         { *m = DeleteLogRequest{} }
 func (m *DeleteLogRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteLogRequest) ProtoMessage()    {}
 func (*DeleteLogRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_38da0f0e8dbb26ee, []int{0}
+	return fileDescriptor_logging_e1a2d3408d65219d, []int{0}
 }
 func (m *DeleteLogRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteLogRequest.Unmarshal(m, b)
@@ -153,7 +153,7 @@ func (m *WriteLogEntriesRequest) Reset()         { *m = WriteLogEntriesRequest{}
 func (m *WriteLogEntriesRequest) String() string { return proto.CompactTextString(m) }
 func (*WriteLogEntriesRequest) ProtoMessage()    {}
 func (*WriteLogEntriesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_38da0f0e8dbb26ee, []int{1}
+	return fileDescriptor_logging_e1a2d3408d65219d, []int{1}
 }
 func (m *WriteLogEntriesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WriteLogEntriesRequest.Unmarshal(m, b)
@@ -227,7 +227,7 @@ func (m *WriteLogEntriesResponse) Reset()         { *m = WriteLogEntriesResponse
 func (m *WriteLogEntriesResponse) String() string { return proto.CompactTextString(m) }
 func (*WriteLogEntriesResponse) ProtoMessage()    {}
 func (*WriteLogEntriesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_38da0f0e8dbb26ee, []int{2}
+	return fileDescriptor_logging_e1a2d3408d65219d, []int{2}
 }
 func (m *WriteLogEntriesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WriteLogEntriesResponse.Unmarshal(m, b)
@@ -265,7 +265,7 @@ func (m *WriteLogEntriesPartialErrors) Reset()         { *m = WriteLogEntriesPar
 func (m *WriteLogEntriesPartialErrors) String() string { return proto.CompactTextString(m) }
 func (*WriteLogEntriesPartialErrors) ProtoMessage()    {}
 func (*WriteLogEntriesPartialErrors) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_38da0f0e8dbb26ee, []int{3}
+	return fileDescriptor_logging_e1a2d3408d65219d, []int{3}
 }
 func (m *WriteLogEntriesPartialErrors) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WriteLogEntriesPartialErrors.Unmarshal(m, b)
@@ -343,7 +343,7 @@ func (m *ListLogEntriesRequest) Reset()         { *m = ListLogEntriesRequest{} }
 func (m *ListLogEntriesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListLogEntriesRequest) ProtoMessage()    {}
 func (*ListLogEntriesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_38da0f0e8dbb26ee, []int{4}
+	return fileDescriptor_logging_e1a2d3408d65219d, []int{4}
 }
 func (m *ListLogEntriesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListLogEntriesRequest.Unmarshal(m, b)
@@ -432,7 +432,7 @@ func (m *ListLogEntriesResponse) Reset()         { *m = ListLogEntriesResponse{}
 func (m *ListLogEntriesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListLogEntriesResponse) ProtoMessage()    {}
 func (*ListLogEntriesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_38da0f0e8dbb26ee, []int{5}
+	return fileDescriptor_logging_e1a2d3408d65219d, []int{5}
 }
 func (m *ListLogEntriesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListLogEntriesResponse.Unmarshal(m, b)
@@ -488,7 +488,7 @@ func (m *ListMonitoredResourceDescriptorsRequest) Reset() {
 func (m *ListMonitoredResourceDescriptorsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListMonitoredResourceDescriptorsRequest) ProtoMessage()    {}
 func (*ListMonitoredResourceDescriptorsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_38da0f0e8dbb26ee, []int{6}
+	return fileDescriptor_logging_e1a2d3408d65219d, []int{6}
 }
 func (m *ListMonitoredResourceDescriptorsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListMonitoredResourceDescriptorsRequest.Unmarshal(m, b)
@@ -541,7 +541,7 @@ func (m *ListMonitoredResourceDescriptorsResponse) Reset() {
 func (m *ListMonitoredResourceDescriptorsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListMonitoredResourceDescriptorsResponse) ProtoMessage()    {}
 func (*ListMonitoredResourceDescriptorsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_38da0f0e8dbb26ee, []int{7}
+	return fileDescriptor_logging_e1a2d3408d65219d, []int{7}
 }
 func (m *ListMonitoredResourceDescriptorsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListMonitoredResourceDescriptorsResponse.Unmarshal(m, b)
@@ -602,7 +602,7 @@ func (m *ListLogsRequest) Reset()         { *m = ListLogsRequest{} }
 func (m *ListLogsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListLogsRequest) ProtoMessage()    {}
 func (*ListLogsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_38da0f0e8dbb26ee, []int{8}
+	return fileDescriptor_logging_e1a2d3408d65219d, []int{8}
 }
 func (m *ListLogsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListLogsRequest.Unmarshal(m, b)
@@ -662,7 +662,7 @@ func (m *ListLogsResponse) Reset()         { *m = ListLogsResponse{} }
 func (m *ListLogsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListLogsResponse) ProtoMessage()    {}
 func (*ListLogsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_38da0f0e8dbb26ee, []int{9}
+	return fileDescriptor_logging_e1a2d3408d65219d, []int{9}
 }
 func (m *ListLogsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListLogsResponse.Unmarshal(m, b)
@@ -954,10 +954,10 @@ var _LoggingServiceV2_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("google/logging/v2/logging.proto", fileDescriptor_logging_38da0f0e8dbb26ee)
+	proto.RegisterFile("google/logging/v2/logging.proto", fileDescriptor_logging_e1a2d3408d65219d)
 }
 
-var fileDescriptor_logging_38da0f0e8dbb26ee = []byte{
+var fileDescriptor_logging_e1a2d3408d65219d = []byte{
 	// 1093 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x56, 0x4f, 0x6f, 0xdc, 0x44,
 	0x14, 0xd7, 0x6c, 0x9a, 0xcd, 0xee, 0x84, 0x26, 0xdb, 0x69, 0xb3, 0x71, 0x77, 0x93, 0x66, 0xb3,

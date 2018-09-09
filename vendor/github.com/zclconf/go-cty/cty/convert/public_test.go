@@ -217,6 +217,17 @@ func TestConvert(t *testing.T) {
 			}),
 		},
 		{
+			Value: cty.TupleVal([]cty.Value{
+				cty.NumberIntVal(5),
+				cty.StringVal("hello"),
+			}),
+			Type: cty.Set(cty.DynamicPseudoType),
+			Want: cty.SetVal([]cty.Value{
+				cty.StringVal("5"),
+				cty.StringVal("hello"),
+			}),
+		},
+		{
 			Value: cty.ObjectVal(map[string]cty.Value{
 				"num": cty.NumberIntVal(5),
 				"str": cty.StringVal("hello"),

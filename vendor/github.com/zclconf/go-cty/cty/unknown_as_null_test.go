@@ -27,6 +27,10 @@ func TestUnknownAsNull(t *testing.T) {
 			NullVal(DynamicPseudoType),
 		},
 		{
+			NullVal(Object(map[string]Type{"test": String})),
+			NullVal(Object(map[string]Type{"test": String})),
+		},
+		{
 			DynamicVal,
 			NullVal(DynamicPseudoType),
 		},

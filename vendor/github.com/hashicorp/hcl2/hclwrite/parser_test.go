@@ -6,134 +6,60 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/hashicorp/hcl2/hcl/hclsyntax"
-	"github.com/hashicorp/hcl2/hcl"
+
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/kylelemons/godebug/pretty"
+
+	"github.com/hashicorp/hcl2/hcl"
+	"github.com/hashicorp/hcl2/hcl/hclsyntax"
 )
 
 func TestParse(t *testing.T) {
 	tests := []struct {
 		src  string
-		want *Body
+		want TestTreeNode
 	}{
 		{
 			"",
-			&Body{
-				Items:     nil,
-				AllTokens: nil,
+			TestTreeNode{
+				Type: "Body",
 			},
 		},
 		{
 			"a = 1\n",
-			&Body{
-				Items: []Node{
-					&Attribute{
-						AllTokens: &TokenSeq{
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenIdent,
-										Bytes:        []byte(`a`),
-										SpacesBefore: 0,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenEqual,
-										Bytes:        []byte(`=`),
-										SpacesBefore: 1,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenNumberLit,
-										Bytes:        []byte(`1`),
-										SpacesBefore: 1,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenNewline,
-										Bytes:        []byte{'\n'},
-										SpacesBefore: 0,
-									},
-								},
-							},
-						},
-						NameTokens: &TokenSeq{Tokens{
+			TestTreeNode{
+				Type: "Body",
+				Children: []TestTreeNode{
+					{
+						Type: "Attribute",
+						Children: []TestTreeNode{
 							{
-								Type:         hclsyntax.TokenIdent,
-								Bytes:        []byte(`a`),
-								SpacesBefore: 0,
+								Type: "comments",
 							},
-						}},
-						EqualsTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenEqual,
-								Bytes:        []byte(`=`),
-								SpacesBefore: 1,
+								Type: "identifier",
+								Val:  "a",
 							},
-						}},
-						Expr: &Expression{
-							AllTokens: &TokenSeq{Tokens{
-								{
-									Type:         hclsyntax.TokenNumberLit,
-									Bytes:        []byte(`1`),
-									SpacesBefore: 1,
-								},
-							}},
-						},
-						EOLTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenNewline,
-								Bytes:        []byte{'\n'},
-								SpacesBefore: 0,
+								Type: "Tokens",
+								Val:  " =",
 							},
-						}},
-					},
-				},
-				AllTokens: &TokenSeq{
-					&TokenSeq{
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenIdent,
-									Bytes:        []byte(`a`),
-									SpacesBefore: 0,
+							{
+								Type: "Expression",
+								Children: []TestTreeNode{
+									{
+										Type: "Tokens",
+										Val:  " 1",
+									},
 								},
 							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenEqual,
-									Bytes:        []byte(`=`),
-									SpacesBefore: 1,
-								},
+							{
+								Type: "comments",
 							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenNumberLit,
-									Bytes:        []byte(`1`),
-									SpacesBefore: 1,
-								},
-							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenNewline,
-									Bytes:        []byte{'\n'},
-									SpacesBefore: 0,
-								},
+							{
+								Type: "Tokens",
+								Val:  "\n",
 							},
 						},
 					},
@@ -142,140 +68,39 @@ func TestParse(t *testing.T) {
 		},
 		{
 			"# aye aye aye\na = 1\n",
-			&Body{
-				Items: []Node{
-					&Attribute{
-						AllTokens: &TokenSeq{
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenComment,
-										Bytes:        []byte("# aye aye aye\n"),
-										SpacesBefore: 0,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenIdent,
-										Bytes:        []byte(`a`),
-										SpacesBefore: 0,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenEqual,
-										Bytes:        []byte(`=`),
-										SpacesBefore: 1,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenNumberLit,
-										Bytes:        []byte(`1`),
-										SpacesBefore: 1,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenNewline,
-										Bytes:        []byte{'\n'},
-										SpacesBefore: 0,
-									},
-								},
-							},
-						},
-						LeadCommentTokens: &TokenSeq{Tokens{
+			TestTreeNode{
+				Type: "Body",
+				Children: []TestTreeNode{
+					{
+						Type: "Attribute",
+						Children: []TestTreeNode{
 							{
-								Type:         hclsyntax.TokenComment,
-								Bytes:        []byte("# aye aye aye\n"),
-								SpacesBefore: 0,
+								Type: "comments",
+								Val:  "# aye aye aye\n",
 							},
-						}},
-						NameTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenIdent,
-								Bytes:        []byte(`a`),
-								SpacesBefore: 0,
+								Type: "identifier",
+								Val:  "a",
 							},
-						}},
-						EqualsTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenEqual,
-								Bytes:        []byte(`=`),
-								SpacesBefore: 1,
+								Type: "Tokens",
+								Val:  " =",
 							},
-						}},
-						Expr: &Expression{
-							AllTokens: &TokenSeq{Tokens{
-								{
-									Type:         hclsyntax.TokenNumberLit,
-									Bytes:        []byte(`1`),
-									SpacesBefore: 1,
-								},
-							}},
-						},
-						EOLTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenNewline,
-								Bytes:        []byte{'\n'},
-								SpacesBefore: 0,
-							},
-						}},
-					},
-				},
-				AllTokens: &TokenSeq{
-					&TokenSeq{
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenComment,
-									Bytes:        []byte("# aye aye aye\n"),
-									SpacesBefore: 0,
+								Type: "Expression",
+								Children: []TestTreeNode{
+									{
+										Type: "Tokens",
+										Val:  " 1",
+									},
 								},
 							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenIdent,
-									Bytes:        []byte(`a`),
-									SpacesBefore: 0,
-								},
+							{
+								Type: "comments",
 							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenEqual,
-									Bytes:        []byte(`=`),
-									SpacesBefore: 1,
-								},
-							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenNumberLit,
-									Bytes:        []byte(`1`),
-									SpacesBefore: 1,
-								},
-							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenNewline,
-									Bytes:        []byte{'\n'},
-									SpacesBefore: 0,
-								},
+							{
+								Type: "Tokens",
+								Val:  "\n",
 							},
 						},
 					},
@@ -284,115 +109,35 @@ func TestParse(t *testing.T) {
 		},
 		{
 			"a = 1 # because it is\n",
-			&Body{
-				Items: []Node{
-					&Attribute{
-						AllTokens: &TokenSeq{
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenIdent,
-										Bytes:        []byte(`a`),
-										SpacesBefore: 0,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenEqual,
-										Bytes:        []byte(`=`),
-										SpacesBefore: 1,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenNumberLit,
-										Bytes:        []byte(`1`),
-										SpacesBefore: 1,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenComment,
-										Bytes:        []byte("# because it is\n"),
-										SpacesBefore: 1,
-									},
-								},
-							},
-						},
-						NameTokens: &TokenSeq{Tokens{
+			TestTreeNode{
+				Type: "Body",
+				Children: []TestTreeNode{
+					{
+						Type: "Attribute",
+						Children: []TestTreeNode{
 							{
-								Type:         hclsyntax.TokenIdent,
-								Bytes:        []byte(`a`),
-								SpacesBefore: 0,
+								Type: "comments",
 							},
-						}},
-						EqualsTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenEqual,
-								Bytes:        []byte(`=`),
-								SpacesBefore: 1,
+								Type: "identifier",
+								Val:  "a",
 							},
-						}},
-						Expr: &Expression{
-							AllTokens: &TokenSeq{Tokens{
-								{
-									Type:         hclsyntax.TokenNumberLit,
-									Bytes:        []byte(`1`),
-									SpacesBefore: 1,
-								},
-							}},
-						},
-						LineCommentTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenComment,
-								Bytes:        []byte("# because it is\n"),
-								SpacesBefore: 1,
+								Type: "Tokens",
+								Val:  " =",
 							},
-						}},
-					},
-				},
-				AllTokens: &TokenSeq{
-					&TokenSeq{
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenIdent,
-									Bytes:        []byte(`a`),
-									SpacesBefore: 0,
+							{
+								Type: "Expression",
+								Children: []TestTreeNode{
+									{
+										Type: "Tokens",
+										Val:  " 1",
+									},
 								},
 							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenEqual,
-									Bytes:        []byte(`=`),
-									SpacesBefore: 1,
-								},
-							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenNumberLit,
-									Bytes:        []byte(`1`),
-									SpacesBefore: 1,
-								},
-							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenComment,
-									Bytes:        []byte("# because it is\n"),
-									SpacesBefore: 1,
-								},
+							{
+								Type: "comments",
+								Val:  " # because it is\n",
 							},
 						},
 					},
@@ -401,129 +146,43 @@ func TestParse(t *testing.T) {
 		},
 		{
 			"# bee bee bee\n\nb = 1\n", // two newlines separate the comment from the attribute
-			&Body{
-				Items: []Node{
-					&Attribute{
-						AllTokens: &TokenSeq{
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenIdent,
-										Bytes:        []byte(`b`),
-										SpacesBefore: 0,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenEqual,
-										Bytes:        []byte(`=`),
-										SpacesBefore: 1,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenNumberLit,
-										Bytes:        []byte(`1`),
-										SpacesBefore: 1,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenNewline,
-										Bytes:        []byte{'\n'},
-										SpacesBefore: 0,
-									},
-								},
-							},
-						},
-						NameTokens: &TokenSeq{Tokens{
-							{
-								Type:         hclsyntax.TokenIdent,
-								Bytes:        []byte(`b`),
-								SpacesBefore: 0,
-							},
-						}},
-						EqualsTokens: &TokenSeq{Tokens{
-							{
-								Type:         hclsyntax.TokenEqual,
-								Bytes:        []byte(`=`),
-								SpacesBefore: 1,
-							},
-						}},
-						Expr: &Expression{
-							AllTokens: &TokenSeq{Tokens{
-								{
-									Type:         hclsyntax.TokenNumberLit,
-									Bytes:        []byte(`1`),
-									SpacesBefore: 1,
-								},
-							}},
-						},
-						EOLTokens: &TokenSeq{Tokens{
-							{
-								Type:         hclsyntax.TokenNewline,
-								Bytes:        []byte{'\n'},
-								SpacesBefore: 0,
-							},
-						}},
+			TestTreeNode{
+				Type: "Body",
+				Children: []TestTreeNode{
+					{
+						Type: "Tokens", // Only lead/line comments attached to an object have type "comments"
+						Val:  "# bee bee bee\n\n",
 					},
-				},
-				AllTokens: &TokenSeq{
-					&TokenSeq{
-						Tokens{
+					{
+						Type: "Attribute",
+						Children: []TestTreeNode{
 							{
-								Type:         hclsyntax.TokenComment,
-								Bytes:        []byte("# bee bee bee\n"),
-								SpacesBefore: 0,
+								Type: "comments",
 							},
 							{
-								Type:         hclsyntax.TokenNewline,
-								Bytes:        []byte("\n"),
-								SpacesBefore: 0,
+								Type: "identifier",
+								Val:  "b",
 							},
-						},
-					},
-					&TokenSeq{
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenIdent,
-									Bytes:        []byte(`b`),
-									SpacesBefore: 0,
+							{
+								Type: "Tokens",
+								Val:  " =",
+							},
+							{
+								Type: "Expression",
+								Children: []TestTreeNode{
+									{
+										Type: "Tokens",
+										Val:  " 1",
+									},
 								},
 							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenEqual,
-									Bytes:        []byte(`=`),
-									SpacesBefore: 1,
-								},
+							{
+								Type: "comments",
+								Val:  "",
 							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenNumberLit,
-									Bytes:        []byte(`1`),
-									SpacesBefore: 1,
-								},
-							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenNewline,
-									Bytes:        []byte{'\n'},
-									SpacesBefore: 0,
-								},
+							{
+								Type: "Tokens",
+								Val:  "\n",
 							},
 						},
 					},
@@ -532,116 +191,33 @@ func TestParse(t *testing.T) {
 		},
 		{
 			"b {}\n",
-			&Body{
-				Items: []Node{
-					&Block{
-						AllTokens: &TokenSeq{
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenIdent,
-										Bytes:        []byte(`b`),
-										SpacesBefore: 0,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenOBrace,
-										Bytes:        []byte(`{`),
-										SpacesBefore: 1,
-									},
-								},
-							},
-							(*TokenSeq)(nil), // the empty body
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenCBrace,
-										Bytes:        []byte(`}`),
-										SpacesBefore: 0,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenNewline,
-										Bytes:        []byte{'\n'},
-										SpacesBefore: 0,
-									},
-								},
-							},
-						},
-						TypeTokens: &TokenSeq{Tokens{
+			TestTreeNode{
+				Type: "Body",
+				Children: []TestTreeNode{
+					{
+						Type: "Block",
+						Children: []TestTreeNode{
 							{
-								Type:         hclsyntax.TokenIdent,
-								Bytes:        []byte(`b`),
-								SpacesBefore: 0,
+								Type: "comments",
 							},
-						}},
-						OBraceTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenOBrace,
-								Bytes:        []byte(`{`),
-								SpacesBefore: 1,
+								Type: "identifier",
+								Val:  "b",
 							},
-						}},
-						Body: &Body{},
-						CBraceTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenCBrace,
-								Bytes:        []byte(`}`),
-								SpacesBefore: 0,
+								Type: "Tokens",
+								Val:  " {",
 							},
-						}},
-						EOLTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenNewline,
-								Bytes:        []byte{'\n'},
-								SpacesBefore: 0,
+								Type: "Body",
 							},
-						}},
-					},
-				},
-				AllTokens: &TokenSeq{
-					&TokenSeq{
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenIdent,
-									Bytes:        []byte(`b`),
-									SpacesBefore: 0,
-								},
+							{
+								Type: "Tokens",
+								Val:  "}",
 							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenOBrace,
-									Bytes:        []byte(`{`),
-									SpacesBefore: 1,
-								},
-							},
-						},
-						(*TokenSeq)(nil), // the empty body
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenCBrace,
-									Bytes:        []byte(`}`),
-									SpacesBefore: 0,
-								},
-							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenNewline,
-									Bytes:        []byte{'\n'},
-									SpacesBefore: 0,
-								},
+							{
+								Type: "Tokens",
+								Val:  "\n",
 							},
 						},
 					},
@@ -650,354 +226,257 @@ func TestParse(t *testing.T) {
 		},
 		{
 			"b {\n  a = 1\n}\n",
-			&Body{
-				Items: []Node{
-					&Block{
-						AllTokens: &TokenSeq{
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenIdent,
-										Bytes:        []byte(`b`),
-										SpacesBefore: 0,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenOBrace,
-										Bytes:        []byte(`{`),
-										SpacesBefore: 1,
-									},
-								},
-							},
-							&TokenSeq{
-								&TokenSeq{
-									Tokens{
-										{
-											Type:         hclsyntax.TokenNewline,
-											Bytes:        []byte{'\n'},
-											SpacesBefore: 0,
-										},
-									},
-								},
-								&TokenSeq{
-									&TokenSeq{
-										Tokens{
-											{
-												Type:         hclsyntax.TokenIdent,
-												Bytes:        []byte(`a`),
-												SpacesBefore: 2,
-											},
-										},
-									},
-									&TokenSeq{
-										Tokens{
-											{
-												Type:         hclsyntax.TokenEqual,
-												Bytes:        []byte(`=`),
-												SpacesBefore: 1,
-											},
-										},
-									},
-									&TokenSeq{
-										Tokens{
-											{
-												Type:         hclsyntax.TokenNumberLit,
-												Bytes:        []byte(`1`),
-												SpacesBefore: 1,
-											},
-										},
-									},
-									&TokenSeq{
-										Tokens{
-											{
-												Type:         hclsyntax.TokenNewline,
-												Bytes:        []byte{'\n'},
-												SpacesBefore: 0,
-											},
-										},
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenCBrace,
-										Bytes:        []byte(`}`),
-										SpacesBefore: 0,
-									},
-								},
-							},
-							&TokenSeq{
-								Tokens{
-									{
-										Type:         hclsyntax.TokenNewline,
-										Bytes:        []byte{'\n'},
-										SpacesBefore: 0,
-									},
-								},
-							},
-						},
-						TypeTokens: &TokenSeq{Tokens{
+			TestTreeNode{
+				Type: "Body",
+				Children: []TestTreeNode{
+					{
+						Type: "Block",
+						Children: []TestTreeNode{
 							{
-								Type:         hclsyntax.TokenIdent,
-								Bytes:        []byte(`b`),
-								SpacesBefore: 0,
+								Type: "comments",
 							},
-						}},
-						OBraceTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenOBrace,
-								Bytes:        []byte(`{`),
-								SpacesBefore: 1,
+								Type: "identifier",
+								Val:  "b",
 							},
-						}},
-						Body: &Body{
-							Items: []Node{
-								&Attribute{
-									AllTokens: &TokenSeq{
-										&TokenSeq{
-											Tokens{
-												{
-													Type:         hclsyntax.TokenIdent,
-													Bytes:        []byte(`a`),
-													SpacesBefore: 2,
-												},
-											},
-										},
-										&TokenSeq{
-											Tokens{
-												{
-													Type:         hclsyntax.TokenEqual,
-													Bytes:        []byte(`=`),
-													SpacesBefore: 1,
-												},
-											},
-										},
-										&TokenSeq{
-											Tokens{
-												{
-													Type:         hclsyntax.TokenNumberLit,
-													Bytes:        []byte(`1`),
-													SpacesBefore: 1,
-												},
-											},
-										},
-										&TokenSeq{
-											Tokens{
-												{
-													Type:         hclsyntax.TokenNewline,
-													Bytes:        []byte{'\n'},
-													SpacesBefore: 0,
-												},
-											},
-										},
-									},
-									NameTokens: &TokenSeq{
-										Tokens{
-											{
-												Type:         hclsyntax.TokenIdent,
-												Bytes:        []byte(`a`),
-												SpacesBefore: 2,
-											},
-										},
-									},
-									EqualsTokens: &TokenSeq{
-										Tokens{
-											{
-												Type:         hclsyntax.TokenEqual,
-												Bytes:        []byte(`=`),
-												SpacesBefore: 1,
-											},
-										},
-									},
-									Expr: &Expression{
-										AllTokens: &TokenSeq{
-											Tokens{
-												{
-													Type:         hclsyntax.TokenNumberLit,
-													Bytes:        []byte(`1`),
-													SpacesBefore: 1,
-												},
-											},
-										},
-									},
-									EOLTokens: &TokenSeq{
-										Tokens{
-											{
-												Type:         hclsyntax.TokenNewline,
-												Bytes:        []byte{'\n'},
-												SpacesBefore: 0,
-											},
-										},
-									},
-								},
-							},
-							AllTokens: &TokenSeq{
-								&TokenSeq{
-									Tokens{
-										{
-											Type:         hclsyntax.TokenNewline,
-											Bytes:        []byte{'\n'},
-											SpacesBefore: 0,
-										},
-									},
-								},
-								&TokenSeq{
-									&TokenSeq{
-										Tokens{
-											{
-												Type:         hclsyntax.TokenIdent,
-												Bytes:        []byte(`a`),
-												SpacesBefore: 2,
-											},
-										},
-									},
-									&TokenSeq{
-										Tokens{
-											{
-												Type:         hclsyntax.TokenEqual,
-												Bytes:        []byte(`=`),
-												SpacesBefore: 1,
-											},
-										},
-									},
-									&TokenSeq{
-										Tokens{
-											{
-												Type:         hclsyntax.TokenNumberLit,
-												Bytes:        []byte(`1`),
-												SpacesBefore: 1,
-											},
-										},
-									},
-									&TokenSeq{
-										Tokens{
-											{
-												Type:         hclsyntax.TokenNewline,
-												Bytes:        []byte{'\n'},
-												SpacesBefore: 0,
-											},
-										},
-									},
-								},
-							},
-						},
-						CBraceTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenCBrace,
-								Bytes:        []byte(`}`),
-								SpacesBefore: 0,
+								Type: "Tokens",
+								Val:  " {",
 							},
-						}},
-						EOLTokens: &TokenSeq{Tokens{
 							{
-								Type:         hclsyntax.TokenNewline,
-								Bytes:        []byte{'\n'},
-								SpacesBefore: 0,
-							},
-						}},
-					},
-				},
-				AllTokens: &TokenSeq{
-					&TokenSeq{
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenIdent,
-									Bytes:        []byte(`b`),
-									SpacesBefore: 0,
-								},
-							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenOBrace,
-									Bytes:        []byte(`{`),
-									SpacesBefore: 1,
-								},
-							},
-						},
-						&TokenSeq{
-							&TokenSeq{
-								Tokens{
+								Type: "Body",
+								Children: []TestTreeNode{
 									{
-										Type:         hclsyntax.TokenNewline,
-										Bytes:        []byte{'\n'},
-										SpacesBefore: 0,
+										Type: "Tokens",
+										Val:  "\n",
 									},
-								},
-							},
-							&TokenSeq{
-								&TokenSeq{
-									Tokens{
-										{
-											Type:         hclsyntax.TokenIdent,
-											Bytes:        []byte(`a`),
-											SpacesBefore: 2,
-										},
-									},
-								},
-								&TokenSeq{
-									Tokens{
-										{
-											Type:         hclsyntax.TokenEqual,
-											Bytes:        []byte(`=`),
-											SpacesBefore: 1,
-										},
-									},
-								},
-								&TokenSeq{
-									Tokens{
-										{
-											Type:         hclsyntax.TokenNumberLit,
-											Bytes:        []byte(`1`),
-											SpacesBefore: 1,
-										},
-									},
-								},
-								&TokenSeq{
-									Tokens{
-										{
-											Type:         hclsyntax.TokenNewline,
-											Bytes:        []byte{'\n'},
-											SpacesBefore: 0,
+									{
+										Type: "Attribute",
+										Children: []TestTreeNode{
+											{
+												Type: "comments",
+											},
+											{
+												Type: "identifier",
+												Val:  "  a",
+											},
+											{
+												Type: "Tokens",
+												Val:  " =",
+											},
+											{
+												Type: "Expression",
+												Children: []TestTreeNode{
+													{
+														Type: "Tokens",
+														Val:  " 1",
+													},
+												},
+											},
+											{
+												Type: "comments",
+											},
+											{
+												Type: "Tokens",
+												Val:  "\n",
+											},
 										},
 									},
 								},
 							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenCBrace,
-									Bytes:        []byte(`}`),
-									SpacesBefore: 0,
-								},
+							{
+								Type: "Tokens",
+								Val:  "}",
 							},
-						},
-						&TokenSeq{
-							Tokens{
-								{
-									Type:         hclsyntax.TokenNewline,
-									Bytes:        []byte{'\n'},
-									SpacesBefore: 0,
-								},
+							{
+								Type: "Tokens",
+								Val:  "\n",
 							},
 						},
 					},
 				},
 			},
 		},
-	}
-
-	prettyConfig := &pretty.Config{
-		Diffable:          true,
-		IncludeUnexported: true,
-		PrintStringers:    true,
+		{
+			"a = foo\n",
+			TestTreeNode{
+				Type: "Body",
+				Children: []TestTreeNode{
+					{
+						Type: "Attribute",
+						Children: []TestTreeNode{
+							{
+								Type: "comments",
+							},
+							{
+								Type: "identifier",
+								Val:  "a",
+							},
+							{
+								Type: "Tokens",
+								Val:  " =",
+							},
+							{
+								Type: "Expression",
+								Children: []TestTreeNode{
+									{
+										Type: "Traversal",
+										Children: []TestTreeNode{
+											{
+												Type: "TraverseName",
+												Children: []TestTreeNode{
+													{
+														Type: "identifier",
+														Val:  " foo",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							{
+								Type: "comments",
+							},
+							{
+								Type: "Tokens",
+								Val:  "\n",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			"a = foo.bar\n",
+			TestTreeNode{
+				Type: "Body",
+				Children: []TestTreeNode{
+					{
+						Type: "Attribute",
+						Children: []TestTreeNode{
+							{
+								Type: "comments",
+							},
+							{
+								Type: "identifier",
+								Val:  "a",
+							},
+							{
+								Type: "Tokens",
+								Val:  " =",
+							},
+							{
+								Type: "Expression",
+								Children: []TestTreeNode{
+									{
+										Type: "Traversal",
+										Children: []TestTreeNode{
+											{
+												Type: "TraverseName",
+												Children: []TestTreeNode{
+													{
+														Type: "identifier",
+														Val:  " foo",
+													},
+												},
+											},
+											{
+												Type: "TraverseName",
+												Children: []TestTreeNode{
+													{
+														Type: "Tokens",
+														Val:  ".",
+													},
+													{
+														Type: "identifier",
+														Val:  "bar",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							{
+								Type: "comments",
+							},
+							{
+								Type: "Tokens",
+								Val:  "\n",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			"a = foo[0]\n",
+			TestTreeNode{
+				Type: "Body",
+				Children: []TestTreeNode{
+					{
+						Type: "Attribute",
+						Children: []TestTreeNode{
+							{
+								Type: "comments",
+							},
+							{
+								Type: "identifier",
+								Val:  "a",
+							},
+							{
+								Type: "Tokens",
+								Val:  " =",
+							},
+							{
+								Type: "Expression",
+								Children: []TestTreeNode{
+									{
+										Type: "Traversal",
+										Children: []TestTreeNode{
+											{
+												Type: "TraverseName",
+												Children: []TestTreeNode{
+													{
+														Type: "identifier",
+														Val:  " foo",
+													},
+												},
+											},
+											{
+												Type: "TraverseIndex",
+												Children: []TestTreeNode{
+													{
+														Type: "Tokens",
+														Val:  "[",
+													},
+													{
+														Type: "number",
+														Val:  "0",
+													},
+													{
+														Type: "Tokens",
+														Val:  "]",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+							{
+								Type: "comments",
+							},
+							{
+								Type: "Tokens",
+								Val:  "\n",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -1010,24 +489,17 @@ func TestParse(t *testing.T) {
 				t.Fatalf("unexpected diagnostics")
 			}
 
-			got := file.Body
+			got := makeTestTree(file.body)
 
-			if !reflect.DeepEqual(got, test.want) {
-				diff := prettyConfig.Compare(got, test.want)
-				if diff != "" {
-					t.Errorf(
-						"wrong result\ninput: %s\ndiff:  %s",
-						test.src,
-						diff,
-					)
-				} else {
-					t.Errorf(
-						"wrong result\ninput: %s\ngot:   %s\nwant:  %s",
-						test.src,
-						spew.Sdump(got),
-						spew.Sdump(test.want),
-					)
-				}
+			if !cmp.Equal(got, test.want) {
+				diff := cmp.Diff(got, test.want)
+				t.Errorf(
+					"wrong result\ninput:\n%s\n\ngot:\n%s\nwant:%s\n\ndiff:\n%s",
+					test.src,
+					spew.Sdump(got),
+					spew.Sdump(test.want),
+					diff,
+				)
 			}
 		})
 	}

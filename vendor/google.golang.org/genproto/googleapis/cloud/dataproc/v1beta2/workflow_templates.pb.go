@@ -58,7 +58,7 @@ func (x WorkflowMetadata_State) String() string {
 	return proto.EnumName(WorkflowMetadata_State_name, int32(x))
 }
 func (WorkflowMetadata_State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{5, 0}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{5, 0}
 }
 
 // The workflow node state.
@@ -101,7 +101,7 @@ func (x WorkflowNode_NodeState) String() string {
 	return proto.EnumName(WorkflowNode_NodeState_name, int32(x))
 }
 func (WorkflowNode_NodeState) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{8, 0}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{8, 0}
 }
 
 // A Cloud Dataproc workflow template resource.
@@ -156,7 +156,7 @@ func (m *WorkflowTemplate) Reset()         { *m = WorkflowTemplate{} }
 func (m *WorkflowTemplate) String() string { return proto.CompactTextString(m) }
 func (*WorkflowTemplate) ProtoMessage()    {}
 func (*WorkflowTemplate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{0}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{0}
 }
 func (m *WorkflowTemplate) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorkflowTemplate.Unmarshal(m, b)
@@ -252,7 +252,7 @@ func (m *WorkflowTemplatePlacement) Reset()         { *m = WorkflowTemplatePlace
 func (m *WorkflowTemplatePlacement) String() string { return proto.CompactTextString(m) }
 func (*WorkflowTemplatePlacement) ProtoMessage()    {}
 func (*WorkflowTemplatePlacement) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{1}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{1}
 }
 func (m *WorkflowTemplatePlacement) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorkflowTemplatePlacement.Unmarshal(m, b)
@@ -279,11 +279,13 @@ type isWorkflowTemplatePlacement_Placement interface {
 type WorkflowTemplatePlacement_ManagedCluster struct {
 	ManagedCluster *ManagedCluster `protobuf:"bytes,1,opt,name=managed_cluster,json=managedCluster,proto3,oneof"`
 }
+
 type WorkflowTemplatePlacement_ClusterSelector struct {
 	ClusterSelector *ClusterSelector `protobuf:"bytes,2,opt,name=cluster_selector,json=clusterSelector,proto3,oneof"`
 }
 
-func (*WorkflowTemplatePlacement_ManagedCluster) isWorkflowTemplatePlacement_Placement()  {}
+func (*WorkflowTemplatePlacement_ManagedCluster) isWorkflowTemplatePlacement_Placement() {}
+
 func (*WorkflowTemplatePlacement_ClusterSelector) isWorkflowTemplatePlacement_Placement() {}
 
 func (m *WorkflowTemplatePlacement) GetPlacement() isWorkflowTemplatePlacement_Placement {
@@ -412,7 +414,7 @@ func (m *ManagedCluster) Reset()         { *m = ManagedCluster{} }
 func (m *ManagedCluster) String() string { return proto.CompactTextString(m) }
 func (*ManagedCluster) ProtoMessage()    {}
 func (*ManagedCluster) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{2}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{2}
 }
 func (m *ManagedCluster) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ManagedCluster.Unmarshal(m, b)
@@ -473,7 +475,7 @@ func (m *ClusterSelector) Reset()         { *m = ClusterSelector{} }
 func (m *ClusterSelector) String() string { return proto.CompactTextString(m) }
 func (*ClusterSelector) ProtoMessage()    {}
 func (*ClusterSelector) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{3}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{3}
 }
 func (m *ClusterSelector) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ClusterSelector.Unmarshal(m, b)
@@ -556,7 +558,7 @@ func (m *OrderedJob) Reset()         { *m = OrderedJob{} }
 func (m *OrderedJob) String() string { return proto.CompactTextString(m) }
 func (*OrderedJob) ProtoMessage()    {}
 func (*OrderedJob) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{4}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{4}
 }
 func (m *OrderedJob) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OrderedJob.Unmarshal(m, b)
@@ -576,6 +578,13 @@ func (m *OrderedJob) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_OrderedJob proto.InternalMessageInfo
 
+func (m *OrderedJob) GetStepId() string {
+	if m != nil {
+		return m.StepId
+	}
+	return ""
+}
+
 type isOrderedJob_JobType interface {
 	isOrderedJob_JobType()
 }
@@ -583,27 +592,37 @@ type isOrderedJob_JobType interface {
 type OrderedJob_HadoopJob struct {
 	HadoopJob *HadoopJob `protobuf:"bytes,2,opt,name=hadoop_job,json=hadoopJob,proto3,oneof"`
 }
+
 type OrderedJob_SparkJob struct {
 	SparkJob *SparkJob `protobuf:"bytes,3,opt,name=spark_job,json=sparkJob,proto3,oneof"`
 }
+
 type OrderedJob_PysparkJob struct {
 	PysparkJob *PySparkJob `protobuf:"bytes,4,opt,name=pyspark_job,json=pysparkJob,proto3,oneof"`
 }
+
 type OrderedJob_HiveJob struct {
 	HiveJob *HiveJob `protobuf:"bytes,5,opt,name=hive_job,json=hiveJob,proto3,oneof"`
 }
+
 type OrderedJob_PigJob struct {
 	PigJob *PigJob `protobuf:"bytes,6,opt,name=pig_job,json=pigJob,proto3,oneof"`
 }
+
 type OrderedJob_SparkSqlJob struct {
 	SparkSqlJob *SparkSqlJob `protobuf:"bytes,7,opt,name=spark_sql_job,json=sparkSqlJob,proto3,oneof"`
 }
 
-func (*OrderedJob_HadoopJob) isOrderedJob_JobType()   {}
-func (*OrderedJob_SparkJob) isOrderedJob_JobType()    {}
-func (*OrderedJob_PysparkJob) isOrderedJob_JobType()  {}
-func (*OrderedJob_HiveJob) isOrderedJob_JobType()     {}
-func (*OrderedJob_PigJob) isOrderedJob_JobType()      {}
+func (*OrderedJob_HadoopJob) isOrderedJob_JobType() {}
+
+func (*OrderedJob_SparkJob) isOrderedJob_JobType() {}
+
+func (*OrderedJob_PysparkJob) isOrderedJob_JobType() {}
+
+func (*OrderedJob_HiveJob) isOrderedJob_JobType() {}
+
+func (*OrderedJob_PigJob) isOrderedJob_JobType() {}
+
 func (*OrderedJob_SparkSqlJob) isOrderedJob_JobType() {}
 
 func (m *OrderedJob) GetJobType() isOrderedJob_JobType {
@@ -611,13 +630,6 @@ func (m *OrderedJob) GetJobType() isOrderedJob_JobType {
 		return m.JobType
 	}
 	return nil
-}
-
-func (m *OrderedJob) GetStepId() string {
-	if m != nil {
-		return m.StepId
-	}
-	return ""
 }
 
 func (m *OrderedJob) GetHadoopJob() *HadoopJob {
@@ -861,7 +873,7 @@ func (m *WorkflowMetadata) Reset()         { *m = WorkflowMetadata{} }
 func (m *WorkflowMetadata) String() string { return proto.CompactTextString(m) }
 func (*WorkflowMetadata) ProtoMessage()    {}
 func (*WorkflowMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{5}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{5}
 }
 func (m *WorkflowMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorkflowMetadata.Unmarshal(m, b)
@@ -954,7 +966,7 @@ func (m *ClusterOperation) Reset()         { *m = ClusterOperation{} }
 func (m *ClusterOperation) String() string { return proto.CompactTextString(m) }
 func (*ClusterOperation) ProtoMessage()    {}
 func (*ClusterOperation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{6}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{6}
 }
 func (m *ClusterOperation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ClusterOperation.Unmarshal(m, b)
@@ -1008,7 +1020,7 @@ func (m *WorkflowGraph) Reset()         { *m = WorkflowGraph{} }
 func (m *WorkflowGraph) String() string { return proto.CompactTextString(m) }
 func (*WorkflowGraph) ProtoMessage()    {}
 func (*WorkflowGraph) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{7}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{7}
 }
 func (m *WorkflowGraph) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorkflowGraph.Unmarshal(m, b)
@@ -1056,7 +1068,7 @@ func (m *WorkflowNode) Reset()         { *m = WorkflowNode{} }
 func (m *WorkflowNode) String() string { return proto.CompactTextString(m) }
 func (*WorkflowNode) ProtoMessage()    {}
 func (*WorkflowNode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{8}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{8}
 }
 func (m *WorkflowNode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorkflowNode.Unmarshal(m, b)
@@ -1128,7 +1140,7 @@ func (m *CreateWorkflowTemplateRequest) Reset()         { *m = CreateWorkflowTem
 func (m *CreateWorkflowTemplateRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateWorkflowTemplateRequest) ProtoMessage()    {}
 func (*CreateWorkflowTemplateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{9}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{9}
 }
 func (m *CreateWorkflowTemplateRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateWorkflowTemplateRequest.Unmarshal(m, b)
@@ -1182,7 +1194,7 @@ func (m *GetWorkflowTemplateRequest) Reset()         { *m = GetWorkflowTemplateR
 func (m *GetWorkflowTemplateRequest) String() string { return proto.CompactTextString(m) }
 func (*GetWorkflowTemplateRequest) ProtoMessage()    {}
 func (*GetWorkflowTemplateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{10}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{10}
 }
 func (m *GetWorkflowTemplateRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetWorkflowTemplateRequest.Unmarshal(m, b)
@@ -1248,7 +1260,7 @@ func (m *InstantiateWorkflowTemplateRequest) Reset()         { *m = InstantiateW
 func (m *InstantiateWorkflowTemplateRequest) String() string { return proto.CompactTextString(m) }
 func (*InstantiateWorkflowTemplateRequest) ProtoMessage()    {}
 func (*InstantiateWorkflowTemplateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{11}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{11}
 }
 func (m *InstantiateWorkflowTemplateRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InstantiateWorkflowTemplateRequest.Unmarshal(m, b)
@@ -1318,7 +1330,7 @@ func (m *InstantiateInlineWorkflowTemplateRequest) Reset() {
 func (m *InstantiateInlineWorkflowTemplateRequest) String() string { return proto.CompactTextString(m) }
 func (*InstantiateInlineWorkflowTemplateRequest) ProtoMessage()    {}
 func (*InstantiateInlineWorkflowTemplateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{12}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{12}
 }
 func (m *InstantiateInlineWorkflowTemplateRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InstantiateInlineWorkflowTemplateRequest.Unmarshal(m, b)
@@ -1374,7 +1386,7 @@ func (m *UpdateWorkflowTemplateRequest) Reset()         { *m = UpdateWorkflowTem
 func (m *UpdateWorkflowTemplateRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateWorkflowTemplateRequest) ProtoMessage()    {}
 func (*UpdateWorkflowTemplateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{13}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{13}
 }
 func (m *UpdateWorkflowTemplateRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateWorkflowTemplateRequest.Unmarshal(m, b)
@@ -1421,7 +1433,7 @@ func (m *ListWorkflowTemplatesRequest) Reset()         { *m = ListWorkflowTempla
 func (m *ListWorkflowTemplatesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListWorkflowTemplatesRequest) ProtoMessage()    {}
 func (*ListWorkflowTemplatesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{14}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{14}
 }
 func (m *ListWorkflowTemplatesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListWorkflowTemplatesRequest.Unmarshal(m, b)
@@ -1479,7 +1491,7 @@ func (m *ListWorkflowTemplatesResponse) Reset()         { *m = ListWorkflowTempl
 func (m *ListWorkflowTemplatesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListWorkflowTemplatesResponse) ProtoMessage()    {}
 func (*ListWorkflowTemplatesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{15}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{15}
 }
 func (m *ListWorkflowTemplatesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListWorkflowTemplatesResponse.Unmarshal(m, b)
@@ -1534,7 +1546,7 @@ func (m *DeleteWorkflowTemplateRequest) Reset()         { *m = DeleteWorkflowTem
 func (m *DeleteWorkflowTemplateRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteWorkflowTemplateRequest) ProtoMessage()    {}
 func (*DeleteWorkflowTemplateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_workflow_templates_fe5253a1eb957933, []int{16}
+	return fileDescriptor_workflow_templates_592be9b1ef908c67, []int{16}
 }
 func (m *DeleteWorkflowTemplateRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteWorkflowTemplateRequest.Unmarshal(m, b)
@@ -1964,10 +1976,10 @@ var _WorkflowTemplateService_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("google/cloud/dataproc/v1beta2/workflow_templates.proto", fileDescriptor_workflow_templates_fe5253a1eb957933)
+	proto.RegisterFile("google/cloud/dataproc/v1beta2/workflow_templates.proto", fileDescriptor_workflow_templates_592be9b1ef908c67)
 }
 
-var fileDescriptor_workflow_templates_fe5253a1eb957933 = []byte{
+var fileDescriptor_workflow_templates_592be9b1ef908c67 = []byte{
 	// 1794 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x59, 0xcf, 0x6f, 0xe3, 0x58,
 	0x1d, 0x1f, 0xbb, 0x4d, 0x9a, 0x7c, 0x33, 0x6d, 0xa3, 0xb7, 0x4c, 0x27, 0x64, 0xb6, 0xda, 0x8e,

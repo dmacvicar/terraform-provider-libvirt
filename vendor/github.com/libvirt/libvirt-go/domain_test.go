@@ -802,14 +802,14 @@ func TestParserCPUString(t *testing.T) {
 		}
 
 		if len(actual) != len(testData.cpumap) {
-			t.Errorf("Expected %s got %s",
+			t.Errorf("Expected %v got %v",
 				actual, testData.cpumap)
 			return
 		}
 
 		for idx, val := range actual {
 			if val != testData.cpumap[idx] {
-				t.Errorf("Expected %s got %s",
+				t.Errorf("Expected %v got %v",
 					actual, testData.cpumap)
 				return
 			}

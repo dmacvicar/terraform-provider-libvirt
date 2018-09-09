@@ -57,7 +57,7 @@ func (m *Invocation) Reset()         { *m = Invocation{} }
 func (m *Invocation) String() string { return proto.CompactTextString(m) }
 func (*Invocation) ProtoMessage()    {}
 func (*Invocation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_invocation_b6bc8ed548b71603, []int{0}
+	return fileDescriptor_invocation_04b66137ff87776e, []int{0}
 }
 func (m *Invocation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Invocation.Unmarshal(m, b)
@@ -153,7 +153,7 @@ func (m *Invocation_Id) Reset()         { *m = Invocation_Id{} }
 func (m *Invocation_Id) String() string { return proto.CompactTextString(m) }
 func (*Invocation_Id) ProtoMessage()    {}
 func (*Invocation_Id) Descriptor() ([]byte, []int) {
-	return fileDescriptor_invocation_b6bc8ed548b71603, []int{0, 0}
+	return fileDescriptor_invocation_04b66137ff87776e, []int{0, 0}
 }
 func (m *Invocation_Id) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Invocation_Id.Unmarshal(m, b)
@@ -191,7 +191,7 @@ func (m *WorkspaceContext) Reset()         { *m = WorkspaceContext{} }
 func (m *WorkspaceContext) String() string { return proto.CompactTextString(m) }
 func (*WorkspaceContext) ProtoMessage()    {}
 func (*WorkspaceContext) Descriptor() ([]byte, []int) {
-	return fileDescriptor_invocation_b6bc8ed548b71603, []int{1}
+	return fileDescriptor_invocation_04b66137ff87776e, []int{1}
 }
 func (m *WorkspaceContext) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorkspaceContext.Unmarshal(m, b)
@@ -236,7 +236,7 @@ func (m *WorkspaceInfo) Reset()         { *m = WorkspaceInfo{} }
 func (m *WorkspaceInfo) String() string { return proto.CompactTextString(m) }
 func (*WorkspaceInfo) ProtoMessage()    {}
 func (*WorkspaceInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_invocation_b6bc8ed548b71603, []int{2}
+	return fileDescriptor_invocation_04b66137ff87776e, []int{2}
 }
 func (m *WorkspaceInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorkspaceInfo.Unmarshal(m, b)
@@ -312,7 +312,7 @@ func (m *CommandLine) Reset()         { *m = CommandLine{} }
 func (m *CommandLine) String() string { return proto.CompactTextString(m) }
 func (*CommandLine) ProtoMessage()    {}
 func (*CommandLine) Descriptor() ([]byte, []int) {
-	return fileDescriptor_invocation_b6bc8ed548b71603, []int{3}
+	return fileDescriptor_invocation_04b66137ff87776e, []int{3}
 }
 func (m *CommandLine) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CommandLine.Unmarshal(m, b)
@@ -386,7 +386,7 @@ func (m *InvocationAttributes) Reset()         { *m = InvocationAttributes{} }
 func (m *InvocationAttributes) String() string { return proto.CompactTextString(m) }
 func (*InvocationAttributes) ProtoMessage()    {}
 func (*InvocationAttributes) Descriptor() ([]byte, []int) {
-	return fileDescriptor_invocation_b6bc8ed548b71603, []int{4}
+	return fileDescriptor_invocation_04b66137ff87776e, []int{4}
 }
 func (m *InvocationAttributes) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InvocationAttributes.Unmarshal(m, b)
@@ -437,10 +437,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/devtools/resultstore/v2/invocation.proto", fileDescriptor_invocation_b6bc8ed548b71603)
+	proto.RegisterFile("google/devtools/resultstore/v2/invocation.proto", fileDescriptor_invocation_04b66137ff87776e)
 }
 
-var fileDescriptor_invocation_b6bc8ed548b71603 = []byte{
+var fileDescriptor_invocation_04b66137ff87776e = []byte{
 	// 631 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x95, 0x71, 0x6b, 0x13, 0x3f,
 	0x18, 0xc7, 0x69, 0xbb, 0x76, 0xeb, 0xb3, 0xf5, 0xc7, 0x16, 0xf6, 0x93, 0xb3, 0xa0, 0x8c, 0x2a,

@@ -52,7 +52,7 @@ var (
 		/* Obsolete we use virConnectDomainEventRegisterAny instead */
 		"virConnectDomainEventRegister",
 
-		/* Wrapped in connect_cfuncs.go instead */
+		/* Wrapped in connect_wrapper.go instead */
 		"virConnectOpenAuth",
 		"virConnectRegisterCloseCallback",
 
@@ -68,7 +68,10 @@ var (
 		/* Only needed at C level */
 		"virCopyLastError",
 		"virFreeError",
+		"virGetLastError",
 		"virGetLastErrorMessage",
+		"virGetLastErrorCode",
+		"virGetLastErrorDomain",
 		"virResetLastError",
 		"virSaveLastError",
 		"virDefaultErrorFunc",
@@ -392,7 +395,7 @@ func ProcessFile(path string) []string {
 
 	defer file.Close()
 
-	re, err := regexp.Compile("C\\.((vir|VIR|LIBVIR)[a-zA-Z0-9_]+?)(Compat|_cgo)?\\b")
+	re, err := regexp.Compile("C\\.((vir|VIR|LIBVIR)[a-zA-Z0-9_]+?)(Wrapper)?\\b")
 	if err != nil {
 		panic(err)
 	}

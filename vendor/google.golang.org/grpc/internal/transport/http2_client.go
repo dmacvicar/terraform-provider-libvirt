@@ -111,19 +111,7 @@ type http2Client struct {
 
 	// Fields below are for channelz metric collection.
 	channelzID int64 // channelz unique identification number
-	czmu       sync.RWMutex
-	kpCount    int64
-	// The number of streams that have started, including already finished ones.
-	streamsStarted int64
-	// The number of streams that have ended successfully by receiving EoS bit set
-	// frame from server.
-	streamsSucceeded  int64
-	streamsFailed     int64
-	lastStreamCreated time.Time
-	msgSent           int64
-	msgRecv           int64
-	lastMsgSent       time.Time
-	lastMsgRecv       time.Time
+	czData     *channelzData
 }
 
 func dial(ctx context.Context, fn func(context.Context, string) (net.Conn, error), addr string) (net.Conn, error) {
@@ -152,7 +140,7 @@ func isTemporary(err error) bool {
 // newHTTP2Client constructs a connected ClientTransport to addr based on HTTP2
 // and starts to receive messages on it. Non-nil error returns if construction
 // fails.
-func newHTTP2Client(connectCtx, ctx context.Context, addr TargetInfo, opts ConnectOptions, onSuccess func()) (_ ClientTransport, err error) {
+func newHTTP2Client(connectCtx, ctx context.Context, addr TargetInfo, opts ConnectOptions, onSuccess func()) (_ *http2Client, err error) {
 	scheme := "http"
 	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
@@ -234,6 +222,7 @@ func newHTTP2Client(connectCtx, ctx context.Context, addr TargetInfo, opts Conne
 		maxConcurrentStreams:  defaultMaxStreamsClient,
 		streamQuota:           defaultMaxStreamsClient,
 		streamsQuotaAvailable: make(chan struct{}, 1),
+		czData:                new(channelzData),
 	}
 	t.controlBuf = newControlBuffer(t.ctxDone)
 	if opts.InitialWindowSize >= defaultWindowSize {
@@ -476,7 +465,7 @@ func (t *http2Client) getTrAuthData(ctx context.Context, audience string) (map[s
 				return nil, err
 			}
 
-			return nil, streamErrorf(codes.Unauthenticated, "transport: %v", err)
+			return nil, status.Errorf(codes.Unauthenticated, "transport: %v", err)
 		}
 		for k, v := range data {
 			// Capital header names are illegal in HTTP/2.
@@ -494,11 +483,11 @@ func (t *http2Client) getCallAuthData(ctx context.Context, audience string, call
 	// options, then both sets of credentials will be applied.
 	if callCreds := callHdr.Creds; callCreds != nil {
 		if !t.isSecure && callCreds.RequireTransportSecurity() {
-			return nil, streamErrorf(codes.Unauthenticated, "transport: cannot send secure credentials on an insecure connection")
+			return nil, status.Error(codes.Unauthenticated, "transport: cannot send secure credentials on an insecure connection")
 		}
 		data, err := callCreds.GetRequestMetadata(ctx, audience)
 		if err != nil {
-			return nil, streamErrorf(codes.Internal, "transport: %v", err)
+			return nil, status.Errorf(codes.Internal, "transport: %v", err)
 		}
 		for k, v := range data {
 			// Capital header names are illegal in HTTP/2
@@ -550,10 +539,8 @@ func (t *http2Client) NewStream(ctx context.Context, callHdr *CallHdr) (_ *Strea
 			}
 			t.activeStreams[id] = s
 			if channelz.IsOn() {
-				t.czmu.Lock()
-				t.streamsStarted++
-				t.lastStreamCreated = time.Now()
-				t.czmu.Unlock()
+				atomic.AddInt64(&t.czData.streamsStarted, 1)
+				atomic.StoreInt64(&t.czData.lastStreamCreatedTime, time.Now().UnixNano())
 			}
 			var sendPing bool
 			// If the number of active streams change from 0 to 1, then check if keepalive
@@ -611,7 +598,7 @@ func (t *http2Client) NewStream(ctx context.Context, callHdr *CallHdr) (_ *Strea
 		var sz int64
 		for _, f := range hdrFrame.hf {
 			if sz += int64(f.Size()); sz > int64(*t.maxSendHeaderListSize) {
-				hdrListSizeErr = streamErrorf(codes.Internal, "header list size to send violates the maximum size (%d bytes) set by server", *t.maxSendHeaderListSize)
+				hdrListSizeErr = status.Errorf(codes.Internal, "header list size to send violates the maximum size (%d bytes) set by server", *t.maxSendHeaderListSize)
 				return false
 			}
 		}
@@ -707,13 +694,11 @@ func (t *http2Client) closeStream(s *Stream, err error, rst bool, rstCode http2.
 			}
 			t.mu.Unlock()
 			if channelz.IsOn() {
-				t.czmu.Lock()
 				if eosReceived {
-					t.streamsSucceeded++
+					atomic.AddInt64(&t.czData.streamsSucceeded, 1)
 				} else {
-					t.streamsFailed++
+					atomic.AddInt64(&t.czData.streamsFailed, 1)
 				}
-				t.czmu.Unlock()
 			}
 		},
 		rst:     rst,
@@ -1206,7 +1191,7 @@ func (t *http2Client) reader() {
 					// use error detail to provide better err message
 					code := http2ErrConvTab[se.Code]
 					msg := t.framer.fr.ErrorDetail().Error()
-					t.closeStream(s, streamError(code, msg), true, http2.ErrCodeProtocol, status.New(code, msg), nil, false)
+					t.closeStream(s, status.Error(code, msg), true, http2.ErrCodeProtocol, status.New(code, msg), nil, false)
 				}
 				continue
 			} else {
@@ -1263,9 +1248,7 @@ func (t *http2Client) keepalive() {
 			} else {
 				t.mu.Unlock()
 				if channelz.IsOn() {
-					t.czmu.Lock()
-					t.kpCount++
-					t.czmu.Unlock()
+					atomic.AddInt64(&t.czData.kpCount, 1)
 				}
 				// Send ping.
 				t.controlBuf.put(p)
@@ -1305,17 +1288,16 @@ func (t *http2Client) GoAway() <-chan struct{} {
 }
 
 func (t *http2Client) ChannelzMetric() *channelz.SocketInternalMetric {
-	t.czmu.RLock()
 	s := channelz.SocketInternalMetric{
-		StreamsStarted:                  t.streamsStarted,
-		StreamsSucceeded:                t.streamsSucceeded,
-		StreamsFailed:                   t.streamsFailed,
-		MessagesSent:                    t.msgSent,
-		MessagesReceived:                t.msgRecv,
-		KeepAlivesSent:                  t.kpCount,
-		LastLocalStreamCreatedTimestamp: t.lastStreamCreated,
-		LastMessageSentTimestamp:        t.lastMsgSent,
-		LastMessageReceivedTimestamp:    t.lastMsgRecv,
+		StreamsStarted:                  atomic.LoadInt64(&t.czData.streamsStarted),
+		StreamsSucceeded:                atomic.LoadInt64(&t.czData.streamsSucceeded),
+		StreamsFailed:                   atomic.LoadInt64(&t.czData.streamsFailed),
+		MessagesSent:                    atomic.LoadInt64(&t.czData.msgSent),
+		MessagesReceived:                atomic.LoadInt64(&t.czData.msgRecv),
+		KeepAlivesSent:                  atomic.LoadInt64(&t.czData.kpCount),
+		LastLocalStreamCreatedTimestamp: time.Unix(0, atomic.LoadInt64(&t.czData.lastStreamCreatedTime)),
+		LastMessageSentTimestamp:        time.Unix(0, atomic.LoadInt64(&t.czData.lastMsgSentTime)),
+		LastMessageReceivedTimestamp:    time.Unix(0, atomic.LoadInt64(&t.czData.lastMsgRecvTime)),
 		LocalFlowControlWindow:          int64(t.fc.getSize()),
 		SocketOptions:                   channelz.GetSocketOption(t.conn),
 		LocalAddr:                       t.localAddr,
@@ -1325,23 +1307,18 @@ func (t *http2Client) ChannelzMetric() *channelz.SocketInternalMetric {
 	if au, ok := t.authInfo.(credentials.ChannelzSecurityInfo); ok {
 		s.Security = au.GetSecurityValue()
 	}
-	t.czmu.RUnlock()
 	s.RemoteFlowControlWindow = t.getOutFlowWindow()
 	return &s
 }
 
 func (t *http2Client) IncrMsgSent() {
-	t.czmu.Lock()
-	t.msgSent++
-	t.lastMsgSent = time.Now()
-	t.czmu.Unlock()
+	atomic.AddInt64(&t.czData.msgSent, 1)
+	atomic.StoreInt64(&t.czData.lastMsgSentTime, time.Now().UnixNano())
 }
 
 func (t *http2Client) IncrMsgRecv() {
-	t.czmu.Lock()
-	t.msgRecv++
-	t.lastMsgRecv = time.Now()
-	t.czmu.Unlock()
+	atomic.AddInt64(&t.czData.msgRecv, 1)
+	atomic.StoreInt64(&t.czData.lastMsgRecvTime, time.Now().UnixNano())
 }
 
 func (t *http2Client) getOutFlowWindow() int64 {

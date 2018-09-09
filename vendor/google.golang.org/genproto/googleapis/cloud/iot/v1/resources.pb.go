@@ -49,7 +49,7 @@ func (x MqttState) String() string {
 	return proto.EnumName(MqttState_name, int32(x))
 }
 func (MqttState) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{0}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{0}
 }
 
 // Indicates whether DeviceService (HTTP) is enabled or disabled for the
@@ -81,7 +81,7 @@ func (x HttpState) String() string {
 	return proto.EnumName(HttpState_name, int32(x))
 }
 func (HttpState) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{1}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{1}
 }
 
 // The supported formats for the public key.
@@ -110,7 +110,7 @@ func (x PublicKeyCertificateFormat) String() string {
 	return proto.EnumName(PublicKeyCertificateFormat_name, int32(x))
 }
 func (PublicKeyCertificateFormat) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{2}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{2}
 }
 
 // The supported formats for the public key.
@@ -160,7 +160,7 @@ func (x PublicKeyFormat) String() string {
 	return proto.EnumName(PublicKeyFormat_name, int32(x))
 }
 func (PublicKeyFormat) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{3}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{3}
 }
 
 // The device resource.
@@ -250,7 +250,7 @@ func (m *Device) Reset()         { *m = Device{} }
 func (m *Device) String() string { return proto.CompactTextString(m) }
 func (*Device) ProtoMessage()    {}
 func (*Device) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{0}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{0}
 }
 func (m *Device) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Device.Unmarshal(m, b)
@@ -424,7 +424,7 @@ func (m *DeviceRegistry) Reset()         { *m = DeviceRegistry{} }
 func (m *DeviceRegistry) String() string { return proto.CompactTextString(m) }
 func (*DeviceRegistry) ProtoMessage()    {}
 func (*DeviceRegistry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{1}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{1}
 }
 func (m *DeviceRegistry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeviceRegistry.Unmarshal(m, b)
@@ -507,7 +507,7 @@ func (m *MqttConfig) Reset()         { *m = MqttConfig{} }
 func (m *MqttConfig) String() string { return proto.CompactTextString(m) }
 func (*MqttConfig) ProtoMessage()    {}
 func (*MqttConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{2}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{2}
 }
 func (m *MqttConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MqttConfig.Unmarshal(m, b)
@@ -548,7 +548,7 @@ func (m *HttpConfig) Reset()         { *m = HttpConfig{} }
 func (m *HttpConfig) String() string { return proto.CompactTextString(m) }
 func (*HttpConfig) ProtoMessage()    {}
 func (*HttpConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{3}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{3}
 }
 func (m *HttpConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HttpConfig.Unmarshal(m, b)
@@ -594,7 +594,7 @@ func (m *EventNotificationConfig) Reset()         { *m = EventNotificationConfig
 func (m *EventNotificationConfig) String() string { return proto.CompactTextString(m) }
 func (*EventNotificationConfig) ProtoMessage()    {}
 func (*EventNotificationConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{4}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{4}
 }
 func (m *EventNotificationConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EventNotificationConfig.Unmarshal(m, b)
@@ -642,7 +642,7 @@ func (m *StateNotificationConfig) Reset()         { *m = StateNotificationConfig
 func (m *StateNotificationConfig) String() string { return proto.CompactTextString(m) }
 func (*StateNotificationConfig) ProtoMessage()    {}
 func (*StateNotificationConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{5}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{5}
 }
 func (m *StateNotificationConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StateNotificationConfig.Unmarshal(m, b)
@@ -685,7 +685,7 @@ func (m *RegistryCredential) Reset()         { *m = RegistryCredential{} }
 func (m *RegistryCredential) String() string { return proto.CompactTextString(m) }
 func (*RegistryCredential) ProtoMessage()    {}
 func (*RegistryCredential) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{6}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{6}
 }
 func (m *RegistryCredential) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RegistryCredential.Unmarshal(m, b)
@@ -807,7 +807,7 @@ func (m *X509CertificateDetails) Reset()         { *m = X509CertificateDetails{}
 func (m *X509CertificateDetails) String() string { return proto.CompactTextString(m) }
 func (*X509CertificateDetails) ProtoMessage()    {}
 func (*X509CertificateDetails) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{7}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{7}
 }
 func (m *X509CertificateDetails) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_X509CertificateDetails.Unmarshal(m, b)
@@ -886,7 +886,7 @@ func (m *PublicKeyCertificate) Reset()         { *m = PublicKeyCertificate{} }
 func (m *PublicKeyCertificate) String() string { return proto.CompactTextString(m) }
 func (*PublicKeyCertificate) ProtoMessage()    {}
 func (*PublicKeyCertificate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{8}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{8}
 }
 func (m *PublicKeyCertificate) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PublicKeyCertificate.Unmarshal(m, b)
@@ -947,7 +947,7 @@ func (m *DeviceCredential) Reset()         { *m = DeviceCredential{} }
 func (m *DeviceCredential) String() string { return proto.CompactTextString(m) }
 func (*DeviceCredential) ProtoMessage()    {}
 func (*DeviceCredential) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{9}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{9}
 }
 func (m *DeviceCredential) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeviceCredential.Unmarshal(m, b)
@@ -1068,7 +1068,7 @@ func (m *PublicKeyCredential) Reset()         { *m = PublicKeyCredential{} }
 func (m *PublicKeyCredential) String() string { return proto.CompactTextString(m) }
 func (*PublicKeyCredential) ProtoMessage()    {}
 func (*PublicKeyCredential) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{10}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{10}
 }
 func (m *PublicKeyCredential) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PublicKeyCredential.Unmarshal(m, b)
@@ -1133,7 +1133,7 @@ func (m *DeviceConfig) Reset()         { *m = DeviceConfig{} }
 func (m *DeviceConfig) String() string { return proto.CompactTextString(m) }
 func (*DeviceConfig) ProtoMessage()    {}
 func (*DeviceConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{11}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{11}
 }
 func (m *DeviceConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeviceConfig.Unmarshal(m, b)
@@ -1197,7 +1197,7 @@ func (m *DeviceState) Reset()         { *m = DeviceState{} }
 func (m *DeviceState) String() string { return proto.CompactTextString(m) }
 func (*DeviceState) ProtoMessage()    {}
 func (*DeviceState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_0e9f09e9c0e62f99, []int{12}
+	return fileDescriptor_resources_adeeda409206dfbb, []int{12}
 }
 func (m *DeviceState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeviceState.Unmarshal(m, b)
@@ -1253,10 +1253,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/cloud/iot/v1/resources.proto", fileDescriptor_resources_0e9f09e9c0e62f99)
+	proto.RegisterFile("google/cloud/iot/v1/resources.proto", fileDescriptor_resources_adeeda409206dfbb)
 }
 
-var fileDescriptor_resources_0e9f09e9c0e62f99 = []byte{
+var fileDescriptor_resources_adeeda409206dfbb = []byte{
 	// 1348 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x57, 0xdd, 0x52, 0xdb, 0xc6,
 	0x17, 0x47, 0x06, 0x0c, 0x1c, 0x03, 0xb6, 0x17, 0x02, 0xfa, 0x7b, 0xfe, 0x6d, 0x1c, 0xf7, 0x8b,

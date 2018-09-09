@@ -32,10 +32,6 @@ import (
 	"time"
 )
 
-func init() {
-	EventRegisterDefaultImpl()
-}
-
 func TestDomainEventRegister(t *testing.T) {
 
 	callbackId := -1
@@ -112,7 +108,7 @@ func TestDomainEventRegister(t *testing.T) {
 
 	// Deregister the event
 	if err := conn.DomainEventDeregister(callbackId); err != nil {
-		t.Fatal("Event deregistration failed with: %v", err)
+		t.Fatalf("Event deregistration failed with: %v", err)
 	}
 	callbackId = -1 // Don't deregister twice
 

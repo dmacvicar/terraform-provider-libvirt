@@ -106,6 +106,9 @@ func defaultResolveAny(typeUrl string) (proto.Message, error) {
 // way they are marshaled to JSON. Messages that implement this should
 // also implement JSONPBUnmarshaler so that the custom format can be
 // parsed.
+//
+// The JSON marshaling must follow the proto to JSON specification:
+//	https://developers.google.com/protocol-buffers/docs/proto3#json
 type JSONPBMarshaler interface {
 	MarshalJSONPB(*Marshaler) ([]byte, error)
 }
@@ -114,6 +117,9 @@ type JSONPBMarshaler interface {
 // the way they are unmarshaled from JSON. Messages that implement this
 // should also implement JSONPBMarshaler so that the custom format can be
 // produced.
+//
+// The JSON unmarshaling must follow the JSON to proto specification:
+//	https://developers.google.com/protocol-buffers/docs/proto3#json
 type JSONPBUnmarshaler interface {
 	UnmarshalJSONPB(*Unmarshaler, []byte) error
 }
@@ -1116,6 +1122,8 @@ func (s mapKeys) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s mapKeys) Less(i, j int) bool {
 	if k := s[i].Kind(); k == s[j].Kind() {
 		switch k {
+		case reflect.String:
+			return s[i].String() < s[j].String()
 		case reflect.Int32, reflect.Int64:
 			return s[i].Int() < s[j].Int()
 		case reflect.Uint32, reflect.Uint64:

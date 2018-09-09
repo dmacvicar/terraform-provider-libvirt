@@ -26,6 +26,9 @@ var vars = &varSpecs{}
 var (
 	specFile    = flag.StringP("spec", "s", "", "path to spec file (required)")
 	outputFile  = flag.StringP("out", "o", "", "write to the given file, instead of stdout")
+	diagsFormat = flag.StringP("diags", "", "", "format any returned diagnostics in the given format; currently only \"json\" is accepted")
+	showVarRefs = flag.BoolP("var-refs", "", false, "rather than decoding input, produce a JSON description of the variables referenced by it")
+	withType    = flag.BoolP("with-type", "", false, "include an additional object level at the top describing the HCL-oriented type of the result value")
 	showVersion = flag.BoolP("version", "v", false, "show the version number and immediately exit")
 )
 
@@ -34,13 +37,6 @@ var diagWr hcl.DiagnosticWriter // initialized in init
 
 func init() {
 	flag.VarP(vars, "vars", "V", "provide variables to the given configuration file(s)")
-
-	color := terminal.IsTerminal(int(os.Stderr.Fd()))
-	w, _, err := terminal.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		w = 80
-	}
-	diagWr = hcl.NewDiagnosticTextWriter(os.Stderr, parser.Files(), uint(w), color)
 }
 
 func main() {
@@ -53,6 +49,21 @@ func main() {
 	}
 
 	args := flag.Args()
+
+	switch *diagsFormat {
+	case "":
+		color := terminal.IsTerminal(int(os.Stderr.Fd()))
+		w, _, err := terminal.GetSize(int(os.Stdout.Fd()))
+		if err != nil {
+			w = 80
+		}
+		diagWr = hcl.NewDiagnosticTextWriter(os.Stderr, parser.Files(), uint(w), color)
+	case "json":
+		diagWr = &jsonDiagWriter{w: os.Stderr}
+	default:
+		fmt.Fprintf(os.Stderr, "Invalid diagnostics format %q: only \"json\" is supported.\n", *diagsFormat)
+		os.Exit(2)
+	}
 
 	err := realmain(args)
 
@@ -74,6 +85,7 @@ func realmain(args []string) error {
 	diags = append(diags, specDiags...)
 	if specDiags.HasErrors() {
 		diagWr.WriteDiagnostics(diags)
+		flush(diagWr)
 		os.Exit(2)
 	}
 
@@ -135,7 +147,13 @@ func realmain(args []string) error {
 		}
 	} else {
 		for _, filename := range args {
-			f, fDiags := parser.ParseHCLFile(filename)
+			var f *hcl.File
+			var fDiags hcl.Diagnostics
+			if strings.HasSuffix(filename, ".json") {
+				f, fDiags = parser.ParseJSONFile(filename)
+			} else {
+				f, fDiags = parser.ParseHCLFile(filename)
+			}
 			diags = append(diags, fDiags...)
 			if !fDiags.HasErrors() {
 				bodies = append(bodies, f.Body)
@@ -145,6 +163,7 @@ func realmain(args []string) error {
 
 	if diags.HasErrors() {
 		diagWr.WriteDiagnostics(diags)
+		flush(diagWr)
 		os.Exit(2)
 	}
 
@@ -159,15 +178,27 @@ func realmain(args []string) error {
 		body = hcl.MergeBodies(bodies)
 	}
 
+	if *showVarRefs {
+		vars := hcldec.Variables(body, spec)
+		return showVarRefsJSON(vars, ctx)
+	}
+
 	val, decDiags := hcldec.Decode(body, spec, ctx)
 	diags = append(diags, decDiags...)
 
 	if diags.HasErrors() {
 		diagWr.WriteDiagnostics(diags)
+		flush(diagWr)
 		os.Exit(2)
 	}
 
-	out, err := ctyjson.Marshal(val, val.Type())
+	wantType := val.Type()
+	if *withType {
+		// We'll instead ask to encode as dynamic, which will make the
+		// marshaler include type information.
+		wantType = cty.DynamicPseudoType
+	}
+	out, err := ctyjson.Marshal(val, wantType)
 	if err != nil {
 		return err
 	}
@@ -195,6 +226,108 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "usage: hcldec --spec=<spec-file> [options] [hcl-file ...]\n")
 	flag.PrintDefaults()
 	os.Exit(2)
+}
+
+func showVarRefsJSON(vars []hcl.Traversal, ctx *hcl.EvalContext) error {
+	type PosJSON struct {
+		Line   int `json:"line"`
+		Column int `json:"column"`
+		Byte   int `json:"byte"`
+	}
+	type RangeJSON struct {
+		Filename string  `json:"filename"`
+		Start    PosJSON `json:"start"`
+		End      PosJSON `json:"end"`
+	}
+	type StepJSON struct {
+		Kind  string          `json:"kind"`
+		Name  string          `json:"name,omitempty"`
+		Key   json.RawMessage `json:"key,omitempty"`
+		Range RangeJSON       `json:"range"`
+	}
+	type TraversalJSON struct {
+		RootName string          `json:"root_name"`
+		Value    json.RawMessage `json:"value,omitempty"`
+		Steps    []StepJSON      `json:"steps"`
+		Range    RangeJSON       `json:"range"`
+	}
+
+	ret := make([]TraversalJSON, 0, len(vars))
+	for _, traversal := range vars {
+		tJSON := TraversalJSON{
+			Steps: make([]StepJSON, 0, len(traversal)),
+		}
+
+		for _, step := range traversal {
+			var sJSON StepJSON
+			rng := step.SourceRange()
+			sJSON.Range.Filename = rng.Filename
+			sJSON.Range.Start.Line = rng.Start.Line
+			sJSON.Range.Start.Column = rng.Start.Column
+			sJSON.Range.Start.Byte = rng.Start.Byte
+			sJSON.Range.End.Line = rng.End.Line
+			sJSON.Range.End.Column = rng.End.Column
+			sJSON.Range.End.Byte = rng.End.Byte
+			switch ts := step.(type) {
+			case hcl.TraverseRoot:
+				sJSON.Kind = "root"
+				sJSON.Name = ts.Name
+				tJSON.RootName = ts.Name
+			case hcl.TraverseAttr:
+				sJSON.Kind = "attr"
+				sJSON.Name = ts.Name
+			case hcl.TraverseIndex:
+				sJSON.Kind = "index"
+				src, err := ctyjson.Marshal(ts.Key, ts.Key.Type())
+				if err == nil {
+					sJSON.Key = json.RawMessage(src)
+				}
+			default:
+				// Should never get here, since the above should be exhaustive
+				// for all possible traversal step types.
+				sJSON.Kind = "(unknown)"
+			}
+			tJSON.Steps = append(tJSON.Steps, sJSON)
+		}
+
+		// Best effort, we'll try to include the current known value of this
+		// traversal, if any.
+		val, diags := traversal.TraverseAbs(ctx)
+		if !diags.HasErrors() {
+			enc, err := ctyjson.Marshal(val, val.Type())
+			if err == nil {
+				tJSON.Value = json.RawMessage(enc)
+			}
+		}
+
+		rng := traversal.SourceRange()
+		tJSON.Range.Filename = rng.Filename
+		tJSON.Range.Start.Line = rng.Start.Line
+		tJSON.Range.Start.Column = rng.Start.Column
+		tJSON.Range.Start.Byte = rng.Start.Byte
+		tJSON.Range.End.Line = rng.End.Line
+		tJSON.Range.End.Column = rng.End.Column
+		tJSON.Range.End.Byte = rng.End.Byte
+
+		ret = append(ret, tJSON)
+	}
+
+	out, err := json.MarshalIndent(ret, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal variable references as JSON: %s", err)
+	}
+
+	target := os.Stdout
+	if *outputFile != "" {
+		target, err = os.OpenFile(*outputFile, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("can't open %s for writing: %s", *outputFile, err)
+		}
+	}
+
+	fmt.Fprintf(target, "%s\n", out)
+
+	return nil
 }
 
 func stripJSONNullProperties(src []byte) []byte {

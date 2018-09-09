@@ -193,6 +193,26 @@ func TestRoundTrip(t *testing.T) {
 			}),
 		},
 		{
+			cty.ObjectVal(map[string]cty.Value{
+				"a": cty.NullVal(cty.String),
+				"b": cty.NullVal(cty.String),
+			}),
+			cty.Object(map[string]cty.Type{
+				"a": cty.String,
+				"b": cty.String,
+			}),
+		},
+		{
+			cty.ObjectVal(map[string]cty.Value{
+				"a": cty.UnknownVal(cty.String),
+				"b": cty.UnknownVal(cty.String),
+			}),
+			cty.Object(map[string]cty.Type{
+				"a": cty.String,
+				"b": cty.String,
+			}),
+		},
+		{
 			cty.EmptyObjectVal,
 			cty.EmptyObject,
 		},

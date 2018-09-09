@@ -46,5 +46,5 @@ end
 complete -c {{.Cmd}} -a "(__complete_{{.Cmd}})"
 `)).Execute(&buf, params)
 
-	return string(buf.Bytes())
+	return buf.String()
 }

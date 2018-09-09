@@ -32,10 +32,6 @@ import (
 	"time"
 )
 
-func init() {
-	EventRegisterDefaultImpl()
-}
-
 func TestNodeDeviceEventRegister(t *testing.T) {
 
 	if true {
@@ -111,7 +107,7 @@ func TestNodeDeviceEventRegister(t *testing.T) {
 
 	// Deregister the event
 	if err := conn.NodeDeviceEventDeregister(callbackId); err != nil {
-		t.Fatal("Event deregistration failed with: %v", err)
+		t.Fatalf("Event deregistration failed with: %v", err)
 	}
 	callbackId = -1 // Don't deregister twice
 

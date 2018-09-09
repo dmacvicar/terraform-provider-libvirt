@@ -203,7 +203,6 @@ func TestUnregisterCloseCallback(t *testing.T) {
 }
 
 func TestSetKeepalive(t *testing.T) {
-	EventRegisterDefaultImpl()        // We need the event loop for keepalive
 	conn := buildTestQEMUConnection() // The test driver doesn't support keepalives
 	defer func() {
 		if res, _ := conn.Close(); res != 0 {
@@ -1461,7 +1460,7 @@ func TestStorageVolUploadDownloadCallbacks(t *testing.T) {
 	}
 
 	if sent != len(input) {
-		t.Fatal("Wanted %d but only sent %d bytes",
+		t.Fatalf("Wanted %d but only sent %d bytes",
 			len(input), sent)
 	}
 

@@ -45,8 +45,8 @@ const (
 	// The queue is disabled.
 	//
 	// A queue becomes `DISABLED` when
-	// [queue.yaml](/appengine/docs/python/config/queueref) or
-	// [queue.xml](appengine/docs/standard/java/config/queueref) is uploaded
+	// [queue.yaml](https://cloud.google.com/appengine/docs/python/config/queueref) or
+	// [queue.xml](https://cloud.google.com/appengine/docs/standard/java/config/queueref) is uploaded
 	// which does not contain the queue. You cannot directly disable a queue.
 	//
 	// When a queue is disabled, tasks can still be added to a queue
@@ -76,7 +76,7 @@ func (x Queue_State) String() string {
 	return proto.EnumName(Queue_State_name, int32(x))
 }
 func (Queue_State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_queue_2041daffc3c0cfe8, []int{0, 0}
+	return fileDescriptor_queue_c4ed304f84e85348, []int{0, 0}
 }
 
 // A queue is a container of related tasks. Queues are configured to manage
@@ -94,7 +94,7 @@ type Queue struct {
 	// * `PROJECT_ID` can contain letters ([A-Za-z]), numbers ([0-9]),
 	//    hyphens (-), colons (:), or periods (.).
 	//    For more information, see
-	//    [Identifying projects](/resource-manager/docs/creating-managing-projects#identifying_projects)
+	//    [Identifying projects](https://cloud.google.com/resource-manager/docs/creating-managing-projects#identifying_projects)
 	// * `LOCATION_ID` is the canonical ID for the queue's location.
 	//    The list of available locations can be obtained by calling
 	//    [ListLocations][google.cloud.location.Locations.ListLocations].
@@ -138,14 +138,14 @@ type Queue struct {
 	// * For tasks created using the App Engine SDK: the queue-level retry
 	//   settings apply to all tasks in the queue which do not have retry settings
 	//   explicitly set on the task and were created by the App Engine SDK. See
-	//   [App Engine documentation](/appengine/docs/standard/python/taskqueue/push/retrying-tasks).
+	//   [App Engine documentation](https://cloud.google.com/appengine/docs/standard/python/taskqueue/push/retrying-tasks).
 	RetryConfig *RetryConfig `protobuf:"bytes,6,opt,name=retry_config,json=retryConfig,proto3" json:"retry_config,omitempty"`
 	// Output only. The state of the queue.
 	//
 	// `state` can only be changed by called
 	// [PauseQueue][google.cloud.tasks.v2beta2.CloudTasks.PauseQueue],
 	// [ResumeQueue][google.cloud.tasks.v2beta2.CloudTasks.ResumeQueue], or uploading
-	// [queue.yaml/xml](/appengine/docs/python/config/queueref).
+	// [queue.yaml/xml](https://cloud.google.com/appengine/docs/python/config/queueref).
 	// [UpdateQueue][google.cloud.tasks.v2beta2.CloudTasks.UpdateQueue] cannot be used to change `state`.
 	State Queue_State `protobuf:"varint,7,opt,name=state,proto3,enum=google.cloud.tasks.v2beta2.Queue_State" json:"state,omitempty"`
 	// Output only. The last time this queue was purged.
@@ -154,7 +154,7 @@ type Queue struct {
 	// were purged.
 	//
 	// A queue can be purged using [PurgeQueue][google.cloud.tasks.v2beta2.CloudTasks.PurgeQueue], the
-	// [App Engine Task Queue SDK, or the Cloud Console](/appengine/docs/standard/python/taskqueue/push/deleting-tasks-and-queues#purging_all_tasks_from_a_queue).
+	// [App Engine Task Queue SDK, or the Cloud Console](https://cloud.google.com/appengine/docs/standard/python/taskqueue/push/deleting-tasks-and-queues#purging_all_tasks_from_a_queue).
 	//
 	// Purge time will be truncated to the nearest microsecond. Purge
 	// time will be unset if the queue has never been purged.
@@ -168,7 +168,7 @@ func (m *Queue) Reset()         { *m = Queue{} }
 func (m *Queue) String() string { return proto.CompactTextString(m) }
 func (*Queue) ProtoMessage()    {}
 func (*Queue) Descriptor() ([]byte, []int) {
-	return fileDescriptor_queue_2041daffc3c0cfe8, []int{0}
+	return fileDescriptor_queue_c4ed304f84e85348, []int{0}
 }
 func (m *Queue) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Queue.Unmarshal(m, b)
@@ -188,6 +188,13 @@ func (m *Queue) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Queue proto.InternalMessageInfo
 
+func (m *Queue) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
 type isQueue_TargetType interface {
 	isQueue_TargetType()
 }
@@ -195,25 +202,20 @@ type isQueue_TargetType interface {
 type Queue_AppEngineHttpTarget struct {
 	AppEngineHttpTarget *AppEngineHttpTarget `protobuf:"bytes,3,opt,name=app_engine_http_target,json=appEngineHttpTarget,proto3,oneof"`
 }
+
 type Queue_PullTarget struct {
 	PullTarget *PullTarget `protobuf:"bytes,4,opt,name=pull_target,json=pullTarget,proto3,oneof"`
 }
 
 func (*Queue_AppEngineHttpTarget) isQueue_TargetType() {}
-func (*Queue_PullTarget) isQueue_TargetType()          {}
+
+func (*Queue_PullTarget) isQueue_TargetType() {}
 
 func (m *Queue) GetTargetType() isQueue_TargetType {
 	if m != nil {
 		return m.TargetType
 	}
 	return nil
-}
-
-func (m *Queue) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
 }
 
 func (m *Queue) GetAppEngineHttpTarget() *AppEngineHttpTarget {
@@ -345,15 +347,15 @@ type RateLimits struct {
 	// If unspecified when the queue is created, Cloud Tasks will pick the
 	// default.
 	//
-	// * For App Engine queues, the maximum allowed value is 500.
-	// * This field is output only   for [pull queues](google.cloud.tasks.v2beta2.PullTarget). In
-	//   addition to the `max_tasks_dispatched_per_second` limit, a
-	//   maximum of 10 QPS of [LeaseTasks][google.cloud.tasks.v2beta2.CloudTasks.LeaseTasks]
-	//   requests are allowed per pull queue.
+	// * For [App Engine queues][google.cloud.tasks.v2beta2.AppEngineHttpTarget], the maximum allowed value
+	//   is 500.
+	// * This field is output only   for [pull queues][google.cloud.tasks.v2beta2.PullTarget]. In addition to the
+	//   `max_tasks_dispatched_per_second` limit, a maximum of 10 QPS of
+	//   [LeaseTasks][google.cloud.tasks.v2beta2.CloudTasks.LeaseTasks] requests are allowed per pull queue.
 	//
 	//
 	// This field has the same meaning as
-	// [rate in queue.yaml/xml](/appengine/docs/standard/python/config/queueref#rate).
+	// [rate in queue.yaml/xml](https://cloud.google.com/appengine/docs/standard/python/config/queueref#rate).
 	MaxTasksDispatchedPerSecond float64 `protobuf:"fixed64,1,opt,name=max_tasks_dispatched_per_second,json=maxTasksDispatchedPerSecond,proto3" json:"max_tasks_dispatched_per_second,omitempty"`
 	// Output only. The max burst size.
 	//
@@ -378,7 +380,7 @@ type RateLimits struct {
 	//
 	// For App Engine queues that were created or updated using
 	// `queue.yaml/xml`, `max_burst_size` is equal to
-	// [bucket_size](/appengine/docs/standard/python/config/queueref#bucket_size).
+	// [bucket_size](https://cloud.google.com/appengine/docs/standard/python/config/queueref#bucket_size).
 	// Since `max_burst_size` is output only, if
 	// [UpdateQueue][google.cloud.tasks.v2beta2.CloudTasks.UpdateQueue] is called on a queue
 	// created by `queue.yaml/xml`, `max_burst_size` will be reset based
@@ -401,13 +403,12 @@ type RateLimits struct {
 	// The maximum allowed value is 5,000.
 	//
 	// This field is output only for
-	// [pull queues](google.cloud.tasks.v2beta2.PullTarget) and always -1, which
-	// indicates no limit. No other queue types can have `max_concurrent_tasks`
-	// set to -1.
+	// [pull queues][google.cloud.tasks.v2beta2.PullTarget] and always -1, which indicates no limit. No other
+	// queue types can have `max_concurrent_tasks` set to -1.
 	//
 	//
 	// This field has the same meaning as
-	// [max_concurrent_requests in queue.yaml/xml](/appengine/docs/standard/python/config/queueref#max_concurrent_requests).
+	// [max_concurrent_requests in queue.yaml/xml](https://cloud.google.com/appengine/docs/standard/python/config/queueref#max_concurrent_requests).
 	MaxConcurrentTasks   int32    `protobuf:"varint,3,opt,name=max_concurrent_tasks,json=maxConcurrentTasks,proto3" json:"max_concurrent_tasks,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -418,7 +419,7 @@ func (m *RateLimits) Reset()         { *m = RateLimits{} }
 func (m *RateLimits) String() string { return proto.CompactTextString(m) }
 func (*RateLimits) ProtoMessage()    {}
 func (*RateLimits) Descriptor() ([]byte, []int) {
-	return fileDescriptor_queue_2041daffc3c0cfe8, []int{1}
+	return fileDescriptor_queue_c4ed304f84e85348, []int{1}
 }
 func (m *RateLimits) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RateLimits.Unmarshal(m, b)
@@ -471,7 +472,7 @@ type RetryConfig struct {
 	//
 	//
 	// This field has the same meaning as
-	// [task_retry_limit in queue.yaml/xml](/appengine/docs/standard/python/config/queueref#retry_parameters).
+	// [task_retry_limit in queue.yaml/xml](https://cloud.google.com/appengine/docs/standard/python/config/queueref#retry_parameters).
 	//
 	// Types that are valid to be assigned to NumAttempts:
 	//	*RetryConfig_MaxAttempts
@@ -489,16 +490,15 @@ type RetryConfig struct {
 	// If unspecified when the queue is created, Cloud Tasks will pick the
 	// default.
 	//
-	// This field is output only for
-	// [pull queues](google.cloud.tasks.v2beta2.PullTarget).
+	// This field is output only for [pull queues][google.cloud.tasks.v2beta2.PullTarget].
 	//
 	//
 	// `max_retry_duration` will be truncated to the nearest second.
 	//
 	// This field has the same meaning as
-	// [task_age_limit in queue.yaml/xml](/appengine/docs/standard/python/config/queueref#retry_parameters).
+	// [task_age_limit in queue.yaml/xml](https://cloud.google.com/appengine/docs/standard/python/config/queueref#retry_parameters).
 	MaxRetryDuration *duration.Duration `protobuf:"bytes,3,opt,name=max_retry_duration,json=maxRetryDuration,proto3" json:"max_retry_duration,omitempty"`
-	// A task will be [scheduled](Task.schedule_time) for retry between
+	// A task will be [scheduled][google.cloud.tasks.v2beta2.Task.schedule_time] for retry between
 	// [min_backoff][google.cloud.tasks.v2beta2.RetryConfig.min_backoff] and
 	// [max_backoff][google.cloud.tasks.v2beta2.RetryConfig.max_backoff] duration after it fails,
 	// if the queue's [RetryConfig][google.cloud.tasks.v2beta2.RetryConfig] specifies that the task should be
@@ -507,16 +507,15 @@ type RetryConfig struct {
 	// If unspecified when the queue is created, Cloud Tasks will pick the
 	// default.
 	//
-	// This field is output only for
-	// [pull queues](google.cloud.tasks.v2beta2.PullTarget).
+	// This field is output only for [pull queues][google.cloud.tasks.v2beta2.PullTarget].
 	//
 	//
 	// `min_backoff` will be truncated to the nearest second.
 	//
 	// This field has the same meaning as
-	// [min_backoff_seconds in queue.yaml/xml](/appengine/docs/standard/python/config/queueref#retry_parameters).
+	// [min_backoff_seconds in queue.yaml/xml](https://cloud.google.com/appengine/docs/standard/python/config/queueref#retry_parameters).
 	MinBackoff *duration.Duration `protobuf:"bytes,4,opt,name=min_backoff,json=minBackoff,proto3" json:"min_backoff,omitempty"`
-	// A task will be [scheduled](Task.schedule_time) for retry between
+	// A task will be [scheduled][google.cloud.tasks.v2beta2.Task.schedule_time] for retry between
 	// [min_backoff][google.cloud.tasks.v2beta2.RetryConfig.min_backoff] and
 	// [max_backoff][google.cloud.tasks.v2beta2.RetryConfig.max_backoff] duration after it fails,
 	// if the queue's [RetryConfig][google.cloud.tasks.v2beta2.RetryConfig] specifies that the task should be
@@ -525,14 +524,13 @@ type RetryConfig struct {
 	// If unspecified when the queue is created, Cloud Tasks will pick the
 	// default.
 	//
-	// This field is output only for
-	// [pull queues](google.cloud.tasks.v2beta2.PullTarget).
+	// This field is output only for [pull queues][google.cloud.tasks.v2beta2.PullTarget].
 	//
 	//
 	// `max_backoff` will be truncated to the nearest second.
 	//
 	// This field has the same meaning as
-	// [max_backoff_seconds in queue.yaml/xml](/appengine/docs/standard/python/config/queueref#retry_parameters).
+	// [max_backoff_seconds in queue.yaml/xml](https://cloud.google.com/appengine/docs/standard/python/config/queueref#retry_parameters).
 	MaxBackoff *duration.Duration `protobuf:"bytes,5,opt,name=max_backoff,json=maxBackoff,proto3" json:"max_backoff,omitempty"`
 	// The time between retries will double `max_doublings` times.
 	//
@@ -556,12 +554,11 @@ type RetryConfig struct {
 	// If unspecified when the queue is created, Cloud Tasks will pick the
 	// default.
 	//
-	// This field is output only for
-	// [pull queues](google.cloud.tasks.v2beta2.PullTarget).
+	// This field is output only for [pull queues][google.cloud.tasks.v2beta2.PullTarget].
 	//
 	//
 	// This field has the same meaning as
-	// [max_doublings in queue.yaml/xml](/appengine/docs/standard/python/config/queueref#retry_parameters).
+	// [max_doublings in queue.yaml/xml](https://cloud.google.com/appengine/docs/standard/python/config/queueref#retry_parameters).
 	MaxDoublings         int32    `protobuf:"varint,6,opt,name=max_doublings,json=maxDoublings,proto3" json:"max_doublings,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -572,7 +569,7 @@ func (m *RetryConfig) Reset()         { *m = RetryConfig{} }
 func (m *RetryConfig) String() string { return proto.CompactTextString(m) }
 func (*RetryConfig) ProtoMessage()    {}
 func (*RetryConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_queue_2041daffc3c0cfe8, []int{2}
+	return fileDescriptor_queue_c4ed304f84e85348, []int{2}
 }
 func (m *RetryConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RetryConfig.Unmarshal(m, b)
@@ -599,11 +596,13 @@ type isRetryConfig_NumAttempts interface {
 type RetryConfig_MaxAttempts struct {
 	MaxAttempts int32 `protobuf:"varint,1,opt,name=max_attempts,json=maxAttempts,proto3,oneof"`
 }
+
 type RetryConfig_UnlimitedAttempts struct {
 	UnlimitedAttempts bool `protobuf:"varint,2,opt,name=unlimited_attempts,json=unlimitedAttempts,proto3,oneof"`
 }
 
-func (*RetryConfig_MaxAttempts) isRetryConfig_NumAttempts()       {}
+func (*RetryConfig_MaxAttempts) isRetryConfig_NumAttempts() {}
+
 func (*RetryConfig_UnlimitedAttempts) isRetryConfig_NumAttempts() {}
 
 func (m *RetryConfig) GetNumAttempts() isRetryConfig_NumAttempts {
@@ -731,10 +730,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/cloud/tasks/v2beta2/queue.proto", fileDescriptor_queue_2041daffc3c0cfe8)
+	proto.RegisterFile("google/cloud/tasks/v2beta2/queue.proto", fileDescriptor_queue_c4ed304f84e85348)
 }
 
-var fileDescriptor_queue_2041daffc3c0cfe8 = []byte{
+var fileDescriptor_queue_c4ed304f84e85348 = []byte{
 	// 702 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x94, 0xcb, 0x6e, 0xdb, 0x3a,
 	0x10, 0x86, 0xad, 0x24, 0xca, 0x65, 0xe4, 0x04, 0x0e, 0xcf, 0x05, 0x3e, 0x3e, 0x45, 0x62, 0x38,

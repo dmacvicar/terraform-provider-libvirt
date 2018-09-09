@@ -48,7 +48,7 @@ func (x CryptoKey_CryptoKeyPurpose) String() string {
 	return proto.EnumName(CryptoKey_CryptoKeyPurpose_name, int32(x))
 }
 func (CryptoKey_CryptoKeyPurpose) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_resources_3fd296b2ee28c3bd, []int{1, 0}
+	return fileDescriptor_resources_8a163c5e6421e08e, []int{1, 0}
 }
 
 // The state of a [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion], indicating if it can be used.
@@ -82,17 +82,17 @@ var CryptoKeyVersion_CryptoKeyVersionState_name = map[int32]string{
 }
 var CryptoKeyVersion_CryptoKeyVersionState_value = map[string]int32{
 	"CRYPTO_KEY_VERSION_STATE_UNSPECIFIED": 0,
-	"ENABLED":           1,
-	"DISABLED":          2,
-	"DESTROYED":         3,
-	"DESTROY_SCHEDULED": 4,
+	"ENABLED":                              1,
+	"DISABLED":                             2,
+	"DESTROYED":                            3,
+	"DESTROY_SCHEDULED":                    4,
 }
 
 func (x CryptoKeyVersion_CryptoKeyVersionState) String() string {
 	return proto.EnumName(CryptoKeyVersion_CryptoKeyVersionState_name, int32(x))
 }
 func (CryptoKeyVersion_CryptoKeyVersionState) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_resources_3fd296b2ee28c3bd, []int{2, 0}
+	return fileDescriptor_resources_8a163c5e6421e08e, []int{2, 0}
 }
 
 // A [KeyRing][google.cloud.kms.v1.KeyRing] is a toplevel logical grouping of [CryptoKeys][google.cloud.kms.v1.CryptoKey].
@@ -111,7 +111,7 @@ func (m *KeyRing) Reset()         { *m = KeyRing{} }
 func (m *KeyRing) String() string { return proto.CompactTextString(m) }
 func (*KeyRing) ProtoMessage()    {}
 func (*KeyRing) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_3fd296b2ee28c3bd, []int{0}
+	return fileDescriptor_resources_8a163c5e6421e08e, []int{0}
 }
 func (m *KeyRing) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_KeyRing.Unmarshal(m, b)
@@ -193,7 +193,7 @@ func (m *CryptoKey) Reset()         { *m = CryptoKey{} }
 func (m *CryptoKey) String() string { return proto.CompactTextString(m) }
 func (*CryptoKey) ProtoMessage()    {}
 func (*CryptoKey) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_3fd296b2ee28c3bd, []int{1}
+	return fileDescriptor_resources_8a163c5e6421e08e, []int{1}
 }
 func (m *CryptoKey) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CryptoKey.Unmarshal(m, b)
@@ -212,23 +212,6 @@ func (m *CryptoKey) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_CryptoKey proto.InternalMessageInfo
-
-type isCryptoKey_RotationSchedule interface {
-	isCryptoKey_RotationSchedule()
-}
-
-type CryptoKey_RotationPeriod struct {
-	RotationPeriod *duration.Duration `protobuf:"bytes,8,opt,name=rotation_period,json=rotationPeriod,proto3,oneof"`
-}
-
-func (*CryptoKey_RotationPeriod) isCryptoKey_RotationSchedule() {}
-
-func (m *CryptoKey) GetRotationSchedule() isCryptoKey_RotationSchedule {
-	if m != nil {
-		return m.RotationSchedule
-	}
-	return nil
-}
 
 func (m *CryptoKey) GetName() string {
 	if m != nil {
@@ -261,6 +244,23 @@ func (m *CryptoKey) GetCreateTime() *timestamp.Timestamp {
 func (m *CryptoKey) GetNextRotationTime() *timestamp.Timestamp {
 	if m != nil {
 		return m.NextRotationTime
+	}
+	return nil
+}
+
+type isCryptoKey_RotationSchedule interface {
+	isCryptoKey_RotationSchedule()
+}
+
+type CryptoKey_RotationPeriod struct {
+	RotationPeriod *duration.Duration `protobuf:"bytes,8,opt,name=rotation_period,json=rotationPeriod,proto3,oneof"`
+}
+
+func (*CryptoKey_RotationPeriod) isCryptoKey_RotationSchedule() {}
+
+func (m *CryptoKey) GetRotationSchedule() isCryptoKey_RotationSchedule {
+	if m != nil {
+		return m.RotationSchedule
 	}
 	return nil
 }
@@ -370,7 +370,7 @@ func (m *CryptoKeyVersion) Reset()         { *m = CryptoKeyVersion{} }
 func (m *CryptoKeyVersion) String() string { return proto.CompactTextString(m) }
 func (*CryptoKeyVersion) ProtoMessage()    {}
 func (*CryptoKeyVersion) Descriptor() ([]byte, []int) {
-	return fileDescriptor_resources_3fd296b2ee28c3bd, []int{2}
+	return fileDescriptor_resources_8a163c5e6421e08e, []int{2}
 }
 func (m *CryptoKeyVersion) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CryptoKeyVersion.Unmarshal(m, b)
@@ -435,10 +435,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/cloud/kms/v1/resources.proto", fileDescriptor_resources_3fd296b2ee28c3bd)
+	proto.RegisterFile("google/cloud/kms/v1/resources.proto", fileDescriptor_resources_8a163c5e6421e08e)
 }
 
-var fileDescriptor_resources_3fd296b2ee28c3bd = []byte{
+var fileDescriptor_resources_8a163c5e6421e08e = []byte{
 	// 673 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x94, 0x51, 0x6e, 0xda, 0x4a,
 	0x14, 0x86, 0x63, 0x20, 0x21, 0x1c, 0x72, 0x13, 0x32, 0xdc, 0xe8, 0x72, 0x51, 0x95, 0x22, 0xda,

@@ -56,7 +56,7 @@ func (m *CreateInstanceRequest) Reset()         { *m = CreateInstanceRequest{} }
 func (m *CreateInstanceRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateInstanceRequest) ProtoMessage()    {}
 func (*CreateInstanceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{0}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{0}
 }
 func (m *CreateInstanceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateInstanceRequest.Unmarshal(m, b)
@@ -118,7 +118,7 @@ func (m *GetInstanceRequest) Reset()         { *m = GetInstanceRequest{} }
 func (m *GetInstanceRequest) String() string { return proto.CompactTextString(m) }
 func (*GetInstanceRequest) ProtoMessage()    {}
 func (*GetInstanceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{1}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{1}
 }
 func (m *GetInstanceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetInstanceRequest.Unmarshal(m, b)
@@ -161,7 +161,7 @@ func (m *ListInstancesRequest) Reset()         { *m = ListInstancesRequest{} }
 func (m *ListInstancesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListInstancesRequest) ProtoMessage()    {}
 func (*ListInstancesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{2}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{2}
 }
 func (m *ListInstancesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListInstancesRequest.Unmarshal(m, b)
@@ -218,7 +218,7 @@ func (m *ListInstancesResponse) Reset()         { *m = ListInstancesResponse{} }
 func (m *ListInstancesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListInstancesResponse) ProtoMessage()    {}
 func (*ListInstancesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{3}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{3}
 }
 func (m *ListInstancesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListInstancesResponse.Unmarshal(m, b)
@@ -275,7 +275,7 @@ func (m *PartialUpdateInstanceRequest) Reset()         { *m = PartialUpdateInsta
 func (m *PartialUpdateInstanceRequest) String() string { return proto.CompactTextString(m) }
 func (*PartialUpdateInstanceRequest) ProtoMessage()    {}
 func (*PartialUpdateInstanceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{4}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{4}
 }
 func (m *PartialUpdateInstanceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PartialUpdateInstanceRequest.Unmarshal(m, b)
@@ -323,7 +323,7 @@ func (m *DeleteInstanceRequest) Reset()         { *m = DeleteInstanceRequest{} }
 func (m *DeleteInstanceRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteInstanceRequest) ProtoMessage()    {}
 func (*DeleteInstanceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{5}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{5}
 }
 func (m *DeleteInstanceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteInstanceRequest.Unmarshal(m, b)
@@ -372,7 +372,7 @@ func (m *CreateClusterRequest) Reset()         { *m = CreateClusterRequest{} }
 func (m *CreateClusterRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateClusterRequest) ProtoMessage()    {}
 func (*CreateClusterRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{6}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{6}
 }
 func (m *CreateClusterRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateClusterRequest.Unmarshal(m, b)
@@ -427,7 +427,7 @@ func (m *GetClusterRequest) Reset()         { *m = GetClusterRequest{} }
 func (m *GetClusterRequest) String() string { return proto.CompactTextString(m) }
 func (*GetClusterRequest) ProtoMessage()    {}
 func (*GetClusterRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{7}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{7}
 }
 func (m *GetClusterRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetClusterRequest.Unmarshal(m, b)
@@ -472,7 +472,7 @@ func (m *ListClustersRequest) Reset()         { *m = ListClustersRequest{} }
 func (m *ListClustersRequest) String() string { return proto.CompactTextString(m) }
 func (*ListClustersRequest) ProtoMessage()    {}
 func (*ListClustersRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{8}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{8}
 }
 func (m *ListClustersRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListClustersRequest.Unmarshal(m, b)
@@ -528,7 +528,7 @@ func (m *ListClustersResponse) Reset()         { *m = ListClustersResponse{} }
 func (m *ListClustersResponse) String() string { return proto.CompactTextString(m) }
 func (*ListClustersResponse) ProtoMessage()    {}
 func (*ListClustersResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{9}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{9}
 }
 func (m *ListClustersResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListClustersResponse.Unmarshal(m, b)
@@ -583,7 +583,7 @@ func (m *DeleteClusterRequest) Reset()         { *m = DeleteClusterRequest{} }
 func (m *DeleteClusterRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteClusterRequest) ProtoMessage()    {}
 func (*DeleteClusterRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{10}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{10}
 }
 func (m *DeleteClusterRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteClusterRequest.Unmarshal(m, b)
@@ -627,7 +627,7 @@ func (m *CreateInstanceMetadata) Reset()         { *m = CreateInstanceMetadata{}
 func (m *CreateInstanceMetadata) String() string { return proto.CompactTextString(m) }
 func (*CreateInstanceMetadata) ProtoMessage()    {}
 func (*CreateInstanceMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{11}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{11}
 }
 func (m *CreateInstanceMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateInstanceMetadata.Unmarshal(m, b)
@@ -685,7 +685,7 @@ func (m *UpdateInstanceMetadata) Reset()         { *m = UpdateInstanceMetadata{}
 func (m *UpdateInstanceMetadata) String() string { return proto.CompactTextString(m) }
 func (*UpdateInstanceMetadata) ProtoMessage()    {}
 func (*UpdateInstanceMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{12}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{12}
 }
 func (m *UpdateInstanceMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateInstanceMetadata.Unmarshal(m, b)
@@ -743,7 +743,7 @@ func (m *CreateClusterMetadata) Reset()         { *m = CreateClusterMetadata{} }
 func (m *CreateClusterMetadata) String() string { return proto.CompactTextString(m) }
 func (*CreateClusterMetadata) ProtoMessage()    {}
 func (*CreateClusterMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{13}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{13}
 }
 func (m *CreateClusterMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateClusterMetadata.Unmarshal(m, b)
@@ -801,7 +801,7 @@ func (m *UpdateClusterMetadata) Reset()         { *m = UpdateClusterMetadata{} }
 func (m *UpdateClusterMetadata) String() string { return proto.CompactTextString(m) }
 func (*UpdateClusterMetadata) ProtoMessage()    {}
 func (*UpdateClusterMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{14}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{14}
 }
 func (m *UpdateClusterMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateClusterMetadata.Unmarshal(m, b)
@@ -866,7 +866,7 @@ func (m *CreateAppProfileRequest) Reset()         { *m = CreateAppProfileRequest
 func (m *CreateAppProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateAppProfileRequest) ProtoMessage()    {}
 func (*CreateAppProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{15}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{15}
 }
 func (m *CreateAppProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateAppProfileRequest.Unmarshal(m, b)
@@ -928,7 +928,7 @@ func (m *GetAppProfileRequest) Reset()         { *m = GetAppProfileRequest{} }
 func (m *GetAppProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*GetAppProfileRequest) ProtoMessage()    {}
 func (*GetAppProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{16}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{16}
 }
 func (m *GetAppProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetAppProfileRequest.Unmarshal(m, b)
@@ -972,7 +972,7 @@ func (m *ListAppProfilesRequest) Reset()         { *m = ListAppProfilesRequest{}
 func (m *ListAppProfilesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListAppProfilesRequest) ProtoMessage()    {}
 func (*ListAppProfilesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{17}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{17}
 }
 func (m *ListAppProfilesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListAppProfilesRequest.Unmarshal(m, b)
@@ -1023,7 +1023,7 @@ func (m *ListAppProfilesResponse) Reset()         { *m = ListAppProfilesResponse
 func (m *ListAppProfilesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListAppProfilesResponse) ProtoMessage()    {}
 func (*ListAppProfilesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{18}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{18}
 }
 func (m *ListAppProfilesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListAppProfilesResponse.Unmarshal(m, b)
@@ -1075,7 +1075,7 @@ func (m *UpdateAppProfileRequest) Reset()         { *m = UpdateAppProfileRequest
 func (m *UpdateAppProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateAppProfileRequest) ProtoMessage()    {}
 func (*UpdateAppProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{19}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{19}
 }
 func (m *UpdateAppProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateAppProfileRequest.Unmarshal(m, b)
@@ -1132,7 +1132,7 @@ func (m *DeleteAppProfileRequest) Reset()         { *m = DeleteAppProfileRequest
 func (m *DeleteAppProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteAppProfileRequest) ProtoMessage()    {}
 func (*DeleteAppProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{20}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{20}
 }
 func (m *DeleteAppProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteAppProfileRequest.Unmarshal(m, b)
@@ -1177,7 +1177,7 @@ func (m *UpdateAppProfileMetadata) Reset()         { *m = UpdateAppProfileMetada
 func (m *UpdateAppProfileMetadata) String() string { return proto.CompactTextString(m) }
 func (*UpdateAppProfileMetadata) ProtoMessage()    {}
 func (*UpdateAppProfileMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa, []int{21}
+	return fileDescriptor_bigtable_instance_admin_67df92d624517bbb, []int{21}
 }
 func (m *UpdateAppProfileMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateAppProfileMetadata.Unmarshal(m, b)
@@ -1932,10 +1932,10 @@ var _BigtableInstanceAdmin_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("google/bigtable/admin/v2/bigtable_instance_admin.proto", fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa)
+	proto.RegisterFile("google/bigtable/admin/v2/bigtable_instance_admin.proto", fileDescriptor_bigtable_instance_admin_67df92d624517bbb)
 }
 
-var fileDescriptor_bigtable_instance_admin_4a25aca1138ca2aa = []byte{
+var fileDescriptor_bigtable_instance_admin_67df92d624517bbb = []byte{
 	// 1566 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x59, 0xcf, 0x6f, 0xdc, 0xc4,
 	0x17, 0xd7, 0x6c, 0xfa, 0xed, 0xb7, 0x79, 0x9b, 0x5f, 0xdf, 0xf9, 0x36, 0xc9, 0xca, 0xf4, 0x47,

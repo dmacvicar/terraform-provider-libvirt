@@ -1958,6 +1958,8 @@ const opGetBucketLifecycle = "GetBucketLifecycle"
 //    }
 //
 // See also, https://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/GetBucketLifecycle
+//
+// Deprecated: GetBucketLifecycle has been deprecated
 func (c *S3) GetBucketLifecycleRequest(input *GetBucketLifecycleInput) (req *request.Request, output *GetBucketLifecycleOutput) {
 	if c.Client.Config.Logger != nil {
 		c.Client.Config.Logger.Log("This operation, GetBucketLifecycle, has been deprecated")
@@ -1988,6 +1990,8 @@ func (c *S3) GetBucketLifecycleRequest(input *GetBucketLifecycleInput) (req *req
 // See the AWS API reference guide for Amazon Simple Storage Service's
 // API operation GetBucketLifecycle for usage and error information.
 // See also, https://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/GetBucketLifecycle
+//
+// Deprecated: GetBucketLifecycle has been deprecated
 func (c *S3) GetBucketLifecycle(input *GetBucketLifecycleInput) (*GetBucketLifecycleOutput, error) {
 	req, out := c.GetBucketLifecycleRequest(input)
 	return out, req.Send()
@@ -2002,6 +2006,8 @@ func (c *S3) GetBucketLifecycle(input *GetBucketLifecycleInput) (*GetBucketLifec
 // the context is nil a panic will occur. In the future the SDK may create
 // sub-contexts for http.Requests. See https://golang.org/pkg/context/
 // for more information on using Contexts.
+//
+// Deprecated: GetBucketLifecycleWithContext has been deprecated
 func (c *S3) GetBucketLifecycleWithContext(ctx aws.Context, input *GetBucketLifecycleInput, opts ...request.Option) (*GetBucketLifecycleOutput, error) {
 	req, out := c.GetBucketLifecycleRequest(input)
 	req.SetContext(ctx)
@@ -2333,6 +2339,8 @@ const opGetBucketNotification = "GetBucketNotification"
 //    }
 //
 // See also, https://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/GetBucketNotification
+//
+// Deprecated: GetBucketNotification has been deprecated
 func (c *S3) GetBucketNotificationRequest(input *GetBucketNotificationConfigurationRequest) (req *request.Request, output *NotificationConfigurationDeprecated) {
 	if c.Client.Config.Logger != nil {
 		c.Client.Config.Logger.Log("This operation, GetBucketNotification, has been deprecated")
@@ -2363,6 +2371,8 @@ func (c *S3) GetBucketNotificationRequest(input *GetBucketNotificationConfigurat
 // See the AWS API reference guide for Amazon Simple Storage Service's
 // API operation GetBucketNotification for usage and error information.
 // See also, https://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/GetBucketNotification
+//
+// Deprecated: GetBucketNotification has been deprecated
 func (c *S3) GetBucketNotification(input *GetBucketNotificationConfigurationRequest) (*NotificationConfigurationDeprecated, error) {
 	req, out := c.GetBucketNotificationRequest(input)
 	return out, req.Send()
@@ -2377,6 +2387,8 @@ func (c *S3) GetBucketNotification(input *GetBucketNotificationConfigurationRequ
 // the context is nil a panic will occur. In the future the SDK may create
 // sub-contexts for http.Requests. See https://golang.org/pkg/context/
 // for more information on using Contexts.
+//
+// Deprecated: GetBucketNotificationWithContext has been deprecated
 func (c *S3) GetBucketNotificationWithContext(ctx aws.Context, input *GetBucketNotificationConfigurationRequest, opts ...request.Option) (*NotificationConfigurationDeprecated, error) {
 	req, out := c.GetBucketNotificationRequest(input)
 	req.SetContext(ctx)
@@ -4815,6 +4827,8 @@ const opPutBucketLifecycle = "PutBucketLifecycle"
 //    }
 //
 // See also, https://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/PutBucketLifecycle
+//
+// Deprecated: PutBucketLifecycle has been deprecated
 func (c *S3) PutBucketLifecycleRequest(input *PutBucketLifecycleInput) (req *request.Request, output *PutBucketLifecycleOutput) {
 	if c.Client.Config.Logger != nil {
 		c.Client.Config.Logger.Log("This operation, PutBucketLifecycle, has been deprecated")
@@ -4847,6 +4861,8 @@ func (c *S3) PutBucketLifecycleRequest(input *PutBucketLifecycleInput) (req *req
 // See the AWS API reference guide for Amazon Simple Storage Service's
 // API operation PutBucketLifecycle for usage and error information.
 // See also, https://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/PutBucketLifecycle
+//
+// Deprecated: PutBucketLifecycle has been deprecated
 func (c *S3) PutBucketLifecycle(input *PutBucketLifecycleInput) (*PutBucketLifecycleOutput, error) {
 	req, out := c.PutBucketLifecycleRequest(input)
 	return out, req.Send()
@@ -4861,6 +4877,8 @@ func (c *S3) PutBucketLifecycle(input *PutBucketLifecycleInput) (*PutBucketLifec
 // the context is nil a panic will occur. In the future the SDK may create
 // sub-contexts for http.Requests. See https://golang.org/pkg/context/
 // for more information on using Contexts.
+//
+// Deprecated: PutBucketLifecycleWithContext has been deprecated
 func (c *S3) PutBucketLifecycleWithContext(ctx aws.Context, input *PutBucketLifecycleInput, opts ...request.Option) (*PutBucketLifecycleOutput, error) {
 	req, out := c.PutBucketLifecycleRequest(input)
 	req.SetContext(ctx)
@@ -5126,6 +5144,8 @@ const opPutBucketNotification = "PutBucketNotification"
 //    }
 //
 // See also, https://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/PutBucketNotification
+//
+// Deprecated: PutBucketNotification has been deprecated
 func (c *S3) PutBucketNotificationRequest(input *PutBucketNotificationInput) (req *request.Request, output *PutBucketNotificationOutput) {
 	if c.Client.Config.Logger != nil {
 		c.Client.Config.Logger.Log("This operation, PutBucketNotification, has been deprecated")
@@ -5158,6 +5178,8 @@ func (c *S3) PutBucketNotificationRequest(input *PutBucketNotificationInput) (re
 // See the AWS API reference guide for Amazon Simple Storage Service's
 // API operation PutBucketNotification for usage and error information.
 // See also, https://docs.aws.amazon.com/goto/WebAPI/s3-2006-03-01/PutBucketNotification
+//
+// Deprecated: PutBucketNotification has been deprecated
 func (c *S3) PutBucketNotification(input *PutBucketNotificationInput) (*PutBucketNotificationOutput, error) {
 	req, out := c.PutBucketNotificationRequest(input)
 	return out, req.Send()
@@ -5172,6 +5194,8 @@ func (c *S3) PutBucketNotification(input *PutBucketNotificationInput) (*PutBucke
 // the context is nil a panic will occur. In the future the SDK may create
 // sub-contexts for http.Requests. See https://golang.org/pkg/context/
 // for more information on using Contexts.
+//
+// Deprecated: PutBucketNotificationWithContext has been deprecated
 func (c *S3) PutBucketNotificationWithContext(ctx aws.Context, input *PutBucketNotificationInput, opts ...request.Option) (*PutBucketNotificationOutput, error) {
 	req, out := c.PutBucketNotificationRequest(input)
 	req.SetContext(ctx)
@@ -6820,7 +6844,7 @@ type Bucket struct {
 	_ struct{} `type:"structure"`
 
 	// Date the bucket was created.
-	CreationDate *time.Time `type:"timestamp" timestampFormat:"iso8601"`
+	CreationDate *time.Time `type:"timestamp"`
 
 	// The name of the bucket.
 	Name *string `type:"string"`
@@ -7212,6 +7236,8 @@ type CloudFunctionConfiguration struct {
 	CloudFunction *string `type:"string"`
 
 	// Bucket event for which to send notifications.
+	//
+	// Deprecated: Event has been deprecated
 	Event *string `deprecated:"true" type:"string" enum:"Event"`
 
 	Events []*string `locationName:"Event" type:"list" flattened:"true"`
@@ -7637,14 +7663,14 @@ type CopyObjectInput struct {
 	CopySourceIfMatch *string `location:"header" locationName:"x-amz-copy-source-if-match" type:"string"`
 
 	// Copies the object if it has been modified since the specified time.
-	CopySourceIfModifiedSince *time.Time `location:"header" locationName:"x-amz-copy-source-if-modified-since" type:"timestamp" timestampFormat:"rfc822"`
+	CopySourceIfModifiedSince *time.Time `location:"header" locationName:"x-amz-copy-source-if-modified-since" type:"timestamp"`
 
 	// Copies the object if its entity tag (ETag) is different than the specified
 	// ETag.
 	CopySourceIfNoneMatch *string `location:"header" locationName:"x-amz-copy-source-if-none-match" type:"string"`
 
 	// Copies the object if it hasn't been modified since the specified time.
-	CopySourceIfUnmodifiedSince *time.Time `location:"header" locationName:"x-amz-copy-source-if-unmodified-since" type:"timestamp" timestampFormat:"rfc822"`
+	CopySourceIfUnmodifiedSince *time.Time `location:"header" locationName:"x-amz-copy-source-if-unmodified-since" type:"timestamp"`
 
 	// Specifies the algorithm to use when decrypting the source object (e.g., AES256).
 	CopySourceSSECustomerAlgorithm *string `location:"header" locationName:"x-amz-copy-source-server-side-encryption-customer-algorithm" type:"string"`
@@ -7660,7 +7686,7 @@ type CopyObjectInput struct {
 	CopySourceSSECustomerKeyMD5 *string `location:"header" locationName:"x-amz-copy-source-server-side-encryption-customer-key-MD5" type:"string"`
 
 	// The date and time at which the object is no longer cacheable.
-	Expires *time.Time `location:"header" locationName:"Expires" type:"timestamp" timestampFormat:"rfc822"`
+	Expires *time.Time `location:"header" locationName:"Expires" type:"timestamp"`
 
 	// Gives the grantee READ, READ_ACP, and WRITE_ACP permissions on the object.
 	GrantFullControl *string `location:"header" locationName:"x-amz-grant-full-control" type:"string"`
@@ -8089,7 +8115,7 @@ type CopyObjectResult struct {
 
 	ETag *string `type:"string"`
 
-	LastModified *time.Time `type:"timestamp" timestampFormat:"iso8601"`
+	LastModified *time.Time `type:"timestamp"`
 }
 
 // String returns the string representation
@@ -8121,7 +8147,7 @@ type CopyPartResult struct {
 	ETag *string `type:"string"`
 
 	// Date and time at which the object was uploaded.
-	LastModified *time.Time `type:"timestamp" timestampFormat:"iso8601"`
+	LastModified *time.Time `type:"timestamp"`
 }
 
 // String returns the string representation
@@ -8325,7 +8351,7 @@ type CreateMultipartUploadInput struct {
 	ContentType *string `location:"header" locationName:"Content-Type" type:"string"`
 
 	// The date and time at which the object is no longer cacheable.
-	Expires *time.Time `location:"header" locationName:"Expires" type:"timestamp" timestampFormat:"rfc822"`
+	Expires *time.Time `location:"header" locationName:"Expires" type:"timestamp"`
 
 	// Gives the grantee READ, READ_ACP, and WRITE_ACP permissions on the object.
 	GrantFullControl *string `location:"header" locationName:"x-amz-grant-full-control" type:"string"`
@@ -8573,7 +8599,7 @@ type CreateMultipartUploadOutput struct {
 	_ struct{} `type:"structure"`
 
 	// Date when multipart upload will become eligible for abort operation by lifecycle.
-	AbortDate *time.Time `location:"header" locationName:"x-amz-abort-date" type:"timestamp" timestampFormat:"rfc822"`
+	AbortDate *time.Time `location:"header" locationName:"x-amz-abort-date" type:"timestamp"`
 
 	// Id of the lifecycle rule that makes a multipart upload eligible for abort
 	// operation.
@@ -9433,7 +9459,7 @@ type DeleteMarkerEntry struct {
 	Key *string `min:"1" type:"string"`
 
 	// Date and time the object was last modified.
-	LastModified *time.Time `type:"timestamp" timestampFormat:"iso8601"`
+	LastModified *time.Time `type:"timestamp"`
 
 	Owner *Owner `type:"structure"`
 
@@ -11589,7 +11615,7 @@ type GetObjectInput struct {
 
 	// Return the object only if it has been modified since the specified time,
 	// otherwise return a 304 (not modified).
-	IfModifiedSince *time.Time `location:"header" locationName:"If-Modified-Since" type:"timestamp" timestampFormat:"rfc822"`
+	IfModifiedSince *time.Time `location:"header" locationName:"If-Modified-Since" type:"timestamp"`
 
 	// Return the object only if its entity tag (ETag) is different from the one
 	// specified, otherwise return a 304 (not modified).
@@ -11597,7 +11623,7 @@ type GetObjectInput struct {
 
 	// Return the object only if it has not been modified since the specified time,
 	// otherwise return a 412 (precondition failed).
-	IfUnmodifiedSince *time.Time `location:"header" locationName:"If-Unmodified-Since" type:"timestamp" timestampFormat:"rfc822"`
+	IfUnmodifiedSince *time.Time `location:"header" locationName:"If-Unmodified-Since" type:"timestamp"`
 
 	// Key is a required field
 	Key *string `location:"uri" locationName:"Key" min:"1" type:"string" required:"true"`
@@ -11633,7 +11659,7 @@ type GetObjectInput struct {
 	ResponseContentType *string `location:"querystring" locationName:"response-content-type" type:"string"`
 
 	// Sets the Expires header of the response.
-	ResponseExpires *time.Time `location:"querystring" locationName:"response-expires" type:"timestamp" timestampFormat:"iso8601"`
+	ResponseExpires *time.Time `location:"querystring" locationName:"response-expires" type:"timestamp"`
 
 	// Specifies the algorithm to use to when encrypting the object (e.g., AES256).
 	SSECustomerAlgorithm *string `location:"header" locationName:"x-amz-server-side-encryption-customer-algorithm" type:"string"`
@@ -11860,7 +11886,7 @@ type GetObjectOutput struct {
 	Expires *string `location:"header" locationName:"Expires" type:"string"`
 
 	// Last modified date of the object
-	LastModified *time.Time `location:"header" locationName:"Last-Modified" type:"timestamp" timestampFormat:"rfc822"`
+	LastModified *time.Time `location:"header" locationName:"Last-Modified" type:"timestamp"`
 
 	// A map of metadata to store with the object in S3.
 	Metadata map[string]*string `location:"headers" locationName:"x-amz-meta-" type:"map"`
@@ -12520,7 +12546,7 @@ type HeadObjectInput struct {
 
 	// Return the object only if it has been modified since the specified time,
 	// otherwise return a 304 (not modified).
-	IfModifiedSince *time.Time `location:"header" locationName:"If-Modified-Since" type:"timestamp" timestampFormat:"rfc822"`
+	IfModifiedSince *time.Time `location:"header" locationName:"If-Modified-Since" type:"timestamp"`
 
 	// Return the object only if its entity tag (ETag) is different from the one
 	// specified, otherwise return a 304 (not modified).
@@ -12528,7 +12554,7 @@ type HeadObjectInput struct {
 
 	// Return the object only if it has not been modified since the specified time,
 	// otherwise return a 412 (precondition failed).
-	IfUnmodifiedSince *time.Time `location:"header" locationName:"If-Unmodified-Since" type:"timestamp" timestampFormat:"rfc822"`
+	IfUnmodifiedSince *time.Time `location:"header" locationName:"If-Unmodified-Since" type:"timestamp"`
 
 	// Key is a required field
 	Key *string `location:"uri" locationName:"Key" min:"1" type:"string" required:"true"`
@@ -12732,7 +12758,7 @@ type HeadObjectOutput struct {
 	Expires *string `location:"header" locationName:"Expires" type:"string"`
 
 	// Last modified date of the object
-	LastModified *time.Time `location:"header" locationName:"Last-Modified" type:"timestamp" timestampFormat:"rfc822"`
+	LastModified *time.Time `location:"header" locationName:"Last-Modified" type:"timestamp"`
 
 	// A map of metadata to store with the object in S3.
 	Metadata map[string]*string `location:"headers" locationName:"x-amz-meta-" type:"map"`
@@ -13032,6 +13058,9 @@ type InputSerialization struct {
 
 	// Specifies JSON as object's input serialization format.
 	JSON *JSONInput `type:"structure"`
+
+	// Specifies Parquet as object's input serialization format.
+	Parquet *ParquetInput `type:"structure"`
 }
 
 // String returns the string representation
@@ -13059,6 +13088,12 @@ func (s *InputSerialization) SetCompressionType(v string) *InputSerialization {
 // SetJSON sets the JSON field's value.
 func (s *InputSerialization) SetJSON(v *JSONInput) *InputSerialization {
 	s.JSON = v
+	return s
+}
+
+// SetParquet sets the Parquet field's value.
+func (s *InputSerialization) SetParquet(v *ParquetInput) *InputSerialization {
+	s.Parquet = v
 	return s
 }
 
@@ -13715,6 +13750,8 @@ type LifecycleRule struct {
 
 	// Prefix identifying one or more objects to which the rule applies. This is
 	// deprecated; use Filter instead.
+	//
+	// Deprecated: Prefix has been deprecated
 	Prefix *string `deprecated:"true" type:"string"`
 
 	// If 'Enabled', the rule is currently being applied. If 'Disabled', the rule
@@ -15350,7 +15387,7 @@ type ListPartsOutput struct {
 	_ struct{} `type:"structure"`
 
 	// Date when multipart upload will become eligible for abort operation by lifecycle.
-	AbortDate *time.Time `location:"header" locationName:"x-amz-abort-date" type:"timestamp" timestampFormat:"rfc822"`
+	AbortDate *time.Time `location:"header" locationName:"x-amz-abort-date" type:"timestamp"`
 
 	// Id of the lifecycle rule that makes a multipart upload eligible for abort
 	// operation.
@@ -15906,7 +15943,7 @@ type MultipartUpload struct {
 	_ struct{} `type:"structure"`
 
 	// Date and time at which the multipart upload was initiated.
-	Initiated *time.Time `type:"timestamp" timestampFormat:"iso8601"`
+	Initiated *time.Time `type:"timestamp"`
 
 	// Identifies who initiated the multipart upload.
 	Initiator *Initiator `type:"structure"`
@@ -16194,7 +16231,7 @@ type Object struct {
 
 	Key *string `min:"1" type:"string"`
 
-	LastModified *time.Time `type:"timestamp" timestampFormat:"iso8601"`
+	LastModified *time.Time `type:"timestamp"`
 
 	Owner *Owner `type:"structure"`
 
@@ -16313,7 +16350,7 @@ type ObjectVersion struct {
 	Key *string `min:"1" type:"string"`
 
 	// Date and time the object was last modified.
-	LastModified *time.Time `type:"timestamp" timestampFormat:"iso8601"`
+	LastModified *time.Time `type:"timestamp"`
 
 	Owner *Owner `type:"structure"`
 
@@ -16487,6 +16524,20 @@ func (s *Owner) SetID(v string) *Owner {
 	return s
 }
 
+type ParquetInput struct {
+	_ struct{} `type:"structure"`
+}
+
+// String returns the string representation
+func (s ParquetInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s ParquetInput) GoString() string {
+	return s.String()
+}
+
 type Part struct {
 	_ struct{} `type:"structure"`
 
@@ -16494,7 +16545,7 @@ type Part struct {
 	ETag *string `type:"string"`
 
 	// Date and time at which the part was uploaded.
-	LastModified *time.Time `type:"timestamp" timestampFormat:"iso8601"`
+	LastModified *time.Time `type:"timestamp"`
 
 	// Part number identifying the part. This is a positive integer between 1 and
 	// 10,000.
@@ -18276,7 +18327,7 @@ type PutObjectInput struct {
 	ContentType *string `location:"header" locationName:"Content-Type" type:"string"`
 
 	// The date and time at which the object is no longer cacheable.
-	Expires *time.Time `location:"header" locationName:"Expires" type:"timestamp" timestampFormat:"rfc822"`
+	Expires *time.Time `location:"header" locationName:"Expires" type:"timestamp"`
 
 	// Gives the grantee READ, READ_ACP, and WRITE_ACP permissions on the object.
 	GrantFullControl *string `location:"header" locationName:"x-amz-grant-full-control" type:"string"`
@@ -18817,6 +18868,8 @@ type QueueConfigurationDeprecated struct {
 	_ struct{} `type:"structure"`
 
 	// Bucket event for which to send notifications.
+	//
+	// Deprecated: Event has been deprecated
 	Event *string `deprecated:"true" type:"string" enum:"Event"`
 
 	Events []*string `locationName:"Event" type:"list" flattened:"true"`
@@ -20834,6 +20887,8 @@ type TopicConfigurationDeprecated struct {
 	_ struct{} `type:"structure"`
 
 	// Bucket event for which to send notifications.
+	//
+	// Deprecated: Event has been deprecated
 	Event *string `deprecated:"true" type:"string" enum:"Event"`
 
 	Events []*string `locationName:"Event" type:"list" flattened:"true"`
@@ -20940,14 +20995,14 @@ type UploadPartCopyInput struct {
 	CopySourceIfMatch *string `location:"header" locationName:"x-amz-copy-source-if-match" type:"string"`
 
 	// Copies the object if it has been modified since the specified time.
-	CopySourceIfModifiedSince *time.Time `location:"header" locationName:"x-amz-copy-source-if-modified-since" type:"timestamp" timestampFormat:"rfc822"`
+	CopySourceIfModifiedSince *time.Time `location:"header" locationName:"x-amz-copy-source-if-modified-since" type:"timestamp"`
 
 	// Copies the object if its entity tag (ETag) is different than the specified
 	// ETag.
 	CopySourceIfNoneMatch *string `location:"header" locationName:"x-amz-copy-source-if-none-match" type:"string"`
 
 	// Copies the object if it hasn't been modified since the specified time.
-	CopySourceIfUnmodifiedSince *time.Time `location:"header" locationName:"x-amz-copy-source-if-unmodified-since" type:"timestamp" timestampFormat:"rfc822"`
+	CopySourceIfUnmodifiedSince *time.Time `location:"header" locationName:"x-amz-copy-source-if-unmodified-since" type:"timestamp"`
 
 	// The range of bytes to copy from the source object. The range value must use
 	// the form bytes=first-last, where the first and last are the zero-based byte
