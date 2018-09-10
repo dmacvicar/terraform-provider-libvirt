@@ -161,10 +161,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if baseVolumeID, ok := d.GetOk("base_volume_id"); ok {
-		if _, ok := d.GetOk("size"); ok {
-			return fmt.Errorf("'size' can't be specified when also 'base_volume_id' is given (the size will be set to the size of the backing image")
-		}
-
 		if _, ok := d.GetOk("base_volume_name"); ok {
 			return fmt.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given")
 		}
@@ -182,9 +178,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if baseVolumeName, ok := d.GetOk("base_volume_name"); ok {
-		if _, ok := d.GetOk("size"); ok {
-			return fmt.Errorf("'size' can't be specified when also 'base_volume_name' is given (the size will be set to the size of the backing image")
-		}
 
 		volume = nil
 		baseVolumePool := pool
@@ -203,6 +196,19 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		backingStoreDef, err := newDefBackingStoreFromLibvirt(baseVolume)
 		if err != nil {
 			return fmt.Errorf("Could not retrieve backing store %s", baseVolumeName.(string))
+		}
+
+		// does the backing store have some size information, check at least that it is not smaller than the backing store?
+		volumeDef.Capacity.Value = uint64(d.Get("size").(int))
+		if _, ok := d.GetOk("size"); ok {
+			backingStoreVolumeDef, err := newDefVolumeFromLibvirt(baseVolume)
+			if err != nil {
+				return err
+			}
+
+			if backingStoreVolumeDef.Capacity != nil && volumeDef.Capacity.Value < backingStoreVolumeDef.Capacity.Value {
+				return fmt.Errorf("When 'size' is specified, it shouldn't be smaller than the backing store specified with 'base_volume_id'")
+			}
 		}
 		volumeDef.BackingStore = &backingStoreDef
 	}
