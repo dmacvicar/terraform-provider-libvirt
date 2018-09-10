@@ -50,7 +50,7 @@ func (x ConsoleOutputStream) String() string {
 	return proto.EnumName(ConsoleOutputStream_name, int32(x))
 }
 func (ConsoleOutputStream) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_build_events_cc132f62a908b693, []int{0}
+	return fileDescriptor_build_events_e8fab93011e40aeb, []int{0}
 }
 
 // How did the event stream finish.
@@ -83,7 +83,7 @@ func (x BuildEvent_BuildComponentStreamFinished_FinishType) String() string {
 	return proto.EnumName(BuildEvent_BuildComponentStreamFinished_FinishType_name, int32(x))
 }
 func (BuildEvent_BuildComponentStreamFinished_FinishType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_build_events_cc132f62a908b693, []int{0, 5, 0}
+	return fileDescriptor_build_events_e8fab93011e40aeb, []int{0, 5, 0}
 }
 
 // Which build component generates this event stream. Each build component
@@ -118,7 +118,7 @@ func (x StreamId_BuildComponent) String() string {
 	return proto.EnumName(StreamId_BuildComponent_name, int32(x))
 }
 func (StreamId_BuildComponent) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_build_events_cc132f62a908b693, []int{1, 0}
+	return fileDescriptor_build_events_e8fab93011e40aeb, []int{1, 0}
 }
 
 // An event representing some state change that occured in the build. This
@@ -150,7 +150,7 @@ func (m *BuildEvent) Reset()         { *m = BuildEvent{} }
 func (m *BuildEvent) String() string { return proto.CompactTextString(m) }
 func (*BuildEvent) ProtoMessage()    {}
 func (*BuildEvent) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_events_cc132f62a908b693, []int{0}
+	return fileDescriptor_build_events_e8fab93011e40aeb, []int{0}
 }
 func (m *BuildEvent) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildEvent.Unmarshal(m, b)
@@ -170,6 +170,13 @@ func (m *BuildEvent) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_BuildEvent proto.InternalMessageInfo
 
+func (m *BuildEvent) GetEventTime() *timestamp.Timestamp {
+	if m != nil {
+		return m.EventTime
+	}
+	return nil
+}
+
 type isBuildEvent_Event interface {
 	isBuildEvent_Event()
 }
@@ -177,51 +184,60 @@ type isBuildEvent_Event interface {
 type BuildEvent_InvocationAttemptStarted_ struct {
 	InvocationAttemptStarted *BuildEvent_InvocationAttemptStarted `protobuf:"bytes,51,opt,name=invocation_attempt_started,json=invocationAttemptStarted,proto3,oneof"`
 }
+
 type BuildEvent_InvocationAttemptFinished_ struct {
 	InvocationAttemptFinished *BuildEvent_InvocationAttemptFinished `protobuf:"bytes,52,opt,name=invocation_attempt_finished,json=invocationAttemptFinished,proto3,oneof"`
 }
+
 type BuildEvent_BuildEnqueued_ struct {
 	BuildEnqueued *BuildEvent_BuildEnqueued `protobuf:"bytes,53,opt,name=build_enqueued,json=buildEnqueued,proto3,oneof"`
 }
+
 type BuildEvent_BuildFinished_ struct {
 	BuildFinished *BuildEvent_BuildFinished `protobuf:"bytes,55,opt,name=build_finished,json=buildFinished,proto3,oneof"`
 }
+
 type BuildEvent_ConsoleOutput_ struct {
 	ConsoleOutput *BuildEvent_ConsoleOutput `protobuf:"bytes,56,opt,name=console_output,json=consoleOutput,proto3,oneof"`
 }
+
 type BuildEvent_ComponentStreamFinished struct {
 	ComponentStreamFinished *BuildEvent_BuildComponentStreamFinished `protobuf:"bytes,59,opt,name=component_stream_finished,json=componentStreamFinished,proto3,oneof"`
 }
+
 type BuildEvent_BazelEvent struct {
 	BazelEvent *any.Any `protobuf:"bytes,60,opt,name=bazel_event,json=bazelEvent,proto3,oneof"`
 }
+
 type BuildEvent_BuildExecutionEvent struct {
 	BuildExecutionEvent *any.Any `protobuf:"bytes,61,opt,name=build_execution_event,json=buildExecutionEvent,proto3,oneof"`
 }
+
 type BuildEvent_SourceFetchEvent struct {
 	SourceFetchEvent *any.Any `protobuf:"bytes,62,opt,name=source_fetch_event,json=sourceFetchEvent,proto3,oneof"`
 }
 
-func (*BuildEvent_InvocationAttemptStarted_) isBuildEvent_Event()  {}
+func (*BuildEvent_InvocationAttemptStarted_) isBuildEvent_Event() {}
+
 func (*BuildEvent_InvocationAttemptFinished_) isBuildEvent_Event() {}
-func (*BuildEvent_BuildEnqueued_) isBuildEvent_Event()             {}
-func (*BuildEvent_BuildFinished_) isBuildEvent_Event()             {}
-func (*BuildEvent_ConsoleOutput_) isBuildEvent_Event()             {}
-func (*BuildEvent_ComponentStreamFinished) isBuildEvent_Event()    {}
-func (*BuildEvent_BazelEvent) isBuildEvent_Event()                 {}
-func (*BuildEvent_BuildExecutionEvent) isBuildEvent_Event()        {}
-func (*BuildEvent_SourceFetchEvent) isBuildEvent_Event()           {}
+
+func (*BuildEvent_BuildEnqueued_) isBuildEvent_Event() {}
+
+func (*BuildEvent_BuildFinished_) isBuildEvent_Event() {}
+
+func (*BuildEvent_ConsoleOutput_) isBuildEvent_Event() {}
+
+func (*BuildEvent_ComponentStreamFinished) isBuildEvent_Event() {}
+
+func (*BuildEvent_BazelEvent) isBuildEvent_Event() {}
+
+func (*BuildEvent_BuildExecutionEvent) isBuildEvent_Event() {}
+
+func (*BuildEvent_SourceFetchEvent) isBuildEvent_Event() {}
 
 func (m *BuildEvent) GetEvent() isBuildEvent_Event {
 	if m != nil {
 		return m.Event
-	}
-	return nil
-}
-
-func (m *BuildEvent) GetEventTime() *timestamp.Timestamp {
-	if m != nil {
-		return m.EventTime
 	}
 	return nil
 }
@@ -511,7 +527,7 @@ func (m *BuildEvent_InvocationAttemptStarted) Reset()         { *m = BuildEvent_
 func (m *BuildEvent_InvocationAttemptStarted) String() string { return proto.CompactTextString(m) }
 func (*BuildEvent_InvocationAttemptStarted) ProtoMessage()    {}
 func (*BuildEvent_InvocationAttemptStarted) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_events_cc132f62a908b693, []int{0, 0}
+	return fileDescriptor_build_events_e8fab93011e40aeb, []int{0, 0}
 }
 func (m *BuildEvent_InvocationAttemptStarted) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildEvent_InvocationAttemptStarted.Unmarshal(m, b)
@@ -553,7 +569,7 @@ func (m *BuildEvent_InvocationAttemptFinished) Reset()         { *m = BuildEvent
 func (m *BuildEvent_InvocationAttemptFinished) String() string { return proto.CompactTextString(m) }
 func (*BuildEvent_InvocationAttemptFinished) ProtoMessage()    {}
 func (*BuildEvent_InvocationAttemptFinished) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_events_cc132f62a908b693, []int{0, 1}
+	return fileDescriptor_build_events_e8fab93011e40aeb, []int{0, 1}
 }
 func (m *BuildEvent_InvocationAttemptFinished) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildEvent_InvocationAttemptFinished.Unmarshal(m, b)
@@ -601,7 +617,7 @@ func (m *BuildEvent_BuildEnqueued) Reset()         { *m = BuildEvent_BuildEnqueu
 func (m *BuildEvent_BuildEnqueued) String() string { return proto.CompactTextString(m) }
 func (*BuildEvent_BuildEnqueued) ProtoMessage()    {}
 func (*BuildEvent_BuildEnqueued) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_events_cc132f62a908b693, []int{0, 2}
+	return fileDescriptor_build_events_e8fab93011e40aeb, []int{0, 2}
 }
 func (m *BuildEvent_BuildEnqueued) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildEvent_BuildEnqueued.Unmarshal(m, b)
@@ -636,7 +652,7 @@ func (m *BuildEvent_BuildFinished) Reset()         { *m = BuildEvent_BuildFinish
 func (m *BuildEvent_BuildFinished) String() string { return proto.CompactTextString(m) }
 func (*BuildEvent_BuildFinished) ProtoMessage()    {}
 func (*BuildEvent_BuildFinished) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_events_cc132f62a908b693, []int{0, 3}
+	return fileDescriptor_build_events_e8fab93011e40aeb, []int{0, 3}
 }
 func (m *BuildEvent_BuildFinished) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildEvent_BuildFinished.Unmarshal(m, b)
@@ -682,7 +698,7 @@ func (m *BuildEvent_ConsoleOutput) Reset()         { *m = BuildEvent_ConsoleOutp
 func (m *BuildEvent_ConsoleOutput) String() string { return proto.CompactTextString(m) }
 func (*BuildEvent_ConsoleOutput) ProtoMessage()    {}
 func (*BuildEvent_ConsoleOutput) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_events_cc132f62a908b693, []int{0, 4}
+	return fileDescriptor_build_events_e8fab93011e40aeb, []int{0, 4}
 }
 func (m *BuildEvent_ConsoleOutput) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildEvent_ConsoleOutput.Unmarshal(m, b)
@@ -702,6 +718,13 @@ func (m *BuildEvent_ConsoleOutput) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_BuildEvent_ConsoleOutput proto.InternalMessageInfo
 
+func (m *BuildEvent_ConsoleOutput) GetType() ConsoleOutputStream {
+	if m != nil {
+		return m.Type
+	}
+	return ConsoleOutputStream_UNKNOWN
+}
+
 type isBuildEvent_ConsoleOutput_Output interface {
 	isBuildEvent_ConsoleOutput_Output()
 }
@@ -709,11 +732,13 @@ type isBuildEvent_ConsoleOutput_Output interface {
 type BuildEvent_ConsoleOutput_TextOutput struct {
 	TextOutput string `protobuf:"bytes,2,opt,name=text_output,json=textOutput,proto3,oneof"`
 }
+
 type BuildEvent_ConsoleOutput_BinaryOutput struct {
 	BinaryOutput []byte `protobuf:"bytes,3,opt,name=binary_output,json=binaryOutput,proto3,oneof"`
 }
 
-func (*BuildEvent_ConsoleOutput_TextOutput) isBuildEvent_ConsoleOutput_Output()   {}
+func (*BuildEvent_ConsoleOutput_TextOutput) isBuildEvent_ConsoleOutput_Output() {}
+
 func (*BuildEvent_ConsoleOutput_BinaryOutput) isBuildEvent_ConsoleOutput_Output() {}
 
 func (m *BuildEvent_ConsoleOutput) GetOutput() isBuildEvent_ConsoleOutput_Output {
@@ -721,13 +746,6 @@ func (m *BuildEvent_ConsoleOutput) GetOutput() isBuildEvent_ConsoleOutput_Output
 		return m.Output
 	}
 	return nil
-}
-
-func (m *BuildEvent_ConsoleOutput) GetType() ConsoleOutputStream {
-	if m != nil {
-		return m.Type
-	}
-	return ConsoleOutputStream_UNKNOWN
 }
 
 func (m *BuildEvent_ConsoleOutput) GetTextOutput() string {
@@ -826,7 +844,7 @@ func (m *BuildEvent_BuildComponentStreamFinished) Reset() {
 func (m *BuildEvent_BuildComponentStreamFinished) String() string { return proto.CompactTextString(m) }
 func (*BuildEvent_BuildComponentStreamFinished) ProtoMessage()    {}
 func (*BuildEvent_BuildComponentStreamFinished) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_events_cc132f62a908b693, []int{0, 5}
+	return fileDescriptor_build_events_e8fab93011e40aeb, []int{0, 5}
 }
 func (m *BuildEvent_BuildComponentStreamFinished) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildEvent_BuildComponentStreamFinished.Unmarshal(m, b)
@@ -871,7 +889,7 @@ func (m *StreamId) Reset()         { *m = StreamId{} }
 func (m *StreamId) String() string { return proto.CompactTextString(m) }
 func (*StreamId) ProtoMessage()    {}
 func (*StreamId) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_events_cc132f62a908b693, []int{1}
+	return fileDescriptor_build_events_e8fab93011e40aeb, []int{1}
 }
 func (m *StreamId) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StreamId.Unmarshal(m, b)
@@ -927,10 +945,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/devtools/build/v1/build_events.proto", fileDescriptor_build_events_cc132f62a908b693)
+	proto.RegisterFile("google/devtools/build/v1/build_events.proto", fileDescriptor_build_events_e8fab93011e40aeb)
 }
 
-var fileDescriptor_build_events_cc132f62a908b693 = []byte{
+var fileDescriptor_build_events_e8fab93011e40aeb = []byte{
 	// 927 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x56, 0x6d, 0x6f, 0xe3, 0x44,
 	0x10, 0x8e, 0xdb, 0xa3, 0x4d, 0xa7, 0x49, 0xce, 0xb7, 0xc7, 0xa9, 0x8e, 0x5b, 0xf1, 0x52, 0x54,

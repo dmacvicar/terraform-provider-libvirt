@@ -17,10 +17,13 @@ and are tested by HashiCorp.
 
 ---
 
+[Atlas](/docs/providers/terraform-enterprise/index.html)
 
 [Chef](/docs/providers/chef/index.html)
 
 [Consul](/docs/providers/consul/index.html)
+
+[Docker](/docs/providers/docker/index.html)
 
 [Kubernetes](/docs/providers/kubernetes/index.html)
 
@@ -38,6 +41,6 @@ and are tested by HashiCorp.
 
 [Terraform](/docs/providers/terraform/index.html)
 
-[Terraform Enterprise](/docs/providers/terraform-enterprise/index.html)
+[Terraform Enterprise](/docs/providers/tfe/index.html)
 
 [Vault](/docs/providers/vault/index.html)

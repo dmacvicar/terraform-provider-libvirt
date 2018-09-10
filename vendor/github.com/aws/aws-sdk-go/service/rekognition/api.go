@@ -668,6 +668,105 @@ func (c *Rekognition) DeleteStreamProcessorWithContext(ctx aws.Context, input *D
 	return out, req.Send()
 }
 
+const opDescribeCollection = "DescribeCollection"
+
+// DescribeCollectionRequest generates a "aws/request.Request" representing the
+// client's request for the DescribeCollection operation. The "output" return
+// value will be populated with the request's response once the request completes
+// successfuly.
+//
+// Use "Send" method on the returned Request to send the API call to the service.
+// the "output" return value is not valid until after Send returns without error.
+//
+// See DescribeCollection for more information on using the DescribeCollection
+// API call, and error handling.
+//
+// This method is useful when you want to inject custom logic or configuration
+// into the SDK's request lifecycle. Such as custom headers, or retry logic.
+//
+//
+//    // Example sending a request using the DescribeCollectionRequest method.
+//    req, resp := client.DescribeCollectionRequest(params)
+//
+//    err := req.Send()
+//    if err == nil { // resp is now filled
+//        fmt.Println(resp)
+//    }
+func (c *Rekognition) DescribeCollectionRequest(input *DescribeCollectionInput) (req *request.Request, output *DescribeCollectionOutput) {
+	op := &request.Operation{
+		Name:       opDescribeCollection,
+		HTTPMethod: "POST",
+		HTTPPath:   "/",
+	}
+
+	if input == nil {
+		input = &DescribeCollectionInput{}
+	}
+
+	output = &DescribeCollectionOutput{}
+	req = c.newRequest(op, input, output)
+	return
+}
+
+// DescribeCollection API operation for Amazon Rekognition.
+//
+// Describes the specified collection. You can use DescribeCollection to get
+// information, such as the number of faces indexed into a collection and the
+// version of the model used by the collection for face detection.
+//
+// For more information, see Describing a Collection in the Amazon Rekognition
+// Developer Guide.
+//
+// Returns awserr.Error for service API and SDK errors. Use runtime type assertions
+// with awserr.Error's Code and Message methods to get detailed information about
+// the error.
+//
+// See the AWS API reference guide for Amazon Rekognition's
+// API operation DescribeCollection for usage and error information.
+//
+// Returned Error Codes:
+//   * ErrCodeInvalidParameterException "InvalidParameterException"
+//   Input parameter violated a constraint. Validate your parameter before calling
+//   the API operation again.
+//
+//   * ErrCodeAccessDeniedException "AccessDeniedException"
+//   You are not authorized to perform the action.
+//
+//   * ErrCodeInternalServerError "InternalServerError"
+//   Amazon Rekognition experienced a service issue. Try your call again.
+//
+//   * ErrCodeThrottlingException "ThrottlingException"
+//   Amazon Rekognition is temporarily unable to process the request. Try your
+//   call again.
+//
+//   * ErrCodeProvisionedThroughputExceededException "ProvisionedThroughputExceededException"
+//   The number of requests exceeded your throughput limit. If you want to increase
+//   this limit, contact Amazon Rekognition.
+//
+//   * ErrCodeResourceNotFoundException "ResourceNotFoundException"
+//   The collection specified in the request cannot be found.
+//
+func (c *Rekognition) DescribeCollection(input *DescribeCollectionInput) (*DescribeCollectionOutput, error) {
+	req, out := c.DescribeCollectionRequest(input)
+	return out, req.Send()
+}
+
+// DescribeCollectionWithContext is the same as DescribeCollection with the addition of
+// the ability to pass a context and additional request options.
+//
+// See DescribeCollection for details on how to use this API operation.
+//
+// The context must be non-nil and will be used for request cancellation. If
+// the context is nil a panic will occur. In the future the SDK may create
+// sub-contexts for http.Requests. See https://golang.org/pkg/context/
+// for more information on using Contexts.
+func (c *Rekognition) DescribeCollectionWithContext(ctx aws.Context, input *DescribeCollectionInput, opts ...request.Option) (*DescribeCollectionOutput, error) {
+	req, out := c.DescribeCollectionRequest(input)
+	req.SetContext(ctx)
+	req.ApplyOptions(opts...)
+	return out, req.Send()
+}
+
 const opDescribeStreamProcessor = "DescribeStreamProcessor"
 
 // DescribeStreamProcessorRequest generates a "aws/request.Request" representing the
@@ -1227,7 +1326,7 @@ func (c *Rekognition) DetectTextRequest(input *DetectTextInput) (req *request.Re
 // To determine whether a TextDetection element is a line of text or a word,
 // use the TextDetection object Type field.
 //
-// To be detected, text must be within +/- 30 degrees orientation of the horizontal
+// To be detected, text must be within +/- 90 degrees orientation of the horizontal
 // axis.
 //
 // For more information, see DetectText in the Amazon Rekognition Developer
@@ -2535,11 +2634,14 @@ func (c *Rekognition) IndexFacesRequest(input *IndexFacesInput) (req *request.Re
 // it in the back-end database. Amazon Rekognition uses feature vectors when
 // performing face match and search operations using the and operations.
 //
+// To get the number of faces in a collection, call .
+//
 // If you are using version 1.0 of the face detection model, IndexFaces indexes
 // the 15 largest faces in the input image. Later versions of the face detection
 // model index the 100 largest faces in the input image. To determine which
-// version of the model you are using, check the the value of FaceModelVersion
-// in the response from IndexFaces.
+// version of the model you are using, call and supply the collection ID. You
+// also get the model version from the value of FaceModelVersion in the response
+// from IndexFaces.
 //
 // For more information, see Model Versioning in the Amazon Rekognition Developer
 // Guide.
@@ -2557,7 +2659,7 @@ func (c *Rekognition) IndexFacesRequest(input *IndexFacesInput) (req *request.Re
 // by the service for the input image. If you request all facial attributes
 // (using the detectionAttributes parameter, Amazon Rekognition returns detailed
 // facial attributes such as facial landmarks (for example, location of eye
-// and mount) and other facial attributes such gender. If you provide the same
+// and mouth) and other facial attributes such gender. If you provide the same
 // image, specify the same collection, and use the same external ID in the IndexFaces
 // operation, Amazon Rekognition doesn't save duplicate face metadata.
 //
@@ -3903,7 +4005,7 @@ func (c *Rekognition) StartFaceSearchRequest(input *StartFaceSearchInput) (req *
 // you specify in NotificationChannel. To get the search results, first check
 // that the status value published to the Amazon SNS topic is SUCCEEDED. If
 // so, call and pass the job identifier (JobId) from the initial call to StartFaceSearch.
-// For more information, see collections-search-person.
+// For more information, see procedure-person-search-videos.
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
 // with awserr.Error's Code and Message methods to get detailed information about
@@ -4488,7 +4590,7 @@ func (s *Beard) SetValue(v bool) *Beard {
 	return s
 }
 
-// Identifies the bounding box around the object, face or text. The left (x-coordinate)
+// Identifies the bounding box around the face or text. The left (x-coordinate)
 // and top (y-coordinate) are coordinates representing the top and left sides
 // of the bounding box. Note that the upper-left corner of the image is the
 // origin (0,0).
@@ -5469,6 +5571,103 @@ func (s DeleteStreamProcessorOutput) GoString() string {
 	return s.String()
 }
 
+type DescribeCollectionInput struct {
+	_ struct{} `type:"structure"`
+
+	// The ID of the collection to describe.
+	//
+	// CollectionId is a required field
+	CollectionId *string `min:"1" type:"string" required:"true"`
+}
+
+// String returns the string representation
+func (s DescribeCollectionInput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s DescribeCollectionInput) GoString() string {
+	return s.String()
+}
+
+// Validate inspects the fields of the type to determine if they are valid.
+func (s *DescribeCollectionInput) Validate() error {
+	invalidParams := request.ErrInvalidParams{Context: "DescribeCollectionInput"}
+	if s.CollectionId == nil {
+		invalidParams.Add(request.NewErrParamRequired("CollectionId"))
+	}
+	if s.CollectionId != nil && len(*s.CollectionId) < 1 {
+		invalidParams.Add(request.NewErrParamMinLen("CollectionId", 1))
+	}
+
+	if invalidParams.Len() > 0 {
+		return invalidParams
+	}
+	return nil
+}
+
+// SetCollectionId sets the CollectionId field's value.
+func (s *DescribeCollectionInput) SetCollectionId(v string) *DescribeCollectionInput {
+	s.CollectionId = &v
+	return s
+}
+
+type DescribeCollectionOutput struct {
+	_ struct{} `type:"structure"`
+
+	// The Amazon Resource Name (ARN) of the collection.
+	CollectionARN *string `type:"string"`
+
+	// The number of milliseconds since the Unix epoch time until the creation of
+	// the collection. The Unix epoch time is 00:00:00 Coordinated Universal Time
+	// (UTC), Thursday, 1 January 1970.
+	CreationTimestamp *time.Time `type:"timestamp"`
+
+	// The number of faces that are indexed into the collection. To index faces
+	// into a collection, use .
+	FaceCount *int64 `type:"long"`
+
+	// The version of the face model that's used by the collection for face detection.
+	//
+	// For more information, see Model Versioning in the Amazon Rekognition Developer
+	// Guide.
+	FaceModelVersion *string `type:"string"`
+}
+
+// String returns the string representation
+func (s DescribeCollectionOutput) String() string {
+	return awsutil.Prettify(s)
+}
+
+// GoString returns the string representation
+func (s DescribeCollectionOutput) GoString() string {
+	return s.String()
+}
+
+// SetCollectionARN sets the CollectionARN field's value.
+func (s *DescribeCollectionOutput) SetCollectionARN(v string) *DescribeCollectionOutput {
+	s.CollectionARN = &v
+	return s
+}
+
+// SetCreationTimestamp sets the CreationTimestamp field's value.
+func (s *DescribeCollectionOutput) SetCreationTimestamp(v time.Time) *DescribeCollectionOutput {
+	s.CreationTimestamp = &v
+	return s
+}
+
+// SetFaceCount sets the FaceCount field's value.
+func (s *DescribeCollectionOutput) SetFaceCount(v int64) *DescribeCollectionOutput {
+	s.FaceCount = &v
+	return s
+}
+
+// SetFaceModelVersion sets the FaceModelVersion field's value.
+func (s *DescribeCollectionOutput) SetFaceModelVersion(v string) *DescribeCollectionOutput {
+	s.FaceModelVersion = &v
+	return s
+}
+
 type DescribeStreamProcessorInput struct {
 	_ struct{} `type:"structure"`
 
@@ -5514,7 +5713,7 @@ type DescribeStreamProcessorOutput struct {
 	_ struct{} `type:"structure"`
 
 	// Date and time the stream processor was created
-	CreationTimestamp *time.Time `type:"timestamp" timestampFormat:"unix"`
+	CreationTimestamp *time.Time `type:"timestamp"`
 
 	// Kinesis video stream that provides the source streaming video.
 	Input *StreamProcessorInput `type:"structure"`
@@ -5522,7 +5721,7 @@ type DescribeStreamProcessorOutput struct {
 	// The time, in Unix format, the stream processor was last updated. For example,
 	// when the stream processor moves from a running state to a failed state, or
 	// when the user starts or stops the stream processor.
-	LastUpdateTimestamp *time.Time `type:"timestamp" timestampFormat:"unix"`
+	LastUpdateTimestamp *time.Time `type:"timestamp"`
 
 	// Name of the stream processor.
 	Name *string `min:"1" type:"string"`
@@ -8409,7 +8608,7 @@ func (s *PersonDetection) SetTimestamp(v int64) *PersonDetection {
 
 // Information about a person whose face matches a face(s) in a Amazon Rekognition
 // collection. Includes information about the faces in the Amazon Rekognition
-// collection (, information about the person (PersonDetail) and the timestamp
+// collection (), information about the person (PersonDetail) and the timestamp
 // for when the person was detected in a video. An array of PersonMatch objects
 // is returned by .
 type PersonMatch struct {

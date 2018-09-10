@@ -26,15 +26,15 @@ type HttpMethod int32
 const (
 	// HTTP method unspecified
 	HttpMethod_HTTP_METHOD_UNSPECIFIED HttpMethod = 0
-	// HTTP Post
+	// HTTP POST
 	HttpMethod_POST HttpMethod = 1
-	// HTTP Get
+	// HTTP GET
 	HttpMethod_GET HttpMethod = 2
-	// HTTP Head
+	// HTTP HEAD
 	HttpMethod_HEAD HttpMethod = 3
-	// HTTP Put
+	// HTTP PUT
 	HttpMethod_PUT HttpMethod = 4
-	// HTTP Delete
+	// HTTP DELETE
 	HttpMethod_DELETE HttpMethod = 5
 )
 
@@ -48,18 +48,18 @@ var HttpMethod_name = map[int32]string{
 }
 var HttpMethod_value = map[string]int32{
 	"HTTP_METHOD_UNSPECIFIED": 0,
-	"POST":   1,
-	"GET":    2,
-	"HEAD":   3,
-	"PUT":    4,
-	"DELETE": 5,
+	"POST":                    1,
+	"GET":                     2,
+	"HEAD":                    3,
+	"PUT":                     4,
+	"DELETE":                  5,
 }
 
 func (x HttpMethod) String() string {
 	return proto.EnumName(HttpMethod_name, int32(x))
 }
 func (HttpMethod) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_target_b871819819dd67b9, []int{0}
+	return fileDescriptor_target_97396313f988895e, []int{0}
 }
 
 // Pull target.
@@ -73,7 +73,7 @@ func (m *PullTarget) Reset()         { *m = PullTarget{} }
 func (m *PullTarget) String() string { return proto.CompactTextString(m) }
 func (*PullTarget) ProtoMessage()    {}
 func (*PullTarget) Descriptor() ([]byte, []int) {
-	return fileDescriptor_target_b871819819dd67b9, []int{0}
+	return fileDescriptor_target_97396313f988895e, []int{0}
 }
 func (m *PullTarget) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PullTarget.Unmarshal(m, b)
@@ -116,7 +116,7 @@ type PullMessage struct {
 	// The tag must be less than 500 characters.
 	//
 	// SDK compatibility: Although the SDK allows tags to be either
-	// string or [bytes](/appengine/docs/standard/java/javadoc/com/google/appengine/api/taskqueue/TaskOptions.html#tag-byte:A-),
+	// string or [bytes](https://cloud.google.com/appengine/docs/standard/java/javadoc/com/google/appengine/api/taskqueue/TaskOptions.html#tag-byte:A-),
 	// only UTF-8 encoded tags can be used in Cloud Tasks. If a tag isn't UTF-8
 	// encoded, the tag will be empty when the task is returned by Cloud Tasks.
 	Tag                  string   `protobuf:"bytes,2,opt,name=tag,proto3" json:"tag,omitempty"`
@@ -129,7 +129,7 @@ func (m *PullMessage) Reset()         { *m = PullMessage{} }
 func (m *PullMessage) String() string { return proto.CompactTextString(m) }
 func (*PullMessage) ProtoMessage()    {}
 func (*PullMessage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_target_b871819819dd67b9, []int{1}
+	return fileDescriptor_target_97396313f988895e, []int{1}
 }
 func (m *PullMessage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PullMessage.Unmarshal(m, b)
@@ -171,7 +171,7 @@ func (m *PullMessage) GetTag() string {
 // task's host URL is constructed.
 //
 // Using [AppEngineHttpTarget][google.cloud.tasks.v2beta2.AppEngineHttpTarget] requires
-// [`appengine.applications.get`](/appengine/docs/admin-api/access-control)
+// [`appengine.applications.get`](https://cloud.google.com/appengine/docs/admin-api/access-control)
 // Google IAM permission for the project
 // and the following scope:
 //
@@ -193,7 +193,7 @@ func (m *AppEngineHttpTarget) Reset()         { *m = AppEngineHttpTarget{} }
 func (m *AppEngineHttpTarget) String() string { return proto.CompactTextString(m) }
 func (*AppEngineHttpTarget) ProtoMessage()    {}
 func (*AppEngineHttpTarget) Descriptor() ([]byte, []int) {
-	return fileDescriptor_target_b871819819dd67b9, []int{2}
+	return fileDescriptor_target_97396313f988895e, []int{2}
 }
 func (m *AppEngineHttpTarget) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AppEngineHttpTarget.Unmarshal(m, b)
@@ -229,7 +229,7 @@ func (m *AppEngineHttpTarget) GetAppEngineRoutingOverride() *AppEngineRouting {
 // [app_engine_http_target][google.cloud.tasks.v2beta2.Queue.app_engine_http_target] set.
 //
 // Using [AppEngineHttpRequest][google.cloud.tasks.v2beta2.AppEngineHttpRequest] requires
-// [`appengine.applications.get`](/appengine/docs/admin-api/access-control)
+// [`appengine.applications.get`](https://cloud.google.com/appengine/docs/admin-api/access-control)
 // Google IAM permission for the project
 // and the following scope:
 //
@@ -237,9 +237,9 @@ func (m *AppEngineHttpTarget) GetAppEngineRoutingOverride() *AppEngineRouting {
 //
 // The task will be delivered to the App Engine app which belongs to the same
 // project as the queue. For more information, see
-// [How Requests are Routed](/appengine/docs/standard/python/how-requests-are-routed)
+// [How Requests are Routed](https://cloud.google.com/appengine/docs/standard/python/how-requests-are-routed)
 // and how routing is affected by
-// [dispatch files](/appengine/docs/python/config/dispatchref).
+// [dispatch files](https://cloud.google.com/appengine/docs/python/config/dispatchref).
 //
 // The [AppEngineRouting][google.cloud.tasks.v2beta2.AppEngineRouting] used to construct the URL that the task is
 // delivered to can be set at the queue-level or task-level:
@@ -269,10 +269,10 @@ type AppEngineHttpRequest struct {
 	// The app's request handler for the task's target URL must be able to handle
 	// HTTP requests with this http_method, otherwise the task attempt will fail
 	// with error code 405 (Method Not Allowed). See
-	// [Writing a push task request handler](/appengine/docs/java/taskqueue/push/creating-handlers#writing_a_push_task_request_handler)
+	// [Writing a push task request handler](https://cloud.google.com/appengine/docs/java/taskqueue/push/creating-handlers#writing_a_push_task_request_handler)
 	// and the documentation for the request handlers in the language your app is
 	// written in e.g.
-	// [Python Request Handler](/appengine/docs/python/tools/webapp/requesthandlerclass).
+	// [Python Request Handler](https://cloud.google.com/appengine/docs/python/tools/webapp/requesthandlerclass).
 	HttpMethod HttpMethod `protobuf:"varint,1,opt,name=http_method,json=httpMethod,proto3,enum=google.cloud.tasks.v2beta2.HttpMethod" json:"http_method,omitempty"`
 	// Task-level setting for App Engine routing.
 	//
@@ -292,7 +292,7 @@ type AppEngineHttpRequest struct {
 	//
 	// This map contains the header field names and values.
 	// Headers can be set when the
-	// [task is created](google.cloud.tasks.v2beta2.CloudTasks.CreateTask).
+	// [task is created][google.cloud.tasks.v2beta2.CloudTasks.CreateTask].
 	// Repeated headers are not supported but a header value can contain commas.
 	//
 	// Cloud Tasks sets some headers to default values:
@@ -309,7 +309,7 @@ type AppEngineHttpRequest struct {
 	// * `Content-Type`: By default, the `Content-Type` header is set to
 	//   `"application/octet-stream"`. The default can be overridden by explicitly
 	//   setting `Content-Type` to a particular media type when the
-	//   [task is created](google.cloud.tasks.v2beta2.CloudTasks.CreateTask).
+	//   [task is created][google.cloud.tasks.v2beta2.CloudTasks.CreateTask].
 	//   For example, `Content-Type` can be set to `"application/json"`.
 	// * `Content-Length`: This is computed by Cloud Tasks. This value is
 	//   output only.   It cannot be changed.
@@ -322,7 +322,7 @@ type AppEngineHttpRequest struct {
 	//
 	// In addition, Cloud Tasks sets some headers when the task is dispatched,
 	// such as headers containing information about the task; see
-	// [request headers](/appengine/docs/python/taskqueue/push/creating-handlers#reading_request_headers).
+	// [request headers](https://cloud.google.com/appengine/docs/python/taskqueue/push/creating-handlers#reading_request_headers).
 	// These headers are set only when the task is dispatched, so they are not
 	// visible when the task is returned in a Cloud Tasks response.
 	//
@@ -346,7 +346,7 @@ func (m *AppEngineHttpRequest) Reset()         { *m = AppEngineHttpRequest{} }
 func (m *AppEngineHttpRequest) String() string { return proto.CompactTextString(m) }
 func (*AppEngineHttpRequest) ProtoMessage()    {}
 func (*AppEngineHttpRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_target_b871819819dd67b9, []int{3}
+	return fileDescriptor_target_97396313f988895e, []int{3}
 }
 func (m *AppEngineHttpRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AppEngineHttpRequest.Unmarshal(m, b)
@@ -404,10 +404,10 @@ func (m *AppEngineHttpRequest) GetPayload() []byte {
 // App Engine Routing.
 //
 // For more information about services, versions, and instances see
-// [An Overview of App Engine](/appengine/docs/python/an-overview-of-app-engine),
-// [Microservices Architecture on Google App Engine](/appengine/docs/python/microservices-on-app-engine),
-// [App Engine Standard request routing](/appengine/docs/standard/python/how-requests-are-routed),
-// and [App Engine Flex request routing](/appengine/docs/flexible/python/how-requests-are-routed).
+// [An Overview of App Engine](https://cloud.google.com/appengine/docs/python/an-overview-of-app-engine),
+// [Microservices Architecture on Google App Engine](https://cloud.google.com/appengine/docs/python/microservices-on-app-engine),
+// [App Engine Standard request routing](https://cloud.google.com/appengine/docs/standard/python/how-requests-are-routed),
+// and [App Engine Flex request routing](https://cloud.google.com/appengine/docs/flexible/python/how-requests-are-routed).
 type AppEngineRouting struct {
 	// App service.
 	//
@@ -449,15 +449,15 @@ type AppEngineRouting struct {
 	// the task is attempted.
 	//
 	// Requests can only be sent to a specific instance if
-	// [manual scaling is used in App Engine Standard](/appengine/docs/python/an-overview-of-app-engine?hl=en_US#scaling_types_and_instance_classes).
+	// [manual scaling is used in App Engine Standard](https://cloud.google.com/appengine/docs/python/an-overview-of-app-engine?hl=en_US#scaling_types_and_instance_classes).
 	// App Engine Flex does not support instances. For more information, see
-	// [App Engine Standard request routing](/appengine/docs/standard/python/how-requests-are-routed)
-	// and [App Engine Flex request routing](/appengine/docs/flexible/python/how-requests-are-routed).
+	// [App Engine Standard request routing](https://cloud.google.com/appengine/docs/standard/python/how-requests-are-routed)
+	// and [App Engine Flex request routing](https://cloud.google.com/appengine/docs/flexible/python/how-requests-are-routed).
 	Instance string `protobuf:"bytes,3,opt,name=instance,proto3" json:"instance,omitempty"`
 	// Output only. The host that the task is sent to.
 	//
 	// For more information, see
-	// [How Requests are Routed](/appengine/docs/standard/python/how-requests-are-routed).
+	// [How Requests are Routed](https://cloud.google.com/appengine/docs/standard/python/how-requests-are-routed).
 	//
 	// The host is constructed as:
 	//
@@ -524,7 +524,7 @@ func (m *AppEngineRouting) Reset()         { *m = AppEngineRouting{} }
 func (m *AppEngineRouting) String() string { return proto.CompactTextString(m) }
 func (*AppEngineRouting) ProtoMessage()    {}
 func (*AppEngineRouting) Descriptor() ([]byte, []int) {
-	return fileDescriptor_target_b871819819dd67b9, []int{4}
+	return fileDescriptor_target_97396313f988895e, []int{4}
 }
 func (m *AppEngineRouting) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AppEngineRouting.Unmarshal(m, b)
@@ -583,10 +583,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/cloud/tasks/v2beta2/target.proto", fileDescriptor_target_b871819819dd67b9)
+	proto.RegisterFile("google/cloud/tasks/v2beta2/target.proto", fileDescriptor_target_97396313f988895e)
 }
 
-var fileDescriptor_target_b871819819dd67b9 = []byte{
+var fileDescriptor_target_97396313f988895e = []byte{
 	// 557 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xcf, 0x6f, 0xd3, 0x4c,
 	0x10, 0xfd, 0x5c, 0xa7, 0xbf, 0xc6, 0xd1, 0x27, 0x6b, 0xa9, 0x84, 0x95, 0xa2, 0xaa, 0xe4, 0x00,

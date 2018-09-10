@@ -25,6 +25,8 @@ tested by HashiCorp.
 
 [Azure](/docs/providers/azurerm/index.html)
 
+[Azure Stack](/docs/providers/azurestack/index.html)
+
 [Google Cloud](/docs/providers/google/index.html)
 
 [Oracle Cloud Platform](/docs/providers/oraclepaas/index.html)
@@ -32,5 +34,7 @@ tested by HashiCorp.
 [Oracle Public Cloud](/docs/providers/opc/index.html)
 
 [VMware NSX-T](/docs/providers/nsxt/index.html)
+
+[vCloud Director](/docs/providers/vcd/index.html)
 
 [VMware vSphere](/docs/providers/vsphere/index.html)

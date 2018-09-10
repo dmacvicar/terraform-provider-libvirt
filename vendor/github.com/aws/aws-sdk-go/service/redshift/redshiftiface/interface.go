@@ -195,6 +195,10 @@ type RedshiftAPI interface {
 	DescribeClusterSubnetGroupsPages(*redshift.DescribeClusterSubnetGroupsInput, func(*redshift.DescribeClusterSubnetGroupsOutput, bool) bool) error
 	DescribeClusterSubnetGroupsPagesWithContext(aws.Context, *redshift.DescribeClusterSubnetGroupsInput, func(*redshift.DescribeClusterSubnetGroupsOutput, bool) bool, ...request.Option) error
 
+	DescribeClusterTracks(*redshift.DescribeClusterTracksInput) (*redshift.DescribeClusterTracksOutput, error)
+	DescribeClusterTracksWithContext(aws.Context, *redshift.DescribeClusterTracksInput, ...request.Option) (*redshift.DescribeClusterTracksOutput, error)
+	DescribeClusterTracksRequest(*redshift.DescribeClusterTracksInput) (*request.Request, *redshift.DescribeClusterTracksOutput)
+
 	DescribeClusterVersions(*redshift.DescribeClusterVersionsInput) (*redshift.DescribeClusterVersionsOutput, error)
 	DescribeClusterVersionsWithContext(aws.Context, *redshift.DescribeClusterVersionsInput, ...request.Option) (*redshift.DescribeClusterVersionsOutput, error)
 	DescribeClusterVersionsRequest(*redshift.DescribeClusterVersionsInput) (*request.Request, *redshift.DescribeClusterVersionsOutput)
@@ -352,6 +356,10 @@ type RedshiftAPI interface {
 	ResetClusterParameterGroup(*redshift.ResetClusterParameterGroupInput) (*redshift.ClusterParameterGroupNameMessage, error)
 	ResetClusterParameterGroupWithContext(aws.Context, *redshift.ResetClusterParameterGroupInput, ...request.Option) (*redshift.ClusterParameterGroupNameMessage, error)
 	ResetClusterParameterGroupRequest(*redshift.ResetClusterParameterGroupInput) (*request.Request, *redshift.ClusterParameterGroupNameMessage)
+
+	ResizeCluster(*redshift.ResizeClusterInput) (*redshift.ResizeClusterOutput, error)
+	ResizeClusterWithContext(aws.Context, *redshift.ResizeClusterInput, ...request.Option) (*redshift.ResizeClusterOutput, error)
+	ResizeClusterRequest(*redshift.ResizeClusterInput) (*request.Request, *redshift.ResizeClusterOutput)
 
 	RestoreFromClusterSnapshot(*redshift.RestoreFromClusterSnapshotInput) (*redshift.RestoreFromClusterSnapshotOutput, error)
 	RestoreFromClusterSnapshotWithContext(aws.Context, *redshift.RestoreFromClusterSnapshotInput, ...request.Option) (*redshift.RestoreFromClusterSnapshotOutput, error)

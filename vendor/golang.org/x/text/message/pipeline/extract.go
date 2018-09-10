@@ -6,6 +6,7 @@ package pipeline
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/constant"
@@ -42,7 +43,9 @@ func Extract(c *Config) (*State, error) {
 		return nil, wrap(err, "")
 	}
 
-	x.seedEndpoints()
+	if err := x.seedEndpoints(); err != nil {
+		return nil, err
+	}
 	x.extractMessages()
 
 	return &State{
@@ -96,8 +99,12 @@ func (x *extracter) globalData(pos token.Pos) *constData {
 	return cd
 }
 
-func (x *extracter) seedEndpoints() {
-	pkg := x.prog.Package(x.iprog.Package("golang.org/x/text/message").Pkg)
+func (x *extracter) seedEndpoints() error {
+	pkgInfo := x.iprog.Package("golang.org/x/text/message")
+	if pkgInfo == nil {
+		return errors.New("pipeline: golang.org/x/text/message is not imported")
+	}
+	pkg := x.prog.Package(pkgInfo.Pkg)
 	typ := types.NewPointer(pkg.Type("Printer").Type())
 
 	x.processGlobalVars()
@@ -117,6 +124,7 @@ func (x *extracter) seedEndpoints() {
 		argPos:    3,
 		isMethod:  true,
 	})
+	return nil
 }
 
 // processGlobalVars finds string constants that are assigned to global

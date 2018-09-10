@@ -14,6 +14,7 @@ func TestNewVersion(t *testing.T) {
 		{"1.0", false},
 		{"1", false},
 		{"1.2.beta", true},
+		{"1.21.beta", true},
 		{"foo", true},
 		{"1.2-5", false},
 		{"1.2-beta.5", false},
@@ -171,8 +172,10 @@ func TestVersionPrerelease(t *testing.T) {
 		{"1.2.3", ""},
 		{"1.2-beta", "beta"},
 		{"1.2.0-x.Y.0", "x.Y.0"},
+		{"1.2.0-7.Y.0", "7.Y.0"},
 		{"1.2.0-x.Y.0+metadata", "x.Y.0"},
 		{"1.2.0-metadata-1.2.0+metadata~dist", "metadata-1.2.0"},
+		{"17.03.0-ce", "ce"}, // zero-padded fields
 	}
 
 	for _, tc := range cases {
@@ -199,6 +202,7 @@ func TestVersionSegments(t *testing.T) {
 		{"1-x.Y.0", []int{1, 0, 0}},
 		{"1.2.0-x.Y.0+metadata", []int{1, 2, 0}},
 		{"1.2.0-metadata-1.2.0+metadata~dist", []int{1, 2, 0}},
+		{"17.03.0-ce", []int{17, 3, 0}}, // zero-padded fields
 	}
 
 	for _, tc := range cases {
@@ -238,6 +242,15 @@ func TestVersionSegments64(t *testing.T) {
 		if !reflect.DeepEqual(actual, expected) {
 			t.Fatalf("expected: %#v\nactual: %#v", expected, actual)
 		}
+
+		{
+			expected := actual[0]
+			actual[0]++
+			actual = v.Segments64()
+			if actual[0] != expected {
+				t.Fatalf("Segments64 is mutable")
+			}
+		}
 	}
 }
 
@@ -248,6 +261,7 @@ func TestVersionString(t *testing.T) {
 		{"1.2.0-x.Y.0", "1.2.0-x.Y.0"},
 		{"1.2.0-x.Y.0+metadata", "1.2.0-x.Y.0+metadata"},
 		{"1.2.0-metadata-1.2.0+metadata~dist", "1.2.0-metadata-1.2.0+metadata~dist"},
+		{"17.03.0-ce", "17.3.0-ce"}, // zero-padded fields
 	}
 
 	for _, tc := range cases {
@@ -260,6 +274,9 @@ func TestVersionString(t *testing.T) {
 		expected := tc[1]
 		if actual != expected {
 			t.Fatalf("expected: %s\nactual: %s", expected, actual)
+		}
+		if actual := v.Original(); actual != tc[0] {
+			t.Fatalf("expected original: %q\nactual: %q", tc[0], actual)
 		}
 	}
 }

@@ -53,7 +53,7 @@ func (x ClusterOperationStatus_State) String() string {
 	return proto.EnumName(ClusterOperationStatus_State_name, int32(x))
 }
 func (ClusterOperationStatus_State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_operations_1e77fee15a492d08, []int{0, 0}
+	return fileDescriptor_operations_7be03f6a43d7bf8b, []int{0, 0}
 }
 
 // The status of the operation.
@@ -75,7 +75,7 @@ func (m *ClusterOperationStatus) Reset()         { *m = ClusterOperationStatus{}
 func (m *ClusterOperationStatus) String() string { return proto.CompactTextString(m) }
 func (*ClusterOperationStatus) ProtoMessage()    {}
 func (*ClusterOperationStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_operations_1e77fee15a492d08, []int{0}
+	return fileDescriptor_operations_7be03f6a43d7bf8b, []int{0}
 }
 func (m *ClusterOperationStatus) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ClusterOperationStatus.Unmarshal(m, b)
@@ -150,7 +150,7 @@ func (m *ClusterOperationMetadata) Reset()         { *m = ClusterOperationMetada
 func (m *ClusterOperationMetadata) String() string { return proto.CompactTextString(m) }
 func (*ClusterOperationMetadata) ProtoMessage()    {}
 func (*ClusterOperationMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_operations_1e77fee15a492d08, []int{1}
+	return fileDescriptor_operations_7be03f6a43d7bf8b, []int{1}
 }
 func (m *ClusterOperationMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ClusterOperationMetadata.Unmarshal(m, b)
@@ -234,10 +234,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/cloud/dataproc/v1/operations.proto", fileDescriptor_operations_1e77fee15a492d08)
+	proto.RegisterFile("google/cloud/dataproc/v1/operations.proto", fileDescriptor_operations_7be03f6a43d7bf8b)
 }
 
-var fileDescriptor_operations_1e77fee15a492d08 = []byte{
+var fileDescriptor_operations_7be03f6a43d7bf8b = []byte{
 	// 553 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0x61, 0x6b, 0xd3, 0x40,
 	0x18, 0x36, 0xcd, 0xb6, 0xb6, 0x97, 0xb5, 0x96, 0x43, 0xe4, 0x88, 0x83, 0xc5, 0x8a, 0x50, 0xbf,

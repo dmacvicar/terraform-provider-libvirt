@@ -45,7 +45,7 @@ func (m *ResultSet) Reset()         { *m = ResultSet{} }
 func (m *ResultSet) String() string { return proto.CompactTextString(m) }
 func (*ResultSet) ProtoMessage()    {}
 func (*ResultSet) Descriptor() ([]byte, []int) {
-	return fileDescriptor_result_set_77baee03a3bdbfba, []int{0}
+	return fileDescriptor_result_set_d3beff64c1ecf5a2, []int{0}
 }
 func (m *ResultSet) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ResultSet.Unmarshal(m, b)
@@ -191,7 +191,7 @@ func (m *PartialResultSet) Reset()         { *m = PartialResultSet{} }
 func (m *PartialResultSet) String() string { return proto.CompactTextString(m) }
 func (*PartialResultSet) ProtoMessage()    {}
 func (*PartialResultSet) Descriptor() ([]byte, []int) {
-	return fileDescriptor_result_set_77baee03a3bdbfba, []int{1}
+	return fileDescriptor_result_set_d3beff64c1ecf5a2, []int{1}
 }
 func (m *PartialResultSet) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PartialResultSet.Unmarshal(m, b)
@@ -269,7 +269,7 @@ func (m *ResultSetMetadata) Reset()         { *m = ResultSetMetadata{} }
 func (m *ResultSetMetadata) String() string { return proto.CompactTextString(m) }
 func (*ResultSetMetadata) ProtoMessage()    {}
 func (*ResultSetMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_result_set_77baee03a3bdbfba, []int{2}
+	return fileDescriptor_result_set_d3beff64c1ecf5a2, []int{2}
 }
 func (m *ResultSetMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ResultSetMetadata.Unmarshal(m, b)
@@ -326,7 +326,7 @@ func (m *ResultSetStats) Reset()         { *m = ResultSetStats{} }
 func (m *ResultSetStats) String() string { return proto.CompactTextString(m) }
 func (*ResultSetStats) ProtoMessage()    {}
 func (*ResultSetStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_result_set_77baee03a3bdbfba, []int{3}
+	return fileDescriptor_result_set_d3beff64c1ecf5a2, []int{3}
 }
 func (m *ResultSetStats) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ResultSetStats.Unmarshal(m, b)
@@ -368,10 +368,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/spanner/v1/result_set.proto", fileDescriptor_result_set_77baee03a3bdbfba)
+	proto.RegisterFile("google/spanner/v1/result_set.proto", fileDescriptor_result_set_d3beff64c1ecf5a2)
 }
 
-var fileDescriptor_result_set_77baee03a3bdbfba = []byte{
+var fileDescriptor_result_set_d3beff64c1ecf5a2 = []byte{
 	// 501 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x93, 0xcd, 0x6e, 0x13, 0x31,
 	0x14, 0x85, 0xe5, 0xf4, 0x87, 0xd4, 0x13, 0x10, 0xb5, 0x04, 0x1d, 0x45, 0x05, 0xa5, 0x29, 0x8b,

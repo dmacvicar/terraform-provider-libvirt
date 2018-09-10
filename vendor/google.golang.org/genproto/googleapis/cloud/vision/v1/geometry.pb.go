@@ -34,7 +34,7 @@ func (m *Vertex) Reset()         { *m = Vertex{} }
 func (m *Vertex) String() string { return proto.CompactTextString(m) }
 func (*Vertex) ProtoMessage()    {}
 func (*Vertex) Descriptor() ([]byte, []int) {
-	return fileDescriptor_geometry_3423d75926342ff3, []int{0}
+	return fileDescriptor_geometry_0f6b64e4b94968be, []int{0}
 }
 func (m *Vertex) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Vertex.Unmarshal(m, b)
@@ -85,7 +85,7 @@ func (m *NormalizedVertex) Reset()         { *m = NormalizedVertex{} }
 func (m *NormalizedVertex) String() string { return proto.CompactTextString(m) }
 func (*NormalizedVertex) ProtoMessage()    {}
 func (*NormalizedVertex) Descriptor() ([]byte, []int) {
-	return fileDescriptor_geometry_3423d75926342ff3, []int{1}
+	return fileDescriptor_geometry_0f6b64e4b94968be, []int{1}
 }
 func (m *NormalizedVertex) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NormalizedVertex.Unmarshal(m, b)
@@ -134,7 +134,7 @@ func (m *BoundingPoly) Reset()         { *m = BoundingPoly{} }
 func (m *BoundingPoly) String() string { return proto.CompactTextString(m) }
 func (*BoundingPoly) ProtoMessage()    {}
 func (*BoundingPoly) Descriptor() ([]byte, []int) {
-	return fileDescriptor_geometry_3423d75926342ff3, []int{2}
+	return fileDescriptor_geometry_0f6b64e4b94968be, []int{2}
 }
 func (m *BoundingPoly) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BoundingPoly.Unmarshal(m, b)
@@ -187,7 +187,7 @@ func (m *Position) Reset()         { *m = Position{} }
 func (m *Position) String() string { return proto.CompactTextString(m) }
 func (*Position) ProtoMessage()    {}
 func (*Position) Descriptor() ([]byte, []int) {
-	return fileDescriptor_geometry_3423d75926342ff3, []int{3}
+	return fileDescriptor_geometry_0f6b64e4b94968be, []int{3}
 }
 func (m *Position) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Position.Unmarshal(m, b)
@@ -236,10 +236,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/cloud/vision/v1/geometry.proto", fileDescriptor_geometry_3423d75926342ff3)
+	proto.RegisterFile("google/cloud/vision/v1/geometry.proto", fileDescriptor_geometry_0f6b64e4b94968be)
 }
 
-var fileDescriptor_geometry_3423d75926342ff3 = []byte{
+var fileDescriptor_geometry_0f6b64e4b94968be = []byte{
 	// 285 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x91, 0x41, 0x4b, 0xc3, 0x30,
 	0x14, 0xc7, 0x49, 0xa7, 0x63, 0xc4, 0x09, 0x52, 0x41, 0x8a, 0x07, 0x19, 0x45, 0xa1, 0xa7, 0x84,

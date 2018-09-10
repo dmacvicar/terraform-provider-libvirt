@@ -150,6 +150,7 @@ type CapsHost struct {
 	MigrationFeatures *CapsHostMigrationFeatures `xml:"migration_features"`
 	NUMA              *CapsHostNUMATopology      `xml:"topology"`
 	Cache             *CapsHostCache             `xml:"cache"`
+	MemoryBandwidth   *CapsHostMemoryBandwidth   `xml:"memory_bandwidth"`
 	SecModel          []CapsHostSecModel         `xml:"secmodel"`
 }
 
@@ -186,6 +187,22 @@ type CapsHostCacheControl struct {
 	Unit        string `xml:"unit,attr"`
 	Type        string `xml:"type,attr"`
 	MaxAllows   uint   `xml:"maxAllocs,attr"`
+}
+
+type CapsHostMemoryBandwidth struct {
+	Nodes []CapsHostMemoryBandwidthNode `xml:"node"`
+}
+
+type CapsHostMemoryBandwidthNode struct {
+	ID      uint                                `xml:"id,attr"`
+	CPUs    string                              `xml:"cpus,attr"`
+	Control *CapsHostMemoryBandwidthNodeControl `xml:"control"`
+}
+
+type CapsHostMemoryBandwidthNodeControl struct {
+	Granularity uint `xml:"granularity,attr"`
+	Min         uint `xml:"min,attr"`
+	MaxAllocs   uint `xml:"maxAllocs,attr"`
 }
 
 type CapsGuestMachine struct {

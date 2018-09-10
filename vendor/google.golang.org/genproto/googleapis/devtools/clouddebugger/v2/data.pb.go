@@ -65,7 +65,7 @@ func (x StatusMessage_Reference) String() string {
 	return proto.EnumName(StatusMessage_Reference_name, int32(x))
 }
 func (StatusMessage_Reference) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_data_96a058f081836bb3, []int{1, 0}
+	return fileDescriptor_data_03347f8b18bb29e5, []int{1, 0}
 }
 
 // Actions that can be taken when a breakpoint hits.
@@ -95,7 +95,7 @@ func (x Breakpoint_Action) String() string {
 	return proto.EnumName(Breakpoint_Action_name, int32(x))
 }
 func (Breakpoint_Action) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_data_96a058f081836bb3, []int{5, 0}
+	return fileDescriptor_data_03347f8b18bb29e5, []int{5, 0}
 }
 
 // Log severity levels.
@@ -125,7 +125,7 @@ func (x Breakpoint_LogLevel) String() string {
 	return proto.EnumName(Breakpoint_LogLevel_name, int32(x))
 }
 func (Breakpoint_LogLevel) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_data_96a058f081836bb3, []int{5, 1}
+	return fileDescriptor_data_03347f8b18bb29e5, []int{5, 1}
 }
 
 // Represents a message with parameters.
@@ -151,7 +151,7 @@ func (m *FormatMessage) Reset()         { *m = FormatMessage{} }
 func (m *FormatMessage) String() string { return proto.CompactTextString(m) }
 func (*FormatMessage) ProtoMessage()    {}
 func (*FormatMessage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_data_96a058f081836bb3, []int{0}
+	return fileDescriptor_data_03347f8b18bb29e5, []int{0}
 }
 func (m *FormatMessage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FormatMessage.Unmarshal(m, b)
@@ -206,7 +206,7 @@ func (m *StatusMessage) Reset()         { *m = StatusMessage{} }
 func (m *StatusMessage) String() string { return proto.CompactTextString(m) }
 func (*StatusMessage) ProtoMessage()    {}
 func (*StatusMessage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_data_96a058f081836bb3, []int{1}
+	return fileDescriptor_data_03347f8b18bb29e5, []int{1}
 }
 func (m *StatusMessage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StatusMessage.Unmarshal(m, b)
@@ -262,7 +262,7 @@ func (m *SourceLocation) Reset()         { *m = SourceLocation{} }
 func (m *SourceLocation) String() string { return proto.CompactTextString(m) }
 func (*SourceLocation) ProtoMessage()    {}
 func (*SourceLocation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_data_96a058f081836bb3, []int{2}
+	return fileDescriptor_data_03347f8b18bb29e5, []int{2}
 }
 func (m *SourceLocation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SourceLocation.Unmarshal(m, b)
@@ -450,7 +450,7 @@ func (m *Variable) Reset()         { *m = Variable{} }
 func (m *Variable) String() string { return proto.CompactTextString(m) }
 func (*Variable) ProtoMessage()    {}
 func (*Variable) Descriptor() ([]byte, []int) {
-	return fileDescriptor_data_96a058f081836bb3, []int{3}
+	return fileDescriptor_data_03347f8b18bb29e5, []int{3}
 }
 func (m *Variable) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Variable.Unmarshal(m, b)
@@ -533,7 +533,7 @@ func (m *StackFrame) Reset()         { *m = StackFrame{} }
 func (m *StackFrame) String() string { return proto.CompactTextString(m) }
 func (*StackFrame) ProtoMessage()    {}
 func (*StackFrame) Descriptor() ([]byte, []int) {
-	return fileDescriptor_data_96a058f081836bb3, []int{4}
+	return fileDescriptor_data_03347f8b18bb29e5, []int{4}
 }
 func (m *StackFrame) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StackFrame.Unmarshal(m, b)
@@ -671,7 +671,7 @@ func (m *Breakpoint) Reset()         { *m = Breakpoint{} }
 func (m *Breakpoint) String() string { return proto.CompactTextString(m) }
 func (*Breakpoint) ProtoMessage()    {}
 func (*Breakpoint) Descriptor() ([]byte, []int) {
-	return fileDescriptor_data_96a058f081836bb3, []int{5}
+	return fileDescriptor_data_03347f8b18bb29e5, []int{5}
 }
 func (m *Breakpoint) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Breakpoint.Unmarshal(m, b)
@@ -859,7 +859,7 @@ func (m *Debuggee) Reset()         { *m = Debuggee{} }
 func (m *Debuggee) String() string { return proto.CompactTextString(m) }
 func (*Debuggee) ProtoMessage()    {}
 func (*Debuggee) Descriptor() ([]byte, []int) {
-	return fileDescriptor_data_96a058f081836bb3, []int{6}
+	return fileDescriptor_data_03347f8b18bb29e5, []int{6}
 }
 func (m *Debuggee) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Debuggee.Unmarshal(m, b)
@@ -972,10 +972,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/devtools/clouddebugger/v2/data.proto", fileDescriptor_data_96a058f081836bb3)
+	proto.RegisterFile("google/devtools/clouddebugger/v2/data.proto", fileDescriptor_data_03347f8b18bb29e5)
 }
 
-var fileDescriptor_data_96a058f081836bb3 = []byte{
+var fileDescriptor_data_03347f8b18bb29e5 = []byte{
 	// 1270 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x57, 0x5d, 0x92, 0xda, 0xc6,
 	0x16, 0x36, 0x3f, 0x03, 0xd2, 0x61, 0x60, 0x70, 0x5f, 0xfb, 0x96, 0x3c, 0xd7, 0x77, 0x4c, 0x71,

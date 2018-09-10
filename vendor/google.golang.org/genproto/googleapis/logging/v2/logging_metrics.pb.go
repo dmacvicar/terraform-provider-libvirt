@@ -51,7 +51,7 @@ func (x LogMetric_ApiVersion) String() string {
 	return proto.EnumName(LogMetric_ApiVersion_name, int32(x))
 }
 func (LogMetric_ApiVersion) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_logging_metrics_2af73e5e02c8b3e5, []int{0, 0}
+	return fileDescriptor_logging_metrics_447f4682ca2f30ca, []int{0, 0}
 }
 
 // Describes a logs-based metric.  The value of the metric is the
@@ -161,7 +161,7 @@ func (m *LogMetric) Reset()         { *m = LogMetric{} }
 func (m *LogMetric) String() string { return proto.CompactTextString(m) }
 func (*LogMetric) ProtoMessage()    {}
 func (*LogMetric) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_metrics_2af73e5e02c8b3e5, []int{0}
+	return fileDescriptor_logging_metrics_447f4682ca2f30ca, []int{0}
 }
 func (m *LogMetric) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogMetric.Unmarshal(m, b)
@@ -262,7 +262,7 @@ func (m *ListLogMetricsRequest) Reset()         { *m = ListLogMetricsRequest{} }
 func (m *ListLogMetricsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListLogMetricsRequest) ProtoMessage()    {}
 func (*ListLogMetricsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_metrics_2af73e5e02c8b3e5, []int{1}
+	return fileDescriptor_logging_metrics_447f4682ca2f30ca, []int{1}
 }
 func (m *ListLogMetricsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListLogMetricsRequest.Unmarshal(m, b)
@@ -320,7 +320,7 @@ func (m *ListLogMetricsResponse) Reset()         { *m = ListLogMetricsResponse{}
 func (m *ListLogMetricsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListLogMetricsResponse) ProtoMessage()    {}
 func (*ListLogMetricsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_metrics_2af73e5e02c8b3e5, []int{2}
+	return fileDescriptor_logging_metrics_447f4682ca2f30ca, []int{2}
 }
 func (m *ListLogMetricsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListLogMetricsResponse.Unmarshal(m, b)
@@ -369,7 +369,7 @@ func (m *GetLogMetricRequest) Reset()         { *m = GetLogMetricRequest{} }
 func (m *GetLogMetricRequest) String() string { return proto.CompactTextString(m) }
 func (*GetLogMetricRequest) ProtoMessage()    {}
 func (*GetLogMetricRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_metrics_2af73e5e02c8b3e5, []int{3}
+	return fileDescriptor_logging_metrics_447f4682ca2f30ca, []int{3}
 }
 func (m *GetLogMetricRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetLogMetricRequest.Unmarshal(m, b)
@@ -416,7 +416,7 @@ func (m *CreateLogMetricRequest) Reset()         { *m = CreateLogMetricRequest{}
 func (m *CreateLogMetricRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateLogMetricRequest) ProtoMessage()    {}
 func (*CreateLogMetricRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_metrics_2af73e5e02c8b3e5, []int{4}
+	return fileDescriptor_logging_metrics_447f4682ca2f30ca, []int{4}
 }
 func (m *CreateLogMetricRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateLogMetricRequest.Unmarshal(m, b)
@@ -471,7 +471,7 @@ func (m *UpdateLogMetricRequest) Reset()         { *m = UpdateLogMetricRequest{}
 func (m *UpdateLogMetricRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateLogMetricRequest) ProtoMessage()    {}
 func (*UpdateLogMetricRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_metrics_2af73e5e02c8b3e5, []int{5}
+	return fileDescriptor_logging_metrics_447f4682ca2f30ca, []int{5}
 }
 func (m *UpdateLogMetricRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateLogMetricRequest.Unmarshal(m, b)
@@ -520,7 +520,7 @@ func (m *DeleteLogMetricRequest) Reset()         { *m = DeleteLogMetricRequest{}
 func (m *DeleteLogMetricRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteLogMetricRequest) ProtoMessage()    {}
 func (*DeleteLogMetricRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logging_metrics_2af73e5e02c8b3e5, []int{6}
+	return fileDescriptor_logging_metrics_447f4682ca2f30ca, []int{6}
 }
 func (m *DeleteLogMetricRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteLogMetricRequest.Unmarshal(m, b)
@@ -774,10 +774,10 @@ var _MetricsServiceV2_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("google/logging/v2/logging_metrics.proto", fileDescriptor_logging_metrics_2af73e5e02c8b3e5)
+	proto.RegisterFile("google/logging/v2/logging_metrics.proto", fileDescriptor_logging_metrics_447f4682ca2f30ca)
 }
 
-var fileDescriptor_logging_metrics_2af73e5e02c8b3e5 = []byte{
+var fileDescriptor_logging_metrics_447f4682ca2f30ca = []byte{
 	// 850 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x56, 0x41, 0x6f, 0x1b, 0x45,
 	0x14, 0x66, 0x9c, 0xc4, 0x69, 0x5e, 0x68, 0xec, 0x4e, 0x5b, 0x77, 0xe5, 0xa6, 0xaa, 0xd9, 0x43,

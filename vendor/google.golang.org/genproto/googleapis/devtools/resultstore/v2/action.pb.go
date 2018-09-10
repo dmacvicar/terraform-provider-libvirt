@@ -54,7 +54,7 @@ func (x ExecutionStrategy) String() string {
 	return proto.EnumName(ExecutionStrategy_name, int32(x))
 }
 func (ExecutionStrategy) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{0}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{0}
 }
 
 // Most build systems cache build results to speed up incremental builds.
@@ -90,7 +90,7 @@ func (x TestCaching) String() string {
 	return proto.EnumName(TestCaching_name, int32(x))
 }
 func (TestCaching) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{1}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{1}
 }
 
 // Errors in file post-processing are categorized using this enum.
@@ -140,7 +140,7 @@ func (x FileProcessingErrorType) String() string {
 	return proto.EnumName(FileProcessingErrorType_name, int32(x))
 }
 func (FileProcessingErrorType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{2}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{2}
 }
 
 // An action that happened as part of a configured target. This action could be
@@ -229,7 +229,7 @@ func (m *Action) Reset()         { *m = Action{} }
 func (m *Action) String() string { return proto.CompactTextString(m) }
 func (*Action) ProtoMessage()    {}
 func (*Action) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{0}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{0}
 }
 func (m *Action) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Action.Unmarshal(m, b)
@@ -248,27 +248,6 @@ func (m *Action) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_Action proto.InternalMessageInfo
-
-type isAction_ActionType interface {
-	isAction_ActionType()
-}
-
-type Action_BuildAction struct {
-	BuildAction *BuildAction `protobuf:"bytes,9,opt,name=build_action,json=buildAction,proto3,oneof"`
-}
-type Action_TestAction struct {
-	TestAction *TestAction `protobuf:"bytes,10,opt,name=test_action,json=testAction,proto3,oneof"`
-}
-
-func (*Action_BuildAction) isAction_ActionType() {}
-func (*Action_TestAction) isAction_ActionType()  {}
-
-func (m *Action) GetActionType() isAction_ActionType {
-	if m != nil {
-		return m.ActionType
-	}
-	return nil
-}
 
 func (m *Action) GetName() string {
 	if m != nil {
@@ -294,6 +273,29 @@ func (m *Action) GetStatusAttributes() *StatusAttributes {
 func (m *Action) GetTiming() *Timing {
 	if m != nil {
 		return m.Timing
+	}
+	return nil
+}
+
+type isAction_ActionType interface {
+	isAction_ActionType()
+}
+
+type Action_BuildAction struct {
+	BuildAction *BuildAction `protobuf:"bytes,9,opt,name=build_action,json=buildAction,proto3,oneof"`
+}
+
+type Action_TestAction struct {
+	TestAction *TestAction `protobuf:"bytes,10,opt,name=test_action,json=testAction,proto3,oneof"`
+}
+
+func (*Action_BuildAction) isAction_ActionType() {}
+
+func (*Action_TestAction) isAction_ActionType() {}
+
+func (m *Action) GetActionType() isAction_ActionType {
+	if m != nil {
+		return m.ActionType
 	}
 	return nil
 }
@@ -454,7 +456,7 @@ func (m *Action_Id) Reset()         { *m = Action_Id{} }
 func (m *Action_Id) String() string { return proto.CompactTextString(m) }
 func (*Action_Id) ProtoMessage()    {}
 func (*Action_Id) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{0, 0}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{0, 0}
 }
 func (m *Action_Id) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Action_Id.Unmarshal(m, b)
@@ -525,7 +527,7 @@ func (m *BuildAction) Reset()         { *m = BuildAction{} }
 func (m *BuildAction) String() string { return proto.CompactTextString(m) }
 func (*BuildAction) ProtoMessage()    {}
 func (*BuildAction) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{1}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{1}
 }
 func (m *BuildAction) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildAction.Unmarshal(m, b)
@@ -604,7 +606,7 @@ func (m *TestAction) Reset()         { *m = TestAction{} }
 func (m *TestAction) String() string { return proto.CompactTextString(m) }
 func (*TestAction) ProtoMessage()    {}
 func (*TestAction) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{2}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{2}
 }
 func (m *TestAction) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TestAction.Unmarshal(m, b)
@@ -694,7 +696,7 @@ func (m *ActionAttributes) Reset()         { *m = ActionAttributes{} }
 func (m *ActionAttributes) String() string { return proto.CompactTextString(m) }
 func (*ActionAttributes) ProtoMessage()    {}
 func (*ActionAttributes) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{3}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{3}
 }
 func (m *ActionAttributes) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ActionAttributes.Unmarshal(m, b)
@@ -764,7 +766,7 @@ func (m *InputFileInfo) Reset()         { *m = InputFileInfo{} }
 func (m *InputFileInfo) String() string { return proto.CompactTextString(m) }
 func (*InputFileInfo) ProtoMessage()    {}
 func (*InputFileInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{4}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{4}
 }
 func (m *InputFileInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InputFileInfo.Unmarshal(m, b)
@@ -833,7 +835,7 @@ func (m *LocalTestTiming) Reset()         { *m = LocalTestTiming{} }
 func (m *LocalTestTiming) String() string { return proto.CompactTextString(m) }
 func (*LocalTestTiming) ProtoMessage()    {}
 func (*LocalTestTiming) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{5}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{5}
 }
 func (m *LocalTestTiming) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LocalTestTiming.Unmarshal(m, b)
@@ -890,7 +892,7 @@ func (m *RemoteTestAttemptTiming) Reset()         { *m = RemoteTestAttemptTiming
 func (m *RemoteTestAttemptTiming) String() string { return proto.CompactTextString(m) }
 func (*RemoteTestAttemptTiming) ProtoMessage()    {}
 func (*RemoteTestAttemptTiming) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{6}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{6}
 }
 func (m *RemoteTestAttemptTiming) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RemoteTestAttemptTiming.Unmarshal(m, b)
@@ -961,7 +963,7 @@ func (m *RemoteTestTiming) Reset()         { *m = RemoteTestTiming{} }
 func (m *RemoteTestTiming) String() string { return proto.CompactTextString(m) }
 func (*RemoteTestTiming) ProtoMessage()    {}
 func (*RemoteTestTiming) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{7}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{7}
 }
 func (m *RemoteTestTiming) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RemoteTestTiming.Unmarshal(m, b)
@@ -1026,7 +1028,7 @@ func (m *TestTiming) Reset()         { *m = TestTiming{} }
 func (m *TestTiming) String() string { return proto.CompactTextString(m) }
 func (*TestTiming) ProtoMessage()    {}
 func (*TestTiming) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{8}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{8}
 }
 func (m *TestTiming) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TestTiming.Unmarshal(m, b)
@@ -1053,11 +1055,13 @@ type isTestTiming_Location interface {
 type TestTiming_Local struct {
 	Local *LocalTestTiming `protobuf:"bytes,1,opt,name=local,proto3,oneof"`
 }
+
 type TestTiming_Remote struct {
 	Remote *RemoteTestTiming `protobuf:"bytes,2,opt,name=remote,proto3,oneof"`
 }
 
-func (*TestTiming_Local) isTestTiming_Location()  {}
+func (*TestTiming_Local) isTestTiming_Location() {}
+
 func (*TestTiming_Remote) isTestTiming_Location() {}
 
 func (m *TestTiming) GetLocation() isTestTiming_Location {
@@ -1189,7 +1193,7 @@ func (m *TestWarning) Reset()         { *m = TestWarning{} }
 func (m *TestWarning) String() string { return proto.CompactTextString(m) }
 func (*TestWarning) ProtoMessage()    {}
 func (*TestWarning) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{9}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{9}
 }
 func (m *TestWarning) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TestWarning.Unmarshal(m, b)
@@ -1231,7 +1235,7 @@ func (m *FileProcessingErrors) Reset()         { *m = FileProcessingErrors{} }
 func (m *FileProcessingErrors) String() string { return proto.CompactTextString(m) }
 func (*FileProcessingErrors) ProtoMessage()    {}
 func (*FileProcessingErrors) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{10}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{10}
 }
 func (m *FileProcessingErrors) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FileProcessingErrors.Unmarshal(m, b)
@@ -1280,7 +1284,7 @@ func (m *FileProcessingError) Reset()         { *m = FileProcessingError{} }
 func (m *FileProcessingError) String() string { return proto.CompactTextString(m) }
 func (*FileProcessingError) ProtoMessage()    {}
 func (*FileProcessingError) Descriptor() ([]byte, []int) {
-	return fileDescriptor_action_d83ec9d6d82ebb41, []int{11}
+	return fileDescriptor_action_3d39b774c5b44bf6, []int{11}
 }
 func (m *FileProcessingError) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FileProcessingError.Unmarshal(m, b)
@@ -1334,10 +1338,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/devtools/resultstore/v2/action.proto", fileDescriptor_action_d83ec9d6d82ebb41)
+	proto.RegisterFile("google/devtools/resultstore/v2/action.proto", fileDescriptor_action_3d39b774c5b44bf6)
 }
 
-var fileDescriptor_action_d83ec9d6d82ebb41 = []byte{
+var fileDescriptor_action_3d39b774c5b44bf6 = []byte{
 	// 1658 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x58, 0x5f, 0x6f, 0x23, 0x49,
 	0x11, 0x5f, 0xdb, 0x49, 0xd6, 0x2e, 0xc7, 0xce, 0xb8, 0x93, 0xdd, 0xf5, 0x2d, 0x70, 0x2c, 0x06,

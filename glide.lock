@@ -1,20 +1,20 @@
-hash: 71ef9db981cf7135b7b31b8a912dbf151e6eb5ed5ff1ad6e78ea49d635975898
-updated: 2018-07-12T10:01:54.056256668+02:00
+hash: c7d5b64be7d2a530becbe7aa44f1f65fdff4deeb256441470517084f9e8eb835
+updated: 2018-09-09T21:42:58.276705056+02:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
 - name: github.com/apparentlymart/go-cidr
-  version: 2bd8b58cf4275aeb086ade613de226773e29e853
+  version: b1115bf8e14a60131a196f908223e4506b0ddc35
   subpackages:
   - cidr
 - name: github.com/apparentlymart/go-textseg
-  version: b836f5c4d331d1945a2fead7188db25432d73b69
+  version: fb01f485ebef760e5ee06d55e1b07534dda2d295
   subpackages:
   - textseg
 - name: github.com/armon/go-radix
-  version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
+  version: 1a2de0c21c94309923825da3df33a4381872c795
 - name: github.com/aws/aws-sdk-go
-  version: b546aa7e916413e7ba7f706fc0d8c9a143aec45a
+  version: 8609a77e872221af054dd404430291a856c9ec75
   subpackages:
   - aws
   - aws/awserr
@@ -35,6 +35,7 @@ imports:
   - aws/signer/v4
   - internal/sdkio
   - internal/sdkrand
+  - internal/sdkuri
   - internal/shareddefaults
   - private/protocol
   - private/protocol/eventstream
@@ -53,47 +54,61 @@ imports:
 - name: github.com/bgentry/speakeasy
   version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
 - name: github.com/blang/semver
-  version: c5e971dbed7850a93c23aa6ff69db5771d8e23b3
+  version: 3c1074078d32d767e08ab2c8564867292da86926
 - name: github.com/c4milo/gotoolkit
   version: e37eeabad07ed8fbe83a0b222c963c480394f033
+- name: github.com/client9/misspell
+  version: c0b55c8239520f6b5aa15a0207ca8b28027ba49e
+  subpackages:
+  - cmd/misspell
 - name: github.com/davecgh/go-spew
-  version: 346938d642f2ec3594ed81d874461961cd0faa76
+  version: 8991bc29aa16c548c550c7ff78260e27b9ab7c73
   subpackages:
   - spew
 - name: github.com/fatih/color
   version: 2d684516a8861da43017284349b7e303e809ac21
 - name: github.com/go-ini/ini
-  version: af26abd521cd7697481572fdbc4a53cbea3dde1b
+  version: 5cf292cae48347c2490ac1a58fe36735fb78df7e
+- name: github.com/golang/lint
+  version: 06c8688daad7faa9da5a0c2f163a3d14aac986ca
+  subpackages:
+  - golint
 - name: github.com/golang/protobuf
-  version: 70b3af33377e7aa25ae42977bed93cc6b90f0373
+  version: b27b920f9e71b439b873b17bf99f56467623814a
   subpackages:
   - proto
+  - protoc-gen-go
+  - protoc-gen-go/descriptor
+  - protoc-gen-go/generator
+  - protoc-gen-go/generator/internal/remap
+  - protoc-gen-go/grpc
+  - protoc-gen-go/plugin
   - ptypes
   - ptypes/any
   - ptypes/duration
   - ptypes/timestamp
 - name: github.com/hashicorp/errwrap
-  version: 7554cd9344cec97297fa6649b055a8c98c2a1e55
+  version: 8a6fb523712970c966eefc6b39ed2c5e74880354
 - name: github.com/hashicorp/go-cleanhttp
-  version: d5fe4b57a186c716b0e00b8c301cbd9b4182694d
+  version: e8ab9daed8d1ddd2d3c4efba338fe2eeae2e4f18
 - name: github.com/hashicorp/go-getter
-  version: a33f09ce9feed989941a4dfe08b3890a0f8aceb9
+  version: 4bda8fa99001c61db3cad96b421d4c12a81f256d
   subpackages:
   - helper/url
 - name: github.com/hashicorp/go-hclog
-  version: ff2cf002a8dd750586d91dddd4470c341f981fe1
+  version: 75ecd6e6d64509d675da33386b15e1174566177b
 - name: github.com/hashicorp/go-multierror
-  version: b7773ae218740a7be65057fc60b366a49b538a44
+  version: 886a7fbe3eb1c874d46f623bfa70af45f425b3d1
 - name: github.com/hashicorp/go-plugin
-  version: e8d22c780116115ae5624720c9af0c97afe4f551
+  version: a4620f9913d19f03a6bf19b2f304daaaf83ea130
 - name: github.com/hashicorp/go-safetemp
-  version: b1a1dbde6fdc11e3ae79efd9039009e22d4ae240
+  version: c9a55de4fe06c920a71964b53cfe3dd293a3c743
 - name: github.com/hashicorp/go-uuid
-  version: 27454136f0364f2d44b1276c552d69105cf8c498
+  version: de160f5c59f693fed329e73e291bb751fe4ea4dc
 - name: github.com/hashicorp/go-version
-  version: 23480c0665776210b5fbbac6eaaee40e3e6a96b7
+  version: b5a281d3160aa11950a6182bd9a9dc2cb1e02d50
 - name: github.com/hashicorp/hcl
-  version: ef8a98b0bbce4a65b5aa4c368430a80ddc533168
+  version: 65a6292f0157eff210d03ed1bf6c59b190b8b906
   subpackages:
   - hcl/ast
   - hcl/parser
@@ -104,7 +119,7 @@ imports:
   - json/scanner
   - json/token
 - name: github.com/hashicorp/hcl2
-  version: 1718a963e6321c0d8b663ca3f2224be366d59905
+  version: 864f97c8ab203ef9f72a47f231e7d10e52a33ce7
   subpackages:
   - gohcl
   - hcl
@@ -119,9 +134,9 @@ imports:
   - parser
   - scanner
 - name: github.com/hashicorp/logutils
-  version: 0dc08b1671f34c4250ce212759ebd880f743d883
+  version: a335183dfd075f638afcc820c90591ca3c97eba6
 - name: github.com/hashicorp/terraform
-  version: 41e50bd32a8825a84535e353c3674af8ce799161
+  version: 6dfc4d748de9cda23835bc5704307ed45e839622
   subpackages:
   - config
   - config/configschema
@@ -129,6 +144,7 @@ imports:
   - config/module
   - dag
   - flatmap
+  - helper/acctest
   - helper/config
   - helper/hashcode
   - helper/hilmapstructure
@@ -150,45 +166,49 @@ imports:
   - tfdiags
   - version
 - name: github.com/hashicorp/yamux
-  version: 7c794e5a67c319fbf26054a43800ad2264a7beb9
+  version: e8ac8b4dab4a3ff8ba72db8fa1a43d6d1f8747c8
 - name: github.com/hooklift/iso9660
   version: d6245ab24065917ac16be2ff10ddd3934f41fe54
 - name: github.com/imdario/mergo
-  version: 7fe0c75c13abdee74b09fcacef5ea1c6bba6a874
+  version: 9f23e2d6bd2a77f959b2bf6acdbefd708a83a4a4
 - name: github.com/jmespath/go-jmespath
   version: c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5
+- name: github.com/kisielk/gotool
+  version: 80517062f582ea3340cd4baf70e86d539ae7d84d
+  subpackages:
+  - internal/load
 - name: github.com/libvirt/libvirt-go
-  version: 4dcd0a83646c61872dd0a4f65b4525d140a26fcd
+  version: d5e0adac44d4365a2d97e259f51ab76cc3c01b20
 - name: github.com/libvirt/libvirt-go-xml
-  version: 2bf987a9cadff986df2451ffb890ade614744391
+  version: 64ef6bd8d0100d46803df155a9d180796815e3aa
 - name: github.com/mattn/go-colorable
   version: efa589957cd060542a26d2dd7832fd6a6c6c3ade
 - name: github.com/mattn/go-isatty
-  version: 6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c
+  version: 3fb116b820352b7f0c281308a4d6250c22d94e27
 - name: github.com/mitchellh/cli
-  version: c48282d14eba4b0817ddef3f832ff8d13851aefd
+  version: 3d22a244be8aa6fb16ac24af0e195c08b7d973aa
 - name: github.com/mitchellh/copystructure
-  version: d23ffcb85de31694d6ccaa23ccb4a03e55c1303f
+  version: 9a1b6f44e8da0e0e374624fb0a825a231b00c537
 - name: github.com/mitchellh/go-homedir
-  version: 3864e76763d94a6df2f9960b16a20a33da9f9a66
+  version: ae18d6b8b3205b561c79e8e5f69bff09736185f4
 - name: github.com/mitchellh/go-testing-interface
-  version: a61a99592b77c9ba629d254a693acffaeb4b7e28
+  version: 6d0b8010fcc857872e42fc6c931227569016843c
 - name: github.com/mitchellh/go-wordwrap
-  version: ad45545899c7b13c020ea92b2072220eefad42b8
+  version: 9e67c67572bc5dd02aef930e2b0ae3c02a4b5a5c
 - name: github.com/mitchellh/hashstructure
-  version: 2bca23e0e452137f789efbc8610126fd8b94f73b
+  version: a38c50148365edc8df43c1580c48fb2b3a1e9cd7
 - name: github.com/mitchellh/mapstructure
-  version: bb74f1db0675b241733089d5a1faa5dd8b0ef57b
+  version: fa473d140ef3c6adf42d6b391fe76707f1f243c8
 - name: github.com/mitchellh/packer
-  version: 4078cfe1622de705333994d037ac93e181a7c884
+  version: d1cc5451e933f39986bdc1069e9d26e534cde548
   subpackages:
   - common/uuid
 - name: github.com/mitchellh/reflectwalk
-  version: 63d60e9d0dbc60cf9164e6510889b0db6683d98c
+  version: eecee6c969c02c8cc2ae48e1e269843ae8590796
 - name: github.com/oklog/run
   version: 6934b124db28979da51d3470dadfa34d73d72652
 - name: github.com/posener/complete
-  version: e037c22b2fcfa85e74495388f03892ed194bba76
+  version: c43123851dc34b5c712ef0298118ae2da47e1365
   subpackages:
   - cmd
   - cmd/install
@@ -200,7 +220,7 @@ imports:
   - internal/xlog
   - lzma
 - name: github.com/zclconf/go-cty
-  version: 3ccef1ae92b0ac73b92d86f274f0ff781e2d9b3b
+  version: 12ca9334a95ffdef66da89903a0aae9865f5ac4e
   subpackages:
   - cty
   - cty/convert
@@ -210,19 +230,28 @@ imports:
   - cty/json
   - cty/set
 - name: golang.org/x/crypto
-  version: a49355c7e3f8fe157a85be2f77e6e269a0f89602
+  version: 0709b304e793a5edb4a2c0145f281ecdc20838a4
   subpackages:
   - bcrypt
   - blowfish
   - cast5
+  - curve25519
+  - ed25519
+  - ed25519/internal/edwards25519
+  - internal/chacha20
+  - internal/subtle
   - openpgp
   - openpgp/armor
   - openpgp/elgamal
   - openpgp/errors
   - openpgp/packet
   - openpgp/s2k
+  - poly1305
+  - ssh
+- name: golang.org/x/lint
+  version: 06c8688daad7faa9da5a0c2f163a3d14aac986ca
 - name: golang.org/x/net
-  version: cffdcf672aee934982473246bc7e9a8ba446aa9b
+  version: 161cd47e91fd58ac17490ef4d742dc98bb4cf60e
   subpackages:
   - context
   - html
@@ -234,22 +263,35 @@ imports:
   - internal/timeseries
   - trace
 - name: golang.org/x/sys
-  version: 1b2967e3c290b7c545b3db0deeda16e9be4f98a2
+  version: d0be0721c37eeb5299f245a996a483160fc36940
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: 0605a8320aceb4207a5fb3521281e17ec2075476
+  version: 4ae1256249243a4eb350a9a372e126557f2aa346
   subpackages:
   - secure/bidirule
   - transform
   - unicode/bidi
   - unicode/norm
+- name: golang.org/x/tools
+  version: 0aa4b8830f481fed77b73cf7cea2bc3129e05148
+  subpackages:
+  - cmd/goimports
+  - go/ast/astutil
+  - go/buildutil
+  - go/gcexportdata
+  - go/internal/cgo
+  - go/internal/gcimporter
+  - go/loader
+  - go/types/typeutil
+  - imports
+  - internal/fastwalk
 - name: google.golang.org/genproto
-  version: e92b116572682a5b432ddd840aeaba2a559eeff1
+  version: 11092d34479b07829b72e10713b159248caf5dad
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: 11b582728a13ef54e14e4fa930d693de2e32420f
+  version: 5fe5ce74bb4367bbef83a0bf91e8af5f07160823
   subpackages:
   - balancer
   - balancer/base
@@ -280,6 +322,23 @@ imports:
   - tap
 - name: gopkg.in/yaml.v2
   version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
+- name: honnef.co/go/tools
+  version: 88497007e8588ea5b6baee991f74a1607e809487
+  subpackages:
+  - callgraph
+  - callgraph/static
+  - cmd/staticcheck
+  - deprecated
+  - functions
+  - internal/sharedcheck
+  - lint
+  - lint/lintdsl
+  - lint/lintutil
+  - ssa
+  - ssa/ssautil
+  - staticcheck
+  - staticcheck/vrp
+  - version
 testImports:
 - name: github.com/coreos/go-semver
   version: 294930c1e79c64e7dbe360054274fdad492c8cf5

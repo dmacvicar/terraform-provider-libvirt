@@ -138,7 +138,9 @@ var extraActualNodes = map[string][]string{
 	"testdata/libvirt/tests/xml2sexprdata/xml2sexpr-no-source-cdrom.xml": []string{
 		"/domain[0]/devices[0]/disk[1]/@type",
 	},
-
+	"testdata/libvirt/tests/qemuxml2argvdata/disk-discard.xml": []string{
+		"/domain[0]/devices[0]/disk[0]/@type",
+	},
 	"testdata/libvirt/tests/qemuxml2argvdata/fs9p-ccw.xml": []string{
 		"/domain[0]/devices[0]/filesystem[1]/@type",
 		"/domain[0]/devices[0]/filesystem[2]/@type",

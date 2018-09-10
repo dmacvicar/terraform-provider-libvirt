@@ -68,7 +68,7 @@ func (x TestCase_Result) String() string {
 	return proto.EnumName(TestCase_Result_name, int32(x))
 }
 func (TestCase_Result) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_test_suite_ee31d75e3e5b9dce, []int{2, 0}
+	return fileDescriptor_test_suite_9672634cf69bbe80, []int{2, 0}
 }
 
 // The result of running a test suite, as reported in a <testsuite> element of
@@ -107,7 +107,7 @@ func (m *TestSuite) Reset()         { *m = TestSuite{} }
 func (m *TestSuite) String() string { return proto.CompactTextString(m) }
 func (*TestSuite) ProtoMessage()    {}
 func (*TestSuite) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_suite_ee31d75e3e5b9dce, []int{0}
+	return fileDescriptor_test_suite_9672634cf69bbe80, []int{0}
 }
 func (m *TestSuite) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TestSuite.Unmarshal(m, b)
@@ -194,7 +194,7 @@ func (m *Test) Reset()         { *m = Test{} }
 func (m *Test) String() string { return proto.CompactTextString(m) }
 func (*Test) ProtoMessage()    {}
 func (*Test) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_suite_ee31d75e3e5b9dce, []int{1}
+	return fileDescriptor_test_suite_9672634cf69bbe80, []int{1}
 }
 func (m *Test) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Test.Unmarshal(m, b)
@@ -221,11 +221,13 @@ type isTest_TestType interface {
 type Test_TestCase struct {
 	TestCase *TestCase `protobuf:"bytes,1,opt,name=test_case,json=testCase,proto3,oneof"`
 }
+
 type Test_TestSuite struct {
 	TestSuite *TestSuite `protobuf:"bytes,2,opt,name=test_suite,json=testSuite,proto3,oneof"`
 }
 
-func (*Test_TestCase) isTest_TestType()  {}
+func (*Test_TestCase) isTest_TestType() {}
+
 func (*Test_TestSuite) isTest_TestType() {}
 
 func (m *Test) GetTestType() isTest_TestType {
@@ -361,7 +363,7 @@ func (m *TestCase) Reset()         { *m = TestCase{} }
 func (m *TestCase) String() string { return proto.CompactTextString(m) }
 func (*TestCase) ProtoMessage()    {}
 func (*TestCase) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_suite_ee31d75e3e5b9dce, []int{2}
+	return fileDescriptor_test_suite_9672634cf69bbe80, []int{2}
 }
 func (m *TestCase) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TestCase.Unmarshal(m, b)
@@ -463,7 +465,7 @@ func (m *TestFailure) Reset()         { *m = TestFailure{} }
 func (m *TestFailure) String() string { return proto.CompactTextString(m) }
 func (*TestFailure) ProtoMessage()    {}
 func (*TestFailure) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_suite_ee31d75e3e5b9dce, []int{3}
+	return fileDescriptor_test_suite_9672634cf69bbe80, []int{3}
 }
 func (m *TestFailure) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TestFailure.Unmarshal(m, b)
@@ -530,7 +532,7 @@ func (m *TestError) Reset()         { *m = TestError{} }
 func (m *TestError) String() string { return proto.CompactTextString(m) }
 func (*TestError) ProtoMessage()    {}
 func (*TestError) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_suite_ee31d75e3e5b9dce, []int{4}
+	return fileDescriptor_test_suite_9672634cf69bbe80, []int{4}
 }
 func (m *TestError) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TestError.Unmarshal(m, b)
@@ -581,10 +583,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("google/devtools/resultstore/v2/test_suite.proto", fileDescriptor_test_suite_ee31d75e3e5b9dce)
+	proto.RegisterFile("google/devtools/resultstore/v2/test_suite.proto", fileDescriptor_test_suite_9672634cf69bbe80)
 }
 
-var fileDescriptor_test_suite_ee31d75e3e5b9dce = []byte{
+var fileDescriptor_test_suite_9672634cf69bbe80 = []byte{
 	// 641 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x95, 0xdf, 0x6e, 0xd3, 0x30,
 	0x14, 0xc6, 0x97, 0xb6, 0xcb, 0x92, 0x93, 0xad, 0xab, 0x7c, 0x81, 0xa2, 0xa1, 0x41, 0x55, 0xfe,

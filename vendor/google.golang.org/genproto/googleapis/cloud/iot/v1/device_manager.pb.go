@@ -47,7 +47,7 @@ func (m *CreateDeviceRegistryRequest) Reset()         { *m = CreateDeviceRegistr
 func (m *CreateDeviceRegistryRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateDeviceRegistryRequest) ProtoMessage()    {}
 func (*CreateDeviceRegistryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{0}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{0}
 }
 func (m *CreateDeviceRegistryRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDeviceRegistryRequest.Unmarshal(m, b)
@@ -95,7 +95,7 @@ func (m *GetDeviceRegistryRequest) Reset()         { *m = GetDeviceRegistryReque
 func (m *GetDeviceRegistryRequest) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceRegistryRequest) ProtoMessage()    {}
 func (*GetDeviceRegistryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{1}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{1}
 }
 func (m *GetDeviceRegistryRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceRegistryRequest.Unmarshal(m, b)
@@ -136,7 +136,7 @@ func (m *DeleteDeviceRegistryRequest) Reset()         { *m = DeleteDeviceRegistr
 func (m *DeleteDeviceRegistryRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteDeviceRegistryRequest) ProtoMessage()    {}
 func (*DeleteDeviceRegistryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{2}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{2}
 }
 func (m *DeleteDeviceRegistryRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteDeviceRegistryRequest.Unmarshal(m, b)
@@ -184,7 +184,7 @@ func (m *UpdateDeviceRegistryRequest) Reset()         { *m = UpdateDeviceRegistr
 func (m *UpdateDeviceRegistryRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateDeviceRegistryRequest) ProtoMessage()    {}
 func (*UpdateDeviceRegistryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{3}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{3}
 }
 func (m *UpdateDeviceRegistryRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateDeviceRegistryRequest.Unmarshal(m, b)
@@ -241,7 +241,7 @@ func (m *ListDeviceRegistriesRequest) Reset()         { *m = ListDeviceRegistrie
 func (m *ListDeviceRegistriesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListDeviceRegistriesRequest) ProtoMessage()    {}
 func (*ListDeviceRegistriesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{4}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{4}
 }
 func (m *ListDeviceRegistriesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDeviceRegistriesRequest.Unmarshal(m, b)
@@ -299,7 +299,7 @@ func (m *ListDeviceRegistriesResponse) Reset()         { *m = ListDeviceRegistri
 func (m *ListDeviceRegistriesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListDeviceRegistriesResponse) ProtoMessage()    {}
 func (*ListDeviceRegistriesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{5}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{5}
 }
 func (m *ListDeviceRegistriesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDeviceRegistriesResponse.Unmarshal(m, b)
@@ -352,7 +352,7 @@ func (m *CreateDeviceRequest) Reset()         { *m = CreateDeviceRequest{} }
 func (m *CreateDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateDeviceRequest) ProtoMessage()    {}
 func (*CreateDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{6}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{6}
 }
 func (m *CreateDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDeviceRequest.Unmarshal(m, b)
@@ -404,7 +404,7 @@ func (m *GetDeviceRequest) Reset()         { *m = GetDeviceRequest{} }
 func (m *GetDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceRequest) ProtoMessage()    {}
 func (*GetDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{7}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{7}
 }
 func (m *GetDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceRequest.Unmarshal(m, b)
@@ -459,7 +459,7 @@ func (m *UpdateDeviceRequest) Reset()         { *m = UpdateDeviceRequest{} }
 func (m *UpdateDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateDeviceRequest) ProtoMessage()    {}
 func (*UpdateDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{8}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{8}
 }
 func (m *UpdateDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateDeviceRequest.Unmarshal(m, b)
@@ -508,7 +508,7 @@ func (m *DeleteDeviceRequest) Reset()         { *m = DeleteDeviceRequest{} }
 func (m *DeleteDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteDeviceRequest) ProtoMessage()    {}
 func (*DeleteDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{9}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{9}
 }
 func (m *DeleteDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteDeviceRequest.Unmarshal(m, b)
@@ -569,7 +569,7 @@ func (m *ListDevicesRequest) Reset()         { *m = ListDevicesRequest{} }
 func (m *ListDevicesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListDevicesRequest) ProtoMessage()    {}
 func (*ListDevicesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{10}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{10}
 }
 func (m *ListDevicesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDevicesRequest.Unmarshal(m, b)
@@ -647,7 +647,7 @@ func (m *ListDevicesResponse) Reset()         { *m = ListDevicesResponse{} }
 func (m *ListDevicesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListDevicesResponse) ProtoMessage()    {}
 func (*ListDevicesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{11}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{11}
 }
 func (m *ListDevicesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDevicesResponse.Unmarshal(m, b)
@@ -704,7 +704,7 @@ func (m *ModifyCloudToDeviceConfigRequest) Reset()         { *m = ModifyCloudToD
 func (m *ModifyCloudToDeviceConfigRequest) String() string { return proto.CompactTextString(m) }
 func (*ModifyCloudToDeviceConfigRequest) ProtoMessage()    {}
 func (*ModifyCloudToDeviceConfigRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{12}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{12}
 }
 func (m *ModifyCloudToDeviceConfigRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ModifyCloudToDeviceConfigRequest.Unmarshal(m, b)
@@ -764,7 +764,7 @@ func (m *ListDeviceConfigVersionsRequest) Reset()         { *m = ListDeviceConfi
 func (m *ListDeviceConfigVersionsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListDeviceConfigVersionsRequest) ProtoMessage()    {}
 func (*ListDeviceConfigVersionsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{13}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{13}
 }
 func (m *ListDeviceConfigVersionsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDeviceConfigVersionsRequest.Unmarshal(m, b)
@@ -812,7 +812,7 @@ func (m *ListDeviceConfigVersionsResponse) Reset()         { *m = ListDeviceConf
 func (m *ListDeviceConfigVersionsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListDeviceConfigVersionsResponse) ProtoMessage()    {}
 func (*ListDeviceConfigVersionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{14}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{14}
 }
 func (m *ListDeviceConfigVersionsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDeviceConfigVersionsResponse.Unmarshal(m, b)
@@ -858,7 +858,7 @@ func (m *ListDeviceStatesRequest) Reset()         { *m = ListDeviceStatesRequest
 func (m *ListDeviceStatesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListDeviceStatesRequest) ProtoMessage()    {}
 func (*ListDeviceStatesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{15}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{15}
 }
 func (m *ListDeviceStatesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDeviceStatesRequest.Unmarshal(m, b)
@@ -906,7 +906,7 @@ func (m *ListDeviceStatesResponse) Reset()         { *m = ListDeviceStatesRespon
 func (m *ListDeviceStatesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListDeviceStatesResponse) ProtoMessage()    {}
 func (*ListDeviceStatesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_manager_c83d83bf4e59b202, []int{16}
+	return fileDescriptor_device_manager_2617478a41a48425, []int{16}
 }
 func (m *ListDeviceStatesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDeviceStatesResponse.Unmarshal(m, b)
@@ -1571,10 +1571,10 @@ var _DeviceManager_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("google/cloud/iot/v1/device_manager.proto", fileDescriptor_device_manager_c83d83bf4e59b202)
+	proto.RegisterFile("google/cloud/iot/v1/device_manager.proto", fileDescriptor_device_manager_2617478a41a48425)
 }
 
-var fileDescriptor_device_manager_c83d83bf4e59b202 = []byte{
+var fileDescriptor_device_manager_2617478a41a48425 = []byte{
 	// 1432 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x58, 0xcd, 0x6f, 0x1b, 0x45,
 	0x14, 0xd7, 0xd8, 0xa5, 0x90, 0x17, 0x97, 0xb6, 0x93, 0xd0, 0x1a, 0xbb, 0xa5, 0xee, 0x96, 0x0f,

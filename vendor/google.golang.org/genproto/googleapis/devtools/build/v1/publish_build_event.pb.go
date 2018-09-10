@@ -52,7 +52,7 @@ func (x PublishLifecycleEventRequest_ServiceLevel) String() string {
 	return proto.EnumName(PublishLifecycleEventRequest_ServiceLevel_name, int32(x))
 }
 func (PublishLifecycleEventRequest_ServiceLevel) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_publish_build_event_392a703d66bd0f43, []int{0, 0}
+	return fileDescriptor_publish_build_event_3702c05a2ef5b2cf, []int{0, 0}
 }
 
 // Publishes 'lifecycle events' that update the high-level state of a build:
@@ -89,7 +89,7 @@ func (m *PublishLifecycleEventRequest) Reset()         { *m = PublishLifecycleEv
 func (m *PublishLifecycleEventRequest) String() string { return proto.CompactTextString(m) }
 func (*PublishLifecycleEventRequest) ProtoMessage()    {}
 func (*PublishLifecycleEventRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_publish_build_event_392a703d66bd0f43, []int{0}
+	return fileDescriptor_publish_build_event_3702c05a2ef5b2cf, []int{0}
 }
 func (m *PublishLifecycleEventRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PublishLifecycleEventRequest.Unmarshal(m, b)
@@ -160,7 +160,7 @@ func (m *PublishBuildToolEventStreamResponse) Reset()         { *m = PublishBuil
 func (m *PublishBuildToolEventStreamResponse) String() string { return proto.CompactTextString(m) }
 func (*PublishBuildToolEventStreamResponse) ProtoMessage()    {}
 func (*PublishBuildToolEventStreamResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_publish_build_event_392a703d66bd0f43, []int{1}
+	return fileDescriptor_publish_build_event_3702c05a2ef5b2cf, []int{1}
 }
 func (m *PublishBuildToolEventStreamResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PublishBuildToolEventStreamResponse.Unmarshal(m, b)
@@ -214,7 +214,7 @@ func (m *OrderedBuildEvent) Reset()         { *m = OrderedBuildEvent{} }
 func (m *OrderedBuildEvent) String() string { return proto.CompactTextString(m) }
 func (*OrderedBuildEvent) ProtoMessage()    {}
 func (*OrderedBuildEvent) Descriptor() ([]byte, []int) {
-	return fileDescriptor_publish_build_event_392a703d66bd0f43, []int{2}
+	return fileDescriptor_publish_build_event_3702c05a2ef5b2cf, []int{2}
 }
 func (m *OrderedBuildEvent) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OrderedBuildEvent.Unmarshal(m, b)
@@ -281,7 +281,7 @@ func (m *PublishBuildToolEventStreamRequest) Reset()         { *m = PublishBuild
 func (m *PublishBuildToolEventStreamRequest) String() string { return proto.CompactTextString(m) }
 func (*PublishBuildToolEventStreamRequest) ProtoMessage()    {}
 func (*PublishBuildToolEventStreamRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_publish_build_event_392a703d66bd0f43, []int{3}
+	return fileDescriptor_publish_build_event_3702c05a2ef5b2cf, []int{3}
 }
 func (m *PublishBuildToolEventStreamRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PublishBuildToolEventStreamRequest.Unmarshal(m, b)
@@ -510,10 +510,10 @@ var _PublishBuildEvent_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("google/devtools/build/v1/publish_build_event.proto", fileDescriptor_publish_build_event_392a703d66bd0f43)
+	proto.RegisterFile("google/devtools/build/v1/publish_build_event.proto", fileDescriptor_publish_build_event_3702c05a2ef5b2cf)
 }
 
-var fileDescriptor_publish_build_event_392a703d66bd0f43 = []byte{
+var fileDescriptor_publish_build_event_3702c05a2ef5b2cf = []byte{
 	// 668 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x55, 0xcd, 0x6e, 0xd3, 0x4c,
 	0x14, 0xfd, 0x26, 0x69, 0xab, 0x2f, 0x93, 0x36, 0xa5, 0x03, 0x05, 0x93, 0xb6, 0x28, 0x32, 0x08,
