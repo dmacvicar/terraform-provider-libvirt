@@ -2,7 +2,6 @@ package libvirt
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/acctest"
@@ -11,12 +10,10 @@ import (
 	libvirt "github.com/libvirt/libvirt-go"
 )
 
-func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
+func TestAccLibvirtCloudInit_CreateCloudInitDisk(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomResourceName := acctest.RandString(10)
 	randomIsoName := acctest.RandString(10) + ".iso"
-	randomLocalHostname := acctest.RandString(5) + ".iso"
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
@@ -26,31 +23,63 @@ func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-				resource "libvirt_cloudinit" "%s" {
-					name           = "%s"
-					local_hostname = "%s"
-					pool           = "default"
-					user_data      = "#cloud-config\nssh_authorized_keys: []\n"
-				}`, randomResourceName, randomIsoName, randomLocalHostname),
+					resource "libvirt_cloudinit" "%s" {
+								name           = "%s"
+								user_data          = <<EOF
+														#cloud-config
+														# vim: syntax=yaml
+															write_files:
+															-   encoding: b64
+			    												content: CiMgVGhpcyBmaWxlIGNvbnRyb2xzIHRoZSBzdGF0ZSBvZiBTRUxpbnV4...
+			    												owner: root:root
+			    						    				path: /tmp/cloudinit_disk.test
+			    						    				permissions: '0644'
+															-   content: |
+			        										# cloudinit_disk_test
+													 EOF
+								meta_data = <<EOF
+														instance-id: foo-bar
+														EOF
+								network_config = <<EOF
+														network:
+			  											version: 2
+			  											ethernets:
+			    											eno1:
+			      										dhcp4: true
+																EOF}`, randomResourceName, randomIsoName),
 
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
-					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit."+randomResourceName, "local_hostname", randomLocalHostname),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
 				),
 			},
-			// 2nd tests Invalid  userdata
 			{
 				Config: fmt.Sprintf(`
-				resource "libvirt_cloudinit" "testfail" {
-					name           = "commoninit2.iso"
-					local_hostname = "samba2"
-					pool           = "default"
-					user_data      = "invalidgino"
-				}`),
-				ExpectError: regexp.MustCompile("Error merging UserData with UserDataRaw: yaml: unmarshal errors"),
+					resource "libvirt_cloudinit" "%s" {
+								name           = "%s"
+								user_data          = <<EOF
+														#cloud-config
+														# vim: syntax=yaml
+															write_files:
+															-   encoding: b64
+			    												content: CiMgVGhpcyBmaWxlIGNvbnRyb2xzIHRoZSBzdGF0ZSBvZiBTRUxpbnV4...
+			    												owner: root:root
+			    						    				path: /tmp/cloudinit_disk.test
+			    						    				permissions: '0644'
+															-   content: |
+			        										# cloudinit_disk_test
+													 EOF
+								meta_data = <<EOF
+														instance-id: foo-bar
+														EOF
+								network_config = <<EOF
+														network:
+			  											version: 2
+			  											ethernets:
+			    											eno1:
+			      										dhcp4: true
+																EOF}`, randomResourceName, randomIsoName),
 			},
 		},
 	})
@@ -63,16 +92,13 @@ func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomResourceName := acctest.RandString(10)
-	randomIsoName := acctest.RandString(9) + ".iso"
-	randomLocalHostname := acctest.RandString(5) + ".iso"
 
 	testAccCheckLibvirtCloudInitConfigBasic := fmt.Sprintf(`
     	resource "libvirt_cloudinit" "%s" {
   	  name           = "%s"
-			local_hostname = "%s"
 			pool           = "default"
 			user_data      = "#cloud-config\nssh_authorized_keys: []\n"
-		}`, randomResourceName, randomIsoName, randomLocalHostname)
+		}`, randomResourceName, randomResourceName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },

@@ -17,12 +17,15 @@ resource "libvirt_network" "vm_network" {
    addresses = ["10.0.1.0/24"]
 }
 
+data "template_file" "user_data" {
+  template = "${file("${path.module}/cloud_init.cfg")}"
+}
+
 # Use CloudInit to add our ssh-key to the instance
 resource "libvirt_cloudinit" "commoninit" {
           name           = "commoninit.iso"
-          ssh_authorized_key = "<ssh-key-here>"
-        }
-
+          user_data          = "${data.template_file.user_data.rendered}"
+}
 
 # Create the machine
 resource "libvirt_domain" "domain-ubuntu" {

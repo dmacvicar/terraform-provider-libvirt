@@ -10,46 +10,27 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/hooklift/iso9660"
-	"github.com/imdario/mergo"
 	libvirt "github.com/libvirt/libvirt-go"
 	"github.com/mitchellh/packer/common/uuid"
-	"gopkg.in/yaml.v2"
 )
 
-// userData is the filename expected by cloud-init
-const userData string = "user-data"
-
-// metaData is the filename expected by cloud-init
-const metaData string = "meta-data"
-
-type defCloudInitUserData struct {
-	SSHAuthorizedKeys []string `yaml:"ssh_authorized_keys"`
-}
-
-type defCloudInitMetaData struct {
-	LocalHostname string `yaml:"local-hostname,omitempty"`
-	InstanceID    string `yaml:"instance-id"`
-}
+const userDataFileName string = "user-data"
+const metaDataFileName string = "meta-data"
+const networkConfigFileName string = "network-config"
 
 type defCloudInit struct {
-	Name        string
-	PoolName    string
-	MetaData    defCloudInitMetaData
-	UserDataRaw string `yaml:"user_data"`
-	UserData    defCloudInitUserData
+	Name          string
+	PoolName      string
+	MetaData      string `yaml:"meta_data"`
+	UserData      string `yaml:"user_data"`
+	NetworkConfig string `yaml:"network_config"`
 }
 
-// Creates a new cloudinit with the defaults
-// the provider uses
+// TODO: check better this one maybe do in otherplaces
 func newCloudInitDef() defCloudInit {
-	return defCloudInit{
-		MetaData: defCloudInitMetaData{
-			InstanceID: fmt.Sprintf("created-at-%s", time.Now().String()),
-		},
-	}
+	return defCloudInit{}
 }
 
 // Create a ISO file based on the contents of the CloudInit instance and
@@ -159,8 +140,9 @@ func (ci *defCloudInit) createISO() (string, error) {
 		"cidata",
 		"-joliet",
 		"-rock",
-		filepath.Join(tmpDir, userData),
-		filepath.Join(tmpDir, metaData))
+		filepath.Join(tmpDir, userDataFileName),
+		filepath.Join(tmpDir, metaDataFileName),
+		filepath.Join(tmpDir, networkConfigFileName))
 
 	log.Printf("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {
@@ -171,8 +153,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 	return isoDestination, nil
 }
 
-// Dumps the userdata and the metadata into two dedicated yaml files.
-// The files are created inside of a temporary directory
+// write user-data,  meta-data network-config in tmp files and dedicated directory
 // Returns a string containing the name of the temporary directory and an error
 // object
 func (ci *defCloudInit) createFiles() (string, error) {
@@ -182,27 +163,17 @@ func (ci *defCloudInit) createFiles() (string, error) {
 		return "", fmt.Errorf("Cannot create tmp directory for cloudinit ISO generation: %s",
 			err)
 	}
-
-	// Create files required by ISO file
-	mergedUserData, err := mergeUserDataIntoUserDataRaw(ci.UserData, ci.UserDataRaw)
-	if err != nil {
-		return "", fmt.Errorf("Error merging UserData with UserDataRaw: %v", err)
-	}
-	userdata := fmt.Sprintf("#cloud-config\n%s", mergedUserData)
-
-	if err = ioutil.WriteFile(
-		filepath.Join(tmpDir, userData),
-		[]byte(userdata),
-		os.ModePerm); err != nil {
+	// user-data
+	if err = ioutil.WriteFile(filepath.Join(tmpDir, userDataFileName), []byte(ci.UserData), os.ModePerm); err != nil {
 		return "", fmt.Errorf("Error while writing user-data to file: %s", err)
 	}
-
-	metadata, err := yaml.Marshal(&ci.MetaData)
-	if err != nil {
-		return "", fmt.Errorf("Error dumping cloudinit's meta data: %s", err)
-	}
-	if err = ioutil.WriteFile(filepath.Join(tmpDir, metaData), metadata, os.ModePerm); err != nil {
+	// meta-data
+	if err = ioutil.WriteFile(filepath.Join(tmpDir, metaDataFileName), []byte(ci.MetaData), os.ModePerm); err != nil {
 		return "", fmt.Errorf("Error while writing meta-data to file: %s", err)
+	}
+	// network-config
+	if err = ioutil.WriteFile(filepath.Join(tmpDir, networkConfigFileName), []byte(ci.NetworkConfig), os.ModePerm); err != nil {
+		return "", fmt.Errorf("Error while writing network-config to file: %s", err)
 	}
 
 	log.Print("ISO contents created")
@@ -242,23 +213,22 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 		return ci, fmt.Errorf("Error retrieving pool name: %s", err)
 	}
 
-	file, err := downloadISO(virConn, *volume)
-	if file != nil {
-		defer os.Remove(file.Name())
-		defer file.Close()
+	isoFile, err := downloadISO(virConn, *volume)
+	if isoFile != nil {
+		defer os.Remove(isoFile.Name())
+		defer isoFile.Close()
 	}
 	if err != nil {
 		return ci, err
 	}
 
-	// read ISO contents
-	isoReader, err := iso9660.NewReader(file)
+	isoReader, err := iso9660.NewReader(isoFile)
 	if err != nil {
 		return ci, fmt.Errorf("Error initializing ISO reader: %s", err)
 	}
 
 	for {
-		f, err := isoReader.Next()
+		file, err := isoReader.Next()
 		if err == io.EOF {
 			break
 		}
@@ -267,38 +237,36 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 			return ci, err
 		}
 
-		log.Printf("ISO reader: processing file %s", f.Name())
-
-		//TODO: the iso9660 has a bug...
-		if f.Name() == "/user_dat." {
-			data, err := ioutil.ReadAll(f.Sys().(io.Reader))
+		// the following filenames need to be like this because ios9660 reader
+		// has a bug that troncate file names.
+		log.Printf("ISO reader: processing file %s", file.Name())
+		if file.Name() == "/user_dat." {
+			data, err := ioutil.ReadAll(file.Sys().(io.Reader))
 			if err != nil {
-				return ci, fmt.Errorf("Error while reading %s: %s", userData, err)
+				return ci, fmt.Errorf("Error while reading user-data file: %s", err)
 			}
-			if err := yaml.Unmarshal(data, &ci.UserData); err != nil {
-				return ci, fmt.Errorf("Error while unmarshalling user-data: %s", err)
-			}
-			// This may differ from the user_data provided in the .tf file
-			// because it always includes ssh_authorized_keys. However, this
-			// shouldn't be an issue since both the authorized keys in the .tf
-			// file (field: ssh_authorized_key) and the ones in this userdata
-			// (field: ssh_authorized_keys) are the same.
-			ci.UserDataRaw = fmt.Sprintf("%s", data)
+			ci.UserData = fmt.Sprintf("%s", data)
 		}
 
-		//TODO: the iso9660 has a bug...
-		if f.Name() == "/meta_dat." {
-			data, err := ioutil.ReadAll(f.Sys().(io.Reader))
+		if file.Name() == "/meta_dat." {
+			data, err := ioutil.ReadAll(file.Sys().(io.Reader))
 			if err != nil {
-				return ci, fmt.Errorf("Error while reading %s: %s", metaData, err)
+				return ci, fmt.Errorf("Error while reading %s: %s", metaDataFileName, err)
 			}
-			if err := yaml.Unmarshal(data, &ci.MetaData); err != nil {
-				return ci, fmt.Errorf("Error while unmarshalling user-data: %s", err)
-			}
+			ci.MetaData = fmt.Sprintf("%s", data)
 		}
+
+		if file.Name() == "/network_." {
+			data, err := ioutil.ReadAll(file.Sys().(io.Reader))
+			if err != nil {
+				return ci, fmt.Errorf("Error while reading %s: %s", networkConfigFileName, err)
+			}
+			ci.NetworkConfig = fmt.Sprintf("%s", data)
+		}
+
 	}
 
-	log.Printf("Read cloud-init from file: %+v", ci)
+	log.Printf("[DEBUG]: Read cloud-init from file: %+v", ci)
 
 	return ci, nil
 }
@@ -314,7 +282,7 @@ func downloadISO(virConn *libvirt.Connect, volume libvirt.StorageVol) (*os.File,
 	}
 
 	// create tmp file for the ISO
-	file, err := ioutil.TempFile("", "cloudinit")
+	tmpFile, err := ioutil.TempFile("", "cloudinit")
 	if err != nil {
 		return nil, fmt.Errorf("Cannot create tmp file: %s", err)
 	}
@@ -322,7 +290,7 @@ func downloadISO(virConn *libvirt.Connect, volume libvirt.StorageVol) (*os.File,
 	// download ISO file
 	stream, err := virConn.NewStream(0)
 	if err != nil {
-		return file, err
+		return tmpFile, err
 	}
 	defer stream.Finish()
 
@@ -330,50 +298,12 @@ func downloadISO(virConn *libvirt.Connect, volume libvirt.StorageVol) (*os.File,
 
 	sio := NewStreamIO(*stream)
 
-	n, err := io.Copy(file, sio)
+	n, err := io.Copy(tmpFile, sio)
 	if err != nil {
-		return file, fmt.Errorf("Error while copying remote volume to local disk: %s", err)
+		return tmpFile, fmt.Errorf("Error while copying remote volume to local disk: %s", err)
 	}
-	file.Seek(0, 0)
+	tmpFile.Seek(0, 0)
 	log.Printf("%d bytes downloaded", n)
 
-	return file, nil
-}
-
-// Convert a UserData instance to a map with string as key and interface as value
-func convertUserDataToMap(data defCloudInitUserData) (map[string]interface{}, error) {
-	userDataMap := make(map[string]interface{})
-
-	// This is required to get the right names expected by cloud-init
-	// For example: SSHKeys -> ssh_authorized_keys
-	tmp, err := yaml.Marshal(&data)
-	if err != nil {
-		return userDataMap, err
-	}
-
-	err = yaml.Unmarshal([]byte(tmp), &userDataMap)
-	return userDataMap, err
-}
-
-func mergeUserDataIntoUserDataRaw(userData defCloudInitUserData, userDataRaw string) (string, error) {
-	userDataMap, err := convertUserDataToMap(userData)
-	if err != nil {
-		return "", err
-	}
-
-	userDataRawMap := make(map[string]interface{})
-	if err = yaml.Unmarshal([]byte(userDataRaw), &userDataRawMap); err != nil {
-		return "", err
-	}
-
-	if err = mergo.Merge(&userDataRawMap, userDataMap); err != nil {
-		return "", err
-	}
-
-	out, err := yaml.Marshal(userDataRawMap)
-	if err != nil {
-		return "", err
-	}
-
-	return string(out[:]), nil
+	return tmpFile, nil
 }
