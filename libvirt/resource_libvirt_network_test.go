@@ -412,6 +412,51 @@ func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 		},
 	})
 }
+
+func checkBridge(resourceName string, bridgeName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		networkDef, err := getNetworkDef(s, resourceName)
+		if err != nil {
+			return err
+		}
+
+		if networkDef.Bridge == nil {
+			return fmt.Errorf("Bridge type of network should be not nil")
+		}
+
+		if networkDef.Bridge.Name != bridgeName || networkDef.Bridge.STP != "on" {
+			fmt.Printf("%#v", networkDef)
+			return fmt.Errorf("fail: network brigde property were not set correctly")
+		}
+
+		return nil
+	}
+}
+
+func TestAccLibvirtNetwork_BridgedMode(t *testing.T) {
+	randomNetworkName := acctest.RandString(10)
+	randomBridgeName := acctest.RandString(10)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "libvirt_network" "%s" {
+	  				name        = "%s"
+	  				mode        = "bridge"
+	  			  bridge      = "vbr-%s"
+	     	}`, randomNetworkName, randomNetworkName, randomBridgeName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkName, "mode", "bridge"),
+					checkBridge("libvirt_network."+randomNetworkName, "vbr-"+randomBridgeName),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 	var network libvirt.Network
 	randomNetworkResource := acctest.RandString(10)
