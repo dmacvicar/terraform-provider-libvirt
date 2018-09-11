@@ -435,6 +435,7 @@ func checkBridge(resourceName string, bridgeName string) resource.TestCheckFunc 
 
 func TestAccLibvirtNetwork_BridgedMode(t *testing.T) {
 	randomNetworkName := acctest.RandString(10)
+	randomBridgeName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -445,11 +446,11 @@ func TestAccLibvirtNetwork_BridgedMode(t *testing.T) {
 					resource "libvirt_network" "%s" {
 	  				name        = "%s"
 	  				mode        = "bridge"
-	  			  bridge      = "virbr21"
-	     	}`, randomNetworkName, randomNetworkName),
+	  			  bridge      = "vbr-%s"
+	     	}`, randomNetworkName, randomNetworkName, randomBridgeName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkName, "mode", "bridge"),
-					checkBridge("libvirt_network."+randomNetworkName, "virbr21"),
+					checkBridge("libvirt_network."+randomNetworkName, "vbr-"+randomBridgeName),
 				),
 			},
 		},
