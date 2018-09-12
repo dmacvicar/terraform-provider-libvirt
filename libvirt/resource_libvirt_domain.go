@@ -608,7 +608,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 			networkName, err := network.GetName()
 			if err != nil {
-				return fmt.Errorf("Error retrieving volume name: %s", err)
+				return fmt.Errorf("Error retrieving network name: %s", err)
 			}
 			hostname := d.Get(prefix + ".hostname").(string)
 			mac := d.Get(prefix + ".mac").(string)
