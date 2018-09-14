@@ -35,11 +35,14 @@ func newCloudInitDef() defCloudInit {
 // Create a ISO file based on the contents of the CloudInit instance and
 // uploads it to the libVirt pool
 // Returns a string holding terraform's internal ID of this resource
-func (ci *defCloudInit) CreateAndUpload(client *Client) (string, error) {
+func (ci *defCloudInit) CreateIso() (string, error) {
 	iso, err := ci.createISO()
 	if err != nil {
 		return "", err
 	}
+	return iso, err
+}
+func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 
 	pool, err := client.libvirt.LookupStoragePoolByName(ci.PoolName)
 	if err != nil {

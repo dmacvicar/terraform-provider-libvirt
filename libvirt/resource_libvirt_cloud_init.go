@@ -61,7 +61,11 @@ func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("[INFO] cloudInit: %+v", cloudInit)
 
-	key, err := cloudInit.CreateAndUpload(client)
+	iso, err := cloudInit.CreateIso()
+	if err != nil {
+		return err
+	}
+	key, err := cloudInit.UploadIso(client, iso)
 	if err != nil {
 		return err
 	}
