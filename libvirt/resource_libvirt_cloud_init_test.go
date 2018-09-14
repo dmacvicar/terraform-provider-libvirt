@@ -126,20 +126,18 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	})
 }
 
-func testAccCheckCloudInitVolumeExists(n string, volume *libvirt.StorageVol) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+		rs, err := getResourceFromTerraformState(volumeName, state)
+		if err != nil {
+			return err
 		}
-
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No libvirt volume key ID is set")
-		}
-
 		cikey, err := getCloudInitVolumeKeyFromTerraformID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
 		retrievedVol, err := virConn.LookupStorageVolByKey(cikey)
 		if err != nil {
 			return err
