@@ -16,6 +16,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 	// this structs are contents values we expect.
 	expectedContents := Expected{UserData: "#cloud-config", NetworkConfig: "network:", MetaData: "instance-id: bamboo"}
 	expectedContents2 := Expected{UserData: "#cloud-config2", NetworkConfig: "network2:", MetaData: "instance-id: bamboo2"}
+	expectedContentsEmpty := Expected{UserData: "#cloud-config2", NetworkConfig: "", MetaData: ""}
 	randomIsoName := acctest.RandString(10) + ".iso"
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -54,6 +55,20 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
 					expectedContents2.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit."+randomResourceName, &volume),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "libvirt_cloudinit" "%s" {
+								name           = "%s"
+								user_data      = "#cloud-config2"
+							}`, randomResourceName, randomIsoName),
+
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
+					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit."+randomResourceName, &volume),
 				),
 			},
 		},
