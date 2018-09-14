@@ -28,7 +28,6 @@ type defCloudInit struct {
 	NetworkConfig string `yaml:"network_config"`
 }
 
-// TODO: check better this one maybe do in otherplaces
 func newCloudInitDef() defCloudInit {
 	return defCloudInit{}
 }

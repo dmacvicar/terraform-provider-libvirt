@@ -10,9 +10,12 @@ import (
 	libvirt "github.com/libvirt/libvirt-go"
 )
 
-func TestAccLibvirtCloudInit_CreateCloudInitDisk(t *testing.T) {
+func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomResourceName := acctest.RandString(10)
+	// this structs are contents values we expect.
+	expectedContents := Expected{UserData: "#cloud-config", NetworkConfig: "network:", MetaData: "instance-id: bamboo"}
+	expectedContents2 := Expected{UserData: "#cloud-config2", NetworkConfig: "network2:", MetaData: "instance-id: bamboo2"}
 	randomIsoName := acctest.RandString(10) + ".iso"
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -25,61 +28,33 @@ func TestAccLibvirtCloudInit_CreateCloudInitDisk(t *testing.T) {
 				Config: fmt.Sprintf(`
 					resource "libvirt_cloudinit" "%s" {
 								name           = "%s"
-								user_data          = <<EOF
-														#cloud-config
-														# vim: syntax=yaml
-															write_files:
-															-   encoding: b64
-			    												content: CiMgVGhpcyBmaWxlIGNvbnRyb2xzIHRoZSBzdGF0ZSBvZiBTRUxpbnV4...
-			    												owner: root:root
-			    						    				path: /tmp/cloudinit_disk.test
-			    						    				permissions: '0644'
-															-   content: |
-			        										# cloudinit_disk_test
-													 EOF
-								meta_data = <<EOF
-														instance-id: foo-bar
-														EOF
-								network_config = <<EOF
-														network:
-			  											version: 2
-			  											ethernets:
-			    											eno1:
-			      										dhcp4: true
-																EOF}`, randomResourceName, randomIsoName),
+								user_data      = "#cloud-config"
+								meta_data = "instance-id: bamboo"
+								network_config = "network:"
+							}`, randomResourceName, randomIsoName),
 
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
+					expectedContents.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit."+randomResourceName, &volume),
 				),
 			},
 			{
 				Config: fmt.Sprintf(`
 					resource "libvirt_cloudinit" "%s" {
 								name           = "%s"
-								user_data          = <<EOF
-														#cloud-config
-														# vim: syntax=yaml
-															write_files:
-															-   encoding: b64
-			    												content: CiMgVGhpcyBmaWxlIGNvbnRyb2xzIHRoZSBzdGF0ZSBvZiBTRUxpbnV4...
-			    												owner: root:root
-			    						    				path: /tmp/cloudinit_disk.test
-			    						    				permissions: '0644'
-															-   content: |
-			        										# cloudinit_disk_test
-													 EOF
-								meta_data = <<EOF
-														instance-id: foo-bar
-														EOF
-								network_config = <<EOF
-														network:
-			  											version: 2
-			  											ethernets:
-			    											eno1:
-			      										dhcp4: true
-																EOF}`, randomResourceName, randomIsoName),
+								user_data      = "#cloud-config2"
+								meta_data = "instance-id: bamboo2"
+								network_config = "network2:"
+							}`, randomResourceName, randomIsoName),
+
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
+					expectedContents2.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit."+randomResourceName, &volume),
+				),
 			},
 		},
 	})
@@ -154,6 +129,34 @@ func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirt.Storag
 
 		*volume = *retrievedVol
 
+		return nil
+	}
+}
+
+type Expected struct {
+	UserData, NetworkConfig, MetaData string
+}
+
+func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		rs, err := getResourceFromTerraformState(volumeName, state)
+		if err != nil {
+			return err
+		}
+
+		cloudInitDiskDef, err := newCloudInitDefFromRemoteISO(virConn, rs.Primary.ID)
+
+		if cloudInitDiskDef.MetaData != expected.MetaData {
+			return fmt.Errorf("metadata '%s' content differs from expected Metadata %s", cloudInitDiskDef.MetaData, expected.MetaData)
+		}
+		if cloudInitDiskDef.UserData != expected.UserData {
+			return fmt.Errorf("userdata '%s' content differs from expected UserData  %s", cloudInitDiskDef.UserData, expected.UserData)
+		}
+		if cloudInitDiskDef.NetworkConfig != expected.NetworkConfig {
+			return fmt.Errorf("networkconfig '%s' content differs from expected NetworkConfigData %s", cloudInitDiskDef.NetworkConfig, expected.NetworkConfig)
+		}
 		return nil
 	}
 }
