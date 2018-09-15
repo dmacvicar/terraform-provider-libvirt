@@ -43,6 +43,15 @@ func (ci *defCloudInit) CreateIso() (string, error) {
 	return iso, err
 }
 
+func removeTmpIsoDirectory(iso string) {
+
+	err := os.RemoveAll(filepath.Dir(iso))
+	if err != nil {
+		log.Printf("Error while removing tmp directory holding the ISO file: %s", err)
+	}
+
+}
+
 func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 
 	pool, err := client.libvirt.LookupStoragePoolByName(ci.PoolName)
@@ -104,15 +113,6 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 	}
 
 	return ci.buildTerraformKey(key), nil
-}
-
-func removeTmpIsoDirectory(iso string) {
-	// Remove the tmp directory holding the ISO
-	err := os.RemoveAll(filepath.Dir(iso))
-	if err != nil {
-		log.Printf("Error while removing tmp directory holding the ISO file: %s", err)
-	}
-
 }
 
 // create a unique ID for terraform use
@@ -229,12 +229,18 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 	if err != nil {
 		return ci, err
 	}
-
 	isoReader, err := iso9660.NewReader(isoFile)
 	if err != nil {
 		return ci, fmt.Errorf("Error initializing ISO reader: %s", err)
 	}
+	err = ci.saveIsoFilesContentToCloudInitDiskFields(isoReader)
+	if err != nil {
+		return ci, err
+	}
+	return ci, nil
+}
 
+func (ci *defCloudInit) saveIsoFilesContentToCloudInitDiskFields(isoReader *iso9660.Reader) error {
 	for {
 		file, err := isoReader.Next()
 		if err == io.EOF {
@@ -242,41 +248,37 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 		}
 
 		if err != nil {
-			return ci, err
+			return err
 		}
-
+		dataBytes, err := readIso9660File(file)
+		if err != nil {
+			return err
+		}
 		// the following filenames need to be like this because ios9660 reader
 		// has a bug that troncate file names.
-		log.Printf("ISO reader: processing file %s", file.Name())
+		//	https://github.com/hooklift/iso9660/issues/3
 		if file.Name() == "/user_dat." {
-			data, err := ioutil.ReadAll(file.Sys().(io.Reader))
-			if err != nil {
-				return ci, fmt.Errorf("Error while reading user-data file: %s", err)
-			}
-			ci.UserData = fmt.Sprintf("%s", data)
+			ci.UserData = fmt.Sprintf("%s", dataBytes)
 		}
-
 		if file.Name() == "/meta_dat." {
-			data, err := ioutil.ReadAll(file.Sys().(io.Reader))
-			if err != nil {
-				return ci, fmt.Errorf("Error while reading %s: %s", metaDataFileName, err)
-			}
-			ci.MetaData = fmt.Sprintf("%s", data)
+			ci.MetaData = fmt.Sprintf("%s", dataBytes)
 		}
-
 		if file.Name() == "/network_." {
-			data, err := ioutil.ReadAll(file.Sys().(io.Reader))
-			if err != nil {
-				return ci, fmt.Errorf("Error while reading %s: %s", networkConfigFileName, err)
-			}
-			ci.NetworkConfig = fmt.Sprintf("%s", data)
+			ci.NetworkConfig = fmt.Sprintf("%s", dataBytes)
 		}
-
 	}
-
 	log.Printf("[DEBUG]: Read cloud-init from file: %+v", ci)
+	return nil
+}
 
-	return ci, nil
+func readIso9660File(file os.FileInfo) ([]byte, error) {
+	log.Printf("ISO reader: processing file %s", file.Name())
+
+	dataBytes, err := ioutil.ReadAll(file.Sys().(io.Reader))
+	if err != nil {
+		return nil, fmt.Errorf("Error while reading %s: %s", file.Name(), err)
+	}
+	return dataBytes, nil
 }
 
 // Downloads the ISO identified by `key` to a local tmp file.
