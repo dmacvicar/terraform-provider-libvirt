@@ -42,6 +42,7 @@ func (ci *defCloudInit) CreateIso() (string, error) {
 	}
 	return iso, err
 }
+
 func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 
 	pool, err := client.libvirt.LookupStoragePoolByName(ci.PoolName)
@@ -67,12 +68,8 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer func() {
-		// Remove the tmp directory holding the ISO
-		if err = os.RemoveAll(filepath.Dir(iso)); err != nil {
-			log.Printf("Error while removing tmp directory holding the ISO file: %s", err)
-		}
-	}()
+
+	defer removeTmpIsoDirectory(iso)
 
 	size, err := img.Size()
 	if err != nil {
@@ -107,6 +104,15 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 	}
 
 	return ci.buildTerraformKey(key), nil
+}
+
+func removeTmpIsoDirectory(iso string) {
+	// Remove the tmp directory holding the ISO
+	err := os.RemoveAll(filepath.Dir(iso))
+	if err != nil {
+		log.Printf("Error while removing tmp directory holding the ISO file: %s", err)
+	}
+
 }
 
 // create a unique ID for terraform use
