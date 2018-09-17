@@ -38,7 +38,7 @@ func TestCloudInitCreateFiles(t *testing.T) {
 	}
 }
 
-func TestCloudInitCreateISONoExteralTool(t *testing.T) {
+func TestCloudInitCreateISONoExternalTool(t *testing.T) {
 	path := os.Getenv("PATH")
 	defer os.Setenv("PATH", path)
 
