@@ -8,46 +8,6 @@ import (
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
-func getHostXMLDesc(ip, mac, name string) string {
-	dd := libvirtxml.NetworkDHCPHost{
-		IP:   ip,
-		MAC:  mac,
-		Name: name,
-	}
-	tmp := struct {
-		XMLName xml.Name `xml:"host"`
-		libvirtxml.NetworkDHCPHost
-	}{xml.Name{}, dd}
-	xml, err := xmlMarshallIndented(tmp)
-	if err != nil {
-		panic("could not marshall host")
-	}
-	return xml
-}
-
-// Adds a new static host to the network
-func addHost(n *libvirt.Network, ip, mac, name string) error {
-	xmlDesc := getHostXMLDesc(ip, mac, name)
-	log.Printf("Adding host with XML:\n%s", xmlDesc)
-	return n.Update(libvirt.NETWORK_UPDATE_COMMAND_ADD_LAST, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, xmlDesc, libvirt.NETWORK_UPDATE_AFFECT_CURRENT)
-}
-
-// Update a static host from the network
-func updateHost(n *libvirt.Network, ip, mac, name string) error {
-	xmlDesc := getHostXMLDesc(ip, mac, name)
-	log.Printf("Updating host with XML:\n%s", xmlDesc)
-	return n.Update(libvirt.NETWORK_UPDATE_COMMAND_MODIFY, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, xmlDesc, libvirt.NETWORK_UPDATE_AFFECT_CURRENT)
-}
-
-// Tries to update first, if that fails, it will add it
-func updateOrAddHost(n *libvirt.Network, ip, mac, name string) error {
-	err := updateHost(n, ip, mac, name)
-	if virErr, ok := err.(libvirt.Error); ok && virErr.Code == libvirt.ERR_OPERATION_INVALID && virErr.Domain == libvirt.FROM_NETWORK {
-		return addHost(n, ip, mac, name)
-	}
-	return err
-}
-
 func getHostArchitecture(virConn *libvirt.Connect) (string, error) {
 	type HostCapabilities struct {
 		XMLName xml.Name `xml:"capabilities"`
