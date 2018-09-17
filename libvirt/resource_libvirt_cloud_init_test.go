@@ -27,7 +27,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-					resource "libvirt_cloudinit" "%s" {
+					resource "libvirt_cloudinit_disk" "%s" {
 								name           = "%s"
 								user_data      = "#cloud-config"
 								meta_data = "instance-id: bamboo"
@@ -36,14 +36,14 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
-					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
-					expectedContents.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit."+randomResourceName, &volume),
+						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContents.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
 				),
 			},
 			{
 				Config: fmt.Sprintf(`
-					resource "libvirt_cloudinit" "%s" {
+					resource "libvirt_cloudinit_disk" "%s" {
 								name           = "%s"
 								user_data      = "#cloud-config2"
 								meta_data = "instance-id: bamboo2"
@@ -52,29 +52,29 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
-					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
-					expectedContents2.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit."+randomResourceName, &volume),
+						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContents2.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
 				),
 			},
 			{
 				Config: fmt.Sprintf(`
-					resource "libvirt_cloudinit" "%s" {
+					resource "libvirt_cloudinit_disk" "%s" {
 								name           = "%s"
 								user_data      = "#cloud-config2"
 							}`, randomResourceName, randomIsoName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
-					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
-					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit."+randomResourceName, &volume),
+						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
 				),
 			},
 			// when we apply 2 times with same conf, we should not have a diff. See bug:
 			// https://github.com/dmacvicar/terraform-provider-libvirt/issues/313
 			{
 				Config: fmt.Sprintf(`
-						resource "libvirt_cloudinit" "%s" {
+						resource "libvirt_cloudinit_disk" "%s" {
 									name           = "%s"
 									user_data      = "#cloud-config4"
 								}`, randomResourceName, randomIsoName),
@@ -82,9 +82,9 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 				PlanOnly:           true,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
-					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
-					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit."+randomResourceName, &volume),
+						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
 				),
 			},
 		},
@@ -100,7 +100,7 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	randomResourceName := acctest.RandString(10)
 
 	testAccCheckLibvirtCloudInitConfigBasic := fmt.Sprintf(`
-    	resource "libvirt_cloudinit" "%s" {
+    	resource "libvirt_cloudinit_disk" "%s" {
   	  name           = "%s"
 			pool           = "default"
 			user_data      = "#cloud-config\nssh_authorized_keys: []\n"
@@ -113,7 +113,7 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 			{
 				Config: testAccCheckLibvirtCloudInitConfigBasic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
 				),
 			},
 			{

@@ -1,6 +1,6 @@
 ---
 layout: "libvirt"
-page_title: "Libvirt: libvirt_cloudinit"
+page_title: "Libvirt: libvirt_cloudinit_disk"
 sidebar_current: "docs-libvirt-cloudinit"
 description: |-
   Manages a cloud-init ISO to attach to a domain
@@ -14,7 +14,7 @@ used to customize a domain during first boot.
 ## Example Usage
 
 ```hcl
-resource "libvirt_cloudinit" "commoninit" {
+resource "libvirt_cloudinit_disk" "commoninit" {
   name = "commoninit.iso"
 }
 

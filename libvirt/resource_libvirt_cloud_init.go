@@ -7,12 +7,12 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func resourceCloudInit() *schema.Resource {
+func resourceCloudInitDisk() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceCloudInitCreate,
-		Read:   resourceCloudInitRead,
-		Delete: resourceCloudInitDelete,
-		Exists: resourceCloudInitExists,
+		Create: resourceCloudInitDiskCreate,
+		Read:   resourceCloudInitDiskRead,
+		Delete: resourceCloudInitDiskDelete,
+		Exists: resourceCloudInitDiskExists,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -44,7 +44,7 @@ func resourceCloudInit() *schema.Resource {
 	}
 }
 
-func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceCloudInitDiskCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] creating cloudinit")
 	client := meta.(*Client)
 	virConn := client.libvirt
@@ -77,10 +77,10 @@ func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
 
 	d.Partial(false)
 
-	return resourceCloudInitRead(d, meta)
+	return resourceCloudInitDiskRead(d, meta)
 }
 
-func resourceCloudInitRead(d *schema.ResourceData, meta interface{}) error {
+func resourceCloudInitDiskRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
@@ -98,7 +98,7 @@ func resourceCloudInitRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceCloudInitDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceCloudInitDiskDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
 	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
@@ -112,8 +112,8 @@ func resourceCloudInitDelete(d *schema.ResourceData, meta interface{}) error {
 	return removeVolume(client, key)
 }
 
-func resourceCloudInitExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	log.Printf("[DEBUG] Check if resource libvirt_cloudinit exists")
+func resourceCloudInitDiskExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+	log.Printf("[DEBUG] Check if resource libvirt_cloudinit_disk exists")
 	client := meta.(*Client)
 	if client.libvirt == nil {
 		return false, fmt.Errorf(LibVirtConIsNil)

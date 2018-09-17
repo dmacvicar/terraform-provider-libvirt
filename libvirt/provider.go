@@ -20,11 +20,11 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"libvirt_domain":    resourceLibvirtDomain(),
-			"libvirt_volume":    resourceLibvirtVolume(),
-			"libvirt_network":   resourceLibvirtNetwork(),
-			"libvirt_cloudinit": resourceCloudInit(),
-			"libvirt_ignition":  resourceIgnition(),
+			"libvirt_domain":         resourceLibvirtDomain(),
+			"libvirt_volume":         resourceLibvirtVolume(),
+			"libvirt_network":        resourceLibvirtNetwork(),
+			"libvirt_cloudinit_disk": resourceCloudInitDisk(),
+			"libvirt_ignition":       resourceIgnition(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{

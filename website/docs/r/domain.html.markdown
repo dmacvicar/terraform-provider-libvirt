@@ -38,7 +38,7 @@ The following arguments are supported:
 * `network_interface` - (Optional) An array of one or more network interfaces to
   attach to the domain. The `network_interface` object structure is documented
   [below](#handling-network-interfaces).
-* `cloudinit` - (Optional) The `libvirt_cloudinit` disk that has to be used by
+* `cloudinit` - (Optional) The `libvirt_cloudinit_disk` disk that has to be used by
   the domain. This is going to be attached as a CDROM ISO. Changing the
   cloud-init won't cause the domain to be recreated, however the change will
   have effect on the next reboot.

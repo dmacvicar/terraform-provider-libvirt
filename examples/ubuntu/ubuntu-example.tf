@@ -30,7 +30,7 @@ data "template_file" "network_config" {
 # https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/website/docs/r/cloudinit.html.markdown
 # Use CloudInit to add our ssh-key to the instance
 # you can add also meta_data field
-resource "libvirt_cloudinit" "commoninit" {
+resource "libvirt_cloudinit_disk" "commoninit" {
           name           = "commoninit.iso"
           user_data          = "${data.template_file.user_data.rendered}"
           network_config = "${data.template_file.network_config.rendered}"
@@ -42,7 +42,7 @@ resource "libvirt_domain" "domain-ubuntu" {
   memory = "512"
   vcpu = 1
 
-  cloudinit = "${libvirt_cloudinit.commoninit.id}"
+  cloudinit = "${libvirt_cloudinit_disk.commoninit.id}"
 
   network_interface {
     network_name = "vm_network"
