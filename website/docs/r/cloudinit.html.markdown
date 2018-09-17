@@ -1,12 +1,12 @@
 ---
 layout: "libvirt"
 page_title: "Libvirt: libvirt_cloudinit_disk"
-sidebar_current: "docs-libvirt-cloudinit"
+sidebar_current: "docs-libvirt-cloudinit-disk"
 description: |-
-  Manages a cloud-init ISO to attach to a domain
+  Manages a cloud-init ISO disk to attach to a domain
 ---
 
-# libvirt\_cloudinit
+# libvirt\_cloudinit\_disk
 
 Manages a [cloud-init](http://cloudinit.readthedocs.io/) ISO disk that can be
 used to customize a domain during first boot.
@@ -16,9 +16,27 @@ used to customize a domain during first boot.
 ```hcl
 resource "libvirt_cloudinit_disk" "commoninit" {
   name = "commoninit.iso"
+  user_data          = "${data.template_file.user_data.rendered}"
+}
+
+data "template_file" "user_data" {
+  template = "${file("${path.module}/cloud_init.cfg")}"
 }
 
 ```
+
+where `cloud_init_cfg` is a file on same dir level of the terraform tf.file
+```
+#cloud-config
+ssh_pwauth: True
+chpasswd:
+  list: |
+     root:linux
+  expire: False
+```
+
+In this example we change with help of cloud-init the root pwd.
+Take also insipiration from ubuntu.tf https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/examples/ubuntu/ubuntu-example.tf
 
 ## Argument Reference
 
@@ -32,4 +50,4 @@ The following arguments are supported:
 
 * `user_data` - (Optional)  cloud-init user data.
 * `meta_data` - (Optional)  cloud-init user data.
-# `network_config` - (Optional) cloud-init network-config data.
+* `network_config` - (Optional) cloud-init network-config data.
