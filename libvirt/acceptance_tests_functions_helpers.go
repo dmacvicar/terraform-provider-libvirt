@@ -6,10 +6,11 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-// This file contain function helper used for testsuite/testacc
+// This file contain function helpers used for testsuite/testacc
 
-// getResourceFromTerraformState is helper function for getting a resource by name
+// getResourceFromTerraformState get aresource by name
 // from terraform states produced during testacc
+// and return the resource
 func getResourceFromTerraformState(resourceName string, state *terraform.State) (*terraform.ResourceState, error) {
 	rs, ok := state.RootModule().Resources[resourceName]
 	if !ok {

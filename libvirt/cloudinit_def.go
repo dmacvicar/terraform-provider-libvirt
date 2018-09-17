@@ -205,20 +205,14 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 	}
 	defer volume.Free()
 
-	ci.Name, err = volume.GetName()
+	err = ci.setCloudInitDiskNameFromExistingVol(volume)
 	if err != nil {
-		return ci, fmt.Errorf("Error retrieving volume name: %s", err)
+		return ci, err
 	}
 
-	volPool, err := volume.LookupPoolByVolume()
+	err = ci.setCloudInitPoolNameFromExistingVol(volume)
 	if err != nil {
-		return ci, fmt.Errorf("Error retrieving pool for volume: %s", err)
-	}
-	defer volPool.Free()
-
-	ci.PoolName, err = volPool.GetName()
-	if err != nil {
-		return ci, fmt.Errorf("Error retrieving pool name: %s", err)
+		return ci, err
 	}
 
 	isoFile, err := downloadISO(virConn, *volume)
@@ -229,18 +223,21 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Connect, id string) (defCloud
 	if err != nil {
 		return ci, err
 	}
-	isoReader, err := iso9660.NewReader(isoFile)
-	if err != nil {
-		return ci, fmt.Errorf("Error initializing ISO reader: %s", err)
-	}
-	err = ci.saveIsoFilesContentToCloudInitDiskFields(isoReader)
+
+	err = ci.setCloudInitDataFromExistingCloudInitDisk(virConn, volume, isoFile)
 	if err != nil {
 		return ci, err
 	}
 	return ci, nil
 }
 
-func (ci *defCloudInit) saveIsoFilesContentToCloudInitDiskFields(isoReader *iso9660.Reader) error {
+// setCloudInitDataFromExistingCloudInitDisk read and set UserData, MetaData, and NetworkConfig from existing CloudInitDisk
+func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvirt.Connect, volume *libvirt.StorageVol, isoFile *os.File) error {
+	isoReader, err := iso9660.NewReader(isoFile)
+	if err != nil {
+		return fmt.Errorf("Error initializing ISO reader: %s", err)
+	}
+
 	for {
 		file, err := isoReader.Next()
 		if err == io.EOF {
@@ -254,9 +251,8 @@ func (ci *defCloudInit) saveIsoFilesContentToCloudInitDiskFields(isoReader *iso9
 		if err != nil {
 			return err
 		}
-		// the following filenames need to be like this because ios9660 reader
-		// has a bug that troncate file names.
-		//	https://github.com/hooklift/iso9660/issues/3
+		// the following filenames need to be like this because in the ios9660 reader
+		// joliet is not supported. https://github.com/hooklift/iso9660/blob/master/README.md#not-supported
 		if file.Name() == "/user_dat." {
 			ci.UserData = fmt.Sprintf("%s", dataBytes)
 		}
@@ -268,6 +264,31 @@ func (ci *defCloudInit) saveIsoFilesContentToCloudInitDiskFields(isoReader *iso9
 		}
 	}
 	log.Printf("[DEBUG]: Read cloud-init from file: %+v", ci)
+	return nil
+}
+
+// setCloudInitPoolNameFromExistingVol retrieve poolname from an existing CloudInitDisk
+func (ci *defCloudInit) setCloudInitPoolNameFromExistingVol(volume *libvirt.StorageVol) error {
+	volPool, err := volume.LookupPoolByVolume()
+	if err != nil {
+		return fmt.Errorf("Error retrieving pool for cloudinit volume: %s", err)
+	}
+	defer volPool.Free()
+
+	ci.PoolName, err = volPool.GetName()
+	if err != nil {
+		return fmt.Errorf("Error retrieving pool name: %s", err)
+	}
+	return nil
+}
+
+// setCloudInitDisklNameFromVol retrieve CloudInitname from an existing CloudInitDisk
+func (ci *defCloudInit) setCloudInitDiskNameFromExistingVol(volume *libvirt.StorageVol) error {
+	var err error
+	ci.Name, err = volume.GetName()
+	if err != nil {
+		return fmt.Errorf("Error retrieving cloudinit volume name: %s", err)
+	}
 	return nil
 }
 

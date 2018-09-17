@@ -63,7 +63,23 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 								name           = "%s"
 								user_data      = "#cloud-config2"
 							}`, randomResourceName, randomIsoName),
-
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
+					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit."+randomResourceName, &volume),
+				),
+			},
+			// when we apply 2 times with same conf, we should not have a diff. See bug:
+			// https://github.com/dmacvicar/terraform-provider-libvirt/issues/313
+			{
+				Config: fmt.Sprintf(`
+						resource "libvirt_cloudinit" "%s" {
+									name           = "%s"
+									user_data      = "#cloud-config4"
+								}`, randomResourceName, randomIsoName),
+				ExpectNonEmptyPlan: true,
+				PlanOnly:           true,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
@@ -148,6 +164,7 @@ func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirt.Storag
 	}
 }
 
+// this is helper method for test expected values
 type Expected struct {
 	UserData, NetworkConfig, MetaData string
 }
