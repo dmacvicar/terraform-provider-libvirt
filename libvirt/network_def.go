@@ -91,7 +91,7 @@ func updateHost(n *libvirt.Network, ip, name string) error {
 }
 
 // Tries to update first, if that fails, it will add it
-func updateOrAddHost(n *libvirt.Network, ip, mac, name string) error {
+func updateOrAddHost(n *libvirt.Network, ip, name string) error {
 	err := updateHost(n, ip, name)
 	if virErr, ok := err.(libvirt.Error); ok && virErr.Code == libvirt.ERR_OPERATION_INVALID && virErr.Domain == libvirt.FROM_NETWORK {
 		return addHost(n, ip, name)

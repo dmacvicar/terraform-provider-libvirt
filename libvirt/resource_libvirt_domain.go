@@ -520,7 +520,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			for _, addressI := range addressesI.([]interface{}) {
 				address := addressI.(string)
 				log.Printf("[INFO] Finally adding IP/MAC/host=%s/%s/%s", address, mac, pending.hostname)
-				updateOrAddHost(pending.network, address, mac, pending.hostname)
+				updateOrAddHost(pending.network, address, pending.hostname)
 				if err != nil {
 					return fmt.Errorf("Could not add IP/MAC/host=%s/%s/%s: %s", address, mac, pending.hostname, err)
 				}
@@ -619,7 +619,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 					return fmt.Errorf("Could not parse addresses '%s'", address)
 				}
 				log.Printf("[INFO] Updating IP/MAC/host=%s/%s/%s in '%s' network", ip.String(), mac, hostname, networkName)
-				if err := updateOrAddHost(network, ip.String(), mac, hostname); err != nil {
+				if err := updateOrAddHost(network, ip.String(), hostname); err != nil {
 					return err
 				}
 			}
@@ -1386,7 +1386,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 						}
 
 						log.Printf("[INFO] Adding IP/MAC/host=%s/%s/%s to %s", ip.String(), mac, hostname, networkName)
-						if err := updateOrAddHost(network, ip.String(), mac, hostname); err != nil {
+						if err := updateOrAddHost(network, ip.String(), hostname); err != nil {
 							return err
 						}
 					}
