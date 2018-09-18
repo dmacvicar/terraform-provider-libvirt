@@ -15,28 +15,6 @@ const (
 	maxIfaceNum = 100
 )
 
-// randomMACAddress returns a randomized MAC address
-func randomMACAddress() (string, error) {
-	buf := make([]byte, 6)
-	_, err := rand.Read(buf)
-	if err != nil {
-		return "", err
-	}
-
-	// set local bit and unicast
-	buf[0] = (buf[0] | 2) & 0xfe
-	// Set the local bit
-	buf[0] |= 2
-
-	// avoid libvirt-reserved addresses
-	if buf[0] == 0xfe {
-		buf[0] = 0xee
-	}
-
-	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x",
-		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
-}
-
 // randomPort returns a random port
 func randomPort() int {
 	const minPort = 1024

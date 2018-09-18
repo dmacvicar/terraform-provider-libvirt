@@ -1324,19 +1324,14 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 			},
 		}
 
-		// calculate the MAC address
+		// if the domain have already the mac adress take it
+		// otherwise set to empty libvirt will auto-generate it
 		var mac string
 		if macI, ok := d.GetOk(prefix + ".mac"); ok {
-			mac = strings.ToUpper(macI.(string))
-		} else {
-			var err error
-			mac, err = randomMACAddress()
-			if err != nil {
-				return fmt.Errorf("Error generating mac address: %s", err)
+			mac := strings.ToUpper(macI.(string))
+			netIface.MAC = &libvirtxml.DomainInterfaceMAC{
+				Address: mac,
 			}
-		}
-		netIface.MAC = &libvirtxml.DomainInterfaceMAC{
-			Address: mac,
 		}
 
 		// this is not passed to libvirt, but used by waitForAddress
@@ -1385,7 +1380,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 							return fmt.Errorf("Could not parse addresses '%s'", address)
 						}
 
-						log.Printf("[INFO] Adding IP/MAC/host=%s/%s/%s to %s", ip.String(), mac, hostname, networkName)
+						log.Printf("[INFO] Adding IP/host=%s/%s to %s", ip.String(), hostname, networkName)
 						if err := updateOrAddHost(network, ip.String(), hostname); err != nil {
 							return err
 						}
