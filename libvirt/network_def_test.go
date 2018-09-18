@@ -30,7 +30,6 @@ func TestNetworkDefUnmarshall(t *testing.T) {
 		<network>
 			<name>my-network</name>
 			<bridge name="virbr0" stp="on" delay="5" macTableManager="libvirt"/>
-			<mac address='00:16:3E:5D:C7:9E'/>
 			<domain name="example.com" localOnly="no"/>
 			<forward mode='nat'>
 				<nat>
@@ -50,8 +49,8 @@ func TestNetworkDefUnmarshall(t *testing.T) {
 			<ip address="192.168.122.1" netmask="255.255.255.0">
 				<dhcp>
 					<range start="192.168.122.100" end="192.168.122.254" />
-					<host mac="00:16:3e:77:e2:ed" name="foo.example.com" ip="192.168.122.10" />
-					<host mac="00:16:3e:3e:a9:1a" name="bar.example.com" ip="192.168.122.11" />
+					<host name="foo.example.com" ip="192.168.122.10" />
+					<host name="bar.example.com" ip="192.168.122.11" />
 				</dhcp>
 			</ip>
 			<ip family="ipv6" address="2001:db8:ca2:2::1" prefix="64" />
@@ -173,10 +172,9 @@ func TestNetworkFromLibvirt(t *testing.T) {
 
 func TestGetHostXMLDesc(t *testing.T) {
 	ip := "127.0.0.1"
-	mac := "XX:YY:ZZ"
 	name := "localhost"
 
-	data := getHostXMLDesc(ip, mac, name)
+	data := getHostXMLDesc(ip, name)
 
 	dd := libvirtxml.NetworkDHCPHost{}
 	err := xml.Unmarshal([]byte(data), &dd)
@@ -186,10 +184,6 @@ func TestGetHostXMLDesc(t *testing.T) {
 
 	if dd.IP != ip {
 		t.Errorf("expected ip %s, got %s", ip, dd.IP)
-	}
-
-	if dd.MAC != mac {
-		t.Errorf("expected mac %s, got %s", mac, dd.MAC)
 	}
 
 	if dd.Name != name {
