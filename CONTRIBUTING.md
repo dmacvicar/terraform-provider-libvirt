@@ -1,5 +1,9 @@
 # How to contribute to terraform-libvirt-plugin:
 
+## Conventions
+
+* Use [commit.style](https://commit.style/) for git commit messages
+
 ## Running the tests (testacc)
 
 ```
