@@ -80,13 +80,13 @@ func domainWaitForLeases(domain *libvirt.Domain, waitForLeases []*libvirtxml.Dom
 
 func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterface, rd *schema.ResourceData) (found bool, ignore bool, err error) {
 
-	mac := strings.ToUpper(iface.MAC.Address)
-	if mac == "" {
+	// skip if we don't have mac
+	if iface.MAC == nil {
 		log.Printf("[DEBUG] Can't wait without a MAC address: ignoring interface %+v.\n", iface)
 		// we can't get the ip without a mac address
 		return false, true, nil
 	}
-
+	mac := strings.ToUpper(iface.MAC.Address)
 	log.Printf("[DEBUG] waiting for network address for iface=%s\n", mac)
 	ifacesWithAddr, err := domainGetIfacesInfo(domain, rd)
 	if err != nil {

@@ -49,8 +49,8 @@ func TestNetworkDefUnmarshall(t *testing.T) {
 			<ip address="192.168.122.1" netmask="255.255.255.0">
 				<dhcp>
 					<range start="192.168.122.100" end="192.168.122.254" />
-					<host name="foo.example.com" ip="192.168.122.10" />
-					<host name="bar.example.com" ip="192.168.122.11" />
+					<host mac="00:16:3e:77:e2:ed" name="foo.example.com" ip="192.168.122.10" />
+					<host mac="00:16:3e:3e:a9:1a" name="bar.example.com" ip="192.168.122.11" />
 				</dhcp>
 			</ip>
 			<ip family="ipv6" address="2001:db8:ca2:2::1" prefix="64" />
