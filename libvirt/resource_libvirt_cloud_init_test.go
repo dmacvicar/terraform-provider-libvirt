@@ -2,7 +2,6 @@ package libvirt
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/acctest"
@@ -11,12 +10,14 @@ import (
 	libvirt "github.com/libvirt/libvirt-go"
 )
 
-func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
+func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomResourceName := acctest.RandString(10)
+	// this structs are contents values we expect.
+	expectedContents := Expected{UserData: "#cloud-config", NetworkConfig: "network:", MetaData: "instance-id: bamboo"}
+	expectedContents2 := Expected{UserData: "#cloud-config2", NetworkConfig: "network2:", MetaData: "instance-id: bamboo2"}
+	expectedContentsEmpty := Expected{UserData: "#cloud-config2", NetworkConfig: "", MetaData: ""}
 	randomIsoName := acctest.RandString(10) + ".iso"
-	randomLocalHostname := acctest.RandString(5) + ".iso"
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
@@ -26,31 +27,65 @@ func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-				resource "libvirt_cloudinit" "%s" {
-					name           = "%s"
-					local_hostname = "%s"
-					pool           = "default"
-					user_data      = "#cloud-config\nssh_authorized_keys: []\n"
-				}`, randomResourceName, randomIsoName, randomLocalHostname),
+					resource "libvirt_cloudinit_disk" "%s" {
+								name           = "%s"
+								user_data      = "#cloud-config"
+								meta_data = "instance-id: bamboo"
+								network_config = "network:"
+							}`, randomResourceName, randomIsoName),
 
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit."+randomResourceName, "name", randomIsoName),
-					resource.TestCheckResourceAttr(
-						"libvirt_cloudinit."+randomResourceName, "local_hostname", randomLocalHostname),
-					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
+						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContents.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
 				),
 			},
-			// 2nd tests Invalid  userdata
 			{
 				Config: fmt.Sprintf(`
-				resource "libvirt_cloudinit" "testfail" {
-					name           = "commoninit2.iso"
-					local_hostname = "samba2"
-					pool           = "default"
-					user_data      = "invalidgino"
-				}`),
-				ExpectError: regexp.MustCompile("Error merging UserData with UserDataRaw: yaml: unmarshal errors"),
+					resource "libvirt_cloudinit_disk" "%s" {
+								name           = "%s"
+								user_data      = "#cloud-config2"
+								meta_data = "instance-id: bamboo2"
+								network_config = "network2:"
+							}`, randomResourceName, randomIsoName),
+
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContents2.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "libvirt_cloudinit_disk" "%s" {
+								name           = "%s"
+								user_data      = "#cloud-config2"
+							}`, randomResourceName, randomIsoName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+				),
+			},
+			// when we apply 2 times with same conf, we should not have a diff. See bug:
+			// https://github.com/dmacvicar/terraform-provider-libvirt/issues/313
+			{
+				Config: fmt.Sprintf(`
+						resource "libvirt_cloudinit_disk" "%s" {
+									name           = "%s"
+									user_data      = "#cloud-config4"
+								}`, randomResourceName, randomIsoName),
+				ExpectNonEmptyPlan: true,
+				PlanOnly:           true,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+				),
 			},
 		},
 	})
@@ -63,16 +98,13 @@ func TestAccLibvirtCloudInit_CreateCloudIsoViaPlugin(t *testing.T) {
 func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomResourceName := acctest.RandString(10)
-	randomIsoName := acctest.RandString(9) + ".iso"
-	randomLocalHostname := acctest.RandString(5) + ".iso"
 
 	testAccCheckLibvirtCloudInitConfigBasic := fmt.Sprintf(`
-    	resource "libvirt_cloudinit" "%s" {
+    	resource "libvirt_cloudinit_disk" "%s" {
   	  name           = "%s"
-			local_hostname = "%s"
 			pool           = "default"
 			user_data      = "#cloud-config\nssh_authorized_keys: []\n"
-		}`, randomResourceName, randomIsoName, randomLocalHostname)
+		}`, randomResourceName, randomResourceName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
@@ -81,7 +113,7 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 			{
 				Config: testAccCheckLibvirtCloudInitConfigBasic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckCloudInitVolumeExists("libvirt_cloudinit."+randomResourceName, &volume),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
 				),
 			},
 			{
@@ -100,20 +132,18 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	})
 }
 
-func testAccCheckCloudInitVolumeExists(n string, volume *libvirt.StorageVol) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
+		rs, err := getResourceFromTerraformState(volumeName, state)
+		if err != nil {
+			return err
 		}
-
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No libvirt volume key ID is set")
-		}
-
 		cikey, err := getCloudInitVolumeKeyFromTerraformID(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
 		retrievedVol, err := virConn.LookupStorageVolByKey(cikey)
 		if err != nil {
 			return err
@@ -130,6 +160,35 @@ func testAccCheckCloudInitVolumeExists(n string, volume *libvirt.StorageVol) res
 
 		*volume = *retrievedVol
 
+		return nil
+	}
+}
+
+// this is helper method for test expected values
+type Expected struct {
+	UserData, NetworkConfig, MetaData string
+}
+
+func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		rs, err := getResourceFromTerraformState(volumeName, state)
+		if err != nil {
+			return err
+		}
+
+		cloudInitDiskDef, err := newCloudInitDefFromRemoteISO(virConn, rs.Primary.ID)
+
+		if cloudInitDiskDef.MetaData != expected.MetaData {
+			return fmt.Errorf("metadata '%s' content differs from expected Metadata %s", cloudInitDiskDef.MetaData, expected.MetaData)
+		}
+		if cloudInitDiskDef.UserData != expected.UserData {
+			return fmt.Errorf("userdata '%s' content differs from expected UserData  %s", cloudInitDiskDef.UserData, expected.UserData)
+		}
+		if cloudInitDiskDef.NetworkConfig != expected.NetworkConfig {
+			return fmt.Errorf("networkconfig '%s' content differs from expected NetworkConfigData %s", cloudInitDiskDef.NetworkConfig, expected.NetworkConfig)
+		}
 		return nil
 	}
 }

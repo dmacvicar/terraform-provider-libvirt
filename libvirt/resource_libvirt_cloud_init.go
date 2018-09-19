@@ -7,12 +7,12 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func resourceCloudInit() *schema.Resource {
+func resourceCloudInitDisk() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceCloudInitCreate,
-		Read:   resourceCloudInitRead,
-		Delete: resourceCloudInitDelete,
-		Exists: resourceCloudInitExists,
+		Create: resourceCloudInitDiskCreate,
+		Read:   resourceCloudInitDiskRead,
+		Delete: resourceCloudInitDiskDelete,
+		Exists: resourceCloudInitDiskExists,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -25,17 +25,17 @@ func resourceCloudInit() *schema.Resource {
 				Default:  "default",
 				ForceNew: true,
 			},
-			"local_hostname": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
 			"user_data": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"ssh_authorized_key": {
+			"meta_data": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+			"network_config": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
@@ -44,7 +44,7 @@ func resourceCloudInit() *schema.Resource {
 	}
 }
 
-func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceCloudInitDiskCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] creating cloudinit")
 	client := meta.(*Client)
 	virConn := client.libvirt
@@ -53,38 +53,34 @@ func resourceCloudInitCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	cloudInit := newCloudInitDef()
-	cloudInit.MetaData.LocalHostname = d.Get("local_hostname").(string)
-	cloudInit.UserDataRaw = d.Get("user_data").(string)
-
-	if _, ok := d.GetOk("ssh_authorized_key"); ok {
-		sshKey := d.Get("ssh_authorized_key").(string)
-		cloudInit.UserData.SSHAuthorizedKeys = append(
-			cloudInit.UserData.SSHAuthorizedKeys,
-			sshKey)
-	}
-
+	cloudInit.UserData = d.Get("user_data").(string)
+	cloudInit.MetaData = d.Get("meta_data").(string)
+	cloudInit.NetworkConfig = d.Get("network_config").(string)
 	cloudInit.Name = d.Get("name").(string)
 	cloudInit.PoolName = d.Get("pool").(string)
 
 	log.Printf("[INFO] cloudInit: %+v", cloudInit)
 
-	key, err := cloudInit.CreateAndUpload(client)
+	iso, err := cloudInit.CreateIso()
+	if err != nil {
+		return err
+	}
+	key, err := cloudInit.UploadIso(client, iso)
 	if err != nil {
 		return err
 	}
 	d.SetId(key)
 
-	// make sure we record the id even if the rest of this gets interrupted
 	d.Partial(true) // make sure we record the id even if the rest of this gets interrupted
 	d.Set("id", key)
 	d.SetPartial("id")
-	// TODO: at this point we have collected more things than the ID, so let's save as many things as we can
+
 	d.Partial(false)
 
-	return resourceCloudInitRead(d, meta)
+	return resourceCloudInitDiskRead(d, meta)
 }
 
-func resourceCloudInitRead(d *schema.ResourceData, meta interface{}) error {
+func resourceCloudInitDiskRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
@@ -96,17 +92,13 @@ func resourceCloudInitRead(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("pool", ci.PoolName)
 	d.Set("name", ci.Name)
-	d.Set("local_hostname", ci.MetaData.LocalHostname)
-	d.Set("user_data", ci.UserDataRaw)
-
-	if len(ci.UserData.SSHAuthorizedKeys) == 1 {
-		d.Set("ssh_authorized_key", ci.UserData.SSHAuthorizedKeys[0])
-	}
-
+	d.Set("user_data", ci.UserData)
+	d.Set("meta_data", ci.MetaData)
+	d.Set("network_config", ci.NetworkConfig)
 	return nil
 }
 
-func resourceCloudInitDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceCloudInitDiskDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
 	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
@@ -120,8 +112,8 @@ func resourceCloudInitDelete(d *schema.ResourceData, meta interface{}) error {
 	return removeVolume(client, key)
 }
 
-func resourceCloudInitExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	log.Printf("[DEBUG] Check if resource libvirt_cloudinit exists")
+func resourceCloudInitDiskExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+	log.Printf("[DEBUG] Check if resource libvirt_cloudinit_disk exists")
 	client := meta.(*Client)
 	if client.libvirt == nil {
 		return false, fmt.Errorf(LibVirtConIsNil)
