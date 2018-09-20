@@ -338,7 +338,7 @@ resource "libvirt_domain" "domain1" {
     hostname = "master"
     addresses = ["10.17.3.3"]
     mac = "AA:BB:CC:11:22:22"
-    wait_for_lease = 1
+    wait_for_lease = true
   }
 }
 ```
@@ -356,7 +356,7 @@ When using a virtual network, users can specify:
 * `addresses` - (Optional) An IP address for this domain in this network.
 * `hostname` - (Optional) A hostname that will be assigned to this domain
   resource in this network.
-* `wait_for_lease`- (Optional) When creating the domain resource, wait until the
+* `wait_for_lease`- (Optional boolean) When creating the domain resource, wait until the
   network interface gets a DHCP lease from libvirt, so that the computed IP
   addresses will be available when the domain is up and the plan applied.
 
