@@ -26,7 +26,7 @@ const domWaitLeaseDone = "all-addresses-obtained"
 var errDomainInvalidState = errors.New("invalid state for domain")
 
 func domainWaitForLeases(domain *libvirt.Domain, waitForLeases []*libvirtxml.DomainInterface,
-	timeout time.Duration, domainDef libvirtxml.Domain, virConn *libvirt.Connect, rd *schema.ResourceData) error {
+	timeout time.Duration, rd *schema.ResourceData) error {
 	waitFunc := func() (interface{}, string, error) {
 
 		state, err := domainGetState(*domain)
@@ -46,7 +46,7 @@ func domainWaitForLeases(domain *libvirt.Domain, waitForLeases []*libvirtxml.Dom
 
 		// check we have IPs for all the interfaces we are waiting for
 		for _, iface := range waitForLeases {
-			found, ignore, err := domainIfaceHasAddress(*domain, *iface, domainDef, virConn, rd)
+			found, ignore, err := domainIfaceHasAddress(*domain, *iface, rd)
 			if err != nil {
 				return false, "", err
 			}
@@ -78,8 +78,7 @@ func domainWaitForLeases(domain *libvirt.Domain, waitForLeases []*libvirtxml.Dom
 	return err
 }
 
-func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterface,
-	domainDef libvirtxml.Domain, virConn *libvirt.Connect, rd *schema.ResourceData) (found bool, ignore bool, err error) {
+func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterface, rd *schema.ResourceData) (found bool, ignore bool, err error) {
 
 	mac := strings.ToUpper(iface.MAC.Address)
 	if mac == "" {
@@ -89,7 +88,7 @@ func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterfa
 	}
 
 	log.Printf("[DEBUG] waiting for network address for iface=%s\n", mac)
-	ifacesWithAddr, err := domainGetIfacesInfo(domain, domainDef, virConn, rd)
+	ifacesWithAddr, err := domainGetIfacesInfo(domain, rd)
 	if err != nil {
 		return false, false, fmt.Errorf("Error retrieving interface addresses: %s", err)
 	}
@@ -147,8 +146,7 @@ func domainIsRunning(domain libvirt.Domain) (bool, error) {
 	return state == libvirt.DOMAIN_RUNNING, nil
 }
 
-func domainGetIfacesInfo(domain libvirt.Domain, domainDef libvirtxml.Domain,
-	virConn *libvirt.Connect, rd *schema.ResourceData) ([]libvirt.DomainInterface, error) {
+func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libvirt.DomainInterface, error) {
 	qemuAgentEnabled := rd.Get("qemu_agent").(bool)
 	if qemuAgentEnabled {
 		// get all the interfaces using the qemu-agent, this includes also

@@ -493,8 +493,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[INFO] Domain ID: %s", d.Id())
 
 	if len(waitForLeases) > 0 {
-		err = domainWaitForLeases(domain, waitForLeases, d.Timeout(schema.TimeoutCreate),
-			domainDef, virConn, d)
+		err = domainWaitForLeases(domain, waitForLeases, d.Timeout(schema.TimeoutCreate), d)
 		if err != nil {
 			return err
 		}
@@ -781,7 +780,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("filesystems", filesystems)
 
 	// lookup interfaces with addresses
-	ifacesWithAddr, err := domainGetIfacesInfo(*domain, domainDef, virConn, d)
+	ifacesWithAddr, err := domainGetIfacesInfo(*domain, d)
 	if err != nil {
 		return fmt.Errorf("Error retrieving interface addresses: %s", err)
 	}
