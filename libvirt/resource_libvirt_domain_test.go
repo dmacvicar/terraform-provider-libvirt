@@ -748,15 +748,12 @@ func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckLibvirtDomainExists(n string, domain *libvirt.Domain) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
-		}
+func testAccCheckLibvirtDomainExists(name string, domain *libvirt.Domain) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
 
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No libvirt domain ID is set")
+		rs, err := getResourceFromTerraformState(name, state)
+		if err != nil {
+			return err
 		}
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
@@ -863,15 +860,12 @@ func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.Tes
 	}
 }
 
-func testAccCheckLibvirtDestroyLeavesIPs(n string, ip string, network *libvirt.Network) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
-		}
+func testAccCheckLibvirtDestroyLeavesIPs(name string, ip string, network *libvirt.Network) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
 
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No libvirt network ID is set")
+		rs, err := getResourceFromTerraformState(name, state)
+		if err != nil {
+			return err
 		}
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
@@ -1098,15 +1092,12 @@ func TestAccLibvirtDomain_ArchType(t *testing.T) {
 	})
 }
 
-func testAccCheckLibvirtNetworkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
-		}
+func testAccCheckLibvirtNetworkExists(name string, network *libvirt.Network) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
 
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No libvirt network ID is set")
+		rs, err := getResourceFromTerraformState(name, state)
+		if err != nil {
+			return err
 		}
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
@@ -1195,16 +1186,12 @@ func TestAccLibvirtDomain_ShutoffMultiDomainsRunning(t *testing.T) {
 	})
 }
 
-func testAccCheckLibvirtDomainStateEqual(n string, domain *libvirt.Domain, exptectedState string) resource.TestCheckFunc {
+func testAccCheckLibvirtDomainStateEqual(name string, domain *libvirt.Domain, exptectedState string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
-		}
-
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No libvirt domain ID is set")
+		rs, err := getResourceFromTerraformState(name, s)
+		if err != nil {
+			return err
 		}
 
 		virConn := testAccProvider.Meta().(*Client).libvirt

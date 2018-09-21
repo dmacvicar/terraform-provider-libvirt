@@ -51,17 +51,13 @@ func TestAccLibvirtIgnition_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckIgnitionVolumeExists(n string, volume *libvirt.StorageVol) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+func testAccCheckIgnitionVolumeExists(name string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
-		}
-
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No libvirt ignition key ID is set")
+		rs, err := getResourceFromTerraformState(name, state)
+		if err != nil {
+			return err
 		}
 
 		ignKey, err := getIgnitionVolumeKeyFromTerraformID(rs.Primary.ID)

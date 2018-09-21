@@ -12,17 +12,14 @@ import (
 	"github.com/libvirt/libvirt-go-xml"
 )
 
-func getNetworkDef(s *terraform.State, name string) (*libvirtxml.Network, error) {
+func getNetworkDef(state *terraform.State, name string) (*libvirtxml.Network, error) {
 	var network *libvirt.Network
-	rs, ok := s.RootModule().Resources[name]
-	if !ok {
-		return nil, fmt.Errorf("Not found: %s", name)
-	}
-	if rs.Primary.ID == "" {
-		return nil, fmt.Errorf("No libvirt network ID is set")
+	rs, err := getResourceFromTerraformState(name, state)
+	if err != nil {
+		return nil, err
 	}
 	virConn := testAccProvider.Meta().(*Client).libvirt
-	network, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
+	network, err = virConn.LookupNetworkByUUIDString(rs.Primary.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -249,15 +246,12 @@ func checkDNSHosts(name string, expected []libvirtxml.NetworkDNSHost) resource.T
 	}
 }
 
-func networkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
-		}
+func networkExists(name string, network *libvirt.Network) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
 
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No libvirt network ID is set")
+		rs, err := getResourceFromTerraformState(name, state)
+		if err != nil {
+			return err
 		}
 
 		virConn := testAccProvider.Meta().(*Client).libvirt

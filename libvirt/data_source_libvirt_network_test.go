@@ -33,13 +33,11 @@ func TestAccLibvirtNetworkDataSource_DNSHostTemplate(t *testing.T) {
 }
 
 func checkDNSHostTemplate(id, name, value string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[id]
-		if !ok {
-			return fmt.Errorf("Not found: %s", id)
-		}
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No ID is set")
+	return func(state *terraform.State) error {
+
+		rs, err := getResourceFromTerraformState(id, state)
+		if err != nil {
+			return err
 		}
 
 		v := rs.Primary.Attributes[name]

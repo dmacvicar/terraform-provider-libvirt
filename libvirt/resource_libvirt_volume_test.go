@@ -33,16 +33,12 @@ func testAccCheckLibvirtVolumeDestroy(state *terraform.State) error {
 }
 
 func testAccCheckLibvirtVolumeExists(name string, volume *libvirt.StorageVol) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+	return func(state *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		rs, ok := s.RootModule().Resources[name]
-		if !ok {
-			return fmt.Errorf("Not found: %s", name)
-		}
-
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No libvirt volume key ID is set")
+		rs, err := getResourceFromTerraformState(name, state)
+		if err != nil {
+			return err
 		}
 
 		retrievedVol, err := virConn.LookupStorageVolByKey(rs.Primary.ID)
@@ -86,16 +82,12 @@ func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.StorageVol
 }
 
 func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirt.StorageVol) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
+	return func(state *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		resource, ok := s.RootModule().Resources[name]
-		if !ok {
-			return fmt.Errorf("Not found: %s", name)
-		}
-
-		if resource.Primary.ID == "" {
-			return fmt.Errorf("No libvirt volume key ID is set")
+		resource, err := getResourceFromTerraformState(name, state)
+		if err != nil {
+			return err
 		}
 
 		vol, err := virConn.LookupStorageVolByKey(resource.Primary.ID)
