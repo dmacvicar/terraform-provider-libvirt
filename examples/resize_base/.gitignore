@@ -1,0 +1,4 @@
+*.img
+*.qcow2
+*.tfstate*
+.terraform
