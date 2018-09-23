@@ -348,6 +348,20 @@ func resourceLibvirtDomain() *schema.Resource {
 				Default:  false,
 				ForceNew: false,
 			},
+			"xml": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"xslt": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -456,8 +470,12 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("Error serializing libvirt domain: %s", err)
 	}
+	log.Printf("[DEBUG] Generated XML for libvirt domain:\n%s", data)
 
-	log.Printf("[DEBUG] Creating libvirt domain with XML:\n%s", data)
+	data, err = transformResourceXML(data, d)
+	if err != nil {
+		return fmt.Errorf("Error applying XSLT stylesheet: %s", err)
+	}
 
 	domain, err := virConn.DomainDefineXML(data)
 	if err != nil {
