@@ -12,24 +12,6 @@ import (
 	"github.com/libvirt/libvirt-go-xml"
 )
 
-func getNetworkDef(state *terraform.State, name string) (*libvirtxml.Network, error) {
-	var network *libvirt.Network
-	rs, err := getResourceFromTerraformState(name, state)
-	if err != nil {
-		return nil, err
-	}
-	virConn := testAccProvider.Meta().(*Client).libvirt
-	network, err = virConn.LookupNetworkByUUIDString(rs.Primary.ID)
-	if err != nil {
-		return nil, err
-	}
-	networkDef, err := getXMLNetworkDefFromLibvirt(network)
-	if err != nil {
-		return nil, fmt.Errorf("Error reading libvirt network XML description: %s", err)
-	}
-	return &networkDef, nil
-}
-
 func TestAccCheckLibvirtNetwork_LocalOnly(t *testing.T) {
 	randomNetworkResource := acctest.RandString(10)
 	randomNetworkName := acctest.RandString(10)
@@ -59,7 +41,10 @@ func TestAccCheckLibvirtNetwork_LocalOnly(t *testing.T) {
 
 func checkLocalOnly(name string, expectLocalOnly bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		networkDef, err := getNetworkDef(s, name)
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		networkDef, err := getNetworkDef(s, name, *virConn)
 		if err != nil {
 			return err
 		}
@@ -131,7 +116,10 @@ func TestAccCheckLibvirtNetwork_DNSForwarders(t *testing.T) {
 
 func checkDNSForwarders(name string, expected []libvirtxml.NetworkDNSForwarder) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		networkDef, err := getNetworkDef(s, name)
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		networkDef, err := getNetworkDef(s, name, *virConn)
 		if err != nil {
 			return err
 		}
@@ -219,7 +207,9 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 
 func checkDNSHosts(name string, expected []libvirtxml.NetworkDNSHost) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		networkDef, err := getNetworkDef(s, name)
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+		networkDef, err := getNetworkDef(s, name, *virConn)
 		if err != nil {
 			return err
 		}
@@ -255,7 +245,7 @@ func networkExists(name string, network *libvirt.Network) resource.TestCheckFunc
 		}
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
-
+		fmt.Printf("%s", virConn)
 		networkRetrived, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
 		if err != nil {
 			return err
@@ -278,7 +268,8 @@ func networkExists(name string, network *libvirt.Network) resource.TestCheckFunc
 
 func testAccCheckLibvirtNetworkDhcpStatus(name string, expectedDhcpStatus string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		networkDef, err := getNetworkDef(s, name)
+		virConn := testAccProvider.Meta().(*Client).libvirt
+		networkDef, err := getNetworkDef(s, name, *virConn)
 		if err != nil {
 			return err
 		}
@@ -409,7 +400,8 @@ func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 
 func checkBridge(resourceName string, bridgeName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		networkDef, err := getNetworkDef(s, resourceName)
+		virConn := testAccProvider.Meta().(*Client).libvirt
+		networkDef, err := getNetworkDef(s, resourceName, *virConn)
 		if err != nil {
 			return err
 		}
