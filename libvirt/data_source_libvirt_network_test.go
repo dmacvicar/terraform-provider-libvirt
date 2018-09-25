@@ -10,9 +10,8 @@ import (
 
 func TestAccLibvirtNetworkDataSource_DNSHostTemplate(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 
 			{

@@ -18,7 +18,7 @@ func TestAccCheckLibvirtNetwork_LocalOnly(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -67,7 +67,7 @@ func TestAccCheckLibvirtNetwork_DNSForwarders(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -152,7 +152,7 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -293,24 +293,6 @@ func testAccCheckLibvirtNetworkDhcpStatus(name string, expectedDhcpStatus string
 	}
 }
 
-func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
-	virtConn := testAccProvider.Meta().(*Client).libvirt
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "libvirt_network" {
-			continue
-		}
-		_, err := virtConn.LookupNetworkByUUIDString(rs.Primary.ID)
-		if err == nil {
-			return fmt.Errorf(
-				"Error waiting for network (%s) to be destroyed: %s",
-				rs.Primary.ID, err)
-		}
-	}
-
-	return nil
-}
-
 func TestAccLibvirtNetwork_Import(t *testing.T) {
 	var network libvirt.Network
 	randomNetworkResource := acctest.RandString(10)
@@ -320,7 +302,7 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config: fmt.Sprintf(`
@@ -348,7 +330,7 @@ func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -376,7 +358,7 @@ func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -425,7 +407,7 @@ func TestAccLibvirtNetwork_BridgedMode(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -450,7 +432,7 @@ func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`

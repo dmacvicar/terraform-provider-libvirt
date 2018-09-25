@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	libvirt "github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
 )
 
 // This file contain function helpers used for testsuite/testacc
+
+// the following helpers are used in mostly all testacc.
 
 // getResourceFromTerraformState get aresource by name
 // from terraform states produced during testacc
@@ -25,6 +28,28 @@ func getResourceFromTerraformState(resourceName string, state *terraform.State) 
 	}
 	return rs, nil
 }
+
+// test in all testacc that resource is destroyed
+func testaccCheckLibvirtDestroyResource(resourceName string, virConn libvirt.Connect) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		for _, rs := range s.RootModule().Resources {
+			if rs.Type != resourceName {
+				continue
+			}
+
+			_, err := virConn.LookupDomainByUUIDString(rs.Primary.ID)
+			if err == nil {
+				return fmt.Errorf(
+					"Error waiting for resource (%s) to be destroyed: %s",
+					rs.Primary.ID, err)
+			}
+		}
+
+		return nil
+	}
+}
+
+// ** resource specifics helpers **
 
 // getVolumeFromTerraformState lookup volume by name and return the libvirt volume from a terraform state
 func getVolumeFromTerraformState(name string, state *terraform.State, virConn libvirt.Connect) (*libvirt.StorageVol, error) {

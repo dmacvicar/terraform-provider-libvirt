@@ -35,7 +35,7 @@ func TestAccLibvirtIgnition_Basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtIgnitionDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_ignition", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -83,30 +83,4 @@ func testAccCheckIgnitionVolumeExists(name string, volume *libvirt.StorageVol) r
 		*volume = *retrievedVol
 		return nil
 	}
-}
-
-func testAccCheckLibvirtIgnitionDestroy(s *terraform.State) error {
-	virtConn := testAccProvider.Meta().(*Client).libvirt
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "libvirt_ignition" {
-			continue
-		}
-
-		// Try to find the Ignition Volume
-
-		ignKey, errKey := getIgnitionVolumeKeyFromTerraformID(rs.Primary.ID)
-		if errKey != nil {
-			return errKey
-		}
-
-		_, err := virtConn.LookupStorageVolByKey(ignKey)
-		if err == nil {
-			return fmt.Errorf(
-				"Error waiting for IgnitionVolume (%s) to be destroyed: %s",
-				ignKey, err)
-		}
-	}
-
-	return nil
 }

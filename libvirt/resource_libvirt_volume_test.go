@@ -13,25 +13,6 @@ import (
 	libvirt "github.com/libvirt/libvirt-go"
 )
 
-func testAccCheckLibvirtVolumeDestroy(state *terraform.State) error {
-	virConn := testAccProvider.Meta().(*Client).libvirt
-
-	for _, rs := range state.RootModule().Resources {
-		if rs.Type != "libvirt_volume" {
-			continue
-		}
-
-		_, err := virConn.LookupStorageVolByKey(rs.Primary.ID)
-		if err == nil {
-			return fmt.Errorf(
-				"Error waiting for volume (%s) to be destroyed: %s",
-				rs.Primary.ID, err)
-		}
-	}
-
-	return nil
-}
-
 func testAccCheckLibvirtVolumeExists(name string, volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
@@ -118,7 +99,7 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_volume", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -146,7 +127,7 @@ func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_volume", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -176,7 +157,7 @@ func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_volume", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -214,7 +195,7 @@ func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_volume", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: testAccCheckLibvirtVolumeConfigBasic,
@@ -257,7 +238,7 @@ func TestAccLibvirtVolume_UniqueName(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_volume", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config:      config,
@@ -293,7 +274,7 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_volume", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -336,7 +317,7 @@ func TestAccLibvirtVolume_DownloadFromSourceFormat(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_volume", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -365,7 +346,7 @@ func TestAccLibvirtVolume_Format(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_volume", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -395,7 +376,7 @@ func TestAccLibvirtVolume_Import(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_volume", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config: fmt.Sprintf(`
