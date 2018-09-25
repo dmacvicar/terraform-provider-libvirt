@@ -2,6 +2,7 @@ package libvirt
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/hashicorp/terraform/terraform"
 	libvirt "github.com/libvirt/libvirt-go"
@@ -23,6 +24,21 @@ func getResourceFromTerraformState(resourceName string, state *terraform.State) 
 		return nil, fmt.Errorf("No libvirt resource key ID is set")
 	}
 	return rs, nil
+}
+
+// getVolumeFromTerraformState lookup volume by name and return the libvirt volume from a terraform state
+func getVolumeFromTerraformState(name string, state *terraform.State, virConn libvirt.Connect) (*libvirt.StorageVol, error) {
+	rs, err := getResourceFromTerraformState(name, state)
+	if err != nil {
+		return nil, err
+	}
+
+	vol, err := virConn.LookupStorageVolByKey(rs.Primary.ID)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[DEBUG]:The ID is %s", rs.Primary.ID)
+	return vol, nil
 }
 
 // helper used in network tests for retrieve xml network definition.

@@ -41,11 +41,10 @@ func testAccCheckLibvirtVolumeExists(name string, volume *libvirt.StorageVol) re
 			return err
 		}
 
-		retrievedVol, err := virConn.LookupStorageVolByKey(rs.Primary.ID)
+		retrievedVol, err := getVolumeFromTerraformState(name, state, *virConn)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("The ID is %s", rs.Primary.ID)
 
 		realID, err := retrievedVol.GetKey()
 		if err != nil {
@@ -85,12 +84,7 @@ func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirt.Storag
 	return func(state *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		resource, err := getResourceFromTerraformState(name, state)
-		if err != nil {
-			return err
-		}
-
-		vol, err := virConn.LookupStorageVolByKey(resource.Primary.ID)
+		vol, err := getVolumeFromTerraformState(name, state, *virConn)
 		if err != nil {
 			return err
 		}
