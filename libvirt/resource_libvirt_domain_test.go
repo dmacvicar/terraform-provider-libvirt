@@ -863,21 +863,11 @@ func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.Tes
 func testAccCheckLibvirtDestroyLeavesIPs(name string, ip string, network *libvirt.Network) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
-		rs, err := getResourceFromTerraformState(name, state)
-		if err != nil {
-			return err
-		}
-
 		virConn := testAccProvider.Meta().(*Client).libvirt
-
-		retrieveNetwork, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
-
+		networkDef, err := getNetworkDef(state, name, *virConn)
 		if err != nil {
 			return err
 		}
-
-		networkDef, err := getXMLNetworkDefFromLibvirt(retrieveNetwork)
-
 		for _, ips := range networkDef.IPs {
 			for _, dhcpHost := range ips.DHCP.Hosts {
 				if dhcpHost.IP == ip {
