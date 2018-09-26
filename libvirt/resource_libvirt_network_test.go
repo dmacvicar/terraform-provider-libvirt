@@ -12,34 +12,13 @@ import (
 	"github.com/libvirt/libvirt-go-xml"
 )
 
-func getNetworkDef(s *terraform.State, name string) (*libvirtxml.Network, error) {
-	var network *libvirt.Network
-	rs, ok := s.RootModule().Resources[name]
-	if !ok {
-		return nil, fmt.Errorf("Not found: %s", name)
-	}
-	if rs.Primary.ID == "" {
-		return nil, fmt.Errorf("No libvirt network ID is set")
-	}
-	virConn := testAccProvider.Meta().(*Client).libvirt
-	network, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
-	if err != nil {
-		return nil, err
-	}
-	networkDef, err := getXMLNetworkDefFromLibvirt(network)
-	if err != nil {
-		return nil, fmt.Errorf("Error reading libvirt network XML description: %s", err)
-	}
-	return &networkDef, nil
-}
-
 func TestAccCheckLibvirtNetwork_LocalOnly(t *testing.T) {
 	randomNetworkResource := acctest.RandString(10)
 	randomNetworkName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -62,7 +41,10 @@ func TestAccCheckLibvirtNetwork_LocalOnly(t *testing.T) {
 
 func checkLocalOnly(name string, expectLocalOnly bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		networkDef, err := getNetworkDef(s, name)
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		networkDef, err := getNetworkDef(s, name, *virConn)
 		if err != nil {
 			return err
 		}
@@ -85,7 +67,7 @@ func TestAccCheckLibvirtNetwork_DNSForwarders(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -134,7 +116,10 @@ func TestAccCheckLibvirtNetwork_DNSForwarders(t *testing.T) {
 
 func checkDNSForwarders(name string, expected []libvirtxml.NetworkDNSForwarder) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		networkDef, err := getNetworkDef(s, name)
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		networkDef, err := getNetworkDef(s, name, *virConn)
 		if err != nil {
 			return err
 		}
@@ -167,7 +152,7 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -222,7 +207,9 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 
 func checkDNSHosts(name string, expected []libvirtxml.NetworkDNSHost) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		networkDef, err := getNetworkDef(s, name)
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+		networkDef, err := getNetworkDef(s, name, *virConn)
 		if err != nil {
 			return err
 		}
@@ -249,19 +236,16 @@ func checkDNSHosts(name string, expected []libvirtxml.NetworkDNSHost) resource.T
 	}
 }
 
-func networkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
-		}
+func networkExists(name string, network *libvirt.Network) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
 
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No libvirt network ID is set")
+		rs, err := getResourceFromTerraformState(name, state)
+		if err != nil {
+			return err
 		}
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
-
+		fmt.Printf("%s", virConn)
 		networkRetrived, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
 		if err != nil {
 			return err
@@ -284,7 +268,8 @@ func networkExists(n string, network *libvirt.Network) resource.TestCheckFunc {
 
 func testAccCheckLibvirtNetworkDhcpStatus(name string, expectedDhcpStatus string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		networkDef, err := getNetworkDef(s, name)
+		virConn := testAccProvider.Meta().(*Client).libvirt
+		networkDef, err := getNetworkDef(s, name, *virConn)
 		if err != nil {
 			return err
 		}
@@ -308,24 +293,6 @@ func testAccCheckLibvirtNetworkDhcpStatus(name string, expectedDhcpStatus string
 	}
 }
 
-func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
-	virtConn := testAccProvider.Meta().(*Client).libvirt
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "libvirt_network" {
-			continue
-		}
-		_, err := virtConn.LookupNetworkByUUIDString(rs.Primary.ID)
-		if err == nil {
-			return fmt.Errorf(
-				"Error waiting for network (%s) to be destroyed: %s",
-				rs.Primary.ID, err)
-		}
-	}
-
-	return nil
-}
-
 func TestAccLibvirtNetwork_Import(t *testing.T) {
 	var network libvirt.Network
 	randomNetworkResource := acctest.RandString(10)
@@ -335,7 +302,7 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config: fmt.Sprintf(`
@@ -363,7 +330,7 @@ func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -391,7 +358,7 @@ func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -415,7 +382,8 @@ func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 
 func checkBridge(resourceName string, bridgeName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		networkDef, err := getNetworkDef(s, resourceName)
+		virConn := testAccProvider.Meta().(*Client).libvirt
+		networkDef, err := getNetworkDef(s, resourceName, *virConn)
 		if err != nil {
 			return err
 		}
@@ -439,7 +407,7 @@ func TestAccLibvirtNetwork_BridgedMode(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -464,7 +432,7 @@ func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_network", *testAccProvider.Meta().(*Client).libvirt),
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`

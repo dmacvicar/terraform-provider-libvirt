@@ -17,5 +17,3 @@ script:
   - make gofmtcheck
   - make vet
   - golint -set_exit_status libvirt/
-  - make test
-  - goveralls -coverprofile=profile.cov -service=travis-ci
