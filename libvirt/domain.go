@@ -153,16 +153,18 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 		// interfaces that are not attached to networks managed by libvirt
 		// (eg. bridges, macvtap,...)
 		log.Print("[DEBUG] fetching networking interfaces using qemu-agent")
-		interfaces := qemuAgentGetInterfacesInfo(&domain, true)
+		interfaces, err := qemuAgentWaitForInterfacesInfo(domain)
+		if err != nil {
+			return interfaces, err
+		}
 		if len(interfaces) > 0 {
 			// the agent will always return all the interfaces, both the
 			// ones managed by libvirt and the ones attached to bridge interfaces
 			// or macvtap. Hence it has the highest priority
 			return interfaces, nil
 		}
-	} else {
-		log.Printf("[DEBUG] qemu-agent is not used")
 	}
+
 	var interfaces []libvirt.DomainInterface
 
 	// get all the interfaces attached to libvirt networks
@@ -192,4 +194,38 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 	log.Printf("[DEBUG] Interfaces info obtained with libvirt API:\n%s\n", spew.Sdump(interfaces))
 
 	return interfaces, nil
+}
+
+func qemuAgentInterfacesRefreshFunc(domain libvirt.Domain) resource.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+
+		interfaces, err := domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+
+		if err != nil {
+			log.Printf("[DEBUG] Qemu-agent error: %s", err)
+			return interfaces, "qemu-agent-wait", err
+		}
+
+		log.Printf("[DEBUG] Interfaces obtained via qemu-agent: %+v", interfaces)
+		return interfaces, "qemu-agent-done", nil
+	}
+}
+
+// Retrieve all the interfaces attached to a domain and their addresses.
+func qemuAgentWaitForInterfacesInfo(domain libvirt.Domain) ([]libvirt.DomainInterface, error) {
+	qemuAgentQuery := &resource.StateChangeConf{
+		Pending:    []string{"qemu-agent-wait"},
+		Target:     []string{"qemu-agent-done"},
+		Refresh:    qemuAgentInterfacesRefreshFunc(domain),
+		MinTimeout: 4 * time.Second,
+		Delay:      4 * time.Second, // Wait this time before starting checks
+		Timeout:    60 * time.Second,
+	}
+
+	interfaces, err := qemuAgentQuery.WaitForState()
+	if err != nil {
+		return []libvirt.DomainInterface{}, fmt.Errorf("Error retrieving interface addresses with Qemu-agent: %s", err)
+	}
+
+	return interfaces.([]libvirt.DomainInterface), nil
 }
