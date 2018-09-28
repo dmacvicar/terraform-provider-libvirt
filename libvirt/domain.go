@@ -147,6 +147,18 @@ func domainIsRunning(domain libvirt.Domain) (bool, error) {
 }
 
 func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libvirt.DomainInterface, error) {
+
+	var interfaces []libvirt.DomainInterface
+	// if the domain is not running, don"t get interface infos
+	domainRunningNow, err := domainIsRunning(domain)
+	if err != nil {
+		return interfaces, err
+	}
+	if !domainRunningNow {
+		log.Print("[DEBUG] no interfaces could be obtained: domain not running")
+		return interfaces, nil
+	}
+
 	qemuAgentEnabled := rd.Get("qemu_agent").(bool)
 	if qemuAgentEnabled {
 		// get all the interfaces using the qemu-agent, this includes also
@@ -164,20 +176,8 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 			return interfaces, nil
 		}
 	}
-
-	var interfaces []libvirt.DomainInterface
-
 	// get all the interfaces attached to libvirt networks
 	log.Print("[DEBUG] no interfaces could be obtained with qemu-agent: falling back to the libvirt API")
-
-	domainRunningNow, err := domainIsRunning(domain)
-	if err != nil {
-		return interfaces, err
-	}
-	if !domainRunningNow {
-		log.Print("[DEBUG] no interfaces could be obtained with libvirt API: domain not running")
-		return interfaces, nil
-	}
 
 	interfaces, err = domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
 	if err != nil {
@@ -199,11 +199,11 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 func qemuAgentInterfacesRefreshFunc(domain libvirt.Domain) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 
-		interfaces, err := domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+		interfaces, err := domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
 
 		if err != nil {
 			log.Printf("[DEBUG] Qemu-agent error: %s", err)
-			return interfaces, "qemu-agent-wait", err
+			return interfaces, "qemu-agent-wait", nil
 		}
 
 		log.Printf("[DEBUG] Interfaces obtained via qemu-agent: %+v", interfaces)
