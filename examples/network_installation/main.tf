@@ -38,7 +38,7 @@ resource "libvirt_domain" "domain-suse-qcow2" {
   cmdline {
       "_" = "noapic"
       install = "http://download.opensuse.org/distribution/leap/15.0/repo/oss/"
-      AutoYaST = "https://github.com/dmacvicar/terraform-provider-libvirt/tree/master/examples/network_installation/autoinst.xml"
+      AutoYaST = "https://github.com/dmacvicar/terraform-provider-libvirt/tree/master/examples/network_installation/leap15.xml"
   }
 
   disk {
