@@ -165,10 +165,7 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 		// interfaces that are not attached to networks managed by libvirt
 		// (eg. bridges, macvtap,...)
 		log.Print("[DEBUG] fetching networking interfaces using qemu-agent")
-		interfaces, err := qemuAgentWaitForInterfacesInfo(domain)
-		if err != nil {
-			return interfaces, err
-		}
+		interfaces = qemuAgentWaitForInterfacesInfo(domain)
 		if len(interfaces) > 0 {
 			// the agent will always return all the interfaces, both the
 			// ones managed by libvirt and the ones attached to bridge interfaces
@@ -212,7 +209,7 @@ func qemuAgentInterfacesRefreshFunc(domain libvirt.Domain) resource.StateRefresh
 }
 
 // Retrieve all the interfaces attached to a domain and their addresses.
-func qemuAgentWaitForInterfacesInfo(domain libvirt.Domain) ([]libvirt.DomainInterface, error) {
+func qemuAgentWaitForInterfacesInfo(domain libvirt.Domain) []libvirt.DomainInterface {
 	qemuAgentQuery := &resource.StateChangeConf{
 		Pending:    []string{"qemu-agent-wait"},
 		Target:     []string{"qemu-agent-done"},
@@ -224,8 +221,8 @@ func qemuAgentWaitForInterfacesInfo(domain libvirt.Domain) ([]libvirt.DomainInte
 
 	interfaces, err := qemuAgentQuery.WaitForState()
 	if err != nil {
-		return []libvirt.DomainInterface{}, fmt.Errorf("Error retrieving interface addresses with Qemu-agent: %s", err)
+		return []libvirt.DomainInterface{}
 	}
 
-	return interfaces.([]libvirt.DomainInterface), nil
+	return interfaces.([]libvirt.DomainInterface)
 }
