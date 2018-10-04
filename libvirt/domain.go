@@ -219,10 +219,19 @@ func qemuAgentWaitForInterfacesInfo(domain libvirt.Domain) []libvirt.DomainInter
 		Timeout:    60 * time.Second,
 	}
 
-	interfaces, err := qemuAgentQuery.WaitForState()
+	AllInterfaces, err := qemuAgentQuery.WaitForState()
 	if err != nil {
 		return []libvirt.DomainInterface{}
 	}
+	var interfaces []libvirt.DomainInterface
+	for _, iface := range AllInterfaces.([]libvirt.DomainInterface) {
 
-	return interfaces.([]libvirt.DomainInterface)
+		if iface.Name == "lo" {
+			// ignore loopback interface otherwise we will have problem
+			// by setting the host in provisioner
+			continue
+		}
+		interfaces = append(interfaces, iface)
+	}
+	return interfaces
 }
