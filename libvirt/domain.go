@@ -26,7 +26,7 @@ const domWaitLeaseDone = "all-addresses-obtained"
 var errDomainInvalidState = errors.New("invalid state for domain")
 
 func domainWaitForLeases(domain *libvirt.Domain, waitForLeases []*libvirtxml.DomainInterface,
-	timeout time.Duration, rd *schema.ResourceData) error {
+	timeout time.Duration, rd *schema.ResourceData, virConn *libvirt.Connect) error {
 	waitFunc := func() (interface{}, string, error) {
 
 		state, err := domainGetState(*domain)
@@ -46,7 +46,7 @@ func domainWaitForLeases(domain *libvirt.Domain, waitForLeases []*libvirtxml.Dom
 
 		// check we have IPs for all the interfaces we are waiting for
 		for _, iface := range waitForLeases {
-			found, ignore, err := domainIfaceHasAddress(*domain, *iface, rd)
+			found, ignore, err := domainIfaceHasAddress(*domain, *iface, rd, virConn)
 			if err != nil {
 				return false, "", err
 			}
@@ -78,7 +78,7 @@ func domainWaitForLeases(domain *libvirt.Domain, waitForLeases []*libvirtxml.Dom
 	return err
 }
 
-func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterface, rd *schema.ResourceData) (found bool, ignore bool, err error) {
+func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterface, rd *schema.ResourceData, virConn *libvirt.Connect) (found bool, ignore bool, err error) {
 
 	mac := strings.ToUpper(iface.MAC.Address)
 	if mac == "" {
@@ -88,7 +88,7 @@ func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterfa
 	}
 
 	log.Printf("[DEBUG] waiting for network address for iface=%s\n", mac)
-	ifacesWithAddr, err := domainGetIfacesInfo(domain, rd)
+	ifacesWithAddr, err := domainGetIfacesInfo(domain, rd, virConn)
 	if err != nil {
 		return false, false, fmt.Errorf("Error retrieving interface addresses: %s", err)
 	}
@@ -146,7 +146,7 @@ func domainIsRunning(domain libvirt.Domain) (bool, error) {
 	return state == libvirt.DOMAIN_RUNNING, nil
 }
 
-func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libvirt.DomainInterface, error) {
+func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData, virConn *libvirt.Connect) ([]libvirt.DomainInterface, error) {
 
 	var interfaces []libvirt.DomainInterface
 	// if the domain is not running, don"t get interface infos
@@ -165,7 +165,7 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 		// interfaces that are not attached to networks managed by libvirt
 		// (eg. bridges, macvtap,...)
 		log.Print("[DEBUG] fetching networking interfaces using qemu-agent")
-		interfaces = qemuAgentWaitForInterfacesInfo(domain)
+		interfaces = qemuAgentWaitForInterfacesInfo(domain, virConn)
 		if len(interfaces) > 0 {
 			// the agent will always return all the interfaces, both the
 			// ones managed by libvirt and the ones attached to bridge interfaces
@@ -193,38 +193,27 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 	return interfaces, nil
 }
 
-func qemuAgentInterfacesRefreshFunc(domain libvirt.Domain) resource.StateRefreshFunc {
-	return func() (interface{}, string, error) {
-
-		interfaces, err := domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
-
-		if err != nil {
-			log.Printf("[DEBUG] Qemu-agent error: %s", err)
-			return interfaces, "qemu-agent-wait", nil
-		}
-
-		log.Printf("[DEBUG] Interfaces obtained via qemu-agent: %+v", interfaces)
-		return interfaces, "qemu-agent-done", nil
-	}
-}
-
 // Retrieve all the interfaces attached to a domain and their addresses.
-func qemuAgentWaitForInterfacesInfo(domain libvirt.Domain) []libvirt.DomainInterface {
-	qemuAgentQuery := &resource.StateChangeConf{
-		Pending:    []string{"qemu-agent-wait"},
-		Target:     []string{"qemu-agent-done"},
-		Refresh:    qemuAgentInterfacesRefreshFunc(domain),
-		MinTimeout: 4 * time.Second,
-		Delay:      4 * time.Second, // Wait this time before starting checks
-		Timeout:    60 * time.Second,
+func qemuAgentWaitForInterfacesInfo(domain libvirt.Domain, virConn *libvirt.Connect) []libvirt.DomainInterface {
+
+	var allInterfaces []libvirt.DomainInterface
+	var err error
+	// guest agent events callback
+	gaCallback := func(c *libvirt.Connect, d *libvirt.Domain, eva *libvirt.DomainEventAgentLifecycle) {
+		allInterfaces, err = domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
 	}
 
-	AllInterfaces, err := qemuAgentQuery.WaitForState()
+	gaCallbackID, err := virConn.DomainEventAgentLifecycleRegister(&domain, gaCallback)
+
+	defer virConn.DomainEventDeregister(gaCallbackID)
+
 	if err != nil {
 		return []libvirt.DomainInterface{}
 	}
 	var interfaces []libvirt.DomainInterface
-	for _, iface := range AllInterfaces.([]libvirt.DomainInterface) {
+
+	libvirt.EventRunDefaultImpl()
+	for _, iface := range allInterfaces {
 
 		if iface.Name == "lo" {
 			// ignore loopback interface otherwise we will have problem
