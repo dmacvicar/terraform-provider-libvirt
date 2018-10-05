@@ -350,7 +350,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 	err = network.Create()
 	if err != nil {
-		return fmt.Errorf("Error crearing libvirt network: %s", err)
+		return fmt.Errorf("Error clearing libvirt network: %s", err)
 	}
 	defer network.Free()
 
