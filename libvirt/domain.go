@@ -202,9 +202,16 @@ func qemuAgentWaitForInterfacesInfo(domain libvirt.Domain, virConn *libvirt.Conn
 	gaCallback := func(c *libvirt.Connect, d *libvirt.Domain, eva *libvirt.DomainEventAgentLifecycle) {
 		allInterfaces, err = domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
 	}
-
+	if err != nil {
+		log.Printf("ERROR: unable to get ifaces via qemu-agent %s", err)
+		return []libvirt.DomainInterface{}
+	}
 	gaCallbackID, err := virConn.DomainEventAgentLifecycleRegister(&domain, gaCallback)
 
+	if err != nil {
+		log.Printf("ERROR: unable to register close callback")
+		return []libvirt.DomainInterface{}
+	}
 	defer virConn.DomainEventDeregister(gaCallbackID)
 
 	if err != nil {
@@ -212,7 +219,6 @@ func qemuAgentWaitForInterfacesInfo(domain libvirt.Domain, virConn *libvirt.Conn
 	}
 	var interfaces []libvirt.DomainInterface
 
-	libvirt.EventRunDefaultImpl()
 	for _, iface := range allInterfaces {
 
 		if iface.Name == "lo" {
