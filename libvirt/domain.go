@@ -200,11 +200,14 @@ func qemuAgentWaitForInterfacesInfo(domain libvirt.Domain, virConn *libvirt.Conn
 	var err error
 	// guest agent events callback
 	gaCallback := func(c *libvirt.Connect, d *libvirt.Domain, eva *libvirt.DomainEventAgentLifecycle) {
+		log.Printf("QEMU-AGENT: INSIDE EVENT!")
+		//2018-10-06T16:40:02.927+0200 [DEBUG] plugin.terraform-provider-libvirt: 2018/10/06 16:40:02 QEMU-AGENT: INSIDE EVENT!
+		// 2018-10-06T16:40:07.927+0200 [DEBUG] plugin.terraform-provider-libvirt: 2018/10/06 16:40:07 ERROR: unable to get ifaces via qemu-agent virError(Code=86, Domain=10, Message='Guest agent is not responding: Guest agent not available for now')
+		time.Sleep(5 * time.Second)
 		allInterfaces, err = domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT)
-	}
-	if err != nil {
-		log.Printf("ERROR: unable to get ifaces via qemu-agent %s", err)
-		return []libvirt.DomainInterface{}
+		if err != nil {
+			log.Printf("ERROR: unable to get ifaces via qemu-agent %s", err)
+		}
 	}
 	gaCallbackID, err := virConn.DomainEventAgentLifecycleRegister(&domain, gaCallback)
 
@@ -219,14 +222,19 @@ func qemuAgentWaitForInterfacesInfo(domain libvirt.Domain, virConn *libvirt.Conn
 	}
 	var interfaces []libvirt.DomainInterface
 
-	for _, iface := range allInterfaces {
+	for {
+		libvirt.EventRunDefaultImpl()
+		if allInterfaces != nil {
+			for _, iface := range allInterfaces {
 
-		if iface.Name == "lo" {
-			// ignore loopback interface otherwise we will have problem
-			// by setting the host in provisioner
-			continue
+				if iface.Name == "lo" {
+					// ignore loopback interface otherwise we will have problem
+					// by setting the host in provisioner
+					continue
+				}
+				interfaces = append(interfaces, iface)
+			}
+			return interfaces
 		}
-		interfaces = append(interfaces, iface)
 	}
-	return interfaces
 }

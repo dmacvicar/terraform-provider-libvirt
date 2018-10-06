@@ -18,12 +18,6 @@ type Client struct {
 	poolMutexKV *mutexkv.MutexKV
 }
 
-func eventloop() {
-	for {
-		libvirt.EventRunDefaultImpl()
-	}
-}
-
 // Client libvirt, generate libvirt client given URI
 func (c *Config) Client() (*Client, error) {
 	libvirt.EventRegisterDefaultImpl()
@@ -37,8 +31,6 @@ func (c *Config) Client() (*Client, error) {
 		libvirt:     libvirtClient,
 		poolMutexKV: mutexkv.NewMutexKV(),
 	}
-
-	go eventloop()
 
 	return client, nil
 }
