@@ -1,3 +1,17 @@
+## 0.5 (October 10, 2018)
+
+### HIGHLIGHTS:
+
+#### libvirt Domain
+
+* _cloud_init_ resource is obsolete and replaced with _cloud_init_disk_ (https://github.com/dmacvicar/terraform-provider-libvirt/pull/410)
+
+  The resource does not allow individual fields anymore, and directly takes the _user_data_, _network_config_ and _meta_data_ fields, which you can provide directly or reading from a file, optionally using a _template_ resource and the rendered function. See the [updated documentation](https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/website/docs/r/cloudinit.html.markdown).
+
+#### Volumes/Disk/Storage
+
+* Allow to set the size of a volume larger than its backing volume, which allows to resize the partition then using _cloud-init_, and not be limited by the backing image (#369 and #357).
+
 ## 0.4.4 (September 16, 2018)
 
 ### HIGHLIGHTS:
