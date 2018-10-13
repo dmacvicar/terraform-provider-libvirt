@@ -168,11 +168,6 @@ func isQCOW2Header(buf []byte) (bool, error) {
 	return false, nil
 }
 
-func isCompressedImage(buf []byte) (bool, error) {
-
-	return false, nil
-}
-
 func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageVolume) error {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", i.url.String(), nil)
