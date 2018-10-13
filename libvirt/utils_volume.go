@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -167,6 +168,11 @@ func isQCOW2Header(buf []byte) (bool, error) {
 	return false, nil
 }
 
+func isCompressedImage(buf []byte) (bool, error) {
+
+	return false, nil
+}
+
 func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageVolume) error {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", i.url.String(), nil)
@@ -199,6 +205,7 @@ func newImage(source string) (image, error) {
 		return nil, fmt.Errorf("Can't parse source '%s' as url: %s", source, err)
 	}
 
+	// in case of http image can be zipped
 	if strings.HasPrefix(url.Scheme, "http") {
 		return &httpImage{url: url}, nil
 	} else if url.Scheme == "file" || url.Scheme == "" {
@@ -211,6 +218,16 @@ func newImage(source string) (image, error) {
 func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64) func(src io.Reader) error {
 	copier := func(src io.Reader) error {
 		var bytesCopied int64
+
+		//create a bufio.Reader so we can 'peek' at the first few bytes
+		bReader := bufio.NewReader(src)
+
+		testBytes, err := bReader.Peek(2) //read 2 bytes
+		// gzip, tar, bzip
+		log.Printf("DEBUG: first bytes of FILE: %d", testBytes)
+		if testBytes[0] == 0x1f && testBytes[1] == 0x8b {
+			log.Printf("Gzip source")
+		}
 
 		stream, err := virConn.NewStream(0)
 		if err != nil {
