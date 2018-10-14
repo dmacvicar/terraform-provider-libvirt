@@ -3,22 +3,23 @@ provider "libvirt" {
 }
 
 resource "libvirt_volume" "os_image_ubuntu" {
-  name = "os_image_ubuntu"
-  pool = "default"
+  name   = "os_image_ubuntu"
+  pool   = "default"
   source = "https://cloud-images.ubuntu.com/releases/xenial/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
 }
 
 resource "libvirt_volume" "disk_ubuntu_resized" {
-  name = "disk"
+  name           = "disk"
   base_volume_id = "${libvirt_volume.os_image_ubuntu.id}"
-  pool = "default"
-  size = 5361393152
+  pool           = "default"
+  size           = 5361393152
 }
 
 # Use CloudInit to add our ssh-key to the instance
 resource "libvirt_cloudinit_disk" "cloudinit_ubuntu_resized" {
-  name           = "cloudinit_ubuntu_resized.iso"
+  name = "cloudinit_ubuntu_resized.iso"
   pool = "default"
+
   user_data = <<EOF
 #cloud-config
 disable_root: 0
@@ -34,14 +35,14 @@ EOF
 }
 
 resource "libvirt_domain" "domain_ubuntu_resized" {
-  name = "doman_ubuntu_resized"
+  name   = "doman_ubuntu_resized"
   memory = "512"
-  vcpu = 1
+  vcpu   = 1
 
   cloudinit = "${libvirt_cloudinit_disk.cloudinit_ubuntu_resized.id}"
 
   network_interface {
-    network_name = "default"
+    network_name   = "default"
     wait_for_lease = true
   }
 
@@ -55,19 +56,19 @@ resource "libvirt_domain" "domain_ubuntu_resized" {
   }
 
   console {
-      type        = "pty"
-      target_type = "virtio"
-      target_port = "1"
+    type        = "pty"
+    target_type = "virtio"
+    target_port = "1"
   }
 
   disk {
-       volume_id = "${libvirt_volume.disk_ubuntu_resized.id}"
+    volume_id = "${libvirt_volume.disk_ubuntu_resized.id}"
   }
 
   graphics {
-    type = "spice"
+    type        = "spice"
     listen_type = "address"
-    autoport = true
+    autoport    = true
   }
 }
 
