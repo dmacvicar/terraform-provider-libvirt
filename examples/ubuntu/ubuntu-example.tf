@@ -11,11 +11,6 @@ resource "libvirt_volume" "ubuntu-qcow2" {
   format = "qcow2"
 }
 
-# Create a network for our VMs
-resource "libvirt_network" "vm_network" {
-   name = "vm_network"
-   addresses = ["10.0.1.0/24"]
-}
 
 data "template_file" "user_data" {
   template = "${file("${path.module}/cloud_init.cfg")}"
@@ -45,12 +40,12 @@ resource "libvirt_domain" "domain-ubuntu" {
   cloudinit = "${libvirt_cloudinit_disk.commoninit.id}"
 
   network_interface {
-    network_name = "vm_network"
+    network_name = "default"
   }
 
-  # IMPORTANT
-  # Ubuntu can hang if an isa-serial is not present at boot time.
-  # If you find your CPU 100% and never is available this is why
+  # IMPORTANT: this is a known bug on cloud images, since they expect a console
+  # we need to pass it
+  # https://bugs.launchpad.net/cloud-images/+bug/1573095
   console {
     type        = "pty"
     target_port = "0"
@@ -73,8 +68,4 @@ resource "libvirt_domain" "domain-ubuntu" {
   }
 }
 
-# Print the Boxes IP
-# Note: you can use `virsh domifaddr <vm_name> <interface>` to get the ip later
-output "ip" {
-  value = "${libvirt_domain.domain-ubuntu.network_interface.0.addresses.0}"
-}
+# IPs: use wait_for_lease true or after creation use terraform refresh and terraform show for the ips of domain

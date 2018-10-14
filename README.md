@@ -134,10 +134,6 @@ Note: when using bridge network configurations you need to enable the `qemu_agen
 
 Be aware that this variables may be subject to change again in future versions.
 
-## Troubleshooting (aka you have a problem)
-
-Have a look at [TROUBLESHOOTING](doc/TROUBLESHOOTING.md), and feel free to add a PR if you find out something is missing.
-
 ## Authors
 
 * Duncan Mac-Vicar P. <dmacvicar@suse.de>
