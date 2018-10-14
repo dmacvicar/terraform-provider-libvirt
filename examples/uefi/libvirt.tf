@@ -35,4 +35,4 @@ resource "libvirt_domain" "domain" {
     listen_type = "address"
     autoport = true
   }
-
+}
