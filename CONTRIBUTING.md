@@ -4,6 +4,21 @@
 
 * Use [commit.style](https://commit.style/) for git commit messages
 
+
+## Some words about the design-architecture of this project:
+
+Libvirt upstream use xml-schemas for defining the resources.
+
+There is a common-pattern shared among the resources in this provider.
+
+For example the `domain` resource, and others are organized like follow:
+
+-  the `domain_def` contains libvirt xml schemas and operation
+- `resource_libvirt_domain.go` (contains terraform CRUD operations and call the libvirt_xml)
+   you can imagine the `resource` file as a sort of "main" file for each resource.
+- `resource_libvirt_domain_test.go` ( contains testacc for resource)
+
+
 ## Running the tests (testacc)
 
 ```
