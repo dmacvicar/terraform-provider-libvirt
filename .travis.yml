@@ -17,3 +17,4 @@ script:
   - make gofmtcheck
   - make vet
   - golint -set_exit_status libvirt/
+  - travis/validate_terraform_files.sh
