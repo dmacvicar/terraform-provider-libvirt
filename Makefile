@@ -1,13 +1,15 @@
+LDFLAGS += -X main.version=$$(git describe --always --abbrev=40 --dirty)
+
 default: build
 
 build: gofmtcheck golint vet
-	go build
+	go build -ldflags "${LDFLAGS}"
 
 install:
 	go install
 
 test:
-	go test -v -covermode=count -coverprofile=profile.cov ./libvirt
+	go test -v -covermode=count -coverprofile=profile.cov . ./libvirt
 
 testacc:
 	./travis/run-tests-acceptance

@@ -5,15 +5,22 @@
 ``` openSUSE 42.2/ Centos7/ Ubuntu.. ```
 
 ### Terraform Version Report
-(Provided by running `terraform -v`.)
 
-### Libvirt version
+```sh
+terraform -v
+```
 
-```virsh --version```
+### Provider and libvirt versions
 
-### terraform-provider-libvirt plugin version (git-hash)
+```sh
+terraform-provider-libvirt -version
+```
 
-``` git log```
+If that gives you "was not built correctly", get the Git commit hash from your local provider repository:
+
+```sh
+git describe --always --abbrev=40 --dirty
+```
 ___
 # Description of Issue/Question
 
