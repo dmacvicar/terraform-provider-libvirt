@@ -10,6 +10,40 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
+const (
+	identitySpaceStripXSLT = `
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:strip-space elements="*" />
+  <xsl:template match="@*|node()">
+    <xsl:copy>
+      <xsl:apply-templates select="@*|node()"/>
+    </xsl:copy>
+  </xsl:template>
+</xsl:stylesheet>
+`
+)
+
+// This is the function we use to detect if the XSLT attribute itself changed
+// As we don't want to recreate resources when the XSLT is changed with whitespace,
+// we specify the diff supress function as the result of applying the identity
+// transform to the xslt, stripping whitespace
+// See https://www.terraform.io/docs/extend/schemas/schema-behaviors.html#diffsuppressfunc
+func xsltDiffSupressFunc(k, old, new string, d *schema.ResourceData) bool {
+	oldStrip, err := transformXML(old, identitySpaceStripXSLT)
+	if err != nil {
+		// fail, just use normal equality
+		log.Printf("[ERROR] Couldn't normalize XSLT stylesheet")
+		return old == new
+	}
+	newStrip, err := transformXML(new, identitySpaceStripXSLT)
+	if err != nil {
+		// fail, just use normal equality
+		log.Printf("[ERROR] Couldn't normalize XSLT stylesheet")
+		return old == new
+	}
+	return oldStrip == newStrip
+}
+
 // this function applies a XSLT transform to the xml data
 func transformXML(xml string, xslt string) (string, error) {
 	xsltFile, err := ioutil.TempFile("", "terraform-provider-libvirt-xslt")
