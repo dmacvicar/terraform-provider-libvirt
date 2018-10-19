@@ -95,7 +95,7 @@ func resourceLibvirtDomain() *schema.Resource {
 				ForceNew: false,
 				Required: false,
 			},
-			"network_installation": {
+			"network_autoinstall": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
@@ -534,6 +534,28 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			}
 		}
 	}
+	// A check if the network_autoinstall is true, if yes we do next ops.
+
+	// if network_autoinstall true,
+	// we might add this piece of code somewhere else. ( at moment is here)
+	rebootCallBack := func(c *libvirt.Connect, d *libvirt.Domain) {
+		log.Printf("REBOOT EVENT!")
+		// Domain rebooted so we assume installation was fine.
+
+		//  once we know that domain rebooted we do following operations:
+		// 1) Shutdown domain
+		// 2) Remove kernel and initrd if they are present otherwise skip
+		// 3) start the domain again ( in this way user can use the installed OS)
+	}
+	rebootCallbackID, err := virConn.DomainEventRebootRegister(domain, rebootCallBack)
+	if err != nil {
+		return fmt.Errorf("ERROR: unable to register rebootDomain callback")
+	}
+	defer virConn.DomainEventDeregister(rebootCallbackID)
+
+	// here we block until we get the signal REBOOT
+	// we could also add 1/2 Hours timeout in case.
+	libvirt.EventRunDefaultImpl()
 
 	destroyDomainByUserRequest(d, domain)
 	return nil

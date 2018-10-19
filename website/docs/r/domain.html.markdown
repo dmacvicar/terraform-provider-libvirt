@@ -59,6 +59,13 @@ The following arguments are supported:
    [below](#define-boot-device-order).
 * `emulator` - (Optional) The path of the emulator to use
 * `qemu_agent` (Optional) By default is disabled, set to true for enabling it. More info [qemu-agent](https://wiki.libvirt.org/page/Qemu_guest_agent).
+
+* `network_autoinstall` (Optional) Default is false, disable. When true, this will wait until the GUEST OS reboot ( installation done).
+   In combination with this variable you will need to have `kernel`, `initrd` and `kernel_cmdlines` variables set.
+   see  the example `examples/network_autoinstall`. 
+   Internally this will activate libvirt-domain events, and once the reboot event is caught, we remove the Kernel/initrd parameters, so an user can use the guest. 
+   (otherwise it will have always reinstallation loop)
+
 ### Kernel and boot arguments
 
 * `kernel` - (Optional) The path of the kernel to boot
