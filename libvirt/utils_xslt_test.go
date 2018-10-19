@@ -20,18 +20,18 @@ const (
 )
 
 func TestTransformXML(t *testing.T) {
-	const inXml string = `    <foo>
+	const inXML string = `    <foo>
 
       <la two="two" one="one">foo this is a test</la>
 
   <be>bebe  </be>
   </foo>
 `
-	const outXml string = `<?xml version="1.0"?>
+	const outXML string = `<?xml version="1.0"?>
 <foo><la two="two" one="one">foo this is a test</la><be>bebe  </be></foo>
 `
 
-	result, err := transformXML(inXml, identitySpaceStripXSLT)
+	result, err := transformXML(inXML, identitySpaceStripXSLT)
 	assert.Nil(t, err)
-	assert.Equal(t, outXml, result)
+	assert.Equal(t, outXML, result)
 }
