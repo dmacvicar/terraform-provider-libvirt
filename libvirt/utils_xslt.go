@@ -11,14 +11,7 @@ import (
 )
 
 // this function applies a XSLT transform to the xml data
-// and is to be reused in all resource types
-// your resource need to have a xml.xslt element in the schema
-func transformResourceXML(xml string, d *schema.ResourceData) (string, error) {
-	xslt, ok := d.GetOk("xml.0.xslt")
-	if !ok {
-		return xml, nil
-	}
-
+func transformXML(xml string, xslt string) (string, error) {
 	xsltFile, err := ioutil.TempFile("", "terraform-provider-libvirt-xslt")
 	if err != nil {
 		log.Fatal(err)
@@ -27,7 +20,7 @@ func transformResourceXML(xml string, d *schema.ResourceData) (string, error) {
 
 	// we trim the xslt as it may contain space before the xml declaration
 	// because of HCL heredoc
-	if _, err := xsltFile.Write([]byte(strings.TrimSpace(xslt.(string)))); err != nil {
+	if _, err := xsltFile.Write([]byte(strings.TrimSpace(xslt))); err != nil {
 		log.Fatal(err)
 	}
 
@@ -56,4 +49,16 @@ func transformResourceXML(xml string, d *schema.ResourceData) (string, error) {
 	}
 	log.Printf("[DEBUG] Transformed XML with user specified XSLT:\n%s", transformedXML)
 	return string(transformedXML), nil
+}
+
+// this function applies a XSLT transform to the xml data
+// and is to be reused in all resource types
+// your resource need to have a xml.xslt element in the schema
+func transformResourceXML(xml string, d *schema.ResourceData) (string, error) {
+	xslt, ok := d.GetOk("xml.0.xslt")
+	if !ok {
+		return xml, nil
+	}
+
+	return transformXML(xml, xslt.(string))
 }
