@@ -9,9 +9,10 @@ install:
 	go install
 
 test:
-	go test -v -covermode=count -coverprofile=profile.cov . ./libvirt
-
+	go test -v -covermode=count -coverprofile=profile.cov ./libvirt
+	go test -v .
 testacc:
+	go test -v .
 	./travis/run-tests-acceptance
 
 vet:
