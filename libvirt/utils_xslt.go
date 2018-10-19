@@ -76,7 +76,12 @@ func transformXML(xml string, xslt string) (string, error) {
 		log.Fatal(err)
 	}
 
-	cmd := exec.Command("xsltproc", xsltFile.Name(), xmlFile.Name())
+	cmd := exec.Command("xsltproc",
+		"--nomkdir",
+		"--nonet",
+		"--nowrite",
+		xsltFile.Name(),
+		xmlFile.Name())
 	transformedXML, err := cmd.Output()
 	if err != nil {
 		return xml, err
