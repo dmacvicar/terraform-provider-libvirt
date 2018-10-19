@@ -95,6 +95,13 @@ func resourceLibvirtDomain() *schema.Resource {
 				ForceNew: false,
 				Required: false,
 			},
+			"network_installation": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+				ForceNew: false,
+				Required: false,
+			},
 			"cloudinit": {
 				Type:     schema.TypeString,
 				Optional: true,
