@@ -537,7 +537,16 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	NetworkAutoinstallEnabled := d.Get("network_autoinstall").(bool)
 	if NetworkAutoinstallEnabled {
-		// we might add this piece of code somewhere else. ( at moment is here)
+		// TODO: we might add this piece of code somewhere else. ( at moment is here)
+		stop := make(chan struct{})
+		rebootCallBack := func(c *libvirt.Connect, d *libvirt.Domain) {
+			log.Printf("[DEBUG:] Libvirt-events: Caught reboot event!")
+
+			destroyDomain(domain)
+			// 2) Remove kernel and initrd if they are present otherwise skip
+			// 3) start the domain again ( in this way user can use the installed OS)
+			close(stop)
+		}
 
 		rebootCallbackID, err := virConn.DomainEventRebootRegister(domain, rebootCallBack)
 		if err != nil {
@@ -545,9 +554,18 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 		defer virConn.DomainEventDeregister(rebootCallbackID)
 
-		// here we block until we get the signal REBOOT
-		// we could also add 1/2 Hours timeout in case.
-		libvirt.EventRunDefaultImpl()
+		// TODO: we can add a timeout here.
+		for {
+			select {
+			case <-stop:
+				break
+			default:
+				if err = libvirt.EventRunDefaultImpl(); err != nil {
+					close(stop)
+					return fmt.Errorf("EventRunDefaultImpl: %s", err.Error())
+				}
+			}
+		}
 	}
 	destroyDomainByUserRequest(d, domain)
 	return nil
@@ -933,18 +951,10 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
 	}
 
-	//TODO NOW; refactor this with the new funct
-	state, _, err := domain.GetState()
+	err = destroyDomain(domain)
 	if err != nil {
-		return fmt.Errorf("Couldn't get info about domain: %s", err)
+		return fmt.Errorf("Error destroying domain: %s", err)
 	}
-
-	if state == libvirt.DOMAIN_RUNNING || state == libvirt.DOMAIN_PAUSED {
-		if err := domain.Destroy(); err != nil {
-			return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
-		}
-	}
-
 	if err := domain.UndefineFlags(libvirt.DOMAIN_UNDEFINE_NVRAM); err != nil {
 		if e := err.(libvirt.Error); e.Code == libvirt.ERR_NO_SUPPORT || e.Code == libvirt.ERR_INVALID_ARG {
 			log.Printf("libvirt does not support undefine flags: will try again without flags")
