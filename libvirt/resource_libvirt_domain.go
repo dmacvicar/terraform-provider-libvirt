@@ -538,14 +538,14 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	NetworkAutoinstallEnabled := d.Get("network_autoinstall").(bool)
 	if NetworkAutoinstallEnabled {
 		// TODO: we might add this piece of code somewhere else. ( at moment is here)
-		stop := make(chan struct{})
+		stop := make(chan int)
 		rebootCallBack := func(c *libvirt.Connect, d *libvirt.Domain) {
 			log.Printf("[DEBUG:] Libvirt-events: Caught reboot event!")
 
 			destroyDomain(domain)
 			// 2) Remove kernel and initrd if they are present otherwise skip
 			// 3) start the domain again ( in this way user can use the installed OS)
-			close(stop)
+			stop <- 0
 		}
 
 		rebootCallbackID, err := virConn.DomainEventRebootRegister(domain, rebootCallBack)
@@ -554,18 +554,21 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 		defer virConn.DomainEventDeregister(rebootCallbackID)
 
-		// TODO: we can add a timeout here.
-		for {
-			select {
-			case <-stop:
-				break
-			default:
-				if err = libvirt.EventRunDefaultImpl(); err != nil {
-					close(stop)
-					return fmt.Errorf("EventRunDefaultImpl: %s", err.Error())
+		go func() {
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+					if err = libvirt.EventRunDefaultImpl(); err != nil {
+						close(stop)
+						return
+					}
 				}
 			}
-		}
+		}()
+		// we wait until the reboot event is caught.
+		<-stop
 	}
 	destroyDomainByUserRequest(d, domain)
 	return nil
