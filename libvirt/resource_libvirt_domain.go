@@ -542,9 +542,12 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		rebootCallBack := func(c *libvirt.Connect, d *libvirt.Domain) {
 			log.Printf("[DEBUG:] Libvirt-events: Caught reboot event!")
 
+			// TODO: check the errors of the calls..
 			destroyDomain(domain)
-			// 2) Remove kernel and initrd if they are present otherwise skip
-			// 3) start the domain again ( in this way user can use the installed OS)
+			// TODO: 2) Remove kernel and initrd if they are present otherwise skip
+
+			// restarting domain
+			domain.Create()
 			stop <- 0
 		}
 
