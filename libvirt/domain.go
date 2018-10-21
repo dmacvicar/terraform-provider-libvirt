@@ -193,3 +193,26 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 
 	return interfaces, nil
 }
+
+func destroyDomain(domain *libvirt.Domain) error {
+
+	domainID, err := domain.GetUUIDString()
+
+	if err != nil {
+		return fmt.Errorf("Error retrieving libvirt domain id: %s", err)
+	}
+
+	log.Printf("Destroying libvirt domain %s", domainID)
+	state, _, err := domain.GetState()
+	if err != nil {
+		return fmt.Errorf("Couldn't get info about domain: %s", err)
+	}
+
+	if state == libvirt.DOMAIN_RUNNING || state == libvirt.DOMAIN_PAUSED {
+		if err := domain.Destroy(); err != nil {
+			return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
+		}
+	}
+
+	return nil
+}
