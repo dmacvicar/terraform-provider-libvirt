@@ -548,6 +548,8 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 			// restarting domain
 			domain.Create()
+			defer domain.Free()
+
 			stop <- 0
 		}
 
