@@ -542,12 +542,39 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		rebootCallBack := func(c *libvirt.Connect, d *libvirt.Domain) {
 			log.Printf("[DEBUG:] Libvirt-events: Caught reboot event!")
 
-			// TODO: check the errors of the calls..
-			destroyDomain(domain)
-			// TODO: 2) Remove kernel and initrd if they are present otherwise skip
+			// TODO: improve panic errors
+			err := destroyDomain(domain)
+			if err != nil {
+				panic(err)
+			}
+			var emptyChannel []libvirtxml.DomainChannel
 
-			// restarting domain
-			domain.Create()
+			domainDef, _ := getXMLDomainDefFromLibvirt(domain)
+			domainDef.OS.Kernel = ""
+			domainDef.OS.Initrd = ""
+			domainDef.OS.Cmdline = ""
+			// TODO: THIS is to prevent having 2 duplicata qemu-agent Channels
+			// otherwise we have a crash.
+			domainDef.Devices.Channels = emptyChannel
+
+			data, err := xmlMarshallIndented(domainDef)
+			if err != nil {
+				panic(err)
+			}
+
+			log.Printf("[DEBUG] Modifying the libvirt domain with XML:\n%s", data)
+
+			domain, err = virConn.DomainDefineXML(data)
+			if err != nil {
+				panic(err)
+			}
+			// TODO: at moment we add twice the qemu-agent domain need investigation..
+			// by adding 2 same port we have creash by line 571
+			// A port already exists by name org.qemu.guest_agent.0
+			err = domain.Create()
+			if err != nil {
+				panic(err)
+			}
 			defer domain.Free()
 
 			stop <- 0
