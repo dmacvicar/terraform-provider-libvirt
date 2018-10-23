@@ -36,9 +36,20 @@ func testaccCheckLibvirtDestroyResource(resourceName string, virConn libvirt.Con
 			if rs.Type != resourceName {
 				continue
 			}
+			if rs.Type == "libvirt_cloudinit_disk" {
+				ciKey, errKey := getCloudInitVolumeKeyFromTerraformID(rs.Primary.ID)
+				if errKey != nil {
+					return errKey
+				}
+				_, err := virConn.LookupStorageVolByKey(ciKey)
+				if err == nil {
+					return fmt.Errorf(
+						"Error waiting for CloudInit Volume (%s) to be destroyed: %s",
+						ciKey, err)
+				}
+			}
 
 			if rs.Type == "libvirt_ignition" {
-				// Try to find the Ignition Volume
 				ignKey, errKey := getIgnitionVolumeKeyFromTerraformID(rs.Primary.ID)
 				if errKey != nil {
 					return errKey
@@ -52,7 +63,6 @@ func testaccCheckLibvirtDestroyResource(resourceName string, virConn libvirt.Con
 			}
 
 			if rs.Type == "libvirt_domain" {
-				// Try to find the server
 				_, err := virConn.LookupDomainByUUIDString(rs.Primary.ID)
 				if err == nil {
 					return fmt.Errorf("Error waiting for domain (%s) to be destroyed: %s", rs.Primary.ID, err)
