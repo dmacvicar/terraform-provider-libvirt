@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -110,6 +111,57 @@ func resourceLibvirtNetwork() *schema.Resource {
 										Type:     schema.TypeString,
 										Optional: true,
 										Required: false,
+										ForceNew: true,
+									},
+								},
+							},
+						},
+						"srvs": {
+							Type:     schema.TypeList,
+							Optional: true,
+							ForceNew: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"service": {
+										Type: schema.TypeString,
+										// This should be required, but Terraform does validation too early
+										// and therefore doesn't recognize that this is set when assigning from
+										// a rendered dns_host template.
+										Optional: true,
+										ForceNew: true,
+									},
+									"protocol": {
+										Type: schema.TypeString,
+										// This should be required, but Terraform does validation too early
+										// and therefore doesn't recognize that this is set when assigning from
+										// a rendered dns_host template.
+										Optional: true,
+										ForceNew: true,
+									},
+									"domain": {
+										Type:     schema.TypeString,
+										Optional: true,
+										Required: false,
+										ForceNew: true,
+									},
+									"target": {
+										Type:     schema.TypeString,
+										Optional: true,
+										ForceNew: true,
+									},
+									"port": {
+										Type:     schema.TypeString,
+										Optional: true,
+										ForceNew: true,
+									},
+									"weight": {
+										Type:     schema.TypeString,
+										Optional: true,
+										ForceNew: true,
+									},
+									"priority": {
+										Type:     schema.TypeString,
+										Optional: true,
 										ForceNew: true,
 									},
 								},
@@ -287,6 +339,48 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			}
 		}
 
+		var dnsSRVs []libvirtxml.NetworkDNSSRV
+		if dnsSRVCount, ok := d.GetOk(dnsPrefix + ".srvs.#"); ok {
+			for i := 0; i < dnsSRVCount.(int); i++ {
+				srv := libvirtxml.NetworkDNSSRV{}
+				srvPrefix := fmt.Sprintf(dnsPrefix+".srvs.%d", i)
+				if service, ok := d.GetOk(srvPrefix + ".service"); ok {
+					srv.Service = service.(string)
+				}
+				if protocol, ok := d.GetOk(srvPrefix + ".protocol"); ok {
+					srv.Protocol = protocol.(string)
+				}
+				if domain, ok := d.GetOk(srvPrefix + ".domain"); ok {
+					srv.Domain = domain.(string)
+				}
+				if target, ok := d.GetOk(srvPrefix + ".target"); ok {
+					srv.Target = target.(string)
+				}
+				if port, ok := d.GetOk(srvPrefix + ".port"); ok {
+					p, err := strconv.Atoi(port.(string))
+					if err != nil {
+						return fmt.Errorf("Could not convert port '%s' to int", port)
+					}
+					srv.Port = uint(p)
+				}
+				if weight, ok := d.GetOk(srvPrefix + ".weight"); ok {
+					w, err := strconv.Atoi(weight.(string))
+					if err != nil {
+						return fmt.Errorf("Could not convert weight '%s' to int", weight)
+					}
+					srv.Weight = uint(w)
+				}
+				if priority, ok := d.GetOk(srvPrefix + ".priority"); ok {
+					w, err := strconv.Atoi(priority.(string))
+					if err != nil {
+						return fmt.Errorf("Could not convert priority '%s' to int", priority)
+					}
+					srv.Priority = uint(w)
+				}
+				dnsSRVs = append(dnsSRVs, srv)
+			}
+		}
+
 		dnsHostsMap := map[string][]string{}
 		if dnsHostCount, ok := d.GetOk(dnsPrefix + ".hosts.#"); ok {
 			for i := 0; i < dnsHostCount.(int); i++ {
@@ -313,10 +407,11 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			})
 		}
 
-		if len(dnsForwarders) > 0 || len(dnsHosts) > 0 {
+		if len(dnsForwarders) > 0 || len(dnsSRVs) > 0 || len(dnsHosts) > 0 {
 			dns := libvirtxml.NetworkDNS{
 				Forwarders: dnsForwarders,
 				Host:       dnsHosts,
+				SRVs:       dnsSRVs,
 			}
 			networkDef.DNS = &dns
 		}
