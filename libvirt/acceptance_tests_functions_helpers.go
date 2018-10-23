@@ -37,14 +37,45 @@ func testaccCheckLibvirtDestroyResource(resourceName string, virConn libvirt.Con
 				continue
 			}
 
-			_, err := virConn.LookupDomainByUUIDString(rs.Primary.ID)
-			if err == nil {
-				return fmt.Errorf(
-					"Error waiting for resource (%s) to be destroyed: %s",
-					rs.Primary.ID, err)
+			if rs.Type == "libvirt_ignition" {
+				// Try to find the Ignition Volume
+				ignKey, errKey := getIgnitionVolumeKeyFromTerraformID(rs.Primary.ID)
+				if errKey != nil {
+					return errKey
+				}
+				_, err := virConn.LookupStorageVolByKey(ignKey)
+				if err == nil {
+					return fmt.Errorf(
+						"Error waiting for IgnitionVolume (%s) to be destroyed: %s",
+						ignKey, err)
+				}
+			}
+
+			if rs.Type == "libvirt_domain" {
+				// Try to find the server
+				_, err := virConn.LookupDomainByUUIDString(rs.Primary.ID)
+				if err == nil {
+					return fmt.Errorf("Error waiting for domain (%s) to be destroyed: %s", rs.Primary.ID, err)
+				}
+			}
+
+			if rs.Type == "libvirt_network" {
+				_, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
+				if err == nil {
+					return fmt.Errorf(
+						"Error waiting for network (%s) to be destroyed: %s",
+						rs.Primary.ID, err)
+				}
+			}
+			if rs.Type == "libvirt_volume" {
+				_, err := virConn.LookupStorageVolByKey(rs.Primary.ID)
+				if err == nil {
+					return fmt.Errorf(
+						"Error waiting for volume (%s) to be destroyed: %s",
+						rs.Primary.ID, err)
+				}
 			}
 		}
-
 		return nil
 	}
 }
