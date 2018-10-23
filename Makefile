@@ -6,7 +6,7 @@ build: gofmtcheck golint vet
 	go build -ldflags "${LDFLAGS}"
 
 install:
-	go install
+	go install -ldflags "${LDFLAGS}"
 
 test:
 	go test -v -covermode=count -coverprofile=profile.cov ./libvirt
