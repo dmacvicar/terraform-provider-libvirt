@@ -120,6 +120,7 @@ Look at more advanced examples [here](examples/)
 
 You can target different libvirt hosts instantiating the [provider multiple times](https://www.terraform.io/docs/configuration/providers.html#multiple-provider-instances). [Example](examples/multiple).
 
+
 ### Using qemu-agent
 
 From its documentation, [qemu-agent](https://wiki.libvirt.org/page/Qemu_guest_agent):
@@ -133,6 +134,14 @@ In current versions, we default to not to attempt connecting to it, and attempti
 Note: when using bridge network configurations you need to enable the `qemu_agent = true`. otherwise you will not retrieve the ip adresses of domains. 
 
 Be aware that this variables may be subject to change again in future versions.
+
+## Upstream projects using terraform-libvirt:
+
+* [sumaform](https://github.com/moio/sumaform)
+
+* [ceph-open-terrarium](https://github.com/MalloZup/ceph-open-terrarium)
+
+* [kubic-caasp-kvm](https://github.com/kubic-project/automation)
 
 ## Authors
 
