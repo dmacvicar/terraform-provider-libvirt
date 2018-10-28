@@ -109,7 +109,9 @@ The following arguments are supported:
 Inside of `dns` section the following argument are supported:
 * `local_only` - (Optional) true/false: true means 'do not forward unresolved requests for this domain to the part DNS server
 * `forwarders` - (Optional) Either `address`, `domain`, or both must be set
-* `hosts` - (Optional) a DNS host entry block.  You can have one or more of these
+* `srvs` - (Optional) a DNS SRV entry block. You can have one or more of these blocks
+   in your DNS definition. You must specify `service` and `protocol`.
+* `hosts` - (Optional) a DNS host entry block. You can have one or more of these
    blocks in your DNS definition. You must specify both `ip` and `hostname`.
 
 An advanced example of round-robin DNS (using DNS host templates) follows:
@@ -127,6 +129,26 @@ data "libvirt_network_dns_host_template" "hosts" {
   count = "${var.host_count}"
   ip = "${var.host_ips[count.index]}"
   hostname = "my_host"
+}
+```
+
+An advanced example of setting up multiple SRV records using DNS SRV templates is:
+
+```hcl
+data "libvirt_network_dns_srv_template" "etcd_cluster" {
+  count = "${var.etcd_count}"
+  service = "etcd-server"
+  protocol = "tcp"
+  domain = "${discovery_domain}"
+  target = "${var.cluster_name}-etcd-${count.index}.${discovery_domain}"
+}
+
+resource "libvirt_network" "k8snet" {
+  ...
+  dns = [{
+    srvs = [ "${flatten(data.libvirt_network_dns_srv_template.etcd_cluster.*.rendered)}" ]
+  }]
+  ...
 }
 ```
 
