@@ -216,3 +216,74 @@ func destroyDomain(domain *libvirt.Domain) error {
 
 	return nil
 }
+
+// autoinstall a domain and block unti installation is completed
+func domainNetworkAutoInstall(domain *libvirt.Domain, virConn *libvirt.Connect) error {
+	stop := make(chan int)
+	rebootCallBack := func(c *libvirt.Connect, d *libvirt.Domain) {
+		log.Printf("[DEBUG:] Libvirt-events: Caught reboot event!")
+		err := destroyDomain(domain)
+		if err != nil {
+			panic(err)
+		}
+		domainDef, _ := getXMLDomainDefFromLibvirt(domain)
+		domainDef.OS.Kernel = ""
+		domainDef.OS.Initrd = ""
+		domainDef.OS.Cmdline = ""
+		// Force the domain to contain only 1 qemu-agent.
+		// the retrieved domainDef can contains more the 1 qemu-agent channels,
+		// if  we have more then 1 qemu-agent channels we will have domain crash
+		domainDef.Devices.Channels = []libvirtxml.DomainChannel{
+			{
+				Target: &libvirtxml.DomainChannelTarget{
+					VirtIO: &libvirtxml.DomainChannelTargetVirtIO{
+						Name: "org.qemu.guest_agent.0",
+					},
+				},
+			},
+		}
+
+		data, err := xmlMarshallIndented(domainDef)
+		if err != nil {
+			panic(err)
+		}
+
+		log.Printf("[DEBUG] Modifying the libvirt domain with XML:\n%s", data)
+
+		domain, err = virConn.DomainDefineXML(data)
+		if err != nil {
+			panic(err)
+		}
+		// create function is used for starting the domain shutted-down
+		err = domain.Create()
+		if err != nil {
+			panic(err)
+		}
+		defer domain.Free()
+
+		stop <- 0
+	}
+
+	rebootCallbackID, err := virConn.DomainEventRebootRegister(domain, rebootCallBack)
+	if err != nil {
+		return fmt.Errorf("ERROR: unable to register rebootDomain callback")
+	}
+	defer virConn.DomainEventDeregister(rebootCallbackID)
+
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+				if err = libvirt.EventRunDefaultImpl(); err != nil {
+					close(stop)
+					return
+				}
+			}
+		}
+	}()
+	// we wait until the reboot event is caught.
+	<-stop
+	return nil
+}

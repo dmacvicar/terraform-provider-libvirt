@@ -26,13 +26,13 @@ resource "libvirt_domain" "domain-suse-qcow2" {
   kernel = "${libvirt_volume.kernel.id}"
   initrd = "${libvirt_volume.initrd.id}"
    boot_device {
-    dev = ["network", "hd"]
+    dev = [ "cdrom", "hd", "network"]
   }
   network_autoinstall = true
   cmdline {
       "_" = "noapic"
       install = "http://download.opensuse.org/distribution/leap/15.0/repo/oss/"
-      AutoYast = "https://raw.githubusercontent.com/MalloZup/terraform-provider-libvirt/network-autoinstall/examples/network_autoinstall/leap15.xml"
+      AutoYast = "https://raw.githubusercontent.com/dmacvicar/terraform-provider-libvirt/network-autoinstall/examples/network_autoinstall/leap15.xml"
   }
   disk {
       volume_id = "${libvirt_volume.leap15-net.id}"

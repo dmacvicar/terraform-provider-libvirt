@@ -535,73 +535,17 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	NetworkAutoinstallEnabled := d.Get("network_autoinstall").(bool)
-	if NetworkAutoinstallEnabled {
-		// TODO: we might add this piece of code somewhere else. ( at moment is here)
-		stop := make(chan int)
-		rebootCallBack := func(c *libvirt.Connect, d *libvirt.Domain) {
-			log.Printf("[DEBUG:] Libvirt-events: Caught reboot event!")
-
-			// TODO: improve panic errors
-			err := destroyDomain(domain)
-			if err != nil {
-				panic(err)
-			}
-			var emptyChannel []libvirtxml.DomainChannel
-
-			domainDef, _ := getXMLDomainDefFromLibvirt(domain)
-			domainDef.OS.Kernel = ""
-			domainDef.OS.Initrd = ""
-			domainDef.OS.Cmdline = ""
-			// TODO: THIS is to prevent having 2 duplicata qemu-agent Channels
-			// otherwise we have a crash.
-			domainDef.Devices.Channels = emptyChannel
-
-			data, err := xmlMarshallIndented(domainDef)
-			if err != nil {
-				panic(err)
-			}
-
-			log.Printf("[DEBUG] Modifying the libvirt domain with XML:\n%s", data)
-
-			domain, err = virConn.DomainDefineXML(data)
-			if err != nil {
-				panic(err)
-			}
-			// TODO: at moment we add twice the qemu-agent domain need investigation..
-			// by adding 2 same port we have creash by line 571
-			// A port already exists by name org.qemu.guest_agent.0
-			err = domain.Create()
-			if err != nil {
-				panic(err)
-			}
-			defer domain.Free()
-
-			stop <- 0
-		}
-
-		rebootCallbackID, err := virConn.DomainEventRebootRegister(domain, rebootCallBack)
+	// network-auto-installation :
+	// if user set boolean to true, we perform network-autoinstallion, waiting until reboot.
+	// todo:  kernel and initrd parameters will be autodetected  (in future)
+	isNetworkAutoinstallEnabled := d.Get("network_autoinstall").(bool)
+	if isNetworkAutoinstallEnabled {
+		err := domainNetworkAutoInstall(domain, virConn)
 		if err != nil {
-			return fmt.Errorf("ERROR: unable to register rebootDomain callback")
+			return fmt.Errorf("Domain network-autoinstallation error: %s", err)
 		}
-		defer virConn.DomainEventDeregister(rebootCallbackID)
-
-		go func() {
-			for {
-				select {
-				case <-stop:
-					return
-				default:
-					if err = libvirt.EventRunDefaultImpl(); err != nil {
-						close(stop)
-						return
-					}
-				}
-			}
-		}()
-		// we wait until the reboot event is caught.
-		<-stop
 	}
+	// shutdown domain if user set variable
 	destroyDomainByUserRequest(d, domain)
 	return nil
 }
