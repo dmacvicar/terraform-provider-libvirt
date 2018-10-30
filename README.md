@@ -15,6 +15,7 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 - [Quickstart](#using-the-provider)
 - [Building from source](#building-from-source)
 - [How to contribute](CONTRIBUTING.md)
+- [Upstream project using this provider](#upstream-projects-using-terraform-libvirt)
 
 ## Website Docs
 - [Libvirt Provider](website/docs/index.html.markdown)
@@ -138,11 +139,14 @@ Be aware that this variables may be subject to change again in future versions.
 ## Upstream projects using terraform-libvirt:
 
 * [sumaform](https://github.com/moio/sumaform)
+   sumaform is a way to quickly configure, deploy, test [Uyuni](https://www.uyuni-project.org/) and [SUSE Manager](https://www.suse.com/products/suse-manager/) setups with clients and servers.
 
 * [ceph-open-terrarium](https://github.com/MalloZup/ceph-open-terrarium)
+   ceph-open-terrarium is a way to quickly configure, deploy, tests CEPH cluster without or with [Deepsea](https://github.com/SUSE/DeepSea)
 
-* [kubic-caasp-kvm](https://github.com/kubic-project/automation)
-
+* [kubic](https://github.com/kubic-project)
+    *   [kubic-kvm](https://github.com/kubic-project/automation/tree/master/caasp-kvm): configure, deploy openSUSE MicroOS Container Operating System with terraform
+    *   [kubic-init](https://github.com/kubic-project/kubic-init) a "init" container for Kubic Project
 ## Authors
 
 * Duncan Mac-Vicar P. <dmacvicar@suse.de>
