@@ -58,8 +58,8 @@ func TestAccLibvirtNetworkDataSource_DNSSRVTemplate(t *testing.T) {
 			{
 				Config: `data "libvirt_network_dns_srv_template" "etcd_cluster" {
   count = 2
-  service = etcd-server-ssl
-  protocol = tcp
+  service = "etcd-server-ssl"
+  protocol = "tcp"
   target = "my-etcd-${count.index}.tt.testing"
 }`,
 				Check: resource.ComposeTestCheckFunc(
