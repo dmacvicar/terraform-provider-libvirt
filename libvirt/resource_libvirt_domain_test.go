@@ -23,7 +23,7 @@ func TestAccLibvirtDomain_Basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -51,7 +51,7 @@ func TestAccLibvirtDomain_Detailed(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -99,7 +99,7 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: configVolAttached,
@@ -154,7 +154,7 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: configVolAttached,
@@ -210,7 +210,7 @@ func TestAccLibvirtDomain_VolumeDriver(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -254,7 +254,7 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: configScsi,
@@ -303,7 +303,7 @@ func TestAccLibvirtDomain_URLDisk(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: configURL,
@@ -354,7 +354,7 @@ func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -404,7 +404,7 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -454,7 +454,7 @@ func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config:             configWithDomain,
@@ -504,7 +504,7 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -553,7 +553,7 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -582,7 +582,7 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -614,7 +614,7 @@ func TestAccLibvirtDomain_Autostart(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: autostartTrue,
@@ -656,7 +656,7 @@ func TestAccLibvirtDomain_Filesystems(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -702,7 +702,7 @@ func TestAccLibvirtDomain_Consoles(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -952,7 +952,7 @@ func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, f
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -990,7 +990,7 @@ func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, fir
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -1023,7 +1023,7 @@ func TestAccLibvirtDomain_MachineType(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -1049,7 +1049,7 @@ func TestAccLibvirtDomain_ArchType(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: config,
@@ -1104,7 +1104,7 @@ func TestAccLibvirtDomain_ShutoffDomain(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -1133,7 +1133,7 @@ func TestAccLibvirtDomain_ShutoffMultiDomainsRunning(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -1202,7 +1202,7 @@ func TestAccLibvirtDomain_Import(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_domain", *testAccProvider.Meta().(*Client).libvirt),
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config: fmt.Sprintf(`
@@ -1227,4 +1227,21 @@ func TestAccLibvirtDomain_Import(t *testing.T) {
 			},
 		},
 	})
+}
+
+func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
+	virtConn := testAccProvider.Meta().(*Client).libvirt
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "libvirt_domain" {
+			continue
+		}
+		// Try to find the server
+		_, err := virtConn.LookupDomainByUUIDString(rs.Primary.ID)
+		if err == nil {
+			return fmt.Errorf(
+				"Error waiting for domain (%s) to be destroyed: %s",
+				rs.Primary.ID, err)
+		}
+	}
+	return nil
 }
