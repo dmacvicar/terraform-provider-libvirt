@@ -19,9 +19,11 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 	expectedContentsEmpty := Expected{UserData: "#cloud-config2", NetworkConfig: "", MetaData: ""}
 	randomIsoName := acctest.RandString(10) + ".iso"
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_cloudinit_disk", *testAccProvider.Meta().(*Client).libvirt),
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return nil
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
@@ -105,9 +107,11 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 		}`, randomResourceName, randomResourceName)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testaccCheckLibvirtDestroyResource("libvirt_cloudinit_disk", *testAccProvider.Meta().(*Client).libvirt),
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: func(s *terraform.State) error {
+			return nil
+		},
 		Steps: []resource.TestStep{
 			{
 				Config: testAccCheckLibvirtCloudInitConfigBasic,
