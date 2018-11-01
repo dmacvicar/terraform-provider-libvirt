@@ -219,6 +219,7 @@ func destroyDomain(domain *libvirt.Domain) error {
 
 // autoinstall a domain and block unti installation is completed
 func domainNetworkAutoInstall(domain *libvirt.Domain, virConn *libvirt.Connect) error {
+	// the channel is use for communitcation between the listener libvirt_events
 	stop := make(chan int)
 	rebootCallBack := func(c *libvirt.Connect, d *libvirt.Domain) {
 		log.Printf("[DEBUG:] Libvirt-events: Caught reboot event!")
@@ -227,6 +228,7 @@ func domainNetworkAutoInstall(domain *libvirt.Domain, virConn *libvirt.Connect) 
 			panic(err)
 		}
 		domainDef, _ := getXMLDomainDefFromLibvirt(domain)
+		// we need to remove this otherwise we have infinite loop on installation.
 		domainDef.OS.Kernel = ""
 		domainDef.OS.Initrd = ""
 		domainDef.OS.Cmdline = ""

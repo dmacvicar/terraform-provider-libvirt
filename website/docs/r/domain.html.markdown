@@ -60,12 +60,13 @@ The following arguments are supported:
 * `emulator` - (Optional) The path of the emulator to use
 * `qemu_agent` (Optional) By default is disabled, set to true for enabling it. More info [qemu-agent](https://wiki.libvirt.org/page/Qemu_guest_agent).
 
-* `network_autoinstall` (Optional) Default is false, disable. When true, this will wait until the GUEST OS reboot ( installation done).
-   In combination with this variable you will need to have `kernel`, `initrd` and `kernel_cmdlines` variables set.
-   see  the example `examples/network_autoinstall`. 
-   Internally this will activate libvirt-domain events, and once the reboot event is caught, we remove the Kernel/initrd parameters, so an user can use the guest. 
-   (otherwise it will have always reinstallation loop)
+* `network_autoinstall` (Optional) Default false. When true use it with kernel and initrd parameters.
+   For usage see example `examples/network_autoinstall/leap15/main.tf`
+   By it's nature this feature will be not idempotent (installing a OS is not idempotent), so you cannot call terraform aplly 2 times. If you do terraform will change your resources again.
 
+   Internally we use libvirt-events and waiting/block until domain rebooted, and once the reboot event is caught, we remove the Kernel/initrd parameters, so an user can use the new guest installed.
+   (otherwise it will have always reinstallation loop)
+   
 ### Kernel and boot arguments
 
 * `kernel` - (Optional) The path of the kernel to boot
