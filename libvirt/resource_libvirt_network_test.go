@@ -304,7 +304,7 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: fmt.Sprintf(`
 				resource "libvirt_network" "%s" {
 					name      = "%s"
@@ -313,7 +313,7 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 					addresses = ["10.17.3.0/24"]
 				}`, randomNetworkResource, randomNetworkName),
 			},
-			resource.TestStep{
+			{
 				ResourceName: resourceName,
 				ImportState:  true,
 				Check: resource.ComposeTestCheckFunc(

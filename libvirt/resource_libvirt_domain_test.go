@@ -456,7 +456,7 @@ func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config:             configWithDomain,
 				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
@@ -464,14 +464,14 @@ func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
 					testAccCheckLibvirtNetworkExists("libvirt_network."+randomNetworkName, &network),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: configWithoutDomain,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDestroyLeavesIPs("libvirt_network."+randomNetworkName,
 						"192.0.0.2", &network),
 				),
 			},
-			resource.TestStep{
+			{
 				Config:             configWithDomain,
 				ExpectNonEmptyPlan: true,
 				Check: resource.ComposeTestCheckFunc(
@@ -1204,7 +1204,7 @@ func TestAccLibvirtDomain_Import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: fmt.Sprintf(`
 				resource "libvirt_domain" "%s" {
 					name   = "%s"
@@ -1212,7 +1212,7 @@ func TestAccLibvirtDomain_Import(t *testing.T) {
 					vcpu   = 2
 				}`, randomDomainName, randomDomainName),
 			},
-			resource.TestStep{
+			{
 				ResourceName: "libvirt_domain." + randomDomainName,
 				ImportState:  true,
 				Check: resource.ComposeTestCheckFunc(
