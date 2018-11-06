@@ -378,7 +378,7 @@ func TestAccLibvirtVolume_Import(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: fmt.Sprintf(`
 					resource "libvirt_volume" "%s" {
 							name   = "%s"
@@ -386,7 +386,7 @@ func TestAccLibvirtVolume_Import(t *testing.T) {
 							size   =  1073741824
 					}`, randomVolumeResource, randomVolumeName),
 			},
-			resource.TestStep{
+			{
 				ResourceName: "libvirt_volume." + randomVolumeResource,
 				ImportState:  true,
 				Check: resource.ComposeTestCheckFunc(
