@@ -170,7 +170,6 @@ func resourceLibvirtNetwork() *schema.Resource {
 						"hosts": {
 							Type:     schema.TypeList,
 							Optional: true,
-							ForceNew: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"ip": {
@@ -179,7 +178,6 @@ func resourceLibvirtNetwork() *schema.Resource {
 										// and therefore doesn't recognize that this is set when assigning from
 										// a rendered dns_host template.
 										Optional: true,
-										ForceNew: true,
 									},
 									"hostname": {
 										Type: schema.TypeString,
@@ -187,7 +185,6 @@ func resourceLibvirtNetwork() *schema.Resource {
 										// and therefore doesn't recognize that this is set when assigning from
 										// a rendered dns_host template.
 										Optional: true,
-										ForceNew: true,
 									},
 								},
 							},
@@ -266,6 +263,12 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 		}
 		d.SetPartial("autostart")
 	}
+
+	err = resourceLibvirtNetworkUpdateDNSHosts(d, network)
+	if err != nil {
+		return fmt.Errorf("update DNS hosts: %s", err)
+	}
+
 	d.Partial(false)
 	return nil
 }
