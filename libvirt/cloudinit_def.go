@@ -102,7 +102,7 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 	defer volume.Free()
 
 	// upload ISO file
-	err = img.Import(newCopier(client.libvirt, volume, uint64(size)), volumeDef)
+	err = img.Import(newCopier(client.libvirt, volume), volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error while uploading cloudinit %s: %s", img.String(), err)
 	}

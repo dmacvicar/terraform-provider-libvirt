@@ -88,7 +88,7 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 	defer volume.Free()
 
 	// upload ignition file
-	err = img.Import(newCopier(client.libvirt, volume, volumeDef.Capacity.Value), volumeDef)
+	err = img.Import(newCopier(client.libvirt, volume), volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error while uploading ignition file %s: %s", img.String(), err)
 	}
