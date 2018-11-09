@@ -40,6 +40,11 @@ func resourceCloudInitDisk() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"type": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -58,6 +63,7 @@ func resourceCloudInitDiskCreate(d *schema.ResourceData, meta interface{}) error
 	cloudInit.NetworkConfig = d.Get("network_config").(string)
 	cloudInit.Name = d.Get("name").(string)
 	cloudInit.PoolName = d.Get("pool").(string)
+	cloudInit.Type = d.Get("type").(string)
 
 	log.Printf("[INFO] cloudInit: %+v", cloudInit)
 
@@ -95,6 +101,7 @@ func resourceCloudInitDiskRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("user_data", ci.UserData)
 	d.Set("meta_data", ci.MetaData)
 	d.Set("network_config", ci.NetworkConfig)
+	d.Set("type", ci.Type)
 	return nil
 }
 

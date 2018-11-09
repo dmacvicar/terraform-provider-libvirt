@@ -16,9 +16,9 @@ import (
 	"github.com/mitchellh/packer/common/uuid"
 )
 
-const userDataFileName string = "user-data"
-const metaDataFileName string = "meta-data"
-const networkConfigFileName string = "network-config"
+const userDataFileName string = "user_data"
+const metaDataFileName string = "meta_data"
+const networkConfigFileName string = "network_config"
 
 type defCloudInit struct {
 	Name          string
@@ -26,6 +26,7 @@ type defCloudInit struct {
 	MetaData      string `yaml:"meta_data"`
 	UserData      string `yaml:"user_data"`
 	NetworkConfig string `yaml:"network_config"`
+	Type          string `yaml:"type"`
 }
 
 func newCloudInitDef() defCloudInit {
@@ -148,9 +149,11 @@ func (ci *defCloudInit) createISO() (string, error) {
 		"cidata",
 		"-joliet",
 		"-rock",
-		filepath.Join(tmpDir, userDataFileName),
-		filepath.Join(tmpDir, metaDataFileName),
-		filepath.Join(tmpDir, networkConfigFileName))
+		"-Vconfig-2",
+		tmpDir)
+	//filepath.Join(tmpDir, userDataFileName),
+	//filepath.Join(tmpDir, metaDataFileName),
+	//filepath.Join(tmpDir, networkConfigFileName))
 
 	log.Printf("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {
@@ -171,6 +174,11 @@ func (ci *defCloudInit) createFiles() (string, error) {
 		return "", fmt.Errorf("Cannot create tmp directory for cloudinit ISO generation: %s",
 			err)
 	}
+	tmpDirRoot := tmpDir
+	if ci.Type == "openstack" {
+		tmpDir += "/openstack/latest/"
+		os.MkdirAll(tmpDir, os.ModePerm)
+	}
 	// user-data
 	if err = ioutil.WriteFile(filepath.Join(tmpDir, userDataFileName), []byte(ci.UserData), os.ModePerm); err != nil {
 		return "", fmt.Errorf("Error while writing user-data to file: %s", err)
@@ -186,7 +194,7 @@ func (ci *defCloudInit) createFiles() (string, error) {
 
 	log.Print("ISO contents created")
 
-	return tmpDir, nil
+	return tmpDirRoot, nil
 }
 
 // Creates a new defCloudInit object starting from a ISO volume handled by
@@ -243,24 +251,28 @@ func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvi
 		if err == io.EOF {
 			break
 		}
+		log.Printf("[DEBUG]: Processing file %+v from cloudInit disk")
 
 		if err != nil {
 			return err
 		}
-		dataBytes, err := readIso9660File(file)
-		if err != nil {
-			return err
-		}
-		// the following filenames need to be like this because in the ios9660 reader
-		// joliet is not supported. https://github.com/hooklift/iso9660/blob/master/README.md#not-supported
-		if file.Name() == "/user_dat." {
-			ci.UserData = fmt.Sprintf("%s", dataBytes)
-		}
-		if file.Name() == "/meta_dat." {
-			ci.MetaData = fmt.Sprintf("%s", dataBytes)
-		}
-		if file.Name() == "/network_." {
-			ci.NetworkConfig = fmt.Sprintf("%s", dataBytes)
+		if !file.IsDir() {
+			dataBytes, err := readIso9660File(file)
+			if err != nil {
+				return err
+			}
+
+			// the following filenames need to be like this because in the ios9660 reader
+			// joliet is not supported. https://github.com/hooklift/iso9660/blob/master/README.md#not-supported
+			if file.Name() == "/user_dat." {
+				ci.UserData = fmt.Sprintf("%s", dataBytes)
+			}
+			if file.Name() == "/meta_dat." {
+				ci.MetaData = fmt.Sprintf("%s", dataBytes)
+			}
+			if file.Name() == "/network_." {
+				ci.NetworkConfig = fmt.Sprintf("%s", dataBytes)
+			}
 		}
 	}
 	log.Printf("[DEBUG]: Read cloud-init from file: %+v", ci)
