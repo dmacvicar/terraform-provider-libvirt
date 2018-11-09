@@ -94,6 +94,15 @@ func (i *httpImage) Size() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	if response.StatusCode == 403 {
+		// possibly only the HEAD method is forbidden, try a Body-less GET instead
+		response, err = http.Get(i.url.String())
+		if err != nil {
+			return 0, err
+		}
+
+		response.Body.Close()
+	}
 	if response.StatusCode != 200 {
 		return 0,
 			fmt.Errorf(
