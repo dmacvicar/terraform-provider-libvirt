@@ -16,9 +16,16 @@ import (
 	"github.com/mitchellh/packer/common/uuid"
 )
 
-const userDataFileName string = "user_data"
-const metaDataFileName string = "meta_data"
-const networkConfigFileName string = "network_config"
+// File Names are only valid on openstack
+// EC2 is invalid and would be user-data
+const (
+	userDataFileNameDefault        string = "user-data"
+	metaDataFileNameDefault        string = "meta-data"
+	networkConfigFileNameDefault   string = "network-config"
+	userDataFileNameOpenStack      string = "user_data"
+	metaDataFileNameOpenStack      string = "meta_data"
+	networkConfigFileNameOpenStack string = "network_config"
+)
 
 type defCloudInit struct {
 	Name          string
@@ -175,9 +182,18 @@ func (ci *defCloudInit) createFiles() (string, error) {
 			err)
 	}
 	tmpDirRoot := tmpDir
-	if ci.Type == "openstack" {
+	var userDataFileName, metaDataFileName, networkConfigFileName string
+	switch ci.Type {
+	case "openstack":
 		tmpDir += "/openstack/latest/"
 		os.MkdirAll(tmpDir, os.ModePerm)
+		userDataFileName = userDataFileNameOpenStack
+		metaDataFileName = metaDataFileNameOpenStack
+		networkConfigFileName = networkConfigFileNameOpenStack
+	default:
+		userDataFileName = userDataFileNameDefault
+		metaDataFileName = metaDataFileNameDefault
+		networkConfigFileName = networkConfigFileNameDefault
 	}
 	// user-data
 	if err = ioutil.WriteFile(filepath.Join(tmpDir, userDataFileName), []byte(ci.UserData), os.ModePerm); err != nil {
