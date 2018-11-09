@@ -51,3 +51,7 @@ The following arguments are supported:
 * `user_data` - (Optional)  cloud-init user data.
 * `meta_data` - (Optional)  cloud-init user data.
 * `network_config` - (Optional) cloud-init network-config data.
+* `data_source_type` - (Optional) sets the datasource provider for the cloudinit ISO.
+  Some OSes (RancherOS, CoreOS) need different labels and directory structures.
+  CloudInit will not get applied if this is wrong.
+  Valid Values are: `openstack`, `ec2` or left empty (default). (`ec2` = default, but can be set nonetheless)
