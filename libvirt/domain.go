@@ -147,6 +147,15 @@ func domainIsRunning(domain libvirt.Domain) (bool, error) {
 }
 
 func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libvirt.DomainInterface, error) {
+	domainRunningNow, err := domainIsRunning(domain)
+	if err != nil {
+		return []libvirt.DomainInterface{}, err
+	}
+	if !domainRunningNow {
+		log.Print("[DEBUG] no interfaces could be obtained: domain not running")
+		return []libvirt.DomainInterface{}, nil
+	}
+
 	qemuAgentEnabled := rd.Get("qemu_agent").(bool)
 	if qemuAgentEnabled {
 		// get all the interfaces using the qemu-agent, this includes also
@@ -167,15 +176,6 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 
 	// get all the interfaces attached to libvirt networks
 	log.Print("[DEBUG] no interfaces could be obtained with qemu-agent: falling back to the libvirt API")
-
-	domainRunningNow, err := domainIsRunning(domain)
-	if err != nil {
-		return interfaces, err
-	}
-	if !domainRunningNow {
-		log.Print("[DEBUG] no interfaces could be obtained with libvirt API: domain not running")
-		return interfaces, nil
-	}
 
 	interfaces, err = domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
 	if err != nil {
