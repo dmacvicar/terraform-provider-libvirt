@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"time"
 )
 
@@ -93,19 +92,8 @@ func (fws *fileWebServer) Start() error {
 	fws.Port = randomPort()
 	fws.URL = fmt.Sprintf("http://127.0.0.1:%d", fws.Port)
 
-	contentLengthHandler := func(h http.Handler) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			fi, err := os.Stat(path.Join(dir, r.URL.Path))
-			if err == nil {
-				w.Header().Add("Content-Length", strconv.FormatInt(fi.Size(), 10))
-				h.ServeHTTP(w, r)
-			}
-		}
-	}
-
 	handler := http.NewServeMux()
-	handler.Handle("/", contentLengthHandler(http.FileServer(http.Dir(dir))))
-
+	handler.Handle("/", http.FileServer(http.Dir(dir)))
 	fws.server = &http.Server{Addr: fmt.Sprintf(":%d", fws.Port), Handler: handler}
 	ln, err := net.Listen("tcp", fws.server.Addr)
 	if err != nil {

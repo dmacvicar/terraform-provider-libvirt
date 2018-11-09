@@ -143,11 +143,12 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 		// update the image in the description, even if the file has not changed
 		size, err := img.Size()
-		if err == nil {
-			log.Printf("Image %s image is: %d bytes", img, size)
-			volumeDef.Capacity.Unit = "B"
-			volumeDef.Capacity.Value = size
+		if err != nil {
+			return err
 		}
+		log.Printf("Image %s image is: %d bytes", img, size)
+		volumeDef.Capacity.Unit = "B"
+		volumeDef.Capacity.Value = size
 	} else {
 
 		// the volume does not have a source image to upload, first handle
@@ -234,7 +235,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	// upload source if present
 	if _, ok := d.GetOk("source"); ok {
-		err = img.Import(newCopier(client.libvirt, volume), volumeDef)
+		err = img.Import(newCopier(client.libvirt, volume, volumeDef.Capacity.Value), volumeDef)
 		if err != nil {
 			return fmt.Errorf("Error while uploading source %s: %s", img.String(), err)
 		}

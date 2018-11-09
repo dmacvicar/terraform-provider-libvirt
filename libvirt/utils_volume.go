@@ -19,7 +19,7 @@ import (
 // network transparent image
 type image interface {
 	Size() (uint64, error)
-	Import(func(io.Reader, uint64) error, libvirtxml.StorageVolume) error
+	Import(func(io.Reader) error, libvirtxml.StorageVolume) error
 	String() string
 	IsQCOW2() (bool, error)
 }
@@ -59,7 +59,7 @@ func (i *localImage) IsQCOW2() (bool, error) {
 	return isQCOW2Header(buf)
 }
 
-func (i *localImage) Import(copier func(io.Reader, uint64) error, vol libvirtxml.StorageVolume) error {
+func (i *localImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageVolume) error {
 	file, err := os.Open(i.path)
 	defer file.Close()
 	if err != nil {
@@ -78,7 +78,7 @@ func (i *localImage) Import(copier func(io.Reader, uint64) error, vol libvirtxml
 		}
 	}
 
-	return copier(file, uint64(fi.Size()))
+	return copier(file)
 }
 
 type httpImage struct {
@@ -97,7 +97,7 @@ func (i *httpImage) Size() (uint64, error) {
 	if response.StatusCode != 200 {
 		return 0,
 			fmt.Errorf(
-				"Could not get size of remote resource: %s - %s",
+				"Error accessing remote resource: %s - %s",
 				i.url.String(),
 				response.Status)
 	}
@@ -158,7 +158,7 @@ func isQCOW2Header(buf []byte) (bool, error) {
 	return false, nil
 }
 
-func (i *httpImage) Import(copier func(io.Reader, uint64) error, vol libvirtxml.StorageVolume) error {
+func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageVolume) error {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", i.url.String(), nil)
 
@@ -181,18 +181,7 @@ func (i *httpImage) Import(copier func(io.Reader, uint64) error, vol libvirtxml.
 		return nil
 	}
 	log.Printf("[DEBUG]: url resp status code %s\n", response.Status)
-
-	length, err := strconv.Atoi(response.Header.Get("Content-Length"))
-	if err != nil {
-		err = fmt.Errorf(
-			"Error while getting Content-Length of \"%s\": %s - got %s",
-			i.url.String(),
-			err,
-			response.Header.Get("Content-Length"))
-		return err
-	}
-
-	return copier(response.Body, uint64(length))
+	return copier(response.Body)
 }
 
 func newImage(source string) (image, error) {
@@ -210,8 +199,8 @@ func newImage(source string) (image, error) {
 	}
 }
 
-func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol) func(src io.Reader, size uint64) error {
-	copier := func(src io.Reader, size uint64) error {
+func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64) func(src io.Reader) error {
+	copier := func(src io.Reader) error {
 		var bytesCopied int64
 
 		stream, err := virConn.NewStream(0)

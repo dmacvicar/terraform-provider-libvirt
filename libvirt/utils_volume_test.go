@@ -61,7 +61,7 @@ func TestLocalImageDownload(t *testing.T) {
 		Mtime: fmt.Sprintf("%d.%d", tmpfileStat.ModTime().Unix(), tmpfileStat.ModTime().Nanosecond()),
 	}
 
-	copier := func(r io.Reader, s uint64) error {
+	copier := func(r io.Reader) error {
 		t.Fatalf("ERROR: starting copy of %s... but the file is the same!", url)
 		return nil
 	}
@@ -129,7 +129,7 @@ func TestRemoteImageDownload(t *testing.T) {
 	vol.Target.Timestamps = &libvirtxml.StorageVolumeTargetTimestamps{
 		Mtime: fmt.Sprintf("%d.%d", tmpfileStat.ModTime().Unix(), tmpfileStat.ModTime().Nanosecond()),
 	}
-	copier := func(r io.Reader, s uint64) error {
+	copier := func(r io.Reader) error {
 		t.Fatalf("ERROR: starting copy of %s... but the file is the same!", url)
 		return nil
 	}
