@@ -201,6 +201,76 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 					}),
 				),
 			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "%s" {
+					name      = "%s"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dns {
+						hosts = [
+						  {
+							  hostname = "myhost1",
+							  ip = "1.1.1.1",
+						  },
+						]
+					}
+				}`, randomNetworkResource, randomNetworkName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.hostname", "myhost1"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.ip", "1.1.1.1"),
+					checkDNSHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSHost{
+						{
+							IP: "1.1.1.1",
+							Hostnames: []libvirtxml.NetworkDNSHostHostname{
+								{Hostname: "myhost1"},
+							},
+						},
+					}),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "%s" {
+					name      = "%s"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dns {
+						hosts = [
+						  {
+							  hostname = "myhost1",
+							  ip = "1.1.1.1",
+						  },
+# Without https:#www.redhat.com/archives/libvir-list/2018-November/msg00231.html, this raises:
+#
+#   update DNS hosts: add {{ } 1.1.1.2 [{myhost1}]}: virError(Code=55, Domain=19, Message='Requested operation is not valid: there is already at least one DNS HOST record with a matching field in network fo64d9y6w9')
+#						  {
+#							  hostname = "myhost1",
+#							  ip = "1.1.1.2",
+#						  },
+						  {
+							  hostname = "myhost2",
+							  ip = "1.1.1.1",
+						  },
+						]
+					}
+				}`, randomNetworkResource, randomNetworkName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.hostname", "myhost1"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.ip", "1.1.1.1"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.1.hostname", "myhost2"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.1.ip", "1.1.1.1"),
+					checkDNSHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSHost{
+						{
+							IP: "1.1.1.1",
+							Hostnames: []libvirtxml.NetworkDNSHostHostname{
+								{Hostname: "myhost1"},
+								{Hostname: "myhost2"},
+							},
+						},
+					}),
+				),
+			},
 		},
 	})
 }
