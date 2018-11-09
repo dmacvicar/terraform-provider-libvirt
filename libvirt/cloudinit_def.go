@@ -25,15 +25,17 @@ const (
 	userDataFileNameOpenStack      string = "user_data"
 	metaDataFileNameOpenStack      string = "meta_data"
 	networkConfigFileNameOpenStack string = "network_config"
+	isoLabelOpenStack              string = "config-2"
+	isoLabelDefault                string = "cidata"
 )
 
 type defCloudInit struct {
-	Name          string
-	PoolName      string
-	MetaData      string `yaml:"meta_data"`
-	UserData      string `yaml:"user_data"`
-	NetworkConfig string `yaml:"network_config"`
-	Type          string `yaml:"type"`
+	Name           string
+	PoolName       string
+	MetaData       string `yaml:"meta_data"`
+	UserData       string `yaml:"user_data"`
+	NetworkConfig  string `yaml:"network_config"`
+	DataSourceType string `yaml:"data_source_type"`
 }
 
 func newCloudInitDef() defCloudInit {
@@ -148,19 +150,25 @@ func (ci *defCloudInit) createISO() (string, error) {
 	}
 
 	isoDestination := filepath.Join(tmpDir, ci.Name)
+	var isoLabel string
+	switch ci.DataSourceType {
+	case "openstack":
+		isoLabel = isoLabelOpenStack
+	case "ec2", "":
+		isoLabel = isoLabelDefault
+	default:
+		log.Printf("Did not find valid CI DataSourceType, found: %v", ci.DataSourceType)
+		isoLabel = isoLabelDefault
+	}
 	cmd := exec.Command(
 		"mkisofs",
 		"-output",
 		isoDestination,
 		"-volid",
-		"cidata",
+		isoLabel,
 		"-joliet",
 		"-rock",
-		"-Vconfig-2",
 		tmpDir)
-	//filepath.Join(tmpDir, userDataFileName),
-	//filepath.Join(tmpDir, metaDataFileName),
-	//filepath.Join(tmpDir, networkConfigFileName))
 
 	log.Printf("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {
@@ -183,14 +191,19 @@ func (ci *defCloudInit) createFiles() (string, error) {
 	}
 	tmpDirRoot := tmpDir
 	var userDataFileName, metaDataFileName, networkConfigFileName string
-	switch ci.Type {
+	switch ci.DataSourceType {
 	case "openstack":
 		tmpDir += "/openstack/latest/"
 		os.MkdirAll(tmpDir, os.ModePerm)
 		userDataFileName = userDataFileNameOpenStack
 		metaDataFileName = metaDataFileNameOpenStack
 		networkConfigFileName = networkConfigFileNameOpenStack
+	case "ec2", "":
+		userDataFileName = userDataFileNameDefault
+		metaDataFileName = metaDataFileNameDefault
+		networkConfigFileName = networkConfigFileNameDefault
 	default:
+		log.Printf("Did not find valid CI DataSourceType, found: %v", ci.DataSourceType)
 		userDataFileName = userDataFileNameDefault
 		metaDataFileName = metaDataFileNameDefault
 		networkConfigFileName = networkConfigFileNameDefault
