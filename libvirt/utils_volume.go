@@ -200,7 +200,6 @@ func newImage(source string) (image, error) {
 		return nil, fmt.Errorf("Can't parse source '%s' as url: %s", source, err)
 	}
 
-	// in case of http image can be zipped
 	if strings.HasPrefix(url.Scheme, "http") {
 		return &httpImage{url: url}, nil
 	} else if url.Scheme == "file" || url.Scheme == "" {
@@ -218,21 +217,21 @@ func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64
 		bReader := bufio.NewReader(src)
 
 		// read 2 bytes for recognizing the archive type
-		testBytes, err := bReader.Peek(2)
+		srcBytes, err := bReader.Peek(2)
 		// https://en.wikipedia.org/wiki/List_of_file_signatures
 		// TODO: implement an handler
 		// gz or tar.gz
-		log.Printf("DEBUG: first bytes of FILE: %d", testBytes)
-		if testBytes[0] == 0x1f && testBytes[1] == 0x8b {
+		log.Printf("DEBUG: first bytes of FILE: %d", srcBytes)
+		if srcBytes[0] == 0x1f && srcBytes[1] == 0x8b {
 			log.Printf("Gzip source file")
 		}
 		// bzip2 or tar.bz2
-		if testBytes[0] == 0x42 && testBytes[1] == 0x5A {
+		if srcBytes[0] == 0x42 && srcBytes[1] == 0x5A {
 			log.Printf("bzip2 source file")
 		}
 
 		// XZ  tar.xz
-		if testBytes[0] == 0xfd && testBytes[1] == 0x37 {
+		if srcBytes[0] == 0xfd && srcBytes[1] == 0x37 {
 			log.Printf("xz source file")
 		}
 
