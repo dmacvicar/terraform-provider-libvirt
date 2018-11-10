@@ -226,13 +226,13 @@ func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64
 		if testBytes[0] == 0x1f && testBytes[1] == 0x8b {
 			log.Printf("Gzip source file")
 		}
-
+		// bzip2 or tar.bz2
 		if testBytes[0] == 0x42 && testBytes[1] == 0x5A {
 			log.Printf("bzip2 source file")
 		}
 
 		// XZ  tar.xz
-		if testBytes[0] == 0x42 && testBytes[1] == 0x5A {
+		if testBytes[0] == 0xfd && testBytes[1] == 0x37 {
 			log.Printf("xz source file")
 		}
 
