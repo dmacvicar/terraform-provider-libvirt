@@ -217,11 +217,23 @@ func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64
 		//create a bufio.Reader so we can 'peek' at the first few bytes
 		bReader := bufio.NewReader(src)
 
-		testBytes, err := bReader.Peek(2) //read 2 bytes
-		// gzip, tar, bzip
+		// read 2 bytes for recognizing the archive type
+		testBytes, err := bReader.Peek(2)
+		// https://en.wikipedia.org/wiki/List_of_file_signatures
+		// TODO: implement an handler
+		// gz or tar.gz
 		log.Printf("DEBUG: first bytes of FILE: %d", testBytes)
 		if testBytes[0] == 0x1f && testBytes[1] == 0x8b {
-			log.Printf("Gzip source")
+			log.Printf("Gzip source file")
+		}
+
+		if testBytes[0] == 0x42 && testBytes[1] == 0x5A {
+			log.Printf("bzip2 source file")
+		}
+
+		// XZ  tar.xz
+		if testBytes[0] == 0x42 && testBytes[1] == 0x5A {
+			log.Printf("xz source file")
 		}
 
 		stream, err := virConn.NewStream(0)

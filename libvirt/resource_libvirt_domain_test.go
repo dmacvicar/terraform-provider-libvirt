@@ -370,6 +370,90 @@ func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
 
 }
 
+func TestAccLibvirtDomain_compressedSourceType(t *testing.T) {
+	var volume libvirt.StorageVol
+	randomVolumeName := acctest.RandString(10)
+	// TODO 1: add in the test the format check (don't break autodetection)
+	// we should detect/heck if after extraction the img is qcow or raw.
+
+	// we test local compressed images.
+	// TODO 2: check if it make sense to test the http ones
+	// (maybe with local web server) or use github.raw as webserver
+
+	// TODO 3: add test for xz compressed files
+	var config = fmt.Sprintf(`
+
+	resource "libvirt_volume" "gzip-raw" {
+		source = "testdata/gzip/initrd.img.gz"
+		name = "%s-gzip-raw"
+		pool = "default"
+	}
+	resource "libvirt_volume" "gzip-raw-tar" {
+		source = "testdata/gzip/initrd.img.tar.gz"
+		name = "%s-gzip-raw-tar"
+		pool = "default"
+	}
+	resource "libvirt_volume" "gzip-qcow2" {
+			source = "testdata/gzip/test.qcow2.gz"
+			name = "%s-gzip-qcow2"
+			pool   = "default"
+	}
+	resource "libvirt_volume" "gzip-qcow2-tar" {
+			source = "testdata/gzip/test.qcow2.tar.gz"
+			name = "%s-gzip-qcow2-tar"
+			pool   = "default"
+	}
+
+
+	resource "libvirt_volume" "bzip2-raw" {
+			source = "testdata/bzip2/initrd.img.bz2"
+			name = "%s-bzip2-raw"
+			pool   = "default"
+	}
+	resource "libvirt_volume" "bzip2-raw-tar" {
+			source = "testdata/bzip2/initrd.img.tar.bz2"
+			name = "%s-bzip2-raw-tar"
+			pool   = "default"
+	}
+	resource "libvirt_volume" "bzip2-qcow2" {
+			source = "testdata/bzip2/test.qcow2.bz2"
+			name = "%s-bzip2-qcow2"
+			pool   = "default"
+	}
+	resource "libvirt_volume" "bzip2-qcow2-tar" {
+			source = "testdata/bzip2/test.qcow2.tar.bz2"
+			name = "%s-bzip2-qcow2-tar"
+			pool   = "default"
+	}
+
+`, randomVolumeName, randomVolumeName, randomVolumeName, randomVolumeName, randomVolumeName, randomVolumeName, randomVolumeName, randomVolumeName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					// this test should ensure volume exists
+					testAccCheckLibvirtVolumeExists("libvirt_domain."+randomVolumeName+"-gzip-raw", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_domain."+randomVolumeName+"-gzip-raw-tar", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_domain."+randomVolumeName+"-gzip-qcow2", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_domain."+randomVolumeName+"-gzip-qcow2-tar", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_domain."+randomVolumeName+"-bzip2-raw", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_domain."+randomVolumeName+"-bzip2-raw-tar", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_domain."+randomVolumeName+"-bzip2-qcow2", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_domain."+randomVolumeName+"-bzip2-qcow2-tar", &volume),
+					// TODO:
+					// for each vol run the extraction and check that we autodetect the format.
+				),
+			},
+		},
+	})
+
+}
+
 func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandString(10)
