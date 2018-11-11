@@ -30,8 +30,42 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 					resource "libvirt_cloudinit_disk" "%s" {
 								name           = "%s"
 								user_data      = "#cloud-config"
-								meta_data = "instance-id: bamboo"
+								meta_data      = "instance-id: bamboo"
 								network_config = "network:"
+							}`, randomResourceName, randomIsoName),
+
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContents.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "libvirt_cloudinit_disk" "%s" {
+								name             = "%s"
+								data_source_type = "openstack"
+								user_data        = "#cloud-config"
+								meta_data        = "instance-id: bamboo"
+								network_config   = "network:"
+							}`, randomResourceName, randomIsoName),
+
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
+					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContents.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+					resource "libvirt_cloudinit_disk" "%s" {
+								name             = "%s"
+								data_source_type = "ec2"
+								user_data        = "#cloud-config"
+								meta_data        = "instance-id: bamboo"
+								network_config   = "network:"
 							}`, randomResourceName, randomIsoName),
 
 				Check: resource.ComposeTestCheckFunc(
@@ -46,7 +80,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 					resource "libvirt_cloudinit_disk" "%s" {
 								name           = "%s"
 								user_data      = "#cloud-config2"
-								meta_data = "instance-id: bamboo2"
+								meta_data      = "instance-id: bamboo2"
 								network_config = "network2:"
 							}`, randomResourceName, randomIsoName),
 
