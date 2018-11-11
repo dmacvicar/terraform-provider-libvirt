@@ -157,7 +157,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 	case "ec2", "":
 		isoLabel = isoLabelDefault
 	default:
-		log.Printf("Did not find valid CI DataSourceType, found: %v", ci.DataSourceType)
+		log.Printf("Did not find valid CI DataSourceType, found: %v. Using default value", ci.DataSourceType)
 		isoLabel = isoLabelDefault
 	}
 	cmd := exec.Command(
@@ -203,7 +203,7 @@ func (ci *defCloudInit) createFiles() (string, error) {
 		metaDataFileName = metaDataFileNameDefault
 		networkConfigFileName = networkConfigFileNameDefault
 	default:
-		log.Printf("Did not find valid CI DataSourceType, found: %v", ci.DataSourceType)
+		log.Printf("Did not find valid CI DataSourceType, found: %v. Using default value", ci.DataSourceType)
 		userDataFileName = userDataFileNameDefault
 		metaDataFileName = metaDataFileNameDefault
 		networkConfigFileName = networkConfigFileNameDefault
