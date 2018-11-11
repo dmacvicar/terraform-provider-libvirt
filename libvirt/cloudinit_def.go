@@ -280,7 +280,7 @@ func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvi
 		if err == io.EOF {
 			break
 		}
-		log.Printf("[DEBUG]: Processing file %+v from cloudInit disk")
+		log.Printf("[DEBUG]: Processing file %+v from cloudInit disk", file.Name())
 
 		if err != nil {
 			return err
