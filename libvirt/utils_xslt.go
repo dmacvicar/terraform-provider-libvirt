@@ -46,6 +46,11 @@ func xsltDiffSupressFunc(k, old, new string, d *schema.ResourceData) bool {
 
 // this function applies a XSLT transform to the xml data
 func transformXML(xml string, xslt string) (string, error) {
+	// empty xslt is a no-op
+	if strings.TrimSpace(xslt) == "" {
+		return xml, nil
+	}
+
 	xsltFile, err := ioutil.TempFile("", "terraform-provider-libvirt-xslt")
 	if err != nil {
 		log.Fatal(err)

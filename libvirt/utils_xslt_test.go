@@ -30,6 +30,15 @@ func TestTransformXML(t *testing.T) {
 	assert.Equal(t, outXML, result)
 }
 
+func TestTransformXMLEmptyXSLTNoOp(t *testing.T) {
+	const xslt = ""
+	const inXML string = "<books><book format=\"paper\"/></books>"
+
+	result, err := transformXML(inXML, xslt)
+	assert.Nil(t, err)
+	assert.Equal(t, inXML, result)
+}
+
 func TestXSLTDiffSupressFunc(t *testing.T) {
 	const inXML string = `    <foo>
 
