@@ -176,6 +176,24 @@ func setDhcpByCIDRAdressesSubnets(d *schema.ResourceData, networkDef *libvirtxml
 				return err
 			}
 			if d.Get("dhcp.0.enabled").(bool) {
+				// prepare host static ip assignement if present
+				var staticHosts []libvirtxml.NetworkDHCPHost
+				if hostsCount, ok := d.GetOk("dhcp.0.hosts.#"); ok {
+					for i := 0; i < hostsCount.(int); i++ {
+						ip := d.Get(fmt.Sprintf("dhcp.0.hosts.%d.ip", i)).(string)
+						if net.ParseIP(ip) == nil {
+							return fmt.Errorf("Could not parse address '%s'", ip)
+						}
+						mac := d.Get(fmt.Sprintf("dhcp.0.hosts.%d.mac", i)).(string)
+						name := d.Get(fmt.Sprintf("dhcp.0.hosts.%d.name", i)).(string)
+						staticHosts = append(staticHosts, libvirtxml.NetworkDHCPHost{
+							IP:   ip,
+							MAC:  mac,
+							Name: name,
+						})
+					}
+					dhcp.Hosts = staticHosts
+				}
 				dni.DHCP = dhcp
 			} else {
 				// if a network exist with enabled but an user want to disable
