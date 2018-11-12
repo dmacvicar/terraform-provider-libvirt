@@ -1,7 +1,6 @@
 package libvirt
 
 import (
-	"encoding/xml"
 	"fmt"
 	"log"
 
@@ -58,6 +57,21 @@ func resourceLibvirtVolume() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
+			},
+			"xml": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"xslt": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+					},
+				},
 			},
 		},
 		Importer: &schema.ResourceImporter{
@@ -206,13 +220,19 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	volumeDef.Capacity.Value = uint64(d.Get("size").(int))
-	volumeDefXML, err := xml.Marshal(volumeDef)
+	data, err := xmlMarshallIndented(volumeDef)
 	if err != nil {
 		return fmt.Errorf("Error serializing libvirt volume: %s", err)
 	}
+	log.Printf("[DEBUG] Generated XML for libvirt volume:\n%s", data)
+
+	data, err = transformResourceXML(data, d)
+	if err != nil {
+		return fmt.Errorf("Error applying XSLT stylesheet: %s", err)
+	}
 
 	// create the volume
-	volume, err := pool.StorageVolCreateXML(string(volumeDefXML), 0)
+	volume, err := pool.StorageVolCreateXML(data, 0)
 	if err != nil {
 		return fmt.Errorf("Error creating libvirt volume: %s", err)
 	}
