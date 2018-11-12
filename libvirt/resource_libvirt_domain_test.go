@@ -1349,6 +1349,107 @@ EOF
 	})
 }
 
+// changed whitespace in the xslt should create an empty plan
+// as the supress diff function should take care of seeing they are equivalent
+func TestAccLibvirtDomain_XSLT_Whitespace(t *testing.T) {
+	var domain libvirt.Domain
+	randomDomainName := acctest.RandString(10)
+	randomNetworkName := acctest.RandString(10)
+
+	var config = fmt.Sprintf(`
+	resource "libvirt_network" "%s" {
+	  name      = "%s"
+  	  addresses = ["10.17.3.0/24"]
+    }
+
+	resource "libvirt_domain" "%s" {
+	  name = "%s"
+	  network_interface = {
+	    network_name = "default"
+	  }
+      xml {
+        xslt = <<EOF
+		<?xml version="1.0" ?>
+		<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+		  <xsl:output omit-xml-declaration="yes" indent="yes"/>
+		  <xsl:template match="node()|@*">
+			 <xsl:copy>
+			   <xsl:apply-templates select="node()|@*"/>
+			 </xsl:copy>
+		  </xsl:template>
+
+		  <xsl:template match="/domain/devices/interface[@type='network']/model/@type">
+			<xsl:attribute name="type">
+			  <xsl:value-of select="'e1000'"/>
+			</xsl:attribute>
+		  </xsl:template>
+
+		</xsl:stylesheet>
+EOF
+      }
+	}`, randomNetworkName, randomNetworkName, randomDomainName, randomDomainName)
+
+	var configAfter = fmt.Sprintf(`
+	resource "libvirt_network" "%s" {
+	  name      = "%s"
+  	  addresses = ["10.17.3.0/24"]
+    }
+
+	resource "libvirt_domain" "%s" {
+	  name = "%s"
+	  network_interface = {
+	    network_name = "default"
+	  }
+      xml {
+        xslt = <<EOF
+		<?xml version="1.0" ?>
+		<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+		  <xsl:output omit-xml-declaration="yes" indent="yes"/>
+		  <xsl:template match="node()|@*">
+			 <xsl:copy><xsl:apply-templates select="node()|@*"/></xsl:copy>
+		  </xsl:template>
+		  <xsl:template match="/domain/devices/interface[@type='network']/model/@type">
+			<xsl:attribute name="type"><xsl:value-of select="'e1000'"/></xsl:attribute>
+		  </xsl:template>
+		</xsl:stylesheet>
+EOF
+      }
+	}`, randomNetworkName, randomNetworkName, randomDomainName, randomDomainName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					testAccCheckLibvirtDomainDescription(&domain, func(domainDef libvirtxml.Domain) error {
+						if domainDef.Devices.Interfaces[0].Model.Type != "e1000" {
+							return fmt.Errorf("Expecting XSLT to tranform network model to e1000")
+						}
+						return nil
+					}),
+				),
+			},
+			{
+				Config:             configAfter,
+				ExpectNonEmptyPlan: false,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					testAccCheckLibvirtDomainDescription(&domain, func(domainDef libvirtxml.Domain) error {
+						if domainDef.Devices.Interfaces[0].Model.Type != "e1000" {
+							return fmt.Errorf("Expecting XSLT to tranform network model to e1000")
+						}
+						return nil
+					}),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 	virtConn := testAccProvider.Meta().(*Client).libvirt
 	for _, rs := range s.RootModule().Resources {
