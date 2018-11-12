@@ -306,6 +306,44 @@ func checkDNSHosts(name string, expected []libvirtxml.NetworkDNSHost) resource.T
 	}
 }
 
+func checkDHCPHosts(name string, expected []libvirtxml.NetworkDHCPHost) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		virConn := testAccProvider.Meta().(*Client).libvirt
+		networkDef, err := getNetworkDef(s, name, *virConn)
+		if err != nil {
+			return err
+		}
+		if networkDef.IPs == nil {
+			return fmt.Errorf("IP block not found in networkDef")
+		}
+		for _, ips := range networkDef.IPs {
+			if ips.DHCP == nil {
+				return fmt.Errorf("DHCP block not found in networkDef")
+			}
+			if ips.DHCP.Hosts == nil {
+				return fmt.Errorf("DHCP Hosts block not found in networkDef DHCP")
+			}
+			actual := ips.DHCP.Hosts
+			if len(expected) != len(actual) {
+				return fmt.Errorf("len(expected): %d != len(actual): %d", len(expected), len(actual))
+			}
+			for _, e := range expected {
+				found := false
+				for _, a := range actual {
+					if reflect.DeepEqual(a.IP, e.IP) && reflect.DeepEqual(a.Name, e.Name) && reflect.DeepEqual(a.MAC, e.MAC) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					return fmt.Errorf("Unable to find:%v in: %v", e, actual)
+				}
+			}
+		}
+		return nil
+	}
+}
+
 func networkExists(name string, network *libvirt.Network) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
@@ -411,11 +449,26 @@ func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 					addresses = ["10.17.3.0/24"]
 					dhcp {
 						enabled = true
+						hosts = [
+							{ name = "host1", ip = "10.17.3.1", mac = "00:11:22:33:44:55" },
+							{ ip = "10.17.3.2", mac = "00:11:22:33:44:56" }
+						]
 					}
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.enabled", "true"),
 					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network."+randomNetworkResource, "enabled"),
+					checkDHCPHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDHCPHost{
+						{
+							IP:   "10.17.3.1",
+							Name: "host1",
+							MAC:  "00:11:22:33:44:55",
+						},
+						{
+							IP:  "10.17.3.2",
+							MAC: "00:11:22:33:44:56",
+						},
+					}),
 				),
 			},
 		},
