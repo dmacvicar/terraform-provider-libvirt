@@ -1288,6 +1288,11 @@ EOF
 	})
 }
 
+// If using XSLT to transform a supported attribute by the terraform
+// provider schema, the provider will try to change it back to the
+// known state.
+// Therefore we explicitly advise against using it with existing
+// schema attributes
 func TestAccLibvirtDomain_XSLT_SupportedAttribute(t *testing.T) {
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandString(10)
