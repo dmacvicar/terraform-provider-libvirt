@@ -534,6 +534,18 @@ boot_device {
 }
 ```
 
+### Altering libvirt's generated domain XML definition
+
+The optional `xml` block relates to the generated domain XML.
+
+Currently the following attributes are supported:
+
+* `xslt`: specifies a XSLT stylesheet to transform the generated XML definition before creating the domain.
+  This is used to support features the provider does not allow to set from the schema.
+  It is not recommended to alter properties and settings that are exposed to the schema, as terraform will insist in changing them back to the known state.
+
+See https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/examples/xslt/main.tf and https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/examples/xslt/nicmodel.xsl for a working example that changes the NIC model.
+
 ## Attributes Reference
 
 * `id` - a unique identifier for the resource.
