@@ -1,9 +1,12 @@
 package libvirt
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -99,6 +102,54 @@ func TestRemoteImageDetermineType(t *testing.T) {
 	}
 	if !qcow2 {
 		t.Errorf("Expected image to be recognized as QCOW2")
+	}
+}
+
+func TestRemoteImageDownloadRetry(t *testing.T) {
+	content := []byte("this is a qcow image... well, it is not")
+
+	// returns a server that returns every error from
+	// errorList before returning a valid response
+	newErrorServer := func(errorList []int) *httptest.Server {
+		errorCount := 0
+		return httptest.NewServer(
+			http.HandlerFunc(
+				func(w http.ResponseWriter, r *http.Request) {
+					if errorCount < len(errorList) {
+						t.Logf("Retry %d", errorCount)
+						http.Error(w, fmt.Sprintf("Error %d", errorCount), errorList[errorCount])
+						errorCount = errorCount + 1
+					} else {
+						http.ServeContent(w, r, "content", time.Now(), bytes.NewReader(content))
+					}
+				}))
+	}
+
+	copier := func(r io.Reader) error {
+		_, err := ioutil.ReadAll(r)
+		return err
+	}
+
+	server := newErrorServer([]int{503, 503})
+	defer server.Close()
+	vol := newDefVolume()
+	image, err := newImage(server.URL)
+	if err != nil {
+		t.Errorf("Could not create image object: %v", err)
+	}
+	if err = image.Import(copier, vol); err != nil {
+		t.Fatalf("Expected to retry: %v", err)
+	}
+
+	server = newErrorServer([]int{503, 404})
+	defer server.Close()
+	vol = newDefVolume()
+	image, err = newImage(server.URL)
+	if err != nil {
+		t.Errorf("Could not create image object: %v", err)
+	}
+	if err = image.Import(copier, vol); err == nil {
+		t.Fatalf("Expected %s to fail with status 4xx", server.URL)
 	}
 }
 
