@@ -156,3 +156,76 @@ func resourceLibvirtNetworkDNSSRVRead(d *schema.ResourceData, meta interface{}) 
 
 	return nil
 }
+
+//// DHCP
+
+// a libvirt network DHCP host template datasource
+//
+// Datasource example:
+//
+// data "libvirt_network_dhcp_host_template" "k8smasters" {
+//   count = "${var.master_count}"
+//   ip = "${var.master_ips[count.index]}"
+//   mac = "${var.master_mac[count.index]}"
+//   name = "master-${count.index}"
+// }
+//
+// resource "libvirt_network" "k8snet" {
+//   ...
+//   dhcp = [{
+//     hosts = [ "${flatten(data.libvirt_network_dhcp_host_template.k8smasters.*.rendered)}" ]
+//   }]
+//   ...
+// }
+//
+func datasourceLibvirtNetworkDHCPHostTemplate() *schema.Resource {
+	return &schema.Resource{
+		Read: resourceLibvirtNetworkDHCPHostRead,
+		Schema: map[string]*schema.Schema{
+			"ip": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"mac": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"name": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"rendered": {
+				Type: schema.TypeMap,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Computed: true,
+			},
+		},
+	}
+}
+
+func resourceLibvirtNetworkDHCPHostRead(d *schema.ResourceData, meta interface{}) error {
+	dhcpHost := map[string]interface{}{}
+	if address, ok := d.GetOk("ip"); ok {
+		ip := net.ParseIP(address.(string))
+		if ip == nil {
+			return fmt.Errorf("Could not parse address '%s'", address)
+		}
+		dhcpHost["ip"] = ip.String()
+	}
+	if address, ok := d.GetOk("mac"); ok {
+		mac, _ := net.ParseMAC(address.(string))
+		if mac == nil {
+			return fmt.Errorf("Could not parse MAC address '%s'", address)
+		}
+		dhcpHost["mac"] = mac.String()
+	}
+	if name, ok := d.GetOk("name"); ok {
+		dhcpHost["name"] = name.(string)
+	}
+	d.Set("rendered", dhcpHost)
+	d.SetId(strconv.Itoa(hashcode.String(fmt.Sprintf("%v", dhcpHost))))
+
+	return nil
+}

@@ -28,8 +28,9 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"libvirt_network_dns_host_template": datasourceLibvirtNetworkDNSHostTemplate(),
-			"libvirt_network_dns_srv_template":  datasourceLibvirtNetworkDNSSRVTemplate(),
+			"libvirt_network_dns_host_template":  datasourceLibvirtNetworkDNSHostTemplate(),
+			"libvirt_network_dns_srv_template":   datasourceLibvirtNetworkDNSSRVTemplate(),
+			"libvirt_network_dhcp_host_template": datasourceLibvirtNetworkDHCPHostTemplate(),
 		},
 
 		ConfigureFunc: providerConfigure,
