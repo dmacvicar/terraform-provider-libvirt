@@ -236,11 +236,6 @@ func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64
 		}
 
 		defer func() {
-			if uint64(bytesCopied) != size {
-				stream.Abort()
-			} else {
-				stream.Finish()
-			}
 			stream.Free()
 		}()
 
@@ -255,12 +250,24 @@ func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64
 		// if we get unexpected EOF this mean that connection was closed suddently from server side
 		// the problem is not on the plugin but on server hosting currupted images
 		if err == io.ErrUnexpectedEOF {
+			stream.Abort()
 			return fmt.Errorf("Error: transfer was unexpectedly closed from the server while downloading. Please try again later or check the server hosting sources")
 		}
 		if err != nil {
+			stream.Abort()
 			return fmt.Errorf("Error while copying source to volume %s", err)
 		}
+
 		log.Printf("%d bytes uploaded\n", bytesCopied)
+		if uint64(bytesCopied) != size {
+			stream.Abort()
+			return fmt.Errorf("Error during volume Upload. BytesCopied: %d != %d volume.size", bytesCopied, size)
+		}
+
+		if err := stream.Finish(); err != nil {
+			stream.Abort()
+			return fmt.Errorf("Error by terminating libvirt stream %s", err)
+		}
 		return nil
 	}
 	return copier
