@@ -79,9 +79,11 @@ The following arguments are supported:
 * `addresses` - (Optional) A list of (0 or 1) IPv4 and (0 or 1) IPv6 subnets in
   CIDR notation.  This defines the subnets associated to that network.
   This argument is also used to define the address on the real host.
-  If `dhcp {  enabled = true }` addresses is also used to define the address range served by
-  the DHCP server.
+* `dhcp` - DHCP configuration of network:
+  * `enabled = true` enables DHCP server, `addresses` field is also used to define the
+	address range served by the DHCP server.
   No DHCP server will be started if `addresses` is omitted.
+  * `hosts`: list of static ip address assignments
 * `mode` -  One of:
     - `none`: the guests can talk to each other and the host OS, but cannot reach
     any other machines on the LAN.
@@ -153,17 +155,50 @@ resource "libvirt_network" "k8snet" {
 ```
 
 * `dhcp` - (Optional) DHCP configuration. 
-   You need to use it in conjuction with the adresses variable.
+   You need to use it in conjunction with the addresses variable.
   * `enabled` - (Optional) when false, disable the DHCP server
+  * `hosts` - (Optional) list of static ip address assignments
 ```hcl
-				resource "libvirt_network" "test_net" {
-					name      = "networktest"
-					mode      = "nat"
-					domain    = "k8s.local"
-					addresses = ["10.17.3.0/24"]
-					dhcp {
-						enabled = true
-					}
+resource "libvirt_network" "test_net" {
+	name      = "networktest"
+	mode      = "nat"
+	domain    = "k8s.local"
+	addresses = ["10.17.3.0/24"]
+	dhcp {
+		enabled = true
+		hosts = [
+			{
+				ip = "10.17.3.2",
+				mac = "00:11:22:33:44:55",
+			},
+			{
+				ip = "10.17.3.3",
+				mac = "00:11:22:33:44:56",
+				name = "hostname1"
+			},
+		]
+	}
+}
+```
+	Can be used with data source as well:
+```hcl
+data "libvirt_network_dhcp_host_template" "test_hosts" {
+  count = "${var.hosts_count}"
+  ip = "${var.hosts_ips[count.index]}"
+  mac = "${var.hosts_macs[count.index]}"
+  name = "${var.hosts_names[count.index]}"
+}
+
+resource "libvirt_network" "test_net" {
+	name      = "networktest"
+	mode      = "nat"
+	domain    = "k8s.local"
+	addresses = ["10.17.3.0/24"]
+	dhcp {
+		enabled = true
+		hosts = [ "${flatten(data.libvirt_network_dns_srv_template.test_hosts.*.rendered)}" ]
+	}
+}
 ```
 
 ### Altering libvirt's generated network XML definition
