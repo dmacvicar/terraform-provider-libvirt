@@ -116,10 +116,11 @@ func TestRemoteImageDownloadRetry(t *testing.T) {
 			http.HandlerFunc(
 				func(w http.ResponseWriter, r *http.Request) {
 					if errorCount < len(errorList) {
-						t.Logf("Retry %d", errorCount)
+						t.Logf("Server serving retry %d", errorCount)
 						http.Error(w, fmt.Sprintf("Error %d", errorCount), errorList[errorCount])
 						errorCount = errorCount + 1
 					} else {
+						t.Logf("Server: success (after %d errors)", errorCount)
 						http.ServeContent(w, r, "content", time.Now(), bytes.NewReader(content))
 					}
 				}))
