@@ -186,10 +186,15 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 	}
 
 	defer response.Body.Close()
+	log.Printf("[DEBUG]: url resp status code %s\n", response.Status)
 	if response.StatusCode == http.StatusNotModified {
 		return nil
 	}
-	log.Printf("[DEBUG]: url resp status code %s\n", response.Status)
+
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("Error while downloading %s: %d", i.url.String(), response.StatusCode)
+
+	}
 	return copier(response.Body)
 }
 
