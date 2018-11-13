@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"archive/tar"
 	"bufio"
 	"bytes"
 	"compress/gzip"
@@ -216,30 +217,46 @@ func extractCompressedSource(src io.Reader) (io.Reader, error) {
 	bReader := bufio.NewReader(src)
 	var compressedReader io.Reader
 	compressedReader = nil
+
 	// read 2 bytes for recognizing the archive type
 	srcBytes, err := bReader.Peek(2)
 	if err != nil {
-		return compressedReader, fmt.Errorf("Error by peeking first 2 bytes %s", err)
+		return nil, fmt.Errorf("Error by peeking first 2 bytes %s", err)
 	}
 
 	// read all src bytes from reader (http or local)
 	sourceContent, err := ioutil.ReadAll(bReader)
 	if err != nil {
-		return compressedReader, fmt.Errorf("Error by reading src image %s", err)
+		return nil, fmt.Errorf("Error by reading src image %s", err)
 	}
+	// buffer the content so we can attach a newReader (gzip, bzip, etc)
 	bufContent := bytes.NewBuffer(sourceContent)
 
 	// https://en.wikipedia.org/wiki/List_of_file_signatures
 	// gz or tar.gz
-	log.Printf("DEBUG: first bytes of FILE: %d", srcBytes)
+	log.Printf("[DEBUG]: first bytes of File: %d", srcBytes)
 	if srcBytes[0] == 0x1f && srcBytes[1] == 0x8b {
 		log.Printf("Gzip source file")
+
 		compressedReader, err := gzip.NewReader(bufContent)
 		if err != nil {
 			return compressedReader, fmt.Errorf("Error by decompressing gzip source %s", err)
 		}
-		return compressedReader, nil
+
+		tarReader := tar.NewReader(compressedReader)
+		_, err = tarReader.Next()
+
+		// we asume the tarball contain only 1file, the image source
+		if err == io.EOF {
+			log.Printf("[DEBUG]: end of tar.gz archive")
+		}
+		if err != nil {
+			return compressedReader, fmt.Errorf("Error by decompressing tar.gz source %s", err)
+		}
+		log.Printf("[DEBUG]: source tar.gzip source file extracted")
+		return tarReader, nil
 	}
+
 	// bzip2 or tar.bz2
 	if srcBytes[0] == 0x42 && srcBytes[1] == 0x5A {
 		log.Printf("bzip2 source file")
