@@ -167,6 +167,9 @@ func isQCOW2Header(buf []byte) (bool, error) {
 	return false, nil
 }
 
+// number of download retries on non client errors (eg. 5xx)
+const maxHTTPRetries int = 3
+
 func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageVolume) error {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", i.url.String(), nil)
@@ -179,23 +182,29 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 	if vol.Target.Timestamps != nil && vol.Target.Timestamps.Mtime != "" {
 		req.Header.Set("If-Modified-Since", timeFromEpoch(vol.Target.Timestamps.Mtime).UTC().Format(http.TimeFormat))
 	}
-	response, err := client.Do(req)
 
-	if err != nil {
-		return fmt.Errorf("Error while downloading %s: %s", i.url.String(), err)
+	for retryCount := 0; retryCount < maxHTTPRetries; retryCount++ {
+		response, err := client.Do(req)
+
+		if err != nil {
+			return fmt.Errorf("Error while downloading %s: %s", i.url.String(), err)
+		}
+
+		defer response.Body.Close()
+		log.Printf("[DEBUG]: url resp status code %s (retry #%d)\n", response.Status, retryCount)
+		if response.StatusCode == http.StatusNotModified {
+			return nil
+		}
+
+		if response.StatusCode == http.StatusOK {
+			return copier(response.Body)
+		}
+
+		if response.StatusCode < 500 {
+			return fmt.Errorf("Error while downloading %s: %d", i.url.String(), response.StatusCode)
+		}
 	}
-
-	defer response.Body.Close()
-	log.Printf("[DEBUG]: url resp status code %s\n", response.Status)
-	if response.StatusCode == http.StatusNotModified {
-		return nil
-	}
-
-	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("Error while downloading %s: %d", i.url.String(), response.StatusCode)
-
-	}
-	return copier(response.Body)
+	return err
 }
 
 func newImage(source string) (image, error) {
