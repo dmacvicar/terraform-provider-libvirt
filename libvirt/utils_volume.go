@@ -19,6 +19,7 @@ import (
 
 	libvirt "github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
+	"github.com/xi2/xz"
 )
 
 // network transparent image
@@ -233,19 +234,15 @@ func extractTarball(compressedReader io.Reader) io.Reader {
 func extractCompressedSource(src io.Reader) (io.Reader, error) {
 	//create a bufio.Reader so we can 'peek' at the first few bytes
 	bReader := bufio.NewReader(src)
-	var compressedReader io.Reader
-	compressedReader = nil
-
 	// read 2 bytes for recognizing the archive type
 	srcBytes, err := bReader.Peek(2)
 	if err != nil {
-		return nil, fmt.Errorf("Error by peeking first 2 bytes %s", err)
+		return src, fmt.Errorf("Error by peeking first 2 bytes %s", err)
 	}
-
 	// read all src bytes from reader (http or local)
 	sourceContent, err := ioutil.ReadAll(bReader)
 	if err != nil {
-		return nil, fmt.Errorf("Error by reading src image %s", err)
+		return src, fmt.Errorf("Error by reading src image %s", err)
 	}
 	// buffer the content so we can attach a newReader (gzip, bzip, etc)
 	bufContent := bytes.NewBuffer(sourceContent)
@@ -255,12 +252,12 @@ func extractCompressedSource(src io.Reader) (io.Reader, error) {
 	log.Printf("[DEBUG]: first bytes of File: %d", srcBytes)
 	if srcBytes[0] == 0x1f && srcBytes[1] == 0x8b {
 		log.Printf("Gzip source file")
-		compressedReader, err := gzip.NewReader(bufContent)
+		gzReader, err := gzip.NewReader(bufContent)
 		if err != nil {
-			return compressedReader, fmt.Errorf("Error by decompressing gzip source %s", err)
+			return src, fmt.Errorf("Error by decompressing gzip source %s", err)
 		}
 		// extract tarball reader or return the extracted reader
-		return extractTarball(compressedReader), nil
+		return extractTarball(gzReader), nil
 	}
 	// bzip2 or tar.bz2
 	if srcBytes[0] == 0x42 && srcBytes[1] == 0x5A {
@@ -271,13 +268,14 @@ func extractCompressedSource(src io.Reader) (io.Reader, error) {
 	// XZ tar.xz
 	if srcBytes[0] == 0xfd && srcBytes[1] == 0x37 {
 		log.Printf("xz source file")
+		xzReader, err := xz.NewReader(bytes.NewReader(sourceContent), 0)
 		if err != nil {
-			log.Fatal(err)
+			return src, fmt.Errorf("Error by decompressing xz source %s", err)
 		}
-		return extractTarball(compressedReader), nil
+		return extractTarball(xzReader), nil
 	}
 	// all source didn't matched the compressed reader return the original reader
-	return compressedReader, nil
+	return src, nil
 }
 func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64) func(src io.Reader) error {
 	copier := func(src io.Reader) error {
@@ -291,10 +289,6 @@ func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64
 		sourceReader, err := extractCompressedSource(src)
 		if err != nil {
 			return err
-		}
-		// if the source reader is nil, set to source image
-		if sourceReader == nil {
-			sourceReader = src
 		}
 
 		defer func() {
