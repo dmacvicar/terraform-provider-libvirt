@@ -138,13 +138,18 @@ func TestRemoteImageDownloadRetry(t *testing.T) {
 	if err != nil {
 		t.Errorf("Could not create image object: %v", err)
 	}
+	start := time.Now()
 	if err = image.Import(copier, vol); err != nil {
 		t.Fatalf("Expected to retry: %v", err)
+	}
+	if time.Since(start).Seconds() < 4 {
+		t.Fatalf("Expected to retry at least 2 times x 2 seconds")
 	}
 
 	server = newErrorServer([]int{503, 404})
 	defer server.Close()
 	vol = newDefVolume()
+	start = time.Now()
 	image, err = newImage(server.URL)
 	if err != nil {
 		t.Errorf("Could not create image object: %v", err)
@@ -152,6 +157,10 @@ func TestRemoteImageDownloadRetry(t *testing.T) {
 	if err = image.Import(copier, vol); err == nil {
 		t.Fatalf("Expected %s to fail with status 4xx", server.URL)
 	}
+	if time.Since(start).Seconds() < 2 {
+		t.Fatalf("Expected to retry at least 1 times x 2 seconds")
+	}
+
 }
 
 func TestRemoteImageDownload(t *testing.T) {
