@@ -33,3 +33,4 @@ testImport:
   subpackages:
   - config/v2_1/types
   - config/validate/report
+- package: github.com/xi2/xz
