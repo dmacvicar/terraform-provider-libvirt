@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bufio"
 	"bytes"
+	"compress/bzip2"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -18,6 +19,7 @@ import (
 
 	libvirt "github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
+	"github.com/ulikunitz/xz"
 )
 
 // network transparent image
@@ -249,9 +251,11 @@ func extractCompressedSource(src io.Reader) (io.Reader, error) {
 		// we asume the tarball contain only 1file, the image source
 		if err == io.EOF {
 			log.Printf("[DEBUG]: end of tar.gz archive")
+			return compressedReader, nil
 		}
+		// 2 cases: 1 the we have a image.gz file, or a real error ( but we wil catch later )
 		if err != nil {
-			return compressedReader, fmt.Errorf("Error by decompressing tar.gz source %s", err)
+			return compressedReader, nil
 		}
 		log.Printf("[DEBUG]: source tar.gzip source file extracted")
 		return tarReader, nil
@@ -260,15 +264,51 @@ func extractCompressedSource(src io.Reader) (io.Reader, error) {
 	// bzip2 or tar.bz2
 	if srcBytes[0] == 0x42 && srcBytes[1] == 0x5A {
 		log.Printf("bzip2 source file")
+
+		compressedReader := bzip2.NewReader(bufContent)
+
+		tarReader := tar.NewReader(compressedReader)
+		_, err = tarReader.Next()
+
+		// we asume the tarball contain only 1file, the image source
+		if err == io.EOF { // eof archive
+			log.Printf("[DEBUG]: end of tar.gz archive")
+			return compressedReader, nil
+		}
+		// the bzip file is not a tarball, or we have an error we will catch later
+		if err != nil {
+			return compressedReader, nil
+		}
+		log.Printf("[DEBUG]: source tar.gzip source file extracted")
+		return tarReader, nil
 	}
 
-	// XZ  tar.xz
+	// XZ tar.xz
 	if srcBytes[0] == 0xfd && srcBytes[1] == 0x37 {
 		log.Printf("xz source file")
+		compressedReader, err := xz.NewReader(bufContent, 0)
+		if err != nil {
+			log.Fatal(err)
+		}
+		tarReader := tar.NewReader(compressedReader)
+		_, err = tarReader.Next()
+
+		// we asume the tarball contain only 1file, the image source
+		if err == io.EOF { // eof archive
+			log.Printf("[DEBUG]: end of tar.gz archive")
+			return compressedReader, nil
+		}
+		// the bzip file is not a tarball, or we have an error we will catch later
+		if err != nil {
+			return compressedReader, nil
+		}
+		log.Printf("[DEBUG]: source tar.gzip source file extracted")
+		return tarReader, nil
+
 	}
+
 	return compressedReader, nil
 }
-
 func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64) func(src io.Reader) error {
 	copier := func(src io.Reader) error {
 		var bytesCopied int64
