@@ -208,6 +208,21 @@ func resourceLibvirtNetwork() *schema.Resource {
 					},
 				},
 			},
+			"xml": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"xslt": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -439,6 +454,12 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	data, err := xmlMarshallIndented(networkDef)
 	if err != nil {
 		return fmt.Errorf("Error serializing libvirt network: %s", err)
+	}
+	log.Printf("[DEBUG] Generated XML for libvirt network:\n%s", data)
+
+	data, err = transformResourceXML(data, d)
+	if err != nil {
+		return fmt.Errorf("Error applying XSLT stylesheet: %s", err)
 	}
 
 	log.Printf("[DEBUG] Creating libvirt network at %s: %s", connectURI, data)

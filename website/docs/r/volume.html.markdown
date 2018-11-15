@@ -65,6 +65,18 @@ The following arguments are supported:
 * `base_volume_pool` - (Optional) The name of the storage pool containing the
   volume defined by `base_volume_name`.
 
+### Altering libvirt's generated volume XML definition
+
+The optional `xml` block relates to the generated volume XML.
+
+Currently the following attributes are supported:
+
+* `xslt`: specifies a XSLT stylesheet to transform the generated XML definition before creating the volume.
+  This is used to support features the provider does not allow to set from the schema.
+  It is not recommended to alter properties and settings that are exposed to the schema, as terraform will insist in changing them back to the known state.
+
+See the domain option with the same name for more information and examples.
+
 ## Attributes Reference
 
 * `id` - a unique identifier for the resource
