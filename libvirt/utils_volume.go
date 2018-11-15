@@ -201,7 +201,8 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 		} else if response.StatusCode < 500 {
 			break
 		} else {
-			// retry
+			// The problem is not client but server side
+			// retry a few times after a small wait
 			if retryCount < maxHTTPRetries {
 				time.Sleep(retryWait)
 			}
