@@ -167,11 +167,12 @@ func isQCOW2Header(buf []byte) (bool, error) {
 	return false, nil
 }
 
-// number of download retries on non client errors (eg. 5xx)
-const maxHTTPRetries int = 3
-const retryWaitSec = 2
-
 func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageVolume) error {
+	// number of download retries on non client errors (eg. 5xx)
+	const maxHTTPRetries int = 3
+	// wait time between retries
+	const retryWait time.Duration = 2 * time.Second
+
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", i.url.String(), nil)
 
@@ -202,7 +203,7 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 		} else {
 			// retry
 			if retryCount < maxHTTPRetries {
-				time.Sleep(retryWaitSec * time.Second)
+				time.Sleep(retryWait)
 			}
 		}
 	}
