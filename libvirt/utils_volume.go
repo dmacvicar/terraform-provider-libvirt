@@ -277,7 +277,7 @@ func extractCompressedSource(src io.Reader) (io.Reader, error) {
 	// all source didn't matched the compressed reader return the original reader
 	return src, nil
 }
-func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64) func(src io.Reader) error {
+func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64, decompressImage bool) func(src io.Reader) error {
 	copier := func(src io.Reader) error {
 		var bytesCopied int64
 
@@ -285,12 +285,14 @@ func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64
 		if err != nil {
 			return err
 		}
-		// return nil in case of error or if the source was not compressed
-		sourceReader, err := extractCompressedSource(src)
-		if err != nil {
-			return err
+		sourceReader := src
+		// for cloudinit and coreos we don't need to decompress
+		if decompressImage == true {
+			sourceReader, err = extractCompressedSource(src)
+			if err != nil {
+				return err
+			}
 		}
-
 		defer func() {
 			if uint64(bytesCopied) != size {
 				stream.Abort()

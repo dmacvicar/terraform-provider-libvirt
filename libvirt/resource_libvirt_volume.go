@@ -235,7 +235,8 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	// upload source if present
 	if _, ok := d.GetOk("source"); ok {
-		err = img.Import(newCopier(client.libvirt, volume, volumeDef.Capacity.Value), volumeDef)
+		decompressImage := true
+		err = img.Import(newCopier(client.libvirt, volume, volumeDef.Capacity.Value, decompressImage), volumeDef)
 		if err != nil {
 			return fmt.Errorf("Error while uploading source %s: %s", img.String(), err)
 		}
