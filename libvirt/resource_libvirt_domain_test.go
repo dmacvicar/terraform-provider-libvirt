@@ -370,7 +370,7 @@ func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
 
 }
 
-func TestAccLibvirtDomain_compressedSourceType(t *testing.T) {
+func TestAccLibvirtDomain_compressedSourceTypeXz(t *testing.T) {
 	var volume libvirt.StorageVol
 
 	// we test local compressed images.
@@ -378,6 +378,57 @@ func TestAccLibvirtDomain_compressedSourceType(t *testing.T) {
 	// (maybe with local web server) or use github.raw as webserver
 
 	// TODO 3: add test for xz compressed files
+	var config = fmt.Sprintf(`
+
+	resource "libvirt_volume" "xz-raw" {
+		source = "testdata/xz/initrd.img.xz"
+		name = "xz-raw"
+		pool = "default"
+	}
+	resource "libvirt_volume" "xz-raw-tar" {
+		source = "testdata/xz/initrd.img.tar.xz"
+		name = "xz-raw-tar"
+		pool = "default"
+	}
+	resource "libvirt_volume" "xz-qcow2" {
+			source = "testdata/xz/test.qcow2.xz"
+			name = "xz-qcow2"
+			pool   = "default"
+	}
+	resource "libvirt_volume" "xz-qcow2-tar" {
+			source = "testdata/xz/test.qcow2.tar.xz"
+			name = "xz-qcow2-tar"
+			pool   = "default"
+	}
+
+`)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					// check existence
+					testAccCheckLibvirtVolumeExists("libvirt_volume.xz-raw", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.xz-raw-tar", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.xz-qcow2", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.xz-qcow2-tar", &volume),
+				),
+			},
+		},
+	})
+
+}
+
+func TestAccLibvirtDomain_compressedSourceTypeGzipAndBzip2(t *testing.T) {
+	var volume libvirt.StorageVol
+
+	// we test local compressed images.
+	// TODO 2: check if it make sense to test the http ones
+	// (maybe with local web server) or use github.raw as webserver
+
 	var config = fmt.Sprintf(`
 
 	resource "libvirt_volume" "gzip-raw" {
@@ -430,7 +481,7 @@ func TestAccLibvirtDomain_compressedSourceType(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					// check existence and format
+					// check existence
 					testAccCheckLibvirtVolumeExists("libvirt_volume.gzip-raw", &volume),
 					testAccCheckLibvirtVolumeExists("libvirt_volume.gzip-raw-tar", &volume),
 					testAccCheckLibvirtVolumeExists("libvirt_volume.gzip-qcow2", &volume),
