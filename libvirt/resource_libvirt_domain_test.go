@@ -373,11 +373,6 @@ func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
 func TestAccLibvirtDomain_compressedSourceTypeXz(t *testing.T) {
 	var volume libvirt.StorageVol
 
-	// we test local compressed images.
-	// TODO 2: check if it make sense to test the http ones
-	// (maybe with local web server) or use github.raw as webserver
-
-	// TODO 3: add test for xz compressed files
 	var config = fmt.Sprintf(`
 
 	resource "libvirt_volume" "xz-raw" {
@@ -419,15 +414,50 @@ func TestAccLibvirtDomain_compressedSourceTypeXz(t *testing.T) {
 			},
 		},
 	})
+}
 
+func TestAccLibvirtDomain_compressedSourceFromHttpWebServer(t *testing.T) {
+	var volume libvirt.StorageVol
+
+	githubWebServer := "https://github.com/MalloZup/terraform-provider-libvirt/raw/compressed-images/libvirt"
+	var config = fmt.Sprintf(`
+
+	resource "libvirt_volume" "xz-raw" {
+		source = "%s/testdata/xz/initrd.img.xz"
+		name = "xz-raw-remote"
+		pool = "default"
+	}
+	resource "libvirt_volume" "gzip-raw-tar" {
+		source = "%s/testdata/gzip/initrd.img.tar.xz"
+		name = "gzip-raw-tar-remote"
+		pool = "default"
+	}
+	resource "libvirt_volume" "bzip2-qcow2" {
+			source = "%s/testdata/xz/test.qcow2.xz"
+			name = "bzip2-qcow2-remote"
+			pool   = "default"
+	}
+`, githubWebServer, githubWebServer, githubWebServer)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtVolumeExists("libvirt_volume.xz-raw-remote", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.gzip-raw-tar-remote", &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.bzip2-qcow2-remote", &volume),
+				),
+			},
+		},
+	})
 }
 
 func TestAccLibvirtDomain_compressedSourceTypeGzipAndBzip2(t *testing.T) {
 	var volume libvirt.StorageVol
-
-	// we test local compressed images.
-	// TODO 2: check if it make sense to test the http ones
-	// (maybe with local web server) or use github.raw as webserver
 
 	var config = fmt.Sprintf(`
 
@@ -494,7 +524,6 @@ func TestAccLibvirtDomain_compressedSourceTypeGzipAndBzip2(t *testing.T) {
 			},
 		},
 	})
-
 }
 
 func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
