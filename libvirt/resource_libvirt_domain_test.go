@@ -621,10 +621,10 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 	}
 
 	resource "libvirt_domain" "%s" {
-		name            = "terraform-test-domain"
+		name            = "%s"
 		coreos_ignition = "${libvirt_ignition.%s.id}"
 	}
-	`, randomIgnitionName, randomDomainName, randomIgnitionName)
+	`, randomIgnitionName, randomDomainName, randomDomainName, randomIgnitionName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
