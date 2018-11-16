@@ -370,6 +370,48 @@ func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
 
 }
 
+func TestAccLibvirtDomain_compressedSourceAttachToDomain(t *testing.T) {
+	var domain libvirt.Domain
+	randomDomainName := acctest.RandString(10)
+
+	var config = fmt.Sprintf(`
+	resource "libvirt_volume" "gzip" {
+				source = "testdata/gzip/test.qcow2.tar.gz"
+				name = "gzip-qcow2-tar-for-domain"
+				pool   = "default"
+		}
+	resource "libvirt_volume" "bzip2-raw" {
+				source = "testdata/bzip2/test.qcow2.bz2"
+				name = "bzip2-qcow2-for-domain"
+				pool   = "default"
+		}
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		disk {
+			volume_id = "${libvirt_volume.bzip2-raw.id}"
+		}
+
+		disk {
+			volume_id = "${libvirt_volume.gzip.id}"
+		}
+	}`, randomDomainName, randomDomainName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+				),
+			},
+		},
+	})
+
+}
+
 func TestAccLibvirtDomain_compressedSourceTypeXz(t *testing.T) {
 	var volume libvirt.StorageVol
 
@@ -419,21 +461,21 @@ func TestAccLibvirtDomain_compressedSourceTypeXz(t *testing.T) {
 func TestAccLibvirtDomain_compressedSourceFromHttpWebServer(t *testing.T) {
 	var volume libvirt.StorageVol
 
-	githubWebServer := "https://github.com/MalloZup/terraform-provider-libvirt/raw/compressed-images/libvirt"
+	githubWebServer := "https://github.com/dmacvicar/terraform-provider-libvirt/raw/master/libvirt"
 	var config = fmt.Sprintf(`
 
-	resource "libvirt_volume" "xz-raw" {
+	resource "libvirt_volume" "xz-raw-remote" {
 		source = "%s/testdata/xz/initrd.img.xz"
 		name = "xz-raw-remote"
 		pool = "default"
 	}
-	resource "libvirt_volume" "gzip-raw-tar" {
-		source = "%s/testdata/gzip/initrd.img.tar.xz"
+	resource "libvirt_volume" "gzip-raw-tar-remote" {
+		source = "%s/testdata/gzip/initrd.img.tar.gz"
 		name = "gzip-raw-tar-remote"
 		pool = "default"
 	}
-	resource "libvirt_volume" "bzip2-qcow2" {
-			source = "%s/testdata/xz/test.qcow2.xz"
+	resource "libvirt_volume" "bzip2-qcow2-remote" {
+			source = "%s/testdata/bzip2/test.qcow2.tar.bz2"
 			name = "bzip2-qcow2-remote"
 			pool   = "default"
 	}
