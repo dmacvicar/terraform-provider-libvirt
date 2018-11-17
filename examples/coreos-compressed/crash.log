@@ -1,0 +1,1649 @@
+2018/11/17 12:21:54 [INFO] Terraform version: 0.11.8  7a5c1d221ac209bbac66947c369815cd9ca70ed5
+2018/11/17 12:21:54 [INFO] Go runtime version: go1.10.1
+2018/11/17 12:21:54 [INFO] CLI args: []string{"/usr/bin/terraform", "apply"}
+2018/11/17 12:21:54 [DEBUG] Attempting to open CLI config file: /home/dmaiocchi/.terraformrc
+2018/11/17 12:21:54 [DEBUG] File doesn't exist, but doesn't need to. Ignoring.
+2018/11/17 12:21:54 [INFO] CLI command args: []string{"apply"}
+2018/11/17 12:21:54 [INFO] command: empty terraform config, returning nil
+2018/11/17 12:21:54 [DEBUG] command: no data state file found for backend config
+2018/11/17 12:21:54 [DEBUG] New state was assigned lineage "daeb9815-bc71-714e-6dfe-b1b8b434c5d6"
+2018/11/17 12:21:54 [INFO] command: backend initialized: <nil>
+2018/11/17 12:21:54 [DEBUG] checking for provider in "."
+2018/11/17 12:21:54 [DEBUG] checking for provider in "/usr/bin"
+2018/11/17 12:21:54 [WARN] found legacy provider "terraform-provider-libvirt"
+2018/11/17 12:21:54 [DEBUG] checking for provider in ".terraform/plugins/linux_amd64"
+2018/11/17 12:21:54 [DEBUG] found valid plugin: "libvirt", "0.0.0", "/usr/bin/terraform-provider-libvirt"
+2018/11/17 12:21:54 [DEBUG] checking for provisioner in "."
+2018/11/17 12:21:54 [DEBUG] checking for provisioner in "/usr/bin"
+2018/11/17 12:21:54 [DEBUG] checking for provisioner in ".terraform/plugins/linux_amd64"
+2018/11/17 12:21:54 [INFO] command: backend <nil> is not enhanced, wrapping in local
+2018/11/17 12:21:54 [INFO] backend/local: starting Apply operation
+2018/11/17 12:21:54 [TRACE] Preserving existing state lineage "2a61c90a-176f-1b3f-741e-5e7d20aa3d4e"
+2018/11/17 12:21:54 [TRACE] Preserving existing state lineage "2a61c90a-176f-1b3f-741e-5e7d20aa3d4e"
+2018/11/17 12:21:54 [INFO] terraform: building graph: GraphTypeInput
+2018/11/17 12:21:54 [TRACE] ConfigTransformer: Starting for path: []
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ConfigTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.LocalTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OutputTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OrphanResourceTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OrphanOutputTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+2018/11/17 12:21:54 [TRACE] AttachResourceConfigTransformer: Beginning...
+2018/11/17 12:21:54 [TRACE] AttachResourceConfigTransformer: Attach resource config request: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] Attaching resource config: &config.Resource{Mode:0, Name:"coreos-qcow2", Type:"libvirt_volume", RawCount:(*config.RawConfig)(0xc4203dc1c0), RawConfig:(*config.RawConfig)(0xc4203dc150), Provisioners:[]*config.Provisioner(nil), Provider:"", DependsOn:[]string(nil), Lifecycle:config.ResourceLifecycle{CreateBeforeDestroy:false, PreventDestroy:false, IgnoreChanges:[]string(nil)}}
+2018/11/17 12:21:54 [TRACE] AttachResourceConfigTransformer: Attach resource config request: libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] Attaching resource config: &config.Resource{Mode:0, Name:"domain-coreos", Type:"libvirt_domain", RawCount:(*config.RawConfig)(0xc4203dc310), RawConfig:(*config.RawConfig)(0xc4203dc2a0), Provisioners:[]*config.Provisioner(nil), Provider:"", DependsOn:[]string(nil), Lifecycle:config.ResourceLifecycle{CreateBeforeDestroy:false, PreventDestroy:false, IgnoreChanges:[]string(nil)}}
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.AttachResourceConfigTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+2018/11/17 12:21:54 [DEBUG] Resource state not found for "libvirt_volume.coreos-qcow2": libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [DEBUG] Resource state not found for "libvirt_domain.domain-coreos": libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.AttachStateTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RootVariableTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+2018/11/17 12:21:54 [TRACE] ProviderConfigTransformer: Starting for path: []
+2018/11/17 12:21:54 [TRACE] Attach provider request: []string{} libvirt
+2018/11/17 12:21:54 [TRACE] Attaching provider config: *config.ProviderConfig{Name:"libvirt", Alias:"", Version:"", RawConfig:(*config.RawConfig)(0xc4203dc0e0)}
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ProviderConfigTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.MissingProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [DEBUG] resource libvirt_volume.coreos-qcow2 using provider provider.libvirt
+2018/11/17 12:21:54 [DEBUG] resource libvirt_domain.domain-coreos using provider provider.libvirt
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.PruneProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ParentProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.graphTransformerMulti:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ModuleVariableTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RemovedModuleTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "libvirt_volume.coreos-qcow2" references: []
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "libvirt_domain.domain-coreos" references: [libvirt_volume.coreos-qcow2]
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "provider.libvirt" references: []
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ReferenceTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.CountBoundaryTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.TargetsTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.CloseProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.CloseProvisionerTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RootTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+root - terraform.graphNodeRoot
+  meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  provider.libvirt (close) - *terraform.graphNodeCloseProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.TransitiveReductionTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeAbstractResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodeAbstractResource
+root - terraform.graphNodeRoot
+  meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  provider.libvirt (close) - *terraform.graphNodeCloseProvider
+2018/11/17 12:21:54 [DEBUG] Starting graph walk: walkInput
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "provider.libvirt"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "provider.libvirt (close)"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "root"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "root" waiting on "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "root" waiting on "provider.libvirt (close)"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "libvirt_domain.domain-coreos" waiting on "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "provider.libvirt (close)" waiting on "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "libvirt_volume.coreos-qcow2" waiting on "provider.libvirt"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "meta.count-boundary (count boundary fixup)" waiting on "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "root", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "libvirt_domain.domain-coreos", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "provider.libvirt (close)", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "libvirt_volume.coreos-qcow2", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "meta.count-boundary (count boundary fixup)", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "provider.libvirt"
+2018/11/17 12:21:54 [TRACE] vertex 'root.provider.libvirt': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.provider.libvirt': evaluating
+2018/11/17 12:21:54 [TRACE] [walkInput] Entering eval tree: provider.libvirt
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInitProvider
+2018-11-17T12:21:54.563+0100 [DEBUG] plugin: starting plugin: path=/usr/bin/terraform-provider-libvirt args=[/usr/bin/terraform-provider-libvirt]
+2018-11-17T12:21:54.563+0100 [DEBUG] plugin: waiting for RPC address: path=/usr/bin/terraform-provider-libvirt
+2018-11-17T12:21:54.588+0100 [DEBUG] plugin.terraform-provider-libvirt: plugin address: timestamp=2018-11-17T12:21:54.587+0100 address=/tmp/plugin921443682 network=unix
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalOpFilter
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalGetProvider
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInterpolateProvider
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalBuildProviderConfig
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInputProvider
+2018/11/17 12:21:54 [TRACE] root: eval: terraform.EvalNoop
+2018/11/17 12:21:54 [TRACE] root: eval: terraform.EvalNoop
+2018/11/17 12:21:54 [TRACE] root: eval: terraform.EvalNoop
+2018/11/17 12:21:54 [TRACE] [walkInput] Exiting eval tree: provider.libvirt
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': walking
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_domain.domain-coreos': walking
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "provider.libvirt (close)"
+2018/11/17 12:21:54 [TRACE] vertex 'root.provider.libvirt (close)': walking
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:21:54 [TRACE] vertex 'root.meta.count-boundary (count boundary fixup)': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.provider.libvirt (close)': evaluating
+2018/11/17 12:21:54 [TRACE] vertex 'root.meta.count-boundary (count boundary fixup)': evaluating
+2018/11/17 12:21:54 [TRACE] [walkInput] Entering eval tree: meta.count-boundary (count boundary fixup)
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCountFixZeroOneBoundaryGlobal
+2018/11/17 12:21:54 [TRACE] [walkInput] Exiting eval tree: meta.count-boundary (count boundary fixup)
+2018/11/17 12:21:54 [TRACE] [walkInput] Entering eval tree: provider.libvirt (close)
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCloseProvider
+2018/11/17 12:21:54 [TRACE] [walkInput] Exiting eval tree: provider.libvirt (close)
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "root"
+2018/11/17 12:21:54 [TRACE] vertex 'root.root': walking
+2018/11/17 12:21:54 [INFO] terraform: building graph: GraphTypeValidate
+2018/11/17 12:21:54 [TRACE] ConfigTransformer: Starting for path: []
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ConfigTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.LocalTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OutputTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OrphanResourceTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OrphanOutputTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+2018/11/17 12:21:54 [TRACE] AttachResourceConfigTransformer: Beginning...
+2018/11/17 12:21:54 [TRACE] AttachResourceConfigTransformer: Attach resource config request: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] Attaching resource config: &config.Resource{Mode:0, Name:"coreos-qcow2", Type:"libvirt_volume", RawCount:(*config.RawConfig)(0xc4203dc1c0), RawConfig:(*config.RawConfig)(0xc4203dc150), Provisioners:[]*config.Provisioner(nil), Provider:"", DependsOn:[]string(nil), Lifecycle:config.ResourceLifecycle{CreateBeforeDestroy:false, PreventDestroy:false, IgnoreChanges:[]string(nil)}}
+2018/11/17 12:21:54 [TRACE] AttachResourceConfigTransformer: Attach resource config request: libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] Attaching resource config: &config.Resource{Mode:0, Name:"domain-coreos", Type:"libvirt_domain", RawCount:(*config.RawConfig)(0xc4203dc310), RawConfig:(*config.RawConfig)(0xc4203dc2a0), Provisioners:[]*config.Provisioner(nil), Provider:"", DependsOn:[]string(nil), Lifecycle:config.ResourceLifecycle{CreateBeforeDestroy:false, PreventDestroy:false, IgnoreChanges:[]string(nil)}}
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.AttachResourceConfigTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+2018/11/17 12:21:54 [DEBUG] Resource state not found for "libvirt_volume.coreos-qcow2": libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [DEBUG] Resource state not found for "libvirt_domain.domain-coreos": libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.AttachStateTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RootVariableTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+2018/11/17 12:21:54 [TRACE] ProviderConfigTransformer: Starting for path: []
+2018/11/17 12:21:54 [TRACE] Attach provider request: []string{} libvirt
+2018/11/17 12:21:54 [TRACE] Attaching provider config: *config.ProviderConfig{Name:"libvirt", Alias:"", Version:"", RawConfig:(*config.RawConfig)(0xc4203dc0e0)}
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ProviderConfigTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.MissingProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [DEBUG] resource libvirt_volume.coreos-qcow2 using provider provider.libvirt
+2018/11/17 12:21:54 [DEBUG] resource libvirt_domain.domain-coreos using provider provider.libvirt
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.PruneProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ParentProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.graphTransformerMulti:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.MissingProvisionerTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ProvisionerTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.graphTransformerMulti:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ModuleVariableTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RemovedModuleTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "libvirt_volume.coreos-qcow2" references: []
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "libvirt_domain.domain-coreos" references: [libvirt_volume.coreos-qcow2]
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "provider.libvirt" references: []
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ReferenceTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.CountBoundaryTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.TargetsTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.CloseProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.CloseProvisionerTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RootTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+root - terraform.graphNodeRoot
+  meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  provider.libvirt (close) - *terraform.graphNodeCloseProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.TransitiveReductionTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodeValidatableResource
+root - terraform.graphNodeRoot
+  meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  provider.libvirt (close) - *terraform.graphNodeCloseProvider
+2018/11/17 12:21:54 [DEBUG] Starting graph walk: walkValidate
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "provider.libvirt (close)"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "root"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "provider.libvirt"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "root" waiting on "provider.libvirt (close)"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "libvirt_volume.coreos-qcow2" waiting on "provider.libvirt"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "libvirt_domain.domain-coreos" waiting on "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "meta.count-boundary (count boundary fixup)" waiting on "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "provider.libvirt (close)" waiting on "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "root" waiting on "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "meta.count-boundary (count boundary fixup)", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "provider.libvirt (close)", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "root", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "libvirt_volume.coreos-qcow2", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "libvirt_domain.domain-coreos", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "provider.libvirt"
+2018/11/17 12:21:54 [TRACE] vertex 'root.provider.libvirt': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.provider.libvirt': evaluating
+2018/11/17 12:21:54 [TRACE] [walkValidate] Entering eval tree: provider.libvirt
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInitProvider
+2018/11/17 12:21:54 [TRACE] root: eval: terraform.EvalNoop
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalOpFilter
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalGetProvider
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInterpolateProvider
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalBuildProviderConfig
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalValidateProvider
+2018/11/17 12:21:54 [TRACE] root: eval: terraform.EvalNoop
+2018/11/17 12:21:54 [TRACE] root: eval: terraform.EvalNoop
+2018/11/17 12:21:54 [TRACE] [walkValidate] Exiting eval tree: provider.libvirt
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': evaluating
+2018/11/17 12:21:54 [TRACE] [walkValidate] Entering eval tree: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInterpolate
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalIf
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalValidateCount
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCountFixZeroOneBoundary
+2018/11/17 12:21:54 [TRACE] [walkValidate] Exiting eval tree: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': expanding/walking dynamic subgraph
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ResourceCountTransformer:
+
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResourceInstance
+2018/11/17 12:21:54 [DEBUG] Resource state not found for "libvirt_volume.coreos-qcow2": libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.AttachStateTransformer:
+
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResourceInstance
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.TargetsTransformer:
+
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResourceInstance
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "libvirt_volume.coreos-qcow2" references: []
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ReferenceTransformer:
+
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResourceInstance
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RootTransformer:
+
+libvirt_volume.coreos-qcow2 - *terraform.NodeValidatableResourceInstance
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': evaluating
+2018/11/17 12:21:54 [TRACE] [walkValidate] Entering eval tree: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalValidateResourceSelfRef
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalGetProvider
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInterpolate
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalValidateResource
+2018/11/17 12:21:54 [TRACE] [walkValidate] Exiting eval tree: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_domain.domain-coreos': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_domain.domain-coreos': evaluating
+2018/11/17 12:21:54 [TRACE] [walkValidate] Entering eval tree: libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInterpolate
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalIf
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalValidateCount
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCountFixZeroOneBoundary
+2018/11/17 12:21:54 [TRACE] [walkValidate] Exiting eval tree: libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_domain.domain-coreos': expanding/walking dynamic subgraph
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ResourceCountTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResourceInstance
+2018/11/17 12:21:54 [DEBUG] Resource state not found for "libvirt_domain.domain-coreos": libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.AttachStateTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResourceInstance
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.TargetsTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResourceInstance
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "libvirt_domain.domain-coreos" references: []
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ReferenceTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResourceInstance
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RootTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeValidatableResourceInstance
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_domain.domain-coreos': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_domain.domain-coreos': evaluating
+2018/11/17 12:21:54 [TRACE] [walkValidate] Entering eval tree: libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalValidateResourceSelfRef
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalGetProvider
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInterpolate
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalValidateResource
+2018/11/17 12:21:54 [TRACE] [walkValidate] Exiting eval tree: libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "provider.libvirt (close)"
+2018/11/17 12:21:54 [TRACE] vertex 'root.meta.count-boundary (count boundary fixup)': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.provider.libvirt (close)': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.meta.count-boundary (count boundary fixup)': evaluating
+2018/11/17 12:21:54 [TRACE] [walkValidate] Entering eval tree: meta.count-boundary (count boundary fixup)
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCountFixZeroOneBoundaryGlobal
+2018/11/17 12:21:54 [TRACE] [walkValidate] Exiting eval tree: meta.count-boundary (count boundary fixup)
+2018/11/17 12:21:54 [TRACE] vertex 'root.provider.libvirt (close)': evaluating
+2018/11/17 12:21:54 [TRACE] [walkValidate] Entering eval tree: provider.libvirt (close)
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCloseProvider
+2018/11/17 12:21:54 [TRACE] [walkValidate] Exiting eval tree: provider.libvirt (close)
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "root"
+2018/11/17 12:21:54 [TRACE] vertex 'root.root': walking
+2018/11/17 12:21:54 [INFO] backend/local: apply calling Refresh
+2018/11/17 12:21:54 [INFO] terraform: building graph: GraphTypeRefresh
+2018/11/17 12:21:54 [TRACE] No managed resources in state during refresh, skipping managed resource transformer
+2018/11/17 12:21:54 [TRACE] ConfigTransformer: Starting for path: []
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ConfigTransformer:
+
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OrphanResourceTransformer:
+
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.AttachStateTransformer:
+
+2018/11/17 12:21:54 [TRACE] AttachResourceConfigTransformer: Beginning...
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.AttachResourceConfigTransformer:
+
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RootVariableTransformer:
+
+2018/11/17 12:21:54 [TRACE] ProviderConfigTransformer: Starting for path: []
+2018/11/17 12:21:54 [TRACE] Attach provider request: []string{} libvirt
+2018/11/17 12:21:54 [TRACE] Attaching provider config: *config.ProviderConfig{Name:"libvirt", Alias:"", Version:"", RawConfig:(*config.RawConfig)(0xc4203dc0e0)}
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ProviderConfigTransformer:
+
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.MissingProviderTransformer:
+
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ProviderTransformer:
+
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [DEBUG] pruning unused provider provider.libvirt
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.PruneProviderTransformer:
+
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ParentProviderTransformer:
+
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.graphTransformerMulti:
+
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.LocalTransformer:
+
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OutputTransformer:
+
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ModuleVariableTransformer:
+
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ReferenceTransformer:
+
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.TargetsTransformer:
+
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.CloseProviderTransformer:
+
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RootTransformer:
+
+root - terraform.graphNodeRoot
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.TransitiveReductionTransformer:
+
+root - terraform.graphNodeRoot
+2018/11/17 12:21:54 [DEBUG] Starting graph walk: walkRefresh
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "root"
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "root"
+2018/11/17 12:21:54 [TRACE] vertex 'root.root': walking
+2018/11/17 12:21:54 [INFO] backend/local: apply calling Plan
+2018/11/17 12:21:54 [INFO] terraform: building graph: GraphTypePlan
+2018/11/17 12:21:54 [TRACE] ConfigTransformer: Starting for path: []
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ConfigTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.LocalTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OutputTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OrphanResourceTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OrphanOutputTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+2018/11/17 12:21:54 [TRACE] AttachResourceConfigTransformer: Beginning...
+2018/11/17 12:21:54 [TRACE] AttachResourceConfigTransformer: Attach resource config request: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] Attaching resource config: &config.Resource{Mode:0, Name:"coreos-qcow2", Type:"libvirt_volume", RawCount:(*config.RawConfig)(0xc4203dc1c0), RawConfig:(*config.RawConfig)(0xc4203dc150), Provisioners:[]*config.Provisioner(nil), Provider:"", DependsOn:[]string(nil), Lifecycle:config.ResourceLifecycle{CreateBeforeDestroy:false, PreventDestroy:false, IgnoreChanges:[]string(nil)}}
+2018/11/17 12:21:54 [TRACE] AttachResourceConfigTransformer: Attach resource config request: libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] Attaching resource config: &config.Resource{Mode:0, Name:"domain-coreos", Type:"libvirt_domain", RawCount:(*config.RawConfig)(0xc4203dc310), RawConfig:(*config.RawConfig)(0xc4203dc2a0), Provisioners:[]*config.Provisioner(nil), Provider:"", DependsOn:[]string(nil), Lifecycle:config.ResourceLifecycle{CreateBeforeDestroy:false, PreventDestroy:false, IgnoreChanges:[]string(nil)}}
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.AttachResourceConfigTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+2018/11/17 12:21:54 [DEBUG] Resource state not found for "libvirt_volume.coreos-qcow2": libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [DEBUG] Resource state not found for "libvirt_domain.domain-coreos": libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.AttachStateTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RootVariableTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+2018/11/17 12:21:54 [TRACE] ProviderConfigTransformer: Starting for path: []
+2018/11/17 12:21:54 [TRACE] Attach provider request: []string{} libvirt
+2018/11/17 12:21:54 [TRACE] Attaching provider config: *config.ProviderConfig{Name:"libvirt", Alias:"", Version:"", RawConfig:(*config.RawConfig)(0xc4203dc0e0)}
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ProviderConfigTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.MissingProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [DEBUG] resource libvirt_volume.coreos-qcow2 using provider provider.libvirt
+2018/11/17 12:21:54 [DEBUG] resource libvirt_domain.domain-coreos using provider provider.libvirt
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.PruneProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ParentProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.graphTransformerMulti:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ModuleVariableTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RemovedModuleTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "libvirt_volume.coreos-qcow2" references: []
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "libvirt_domain.domain-coreos" references: [libvirt_volume.coreos-qcow2]
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "provider.libvirt" references: []
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ReferenceTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.CountBoundaryTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.TargetsTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.CloseProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.CloseProvisionerTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RootTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+root - terraform.graphNodeRoot
+  meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  provider.libvirt (close) - *terraform.graphNodeCloseProvider
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.TransitiveReductionTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodePlannableResource
+root - terraform.graphNodeRoot
+  meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  provider.libvirt (close) - *terraform.graphNodeCloseProvider
+2018/11/17 12:21:54 [DEBUG] Starting graph walk: walkPlan
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "provider.libvirt"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "provider.libvirt (close)"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "root"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "meta.count-boundary (count boundary fixup)" waiting on "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "libvirt_volume.coreos-qcow2" waiting on "provider.libvirt"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "root" waiting on "provider.libvirt (close)"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "provider.libvirt (close)" waiting on "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "root" waiting on "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:21:54 [TRACE] dag/walk: added edge: "libvirt_domain.domain-coreos" waiting on "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "meta.count-boundary (count boundary fixup)", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "libvirt_volume.coreos-qcow2", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "root", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "provider.libvirt (close)", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: dependencies changed for "libvirt_domain.domain-coreos", sending new deps
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "provider.libvirt"
+2018/11/17 12:21:54 [TRACE] vertex 'root.provider.libvirt': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.provider.libvirt': evaluating
+2018/11/17 12:21:54 [TRACE] [walkPlan] Entering eval tree: provider.libvirt
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInitProvider
+2018/11/17 12:21:54 [TRACE] root: eval: terraform.EvalNoop
+2018/11/17 12:21:54 [TRACE] root: eval: terraform.EvalNoop
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalOpFilter
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalGetProvider
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInterpolateProvider
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalBuildProviderConfig
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalOpFilter
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalConfigProvider
+2018-11-17T12:21:54.599+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:21:54 [DEBUG] Configuring provider for 'qemu:///system': &{map[uri:0xc00043aff0] <nil> <nil> 0xc0003046e0 map[] <nil> 0xc0003047e0 0xc000304760 0xc00035a1e0 false map[] {{0 0} 1} false false}
+2018-11-17T12:21:54.600+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:21:54 [INFO] Created libvirt client
+2018/11/17 12:21:54 [TRACE] [walkPlan] Exiting eval tree: provider.libvirt
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': evaluating
+2018/11/17 12:21:54 [TRACE] [walkPlan] Entering eval tree: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInterpolate
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCountCheckComputed
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalIf
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCountFixZeroOneBoundary
+2018/11/17 12:21:54 [TRACE] [walkPlan] Exiting eval tree: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': expanding/walking dynamic subgraph
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ResourceCountTransformer:
+
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResourceInstance
+2018/11/17 12:21:54 [TRACE] OrphanResourceCount: Starting...
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OrphanResourceCountTransformer:
+
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResourceInstance
+2018/11/17 12:21:54 [DEBUG] Resource state not found for "libvirt_volume.coreos-qcow2": libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.AttachStateTransformer:
+
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResourceInstance
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.TargetsTransformer:
+
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResourceInstance
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "libvirt_volume.coreos-qcow2" references: []
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ReferenceTransformer:
+
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResourceInstance
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RootTransformer:
+
+libvirt_volume.coreos-qcow2 - *terraform.NodePlannableResourceInstance
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': evaluating
+2018/11/17 12:21:54 [TRACE] [walkPlan] Entering eval tree: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInterpolate
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalGetProvider
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalValidateResource
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalReadState
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalDiff
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCheckPreventDestroy
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalWriteState
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalWriteDiff
+2018/11/17 12:21:54 [TRACE] [walkPlan] Exiting eval tree: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_domain.domain-coreos': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_domain.domain-coreos': evaluating
+2018/11/17 12:21:54 [TRACE] [walkPlan] Entering eval tree: libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInterpolate
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCountCheckComputed
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalIf
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCountFixZeroOneBoundary
+2018/11/17 12:21:54 [TRACE] [walkPlan] Exiting eval tree: libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_domain.domain-coreos': expanding/walking dynamic subgraph
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ResourceCountTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResourceInstance
+2018/11/17 12:21:54 [TRACE] OrphanResourceCount: Starting...
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.OrphanResourceCountTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResourceInstance
+2018/11/17 12:21:54 [DEBUG] Resource state not found for "libvirt_domain.domain-coreos": libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.AttachStateTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResourceInstance
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.TargetsTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResourceInstance
+2018/11/17 12:21:54 [DEBUG] ReferenceTransformer: "libvirt_domain.domain-coreos" references: []
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.ReferenceTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResourceInstance
+2018/11/17 12:21:54 [TRACE] Graph after step *terraform.RootTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodePlannableResourceInstance
+2018/11/17 12:21:54 [TRACE] dag/walk: added new vertex: "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "libvirt_domain.domain-coreos"
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_domain.domain-coreos': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.libvirt_domain.domain-coreos': evaluating
+2018/11/17 12:21:54 [TRACE] [walkPlan] Entering eval tree: libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalInterpolate
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalGetProvider
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalValidateResource
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalReadState
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalDiff
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCheckPreventDestroy
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalWriteState
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalWriteDiff
+2018/11/17 12:21:54 [TRACE] [walkPlan] Exiting eval tree: libvirt_domain.domain-coreos
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:21:54 [TRACE] vertex 'root.meta.count-boundary (count boundary fixup)': walking
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "provider.libvirt (close)"
+2018/11/17 12:21:54 [TRACE] vertex 'root.provider.libvirt (close)': walking
+2018/11/17 12:21:54 [TRACE] vertex 'root.meta.count-boundary (count boundary fixup)': evaluating
+2018/11/17 12:21:54 [TRACE] vertex 'root.provider.libvirt (close)': evaluating
+2018/11/17 12:21:54 [TRACE] [walkPlan] Entering eval tree: provider.libvirt (close)
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCloseProvider
+2018/11/17 12:21:54 [TRACE] [walkPlan] Exiting eval tree: provider.libvirt (close)
+2018/11/17 12:21:54 [TRACE] [walkPlan] Entering eval tree: meta.count-boundary (count boundary fixup)
+2018/11/17 12:21:54 [TRACE] root: eval: *terraform.EvalCountFixZeroOneBoundaryGlobal
+2018/11/17 12:21:54 [TRACE] [walkPlan] Exiting eval tree: meta.count-boundary (count boundary fixup)
+2018/11/17 12:21:54 [TRACE] dag/walk: walking "root"
+2018/11/17 12:21:54 [TRACE] vertex 'root.root': walking
+2018/11/17 12:21:54 [DEBUG] command: asking for input: "Do you want to perform these actions?"
+2018/11/17 12:21:56 [INFO] terraform: building graph: GraphTypeApply
+2018/11/17 12:21:56 [TRACE] DiffTransformer: starting
+2018/11/17 12:21:56 [TRACE] DiffTransformer: Module: CREATE: libvirt_domain.domain-coreos
+  arch:                             "" => "<computed>"
+  console.#:                        "" => "2"
+  console.0.target_port:            "" => "0" (forces new resource)
+  console.0.target_type:            "" => "serial" (forces new resource)
+  console.0.type:                   "" => "pty" (forces new resource)
+  console.1.target_port:            "" => "1" (forces new resource)
+  console.1.target_type:            "" => "virtio" (forces new resource)
+  console.1.type:                   "" => "pty" (forces new resource)
+  disk.#:                           "" => "1" (forces new resource)
+  disk.0.scsi:                      "" => "false"
+  disk.0.volume_id:                 "" => "<computed>"
+  emulator:                         "" => "<computed>"
+  graphics.#:                       "" => "1"
+  graphics.0.autoport:              "" => "true"
+  graphics.0.listen_type:           "" => "address"
+  graphics.0.type:                  "" => "spice"
+  machine:                          "" => "<computed>"
+  memory:                           "" => "512" (forces new resource)
+  name:                             "" => "coreos-terraform" (forces new resource)
+  network_interface.#:              "" => "1"
+  network_interface.0.addresses.#:  "" => "<computed>"
+  network_interface.0.hostname:     "" => "<computed>"
+  network_interface.0.mac:          "" => "<computed>"
+  network_interface.0.network_id:   "" => "<computed>"
+  network_interface.0.network_name: "" => "default"
+  qemu_agent:                       "" => "false"
+  running:                          "" => "true"
+  vcpu:                             "" => "1" (forces new resource)
+CREATE: libvirt_volume.coreos-qcow2
+  format: "" => "<computed>" (forces new resource)
+  name:   "" => "coreos-qcow2" (forces new resource)
+  pool:   "" => "default" (forces new resource)
+  size:   "" => "<computed>" (forces new resource)
+  source: "" => "https://stable.release.core-os.net/amd64-usr/current/coreos_production_qemu_image.img.bz2" (forces new resource)
+2018/11/17 12:21:56 [TRACE] DiffTransformer: Resource "libvirt_volume.coreos-qcow2": *terraform.InstanceDiff{mu:sync.Mutex{state:0, sema:0x0}, Attributes:map[string]*terraform.ResourceAttrDiff{"id":*terraform.ResourceAttrDiff{Old:"", New:"", NewComputed:true, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x2}, "name":*terraform.ResourceAttrDiff{Old:"", New:"coreos-qcow2", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "pool":*terraform.ResourceAttrDiff{Old:"", New:"default", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "source":*terraform.ResourceAttrDiff{Old:"", New:"https://stable.release.core-os.net/amd64-usr/current/coreos_production_qemu_image.img.bz2", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "size":*terraform.ResourceAttrDiff{Old:"", New:"", NewComputed:true, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "format":*terraform.ResourceAttrDiff{Old:"", New:"", NewComputed:true, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}}, Destroy:false, DestroyDeposed:false, DestroyTainted:false, Meta:map[string]interface {}(nil)}
+2018/11/17 12:21:56 [TRACE] DiffTransformer: Resource "libvirt_domain.domain-coreos": *terraform.InstanceDiff{mu:sync.Mutex{state:0, sema:0x0}, Attributes:map[string]*terraform.ResourceAttrDiff{"console.1.type":*terraform.ResourceAttrDiff{Old:"", New:"pty", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "memory":*terraform.ResourceAttrDiff{Old:"", New:"512", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "graphics.0.type":*terraform.ResourceAttrDiff{Old:"", New:"spice", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "graphics.0.listen_type":*terraform.ResourceAttrDiff{Old:"", New:"address", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "network_interface.0.network_id":*terraform.ResourceAttrDiff{Old:"", New:"", NewComputed:true, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "id":*terraform.ResourceAttrDiff{Old:"", New:"", NewComputed:true, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x2}, "console.0.type":*terraform.ResourceAttrDiff{Old:"", New:"pty", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "console.0.target_type":*terraform.ResourceAttrDiff{Old:"", New:"serial", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "arch":*terraform.ResourceAttrDiff{Old:"", New:"", NewComputed:true, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "vcpu":*terraform.ResourceAttrDiff{Old:"", New:"1", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "emulator":*terraform.ResourceAttrDiff{Old:"", New:"", NewComputed:true, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "graphics.0.autoport":*terraform.ResourceAttrDiff{Old:"", New:"true", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "disk.0.scsi":*terraform.ResourceAttrDiff{Old:"", New:"false", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "machine":*terraform.ResourceAttrDiff{Old:"", New:"", NewComputed:true, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "disk.0.volume_id":*terraform.ResourceAttrDiff{Old:"", New:"${libvirt_volume.coreos-qcow2.id}", NewComputed:true, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "disk.#":*terraform.ResourceAttrDiff{Old:"", New:"1", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "running":*terraform.ResourceAttrDiff{Old:"", New:"true", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "name":*terraform.ResourceAttrDiff{Old:"", New:"coreos-terraform", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "console.#":*terraform.ResourceAttrDiff{Old:"", New:"2", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "network_interface.#":*terraform.ResourceAttrDiff{Old:"", New:"1", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "network_interface.0.mac":*terraform.ResourceAttrDiff{Old:"", New:"", NewComputed:true, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "network_interface.0.network_name":*terraform.ResourceAttrDiff{Old:"", New:"default", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "graphics.#":*terraform.ResourceAttrDiff{Old:"", New:"1", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "console.1.target_type":*terraform.ResourceAttrDiff{Old:"", New:"virtio", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "console.1.target_port":*terraform.ResourceAttrDiff{Old:"", New:"1", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "network_interface.0.hostname":*terraform.ResourceAttrDiff{Old:"", New:"", NewComputed:true, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "network_interface.0.addresses.#":*terraform.ResourceAttrDiff{Old:"", New:"", NewComputed:true, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}, "console.0.target_port":*terraform.ResourceAttrDiff{Old:"", New:"0", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:true, Sensitive:false, Type:0x0}, "qemu_agent":*terraform.ResourceAttrDiff{Old:"", New:"false", NewComputed:false, NewRemoved:false, NewExtra:interface {}(nil), RequiresNew:false, Sensitive:false, Type:0x0}}, Destroy:false, DestroyDeposed:false, DestroyTainted:false, Meta:map[string]interface {}(nil)}
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.DiffTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.OrphanOutputTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+2018/11/17 12:21:56 [TRACE] AttachResourceConfigTransformer: Beginning...
+2018/11/17 12:21:56 [TRACE] AttachResourceConfigTransformer: Attach resource config request: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:56 [TRACE] Attaching resource config: &config.Resource{Mode:0, Name:"coreos-qcow2", Type:"libvirt_volume", RawCount:(*config.RawConfig)(0xc4203dc1c0), RawConfig:(*config.RawConfig)(0xc4203dc150), Provisioners:[]*config.Provisioner(nil), Provider:"", DependsOn:[]string(nil), Lifecycle:config.ResourceLifecycle{CreateBeforeDestroy:false, PreventDestroy:false, IgnoreChanges:[]string(nil)}}
+2018/11/17 12:21:56 [TRACE] AttachResourceConfigTransformer: Attach resource config request: libvirt_domain.domain-coreos
+2018/11/17 12:21:56 [TRACE] Attaching resource config: &config.Resource{Mode:0, Name:"domain-coreos", Type:"libvirt_domain", RawCount:(*config.RawConfig)(0xc4203dc310), RawConfig:(*config.RawConfig)(0xc4203dc2a0), Provisioners:[]*config.Provisioner(nil), Provider:"", DependsOn:[]string(nil), Lifecycle:config.ResourceLifecycle{CreateBeforeDestroy:false, PreventDestroy:false, IgnoreChanges:[]string(nil)}}
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.AttachResourceConfigTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+2018/11/17 12:21:56 [DEBUG] Resource state not found for "libvirt_volume.coreos-qcow2": libvirt_volume.coreos-qcow2
+2018/11/17 12:21:56 [DEBUG] Resource state not found for "libvirt_domain.domain-coreos": libvirt_domain.domain-coreos
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.AttachStateTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+2018/11/17 12:21:56 [TRACE] ProviderConfigTransformer: Starting for path: []
+2018/11/17 12:21:56 [TRACE] Attach provider request: []string{} libvirt
+2018/11/17 12:21:56 [TRACE] Attaching provider config: *config.ProviderConfig{Name:"libvirt", Alias:"", Version:"", RawConfig:(*config.RawConfig)(0xc4203dc0e0)}
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.ProviderConfigTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.MissingProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [DEBUG] resource libvirt_volume.coreos-qcow2 using provider provider.libvirt
+2018/11/17 12:21:56 [DEBUG] resource libvirt_domain.domain-coreos using provider provider.libvirt
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.ProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.PruneProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.ParentProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.graphTransformerMulti:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] DestroyEdgeTransformer: Beginning destroy edge transformation...
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.DestroyEdgeTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] CBDEdgeTransformer: Beginning CBD transformation...
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.CBDEdgeTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.MissingProvisionerTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.ProvisionerTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.RootVariableTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.LocalTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.OutputTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.ModuleVariableTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.RemovedModuleTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [DEBUG] ReferenceTransformer: "libvirt_domain.domain-coreos" references: [libvirt_volume.coreos-qcow2 libvirt_volume.coreos-qcow2]
+2018/11/17 12:21:56 [DEBUG] ReferenceTransformer: "provider.libvirt" references: []
+2018/11/17 12:21:56 [DEBUG] ReferenceTransformer: "libvirt_volume.coreos-qcow2" references: []
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.ReferenceTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.CountBoundaryTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.TargetsTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.CloseProviderTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.CloseProvisionerTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.RootTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+root - terraform.graphNodeRoot
+  meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  provider.libvirt (close) - *terraform.graphNodeCloseProvider
+2018/11/17 12:21:56 [TRACE] Graph after step *terraform.TransitiveReductionTransformer:
+
+libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+  libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+libvirt_volume.coreos-qcow2 - *terraform.NodeApplyableResource
+  provider.libvirt - *terraform.NodeApplyableProvider
+meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+provider.libvirt - *terraform.NodeApplyableProvider
+provider.libvirt (close) - *terraform.graphNodeCloseProvider
+  libvirt_domain.domain-coreos - *terraform.NodeApplyableResource
+root - terraform.graphNodeRoot
+  meta.count-boundary (count boundary fixup) - *terraform.NodeCountBoundary
+  provider.libvirt (close) - *terraform.graphNodeCloseProvider
+2018/11/17 12:21:56 [DEBUG] Starting graph walk: walkApply
+2018/11/17 12:21:56 [TRACE] dag/walk: added new vertex: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:21:56 [TRACE] dag/walk: added new vertex: "provider.libvirt (close)"
+2018/11/17 12:21:56 [TRACE] dag/walk: added new vertex: "root"
+2018/11/17 12:21:56 [TRACE] dag/walk: added new vertex: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:56 [TRACE] dag/walk: added new vertex: "libvirt_domain.domain-coreos"
+2018/11/17 12:21:56 [TRACE] dag/walk: added new vertex: "provider.libvirt"
+2018/11/17 12:21:56 [TRACE] dag/walk: added edge: "root" waiting on "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:21:56 [TRACE] dag/walk: added edge: "libvirt_volume.coreos-qcow2" waiting on "provider.libvirt"
+2018/11/17 12:21:56 [TRACE] dag/walk: added edge: "libvirt_domain.domain-coreos" waiting on "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:56 [TRACE] dag/walk: added edge: "root" waiting on "provider.libvirt (close)"
+2018/11/17 12:21:56 [TRACE] dag/walk: added edge: "meta.count-boundary (count boundary fixup)" waiting on "libvirt_domain.domain-coreos"
+2018/11/17 12:21:56 [TRACE] dag/walk: added edge: "provider.libvirt (close)" waiting on "libvirt_domain.domain-coreos"
+2018/11/17 12:21:56 [TRACE] dag/walk: dependencies changed for "provider.libvirt (close)", sending new deps
+2018/11/17 12:21:56 [TRACE] dag/walk: dependencies changed for "root", sending new deps
+2018/11/17 12:21:56 [TRACE] dag/walk: dependencies changed for "libvirt_volume.coreos-qcow2", sending new deps
+2018/11/17 12:21:56 [TRACE] dag/walk: dependencies changed for "libvirt_domain.domain-coreos", sending new deps
+2018/11/17 12:21:56 [TRACE] dag/walk: dependencies changed for "meta.count-boundary (count boundary fixup)", sending new deps
+2018/11/17 12:21:56 [TRACE] dag/walk: walking "provider.libvirt"
+2018/11/17 12:21:56 [TRACE] vertex 'root.provider.libvirt': walking
+2018/11/17 12:21:56 [TRACE] vertex 'root.provider.libvirt': evaluating
+2018/11/17 12:21:56 [TRACE] [walkApply] Entering eval tree: provider.libvirt
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalInitProvider
+2018/11/17 12:21:56 [TRACE] root: eval: terraform.EvalNoop
+2018/11/17 12:21:56 [TRACE] root: eval: terraform.EvalNoop
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalOpFilter
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalGetProvider
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalInterpolateProvider
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalBuildProviderConfig
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalOpFilter
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalConfigProvider
+2018-11-17T12:21:56.184+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:21:56 [DEBUG] Configuring provider for 'qemu:///system': &{map[uri:0xc000235b30] <nil> <nil> 0xc00000d480 map[] <nil> 0xc00000d5e0 0xc00000d540 0xc00035a2d0 false map[] {{0 0} 1} false false}
+2018-11-17T12:21:56.184+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:21:56 [DEBUG] Reusing client for uri: 'qemu:///system'
+2018/11/17 12:21:56 [TRACE] [walkApply] Exiting eval tree: provider.libvirt
+2018/11/17 12:21:56 [TRACE] dag/walk: walking "libvirt_volume.coreos-qcow2"
+2018/11/17 12:21:56 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': walking
+2018/11/17 12:21:56 [TRACE] vertex 'root.libvirt_volume.coreos-qcow2': evaluating
+2018/11/17 12:21:56 [TRACE] [walkApply] Entering eval tree: libvirt_volume.coreos-qcow2
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalSequence
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalInstanceInfo
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalReadDiff
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalIf
+2018/11/17 12:21:56 [TRACE] root: eval: terraform.EvalNoop
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalIf
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalInterpolate
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalInterpolate
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalGetProvider
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalReadState
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalValidateResource
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalDiff
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalReadDiff
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalCompareDiff
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalGetProvider
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalReadState
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalApplyPre
+2018/11/17 12:21:56 [TRACE] root: eval: *terraform.EvalApply
+2018/11/17 12:21:56 [DEBUG] apply: libvirt_volume.coreos-qcow2: executing Apply
+2018-11-17T12:21:56.189+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:21:56 [DEBUG] Locking "default"
+2018-11-17T12:21:56.189+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:21:56 [DEBUG] Locked "default"
+2018-11-17T12:21:56.579+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:21:56 Image https://stable.release.core-os.net/amd64-usr/current/coreos_production_qemu_image.img.bz2 image is: 398058297 bytes
+2018-11-17T12:21:56.626+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:21:56 [INFO] Volume ID: /var/lib/libvirt/images/coreos-qcow2
+2018-11-17T12:21:56.667+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:21:56 [DEBUG]: url resp status code 200 OK
+2018/11/17 12:22:01 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:22:01 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:01 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:22:01 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:06 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:22:06 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:06 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:22:06 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:11 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:22:11 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:22:11 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:11 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:16 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:22:16 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:16 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:16 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:22:21 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:22:21 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:21 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:22:21 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:26 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:26 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:22:26 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:22:26 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:31 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:31 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:22:31 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:31 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:22:36 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:22:36 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:22:36 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:36 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:41 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:22:41 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:41 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:41 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:22:46 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:22:46 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:46 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:46 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:22:51 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:51 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:51 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:22:51 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:22:56 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:22:56 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:22:56 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:22:56 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:01 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:01 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:23:01 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:23:01 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:06 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:23:06 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:06 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:06 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:23:11 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:23:11 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:11 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:11 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:23:16 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:16 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:23:16 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:16 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:23:21 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:21 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:23:21 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:23:21 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:26 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:23:26 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:26 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:23:26 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:31 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:23:31 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:31 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:31 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:23:36 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:23:36 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:36 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:23:36 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:41 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:41 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:41 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:23:41 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:23:46 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:46 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:23:46 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:46 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:23:51 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:51 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:23:51 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:51 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:23:56 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:23:56 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:23:56 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:23:56 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:01 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:24:01 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:01 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:01 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:24:06 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:24:06 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:06 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:06 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:24:11 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:11 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:24:11 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:24:11 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:16 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:16 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:24:16 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:16 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:24:21 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:21 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:24:21 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:24:21 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:26 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:26 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:24:26 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:26 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:24:31 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:31 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:31 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:24:31 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:24:36 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:36 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:24:36 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:36 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:24:41 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:41 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:41 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:24:41 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:24:46 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:24:46 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:24:46 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:46 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:51 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:51 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:24:51 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:51 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:24:56 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:24:56 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:24:56 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:24:56 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:01 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:25:01 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:01 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:25:01 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:06 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:25:06 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:06 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:06 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:25:11 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:11 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:25:11 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:11 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:25:16 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:16 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:25:16 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:25:16 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:21 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:21 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:21 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:25:21 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:25:26 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:26 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:25:26 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:26 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:25:31 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:25:31 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:25:31 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:31 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:36 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:25:36 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:25:36 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:36 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:41 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:25:41 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:41 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:25:41 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:46 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:25:46 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:25:46 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:46 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:51 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:25:51 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:51 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:25:51 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:56 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:56 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:25:56 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:25:56 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:01 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:01 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:26:01 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:01 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:06 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:06 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:26:06 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:06 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:11 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:11 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:26:11 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:11 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:16 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:16 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:26:16 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:16 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:21 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:26:21 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:21 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:21 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:26 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:26:26 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:26 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:26 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:31 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:26:31 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:31 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:31 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:36 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:36 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:36 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:26:36 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:41 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:26:41 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:41 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:41 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:46 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:46 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:26:46 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:46 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:51 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018/11/17 12:26:51 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:51 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:51 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:56 [TRACE] dag/walk: vertex "root", waiting for: "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:56 [TRACE] dag/walk: vertex "provider.libvirt (close)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:56 [TRACE] dag/walk: vertex "meta.count-boundary (count boundary fixup)", waiting for: "libvirt_domain.domain-coreos"
+2018/11/17 12:26:56 [TRACE] dag/walk: vertex "libvirt_domain.domain-coreos", waiting for: "libvirt_volume.coreos-qcow2"
+2018-11-17T12:26:58.306+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:26:58 [DEBUG]: first bytes of File: [135 71]
+2018-11-17T12:26:58.306+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:26:58 DEBUG-READER:bytes readed from src: 0
+2018-11-17T12:26:58.307+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:26:58 [DEBUG] Unlocking "default"
+2018-11-17T12:26:58.307+0100 [DEBUG] plugin.terraform-provider-libvirt: 2018/11/17 12:26:58 [DEBUG] Unlocked "default"
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: panic: runtime error: index out of range
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: 
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: goroutine 33 [running]:
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: github.com/dmacvicar/terraform-provider-libvirt/vendor/github.com/libvirt/libvirt-go.(*Stream).Send(0xc000310260, 0xc0002a0000, 0x0, 0x200, 0x0, 0x0, 0x0)
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: 	/home/dmaiocchi/go/src/github.com/dmacvicar/terraform-provider-libvirt/vendor/github.com/libvirt/libvirt-go/stream.go:158 +0x14a
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: github.com/dmacvicar/terraform-provider-libvirt/libvirt.newCopier.func1(0x7f777c180000, 0xc000158280, 0x0, 0x0)
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: 	/home/dmaiocchi/go/src/github.com/dmacvicar/terraform-provider-libvirt/libvirt/utils_volume.go:318 +0x2dd
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: github.com/dmacvicar/terraform-provider-libvirt/libvirt.(*httpImage).Import(0xc00000ea10, 0xc0002e0d40, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xc000036840, 0xc, ...)
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: 	/home/dmaiocchi/go/src/github.com/dmacvicar/terraform-provider-libvirt/libvirt/utils_volume.go:199 +0x340
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: github.com/dmacvicar/terraform-provider-libvirt/libvirt.resourceLibvirtVolumeCreate(0xc000174460, 0xd983a0, 0xc000300770, 0x0, 0x0)
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: 	/home/dmaiocchi/go/src/github.com/dmacvicar/terraform-provider-libvirt/libvirt/resource_libvirt_volume.go:239 +0xee7
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: github.com/dmacvicar/terraform-provider-libvirt/vendor/github.com/hashicorp/terraform/helper/schema.(*Resource).Apply(0xc0000c8690, 0xc0000bc2d0, 0xc0002e08a0, 0xd983a0, 0xc000300770, 0x429801, 0xc00007eb80, 0x4d96bc)
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: 	/home/dmaiocchi/go/src/github.com/dmacvicar/terraform-provider-libvirt/vendor/github.com/hashicorp/terraform/helper/schema/resource.go:225 +0x351
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: github.com/dmacvicar/terraform-provider-libvirt/vendor/github.com/hashicorp/terraform/helper/schema.(*Provider).Apply(0xc0000c8d20, 0xc0000bc1e0, 0xc0000bc2d0, 0xc0002e08a0, 0xc0004b0380, 0x18, 0x7f77883146c0)
+2018-11-17T12:26:58.310+0100 [DEBUG] plugin.terraform-provider-libvirt: 	/home/dmaiocchi/go/src/github.com/dmacvicar/terraform-provider-libvirt/vendor/github.com/hashicorp/terraform/helper/schema/provider.go:283 +0x9c
+2018-11-17T12:26:58.311+0100 [DEBUG] plugin.terraform-provider-libvirt: github.com/dmacvicar/terraform-provider-libvirt/vendor/github.com/hashicorp/terraform/plugin.(*ResourceProviderServer).Apply(0xc00049e840, 0xc0002e03e0, 0xc0001371c0, 0x0, 0x0)
+2018-11-17T12:26:58.311+0100 [DEBUG] plugin.terraform-provider-libvirt: 	/home/dmaiocchi/go/src/github.com/dmacvicar/terraform-provider-libvirt/vendor/github.com/hashicorp/terraform/plugin/resource_provider.go:527 +0x57
+2018-11-17T12:26:58.311+0100 [DEBUG] plugin.terraform-provider-libvirt: reflect.Value.call(0xc000091740, 0xc000310068, 0x13, 0xf687bf, 0x4, 0xc00007ef18, 0x3, 0x3, 0xc000316340, 0x431277, ...)
+2018-11-17T12:26:58.311+0100 [DEBUG] plugin.terraform-provider-libvirt: 	/usr/local/go/src/reflect/value.go:447 +0x449
+2018-11-17T12:26:58.311+0100 [DEBUG] plugin.terraform-provider-libvirt: reflect.Value.Call(0xc000091740, 0xc000310068, 0x13, 0xc00035e718, 0x3, 0x3, 0x12a05f200, 0xc00035e710, 0xc00035e7b8)
+2018-11-17T12:26:58.311+0100 [DEBUG] plugin.terraform-provider-libvirt: 	/usr/local/go/src/reflect/value.go:308 +0xa4
+2018-11-17T12:26:58.311+0100 [DEBUG] plugin.terraform-provider-libvirt: net/rpc.(*service).call(0xc000049800, 0xc00035a1e0, 0xc00031a060, 0xc00031a0b0, 0xc000320a80, 0xc00000d440, 0xd999a0, 0xc0002e03e0, 0x16, 0xd999e0, ...)
+2018-11-17T12:26:58.311+0100 [DEBUG] plugin.terraform-provider-libvirt: 	/usr/local/go/src/net/rpc/server.go:384 +0x14e
+2018-11-17T12:26:58.311+0100 [DEBUG] plugin.terraform-provider-libvirt: created by net/rpc.(*Server).ServeCodec
+2018-11-17T12:26:58.311+0100 [DEBUG] plugin.terraform-provider-libvirt: 	/usr/local/go/src/net/rpc/server.go:481 +0x47e
+2018/11/17 12:26:58 [TRACE] root: eval: *terraform.EvalWriteState
+2018/11/17 12:26:58 [TRACE] root: eval: *terraform.EvalApplyProvisioners
+2018/11/17 12:26:58 [TRACE] root: eval: *terraform.EvalIf
+2018/11/17 12:26:58 [TRACE] root: eval: *terraform.EvalWriteState
+2018/11/17 12:26:58 [TRACE] root: eval: *terraform.EvalWriteDiff
+2018/11/17 12:26:58 [TRACE] root: eval: *terraform.EvalApplyPost
+2018/11/17 12:26:58 [ERROR] root: eval: *terraform.EvalApplyPost, err: 1 error(s) occurred:
+
+* libvirt_volume.coreos-qcow2: unexpected EOF
+2018/11/17 12:26:58 [ERROR] root: eval: *terraform.EvalSequence, err: 1 error(s) occurred:
+
+* libvirt_volume.coreos-qcow2: unexpected EOF
+2018/11/17 12:26:58 [TRACE] [walkApply] Exiting eval tree: libvirt_volume.coreos-qcow2
+2018-11-17T12:26:58.321+0100 [DEBUG] plugin: plugin process exited: path=/usr/bin/terraform-provider-libvirt
+2018/11/17 12:26:58 [TRACE] dag/walk: upstream errored, not walking "libvirt_domain.domain-coreos"
+2018/11/17 12:26:58 [TRACE] dag/walk: upstream errored, not walking "meta.count-boundary (count boundary fixup)"
+2018/11/17 12:26:58 [TRACE] dag/walk: upstream errored, not walking "provider.libvirt (close)"
+2018/11/17 12:26:58 [TRACE] dag/walk: upstream errored, not walking "root"
+2018/11/17 12:26:58 [TRACE] Preserving existing state lineage "2a61c90a-176f-1b3f-741e-5e7d20aa3d4e"
+2018/11/17 12:26:58 [TRACE] Preserving existing state lineage "2a61c90a-176f-1b3f-741e-5e7d20aa3d4e"
+2018/11/17 12:26:58 [TRACE] Preserving existing state lineage "2a61c90a-176f-1b3f-741e-5e7d20aa3d4e"
+2018/11/17 12:26:58 [TRACE] Preserving existing state lineage "2a61c90a-176f-1b3f-741e-5e7d20aa3d4e"
+2018/11/17 12:26:58 [DEBUG] plugin: waiting for all plugin processes to complete...
+2018-11-17T12:26:58.407+0100 [WARN ] plugin: error closing client during Kill: err="connection is shut down"

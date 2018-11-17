@@ -220,7 +220,7 @@ func extractTarball(compressedReader io.Reader) io.Reader {
 
 	// we asume the tarball contain only 1file, the image source
 	if err == io.EOF {
-		log.Printf("[DEBUG]: end of tar.gz archive")
+		log.Printf("[DEBUG]: end of tar archive")
 		return compressedReader
 	}
 	// 2 cases: 1 the we have a image.gz file, or a real error ( but we wil catch later )
@@ -241,20 +241,13 @@ func extractCompressedSource(src io.Reader) (io.Reader, error) {
 	if err != nil {
 		return src, fmt.Errorf("Error by peeking first 2 bytes %s", err)
 	}
-	// read all src bytes from reader (http or local)
-	sourceContent, err := ioutil.ReadAll(bReader)
-	if err != nil {
-		return src, fmt.Errorf("Error by reading src image %s", err)
-	}
-	// buffer the content so we can attach a newReader (gzip, bzip, etc)
-	bufContent := bytes.NewBuffer(sourceContent)
 
 	// https://en.wikipedia.org/wiki/List_of_file_signatures
 	// gz or tar.gz
 	log.Printf("[DEBUG]: first bytes of File: %d", srcBytes)
 	if srcBytes[0] == 0x1f && srcBytes[1] == 0x8b {
 		log.Printf("Gzip source file")
-		gzReader, err := gzip.NewReader(bufContent)
+		gzReader, err := gzip.NewReader(src)
 		if err != nil {
 			return src, fmt.Errorf("Error by decompressing gzip source %s", err)
 		}
@@ -264,13 +257,21 @@ func extractCompressedSource(src io.Reader) (io.Reader, error) {
 	// bzip2 or tar.bz2
 	if srcBytes[0] == 0x42 && srcBytes[1] == 0x5A {
 		log.Printf("bzip2 source file")
-		compressedReader := bzip2.NewReader(bufContent)
-		return extractTarball(compressedReader), nil
+		compressedReader := bzip2.NewReader(src)
+		return compressedReader, nil
+		//return extractTarball(compressedReader), nil
 	}
 	// XZ tar.xz
 	if srcBytes[0] == 0xfd && srcBytes[1] == 0x37 {
 		log.Printf("xz source file")
-		xzReader, err := xz.NewReader(bytes.NewReader(sourceContent), 0)
+		// xz is different from others readers
+		var sourceContent bytes.Buffer
+		bytesReadFromXzRead, err := sourceContent.ReadFrom(src)
+		log.Printf("DEBUG-READER:bytes readed from src: %d", bytesReadFromXzRead)
+		if err != nil {
+			return src, fmt.Errorf("Error by reading content of XZ archive %s", err)
+		}
+		xzReader, err := xz.NewReader(bytes.NewReader(sourceContent.Bytes()), 0)
 		if err != nil {
 			return src, fmt.Errorf("Error by decompressing xz source %s", err)
 		}
@@ -281,7 +282,7 @@ func extractCompressedSource(src io.Reader) (io.Reader, error) {
 }
 func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64, decompressImage bool) func(src io.Reader) error {
 	copier := func(src io.Reader) error {
-		var bytesCopied int64
+		var bytesCopied int
 
 		stream, err := virConn.NewStream(0)
 		if err != nil {
@@ -289,36 +290,33 @@ func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64
 		}
 		sourceReader := src
 		// for cloudinit and coreos we don't need to decompress
-		if decompressImage == true {
-			sourceReader, err = extractCompressedSource(src)
-			if err != nil {
-				return err
-			}
-		}
+		//	if decompressImage == true {
+		//		sourceReader, err = extractCompressedSource(src)
+		//		if err != nil {
+		//			return err
+		//		}
+		//	}
 		defer func() {
-			if uint64(bytesCopied) != size {
-				stream.Abort()
-				log.Printf("[ERROR]: did not copied full size of source to libvirt-volume")
-			} else {
-				stream.Finish()
-			}
 			stream.Free()
 		}()
-		// set it up to upload from stream
-		if err := volume.Upload(stream, 0, size, 0); err != nil {
-			stream.Abort()
-			return fmt.Errorf("Error while uploading volume %s", err)
-		}
 
 		// read all content of Reader ( it can be gzip/bzip2 and normal image)
-		sourceContent, err := ioutil.ReadAll(sourceReader)
-		log.Printf("%s", sourceContent)
+		var sourceContent bytes.Buffer
+		bytesReadFromSrcRead, err := sourceContent.ReadFrom(sourceReader)
+		log.Printf("DEBUG-READER:bytes readed from src: %d", bytesReadFromSrcRead)
 		if err != nil {
 			return fmt.Errorf("Error by reading content of libvirt source image %s", err)
 		}
 
+		// set it up to upload from stream
+		if err := volume.Upload(stream, 0, uint64(size), 0); err != nil {
+			stream.Abort()
+			return fmt.Errorf("Error while uploading volume %s", err)
+		}
+
 		// 3. do the actual writing
-		if bytesCopied, err := stream.Send(sourceContent); err != nil || bytesCopied != len(sourceContent) {
+		bytesCopied, err = stream.Send(sourceContent.Bytes())
+		if err != nil || bytesCopied != sourceContent.Len() {
 			return fmt.Errorf("Error while writing to libvirt volume %s", err)
 		}
 
