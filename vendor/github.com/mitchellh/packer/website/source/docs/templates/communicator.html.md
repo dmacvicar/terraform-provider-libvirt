@@ -71,13 +71,20 @@ The SSH communicator has the following options:
 -   `ssh_bastion_password` (string) - The password to use to authenticate
     with the bastion host.
 
--   `ssh_bastion_port` (number) - The port of the bastion host. Defaults to `1`.
+-   `ssh_bastion_port` (number) - The port of the bastion host. Defaults to `22`.
 
 -   `ssh_bastion_private_key_file` (string) - A private key file to use
     to authenticate with the bastion host.
 
 -   `ssh_bastion_username` (string) - The username to connect to the bastion
     host.
+
+-   `ssh_clear_authorized_keys` (boolean) - If true, Packer will attempt to
+    remove its temporary key from `~/.ssh/authorized_keys` and
+    `/root/.ssh/authorized_keys`. This is a mostly cosmetic option, since Packer
+    will delete the temporary private key from the host system regardless of
+    whether this is set to true (unless the user has set the `-debug` flag).
+    Defaults to "false"; currently only works on guests with `sed` installed.
 
 -   `ssh_disable_agent_forwarding` (boolean) - If true, SSH agent forwarding
     will be disabled. Defaults to `false`.
@@ -127,6 +134,32 @@ The SSH communicator has the following options:
 -   `ssh_username` (string) - The username to connect to SSH with. Required
     if using SSH.
 
+### SSH Communicator Details
+
+Packer will only use one authentication method, either `publickey` or if
+`ssh_password` is used packer will offer `password` and `keyboard-interactive`
+both sending the password. In other words Packer will not work with _sshd_
+configured with more than one configured authentication method using
+`AuthenticationMethods`.
+
+Packer supports the following ciphers:
+
+- aes128-ctr
+- aes192-ctr
+- aes256-ctr
+- arcfour128
+- arcfour256
+- arcfour
+- es128-gcm@openssh.com
+- acha20-poly1305@openssh.com
+
+And the following MACs:
+
+- hmac-sha1
+- hmac-sha1-96
+- hmac-sha2-256
+- hmac-sha2-256-etm@openssh.com
+
 ## WinRM Communicator
 
 The WinRM communicator has the following options.
@@ -146,10 +179,12 @@ The WinRM communicator has the following options.
     become available. This defaults to `30m` since setting up a Windows
     machine generally takes a long time.
 
--   `winrm_use_ntlm` (boolean) - If `true`, NTLM authentication will be used for WinRM,
-    rather than default (basic authentication), removing the requirement for basic
-    authentication to be enabled within the target guest. Further reading for remote
-    connection authentication can be found [here](https://msdn.microsoft.com/en-us/library/aa384295(v=vs.85).aspx).
+-   `winrm_use_ntlm` (boolean) - If `true`, NTLMv2 authentication (with
+    session security) will be used for WinRM, rather than
+    default (basic authentication), removing the requirement for basic
+    authentication to be enabled within the target guest. Further reading
+    for remote connection authentication can be found
+    [here](https://msdn.microsoft.com/en-us/library/aa384295(v=vs.85).aspx).
 
 -   `winrm_use_ssl` (boolean) - If `true`, use HTTPS for WinRM.
 

@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -23,8 +25,10 @@ import (
 )
 
 const (
-	defaultHostname = "app.terraform.io"
-	serviceID       = "tfe.v2"
+	defaultHostname    = "app.terraform.io"
+	defaultModuleDepth = -1
+	defaultParallelism = 10
+	serviceID          = "tfe.v2"
 )
 
 // Remote is an implementation of EnhancedBackend that performs all
@@ -168,7 +172,11 @@ func (b *Remote) configure(ctx context.Context) error {
 		Address:  service.String(),
 		BasePath: service.Path,
 		Token:    token,
+		Headers:  make(http.Header),
 	}
+
+	// Set the version header to the current version.
+	cfg.Headers.Set(version.Header, version.Version)
 
 	// Create the remote backend API client.
 	b.client, err = tfe.NewClient(cfg)
@@ -251,9 +259,10 @@ func (b *Remote) State(workspace string) (state.State, error) {
 	}
 
 	// Configure the remote workspace name.
-	if workspace == backend.DefaultStateName {
+	switch {
+	case workspace == backend.DefaultStateName:
 		workspace = b.workspace
-	} else if b.prefix != "" && !strings.HasPrefix(workspace, b.prefix) {
+	case b.prefix != "" && !strings.HasPrefix(workspace, b.prefix):
 		workspace = b.prefix + workspace
 	}
 
@@ -278,6 +287,9 @@ func (b *Remote) State(workspace string) (state.State, error) {
 		client:       b.client,
 		organization: b.organization,
 		workspace:    workspace,
+
+		// This is optionally set during Terraform Enterprise runs.
+		runID: os.Getenv("TFE_RUN_ID"),
 	}
 
 	return &remote.State{Client: client}, nil
@@ -293,9 +305,10 @@ func (b *Remote) DeleteState(workspace string) error {
 	}
 
 	// Configure the remote workspace name.
-	if workspace == backend.DefaultStateName {
+	switch {
+	case workspace == backend.DefaultStateName:
 		workspace = b.workspace
-	} else if b.prefix != "" && !strings.HasPrefix(workspace, b.prefix) {
+	case b.prefix != "" && !strings.HasPrefix(workspace, b.prefix):
 		workspace = b.prefix + workspace
 	}
 
@@ -336,20 +349,39 @@ func (b *Remote) states() ([]string, error) {
 	}
 
 	options := tfe.WorkspaceListOptions{}
-	ws, err := b.client.Workspaces.List(context.Background(), b.organization, options)
-	if err != nil {
-		return nil, err
+	switch {
+	case b.workspace != "":
+		options.Search = tfe.String(b.workspace)
+	case b.prefix != "":
+		options.Search = tfe.String(b.prefix)
 	}
 
+	// Create a slice to contain all the names.
 	var names []string
-	for _, w := range ws {
-		if b.workspace != "" && w.Name == b.workspace {
-			names = append(names, backend.DefaultStateName)
-			continue
+
+	for {
+		wl, err := b.client.Workspaces.List(context.Background(), b.organization, options)
+		if err != nil {
+			return nil, err
 		}
-		if b.prefix != "" && strings.HasPrefix(w.Name, b.prefix) {
-			names = append(names, strings.TrimPrefix(w.Name, b.prefix))
+
+		for _, w := range wl.Items {
+			if b.workspace != "" && w.Name == b.workspace {
+				names = append(names, backend.DefaultStateName)
+				continue
+			}
+			if b.prefix != "" && strings.HasPrefix(w.Name, b.prefix) {
+				names = append(names, strings.TrimPrefix(w.Name, b.prefix))
+			}
 		}
+
+		// Exit the loop when we've seen all pages.
+		if wl.CurrentPage >= wl.TotalPages {
+			break
+		}
+
+		// Update the page number to get the next page.
+		options.PageNumber = wl.NextPage
 	}
 
 	// Sort the result so we have consistent output.
@@ -361,23 +393,25 @@ func (b *Remote) states() ([]string, error) {
 // Operation implements backend.Enhanced
 func (b *Remote) Operation(ctx context.Context, op *backend.Operation) (*backend.RunningOperation, error) {
 	// Configure the remote workspace name.
-	if op.Workspace == backend.DefaultStateName {
+	switch {
+	case op.Workspace == backend.DefaultStateName:
 		op.Workspace = b.workspace
-	} else if b.prefix != "" && !strings.HasPrefix(op.Workspace, b.prefix) {
+	case b.prefix != "" && !strings.HasPrefix(op.Workspace, b.prefix):
 		op.Workspace = b.prefix + op.Workspace
 	}
 
 	// Determine the function to call for our operation
-	var f func(context.Context, context.Context, *backend.Operation, *backend.RunningOperation)
+	var f func(context.Context, context.Context, *backend.Operation) (*tfe.Run, error)
 	switch op.Type {
 	case backend.OperationTypePlan:
 		f = b.opPlan
+	case backend.OperationTypeApply:
+		f = b.opApply
 	default:
 		return nil, fmt.Errorf(
-			"\n\nThe \"remote\" backend currently only supports the \"plan\" operation.\n"+
-				"Please use the remote backend web UI for all other operations:\n"+
-				"https://%s/app/%s/%s", b.hostname, b.organization, op.Workspace)
-		// return nil, backend.ErrOperationNotSupported
+			"\n\nThe \"remote\" backend does not support the %q operation.\n"+
+				"Please use the remote backend web UI for running this operation:\n"+
+				"https://%s/app/%s/%s", op.Type, b.hostname, b.organization, op.Workspace)
 	}
 
 	// Lock
@@ -387,7 +421,8 @@ func (b *Remote) Operation(ctx context.Context, op *backend.Operation) (*backend
 	// the runninCtx is only used to block until the operation returns.
 	runningCtx, done := context.WithCancel(context.Background())
 	runningOp := &backend.RunningOperation{
-		Context: runningCtx,
+		Context:   runningCtx,
+		PlanEmpty: true,
 	}
 
 	// stopCtx wraps the context passed in, and is used to signal a graceful Stop.
@@ -399,41 +434,135 @@ func (b *Remote) Operation(ctx context.Context, op *backend.Operation) (*backend
 	cancelCtx, cancel := context.WithCancel(context.Background())
 	runningOp.Cancel = cancel
 
-	// Do it
+	// Do it.
 	go func() {
 		defer done()
 		defer stop()
 		defer cancel()
 
 		defer b.opLock.Unlock()
-		f(stopCtx, cancelCtx, op, runningOp)
+
+		r, opErr := f(stopCtx, cancelCtx, op)
+		if opErr != nil && opErr != context.Canceled {
+			runningOp.Err = opErr
+			return
+		}
+
+		if r != nil {
+			// Retrieve the run to get its current status.
+			r, err := b.client.Runs.Read(cancelCtx, r.ID)
+			if err != nil {
+				runningOp.Err = generalError("error retrieving run", err)
+				return
+			}
+
+			// Record if there are any changes.
+			runningOp.PlanEmpty = !r.HasChanges
+
+			if opErr == context.Canceled {
+				runningOp.Err = b.cancel(cancelCtx, op, r)
+			}
+
+			if runningOp.Err == nil && r.Status == tfe.RunErrored {
+				runningOp.ExitCode = 1
+			}
+		}
 	}()
 
-	// Return
+	// Return the running operation.
 	return runningOp, nil
 }
 
-// Colorize returns the Colorize structure that can be used for colorizing
-// output. This is gauranteed to always return a non-nil value and so is useful
-// as a helper to wrap any potentially colored strings.
-func (b *Remote) Colorize() *colorstring.Colorize {
-	if b.CLIColor != nil {
-		return b.CLIColor
+func (b *Remote) cancel(cancelCtx context.Context, op *backend.Operation, r *tfe.Run) error {
+	if r.Status == tfe.RunPending && r.Actions.IsCancelable {
+		// Only ask if the remote operation should be canceled
+		// if the auto approve flag is not set.
+		if !op.AutoApprove {
+			v, err := op.UIIn.Input(&terraform.InputOpts{
+				Id:          "cancel",
+				Query:       "\nDo you want to cancel the pending remote operation?",
+				Description: "Only 'yes' will be accepted to cancel.",
+			})
+			if err != nil {
+				return generalError("error asking to cancel", err)
+			}
+			if v != "yes" {
+				if b.CLI != nil {
+					b.CLI.Output(b.Colorize().Color(strings.TrimSpace(operationNotCanceled)))
+				}
+				return nil
+			}
+		} else {
+			if b.CLI != nil {
+				// Insert a blank line to separate the ouputs.
+				b.CLI.Output("")
+			}
+		}
+
+		// Try to cancel the remote operation.
+		err := b.client.Runs.Cancel(cancelCtx, r.ID, tfe.RunCancelOptions{})
+		if err != nil {
+			return generalError("error cancelling run", err)
+		}
+		if b.CLI != nil {
+			b.CLI.Output(b.Colorize().Color(strings.TrimSpace(operationCanceled)))
+		}
 	}
 
-	return &colorstring.Colorize{
-		Colors:  colorstring.DefaultColors,
-		Disable: true,
+	return nil
+}
+
+// Colorize returns the Colorize structure that can be used for colorizing
+// output. This is guaranteed to always return a non-nil value and so useful
+// as a helper to wrap any potentially colored strings.
+// func (b *Remote) Colorize() *colorstring.Colorize {
+// 	if b.CLIColor != nil {
+// 		return b.CLIColor
+// 	}
+
+// 	return &colorstring.Colorize{
+// 		Colors:  colorstring.DefaultColors,
+// 		Disable: true,
+// 	}
+// }
+
+func generalError(msg string, err error) error {
+	if urlErr, ok := err.(*url.Error); ok {
+		err = urlErr.Err
+	}
+	switch err {
+	case context.Canceled:
+		return err
+	case tfe.ErrResourceNotFound:
+		return fmt.Errorf(strings.TrimSpace(fmt.Sprintf(notFoundErr, msg, err)))
+	default:
+		return fmt.Errorf(strings.TrimSpace(fmt.Sprintf(generalErr, msg, err)))
 	}
 }
 
 const generalErr = `
 %s: %v
 
-The "remote" backend encountered an unexpected error while communicating
-with remote backend. In some cases this could be caused by a network
-connection problem, in which case you could retry the command. If the issue
-persists please open a support ticket to get help resolving the problem.
+The configured "remote" backend encountered an unexpected error. Sometimes
+this is caused by network connection problems, in which case you could retry
+the command. If the issue persists please open a support ticket to get help
+resolving the problem.
+`
+
+const notFoundErr = `
+%s: %v
+
+The configured "remote" backend returns '404 Not Found' errors for resources
+that do not exist, as well as for resources that a user doesn't have access
+to. When the resource does exists, please check the rights for the used token.
+`
+
+const operationCanceled = `
+[reset][red]The remote operation was successfully cancelled.[reset]
+`
+
+const operationNotCanceled = `
+[reset][red]The remote operation was not cancelled.[reset]
 `
 
 var schemaDescriptions = map[string]string{

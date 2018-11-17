@@ -3,6 +3,8 @@ package arm
 import (
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/packer/common/random"
 )
 
 func TestTempNameShouldCreatePrefixedRandomNames(t *testing.T) {
@@ -38,6 +40,20 @@ func TestTempNameShouldCreatePrefixedRandomNames(t *testing.T) {
 
 	if strings.Index(tempName.VirtualNetworkName, "pkrvn") != 0 {
 		t.Errorf("Expected VirtualNetworkName to begin with 'pkrvn', but got '%s'!", tempName.VirtualNetworkName)
+	}
+}
+
+func TestTempAdminPassword(t *testing.T) {
+	tempName := NewTempName()
+
+	if !strings.ContainsAny(tempName.AdminPassword, random.PossibleNumbers) {
+		t.Errorf("Expected AdminPassword to contain at least one of '%s'!", random.PossibleNumbers)
+	}
+	if !strings.ContainsAny(tempName.AdminPassword, random.PossibleLowerCase) {
+		t.Errorf("Expected AdminPassword to contain at least one of '%s'!", random.PossibleLowerCase)
+	}
+	if !strings.ContainsAny(tempName.AdminPassword, random.PossibleUpperCase) {
+		t.Errorf("Expected AdminPassword to contain at least one of '%s'!", random.PossibleUpperCase)
 	}
 }
 

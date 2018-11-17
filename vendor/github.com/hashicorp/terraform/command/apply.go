@@ -147,13 +147,13 @@ func (c *ApplyCommand) Run(args []string) int {
 
 	// Build the operation
 	opReq := c.Operation()
+	opReq.AutoApprove = autoApprove
 	opReq.Destroy = c.Destroy
+	opReq.DestroyForce = destroyForce
 	opReq.Module = mod
 	opReq.Plan = plan
 	opReq.PlanRefresh = refresh
 	opReq.Type = backend.OperationTypeApply
-	opReq.AutoApprove = autoApprove
-	opReq.DestroyForce = destroyForce
 
 	op, err := c.RunOperation(b, opReq)
 	if err != nil {
@@ -177,7 +177,7 @@ func (c *ApplyCommand) Run(args []string) int {
 		}
 	}
 
-	return 0
+	return op.ExitCode
 }
 
 func (c *ApplyCommand) Help() string {

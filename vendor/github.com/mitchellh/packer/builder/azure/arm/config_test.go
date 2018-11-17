@@ -586,12 +586,12 @@ func TestConfigShouldAcceptTags(t *testing.T) {
 
 	value := c.AzureTags["tag01"]
 	if *value != "value01" {
-		t.Errorf("expected AzureTags[\"tag01\"] to have value \"value01\", but got %q", value)
+		t.Errorf("expected AzureTags[\"tag01\"] to have value \"value01\", but got %q", *value)
 	}
 
 	value = c.AzureTags["tag02"]
 	if *value != "value02" {
-		t.Errorf("expected AzureTags[\"tag02\"] to have value \"value02\", but got %q", value)
+		t.Errorf("expected AzureTags[\"tag02\"] to have value \"value02\", but got %q", *value)
 	}
 }
 
@@ -799,7 +799,7 @@ func TestConfigShouldRejectCustomAndPlatformManagedImageBuild(t *testing.T) {
 
 func TestConfigShouldRejectCustomAndImageUrlForManagedImageBuild(t *testing.T) {
 	config := map[string]interface{}{
-		"image_url":                                "ignore",
+		"image_url": "ignore",
 		"custom_managed_image_resource_group_name": "ignore",
 		"custom_managed_image_name":                "ignore",
 		"location":                                 "ignore",
@@ -1292,6 +1292,51 @@ func TestConfigShouldAllowAsyncResourceGroupOverrideBadValue(t *testing.T) {
 	if err != nil && c == nil {
 		t.Log("newConfig failed  which is expected ", err)
 
+	}
+
+}
+func TestConfigShouldAllowSharedImageGalleryOptions(t *testing.T) {
+	config := map[string]interface{}{
+		"location":        "ignore",
+		"subscription_id": "ignore",
+		"os_type":         "linux",
+		"shared_image_gallery": map[string]string{
+			"subscription":   "ignore",
+			"resource_group": "ignore",
+			"gallery_name":   "ignore",
+			"image_name":     "ignore",
+			"image_version":  "ignore",
+		},
+	}
+
+	_, _, err := newConfig(config, getPackerConfiguration())
+	if err == nil {
+		t.Log("expected config to accept Shared Image Gallery options", err)
+	}
+
+}
+
+func TestConfigShouldRejectSharedImageGalleryWithVhdTarget(t *testing.T) {
+	config := map[string]interface{}{
+		"location":        "ignore",
+		"subscription_id": "ignore",
+		"os_type":         "linux",
+		"shared_image_gallery": map[string]string{
+			"subscription":   "ignore",
+			"resource_group": "ignore",
+			"gallery_name":   "ignore",
+			"image_name":     "ignore",
+			"image_version":  "ignore",
+		},
+		"resource_group_name":    "ignore",
+		"storage_account":        "ignore",
+		"capture_container_name": "ignore",
+		"capture_name_prefix":    "ignore",
+	}
+
+	_, _, err := newConfig(config, getPackerConfiguration())
+	if err != nil {
+		t.Log("expected an error if Shared Image Gallery source is used with VHD target", err)
 	}
 
 }

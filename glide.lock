@@ -1,5 +1,5 @@
-hash: c7d5b64be7d2a530becbe7aa44f1f65fdff4deeb256441470517084f9e8eb835
-updated: 2018-09-09T21:42:58.276705056+02:00
+hash: 0e5d6c78d1adbc02d7c867e839bee0779a55b212aca69ac42509d0a20fe3ad98
+updated: 2018-11-17T11:05:21.943486255+01:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
@@ -136,7 +136,7 @@ imports:
 - name: github.com/hashicorp/logutils
   version: a335183dfd075f638afcc820c90591ca3c97eba6
 - name: github.com/hashicorp/terraform
-  version: 6dfc4d748de9cda23835bc5704307ed45e839622
+  version: 17850e9a55d33c43d7c31fd6ac122ba97a51d899
   subpackages:
   - config
   - config/configschema
@@ -166,7 +166,7 @@ imports:
   - tfdiags
   - version
 - name: github.com/hashicorp/yamux
-  version: e8ac8b4dab4a3ff8ba72db8fa1a43d6d1f8747c8
+  version: 2f1d1f20f75d5404f53b9edf6b53ed5505508675
 - name: github.com/hooklift/iso9660
   version: d6245ab24065917ac16be2ff10ddd3934f41fe54
 - name: github.com/imdario/mergo
@@ -178,7 +178,7 @@ imports:
   subpackages:
   - internal/load
 - name: github.com/libvirt/libvirt-go
-  version: d5e0adac44d4365a2d97e259f51ab76cc3c01b20
+  version: 9c5bdce3c18faad94cb383e7ec42f5122a8c7fa1
 - name: github.com/libvirt/libvirt-go-xml
   version: 64ef6bd8d0100d46803df155a9d180796815e3aa
 - name: github.com/mattn/go-colorable
@@ -200,7 +200,7 @@ imports:
 - name: github.com/mitchellh/mapstructure
   version: fa473d140ef3c6adf42d6b391fe76707f1f243c8
 - name: github.com/mitchellh/packer
-  version: d1cc5451e933f39986bdc1069e9d26e534cde548
+  version: 6881d841a1a8374d696d79f156cbc462efe17984
   subpackages:
   - common/uuid
 - name: github.com/mitchellh/reflectwalk
@@ -213,6 +213,10 @@ imports:
   - cmd
   - cmd/install
   - match
+- name: github.com/stretchr/testify
+  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
+  subpackages:
+  - assert
 - name: github.com/ulikunitz/xz
   version: 636d36a76670e6c700f22fd5f4588679ff2896c4
   subpackages:
@@ -355,6 +359,10 @@ testImports:
   - config/errors
   - config/v2_1/types
   - config/validate/report
+- name: github.com/pmezard/go-difflib
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
+  subpackages:
+  - difflib
 - name: github.com/terraform-providers/terraform-provider-ignition
   version: 3168afa8c74263515839d645ec9b819d21fc20f0
   subpackages:

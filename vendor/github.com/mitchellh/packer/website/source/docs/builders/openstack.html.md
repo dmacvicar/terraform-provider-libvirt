@@ -36,6 +36,9 @@ installed *if you are using temporary key pairs*, i.e. don't use
 OS'es have OpenSSL installed by default except Windows. This have been
 resolved in OpenStack Ocata(Feb 2017).
 
+~&gt; **Note:** OpenStack Block Storage volume support is available only for
+V3 Block Storage API. It's available in OpenStack since Mitaka release
+(Apr 2016).
 
 ## Configuration Reference
 
@@ -66,6 +69,11 @@ builder.
 -   `source_image_name` (string) - The name of the base image to use. This
     is an alternative way of providing `source_image` and only either of them
     can be specified.
+
+-   `source_image_filter` (map) - The search filters for determining the base
+    image to use. This is an alternative way of providing `source_image` and
+    only one of these methods can be used. `source_image` will override the
+    filters.
 
 -   `username` or `user_id` (string) - The username or id used to connect to
     the OpenStack service. If not specified, Packer will use the environment
@@ -109,8 +117,11 @@ builder.
 
 -   `floating_ip` (string) - A specific floating IP to assign to this instance.
 
--   `floating_ip_pool` (string) - The name of the floating IP pool to use to
-    allocate a floating IP.
+-   `floating_ip_network` (string) - The ID or name of an external network that
+    can be used for creation of a new floating IP.
+
+-   `floating_ip_pool` (string) - *Deprecated* use `floating_ip_network`
+    instead.
 
 -   `image_members` (array of strings) - List of members to add to the image
     after creation. An image member is usually a project (also called the
@@ -139,12 +150,15 @@ builder.
 -   `networks` (array of strings) - A list of networks by UUID to attach to
     this instance.
 
+-   `ports` (array of strings) - A list of ports by UUID to attach to
+    this instance.
+
 -   `rackconnect_wait` (boolean) - For rackspace, whether or not to wait for
     Rackconnect to assign the machine an IP address before connecting via SSH.
     Defaults to false.
 
 -   `region` (string) - The name of the region, such as "DFW", in which to
-    launch the server to create the AMI. If not specified, Packer will use the
+    launch the server to create the image. If not specified, Packer will use the
     environment variable `OS_REGION_NAME`, if set.
 
 -   `reuse_ips` (boolean) - Whether or not to attempt to reuse existing
@@ -156,6 +170,48 @@ builder.
 
 -   `security_groups` (array of strings) - A list of security groups by name to
     add to this instance.
+
+-   `source_image_filter` (object) - Filters used to populate filter options.
+    Example:
+
+    ``` json
+    {
+        "source_image_filter": {
+            "filters": {
+                "name": "ubuntu-16.04",
+                "visibility": "protected",
+                "owner": "d1a588cf4b0743344508dc145649372d1",
+                "tags": ["prod", "ready"]
+            },
+            "most_recent": true
+        }
+    }
+    ```
+
+    This selects the most recent production Ubuntu 16.04 shared to you by the given owner.
+    NOTE: This will fail unless *exactly* one image is returned, or `most_recent` is set to true.
+    In the example of multiple returned images, `most_recent` will cause this to succeed by selecting
+    the newest image of the returned images.
+
+    -   `filters` (map of strings) - filters used to select a `source_image`.
+        NOTE: This will fail unless *exactly* one image is returned, or `most_recent` is set to true.
+        Of the filters described in [ImageService](https://developer.openstack.org/api-ref/image/v2/), the following
+        are valid:
+
+        - name (string)
+
+        - owner (string)
+
+        - tags (array of strings)
+
+        - visibility (string)
+
+    -   `most_recent` (boolean) - Selects the newest created image when true.
+        This is most useful for selecting a daily distro build.
+
+    You may set use this in place of `source_image` If `source_image_filter` is provided
+    alongside `source_image`, the `source_image` will override the filter. The filter
+    will not be used in this case.
 
 -   `ssh_interface` (string) - The type of interface to connect via SSH. Values
     useful for Rackspace are "public" or "private", and the default behavior is
@@ -202,6 +258,25 @@ builder.
 
 -   `user_data_file` (string) - Path to a file that will be used for the user
     data when launching the instance.
+
+-   `use_blockstorage_volume` (boolean) - Use Block Storage service volume for
+    the instance root volume instead of Compute service local volume (default).
+
+-   `volume_name` (string) - Name of the Block Storage service volume. If this
+    isn't specified, random string will be used.
+
+-   `volume_type` (string) - Type of the Block Storage service volume. If this
+    isn't specified, the default enforced by your OpenStack cluster will be
+    used.
+
+-   `volume_availability_zone` (string) - Availability zone of the Block
+    Storage service volume. If omitted, Compute instance availability zone will
+    be used. If both of Compute instance and Block Storage volume availability
+    zones aren't specified, the default enforced by your OpenStack cluster will
+    be used.
+
+-   `image_disk_format` (string) - Disk format of the resulting image.
+    This option works if `use_blockstorage_volume` is true.
 
 ## Basic Example: DevStack
 
@@ -288,6 +363,31 @@ export OS_USERNAME="myuser"
 export OS_PASSWORD="password"
 export OS_USER_DOMAIN_NAME="mydomain"
 export OS_PROJECT_DOMAIN_NAME="mydomain"
+```
+
+## Basic Example: Instance with Block Storage root volume
+
+A basic example of Instance with a remote root Block Storage service volume.
+This is a working example to build an image on private OpenStack cloud powered
+by Selectel VPC.
+
+``` json
+{
+  "type": "openstack",
+  "identity_endpoint": "https://api.selvpc.com/identity/v3",
+  "tenant_id": "2e90c5c04c7b4c509be78723e2b55b77",
+  "username": "foo",
+  "password": "foo",
+  "region": "ru-3",
+  "ssh_username": "root",
+  "image_name": "Test image",
+  "source_image": "5f58ea7e-6264-4939-9d0f-0c23072b1132",
+  "networks": "9aab504e-bedf-48af-9256-682a7fa3dabb",
+  "flavor": "1001",
+  "availability_zone": "ru-3a",
+  "use_blockstorage_volume": true,
+  "volume_type": "fast.ru-3a"
+}
 ```
 
 ## Notes on OpenStack Authorization

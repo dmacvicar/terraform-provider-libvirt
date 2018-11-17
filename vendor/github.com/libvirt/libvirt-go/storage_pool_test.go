@@ -42,7 +42,7 @@ func buildTestStoragePool(poolName string) (*StoragePool, *Connect) {
 	pool, err := conn.StoragePoolDefineXML(`<pool type='dir'>
   <name>`+name+`</name>
   <target>
-  <path>/default-pool</path>
+  <path>/default-pool-test-1</path>
   </target>
   </pool>`, 0)
 	if err != nil {

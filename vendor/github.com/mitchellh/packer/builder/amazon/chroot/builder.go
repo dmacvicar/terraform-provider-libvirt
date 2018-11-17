@@ -42,8 +42,10 @@ type Config struct {
 	PreMountCommands  []string                   `mapstructure:"pre_mount_commands"`
 	RootDeviceName    string                     `mapstructure:"root_device_name"`
 	RootVolumeSize    int64                      `mapstructure:"root_volume_size"`
+	RootVolumeType    string                     `mapstructure:"root_volume_type"`
 	SourceAmi         string                     `mapstructure:"source_ami"`
 	SourceAmiFilter   awscommon.AmiFilterOptions `mapstructure:"source_ami_filter"`
+	RootVolumeTags    awscommon.TagMap           `mapstructure:"root_volume_tags"`
 
 	ctx interpolate.Context
 }
@@ -67,6 +69,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 				"ami_description",
 				"snapshot_tags",
 				"tags",
+				"root_volume_tags",
 				"command_wrapper",
 				"post_mount_commands",
 				"pre_mount_commands",
@@ -174,7 +177,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 		return warns, errs
 	}
 
-	log.Println(common.ScrubConfig(b.config, b.config.AccessKey, b.config.SecretKey, b.config.Token))
+	packer.LogSecretFilter.Set(b.config.AccessKey, b.config.SecretKey, b.config.Token)
 	return warns, nil
 }
 
@@ -220,6 +223,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 				EnableAMISriovNetSupport: b.config.AMISriovNetSupport,
 				EnableAMIENASupport:      b.config.AMIENASupport,
 				AmiFilters:               b.config.SourceAmiFilter,
+				AMIVirtType:              b.config.AMIVirtType,
 			},
 			&StepCheckRootDevice{},
 		)
@@ -229,7 +233,10 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		&StepFlock{},
 		&StepPrepareDevice{},
 		&StepCreateVolume{
+			RootVolumeType: b.config.RootVolumeType,
 			RootVolumeSize: b.config.RootVolumeSize,
+			RootVolumeTags: b.config.RootVolumeTags,
+			Ctx:            b.config.ctx,
 		},
 		&StepAttachVolume{},
 		&StepEarlyUnflock{},
