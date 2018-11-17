@@ -216,7 +216,7 @@ func newImage(source string) (image, error) {
 
 func extractTarball(compressedReader io.Reader) io.Reader {
 	tarReader := tar.NewReader(compressedReader)
-	_, err := tarReader.Next()
+	tarFile, err := tarReader.Next()
 
 	// we asume the tarball contain only 1file, the image source
 	if err == io.EOF {
@@ -227,7 +227,9 @@ func extractTarball(compressedReader io.Reader) io.Reader {
 	if err != nil {
 		return compressedReader
 	}
-	log.Printf("[DEBUG]: source tar.gzip source file extracted")
+
+	log.Printf("Found file name inside tar %s:", tarFile.Name)
+	log.Printf("[DEBUG]: returning source tarball reader")
 	return tarReader
 }
 
@@ -310,6 +312,7 @@ func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64
 
 		// read all content of Reader ( it can be gzip/bzip2 and normal image)
 		sourceContent, err := ioutil.ReadAll(sourceReader)
+		log.Printf("%s", sourceContent)
 		if err != nil {
 			return fmt.Errorf("Error by reading content of libvirt source image %s", err)
 		}

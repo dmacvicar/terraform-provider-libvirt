@@ -5,7 +5,8 @@ provider "libvirt" {
 
 resource "libvirt_volume" "coreos-qcow2" {
   name = "coreos-qcow2"
-  source = "https://stable.release.core-os.net/amd64-usr/current/coreos_production_qemu_image.img.bz2"
+  // source = "https://stable.release.core-os.net/amd64-usr/current/coreos_production_qemu_image.img.bz2"
+  source = "https://cloud-images.ubuntu.com/cosmic/current/cosmic-server-cloudimg-amd64-lxd.tar.xz"
 }
 
 # Create the machine
