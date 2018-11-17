@@ -296,28 +296,34 @@ func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64
 		defer func() {
 			if uint64(bytesCopied) != size {
 				stream.Abort()
+				log.Printf("[ERROR]: did not copied full size of source to libvirt-volume")
 			} else {
 				stream.Finish()
 			}
 			stream.Free()
 		}()
-
+		// set it up to upload from stream
 		if err := volume.Upload(stream, 0, size, 0); err != nil {
 			stream.Abort()
 			return fmt.Errorf("Error while uploading volume %s", err)
 		}
 
-		sio := NewStreamIO(*stream)
-
-		bytesCopied, err = io.Copy(sio, sourceReader)
-		// if we get unexpected EOF this mean that connection was closed suddently from server side
-		// the problem is not on the plugin but on server hosting currupted images
-		if err == io.ErrUnexpectedEOF {
-			return fmt.Errorf("Error: transfer was unexpectedly closed from the server while downloading. Please try again later or check the server hosting sources")
-		}
+		// read all content of Reader ( it can be gzip/bzip2 and normal image)
+		sourceContent, err := ioutil.ReadAll(sourceReader)
 		if err != nil {
-			return fmt.Errorf("Error while copying source to volume %s", err)
+			return fmt.Errorf("Error by reading content of libvirt source image %s", err)
 		}
+
+		// 3. do the actual writing
+		if bytesCopied, err := stream.Send(sourceContent); err != nil || bytesCopied != len(sourceContent) {
+			return fmt.Errorf("Error while writing to libvirt volume %s", err)
+		}
+
+		// 4. finish/close the stream
+		if err := stream.Finish(); err != nil {
+			return fmt.Errorf("Error while closing libvirt stream %s", err)
+		}
+
 		log.Printf("%d bytes uploaded\n", bytesCopied)
 		return nil
 	}

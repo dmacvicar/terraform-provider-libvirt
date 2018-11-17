@@ -320,22 +320,32 @@ func downloadISO(virConn *libvirt.Connect, volume libvirt.StorageVol) (*os.File,
 	}
 
 	// download ISO file
-	stream, err := virConn.NewStream(0)
+	downStream, err := virConn.NewStream(0)
 	if err != nil {
 		return tmpFile, err
 	}
-	defer stream.Finish()
+	defer func() {
+		downStream.Free()
+	}()
 
-	volume.Download(stream, 0, info.Capacity, 0)
-
-	sio := NewStreamIO(*stream)
-
-	n, err := io.Copy(tmpFile, sio)
+	//volume.Download(downStream, 0, info.Capacity, 0)
+	// 2. set it up to download from stream
+	if err := volume.Download(downStream, 0, info.Capacity, 0); err != nil {
+		downStream.Abort()
+		return tmpFile, fmt.Errorf("Error while copying remote volume to cloudinit disk: %s", err)
+	}
+	// 3. do the actual reading
+	var buf []byte
+	bytesCopied, err := downStream.Recv(buf)
 	if err != nil {
-		return tmpFile, fmt.Errorf("Error while copying remote volume to local disk: %s", err)
+		return tmpFile, fmt.Errorf("Error while reading cloudinit data volume: %s", err)
+	}
+	// 4. finish!
+	if err := downStream.Finish(); err != nil {
+		return tmpFile, fmt.Errorf("Error while closing libvirt-stream for cloudinit disk: %s", err)
 	}
 	tmpFile.Seek(0, 0)
-	log.Printf("%d bytes downloaded", n)
+	log.Printf("%d bytes downloaded from cloudinit ISO file", bytesCopied)
 
 	return tmpFile, nil
 }
