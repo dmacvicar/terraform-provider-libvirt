@@ -1,8 +1,9 @@
 ./terraform-provider-libvirt
-.terraform/*
+*.terraform/*
 ./*.tf
-*.tfstate
-*.tfstate.backup
 *.test
 *.cov
 terraform-provider-libvirt
+.terraform
+*.tfstate*
+*.swap*
