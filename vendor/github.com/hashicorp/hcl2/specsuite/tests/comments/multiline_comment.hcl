@@ -1,3 +1,0 @@
-/*
-  Multi-line comment
-*/
