@@ -1,5 +1,5 @@
-hash: 0e5d6c78d1adbc02d7c867e839bee0779a55b212aca69ac42509d0a20fe3ad98
-updated: 2018-11-17T11:05:21.943486255+01:00
+hash: f9c3c2d04297c797097cf7e0364ba268889ed107a1b62e32a647baaa1a9b9c23
+updated: 2018-11-19T19:32:01.972152672+01:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
@@ -121,6 +121,8 @@ imports:
 - name: github.com/hashicorp/hcl2
   version: 864f97c8ab203ef9f72a47f231e7d10e52a33ce7
   subpackages:
+  - ext/dynblock
+  - ext/typeexpr
   - gohcl
   - hcl
   - hcl/hclsyntax
@@ -136,12 +138,15 @@ imports:
 - name: github.com/hashicorp/logutils
   version: a335183dfd075f638afcc820c90591ca3c97eba6
 - name: github.com/hashicorp/terraform
-  version: 17850e9a55d33c43d7c31fd6ac122ba97a51d899
+  version: 6383ffc2aa1ba955dd16bed33e1de9ae8424097b
   subpackages:
+  - addrs
   - config
-  - config/configschema
   - config/hcl2shim
   - config/module
+  - configs
+  - configs/configload
+  - configs/configschema
   - dag
   - flatmap
   - helper/acctest
@@ -150,15 +155,26 @@ imports:
   - helper/hilmapstructure
   - helper/logging
   - helper/mutexkv
+  - helper/plugin
   - helper/resource
   - helper/schema
   - httpclient
+  - lang
+  - lang/funcs
   - moduledeps
+  - plans
+  - plans/objchange
   - plugin
+  - plugin/convert
   - plugin/discovery
+  - plugin/proto
+  - providers
+  - provisioners
   - registry
   - registry/regsrc
   - registry/response
+  - states
+  - states/statefile
   - svchost
   - svchost/auth
   - svchost/disco
@@ -213,6 +229,10 @@ imports:
   - cmd
   - cmd/install
   - match
+- name: github.com/spf13/afero
+  version: d40851caa0d747393da1ffb28f7f9d8b4eeffebd
+  subpackages:
+  - mem
 - name: github.com/stretchr/testify
   version: f35b8ab0b5a2cef36673838d662e249dd9c94686
   subpackages:
@@ -223,6 +243,10 @@ imports:
   - internal/hash
   - internal/xlog
   - lzma
+- name: github.com/vmihailenco/msgpack
+  version: c4fc0fcdd500af473157759b6d73f935e727ec77
+  subpackages:
+  - codes
 - name: github.com/zclconf/go-cty
   version: 12ca9334a95ffdef66da89903a0aae9865f5ac4e
   subpackages:
@@ -232,6 +256,7 @@ imports:
   - cty/function/stdlib
   - cty/gocty
   - cty/json
+  - cty/msgpack
   - cty/set
 - name: golang.org/x/crypto
   version: 0709b304e793a5edb4a2c0145f281ecdc20838a4
@@ -258,8 +283,6 @@ imports:
   version: 161cd47e91fd58ac17490ef4d742dc98bb4cf60e
   subpackages:
   - context
-  - html
-  - html/atom
   - http/httpguts
   - http2
   - http2/hpack
@@ -290,6 +313,17 @@ imports:
   - go/types/typeutil
   - imports
   - internal/fastwalk
+- name: google.golang.org/appengine
+  version: 4a4468ece617fc8205e99368fa2200e9d1fad421
+  subpackages:
+  - datastore
+  - internal
+  - internal/app_identity
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/modules
+  - internal/remote_api
 - name: google.golang.org/genproto
   version: 11092d34479b07829b72e10713b159248caf5dad
   subpackages:
@@ -324,6 +358,7 @@ imports:
   - stats
   - status
   - tap
+  - test/bufconn
 - name: gopkg.in/yaml.v2
   version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
 - name: honnef.co/go/tools
