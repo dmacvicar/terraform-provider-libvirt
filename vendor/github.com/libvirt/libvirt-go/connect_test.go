@@ -789,7 +789,7 @@ func TestStoragePoolDefineXML(t *testing.T) {
 	}()
 	defName := "default-pool-test-0"
 	xml := `<pool type='dir'><name>default-pool-test-0</name><target>
-            <path>/default-pool</path></target></pool>`
+            <path>/default-pool-test-0</path></target></pool>`
 	pool, err := conn.StoragePoolDefineXML(xml, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -900,7 +900,7 @@ func TestLookupStorageVolByKey(t *testing.T) {
 		return
 	}
 	defer pool.Destroy()
-	defPoolPath := "default-pool"
+	defPoolPath := "default-pool-test-1"
 	defVolName := time.Now().String()
 	defVolKey := "/" + defPoolPath + "/" + defVolName
 	vol, err := pool.StorageVolCreateXML(testStorageVolXML(defVolName, defPoolPath), 0)
@@ -942,7 +942,7 @@ func TestLookupStorageVolByPath(t *testing.T) {
 		return
 	}
 	defer pool.Destroy()
-	defPoolPath := "default-pool"
+	defPoolPath := "default-pool-test-1"
 	defVolName := time.Now().String()
 	defVolPath := "/" + defPoolPath + "/" + defVolName
 	vol, err := pool.StorageVolCreateXML(testStorageVolXML(defVolName, defPoolPath), 0)

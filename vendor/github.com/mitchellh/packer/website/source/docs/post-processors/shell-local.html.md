@@ -60,7 +60,7 @@ Optional parameters:
     as well, which are covered in the section below.
 
 -   `execute_command` (array of strings) - The command used to execute the script. By
-    default this is `["/bin/sh", "-c", "{{.Vars}}, "{{.Script}}"]`
+    default this is `["/bin/sh", "-c", "{{.Vars}}", "{{.Script}}"]`
     on unix and `["cmd", "/c", "{{.Vars}}", "{{.Script}}"]` on windows.
     This is treated as a [template engine](/docs/templates/engine.html).
     There are two available variables: `Script`, which is the path to the script
@@ -90,6 +90,12 @@ Optional parameters:
     you're not using `inline`, then this configuration has no effect.
     **Important:** If you customize this, be sure to include something like the
     `-e` flag, otherwise individual steps failing won't fail the provisioner.
+
+-  `only_on` (array of strings) - This is an array of 
+    [runtime operating systems](https://golang.org/doc/install/source#environment)
+    where `shell-local` will execute. This allows you to execute `shell-local` 
+    *only* on specific operating systems. By default, shell-local will always run 
+    if `only_on` is not set."
 
 -  `use_linux_pathing` (bool) - This is only relevant to windows hosts. If you
    are running Packer in a Windows environment with the Windows Subsystem for
@@ -191,8 +197,8 @@ In order to interact with build artifacts, you may want to use the [manifest
 post-processor](/docs/post-processors/manifest.html). This will write the list
 of files produced by a `builder` to a json file after each `builder` is run.
 
-For example, if you wanted to package a file from the file builder into
-a tarball, you might wright this:
+For example, if you wanted to package a file from the file builder into a
+tarball, you might write this:
 
 ``` json
 {

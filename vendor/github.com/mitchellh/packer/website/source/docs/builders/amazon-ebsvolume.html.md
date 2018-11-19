@@ -63,7 +63,8 @@ builder.
     device mappings to the AMI. The block device mappings allow for keys:
 
     -   `device_name` (string) - The device name exposed to the instance (for
-        example, `/dev/sdh` or `xvdh`). Required when specifying `volume_size`.
+        example, `/dev/sdh` or `xvdh`). Required for every device in the
+        block device mapping.
 
     -   `delete_on_termination` (boolean) - Indicates whether the EBS volume is
         deleted on instance termination.
@@ -71,7 +72,10 @@ builder.
     -   `encrypted` (boolean) - Indicates whether to encrypt the volume or not
 
     -   `kms_key_id` (string) - The ARN for the KMS encryption key. When
-        specifying `kms_key_id`, `encrypted` needs to be set to `true`.
+        specifying `kms_key_id`, `encrypted` needs to be set to `true`. For valid formats
+        see _KmsKeyId_ in the
+        [AWS API docs - CopyImage](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CopyImage.html).
+
 
     -   `iops` (number) - The number of I/O operations per second (IOPS) that the
         volume supports. See the documentation on
@@ -107,6 +111,11 @@ builder.
 -   `availability_zone` (string) - Destination availability zone to launch
     instance in. Leave this empty to allow Amazon to auto-assign.
 
+-   `block_duration_minutes` (int64) - Requires `spot_price` to
+    be set. The required duration for the Spot Instances (also known as Spot blocks).
+    This value must be a multiple of 60 (60, 120, 180, 240, 300, or 360).
+    You can't specify an Availability Zone group or a launch group if you specify a duration.
+
 -   `custom_endpoint_ec2` (string) - This option is useful if you use a cloud
     provider whose API is compatible with aws EC2. Specify another endpoint
     like this `https://ec2.custom.endpoint.com`.
@@ -132,14 +141,21 @@ builder.
     }
     ```
 
+-   `decode_authorization_messages` (boolean) - Enable automatic decoding of any
+    encoded authorization (error) messages using the `sts:DecodeAuthorizationMessage` API.
+    Note: requires that the effective user/role have permissions to `sts:DecodeAuthorizationMessage`
+    on resource `*`. Default `false`.
+
 -   `ebs_optimized` (boolean) - Mark instance as [EBS
     Optimized](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSOptimized.html).
     Default `false`.
 
 -   `ena_support` (boolean) - Enable enhanced networking (ENA but not SriovNetSupport)
-    on HVM-compatible AMIs. If true, add `ec2:ModifyInstanceAttribute` to your AWS IAM policy.
-    Note: you must make sure enhanced networking is enabled on your instance. See [Amazon's
-    documentation on enabling enhanced networking](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/enhanced-networking.html#enabling_enhanced_networking). Default `false`.
+    on HVM-compatible AMIs. If set, add `ec2:ModifyInstanceAttribute` to your AWS IAM policy.
+    If false, this will disable enhanced networking in the final AMI as opposed to passing
+    the setting through unchanged from the source. Note: you must make sure enhanced
+    networking is enabled on your instance. See [Amazon's documentation on enabling enhanced
+    networking](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/enhanced-networking.html#enabling_enhanced_networking).
 
 -   `enable_t2_unlimited` (boolean) - Enabling T2 Unlimited allows the source
     instance to burst additional CPU beyond its available [CPU Credits]
@@ -193,10 +209,26 @@ builder.
     described above. Note that if this is specified, you must omit the
     `security_group_id`.
 
--   `temporary_security_group_source_cidr` (string) - An IPv4 CIDR block to be authorized
-    access to the instance, when packer is creating a temporary security group.
-    The default is `0.0.0.0/0` (ie, allow any IPv4 source). This is only used
-    when `security_group_id` or `security_group_ids` is not specified.
+-   `security_group_filter` (object) - Filters used to populate the `security_group_ids` field.
+    Example:
+
+    ``` json
+    {
+      "security_group_filter": {
+        "filters": {
+          "tag:Class": "packer"
+        }
+      }
+    }
+    ```
+
+    This selects the SG's with tag `Class` with the value `packer`.
+
+    -   `filters` (map of strings) - filters used to select a `security_group_ids`.
+        Any filter described in the docs for [DescribeSecurityGroups](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeSecurityGroups.html)
+        is valid.
+
+    `security_group_ids` take precedence over this.
 
 -   `shutdown_behavior` (string) - Automatically terminate instances on shutdown
     in case Packer exits ungracefully. Possible values are `stop` and `terminate`.
@@ -239,8 +271,11 @@ builder.
         Any filter described in the docs for [DescribeImages](http://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeImages.html)
         is valid.
 
-    -   `owners` (array of strings) - This scopes the AMIs to certain Amazon account IDs.
-        This is helpful to limit the AMIs to a trusted third party, or to your own account.
+    -   `owners` (array of strings) - Filters the images by their owner. You may
+        specify one or more AWS account IDs, "self" (which will use the account
+        whose credentials you are using to run Packer), or an AWS owner alias:
+        for example, "amazon", "aws-marketplace", or "microsoft".
+        This option is required for security reasons.
 
     -   `most_recent` (boolean) - Selects the newest created image when true.
         This is most useful for selecting a daily distro build.
@@ -299,9 +334,47 @@ builder.
     `subnet-12345def`, where Packer will launch the EC2 instance. This field is
     required if you are using an non-default VPC.
 
+-   `subnet_filter` (object) - Filters used to populate the `subnet_id` field.
+    Example:
+
+    ``` json
+    {
+      "subnet_filter": {
+        "filters": {
+          "tag:Class": "build"
+        },
+        "most_free": true,
+        "random": false
+      }
+    }
+    ```
+
+    This selects the Subnet with tag `Class` with the value `build`,  which has
+    the most free IP addresses.
+    NOTE: This will fail unless *exactly* one Subnet is returned. By using
+    `most_free` or `random` one will be selected from those matching the filter.
+
+    -   `filters` (map of strings) - filters used to select a `subnet_id`.
+        NOTE: This will fail unless *exactly* one Subnet is returned.
+        Any filter described in the docs for [DescribeSubnets](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeSubnets.html)
+        is valid.
+
+    -   `most_free` (boolean) - The Subnet with the most free IPv4 addresses
+        will be used if multiple Subnets matches the filter.
+
+    -   `random` (boolean) - A random Subnet will be used if multiple Subnets
+        matches the filter. `most_free` have precendence over this.
+
+    `subnet_id` take precedence over this.
+
 -   `temporary_key_pair_name` (string) - The name of the temporary key pair
     to generate. By default, Packer generates a name that looks like
     `packer_<UUID>`, where &lt;UUID&gt; is a 36 character unique identifier.
+
+-   `temporary_security_group_source_cidr` (string) - An IPv4 CIDR block to be authorized
+    access to the instance, when packer is creating a temporary security group.
+    The default is `0.0.0.0/0` (i.e., allow any IPv4 source). This is only used
+    when `security_group_id` or `security_group_ids` is not specified.
 
 -   `token` (string) - The access token to use. This is different from the
     access key and secret key. If you're not sure what this is, then you
@@ -319,6 +392,32 @@ builder.
     in order to create a temporary security group within the VPC. Requires `subnet_id`
     to be set. If this field is left blank, Packer will try to get the VPC ID from the
     `subnet_id`.
+
+-   `vpc_filter` (object) - Filters used to populate the `vpc_id` field.
+    Example:
+
+    ``` json
+    {
+      "vpc_filter": {
+        "filters": {
+          "tag:Class": "build",
+          "isDefault": "false",
+          "cidr": "/24"
+        }
+      }
+    }
+    ```
+
+    This selects the VPC with tag `Class` with the value `build`,  which is not the
+    default VPC, and have a IPv4 CIDR block of `/24`.
+    NOTE: This will fail unless *exactly* one VPC is returned.
+
+    -   `filters` (map of strings) - filters used to select a `vpc_id`.
+        NOTE: This will fail unless *exactly* one VPC is returned.
+        Any filter described in the docs for [DescribeVpcs](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeVpcs.html)
+        is valid.
+
+    `vpc_id` take precedence over this.
 
 -   `windows_password_timeout` (string) - The timeout for waiting for a Windows
     password for Windows instances. Defaults to 20 minutes. Example value: `10m`
@@ -387,7 +486,8 @@ You can use this information to access the instance as it is running.
 
 ## Build template data
 
-The available variables are:
+In configuration directives marked as a template engine above, the
+following variables are available:
 
 - `BuildRegion` - The region (for example `eu-central-1`) where Packer is building the AMI.
 - `SourceAMI` - The source AMI ID (for example `ami-a2412fcd`) used to build the AMI.

@@ -1,6 +1,7 @@
 package getter
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -38,20 +39,54 @@ func TestDetect(t *testing.T) {
 			false,
 		},
 		{
+			"git::https://person@someothergit.com/foo/bar",
+			"",
+			"git::https://person@someothergit.com/foo/bar",
+			false,
+		},
+		{
+			"git::https://person@someothergit.com/foo/bar",
+			"/bar",
+			"git::https://person@someothergit.com/foo/bar",
+			false,
+		},
+		{
 			"./foo/archive//*",
 			"/bar",
 			"file:///bar/foo/archive//*",
 			false,
 		},
+
+		// https://github.com/hashicorp/go-getter/pull/124
+		{
+			"git::ssh://git@my.custom.git/dir1/dir2",
+			"",
+			"git::ssh://git@my.custom.git/dir1/dir2",
+			false,
+		},
+		{
+			"git::git@my.custom.git:dir1/dir2",
+			"/foo",
+			"git::ssh://git@my.custom.git/dir1/dir2",
+			false,
+		},
+		{
+			"git::git@my.custom.git:dir1/dir2",
+			"",
+			"git::ssh://git@my.custom.git/dir1/dir2",
+			false,
+		},
 	}
 
 	for i, tc := range cases {
-		output, err := Detect(tc.Input, tc.Pwd, Detectors)
-		if err != nil != tc.Err {
-			t.Fatalf("%d: bad err: %s", i, err)
-		}
-		if output != tc.Output {
-			t.Fatalf("%d: bad output: %s\nexpected: %s", i, output, tc.Output)
-		}
+		t.Run(fmt.Sprintf("%d %s", i, tc.Input), func(t *testing.T) {
+			output, err := Detect(tc.Input, tc.Pwd, Detectors)
+			if err != nil != tc.Err {
+				t.Fatalf("%d: bad err: %s", i, err)
+			}
+			if output != tc.Output {
+				t.Fatalf("%d: bad output: %s\nexpected: %s", i, output, tc.Output)
+			}
+		})
 	}
 }

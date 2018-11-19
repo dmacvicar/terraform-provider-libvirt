@@ -41,6 +41,12 @@ type HttpGetter struct {
 	// Client is the http.Client to use for Get requests.
 	// This defaults to a cleanhttp.DefaultClient if left unset.
 	Client *http.Client
+
+	// Header contains optional request header fields that should be included
+	// with every HTTP request. Note that the zero value of this field is nil,
+	// and as such it needs to be initialized before use, via something like
+	// make(http.Header).
+	Header http.Header
 }
 
 func (g *HttpGetter) ClientMode(u *url.URL) (ClientMode, error) {
@@ -72,10 +78,17 @@ func (g *HttpGetter) Get(dst string, u *url.URL) error {
 	u.RawQuery = q.Encode()
 
 	// Get the URL
-	resp, err := g.Client.Get(u.String())
+	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return err
 	}
+
+	req.Header = g.Header
+	resp, err := g.Client.Do(req)
+	if err != nil {
+		return err
+	}
+
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("bad response code: %d", resp.StatusCode)
@@ -118,10 +131,17 @@ func (g *HttpGetter) GetFile(dst string, u *url.URL) error {
 		g.Client = httpClient
 	}
 
-	resp, err := g.Client.Get(u.String())
+	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return err
 	}
+
+	req.Header = g.Header
+	resp, err := g.Client.Do(req)
+	if err != nil {
+		return err
+	}
+
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("bad response code: %d", resp.StatusCode)

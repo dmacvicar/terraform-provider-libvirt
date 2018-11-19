@@ -10,7 +10,7 @@ func getFakeSasUrl(name string) string {
 	return fmt.Sprintf("SAS-%s", name)
 }
 
-func TestArtifactId(t *testing.T) {
+func TestArtifactIdVHD(t *testing.T) {
 	template := CaptureTemplate{
 		Resources: []CaptureResources{
 			{
@@ -28,12 +28,26 @@ func TestArtifactId(t *testing.T) {
 		},
 	}
 
-	artifact, err := NewArtifact(&template, getFakeSasUrl)
+	artifact, err := NewArtifact(&template, getFakeSasUrl, "Linux")
 	if err != nil {
 		t.Fatalf("err=%s", err)
 	}
 
 	expected := "https://storage.blob.core.windows.net/system/Microsoft.Compute/Images/images/packer-osDisk.4085bb15-3644-4641-b9cd-f575918640b4.vhd"
+
+	result := artifact.Id()
+	if result != expected {
+		t.Fatalf("bad: %s", result)
+	}
+}
+
+func TestArtifactIDManagedImage(t *testing.T) {
+	artifact, err := NewManagedImageArtifact("Linux", "fakeResourceGroup", "fakeName", "fakeLocation", "fakeID")
+	if err != nil {
+		t.Fatalf("err=%s", err)
+	}
+
+	expected := "fakeID"
 
 	result := artifact.Id()
 	if result != expected {
@@ -59,7 +73,7 @@ func TestArtifactString(t *testing.T) {
 		},
 	}
 
-	artifact, err := NewArtifact(&template, getFakeSasUrl)
+	artifact, err := NewArtifact(&template, getFakeSasUrl, "Linux")
 	if err != nil {
 		t.Fatalf("err=%s", err)
 	}
@@ -79,6 +93,9 @@ func TestArtifactString(t *testing.T) {
 	}
 	if !strings.Contains(testSubject, "StorageAccountLocation: southcentralus") {
 		t.Errorf("Expected String() output to contain StorageAccountLocation")
+	}
+	if !strings.Contains(testSubject, "OSType: Linux") {
+		t.Errorf("Expected String() output to contain OSType")
 	}
 }
 
@@ -107,7 +124,7 @@ func TestAdditionalDiskArtifactString(t *testing.T) {
 		},
 	}
 
-	artifact, err := NewArtifact(&template, getFakeSasUrl)
+	artifact, err := NewArtifact(&template, getFakeSasUrl, "Linux")
 	if err != nil {
 		t.Fatalf("err=%s", err)
 	}
@@ -127,6 +144,9 @@ func TestAdditionalDiskArtifactString(t *testing.T) {
 	}
 	if !strings.Contains(testSubject, "StorageAccountLocation: southcentralus") {
 		t.Errorf("Expected String() output to contain StorageAccountLocation")
+	}
+	if !strings.Contains(testSubject, "OSType: Linux") {
+		t.Errorf("Expected String() output to contain OSType")
 	}
 	if !strings.Contains(testSubject, "AdditionalDiskUri (datadisk-1): https://storage.blob.core.windows.net/system/Microsoft.Compute/Images/images/packer-datadisk-1.4085bb15-3644-4641-b9cd-f575918640b4.vhd") {
 		t.Errorf("Expected String() output to contain AdditionalDiskUri")
@@ -154,7 +174,7 @@ func TestArtifactProperties(t *testing.T) {
 		},
 	}
 
-	testSubject, err := NewArtifact(&template, getFakeSasUrl)
+	testSubject, err := NewArtifact(&template, getFakeSasUrl, "Linux")
 	if err != nil {
 		t.Fatalf("err=%s", err)
 	}
@@ -173,6 +193,9 @@ func TestArtifactProperties(t *testing.T) {
 	}
 	if testSubject.StorageAccountLocation != "southcentralus" {
 		t.Errorf("Expected StorageAccountLocation to be 'southcentral', but got %s", testSubject.StorageAccountLocation)
+	}
+	if testSubject.OSType != "Linux" {
+		t.Errorf("Expected OSType to be 'Linux', but got %s", testSubject.OSType)
 	}
 }
 
@@ -201,7 +224,7 @@ func TestAdditionalDiskArtifactProperties(t *testing.T) {
 		},
 	}
 
-	testSubject, err := NewArtifact(&template, getFakeSasUrl)
+	testSubject, err := NewArtifact(&template, getFakeSasUrl, "Linux")
 	if err != nil {
 		t.Fatalf("err=%s", err)
 	}
@@ -220,6 +243,9 @@ func TestAdditionalDiskArtifactProperties(t *testing.T) {
 	}
 	if testSubject.StorageAccountLocation != "southcentralus" {
 		t.Errorf("Expected StorageAccountLocation to be 'southcentral', but got %s", testSubject.StorageAccountLocation)
+	}
+	if testSubject.OSType != "Linux" {
+		t.Errorf("Expected OSType to be 'Linux', but got %s", testSubject.OSType)
 	}
 	if testSubject.AdditionalDisks == nil {
 		t.Errorf("Expected AdditionalDisks to be not nil")
@@ -253,7 +279,7 @@ func TestArtifactOverHyphenatedCaptureUri(t *testing.T) {
 		},
 	}
 
-	testSubject, err := NewArtifact(&template, getFakeSasUrl)
+	testSubject, err := NewArtifact(&template, getFakeSasUrl, "Linux")
 	if err != nil {
 		t.Fatalf("err=%s", err)
 	}
@@ -266,7 +292,7 @@ func TestArtifactOverHyphenatedCaptureUri(t *testing.T) {
 func TestArtifactRejectMalformedTemplates(t *testing.T) {
 	template := CaptureTemplate{}
 
-	_, err := NewArtifact(&template, getFakeSasUrl)
+	_, err := NewArtifact(&template, getFakeSasUrl, "Linux")
 	if err == nil {
 		t.Fatalf("Expected artifact creation to fail, but it succeeded.")
 	}
@@ -289,7 +315,7 @@ func TestArtifactRejectMalformedStorageUri(t *testing.T) {
 		},
 	}
 
-	_, err := NewArtifact(&template, getFakeSasUrl)
+	_, err := NewArtifact(&template, getFakeSasUrl, "Linux")
 	if err == nil {
 		t.Fatalf("Expected artifact creation to fail, but it succeeded.")
 	}

@@ -42,6 +42,11 @@ func (d *driverOCI) CreateInstance(ctx context.Context, publicKey string) (strin
 	metadata := map[string]string{
 		"ssh_authorized_keys": publicKey,
 	}
+	if d.cfg.Metadata != nil {
+		for key, value := range d.cfg.Metadata {
+			metadata[key] = value
+		}
+	}
 	if d.cfg.UserData != "" {
 		metadata["user_data"] = d.cfg.UserData
 	}
@@ -75,6 +80,7 @@ func (d *driverOCI) CreateImage(ctx context.Context, id string) (core.Image, err
 		CompartmentId: &d.cfg.CompartmentID,
 		InstanceId:    &id,
 		DisplayName:   &d.cfg.ImageName,
+		FreeformTags:  d.cfg.Tags,
 	}})
 
 	if err != nil {

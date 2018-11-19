@@ -431,6 +431,7 @@ type DomainInterfaceSourceMCast struct {
 type DomainInterfaceSourceNetwork struct {
 	Network   string `xml:"network,attr,omitempty"`
 	PortGroup string `xml:"portgroup,attr,omitempty"`
+	Bridge    string `xml:"bridge,attr,omitempty"`
 }
 
 type DomainInterfaceSourceBridge struct {
@@ -802,11 +803,17 @@ type DomainAlias struct {
 }
 
 type DomainAddressPCI struct {
-	Domain        *uint  `xml:"domain,attr"`
-	Bus           *uint  `xml:"bus,attr"`
-	Slot          *uint  `xml:"slot,attr"`
-	Function      *uint  `xml:"function,attr"`
-	MultiFunction string `xml:"multifunction,attr,omitempty"`
+	Domain        *uint              `xml:"domain,attr"`
+	Bus           *uint              `xml:"bus,attr"`
+	Slot          *uint              `xml:"slot,attr"`
+	Function      *uint              `xml:"function,attr"`
+	MultiFunction string             `xml:"multifunction,attr,omitempty"`
+	ZPCI          *DomainAddressZPCI `xml:"zpci"`
+}
+
+type DomainAddressZPCI struct {
+	UID *uint `xml:"uid,attr,omitempty"`
+	FID *uint `xml:"fid,attr,omitempty"`
 }
 
 type DomainAddressUSB struct {
@@ -1850,6 +1857,8 @@ type DomainFeatureHyperV struct {
 	Frequencies     *DomainFeatureState           `xml:"frequencies"`
 	ReEnlightenment *DomainFeatureState           `xml:"reenlightenment"`
 	TLBFlush        *DomainFeatureState           `xml:"tlbflush"`
+	IPI             *DomainFeatureState           `xml:"ipi"`
+	EVMCS           *DomainFeatureState           `xml:"evmcs"`
 }
 
 type DomainFeatureKVM struct {
@@ -2001,8 +2010,9 @@ type DomainCPUTuneIOThreadSched struct {
 }
 
 type DomainCPUCacheTune struct {
-	VCPUs string                    `xml:"vcpus,attr,omitempty"`
-	Cache []DomainCPUCacheTuneCache `xml:"cache"`
+	VCPUs   string                      `xml:"vcpus,attr,omitempty"`
+	Cache   []DomainCPUCacheTuneCache   `xml:"cache"`
+	Monitor []DomainCPUCacheTuneMonitor `xml:"monitor"`
 }
 
 type DomainCPUCacheTuneCache struct {
@@ -2011,6 +2021,11 @@ type DomainCPUCacheTuneCache struct {
 	Type  string `xml:"type,attr"`
 	Size  uint   `xml:"size,attr"`
 	Unit  string `xml:"unit,attr"`
+}
+
+type DomainCPUCacheTuneMonitor struct {
+	Level uint   `xml:"level,attr,omitempty"`
+	VCPUs string `xml:"vcpus,attr,omitempty"`
 }
 
 type DomainCPUMemoryTune struct {
@@ -4513,6 +4528,22 @@ func (a *DomainAddressPCI) MarshalXML(e *xml.Encoder, start xml.StartElement) er
 		})
 	}
 	e.EncodeToken(start)
+	if a.ZPCI != nil {
+		zpci := xml.StartElement{}
+		zpci.Name.Local = "zpci"
+		err := e.EncodeElement(a.ZPCI, zpci)
+		if err != nil {
+			return err
+		}
+	}
+	e.EncodeToken(start.End())
+	return nil
+}
+
+func (a *DomainAddressZPCI) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	marshalUintAttr(&start, "uid", a.UID, "0x%04x")
+	marshalUintAttr(&start, "fid", a.FID, "0x%04x")
+	e.EncodeToken(start)
 	e.EncodeToken(start.End())
 	return nil
 }
@@ -4727,6 +4758,43 @@ func (a *DomainAddressPCI) UnmarshalXML(d *xml.Decoder, start xml.StartElement) 
 			a.MultiFunction = attr.Value
 		}
 	}
+
+	for {
+		tok, err := d.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		switch tok := tok.(type) {
+		case xml.StartElement:
+			if tok.Name.Local == "zpci" {
+				a.ZPCI = &DomainAddressZPCI{}
+				err = d.DecodeElement(a.ZPCI, &tok)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (a *DomainAddressZPCI) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	for _, attr := range start.Attr {
+		if attr.Name.Local == "fid" {
+			if err := unmarshalUintAttr(attr.Value, &a.FID, 0); err != nil {
+				return err
+			}
+		} else if attr.Name.Local == "uid" {
+			if err := unmarshalUintAttr(attr.Value, &a.UID, 0); err != nil {
+				return err
+			}
+		}
+	}
+
 	d.Skip()
 	return nil
 }

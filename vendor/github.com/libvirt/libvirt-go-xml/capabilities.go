@@ -168,7 +168,8 @@ type CapsHostIOMMU struct {
 }
 
 type CapsHostCache struct {
-	Banks []CapsHostCacheBank `xml:"bank"`
+	Banks   []CapsHostCacheBank   `xml:"bank"`
+	Monitor *CapsHostCacheMonitor `xml:"monitor"`
 }
 
 type CapsHostCacheBank struct {
@@ -181,6 +182,17 @@ type CapsHostCacheBank struct {
 	Control []CapsHostCacheControl `xml:"control"`
 }
 
+type CapsHostCacheMonitor struct {
+	Level          uint                          `xml:"level,attr,omitempty"`
+	ResueThreshold uint                          `xml:"reuseThreshold,attr,omitempty"`
+	MaxMonitors    uint                          `xml:"maxMonitors,attr"`
+	Features       []CapsHostCacheMonitorFeature `xml:"feature"`
+}
+
+type CapsHostCacheMonitorFeature struct {
+	Name string `xml:"name,attr"`
+}
+
 type CapsHostCacheControl struct {
 	Granularity uint   `xml:"granularity,attr"`
 	Min         uint   `xml:"min,attr,omitempty"`
@@ -190,7 +202,8 @@ type CapsHostCacheControl struct {
 }
 
 type CapsHostMemoryBandwidth struct {
-	Nodes []CapsHostMemoryBandwidthNode `xml:"node"`
+	Nodes   []CapsHostMemoryBandwidthNode   `xml:"node"`
+	Monitor *CapsHostMemoryBandwidthMonitor `xml:"monitor"`
 }
 
 type CapsHostMemoryBandwidthNode struct {
@@ -203,6 +216,15 @@ type CapsHostMemoryBandwidthNodeControl struct {
 	Granularity uint `xml:"granularity,attr"`
 	Min         uint `xml:"min,attr"`
 	MaxAllocs   uint `xml:"maxAllocs,attr"`
+}
+
+type CapsHostMemoryBandwidthMonitor struct {
+	MaxMonitors uint                                    `xml:"maxMonitors,attr"`
+	Features    []CapsHostMemoryBandwidthMonitorFeature `xml:"feature"`
+}
+
+type CapsHostMemoryBandwidthMonitorFeature struct {
+	Name string `xml:"name,attr"`
 }
 
 type CapsGuestMachine struct {

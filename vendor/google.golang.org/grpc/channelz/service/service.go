@@ -22,19 +22,21 @@
 package service
 
 import (
+	"context"
 	"net"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	durpb "github.com/golang/protobuf/ptypes/duration"
 	wrpb "github.com/golang/protobuf/ptypes/wrappers"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	channelzgrpc "google.golang.org/grpc/channelz/grpc_channelz_v1"
 	channelzpb "google.golang.org/grpc/channelz/grpc_channelz_v1"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/internal/channelz"
+	"google.golang.org/grpc/status"
 )
 
 func init() {
@@ -73,6 +75,35 @@ func connectivityStateToProto(s connectivity.State) *channelzpb.ChannelConnectiv
 	}
 }
 
+func channelTraceToProto(ct *channelz.ChannelTrace) *channelzpb.ChannelTrace {
+	pbt := &channelzpb.ChannelTrace{}
+	pbt.NumEventsLogged = ct.EventNum
+	if ts, err := ptypes.TimestampProto(ct.CreationTime); err == nil {
+		pbt.CreationTimestamp = ts
+	}
+	var events []*channelzpb.ChannelTraceEvent
+	for _, e := range ct.Events {
+		cte := &channelzpb.ChannelTraceEvent{
+			Description: e.Desc,
+			Severity:    channelzpb.ChannelTraceEvent_Severity(e.Severity),
+		}
+		if ts, err := ptypes.TimestampProto(e.Timestamp); err == nil {
+			cte.Timestamp = ts
+		}
+		if e.RefID != 0 {
+			switch e.RefType {
+			case channelz.RefChannel:
+				cte.ChildRef = &channelzpb.ChannelTraceEvent_ChannelRef{ChannelRef: &channelzpb.ChannelRef{ChannelId: e.RefID, Name: e.RefName}}
+			case channelz.RefSubChannel:
+				cte.ChildRef = &channelzpb.ChannelTraceEvent_SubchannelRef{SubchannelRef: &channelzpb.SubchannelRef{SubchannelId: e.RefID, Name: e.RefName}}
+			}
+		}
+		events = append(events, cte)
+	}
+	pbt.Events = events
+	return pbt
+}
+
 func channelMetricToProto(cm *channelz.ChannelMetric) *channelzpb.Channel {
 	c := &channelzpb.Channel{}
 	c.Ref = &channelzpb.ChannelRef{ChannelId: cm.ID, Name: cm.RefName}
@@ -104,6 +135,7 @@ func channelMetricToProto(cm *channelz.ChannelMetric) *channelzpb.Channel {
 		sockets = append(sockets, &channelzpb.SocketRef{SocketId: id, Name: ref})
 	}
 	c.SocketRef = sockets
+	c.Data.Trace = channelTraceToProto(cm.Trace)
 	return c
 }
 
@@ -138,6 +170,7 @@ func subChannelMetricToProto(cm *channelz.SubChannelMetric) *channelzpb.Subchann
 		sockets = append(sockets, &channelzpb.SocketRef{SocketId: id, Name: ref})
 	}
 	sc.SocketRef = sockets
+	sc.Data.Trace = channelTraceToProto(cm.Trace)
 	return sc
 }
 
@@ -301,4 +334,8 @@ func (s *serverImpl) GetSocket(ctx context.Context, req *channelzpb.GetSocketReq
 	}
 	resp := &channelzpb.GetSocketResponse{Socket: socketMetricToProto(metric)}
 	return resp, nil
+}
+
+func (s *serverImpl) GetServer(ctx context.Context, req *channelzpb.GetServerRequest) (*channelzpb.GetServerResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "GetServer not implemented")
 }

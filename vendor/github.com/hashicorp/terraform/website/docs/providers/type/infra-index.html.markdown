@@ -17,13 +17,13 @@ and are tested by HashiCorp.
 
 ---
 
-[Atlas](/docs/providers/terraform-enterprise/index.html)
-
 [Chef](/docs/providers/chef/index.html)
 
 [Consul](/docs/providers/consul/index.html)
 
 [Docker](/docs/providers/docker/index.html)
+
+[Helm](/docs/providers/helm/index.html)
 
 [Kubernetes](/docs/providers/kubernetes/index.html)
 
@@ -34,6 +34,8 @@ and are tested by HashiCorp.
 [RabbitMQ](/docs/providers/rabbitmq/index.html)
 
 [Rancher](/docs/providers/rancher/index.html)
+
+[RightScale](/docs/providers/rightscale/index.html)
 
 [Rundeck](/docs/providers/rundeck/index.html)
 

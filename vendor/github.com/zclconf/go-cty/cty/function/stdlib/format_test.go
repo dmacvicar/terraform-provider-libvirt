@@ -520,7 +520,7 @@ func TestFormat(t *testing.T) {
 			cty.NullVal(cty.String),
 			[]cty.Value{cty.NumberIntVal(10)},
 			cty.NilVal,
-			`must not be null`,
+			`argument must not be null`,
 		},
 	}
 

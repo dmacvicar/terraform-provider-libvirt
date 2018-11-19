@@ -40,10 +40,16 @@ func WaitUntilAMIAvailable(ctx aws.Context, conn *ec2.EC2, imageId string) error
 		ImageIds: []*string{&imageId},
 	}
 
+	waitOpts := getWaiterOptions()
+	if len(waitOpts) == 0 {
+		// Bump this default to 30 minutes because the aws default
+		// of ten minutes doesn't work for some of our long-running copies.
+		waitOpts = append(waitOpts, request.WithWaiterMaxAttempts(120))
+	}
 	err := conn.WaitUntilImageAvailableWithContext(
 		ctx,
 		&imageInput,
-		getWaiterOptions()...)
+		waitOpts...)
 	return err
 }
 
@@ -163,6 +169,8 @@ func WaitForVolumeToBeAttached(c *ec2.EC2, ctx aws.Context, input *ec2.DescribeV
 			return req, nil
 		},
 	}
+	w.ApplyOptions(opts...)
+
 	return w.WaitWithContext(ctx)
 }
 
@@ -192,13 +200,15 @@ func WaitForVolumeToBeDetached(c *ec2.EC2, ctx aws.Context, input *ec2.DescribeV
 			return req, nil
 		},
 	}
+	w.ApplyOptions(opts...)
+
 	return w.WaitWithContext(ctx)
 }
 
 func WaitForImageToBeImported(c *ec2.EC2, ctx aws.Context, input *ec2.DescribeImportImageTasksInput, opts ...request.WaiterOption) error {
 	w := request.Waiter{
 		Name:        "DescribeImages",
-		MaxAttempts: 300,
+		MaxAttempts: 720,
 		Delay:       request.ConstantWaiterDelay(5 * time.Second),
 		Acceptors: []request.WaiterAcceptor{
 			{
@@ -206,6 +216,12 @@ func WaitForImageToBeImported(c *ec2.EC2, ctx aws.Context, input *ec2.DescribeIm
 				Matcher:  request.PathAllWaiterMatch,
 				Argument: "ImportImageTasks[].Status",
 				Expected: "completed",
+			},
+			{
+				State:    request.FailureWaiterState,
+				Matcher:  request.PathAnyWaiterMatch,
+				Argument: "ImportImageTasks[].Status",
+				Expected: "deleted",
 			},
 		},
 		Logger: c.Config.Logger,
@@ -221,6 +237,8 @@ func WaitForImageToBeImported(c *ec2.EC2, ctx aws.Context, input *ec2.DescribeIm
 			return req, nil
 		},
 	}
+	w.ApplyOptions(opts...)
+
 	return w.WaitWithContext(ctx)
 }
 
@@ -275,11 +293,11 @@ func getOverride(varInfo envInfo) envInfo {
 	return varInfo
 }
 func getEnvOverrides() overridableWaitVars {
-	// Load env vars from environment, and use them to override defaults
+	// Load env vars from environment.
 	envValues := overridableWaitVars{
 		envInfo{"AWS_POLL_DELAY_SECONDS", 2, false},
 		envInfo{"AWS_MAX_ATTEMPTS", 0, false},
-		envInfo{"AWS_TIMEOUT_SECONDS", 300, false},
+		envInfo{"AWS_TIMEOUT_SECONDS", 0, false},
 	}
 
 	envValues.awsMaxAttempts = getOverride(envValues.awsMaxAttempts)
@@ -324,7 +342,7 @@ func applyEnvOverrides(envOverrides overridableWaitVars) []request.WaiterOption 
 	}
 	if len(waitOpts) == 0 {
 		log.Printf("No AWS timeout and polling overrides have been set. " +
-			"Packer will defalt to waiter-specific delays and timeouts. If you would " +
+			"Packer will default to waiter-specific delays and timeouts. If you would " +
 			"like to customize the length of time between retries and max " +
 			"number of retries you may do so by setting the environment " +
 			"variables AWS_POLL_DELAY_SECONDS and AWS_MAX_ATTEMPTS to your " +
