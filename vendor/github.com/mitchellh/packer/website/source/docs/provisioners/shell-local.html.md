@@ -75,7 +75,7 @@ Optional parameters:
     `"environment_vars": "WINRMPASS={{.WinRMPassword}}"`
 
 -   `execute_command` (array of strings) - The command used to execute the script.
-    By default this is `["/bin/sh", "-c", "{{.Vars}}, "{{.Script}}"]`
+    By default this is `["/bin/sh", "-c", "{{.Vars}}", "{{.Script}}"]`
     on unix and `["cmd", "/c", "{{.Vars}}", "{{.Script}}"]` on windows.
     This is treated as a [template engine](/docs/templates/engine.html).
     There are two available variables: `Script`, which is the path to the script
@@ -107,6 +107,12 @@ Optional parameters:
     you're not using `inline`, then this configuration has no effect.
     **Important:** If you customize this, be sure to include something like the
     `-e` flag, otherwise individual steps failing won't fail the provisioner.
+
+-  `only_on` (array of strings) - This is an array of 
+    [runtime operating systems](https://golang.org/doc/install/source#environment)
+    where `shell-local` will execute. This allows you to execute `shell-local` 
+    *only* on specific operating systems. By default, shell-local will always run 
+    if `only_on` is not set."
 
 -  `use_linux_pathing` (bool) - This is only relevant to windows hosts. If you
    are running Packer in a Windows environment with the Windows Subsystem for
@@ -183,6 +189,13 @@ commonly useful environmental variables:
 -   `PACKER_BUILDER_TYPE` is the type of the builder that was used to create the
     machine that the script is running on. This is useful if you want to run
     only certain parts of the script on systems built with certain builders.
+
+-   `PACKER_HTTP_ADDR` If using a builder that provides an http server for file
+    transfer (such as hyperv, parallels, qemu, virtualbox, and vmware), this
+    will be set to the address. You can use this address in your provisioner to
+    download large files over http. This may be useful if you're experiencing
+    slower speeds using the default file provisioner. A file provisioner using
+    the `winrm` communicator may experience these types of difficulties.
 
 ## Safely Writing A Script
 

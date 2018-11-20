@@ -22,14 +22,14 @@ const DefaultStateName = "default"
 // This must be returned rather than a custom error so that the Terraform
 // CLI can detect it and handle it appropriately.
 var (
+	// ErrDefaultStateNotSupported is returned when an operation does not support
+	// using the default state, but requires a named state to be selected.
+	ErrDefaultStateNotSupported = errors.New("default state not supported\n" +
+		"You can create a new workspace with the \"workspace new\" command.")
+
 	// ErrNamedStatesNotSupported is returned when a named state operation
 	// isn't supported.
 	ErrNamedStatesNotSupported = errors.New("named states not supported")
-
-	// ErrDefaultStateNotSupported is returned when an operation does not support
-	// using the default state, but requires a named state to be selected.
-	ErrDefaultStateNotSupported = errors.New("default state not supported\n\n" +
-		"You can create a new workspace wth the \"workspace new\" command")
 
 	// ErrOperationNotSupported is returned when an unsupported operation
 	// is detected by the configured backend.
@@ -137,11 +137,17 @@ type Operation struct {
 
 	// The options below are more self-explanatory and affect the runtime
 	// behavior of the operation.
-	Destroy      bool
-	Targets      []string
-	Variables    map[string]interface{}
 	AutoApprove  bool
+	Destroy      bool
 	DestroyForce bool
+	ModuleDepth  int
+	Parallelism  int
+	Targets      []string
+
+	// Variables should only contain any variables passed as command
+	// arguments and not any variables read from the terraform.tfvars
+	// or *.auto.tfvars files.
+	Variables map[string]interface{}
 
 	// Input/output/control options.
 	UIIn  terraform.UIInput
@@ -166,7 +172,7 @@ type Operation struct {
 // RunningOperation is the result of starting an operation.
 type RunningOperation struct {
 	// For implementers of a backend, this context should not wrap the
-	// passed in context. Otherwise, canceling the parent context will
+	// passed in context. Otherwise, cancelling the parent context will
 	// immediately mark this context as "done" but those aren't the semantics
 	// we want: we want this context to be done only when the operation itself
 	// is fully done.
@@ -185,6 +191,10 @@ type RunningOperation struct {
 	// Err is the error of the operation. This is populated after
 	// the operation has completed.
 	Err error
+
+	// ExitCode can be used to set a custom exit code. This enables enhanced
+	// backends to set specific exit codes that miror any remote exit codes.
+	ExitCode int
 
 	// PlanEmpty is populated after a Plan operation completes without error
 	// to note whether a plan is empty or has changes.

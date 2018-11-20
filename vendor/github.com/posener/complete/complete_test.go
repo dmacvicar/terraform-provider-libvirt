@@ -2,14 +2,15 @@ package complete
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 )
 
 func TestCompleter_Complete(t *testing.T) {
-	t.Parallel()
 	initTests()
 
 	c := Command{
@@ -39,166 +40,229 @@ func TestCompleter_Complete(t *testing.T) {
 	cmp := New("cmd", c)
 
 	tests := []struct {
-		args string
-		want []string
+		line  string
+		point int // -1 indicates len(line)
+		want  []string
 	}{
 		{
-			args: "",
-			want: []string{"sub1", "sub2"},
+			line:  "cmd ",
+			point: -1,
+			want:  []string{"sub1", "sub2"},
 		},
 		{
-			args: "-",
-			want: []string{"-h", "-global1", "-o"},
+			line:  "cmd -",
+			point: -1,
+			want:  []string{"-h", "-global1", "-o"},
 		},
 		{
-			args: "-h ",
-			want: []string{"sub1", "sub2"},
+			line:  "cmd -h ",
+			point: -1,
+			want:  []string{"sub1", "sub2"},
 		},
 		{
-			args: "-global1 ", // global1 is known follow flag
-			want: []string{},
+			line:  "cmd -global1 ", // global1 is known follow flag
+			point: -1,
+			want:  []string{},
 		},
 		{
-			args: "sub",
-			want: []string{"sub1", "sub2"},
+			line:  "cmd sub",
+			point: -1,
+			want:  []string{"sub1", "sub2"},
 		},
 		{
-			args: "sub1",
-			want: []string{"sub1"},
+			line:  "cmd sub1",
+			point: -1,
+			want:  []string{"sub1"},
 		},
 		{
-			args: "sub2",
-			want: []string{"sub2"},
+			line:  "cmd sub2",
+			point: -1,
+			want:  []string{"sub2"},
 		},
 		{
-			args: "sub1 ",
-			want: []string{},
+			line:  "cmd sub1 ",
+			point: -1,
+			want:  []string{},
 		},
 		{
-			args: "sub1 -",
-			want: []string{"-flag1", "-flag2", "-h", "-global1"},
+			line:  "cmd sub1 -",
+			point: -1,
+			want:  []string{"-flag1", "-flag2", "-h", "-global1"},
 		},
 		{
-			args: "sub2 ",
-			want: []string{"./", "dir/", "outer/", "readme.md"},
+			line:  "cmd sub2 ",
+			point: -1,
+			want:  []string{"./", "dir/", "outer/", "readme.md"},
 		},
 		{
-			args: "sub2 ./",
-			want: []string{"./", "./readme.md", "./dir/", "./outer/"},
+			line:  "cmd sub2 ./",
+			point: -1,
+			want:  []string{"./", "./readme.md", "./dir/", "./outer/"},
 		},
 		{
-			args: "sub2 re",
-			want: []string{"readme.md"},
+			line:  "cmd sub2 re",
+			point: -1,
+			want:  []string{"readme.md"},
 		},
 		{
-			args: "sub2 ./re",
-			want: []string{"./readme.md"},
+			line:  "cmd sub2 ./re",
+			point: -1,
+			want:  []string{"./readme.md"},
 		},
 		{
-			args: "sub2 -flag2 ",
-			want: []string{"./", "dir/", "outer/", "readme.md"},
+			line:  "cmd sub2 -flag2 ",
+			point: -1,
+			want:  []string{"./", "dir/", "outer/", "readme.md"},
 		},
 		{
-			args: "sub1 -fl",
-			want: []string{"-flag1", "-flag2"},
+			line:  "cmd sub1 -fl",
+			point: -1,
+			want:  []string{"-flag1", "-flag2"},
 		},
 		{
-			args: "sub1 -flag1",
-			want: []string{"-flag1"},
+			line:  "cmd sub1 -flag1",
+			point: -1,
+			want:  []string{"-flag1"},
 		},
 		{
-			args: "sub1 -flag1 ",
-			want: []string{}, // flag1 is unknown follow flag
+			line:  "cmd sub1 -flag1 ",
+			point: -1,
+			want:  []string{}, // flag1 is unknown follow flag
 		},
 		{
-			args: "sub1 -flag2 -",
-			want: []string{"-flag1", "-flag2", "-h", "-global1"},
+			line:  "cmd sub1 -flag2 -",
+			point: -1,
+			want:  []string{"-flag1", "-flag2", "-h", "-global1"},
 		},
 		{
-			args: "-no-such-flag",
-			want: []string{},
+			line:  "cmd -no-such-flag",
+			point: -1,
+			want:  []string{},
 		},
 		{
-			args: "-no-such-flag ",
-			want: []string{"sub1", "sub2"},
+			line:  "cmd -no-such-flag ",
+			point: -1,
+			want:  []string{"sub1", "sub2"},
 		},
 		{
-			args: "-no-such-flag -",
-			want: []string{"-h", "-global1", "-o"},
+			line:  "cmd -no-such-flag -",
+			point: -1,
+			want:  []string{"-h", "-global1", "-o"},
 		},
 		{
-			args: "no-such-command",
-			want: []string{},
+			line:  "cmd no-such-command",
+			point: -1,
+			want:  []string{},
 		},
 		{
-			args: "no-such-command ",
-			want: []string{"sub1", "sub2"},
+			line:  "cmd no-such-command ",
+			point: -1,
+			want:  []string{"sub1", "sub2"},
 		},
 		{
-			args: "-o ",
-			want: []string{"a.txt", "b.txt", "c.txt", ".dot.txt", "./", "dir/", "outer/"},
+			line:  "cmd -o ",
+			point: -1,
+			want:  []string{"a.txt", "b.txt", "c.txt", ".dot.txt", "./", "dir/", "outer/"},
 		},
 		{
-			args: "-o ./no-su",
-			want: []string{},
+			line:  "cmd -o ./no-su",
+			point: -1,
+			want:  []string{},
 		},
 		{
-			args: "-o ./",
-			want: []string{"./a.txt", "./b.txt", "./c.txt", "./.dot.txt", "./", "./dir/", "./outer/"},
+			line:  "cmd -o ./",
+			point: -1,
+			want:  []string{"./a.txt", "./b.txt", "./c.txt", "./.dot.txt", "./", "./dir/", "./outer/"},
 		},
 		{
-			args: "-o=./",
-			want: []string{"./a.txt", "./b.txt", "./c.txt", "./.dot.txt", "./", "./dir/", "./outer/"},
+			line:  "cmd -o=./",
+			point: -1,
+			want:  []string{"./a.txt", "./b.txt", "./c.txt", "./.dot.txt", "./", "./dir/", "./outer/"},
 		},
 		{
-			args: "-o .",
-			want: []string{"./a.txt", "./b.txt", "./c.txt", "./.dot.txt", "./", "./dir/", "./outer/"},
+			line:  "cmd -o .",
+			point: -1,
+			want:  []string{"./a.txt", "./b.txt", "./c.txt", "./.dot.txt", "./", "./dir/", "./outer/"},
 		},
 		{
-			args: "-o ./b",
-			want: []string{"./b.txt"},
+			line:  "cmd -o ./b",
+			point: -1,
+			want:  []string{"./b.txt"},
 		},
 		{
-			args: "-o=./b",
-			want: []string{"./b.txt"},
+			line:  "cmd -o=./b",
+			point: -1,
+			want:  []string{"./b.txt"},
 		},
 		{
-			args: "-o ./read",
-			want: []string{},
+			line:  "cmd -o ./read",
+			point: -1,
+			want:  []string{},
 		},
 		{
-			args: "-o=./read",
-			want: []string{},
+			line:  "cmd -o=./read",
+			point: -1,
+			want:  []string{},
 		},
 		{
-			args: "-o ./readme.md",
-			want: []string{},
+			line:  "cmd -o ./readme.md",
+			point: -1,
+			want:  []string{},
 		},
 		{
-			args: "-o ./readme.md ",
-			want: []string{"sub1", "sub2"},
+			line:  "cmd -o ./readme.md ",
+			point: -1,
+			want:  []string{"sub1", "sub2"},
 		},
 		{
-			args: "-o=./readme.md ",
-			want: []string{"sub1", "sub2"},
+			line:  "cmd -o=./readme.md ",
+			point: -1,
+			want:  []string{"sub1", "sub2"},
 		},
 		{
-			args: "-o sub2 -flag3 ",
-			want: []string{"opt1", "opt2", "opt12"},
+			line:  "cmd -o sub2 -flag3 ",
+			point: -1,
+			want:  []string{"opt1", "opt2", "opt12"},
 		},
 		{
-			args: "-o sub2 -flag3 opt1",
-			want: []string{"opt1", "opt12"},
+			line:  "cmd -o sub2 -flag3 opt1",
+			point: -1,
+			want:  []string{"opt1", "opt12"},
 		},
 		{
-			args: "-o sub2 -flag3 opt",
-			want: []string{"opt1", "opt2", "opt12"},
+			line:  "cmd -o sub2 -flag3 opt",
+			point: -1,
+			want:  []string{"opt1", "opt2", "opt12"},
+		},
+		{
+			line: "cmd -o ./b foo",
+			//               ^
+			point: 10,
+			want:  []string{"./b.txt"},
+		},
+		{
+			line: "cmd -o=./b foo",
+			//               ^
+			point: 10,
+			want:  []string{"./b.txt"},
+		},
+		{
+			line: "cmd -o sub2 -flag3 optfoo",
+			//                           ^
+			point: 22,
+			want:  []string{"opt1", "opt2", "opt12"},
+		},
+		{
+			line: "cmd -o ",
+			//         ^
+			point: 4,
+			want:  []string{"sub1", "sub2"},
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.args, func(t *testing.T) {
-			got := runComplete(cmp, tt.args)
+		t.Run(fmt.Sprintf("%s@%d", tt.line, tt.point), func(t *testing.T) {
+			got := runComplete(cmp, tt.line, tt.point)
 
 			sort.Strings(tt.want)
 			sort.Strings(got)
@@ -211,7 +275,6 @@ func TestCompleter_Complete(t *testing.T) {
 }
 
 func TestCompleter_Complete_SharedPrefix(t *testing.T) {
-	t.Parallel()
 	initTests()
 
 	c := Command{
@@ -243,42 +306,50 @@ func TestCompleter_Complete_SharedPrefix(t *testing.T) {
 	cmp := New("cmd", c)
 
 	tests := []struct {
-		args string
-		want []string
+		line  string
+		point int // -1 indicates len(line)
+		want  []string
 	}{
 		{
-			args: "",
-			want: []string{"status", "job"},
+			line:  "cmd ",
+			point: -1,
+			want:  []string{"status", "job"},
 		},
 		{
-			args: "-",
-			want: []string{"-h", "-global1", "-o"},
+			line:  "cmd -",
+			point: -1,
+			want:  []string{"-h", "-global1", "-o"},
 		},
 		{
-			args: "j",
-			want: []string{"job"},
+			line:  "cmd j",
+			point: -1,
+			want:  []string{"job"},
 		},
 		{
-			args: "job ",
-			want: []string{"status"},
+			line:  "cmd job ",
+			point: -1,
+			want:  []string{"status"},
 		},
 		{
-			args: "job -",
-			want: []string{"-h", "-global1"},
+			line:  "cmd job -",
+			point: -1,
+			want:  []string{"-h", "-global1"},
 		},
 		{
-			args: "job status ",
-			want: []string{},
+			line:  "cmd job status ",
+			point: -1,
+			want:  []string{},
 		},
 		{
-			args: "job status -",
-			want: []string{"-f4", "-h", "-global1"},
+			line:  "cmd job status -",
+			point: -1,
+			want:  []string{"-f4", "-h", "-global1"},
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.args, func(t *testing.T) {
-			got := runComplete(cmp, tt.args)
+		t.Run(tt.line, func(t *testing.T) {
+			got := runComplete(cmp, tt.line, tt.point)
 
 			sort.Strings(tt.want)
 			sort.Strings(got)
@@ -293,8 +364,12 @@ func TestCompleter_Complete_SharedPrefix(t *testing.T) {
 // runComplete runs the complete login for test purposes
 // it gets the complete struct and command line arguments and returns
 // the complete options
-func runComplete(c *Complete, args string) (completions []string) {
-	os.Setenv(envComplete, "cmd "+args)
+func runComplete(c *Complete, line string, point int) (completions []string) {
+	if point == -1 {
+		point = len(line)
+	}
+	os.Setenv(envLine, line)
+	os.Setenv(envPoint, strconv.Itoa(point))
 	b := bytes.NewBuffer(nil)
 	c.Out = b
 	c.Complete()

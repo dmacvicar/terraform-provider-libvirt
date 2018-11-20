@@ -19,14 +19,15 @@
 package grpc
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"math"
 	"net"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
@@ -133,11 +134,11 @@ func TestDialWithMultipleBackendsNotSendingServerPreface(t *testing.T) {
 
 func TestDialWaitsForServerSettings(t *testing.T) {
 	defer leakcheck.Check(t)
-	server, err := net.Listen("tcp", "localhost:0")
+	lis, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		t.Fatalf("Error while listening. Err: %v", err)
 	}
-	defer server.Close()
+	defer lis.Close()
 	done := make(chan struct{})
 	sent := make(chan struct{})
 	dialDone := make(chan struct{})
@@ -145,7 +146,7 @@ func TestDialWaitsForServerSettings(t *testing.T) {
 		defer func() {
 			close(done)
 		}()
-		conn, err := server.Accept()
+		conn, err := lis.Accept()
 		if err != nil {
 			t.Errorf("Error while accepting. Err: %v", err)
 			return
@@ -164,10 +165,9 @@ func TestDialWaitsForServerSettings(t *testing.T) {
 	}()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := DialContext(ctx, server.Addr().String(), WithInsecure(), WithWaitForHandshake(), WithBlock())
+	client, err := DialContext(ctx, lis.Addr().String(), WithInsecure(), WithWaitForHandshake(), WithBlock())
 	close(dialDone)
 	if err != nil {
-		cancel()
 		t.Fatalf("Error while dialing. Err: %v", err)
 	}
 	defer client.Close()
@@ -180,16 +180,53 @@ func TestDialWaitsForServerSettings(t *testing.T) {
 
 }
 
+func TestDialWaitsForServerSettingsAndFails(t *testing.T) {
+	defer leakcheck.Check(t)
+	lis, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		t.Fatalf("Error while listening. Err: %v", err)
+	}
+	done := make(chan struct{})
+	numConns := 0
+	go func() { // Launch the server.
+		defer func() {
+			close(done)
+		}()
+		for {
+			conn, err := lis.Accept()
+			if err != nil {
+				break
+			}
+			numConns++
+			defer conn.Close()
+		}
+	}()
+	getMinConnectTimeout = func() time.Duration { return time.Second / 2 }
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	client, err := DialContext(ctx, lis.Addr().String(), WithInsecure(), WithWaitForHandshake(), WithBlock())
+	lis.Close()
+	if err == nil {
+		client.Close()
+		t.Fatalf("Unexpected success (err=nil) while dialing")
+	}
+	if err != context.DeadlineExceeded {
+		t.Fatalf("DialContext(_) = %v; want context.DeadlineExceeded", err)
+	}
+	if numConns < 2 {
+		t.Fatalf("dial attempts: %v; want > 1", numConns)
+	}
+	<-done
+}
+
 func TestCloseConnectionWhenServerPrefaceNotReceived(t *testing.T) {
 	// 1. Client connects to a server that doesn't send preface.
 	// 2. After minConnectTimeout(500 ms here), client disconnects and retries.
 	// 3. The new server sends its preface.
 	// 4. Client doesn't kill the connection this time.
 	mctBkp := getMinConnectTimeout()
-	// Call this only after transportMonitor goroutine has ended.
 	defer func() {
 		atomic.StoreInt64((*int64)(&mutableMinConnectTimeout), int64(mctBkp))
-
 	}()
 	defer leakcheck.Check(t)
 	atomic.StoreInt64((*int64)(&mutableMinConnectTimeout), int64(time.Millisecond)*500)
@@ -266,17 +303,17 @@ func TestCloseConnectionWhenServerPrefaceNotReceived(t *testing.T) {
 
 func TestBackoffWhenNoServerPrefaceReceived(t *testing.T) {
 	defer leakcheck.Check(t)
-	server, err := net.Listen("tcp", "localhost:0")
+	lis, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		t.Fatalf("Error while listening. Err: %v", err)
 	}
-	defer server.Close()
+	defer lis.Close()
 	done := make(chan struct{})
 	go func() { // Launch the server.
 		defer func() {
 			close(done)
 		}()
-		conn, err := server.Accept() // Accept the connection only to close it immediately.
+		conn, err := lis.Accept() // Accept the connection only to close it immediately.
 		if err != nil {
 			t.Errorf("Error while accepting. Err: %v", err)
 			return
@@ -286,7 +323,7 @@ func TestBackoffWhenNoServerPrefaceReceived(t *testing.T) {
 		var prevDuration time.Duration
 		// Make sure the retry attempts are backed off properly.
 		for i := 0; i < 3; i++ {
-			conn, err := server.Accept()
+			conn, err := lis.Accept()
 			if err != nil {
 				t.Errorf("Error while accepting. Err: %v", err)
 				return
@@ -302,7 +339,7 @@ func TestBackoffWhenNoServerPrefaceReceived(t *testing.T) {
 			prevAt = meow
 		}
 	}()
-	client, err := Dial(server.Addr().String(), WithInsecure())
+	client, err := Dial(lis.Addr().String(), WithInsecure())
 	if err != nil {
 		t.Fatalf("Error while dialing. Err: %v", err)
 	}
@@ -637,6 +674,22 @@ func TestResolverServiceConfigBeforeAddressNotPanic(t *testing.T) {
 	time.Sleep(time.Second) // Sleep to make sure the service config is handled by ClientConn.
 }
 
+func TestResolverServiceConfigWhileClosingNotPanic(t *testing.T) {
+	defer leakcheck.Check(t)
+	for i := 0; i < 10; i++ { // Run this multiple times to make sure it doesn't panic.
+		r, rcleanup := manual.GenerateAndRegisterManualResolver()
+		defer rcleanup()
+
+		cc, err := Dial(r.Scheme()+":///test.server", WithInsecure())
+		if err != nil {
+			t.Fatalf("failed to dial: %v", err)
+		}
+		// Send a new service config while closing the ClientConn.
+		go cc.Close()
+		go r.NewServiceConfig(`{"loadBalancingPolicy": "round_robin"}`) // This should not panic.
+	}
+}
+
 func TestResolverEmptyUpdateNotPanic(t *testing.T) {
 	defer leakcheck.Check(t)
 	r, rcleanup := manual.GenerateAndRegisterManualResolver()
@@ -731,6 +784,12 @@ func (b backoffForever) Backoff(int) time.Duration { return time.Duration(math.M
 func TestResetConnectBackoff(t *testing.T) {
 	defer leakcheck.Check(t)
 	dials := make(chan struct{})
+	defer func() { // If we fail, let the http2client break out of dialing.
+		select {
+		case <-dials:
+		default:
+		}
+	}()
 	dialer := func(string, time.Duration) (net.Conn, error) {
 		dials <- struct{}{}
 		return nil, errors.New("failed to fake dial")
@@ -759,4 +818,19 @@ func TestResetConnectBackoff(t *testing.T) {
 	case <-time.NewTimer(10 * time.Second).C:
 		t.Fatal("Failed to call dial within 10s after resetting backoff")
 	}
+}
+
+func TestBackoffCancel(t *testing.T) {
+	defer leakcheck.Check(t)
+	dialStrCh := make(chan string)
+	cc, err := Dial("any", WithInsecure(), WithDialer(func(t string, _ time.Duration) (net.Conn, error) {
+		dialStrCh <- t
+		return nil, fmt.Errorf("test dialer, always error")
+	}))
+	if err != nil {
+		t.Fatalf("Failed to create ClientConn: %v", err)
+	}
+	<-dialStrCh
+	cc.Close()
+	// Should not leak. May need -count 5000 to exercise.
 }

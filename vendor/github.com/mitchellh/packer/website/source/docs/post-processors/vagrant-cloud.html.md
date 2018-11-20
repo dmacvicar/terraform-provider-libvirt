@@ -15,8 +15,9 @@ Type: `vagrant-cloud`
 
 The Packer Vagrant Cloud post-processor receives a Vagrant box from the
 `vagrant` post-processor and pushes it to Vagrant Cloud. [Vagrant
-Cloud](https://atlas.hashicorp.com) hosts and serves boxes to Vagrant, allowing you
-to version and distribute boxes to an organization in a simple way.
+Cloud](https://app.vagrantup.com/boxes/search) hosts and serves boxes to
+Vagrant, allowing you to version and distribute boxes to an organization in
+a simple way.
 
 You'll need to be familiar with Vagrant Cloud, have an upgraded account to
 enable box hosting, and be distributing your box via the [shorthand
@@ -58,7 +59,8 @@ on Vagrant Cloud, as well as authentication and version information.
     if nothing is found, finally `ATLAS_TOKEN` will be used.
 
 -   `box_tag` (string) - The shorthand tag for your box that maps to Vagrant
-    Cloud, i.e `hashicorp/precise64` for `vagrantcloud.com/hashicorp/precise64`
+    Cloud, for example `hashicorp/precise64`, which is short for
+    `vagrantcloud.com/hashicorp/precise64`.
 
 -   `version` (string) - The version number, typically incrementing a
     previous version. The version string is validated based on [Semantic

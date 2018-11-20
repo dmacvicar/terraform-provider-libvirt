@@ -13,10 +13,14 @@ Type: `googlecompute`
 
 The `googlecompute` Packer builder is able to create
 [images](https://developers.google.com/compute/docs/images) for use with [Google
-Compute Engine](https://cloud.google.com/products/compute-engine)(GCE) based on
-existing images. Building GCE images from scratch is not possible from Packer at
-this time. For building images from scratch, please see
-[Building GCE Images from Scratch](https://cloud.google.com/compute/docs/tutorials/building-images).
+Compute Engine](https://cloud.google.com/products/compute-engine) (GCE) based on
+existing images.
+
+It is possible to build images from scratch, but not with the `googlecompute` Packer builder.
+The process is recommended only for advanced users, please see [Building GCE Images from Scratch]
+(https://cloud.google.com/compute/docs/tutorials/building-images)
+and the [Google Compute Import Post-Processor](/docs/post-processors/googlecompute-import.html)
+for more information.
 
 ## Authentication
 
@@ -68,20 +72,23 @@ straightforwarded, it is documented here.
 
 3.  Click the "Create credentials" button, select "Service account key"
 
-4.  Create new service account that at least has `Compute Engine Instance Admin (v1)` and `Service Account User` roles.
+4.  Create a new service account that at least has `Compute Engine Instance Admin (v1)` and `Service Account User` roles.
 
-5.  Choose `JSON` as Key type and click "Create".
+5.  Choose `JSON` as the Key type and click "Create".
     A JSON file will be downloaded automatically. This is your *account file*.
 
 ### Precedence of Authentication Methods
 
-Packer looks for credentials in the following places, preferring the first location found:
+Packer looks for credentials in the following places, preferring the first
+location found:
 
-1.  A `account_file` option in your packer file.
+1.  An `account_file` option in your packer file.
 
-2.  A JSON file (Service Account) whose path is specified by the `GOOGLE_APPLICATION_CREDENTIALS` environment variable.
+2.  A JSON file (Service Account) whose path is specified by the
+`GOOGLE_APPLICATION_CREDENTIALS` environment variable.
 
-3.  A JSON file in a location known to the `gcloud` command-line tool. (`gcloud` creates it when it's configured)
+3.  A JSON file in a location known to the `gcloud` command-line tool.
+(`gcloud` creates it when it's configured)
 
     On Windows, this is:
 
@@ -91,16 +98,18 @@ Packer looks for credentials in the following places, preferring the first locat
 
         $HOME/.config/gcloud/application_default_credentials.json
 
-4.  On Google Compute Engine and Google App Engine Managed VMs, it fetches credentials from the metadata server. (Needs a correct VM authentication scope configuration, see above)
+4.  On Google Compute Engine and Google App Engine Managed VMs, it fetches
+credentials from the metadata server. (Needs a correct VM authentication scope
+configuration, see above.)
 
 ## Examples
 
 ### Basic Example
 
-Below is a fully functioning example. It doesn't do anything useful, since no
+Below is a fully functioning example. It doesn't do anything useful since no
 provisioners or startup-script metadata are defined, but it will effectively
 repackage an existing GCE image. The account\_file is obtained in the previous
-section. If it parses as JSON it is assumed to be the file itself, otherwise it
+section. If it parses as JSON it is assumed to be the file itself, otherwise, it
 is assumed to be the path to the file containing the JSON.
 
 ``` json
@@ -120,14 +129,18 @@ is assumed to be the path to the file containing the JSON.
 
 ### Windows Example
 
-Before you can provision using the winrm communicator, you need to navigate to
-https://console.cloud.google.com/networking/firewalls/list to allow traffic
+Before you can provision using the winrm communicator, you need to allow traffic
 through google's firewall on the winrm port (tcp:5986).
+You can do so using the gcloud command.
+```
+gcloud compute firewall-rules create allow-winrm --allow tcp:5986
+```
+Or alternatively by navigating to https://console.cloud.google.com/networking/firewalls/list.
 
 Once this is set up, the following is a complete working packer config after
 setting a valid `account_file` and `project_id`:
 
-``` {.json}
+``` json
 {
   "builders": [
     {
@@ -149,6 +162,7 @@ setting a valid `account_file` and `project_id`:
   ]
 }
 ```
+This build can take up to 15 min.
 
 ### Nested Hypervisor Example
 
@@ -203,7 +217,7 @@ builder.
 
 -   `account_file` (string) - The JSON file containing your account credentials.
     Not required if you run Packer on a GCE instance with a service account.
-    Instructions for creating file or using service accounts are above.
+    Instructions for creating the file or using service accounts are above.
 
 -   `accelerator_count` (number) - Number of guest accelerator cards to add to the launched instance.
 
@@ -251,6 +265,10 @@ builder.
 -   `metadata` (object of key/value strings) - Metadata applied to the launched
     instance.
 
+-   `min_cpu_platform` (string) - A Minimum CPU Platform for VM Instance.
+    Availability and default CPU platforms vary across zones, based on 
+    the hardware available in each GCP zone. [Details](https://cloud.google.com/compute/docs/instances/specify-min-cpu-platform)
+
 -   `network` (string) - The Google Compute network id or URL to use for the
     launched instance. Defaults to `"default"`. If the value is not a URL, it
     will be interpolated to `projects/((network_project_id))/global/networks/((network))`.
@@ -273,7 +291,7 @@ builder.
 -   `preemptible` (boolean) - If true, launch a preemptible instance.
 
 -   `region` (string) - The region in which to launch the instance. Defaults to
-    to the region hosting the specified `zone`.
+    the region hosting the specified `zone`.
 
 -   `service_account_email` (string) - The service account to be used for launched instance. Defaults to
     the project's default service account unless `disable_default_service_account` is true.
@@ -292,7 +310,7 @@ builder.
 -   `source_image_project_id` (string) - The project ID of the
     project containing the source image.
 
--   `startup_script_file` (string) - The filepath to a startup script to run on
+-   `startup_script_file` (string) - The path to a startup script to run on
     the VM from which the image will be made.
 
 -   `state_timeout` (string) - The time to wait for instance state changes.
@@ -305,7 +323,8 @@ builder.
     will be interpolated to `projects/((network_project_id))/regions/((region))/subnetworks/((subnetwork))`
 
 
--   `tags` (array of strings)
+-   `tags` (array of strings) - Assign network tags to apply firewall rules to
+    VM instance.
 
 -   `use_internal_ip` (boolean) - If true, use the instance's internal IP
     instead of its external IP during building.
@@ -314,9 +333,9 @@ builder.
 
 Startup scripts can be a powerful tool for configuring the instance from which the image is made.
 The builder will wait for a startup script to terminate. A startup script can be provided via the
-`startup_script_file` or 'startup-script' instance creation `metadata` field. Therefore, the build
+`startup_script_file` or `startup-script` instance creation `metadata` field. Therefore, the build
 time will vary depending on the duration of the startup script. If `startup_script_file` is set,
-the 'startup-script' `metadata` field will be overwritten. In other words,`startup_script_file`
+the `startup-script` `metadata` field will be overwritten. In other words, `startup_script_file`
 takes precedence.
 
 The builder does not check for a pass/fail/error signal from the startup script, at this time. Until
@@ -325,14 +344,14 @@ when a startup script fails.
 
 ### Windows
 
-A Windows startup script can only be provided via the 'windows-startup-script-cmd' instance
-creation `metadata` field. The builder will *not* wait for a Windows startup scripts to
+A Windows startup script can only be provided via the `windows-startup-script-cmd` instance
+creation `metadata` field. The builder will *not* wait for a Windows startup script to
 terminate. You have to ensure that it finishes before the instance shuts down.
 
 ### Logging
 
 Startup script logs can be copied to a Google Cloud Storage (GCS) location specified via the
-'startup-script-log-dest' instance creation `metadata` field. The GCS location must be writeable by
+`startup-script-log-dest` instance creation `metadata` field. The GCS location must be writeable by
 the credentials provided in the builder config's `account_file`.
 
 ## Gotchas

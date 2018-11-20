@@ -83,7 +83,7 @@ Optional:
 
 -   `s3_key_name` (string) - The name of the key in `s3_bucket_name` where the
     OVA file will be copied to for import. If not specified, this will default
-    to "packer-import-{{timestamp}}.ova". This key (ie, the uploaded OVA) will
+    to "packer-import-{{timestamp}}.ova". This key (i.e., the uploaded OVA) will
     be removed after import, unless `skip_clean` is `true`.
 
 -   `skip_clean` (boolean) - Whether we should skip removing the OVA file uploaded to S3 after the
@@ -157,7 +157,9 @@ max retries or find yourself being rate limited, you can override the max
 retries and the delay in between retries by setting the environment variables
  `AWS_MAX_ATTEMPTS` and `AWS_POLL_DELAY_SECONDS` on the machine running the
  Packer build. By default, the waiter that waits for your image to be imported
- from s3 waits retries up to 300 times with a 5 second delay in between retries.
+ from s3 will retry for up to an hour: it retries up to 720 times with a 5
+ second delay in between retries.
+
  This is dramatically higher than many of our other waiters, to account for how
  long this process can take.
 

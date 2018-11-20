@@ -174,9 +174,12 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			&communicator.StepConnectSSH{
 				Config:    &b.config.Comm,
 				Host:      lin.SSHHost,
-				SSHConfig: lin.SSHConfig(b.config.UserName),
+				SSHConfig: b.config.Comm.SSHConfigFunc(),
 			},
 			&packerCommon.StepProvision{},
+			&packerCommon.StepCleanupTempKeys{
+				Comm: &b.config.Comm,
+			},
 			NewStepGetOSDisk(azureClient, ui),
 			NewStepGetAdditionalDisks(azureClient, ui),
 			NewStepPowerOffCompute(azureClient, ui),
@@ -229,7 +232,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		ui.Message(fmt.Sprintf("temp admin user: '%s'", b.config.UserName))
 		ui.Message(fmt.Sprintf("temp admin password: '%s'", b.config.Password))
 
-		if b.config.sshPrivateKey != "" {
+		if len(b.config.Comm.SSHPrivateKey) != 0 {
 			debugKeyPath := fmt.Sprintf("%s-%s.pem", b.config.PackerBuildName, b.config.tmpComputeName)
 			ui.Message(fmt.Sprintf("temp ssh key: %s", debugKeyPath))
 
@@ -255,7 +258,8 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	}
 
 	if b.config.isManagedImage() {
-		return NewManagedImageArtifact(b.config.ManagedImageResourceGroupName, b.config.ManagedImageName, b.config.manageImageLocation)
+		managedImageID := fmt.Sprintf("/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Compute/images/%s", b.config.SubscriptionID, b.config.ManagedImageResourceGroupName, b.config.ManagedImageName)
+		return NewManagedImageArtifact(b.config.OSType, b.config.ManagedImageResourceGroupName, b.config.ManagedImageName, b.config.manageImageLocation, managedImageID)
 	} else if template, ok := b.stateBag.GetOk(constants.ArmCaptureTemplate); ok {
 		return NewArtifact(
 			template.(*CaptureTemplate),
@@ -266,7 +270,8 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 				options.Expiry = time.Now().AddDate(0, 1, 0).UTC() // one month
 				sasUrl, _ := blob.GetSASURI(options)
 				return sasUrl
-			})
+			},
+			b.config.OSType)
 	}
 
 	return &Artifact{}, nil
@@ -280,7 +285,7 @@ func (b *Builder) writeSSHPrivateKey(ui packer.Ui, debugKeyPath string) {
 	defer f.Close()
 
 	// Write the key out
-	if _, err := f.Write([]byte(b.config.sshPrivateKey)); err != nil {
+	if _, err := f.Write(b.config.Comm.SSHPrivateKey); err != nil {
 		ui.Say(fmt.Sprintf("Error saving debug key: %s", err))
 		return
 	}
@@ -331,7 +336,6 @@ func (b *Builder) getBlobAccount(ctx context.Context, client *AzureClient, resou
 
 func (b *Builder) configureStateBag(stateBag multistep.StateBag) {
 	stateBag.Put(constants.AuthorizedKey, b.config.sshAuthorizedKey)
-	stateBag.Put(constants.PrivateKey, b.config.sshPrivateKey)
 
 	stateBag.Put(constants.ArmTags, b.config.AzureTags)
 	stateBag.Put(constants.ArmComputeName, b.config.tmpComputeName)

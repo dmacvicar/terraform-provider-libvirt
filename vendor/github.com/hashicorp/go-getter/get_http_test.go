@@ -40,6 +40,34 @@ func TestHttpGetter_header(t *testing.T) {
 	}
 }
 
+func TestHttpGetter_requestHeader(t *testing.T) {
+	ln := testHttpServer(t)
+	defer ln.Close()
+
+	g := new(HttpGetter)
+	g.Header = make(http.Header)
+	g.Header.Add("X-Foobar", "foobar")
+	dst := tempDir(t)
+	defer os.RemoveAll(dst)
+
+	var u url.URL
+	u.Scheme = "http"
+	u.Host = ln.Addr().String()
+	u.Path = "/expect-header"
+	u.RawQuery = "expected=X-Foobar"
+
+	// Get it!
+	if err := g.GetFile(dst, &u); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+
+	// Verify the main file exists
+	if _, err := os.Stat(dst); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	assertContents(t, dst, "Hello\n")
+}
+
 func TestHttpGetter_meta(t *testing.T) {
 	ln := testHttpServer(t)
 	defer ln.Close()
@@ -255,6 +283,7 @@ func testHttpServer(t *testing.T) net.Listener {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/expect-header", testHttpHandlerExpectHeader)
 	mux.HandleFunc("/file", testHttpHandlerFile)
 	mux.HandleFunc("/header", testHttpHandlerHeader)
 	mux.HandleFunc("/meta", testHttpHandlerMeta)
@@ -267,6 +296,17 @@ func testHttpServer(t *testing.T) net.Listener {
 	go server.Serve(ln)
 
 	return ln
+}
+
+func testHttpHandlerExpectHeader(w http.ResponseWriter, r *http.Request) {
+	if expected, ok := r.URL.Query()["expected"]; ok {
+		if r.Header.Get(expected[0]) != "" {
+			w.Write([]byte("Hello\n"))
+			return
+		}
+	}
+
+	w.WriteHeader(400)
 }
 
 func testHttpHandlerFile(w http.ResponseWriter, r *http.Request) {

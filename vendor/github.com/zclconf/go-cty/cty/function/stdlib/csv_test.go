@@ -78,7 +78,7 @@ func TestCSVDecode(t *testing.T) {
 		{
 			cty.NullVal(cty.String),
 			cty.DynamicVal,
-			`must not be null`,
+			`argument must not be null`,
 		},
 	}
 

@@ -18,7 +18,7 @@ customized images based on an existing base images.
 
 The following configuration options are available for building Alicloud images.
 In addition to the options listed here,
-a [communicator](/docs/templates/communicator.html) can be configured for this
+a [communicator](../templates/communicator.html) can be configured for this
 builder.
 
 ### Required:
@@ -56,6 +56,12 @@ builder.
     If it is set to `false`, the system is shut down normally; if it is set to
     `true`, the system is forced to shut down.
 
+-   `disable_stop_instance` (boolean) - If this option is set to `true`, Packer will not stop the instance
+    for you, and you need to make sure the instance will be stopped in the final provisioner command. Otherwise,
+    Packer will timeout while waiting the instance to be stopped. This option is provided for some specific
+    scenarios that you want to stop the instance by yourself. E.g., Sysprep a windows which may shutdown the instance
+    within its command. The default value is `false`.
+
 -   `image_copy_names` (array of string) - The name of the destination image, \[2,
     128\] English or Chinese characters. It must begin with an uppercase/lowercase
     letter or a Chinese character, and may contain numbers, `_` or `-`. It cannot
@@ -71,9 +77,9 @@ builder.
     to the image.
 
     -   `disk_category` (string) - Category of the data disk. Optional values are:
-        -   cloud - general cloud disk
-        -   cloud\_efficiency - efficiency cloud disk
-        -   cloud\_ssd - cloud SSD
+        -   `cloud` - general cloud disk
+        -   `cloud_efficiency` - efficiency cloud disk
+        -   `cloud_ssd` - cloud SSD
 
         Default value: cloud.
 
@@ -92,9 +98,9 @@ builder.
         will appear on the console. It cannot begin with `http://` or `https://`.
 
     -   `disk_size` (number) - Size of the system disk, in GB, values range:
-        -   cloud - 5 ~ 2000
-        -   cloud\_efficiency - 20 ~ 2048
-        -   cloud\_ssd - 20 ~ 2048
+        -   `cloud` - 5 ~ 2000
+        -   `cloud_efficiency` - 20 ~ 2048
+        -   `cloud_ssd` - 20 ~ 2048
 
         The value should be equal to or greater than the size of the specific SnapshotId.
 
@@ -129,19 +135,19 @@ builder.
 
 -   `internet_charge_type` (string) - Internet charge type, which can be
     `PayByTraffic` or `PayByBandwidth`. Optional values:
-    -   PayByBandwidth
-    -   PayByTraffic
+    -   `PayByBandwidth`
+    -   `PayByTraffic`
 
     If this parameter is not specified, the default value is `PayByBandwidth`.
     For the regions out of China, currently only support `PayByTraffic`, you must
     set it manfully.
 
 -   `internet_max_bandwidth_out` (string) - Maximum outgoing bandwidth to the public
-    network, measured in Mbps (Mega bit per second).
+    network, measured in Mbps (Mega bits per second).
 
     Value range:
-    -   PayByBandwidth: \[0, 100\]. If this parameter is not specified, API automatically sets it to 0 Mbps.
-    -   PayByTraffic: \[1, 100\]. If this parameter is not specified, an error is returned.
+    -   `PayByBandwidth`: \[0, 100\]. If this parameter is not specified, API automatically sets it to 0 Mbps.
+    -   `PayByTraffic`: \[1, 100\]. If this parameter is not specified, an error is returned.
 
 -   `io_optimized` (boolean) - Whether an ECS instance is I/O optimized or not.
     The default value is `false`.
@@ -159,7 +165,7 @@ builder.
     `_` or `-`. It cannot begin with `http://` or `https://`.
 
 -   `security_token` (string) - STS access token, can be set through template or by exporting
-     as environment variable such "export SecurityToken=value".
+     as environment variable such as `export SecurityToken=value`.
 
 -   `skip_region_validation` (boolean) - The region validation can be skipped if this
     value is true, the default value is false.
@@ -169,7 +175,7 @@ builder.
     where `<UUID>` is a 36 character unique identifier.
 
 -   `TLSHandshakeTimeout` (int) - When happen "net/http: TLS handshake timeout" problem, set this environment variable
-     to a bigger such as "export TLSHandshakeTimeout=30", it will set the TLS handshake timeout value to 30s.
+     to a bigger such as `export TLSHandshakeTimeout=30`, it will set the TLS handshake timeout value to 30s.
 
 -   `user_data` (string) - The UserData of an instance must be encoded in `Base64`
     format, and the maximum size of the raw data is `16 KB`.
@@ -190,6 +196,11 @@ builder.
 
 -   `zone_id` (string) - ID of the zone to which the disk belongs.
 
+-   `ssh_private_ip` (boolean) - If this value is true, packer will connect to the ECS created through private ip
+    instead of allocating a public ip or an EIP. The default value is false.
+
+-   `tags` (object of key/value strings) - Tags applied to the destination image.
+
 ## Basic Example
 
 Here is a basic example for Alicloud.
@@ -206,7 +217,7 @@ Here is a basic example for Alicloud.
     "secret_key":"{{user `secret_key`}}",
     "region":"cn-beijing",
     "image_name":"packer_test2",
-    "source_image":"centos_7_2_64_40G_base_20170222.vhd",
+    "source_image":"centos_7_04_64_20G_alibase_201701015.vhd",
     "ssh_username":"root",
     "instance_type":"ecs.n1.tiny",
     "io_optimized":"true",
@@ -221,6 +232,9 @@ Here is a basic example for Alicloud.
   }]
 }
 ```
+
+~&gt; Note: Images can become deprecated after a while; run
+`aliyun ecs DescribeImages` to find one that exists.
 
 See the
 [examples/alicloud](https://github.com/hashicorp/packer/tree/master/examples/alicloud)

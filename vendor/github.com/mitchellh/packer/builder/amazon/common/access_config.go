@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/packer/template/interpolate"
 )
@@ -19,6 +21,7 @@ import (
 type AccessConfig struct {
 	AccessKey            string `mapstructure:"access_key"`
 	CustomEndpointEc2    string `mapstructure:"custom_endpoint_ec2"`
+	DecodeAuthZMessages  bool   `mapstructure:"decode_authorization_messages"`
 	MFACode              string `mapstructure:"mfa_code"`
 	ProfileName          string `mapstructure:"profile"`
 	RawRegion            string `mapstructure:"region"`
@@ -27,6 +30,8 @@ type AccessConfig struct {
 	SkipMetadataApiCheck bool   `mapstructure:"skip_metadata_api_check"`
 	Token                string `mapstructure:"token"`
 	session              *session.Session
+
+	getEC2Connection func() ec2iface.EC2API
 }
 
 // Config returns a valid aws.Config object for access to AWS services, or
@@ -37,11 +42,13 @@ func (c *AccessConfig) Session() (*session.Session, error) {
 	}
 
 	config := aws.NewConfig().WithCredentialsChainVerboseErrors(true)
-
 	staticCreds := credentials.NewStaticCredentials(c.AccessKey, c.SecretKey, c.Token)
 	if _, err := staticCreds.Get(); err != credentials.ErrStaticCredentialsEmpty {
 		config.WithCredentials(staticCreds)
 	}
+
+	// default is 3, and when it was causing failures for users being throttled
+	config = config.WithMaxRetries(20)
 
 	if c.RawRegion != "" {
 		config = config.WithRegion(c.RawRegion)
@@ -88,6 +95,11 @@ func (c *AccessConfig) Session() (*session.Session, error) {
 		}
 		log.Printf("[INFO] AWS Auth provider used: %q", cp.ProviderName)
 	}
+
+	if c.DecodeAuthZMessages {
+		DecodeAuthZMessages(c.session)
+	}
+
 	return c.session, nil
 }
 
@@ -139,10 +151,22 @@ func (c *AccessConfig) Prepare(ctx *interpolate.Context) []error {
 	}
 
 	if c.RawRegion != "" && !c.SkipValidation {
-		if valid := ValidateRegion(c.RawRegion); !valid {
-			errs = append(errs, fmt.Errorf("Unknown region: %s", c.RawRegion))
+		err := c.ValidateRegion(c.RawRegion)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("error validating region: %s", err.Error()))
 		}
 	}
 
 	return errs
+}
+
+func (c *AccessConfig) NewEC2Connection() (ec2iface.EC2API, error) {
+	if c.getEC2Connection != nil {
+		return c.getEC2Connection(), nil
+	}
+	sess, err := c.Session()
+	if err != nil {
+		return nil, err
+	}
+	return ec2.New(sess), nil
 }
