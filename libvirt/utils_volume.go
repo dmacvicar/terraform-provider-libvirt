@@ -294,14 +294,6 @@ func removeVolume(client *Client, key string) error {
 	}
 	defer volPool.Free()
 
-	poolName, err := volPool.GetName()
-	if err != nil {
-		return fmt.Errorf("Error retrieving name of volume: %s", err)
-	}
-
-	client.poolMutexKV.Lock(poolName)
-	defer client.poolMutexKV.Unlock(poolName)
-
 	waitForSuccess("Error refreshing pool for volume", func() error {
 		return volPool.Refresh(0)
 	})

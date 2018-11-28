@@ -91,9 +91,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		poolName = d.Get("pool").(string)
 	}
 
-	client.poolMutexKV.Lock(poolName)
-	defer client.poolMutexKV.Unlock(poolName)
-
 	pool, err := client.libvirt.LookupStoragePoolByName(poolName)
 	if err != nil {
 		return fmt.Errorf("can't find storage pool '%s'", poolName)
