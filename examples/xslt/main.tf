@@ -3,7 +3,7 @@ provider "libvirt" {
 }
 
 resource "libvirt_domain" "xslt-demo-domain" {
-  name = "xslt-demo-domain"
+  name   = "xslt-demo-domain"
   memory = "512"
 
   network_interface {
