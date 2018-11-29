@@ -257,6 +257,10 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	if _, ok := d.GetOk("source"); ok {
 		err = img.Import(newCopier(client.libvirt, volume, volumeDef.Capacity.Value), volumeDef)
 		if err != nil {
+			// If an unexpected error occurs don't save volume ID so we will taint the volume after.
+			// If we don't throw away the id, we will keep instead a broken volume.
+			//  see for reference: https://github.com/dmacvicar/terraform-provider-libvirt/issues/494
+			d.Set("id", "")
 			return fmt.Errorf("Error while uploading source %s: %s", img.String(), err)
 		}
 	}
