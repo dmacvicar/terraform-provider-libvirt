@@ -261,6 +261,9 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			// If we don't throw away the id, we will keep instead a broken volume.
 			//  see for reference: https://github.com/dmacvicar/terraform-provider-libvirt/issues/494
 			d.Set("id", "")
+			if volErr := volume.Delete(libvirt.STORAGE_VOL_DELETE_WITH_SNAPSHOTS); volErr != nil {
+				log.Printf("[ERROR] Volume %s could not be deleted. Delete it manually", img.String())
+			}
 			return fmt.Errorf("Error while uploading source %s: %s", img.String(), err)
 		}
 	}
