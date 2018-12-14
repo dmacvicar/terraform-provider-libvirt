@@ -341,7 +341,7 @@ func downloadISO(virConn *libvirt.Connect, volume libvirt.StorageVol) (*os.File,
 
 	if uint64(bytesCopied) != info.Capacity {
 		stream.Abort()
-		return tmpFile, fmt.Errorf("Error while copying remote volume to local disk, bytesCopied %d !=  %d volume.size:", bytesCopied, info.Capacity)
+		return tmpFile, fmt.Errorf("Error while copying remote volume to local disk, bytesCopied %d !=  %d volume.size", bytesCopied, info.Capacity)
 	}
 
 	err = stream.Finish()
