@@ -19,8 +19,3 @@ func (sio *StreamIO) Read(p []byte) (int, error) {
 func (sio *StreamIO) Write(p []byte) (int, error) {
 	return sio.Stream.Send(p)
 }
-
-// Close closes the stream
-func (sio *StreamIO) Close() error {
-	return sio.Stream.Finish()
-}

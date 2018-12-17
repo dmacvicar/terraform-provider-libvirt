@@ -242,7 +242,7 @@ func TestAccLibvirtVolume_UniqueName(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      config,
-				ExpectError: regexp.MustCompile(`storage volume '` + randomVolumeName + `' already exists`),
+				ExpectError: regexp.MustCompile(`storage volume '` + randomVolumeName + `' exists already`),
 			},
 		},
 	})

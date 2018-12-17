@@ -304,6 +304,8 @@ func readIso9660File(file os.FileInfo) ([]byte, error) {
 // pointer when you are done.
 func downloadISO(virConn *libvirt.Connect, volume libvirt.StorageVol) (*os.File, error) {
 	// get Volume info (required to get size later)
+	var bytesCopied int64
+
 	info, err := volume.GetInfo()
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving info for volume: %s", err)
@@ -320,18 +322,36 @@ func downloadISO(virConn *libvirt.Connect, volume libvirt.StorageVol) (*os.File,
 	if err != nil {
 		return tmpFile, err
 	}
-	defer stream.Finish()
 
-	volume.Download(stream, 0, info.Capacity, 0)
+	defer func() {
+		stream.Free()
+	}()
 
+	err = volume.Download(stream, 0, info.Capacity, 0)
+	if err != nil {
+		stream.Abort()
+		return tmpFile, fmt.Errorf("Error by downloading content to libvirt volume:%s", err)
+	}
 	sio := NewStreamIO(*stream)
 
-	n, err := io.Copy(tmpFile, sio)
+	bytesCopied, err = io.Copy(tmpFile, sio)
 	if err != nil {
 		return tmpFile, fmt.Errorf("Error while copying remote volume to local disk: %s", err)
 	}
+
+	if uint64(bytesCopied) != info.Capacity {
+		stream.Abort()
+		return tmpFile, fmt.Errorf("Error while copying remote volume to local disk, bytesCopied %d !=  %d volume.size", bytesCopied, info.Capacity)
+	}
+
+	err = stream.Finish()
+	if err != nil {
+		stream.Abort()
+		return tmpFile, fmt.Errorf("Error by terminating libvirt stream %s", err)
+	}
+
 	tmpFile.Seek(0, 0)
-	log.Printf("%d bytes downloaded", n)
+	log.Printf("%d bytes downloaded", bytesCopied)
 
 	return tmpFile, nil
 }

@@ -193,16 +193,14 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 				return fmt.Errorf("Can't retrieve volume %s: %v", baseVolumeName.(string), err)
 			}
 		}
-
 		if baseVolume != nil {
 			backingStoreDef, err := newDefBackingStoreFromLibvirt(baseVolume)
 			if err != nil {
 				return fmt.Errorf("Could not retrieve backing store definition: %s", err.Error())
 			}
-
-			// does the backing store have some size information?, check at least that it is not smaller than the backing store
-			volumeDef.Capacity.Value = uint64(d.Get("size").(int))
 			if _, ok := d.GetOk("size"); ok {
+				// does the backing store have some size information?, check at least that it is not smaller than the backing store
+				volumeDef.Capacity.Value = uint64(d.Get("size").(int))
 				backingStoreVolumeDef, err := newDefVolumeFromLibvirt(baseVolume)
 				if err != nil {
 					return err
@@ -215,8 +213,9 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			volumeDef.BackingStore = &backingStoreDef
 		}
 	}
-
-	volumeDef.Capacity.Value = uint64(d.Get("size").(int))
+	if _, ok := d.GetOk("size"); ok {
+		volumeDef.Capacity.Value = uint64(d.Get("size").(int))
+	}
 	data, err := xmlMarshallIndented(volumeDef)
 	if err != nil {
 		return fmt.Errorf("Error serializing libvirt volume: %s", err)
