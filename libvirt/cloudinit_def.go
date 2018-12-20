@@ -60,6 +60,9 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 	}
 	defer pool.Free()
 
+	client.poolMutexKV.Lock(ci.PoolName)
+	defer client.poolMutexKV.Unlock(ci.PoolName)
+
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
 	waitForSuccess("Error refreshing pool for volume", func() error {
