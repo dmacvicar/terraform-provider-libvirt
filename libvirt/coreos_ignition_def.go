@@ -38,6 +38,9 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 	}
 	defer pool.Free()
 
+	client.poolMutexKV.Lock(ign.PoolName)
+	defer client.poolMutexKV.Unlock(ign.PoolName)
+
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
 	waitForSuccess("Error refreshing pool for volume", func() error {
