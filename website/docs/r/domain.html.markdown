@@ -350,7 +350,7 @@ When using a virtual network, users can specify:
   provider.
 * `network_id` - (Optional) The ID of a network resource to attach this
   interface to. This is a
-  [network resource](/docs/providers/libvirt/r/network.html) managed by the
+  [network resource](/website/docs/r/network.markdown) managed by the
   Terraform libvirt provider.
 * `mac` - (Optional) The specific MAC address to use for this interface.
 * `addresses` - (Optional) An IP address for this domain in this network.
