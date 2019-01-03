@@ -1,9 +1,20 @@
 #!/bin/bash
-set -x
+#
+# Run acceptance tests.
+#
+# Usage:
+#
+# * List all the acceptance tests: run-tests-acceptance -list 'TestAccLibvirt*'
+# * Run some particular test:      run-tests-acceptance -run TestAccLibvirtDomain_Cpu
+#
+
+TEST_ARGS=$@
+TEST_ARGS_DEF="-covermode=count -coverprofile=profile.cov -timeout=1200s"
 
 unset http_proxy
 export TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE=qemu
 export LIBVIRT_DEFAULT_URI="qemu:///system"
 export TF_ACC=true
 
-go test -v -covermode=count -coverprofile=profile.cov -timeout=1200s ./libvirt
+set -x
+go test -v $TEST_ARGS_DEF $TEST_ARGS ./libvirt
