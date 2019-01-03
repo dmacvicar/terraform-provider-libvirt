@@ -40,6 +40,18 @@ For example the `domain` resource, and others are organized like follow:
 make testacc
 ```
 
+You can also run some particular test with:
+
+```
+make testacc TEST_ARGS="-run TestAccLibvirtDomain_Cpu"
+```
+
+Or run a group of test with a verbose loglevel:
+
+```bash
+TF_LOG=DEBUG make testacc TEST_ARGS="-run TestAccLibvirtNet*"
+```
+
 ### Code coverage:
 
 Run first the testacc suite.
