@@ -158,6 +158,10 @@ func resourceLibvirtDomain() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
+						"cache": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
 					},
 				},
 			},

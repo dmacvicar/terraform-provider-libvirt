@@ -256,6 +256,8 @@ While `volume_id`, `url` and `file` are optional, it is intended that you use on
 model is set to `virtio-scsi`
 * `wwn` - (Optional) Specify a WWN to use for the disk if the disk is using
 a scsi controller, if not specified then a random wwn is generated for the disk
+* `cache` - (Optional) The driver cache mode that shall be used. If not set libvirt
+default will be used [Disk Cache Modes](https://doc.opensuse.org/documentation/leap/virtualization/html/book.virt/cha.cachemodes.html).
 
 
 ```hcl

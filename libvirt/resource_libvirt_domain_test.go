@@ -142,7 +142,8 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 		}
 
 		disk {
-			volume_id = "${libvirt_volume.%s.id}"
+		    volume_id = "${libvirt_volume.%s.id}",
+		    cache = "none"
 		}
 	}`, randomVolumeName, randomVolumeName, randomVolumeName2, randomVolumeName2, randomDomainName, randomDomainName, randomVolumeName, randomVolumeName2)
 
