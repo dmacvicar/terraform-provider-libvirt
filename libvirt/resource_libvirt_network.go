@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	libvirt "github.com/libvirt/libvirt-go"
+	"github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
 )
 
@@ -208,6 +208,23 @@ func resourceLibvirtNetwork() *schema.Resource {
 					},
 				},
 			},
+			"routes": {
+				Type:     schema.TypeList,
+				Optional: true,
+				ForceNew: false,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"cidr": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"gateway": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
+			},
 			"xml": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -358,8 +375,8 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		}
 
 		var dnsSRVs []libvirtxml.NetworkDNSSRV
-		if dnsSRVCount, ok := d.GetOk(dnsPrefix + ".srvs.#"); ok {
-			for i := 0; i < dnsSRVCount.(int); i++ {
+		if routesCount, ok := d.GetOk(dnsPrefix + ".srvs.#"); ok {
+			for i := 0; i < routesCount.(int); i++ {
 				srv := libvirtxml.NetworkDNSSRV{}
 				srvPrefix := fmt.Sprintf(dnsPrefix+".srvs.%d", i)
 				if service, ok := d.GetOk(srvPrefix + ".service"); ok {
@@ -443,6 +460,13 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	} else {
 		return fmt.Errorf("unsupported network mode '%s'", networkDef.Forward.Mode)
 	}
+
+	// parse any static routes
+	routes, err := getRoutesFromResource(d)
+	if err != nil {
+		return err
+	}
+	networkDef.Routes = routes
 
 	// once we have the network defined, connect to libvirt and create it from the XML serialization
 	connectURI, err := virConn.GetURI()
@@ -573,6 +597,17 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 			}
 		}
 	}
+
+	if len(networkDef.Routes) > 0 {
+		for i, route := range networkDef.Routes {
+			routePrefix := fmt.Sprintf("routes.%d", i)
+			d.Set(routePrefix+".gateway", route.Gateway)
+
+			cidr := fmt.Sprintf("%s/%d", route.Address, route.Prefix)
+			d.Set(routePrefix+".cidr", cidr)
+		}
+	}
+
 	// TODO: get any other parameters from the network and save them
 
 	log.Printf("[DEBUG] Network ID %s successfully read", d.Id())

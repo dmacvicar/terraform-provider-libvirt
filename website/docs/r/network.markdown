@@ -65,6 +65,15 @@ resource "libvirt_network" "kube_network" {
     #     ip = "my.ip.address.2"
     #   },
     # ]
+
+    # (Optional) one or more static routes.
+    # "cidr" and "gateway" must be specified. The format is:
+    # routes = [
+    #   {
+    #     cidr = "10.17.0.0/16"
+    #     gateway = "10.18.0.2"
+    #   },
+    # ]
   }
 }
 ```
@@ -104,6 +113,8 @@ The following arguments are supported:
    it will be automatically obtained by libvirt in `none`, `nat` and `route` modes).
 * `autostart` - (Optional) Set to `true` to start the network on host boot up.
   If not specified `false` is assumed.
+* `routes` - (Optional) a list of static routes. A `cidr` and a `gateway` must
+  be provided. The `gateway` must be reachable via the bridge interface.
 * `dns` - (Optional) configuration of DNS specific settings for the network
 
 Inside of `dns` section the following argument are supported:

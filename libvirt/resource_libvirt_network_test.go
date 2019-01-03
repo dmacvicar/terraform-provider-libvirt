@@ -495,6 +495,82 @@ func TestAccLibvirtNetwork_BridgedMode(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtNetwork_StaticRoutes(t *testing.T) {
+
+	checkRoutes := func(resourceName string) resource.TestCheckFunc {
+		return func(s *terraform.State) error {
+			virConn := testAccProvider.Meta().(*Client).libvirt
+			networkDef, err := getNetworkDef(s, resourceName, *virConn)
+			if err != nil {
+				return err
+			}
+
+			if len(networkDef.Routes) != 1 {
+				return fmt.Errorf("Network should have one route but it has %d", len(networkDef.Routes))
+			}
+
+			if networkDef.Routes[0].Address != "10.18.0.0" {
+				return fmt.Errorf("Unexpected network address '%s'", networkDef.Routes[0].Address)
+			}
+
+			if !(networkDef.Routes[0].Family == "" || networkDef.Routes[0].Family == "ipv6") {
+				return fmt.Errorf("Unexpected network family '%s'", networkDef.Routes[0].Family)
+			}
+
+			if networkDef.Routes[0].Prefix != 16 {
+				return fmt.Errorf("Unexpected network prefix '%d'", networkDef.Routes[0].Prefix)
+			}
+
+			if networkDef.Routes[0].Gateway != "10.17.3.2" {
+				return fmt.Errorf("Unexpected gateway '%s'", networkDef.Routes[0].Gateway)
+			}
+
+			return nil
+		}
+	}
+
+	randomNetworkName := acctest.RandString(10)
+	config := fmt.Sprintf(`
+					resource "libvirt_network" "%s" {
+					name      = "%s"
+					mode      = "route"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dhcp {
+						enabled = false
+					}
+					routes = [
+						{
+							cidr = "10.18.0.0/16"
+							gateway = "10.17.3.2"
+						},
+					]}`,
+		randomNetworkName, randomNetworkName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					checkRoutes("libvirt_network." + randomNetworkName),
+				),
+			},
+			// when we apply 2 times with same conf, we should not have a diff
+			{
+				Config:             config,
+				ExpectNonEmptyPlan: false,
+				PlanOnly:           true,
+				Check: resource.ComposeTestCheckFunc(
+					checkRoutes("libvirt_network." + randomNetworkName),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 	var network libvirt.Network
 	randomNetworkResource := acctest.RandString(10)
