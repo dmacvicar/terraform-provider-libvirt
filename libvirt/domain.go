@@ -452,6 +452,11 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 				log.Printf("[WARN] Disk volume has no format specified: %s", volumeKey.(string))
 			}
 
+            if cache, ok := d.GetOk(prefix + ".cache"); ok {
+                log.Print("[DEBUG] Setting disk cache mode to: %s", cache.(string))
+                disk.Driver.Cache = cache.(string)
+            }
+
 			disk.Source = &libvirtxml.DomainDiskSource{
 				Volume: &libvirtxml.DomainDiskSourceVolume{
 					Pool:   diskPoolName,
