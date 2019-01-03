@@ -1,5 +1,8 @@
 LDFLAGS += -X main.version=$$(git describe --always --abbrev=40 --dirty)
 
+# default  args for tests
+TEST_ARGS_DEF := -covermode=count -coverprofile=profile.cov
+
 default: build
 
 build: gofmtcheck golint vet
@@ -8,12 +11,29 @@ build: gofmtcheck golint vet
 install:
 	go install -ldflags "${LDFLAGS}"
 
+# unit tests
+# usage:
+# - run all the unit tests: make test
+# - run some particular test: make test TEST_ARGS="-run TestAccLibvirtDomain_Cpu"
 test:
-	go test -v -covermode=count -coverprofile=profile.cov ./libvirt
+	go test -v $(TEST_ARGS_DEF) $(TEST_ARGS) ./libvirt
 	go test -v .
+
+# acceptance tests
+# usage:
+#
+# - run all the acceptance tests:
+#   make testacc
+#
+# - run some particular test:
+#   make testacc TEST_ARGS="-run TestAccLibvirtDomain_Cpu"
+#
+# - run all the network test with a verbose loglevel:
+#   TF_LOG=DEBUG make testacc TEST_ARGS="-run TestAccLibvirtNet*"
+#
 testacc:
 	go test -v .
-	./travis/run-tests-acceptance
+	./travis/run-tests-acceptance $(TEST_ARGS)
 
 vet:
 	@echo "go vet ."
@@ -29,7 +49,6 @@ golint:
 
 gofmtcheck:
 	bash travis/run-gofmt
-
 
 clean:
 	./travis/cleanup.sh
