@@ -73,7 +73,7 @@ func newDomainDef() libvirtxml.Domain {
 				{
 					Model: "virtio",
 					Backend: &libvirtxml.DomainRNGBackend{
-						Random: &libvirtxml.DomainRNGBackendRandom{},
+						Random: &libvirtxml.DomainRNGBackendRandom{Device: "/dev/urandom"},
 					},
 				},
 			},
