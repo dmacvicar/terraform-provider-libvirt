@@ -381,6 +381,7 @@ When connecting to a LAN, users can specify a target device with:
   sent to the VF/IF of the configured network device. Depending on the
   capabilities of the device additional prerequisites or limitations may apply;
   for example, on Linux this requires kernel 2.6.38 or newer.
+* `vlan` - (Optional) A list of vlan tags (see example)
 
 Example of a `macvtap` interface:
 
@@ -393,6 +394,19 @@ resource "libvirt_domain" "my-domain" {
   }
 }
 ```
+
+For  LAN connections with vlan support (`bridge`) it is also possible to
+add vlan tag definition, example:
+
+```hcl
+  network_interface {
+      vlan {
+          tag = [12]
+      }
+  }
+```
+In case multiple tags are specified, libvirt will automatically set the vlan
+type to `trunk`. [Libvirt Vlan Doc](https://libvirt.org/formatdomain.html#elementVlanTag)
 
 **Warning:** the [Qemu guest agent](http://wiki.libvirt.org/page/Qemu_guest_agent)
 must be installed and running inside of the domain in order to discover the IP

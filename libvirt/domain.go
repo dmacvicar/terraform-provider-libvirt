@@ -585,6 +585,19 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 			},
 		}
 
+		if _, ok := d.GetOk(prefix + ".vlan"); ok {
+			log.Print("[DEBUG] vlan definition set")
+			netIface.VLan = &libvirtxml.DomainInterfaceVLan{}
+			for vlantag := 0; vlantag < d.Get(prefix+".vlan.0.tag.#").(int); vlantag++ {
+				tagPrefix := fmt.Sprintf(prefix+".vlan.0.tag.%d", vlantag)
+				netIface.VLan.Tags = append(
+					netIface.VLan.Tags,
+					libvirtxml.DomainInterfaceVLanTag{
+						ID: uint(d.Get(tagPrefix).(int)),
+					},
+				)
+			}
+		}
 		// calculate the MAC address
 		var mac string
 		if macI, ok := d.GetOk(prefix + ".mac"); ok {

@@ -214,6 +214,25 @@ func resourceLibvirtDomain() *schema.Resource {
 								Type: schema.TypeString,
 							},
 						},
+
+						"vlan": {
+							Type:     schema.TypeList,
+							Optional: true,
+							Required: false,
+							MaxItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"tag": {
+										Type:     schema.TypeList,
+										Optional: true,
+										Required: false,
+										Elem: &schema.Schema{
+											Type: schema.TypeInt,
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
