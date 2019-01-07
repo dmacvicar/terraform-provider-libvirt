@@ -1,3 +1,15 @@
+## 0.5.1 (December 14, 2018)
+
+### HIGHLIGHTS:
+
+- The provider will retry HTTP downloads if they were caused by server errors (https://github.com/dmacvicar/terraform-provider-libvirt/pull/479)
+- XSLT can be used to transform the libvirt XML definition before creating resources, allowing to enable features the provider does not support (https://github.com/dmacvicar/terraform-provider-libvirt/pull/431)
+- volumes: when the _HEAD_ method is forbidden, the provider will try a body-less _GET_ instead (https://github.com/dmacvicar/terraform-provider-libvirt/pull/472)
+- network: add support for updating _dns.hosts_ (https://github.com/dmacvicar/terraform-provider-libvirt/pull/469)
+- network: add support for setting _SRV_ entries (https://github.com/dmacvicar/terraform-provider-libvirt/pull/460)
+- qemu-agent: do not contact the qemu agent if the domain is shutdown (https://github.com/dmacvicar/terraform-provider-libvirt/pull/474)
+- cli:  add `-version` flag (https://github.com/dmacvicar/terraform-provider-libvirt/pull/444)  
+
 ## 0.5 (October 10, 2018)
 
 ### HIGHLIGHTS:
