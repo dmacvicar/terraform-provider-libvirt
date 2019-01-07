@@ -396,6 +396,9 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 			mac            = "52:54:00:A9:F5:17"
 			wait_for_lease = true
 		}
+		network_interface = {
+			model = "e1000"
+		}
 		disk {
 			file = "%s/testdata/tcl.iso"
 		}
@@ -414,6 +417,8 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 						"libvirt_domain."+randomDomainName, "network_interface.0.network_name", "default"),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomDomainName, "network_interface.1.mac", "52:54:00:A9:F5:17"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "network_interface.2.model", "e1000"),
 				),
 			},
 		},

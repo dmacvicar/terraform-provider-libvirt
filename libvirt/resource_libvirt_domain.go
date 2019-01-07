@@ -188,6 +188,11 @@ func resourceLibvirtDomain() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
+						"model": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  "virtio",
+						},
 						"passthrough": {
 							Type:     schema.TypeString,
 							Optional: true,
@@ -827,6 +832,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			"bridge":         "",
 			"vepa":           "",
 			"macvtap":        "",
+			"model":          "",
 			"passthrough":    "",
 			"mac":            mac,
 			"hostname":       "",
@@ -855,6 +861,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			}
 
 			netIface["network_name"] = networkInterfaceDef.Source.Network.Network
+			netIface["model"] = networkInterfaceDef.Model
 
 			// try to look for this MAC in the DHCP configuration for this VM
 			if HasDHCP(networkDef) {
