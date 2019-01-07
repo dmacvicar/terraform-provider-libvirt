@@ -188,11 +188,6 @@ func resourceLibvirtDomain() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"model": {
-							Type:     schema.TypeString,
-							Optional: true,
-							Default:  "virtio",
-						},
 						"passthrough": {
 							Type:     schema.TypeString,
 							Optional: true,
