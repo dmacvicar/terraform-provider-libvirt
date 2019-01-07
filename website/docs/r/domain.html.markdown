@@ -353,6 +353,7 @@ When using a virtual network, users can specify:
   [network resource](/website/docs/r/network.markdown) managed by the
   Terraform libvirt provider.
 * `mac` - (Optional) The specific MAC address to use for this interface.
+* `model` - Set the model of emulated network interface card, defaults to `virtio`.
 * `addresses` - (Optional) An IP address for this domain in this network.
 * `hostname` - (Optional) A hostname that will be assigned to this domain
   resource in this network.
