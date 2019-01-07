@@ -142,7 +142,7 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 		}
 
 		disk {
-			volume_id = "${libvirt_volume.%s.id}"
+		    volume_id = "${libvirt_volume.%s.id}",
 		}
 	}`, randomVolumeName, randomVolumeName, randomVolumeName2, randomVolumeName2, randomDomainName, randomDomainName, randomVolumeName, randomVolumeName2)
 
@@ -171,6 +171,49 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 					testAccCheckLibvirtVolumeDoesNotExists("libvirt_volume."+randomVolumeName, &volume),
 					testAccCheckLibvirtVolumeDoesNotExists("libvirt_volume."+randomVolumeName2, &volume),
 				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtDomain_VolumeCache(t *testing.T) {
+	var domain libvirt.Domain
+	var volumeQCOW2 libvirt.StorageVol
+	randomVolumeQCOW2 := acctest.RandString(10)
+	randomDomainName := acctest.RandString(10)
+
+	var config = fmt.Sprintf(`
+	resource "libvirt_volume" "%s" {
+		name = "%s"
+		format = "qcow2"
+	}
+
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		disk {
+			volume_id = "${libvirt_volume.%s.id}"
+			cache = "unsafe"
+		}
+	}`, randomVolumeQCOW2, randomVolumeQCOW2, randomDomainName, randomDomainName, randomVolumeQCOW2)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeQCOW2, &volumeQCOW2),
+					// Check that each disk has the appropriate cache
+					testAccCheckLibvirtDomainDescription(&domain, func(domainDef libvirtxml.Domain) error {
+						cacheMode := domainDef.Devices.Disks[0].Driver.Cache
+						if cacheMode != "unsafe" {
+							return fmt.Errorf("Expected disk to have cache mode: unsafe, got: %s", cacheMode)
+						}
+						return nil
+					})),
 			},
 		},
 	})
