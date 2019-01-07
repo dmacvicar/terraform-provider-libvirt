@@ -252,7 +252,7 @@ The `disk` block supports:
 
 While `volume_id`, `url` and `file` are optional, it is intended that you use one of them.
 
-* `scsi` - (Optional) Use a scsi controller for this disk.  The controller
+* `scsi` - (Optional, Boolean) Use a scsi controller for this disk.  The controller
 model is set to `virtio-scsi`
 * `wwn` - (Optional) Specify a WWN to use for the disk if the disk is using
 a scsi controller, if not specified then a random wwn is generated for the disk
@@ -273,7 +273,7 @@ resource "libvirt_domain" "domain1" {
   name = "domain1"
   disk {
     volume_id = "${libvirt_volume.mydisk.id}"
-    scsi = "yes"
+    scsi = "true"
   }
 
   disk {
