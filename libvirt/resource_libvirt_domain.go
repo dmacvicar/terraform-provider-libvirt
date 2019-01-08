@@ -241,6 +241,20 @@ func resourceLibvirtDomain() *schema.Resource {
 					},
 				},
 			},
+			"video": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"type": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  "cirrus",
+						},
+					},
+				},
+			},
 			"console": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -430,6 +444,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
+	setVideo(d, &domainDef)
 	setConsoles(d, &domainDef)
 	setCmdlineArgs(d, &domainDef)
 	setFirmware(d, &domainDef)

@@ -596,6 +596,35 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_Video(t *testing.T) {
+	var domain libvirt.Domain
+	randomDomainName := acctest.RandString(10)
+
+	var config = fmt.Sprintf(`
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		video {
+			type = "vga"
+		}
+	}`, randomDomainName, randomDomainName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "video.0.type", "vga"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_Autostart(t *testing.T) {
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandString(10)

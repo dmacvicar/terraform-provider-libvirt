@@ -251,6 +251,19 @@ func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain) err
 	return nil
 }
 
+func setVideo(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
+	prefix := "video.0"
+	if _, ok := d.GetOk(prefix); ok {
+		domainDef.Devices.Videos = append(domainDef.Devices.Videos, libvirtxml.DomainVideo{
+			Model: libvirtxml.DomainVideoModel{
+				Type: d.Get(prefix + ".type").(string),
+			},
+		})
+	}
+
+	return nil
+}
+
 func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch string) error {
 	if arch == "s390x" || arch == "ppc64" {
 		domainDef.Devices.Graphics = nil
