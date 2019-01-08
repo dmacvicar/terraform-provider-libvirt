@@ -2,7 +2,6 @@ package libvirt
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/acctest"
@@ -12,7 +11,34 @@ import (
 	"github.com/libvirt/libvirt-go-xml"
 )
 
-func TestAccCheckLibvirtNetwork_LocalOnly(t *testing.T) {
+func TestAccLibvirtNetwork_Addresses(t *testing.T) {
+	randomNetworkResource := acctest.RandString(10)
+	randomNetworkResourceFull := "libvirt_network." + randomNetworkResource
+	randomNetworkName := acctest.RandString(10)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "%s" {
+					name      = "%s"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+				}`, randomNetworkResource, randomNetworkName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(randomNetworkResourceFull,
+						"addresses.0", "10.17.3.0/24"),
+					resource.TestCheckResourceAttr(randomNetworkResourceFull,
+						"mode", "nat"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtNetwork_LocalOnly(t *testing.T) {
 	randomNetworkResource := acctest.RandString(10)
 	randomNetworkName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
@@ -32,36 +58,14 @@ func TestAccCheckLibvirtNetwork_LocalOnly(t *testing.T) {
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.local_only", "true"),
-					checkLocalOnly("libvirt_network."+randomNetworkResource, true),
+					testAccCheckLibvirtNetworkLocalOnly("libvirt_network."+randomNetworkResource, true),
 				),
 			},
 		},
 	})
 }
 
-func checkLocalOnly(name string, expectLocalOnly bool) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-
-		virConn := testAccProvider.Meta().(*Client).libvirt
-
-		networkDef, err := getNetworkDef(s, name, *virConn)
-		if err != nil {
-			return err
-		}
-		if expectLocalOnly {
-			if networkDef.Domain == nil || networkDef.Domain.LocalOnly != "yes" {
-				return fmt.Errorf("networkDef.Domain.LocalOnly is not true")
-			}
-		} else {
-			if networkDef.Domain != nil && networkDef.Domain.LocalOnly != "no" {
-				return fmt.Errorf("networkDef.Domain.LocalOnly is true")
-			}
-		}
-		return nil
-	}
-}
-
-func TestAccCheckLibvirtNetwork_DNSForwarders(t *testing.T) {
+func TestAccLibvirtNetwork_DNSForwarders(t *testing.T) {
 	randomNetworkResource := acctest.RandString(10)
 	randomNetworkName := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
@@ -96,7 +100,7 @@ func TestAccCheckLibvirtNetwork_DNSForwarders(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.forwarders.1.address", "10.10.0.67"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.forwarders.1.domain", "my.domain.com"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.forwarders.2.domain", "hello.com"),
-					checkDNSForwarders("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSForwarder{
+					testAccCheckLibvirtNetworkDNSForwarders("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSForwarder{
 						{
 							Addr: "8.8.8.8",
 						},
@@ -112,38 +116,6 @@ func TestAccCheckLibvirtNetwork_DNSForwarders(t *testing.T) {
 			},
 		},
 	})
-}
-
-func checkDNSForwarders(name string, expected []libvirtxml.NetworkDNSForwarder) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-
-		virConn := testAccProvider.Meta().(*Client).libvirt
-
-		networkDef, err := getNetworkDef(s, name, *virConn)
-		if err != nil {
-			return err
-		}
-		if networkDef.DNS == nil {
-			return fmt.Errorf("DNS block not found in networkDef")
-		}
-		actual := networkDef.DNS.Forwarders
-		if len(expected) != len(actual) {
-			return fmt.Errorf("len(expected): %d != len(actual): %d", len(expected), len(actual))
-		}
-		for _, e := range expected {
-			found := false
-			for _, a := range actual {
-				if reflect.DeepEqual(a, e) {
-					found = true
-					break
-				}
-			}
-			if !found {
-				return fmt.Errorf("Unable to find %v in %v", e, actual)
-			}
-		}
-		return nil
-	}
 }
 
 func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
@@ -184,7 +156,7 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.1.ip", "1.1.1.2"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.2.hostname", "myhost2"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.2.ip", "1.1.1.1"),
-					checkDNSHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSHost{
+					testAccCheckDNSHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSHost{
 						{
 							IP: "1.1.1.1",
 							Hostnames: []libvirtxml.NetworkDNSHostHostname{
@@ -219,7 +191,7 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.hostname", "myhost1"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.ip", "1.1.1.1"),
-					checkDNSHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSHost{
+					testAccCheckDNSHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSHost{
 						{
 							IP: "1.1.1.1",
 							Hostnames: []libvirtxml.NetworkDNSHostHostname{
@@ -260,7 +232,7 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.ip", "1.1.1.1"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.1.hostname", "myhost2"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.1.ip", "1.1.1.1"),
-					checkDNSHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSHost{
+					testAccCheckDNSHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSHost{
 						{
 							IP: "1.1.1.1",
 							Hostnames: []libvirtxml.NetworkDNSHostHostname{
@@ -273,94 +245,6 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 			},
 		},
 	})
-}
-
-func checkDNSHosts(name string, expected []libvirtxml.NetworkDNSHost) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-
-		virConn := testAccProvider.Meta().(*Client).libvirt
-		networkDef, err := getNetworkDef(s, name, *virConn)
-		if err != nil {
-			return err
-		}
-		if networkDef.DNS == nil {
-			return fmt.Errorf("DNS block not found in networkDef")
-		}
-		actual := networkDef.DNS.Host
-		if len(expected) != len(actual) {
-			return fmt.Errorf("len(expected): %d != len(actual): %d", len(expected), len(actual))
-		}
-		for _, e := range expected {
-			found := false
-			for _, a := range actual {
-				if reflect.DeepEqual(a.IP, e.IP) && reflect.DeepEqual(a.Hostnames, e.Hostnames) {
-					found = true
-					break
-				}
-			}
-			if !found {
-				return fmt.Errorf("Unable to find:%v in: %v", e, actual)
-			}
-		}
-		return nil
-	}
-}
-
-func networkExists(name string, network *libvirt.Network) resource.TestCheckFunc {
-	return func(state *terraform.State) error {
-
-		rs, err := getResourceFromTerraformState(name, state)
-		if err != nil {
-			return err
-		}
-
-		virConn := testAccProvider.Meta().(*Client).libvirt
-		fmt.Printf("%s", virConn)
-		networkRetrived, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
-		if err != nil {
-			return err
-		}
-
-		realID, err := networkRetrived.GetUUIDString()
-		if err != nil {
-			return err
-		}
-
-		if realID != rs.Primary.ID {
-			return fmt.Errorf("Libvirt network not found")
-		}
-
-		*network = *networkRetrived
-
-		return nil
-	}
-}
-
-func testAccCheckLibvirtNetworkDhcpStatus(name string, expectedDhcpStatus string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirt
-		networkDef, err := getNetworkDef(s, name, *virConn)
-		if err != nil {
-			return err
-		}
-		if expectedDhcpStatus == "disabled" {
-			for _, ips := range networkDef.IPs {
-				// &libvirtxml.NetworkDHCP{..} should be nil when dhcp is disabled
-				if ips.DHCP != nil {
-					fmt.Printf("%#v", ips.DHCP)
-					return fmt.Errorf("the network should have DHCP disabled")
-				}
-			}
-		}
-		if expectedDhcpStatus == "enabled" {
-			for _, ips := range networkDef.IPs {
-				if ips.DHCP == nil {
-					return fmt.Errorf("the network should have DHCP enabled")
-				}
-			}
-		}
-		return nil
-	}
 }
 
 func TestAccLibvirtNetwork_Import(t *testing.T) {
@@ -387,7 +271,7 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 				ResourceName: resourceName,
 				ImportState:  true,
 				Check: resource.ComposeTestCheckFunc(
-					networkExists("libvirt_network."+randomNetworkResource, &network),
+					testAccCheckNetworkExists("libvirt_network."+randomNetworkResource, &network),
 				),
 			},
 		},
@@ -450,27 +334,6 @@ func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 	})
 }
 
-func checkBridge(resourceName string, bridgeName string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirt
-		networkDef, err := getNetworkDef(s, resourceName, *virConn)
-		if err != nil {
-			return err
-		}
-
-		if networkDef.Bridge == nil {
-			return fmt.Errorf("Bridge type of network should be not nil")
-		}
-
-		if networkDef.Bridge.Name != bridgeName || networkDef.Bridge.STP != "on" {
-			fmt.Printf("%#v", networkDef)
-			return fmt.Errorf("fail: network brigde property were not set correctly")
-		}
-
-		return nil
-	}
-}
-
 func TestAccLibvirtNetwork_BridgedMode(t *testing.T) {
 	randomNetworkName := acctest.RandString(10)
 	randomBridgeName := acctest.RandString(10)
@@ -488,7 +351,7 @@ func TestAccLibvirtNetwork_BridgedMode(t *testing.T) {
 	     	}`, randomNetworkName, randomNetworkName, randomBridgeName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkName, "mode", "bridge"),
-					checkBridge("libvirt_network."+randomNetworkName, "vbr-"+randomBridgeName),
+					testAccCheckLibvirtNetworkBridge("libvirt_network."+randomNetworkName, "vbr-"+randomBridgeName),
 				),
 			},
 		},
@@ -590,7 +453,7 @@ func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 					autostart = true
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
-					networkExists("libvirt_network."+randomNetworkResource, &network),
+					testAccCheckNetworkExists("libvirt_network."+randomNetworkResource, &network),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "autostart", "true"),
 				),
 			},
@@ -604,26 +467,10 @@ func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 					autostart = false
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
-					networkExists("libvirt_network."+randomNetworkResource, &network),
+					testAccCheckNetworkExists("libvirt_network."+randomNetworkResource, &network),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "autostart", "false"),
 				),
 			},
 		},
 	})
-}
-
-func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
-	virtConn := testAccProvider.Meta().(*Client).libvirt
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "libvirt_network" {
-			continue
-		}
-		_, err := virtConn.LookupNetworkByUUIDString(rs.Primary.ID)
-		if err == nil {
-			return fmt.Errorf(
-				"Error waiting for network (%s) to be destroyed: %s",
-				rs.Primary.ID, err)
-		}
-	}
-	return nil
 }

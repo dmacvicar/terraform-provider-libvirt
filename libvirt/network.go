@@ -1,144 +1,16 @@
 package libvirt
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net"
-	"reflect"
-	"sort"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	libvirt "github.com/libvirt/libvirt-go"
+	"github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
 )
-
-func resourceLibvirtNetworkUpdateDNSHosts(d *schema.ResourceData, network *libvirt.Network) error {
-	hostsKey := dnsPrefix + ".hosts"
-	if d.HasChange(hostsKey) {
-		oldInterface, newInterface := d.GetChange(hostsKey)
-
-		oldEntries, err := parseNetworkDNSHostsChange(oldInterface)
-		if err != nil {
-			return fmt.Errorf("parse old %s: %s", hostsKey, err)
-		}
-
-		newEntries, err := parseNetworkDNSHostsChange(newInterface)
-		if err != nil {
-			return fmt.Errorf("parse new %s: %s", hostsKey, err)
-		}
-
-		for _, oldEntry := range oldEntries {
-			found := false
-			for _, newEntry := range newEntries {
-				if reflect.DeepEqual(newEntry, oldEntry) {
-					found = true
-					break
-				}
-			}
-			if found {
-				continue
-			}
-
-			data, err := xmlMarshallIndented(libvirtxml.NetworkDNSHost{IP: oldEntry.IP})
-			if err != nil {
-				return fmt.Errorf("serialize update: %s", err)
-			}
-
-			err = network.Update(libvirt.NETWORK_UPDATE_COMMAND_DELETE, libvirt.NETWORK_SECTION_DNS_HOST, -1, data, libvirt.NETWORK_UPDATE_AFFECT_LIVE|libvirt.NETWORK_UPDATE_AFFECT_CONFIG)
-			if err != nil {
-				return fmt.Errorf("delete %s: %s", oldEntry.IP, err)
-			}
-		}
-
-		for _, newEntry := range newEntries {
-			found := false
-			for _, oldEntry := range oldEntries {
-				if reflect.DeepEqual(oldEntry, newEntry) {
-					found = true
-					break
-				}
-			}
-			if found {
-				continue
-			}
-
-			data, err := xmlMarshallIndented(newEntry)
-			if err != nil {
-				return fmt.Errorf("serialize update: %s", err)
-			}
-
-			err = network.Update(libvirt.NETWORK_UPDATE_COMMAND_ADD_LAST, libvirt.NETWORK_SECTION_DNS_HOST, -1, data, libvirt.NETWORK_UPDATE_AFFECT_LIVE|libvirt.NETWORK_UPDATE_AFFECT_CONFIG)
-			if err != nil {
-				return fmt.Errorf("add %v: %s", newEntry, err)
-			}
-		}
-
-		d.SetPartial(hostsKey)
-	}
-
-	return nil
-}
-
-func parseNetworkDNSHostsChange(change interface{}) (entries []libvirtxml.NetworkDNSHost, err error) {
-	slice, ok := change.([]interface{})
-	if !ok {
-		return entries, errors.New("not slice")
-	}
-
-	mapEntries := map[string][]string{}
-	for i, entryInterface := range slice {
-		entryMap, ok := entryInterface.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("entry %d is not a map", i)
-		}
-
-		ipInterface, ok := entryMap["ip"]
-		if !ok {
-			return nil, fmt.Errorf("entry %d.ip is missing", i)
-		}
-
-		ip, ok := ipInterface.(string)
-		if !ok {
-			return nil, fmt.Errorf("entry %d.ip is not a string", i)
-		}
-
-		hostnameInterface, ok := entryMap["hostname"]
-		if !ok {
-			return nil, fmt.Errorf("entry %d.hostname is missing", i)
-		}
-
-		hostname, ok := hostnameInterface.(string)
-		if !ok {
-			return nil, fmt.Errorf("entry %d.hostname is not a string", i)
-		}
-
-		_, ok = mapEntries[ip]
-		if ok {
-			mapEntries[ip] = append(mapEntries[ip], hostname)
-		} else {
-			mapEntries[ip] = []string{hostname}
-		}
-	}
-
-	entries = make([]libvirtxml.NetworkDNSHost, 0, len(mapEntries))
-	for ip, hostnames := range mapEntries {
-		sort.Strings(hostnames)
-		xmlHostnames := make([]libvirtxml.NetworkDNSHostHostname, 0, len(hostnames))
-		for _, hostname := range hostnames {
-			xmlHostnames = append(xmlHostnames, libvirtxml.NetworkDNSHostHostname{
-				Hostname: hostname,
-			})
-		}
-		entries = append(entries, libvirtxml.NetworkDNSHost{
-			IP:        ip,
-			Hostnames: xmlHostnames,
-		})
-	}
-
-	return entries, nil
-}
 
 func waitForNetworkActive(network libvirt.Network) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
@@ -153,7 +25,7 @@ func waitForNetworkActive(network libvirt.Network) resource.StateRefreshFunc {
 	}
 }
 
-// wait for network to be up and timeout after 5 minutes.
+// waitForNetworkDestroyed waits for a network to destroyed
 func waitForNetworkDestroyed(virConn *libvirt.Connect, uuid string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		log.Printf("Waiting for network %s to be destroyed", uuid)
@@ -166,31 +38,54 @@ func waitForNetworkDestroyed(virConn *libvirt.Connect, uuid string) resource.Sta
 	}
 }
 
-func setDhcpByCIDRAdressesSubnets(d *schema.ResourceData, networkDef *libvirtxml.Network) error {
-	if addresses, ok := d.GetOk("addresses"); ok {
-		ipsPtrsLst := []libvirtxml.NetworkIP{}
-		for _, addressI := range addresses.([]interface{}) {
-			// get the IP address entry for this subnet (with a guessed DHCP range)
-			dni, dhcp, err := setNetworkIP(addressI.(string))
-			if err != nil {
-				return err
-			}
-			if d.Get("dhcp.0.enabled").(bool) {
-				dni.DHCP = dhcp
-			} else {
-				// if a network exist with enabled but an user want to disable
-				// dhcp, we need to set dhcp struct to nil.
-				dni.DHCP = nil
-			}
-
-			ipsPtrsLst = append(ipsPtrsLst, *dni)
-		}
-		networkDef.IPs = ipsPtrsLst
-	}
-	return nil
+// getNetModeFromResource returns the network mode fromm a network definition
+func getNetModeFromResource(d *schema.ResourceData) string {
+	return strings.ToLower(d.Get("mode").(string))
 }
 
-func setNetworkIP(address string) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHCP, error) {
+// getIPsFromResource gets the IPs configurations from the resource definition
+func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) {
+	addresses, ok := d.GetOk("addresses")
+	if !ok {
+		return []libvirtxml.NetworkIP{}, nil
+	}
+
+	// check if DHCP must be enabled by default
+	var dhcpEnabled bool
+	netMode := getNetModeFromResource(d)
+	if netMode == netModeIsolated || netMode == netModeNat || netMode == netModeRoute {
+		dhcpEnabled = true
+	}
+
+	ipsPtrsLst := []libvirtxml.NetworkIP{}
+	for num, addressI := range addresses.([]interface{}) {
+		// get the IP address entry for this subnet (with a guessed DHCP range)
+		dni, dhcp, err := getNetworkIPConfig(addressI.(string))
+		if err != nil {
+			return nil, err
+		}
+
+		dhcpKey := fmt.Sprintf("dhcp.%d.enabled", num)
+		dhcpEnabledByUser, ok := d.GetOkExists(dhcpKey)
+		if ok {
+			dhcpEnabled = dhcpEnabledByUser.(bool)
+		}
+
+		if dhcpEnabled {
+			dni.DHCP = dhcp
+		} else {
+			// if a network exist with enabled but an user want to disable it
+			// we need to set DHCP struct to nil.
+			dni.DHCP = nil
+		}
+
+		ipsPtrsLst = append(ipsPtrsLst, *dni)
+	}
+
+	return ipsPtrsLst, nil
+}
+
+func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHCP, error) {
 	_, ipNet, err := net.ParseCIDR(address)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Error parsing addresses definition '%s': %s", address, err)
@@ -232,4 +127,42 @@ func setNetworkIP(address string) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHC
 	}
 
 	return dni, dhcp, nil
+}
+
+// getBridgeFromResource returns a libvirt's NetworkBridge
+// from the ResourceData provided.
+func getBridgeFromResource(d *schema.ResourceData) *libvirtxml.NetworkBridge {
+	// use a bridge provided by the user, or create one otherwise (libvirt will assign on automatically when empty)
+	bridgeName := ""
+	if b, ok := d.GetOk("bridge"); ok {
+		bridgeName = b.(string)
+	}
+
+	bridge := &libvirtxml.NetworkBridge{
+		Name: bridgeName,
+		STP:  "on",
+	}
+
+	return bridge
+}
+
+// getDomainFromResource returns a libvirt's NetworkDomain
+// from the ResourceData provided.
+func getDomainFromResource(d *schema.ResourceData) *libvirtxml.NetworkDomain {
+	domainName, ok := d.GetOk("domain")
+	if !ok {
+		return nil
+	}
+
+	domain := &libvirtxml.NetworkDomain{
+		Name: domainName.(string),
+	}
+
+	if dnsLocalOnly, ok := d.GetOk(dnsPrefix + ".local_only"); ok {
+		if dnsLocalOnly.(bool) {
+			domain.LocalOnly = "yes" // this "boolean" must be "yes"|"no"
+		}
+	}
+
+	return domain
 }

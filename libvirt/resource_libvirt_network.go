@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strconv"
 	"strings"
 	"time"
 
@@ -55,7 +54,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 			"domain": {
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
+				ForceNew: false,
 			},
 			"mode": { // can be "none", "nat" (default), "route", "bridge"
 				Type:     schema.TypeString,
@@ -67,7 +66,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
-				ForceNew: true,
+				ForceNew: false,
 			},
 			"addresses": {
 				Type:     schema.TypeList,
@@ -85,7 +84,6 @@ func resourceLibvirtNetwork() *schema.Resource {
 			"dns": {
 				Type:     schema.TypeList,
 				Optional: true,
-				ForceNew: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -169,6 +167,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 						},
 						"hosts": {
 							Type:     schema.TypeList,
+							ForceNew: false,
 							Optional: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
@@ -211,7 +210,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 			"routes": {
 				Type:     schema.TypeList,
 				Optional: true,
-				ForceNew: false,
+				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"cidr": {
@@ -263,7 +262,10 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 	return err == nil, err
 }
 
+// resourceLibvirtNetworkUpdate updates dynamically some attributes in the network
 func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
+	// check the list of things that can be changed dynamically
+	// in https://wiki.libvirt.org/page/Networking#virsh_net-update
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
@@ -276,35 +278,80 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 
 	d.Partial(true)
 
+	networkName, err := network.GetName()
+	if err != nil {
+		return err
+	}
+
 	active, err := network.IsActive()
 	if err != nil {
-		return fmt.Errorf("Error by getting network's status during update: %s", err)
+		return fmt.Errorf("Error when getting network %s status during update: %s", networkName, err)
 	}
 
 	if !active {
-		log.Printf("[DEBUG] Activating network")
+		log.Printf("[DEBUG] Activating network %s", networkName)
 		if err := network.Create(); err != nil {
-			return fmt.Errorf("Error by activating network during update: %s", err)
+			return fmt.Errorf("Error when activating network %s during update: %s", networkName, err)
 		}
 	}
 
 	if d.HasChange("autostart") {
 		err = network.SetAutostart(d.Get("autostart").(bool))
 		if err != nil {
-			return fmt.Errorf("Error updating autostart for network: %s", err)
+			return fmt.Errorf("Error updating autostart for network %s: %s", networkName, err)
 		}
 		d.SetPartial("autostart")
 	}
 
-	err = resourceLibvirtNetworkUpdateDNSHosts(d, network)
+	// detect changes in the DNS entries in this network
+	err = updateDNSHosts(d, network)
 	if err != nil {
-		return fmt.Errorf("update DNS hosts: %s", err)
+		return fmt.Errorf("Error updating DNS hosts for network %s: %s", networkName, err)
+	}
+
+	// detect changes in the bridge
+	if d.HasChange("bridge") {
+		networkBridge := getBridgeFromResource(d)
+
+		data, err := xmlMarshallIndented(networkBridge)
+		if err != nil {
+			return fmt.Errorf("Error serializing update for network %s: %s", networkName, err)
+		}
+
+		log.Printf("[DEBUG] Updating bridge for libvirt network '%s' with XML: %s", network, networkBridge.Name)
+		err = network.Update(libvirt.NETWORK_UPDATE_COMMAND_MODIFY, libvirt.NETWORK_SECTION_BRIDGE, -1,
+			data, libvirt.NETWORK_UPDATE_AFFECT_LIVE|libvirt.NETWORK_UPDATE_AFFECT_CONFIG)
+		if err != nil {
+			return fmt.Errorf("Error when updating bridge in %s: %s", networkName, err)
+		}
+
+		d.SetPartial("bridge")
+	}
+
+	// detect changes in the domain
+	if d.HasChange("domain") {
+		networkDomain := getDomainFromResource(d)
+
+		data, err := xmlMarshallIndented(networkDomain)
+		if err != nil {
+			return fmt.Errorf("serialize update: %s", err)
+		}
+
+		log.Printf("[DEBUG] Updating domain for libvirt network '%s' with XML: %s", network, data)
+		err = network.Update(libvirt.NETWORK_UPDATE_COMMAND_MODIFY, libvirt.NETWORK_SECTION_DOMAIN, -1,
+			data, libvirt.NETWORK_UPDATE_AFFECT_LIVE|libvirt.NETWORK_UPDATE_AFFECT_CONFIG)
+		if err != nil {
+			return fmt.Errorf("Error when updating domain in %s: %s", networkName, err)
+		}
+
+		d.SetPartial("domain")
 	}
 
 	d.Partial(false)
 	return nil
 }
 
+// resourceLibvirtNetworkCreate creates a libvirt network from the resource definition
 func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) error {
 	// see https://libvirt.org/formatnetwork.html
 	virConn := meta.(*Client).libvirt
@@ -314,32 +361,14 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 
 	networkDef := newNetworkDef()
 	networkDef.Name = d.Get("name").(string)
-
-	if domain, ok := d.GetOk("domain"); ok {
-		networkDef.Domain = &libvirtxml.NetworkDomain{
-			Name: domain.(string),
-		}
-
-		if dnsLocalOnly, ok := d.GetOk(dnsPrefix + ".local_only"); ok {
-			if dnsLocalOnly.(bool) {
-				networkDef.Domain.LocalOnly = "yes" // this "boolean" must be "yes"|"no"
-			}
-		}
-	}
+	networkDef.Domain = getDomainFromResource(d)
 
 	// use a bridge provided by the user, or create one otherwise (libvirt will assign on automatically when empty)
-	bridgeName := ""
-	if b, ok := d.GetOk("bridge"); ok {
-		bridgeName = b.(string)
-	}
-	networkDef.Bridge = &libvirtxml.NetworkBridge{
-		Name: bridgeName,
-		STP:  "on",
-	}
+	networkDef.Bridge = getBridgeFromResource(d)
 
 	// check the network mode
 	networkDef.Forward = &libvirtxml.NetworkForward{
-		Mode: strings.ToLower(d.Get("mode").(string)),
+		Mode: getNetModeFromResource(d),
 	}
 	if networkDef.Forward.Mode == netModeIsolated || networkDef.Forward.Mode == netModeNat || networkDef.Forward.Mode == netModeRoute {
 
@@ -350,96 +379,27 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			// there is no NAT when using a routed network
 			networkDef.Forward.NAT = nil
 		}
+
 		// if addresses are given set dhcp for these
-		err := setDhcpByCIDRAdressesSubnets(d, &networkDef)
+		ips, err := getIPsFromResource(d)
 		if err != nil {
 			return fmt.Errorf("Could not set DHCP from adresses '%s'", err)
 		}
-		var dnsForwarders []libvirtxml.NetworkDNSForwarder
-		if dnsForwardCount, ok := d.GetOk(dnsPrefix + ".forwarders.#"); ok {
-			for i := 0; i < dnsForwardCount.(int); i++ {
-				forward := libvirtxml.NetworkDNSForwarder{}
-				forwardPrefix := fmt.Sprintf(dnsPrefix+".forwarders.%d", i)
-				if address, ok := d.GetOk(forwardPrefix + ".address"); ok {
-					ip := net.ParseIP(address.(string))
-					if ip == nil {
-						return fmt.Errorf("Could not parse address '%s'", address)
-					}
-					forward.Addr = ip.String()
-				}
-				if domain, ok := d.GetOk(forwardPrefix + ".domain"); ok {
-					forward.Domain = domain.(string)
-				}
-				dnsForwarders = append(dnsForwarders, forward)
-			}
+		networkDef.IPs = ips
+
+		dnsForwarders, err := getDNSForwardersFromResource(d)
+		if err != nil {
+			return err
 		}
 
-		var dnsSRVs []libvirtxml.NetworkDNSSRV
-		if routesCount, ok := d.GetOk(dnsPrefix + ".srvs.#"); ok {
-			for i := 0; i < routesCount.(int); i++ {
-				srv := libvirtxml.NetworkDNSSRV{}
-				srvPrefix := fmt.Sprintf(dnsPrefix+".srvs.%d", i)
-				if service, ok := d.GetOk(srvPrefix + ".service"); ok {
-					srv.Service = service.(string)
-				}
-				if protocol, ok := d.GetOk(srvPrefix + ".protocol"); ok {
-					srv.Protocol = protocol.(string)
-				}
-				if domain, ok := d.GetOk(srvPrefix + ".domain"); ok {
-					srv.Domain = domain.(string)
-				}
-				if target, ok := d.GetOk(srvPrefix + ".target"); ok {
-					srv.Target = target.(string)
-				}
-				if port, ok := d.GetOk(srvPrefix + ".port"); ok {
-					p, err := strconv.Atoi(port.(string))
-					if err != nil {
-						return fmt.Errorf("Could not convert port '%s' to int", port)
-					}
-					srv.Port = uint(p)
-				}
-				if weight, ok := d.GetOk(srvPrefix + ".weight"); ok {
-					w, err := strconv.Atoi(weight.(string))
-					if err != nil {
-						return fmt.Errorf("Could not convert weight '%s' to int", weight)
-					}
-					srv.Weight = uint(w)
-				}
-				if priority, ok := d.GetOk(srvPrefix + ".priority"); ok {
-					w, err := strconv.Atoi(priority.(string))
-					if err != nil {
-						return fmt.Errorf("Could not convert priority '%s' to int", priority)
-					}
-					srv.Priority = uint(w)
-				}
-				dnsSRVs = append(dnsSRVs, srv)
-			}
+		dnsSRVs, err := getDNSSRVFromResource(d)
+		if err != nil {
+			return err
 		}
 
-		dnsHostsMap := map[string][]string{}
-		if dnsHostCount, ok := d.GetOk(dnsPrefix + ".hosts.#"); ok {
-			for i := 0; i < dnsHostCount.(int); i++ {
-				hostPrefix := fmt.Sprintf(dnsPrefix+".hosts.%d", i)
-
-				address := d.Get(hostPrefix + ".ip").(string)
-				if net.ParseIP(address) == nil {
-					return fmt.Errorf("Could not parse address '%s'", address)
-				}
-
-				dnsHostsMap[address] = append(dnsHostsMap[address], d.Get(hostPrefix+".hostname").(string))
-			}
-		}
-
-		var dnsHosts []libvirtxml.NetworkDNSHost
-		for ip, hostnames := range dnsHostsMap {
-			dnsHostnames := []libvirtxml.NetworkDNSHostHostname{}
-			for _, hostname := range hostnames {
-				dnsHostnames = append(dnsHostnames, libvirtxml.NetworkDNSHostHostname{Hostname: hostname})
-			}
-			dnsHosts = append(dnsHosts, libvirtxml.NetworkDNSHost{
-				IP:        ip,
-				Hostnames: dnsHostnames,
-			})
+		dnsHosts, err := getDNSHostsFromResource(d)
+		if err != nil {
+			return err
 		}
 
 		if len(dnsForwarders) > 0 || len(dnsSRVs) > 0 || len(dnsHosts) > 0 {
@@ -452,7 +412,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		}
 
 	} else if networkDef.Forward.Mode == netModeBridge {
-		if bridgeName == "" {
+		if networkDef.Bridge.Name == "" {
 			return fmt.Errorf("'bridge' must be provided when using the bridged network mode")
 		}
 		// Bridges cannot forward
@@ -534,7 +494,11 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	return resourceLibvirtNetworkRead(d, meta)
 }
 
+// resourceLibvirtNetworkRead gets the current resource from libvirt and creates
+// the corresponding `schema.ResourceData`
 func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error {
+	log.Printf("[DEBUG] Read resource libvirt_network")
+
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
@@ -554,6 +518,10 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	d.Set("name", networkDef.Name)
 	d.Set("bridge", networkDef.Bridge.Name)
 
+	if networkDef.Forward != nil {
+		d.Set("mode", networkDef.Forward.Mode)
+	}
+
 	// Domain as won't be present for bridged networks
 	if networkDef.Domain != nil {
 		d.Set("domain", networkDef.Domain.Name)
@@ -565,6 +533,8 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		return fmt.Errorf("Error reading network autostart setting: %s", err)
 	}
 	d.Set("autostart", autostart)
+
+	// read add the IP addresses
 	addresses := []string{}
 	for _, address := range networkDef.IPs {
 		// we get the host interface IP (ie, 10.10.8.1) but we want the network CIDR (ie, 10.10.8.0/24)
@@ -586,6 +556,17 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		d.Set("addresses", addresses)
 	}
 
+	// set as DHCP=enabled if at least one of the IPs has a DHCP configuration
+	dhcpEnabled := false
+	for _, address := range networkDef.IPs {
+		if address.DHCP != nil {
+			dhcpEnabled = true
+			break
+		}
+	}
+	d.Set("dhcp.0.enabled", dhcpEnabled)
+
+	// read the DNS configuration
 	if networkDef.DNS != nil {
 		for i, forwarder := range networkDef.DNS.Forwarders {
 			key := fmt.Sprintf(dnsPrefix+".forwarders.%d", i)
@@ -598,6 +579,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		}
 	}
 
+	// and the static routes
 	if len(networkDef.Routes) > 0 {
 		for i, route := range networkDef.Routes {
 			routePrefix := fmt.Sprintf("routes.%d", i)
