@@ -501,6 +501,21 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 		}
 	}`, randomVolumeName, randomVolumeName, randomDomainName, randomDomainName)
 
+	var configListenAddress = fmt.Sprintf(`
+	resource "libvirt_volume" "%s" {
+		name = "%s"
+	}
+
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		graphics {
+			type        = "spice"
+			autoport    = "true"
+			listen_type = "address"
+			listen_address = "127.0.1.1"
+		}
+	}`, randomVolumeName, randomVolumeName, randomDomainName, randomDomainName)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -516,6 +531,28 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 						"libvirt_domain."+randomDomainName, "graphics.0.autoport", "true"),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomDomainName, "graphics.0.listen_type", "none"),
+				),
+			},
+		},
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: configListenAddress,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.type", "spice"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.autoport", "true"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.listen_type", "address"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.listen_address", "127.0.1.1"),
 				),
 			},
 		},
