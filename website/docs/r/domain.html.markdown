@@ -398,7 +398,7 @@ resource "libvirt_domain" "my-domain" {
 must be installed and running inside of the domain in order to discover the IP
 addresses of all the network interfaces attached to a LAN.
 
-### Graphics devices
+### Graphics devices and Video Card
 
 The optional `graphics` block allows you to override the default graphics
 settings.
@@ -425,6 +425,18 @@ resource "libvirt_domain" "my_machine" {
   graphics {
     type = "vnc"
     listen_type = "address"
+  }
+}
+```
+
+The video card type can be changed from libvirt default `cirrus` to
+`vga` or others as described in [Video Card Elements](https://libvirt.org/formatdomain.html#elementsVideo)
+
+```hcl
+resource "libvirt_domain" "my_machine" {
+  ...
+  video {
+    type = "vga"
   }
 }
 ```
