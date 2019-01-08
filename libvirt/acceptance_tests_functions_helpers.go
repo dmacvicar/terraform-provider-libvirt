@@ -2,11 +2,12 @@ package libvirt
 
 import (
 	"fmt"
-	"log"
-
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	libvirt "github.com/libvirt/libvirt-go"
+	"github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
+	"log"
+	"reflect"
 )
 
 // This file contain function helpers used for testsuite/testacc

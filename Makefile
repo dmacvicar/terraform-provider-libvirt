@@ -50,6 +50,9 @@ golint:
 gofmtcheck:
 	bash travis/run-gofmt
 
+fmt:
+	(cd libvirt && go fmt .)
+
 clean:
 	./travis/cleanup.sh
 
