@@ -10,6 +10,7 @@ This is a terraform provider that lets you provision
 servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraform.io/).
 
 ## Table of Content
+- [Introduction and Goals](#intro)
 - [Downloading](#downloading)
 - [Installing](#installing)
 - [Quickstart](#using-the-provider)
@@ -25,7 +26,20 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 - [Networks](website/docs/r/network.markdown)
 - [Volumes](website/docs/r/volume.html.markdown)
 
+# Introduction & Goals
 
+This project exists:
+
+* To allow teams to get the benefits [Software Defined Infrastructure](https://en.wikipedia.org/wiki/Software-defined_infrastructure) Terraform provides, on top of classical and cheap virtualization infrastructure provided by Linux and [KVM](https://www.linux-kvm.org)
+  This helps in very dynamic [DevOps](https://en.wikipedia.org/wiki/DevOps), Development and Testing activities.
+* To allow for mixing KVM resources with other infrastructure Terraform is able to manage
+
+What is *NOT* in scope:
+
+* To support every advanced feature [libvirt](https://libvirt.org/) supports
+
+  This would make the mapping from terraform complicated and not maintanable. See the [How to contribute](CONTRIBUTING.md) section to understand how to approach new features.
+  
 ## Downloading
 
 Builds for openSUSE, CentOS, Ubuntu, Fedora are created with openSUSE's [OBS](https://build.opensuse.org). The build definitions are available for both the [stable](https://build.opensuse.org/package/show/systemsmanagement:terraform/terraform-provider-libvirt) and [master](https://build.opensuse.org/package/show/systemsmanagement:terraform:unstable/terraform-provider-libvirt) branches.
