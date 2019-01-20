@@ -1,0 +1,156 @@
+stages:
+  - build
+
+
+variables:
+  REPO_NAME: github.com/dmacvicar/terraform-provider-libvirt
+  GOLANG_VERSION: 1.11.4
+  GOPATH: /go
+  PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin:/go/bin/
+
+
+before_script:
+  - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
+  - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
+  - cd $GOPATH/src/$REPO_NAME
+
+
+.build_deb: &build_deb
+  script:
+  - apt-get update -q
+  - apt-get install -yq pkg-config libvirt-dev build-essential curl
+  - curl -s https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz | tar -C /usr/local -xzf -
+  - go build -o ${CI_PROJECT_DIR}/${CI_PROJECT_NAME}-${OS}-amd64 /go/src/github.com/dmacvicar/terraform-provider-libvirt
+
+.build_rhel: &build_rhel
+  script:
+  - yum groupinstall -y 'Development Tools'
+  - yum install -y curl libvirt-devel
+  - curl -s https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz | tar -C /usr/local -xzf -
+  - go build -o ${CI_PROJECT_DIR}/${CI_PROJECT_NAME}-${OS}-amd64 /go/src/github.com/dmacvicar/terraform-provider-libvirt
+
+
+.build_opensuse: &build_opensuse
+  script:
+  - zypper in -y libvirt-devel curl
+  - zypper in -y -t pattern devel_C_C++
+  - curl -s https://dl.google.com/go/go$GOLANG_VERSION.linux-amd64.tar.gz | tar -C /usr/local -xzf -
+  - go build -o ${CI_PROJECT_DIR}/${CI_PROJECT_NAME}-${OS}-amd64 /go/src/github.com/dmacvicar/terraform-provider-libvirt
+
+
+.artifacts: &artifacts
+  artifacts:
+    paths:
+      - ${CI_PROJECT_NAME}-${OS}-amd64
+    when: on_success
+    expire_in: 180 days
+
+
+debian-9.6:
+  image: debian:9.6
+  stage: build
+  variables:
+    OS: debian-9.6
+  <<: *build_deb
+  <<: *artifacts
+
+
+debian-8.11:
+  image: debian:8.11
+  stage: build
+  variables:
+    OS: debian-8.11
+  <<: *build_deb
+  <<: *artifacts
+
+
+ubuntu-14.04:
+  image: ubuntu:14.04
+  stage: build
+  variables:
+    OS: ubuntu-14.04
+  <<: *build_deb
+  <<: *artifacts
+
+
+ubuntu-16.04:
+  image: ubuntu:16.04
+  stage: build
+  variables:
+    OS: ubuntu-16.04
+  <<: *build_deb
+  <<: *artifacts
+
+ubuntu-18.04:
+  image: ubuntu:18.04
+  stage: build
+  variables:
+    OS: ubuntu-18.04
+  <<: *build_deb
+  <<: *artifacts
+
+
+centos-7:
+  image: centos:7
+  stage: build
+  variables:
+    OS: centos-7
+  <<: *build_rhel
+  <<: *artifacts
+
+
+oraclelinux-7:
+  image: oraclelinux:7
+  stage: build
+  variables:
+    OS: oraclelinux-7
+  <<: *build_rhel
+  <<: *artifacts
+
+
+fedora-28:
+  image: fedora:28
+  stage: build
+  variables:
+    OS: fedora-28
+  <<: *build_rhel
+  <<: *artifacts
+
+
+fedora-27:
+  image: fedora:27
+  stage: build
+  variables:
+    OS: fedora-27
+  <<: *build_rhel
+  <<: *artifacts
+
+
+fedora-26:
+  image: fedora:26
+  stage: build
+  variables:
+    OS: fedora-26
+  <<: *build_rhel
+  <<: *artifacts
+
+
+
+opensuse-tumbleweed:
+  image: opensuse/tumbleweed
+  stage: build
+  variables:
+    OS: opensuse-tumbleweed
+  <<: *build_opensuse
+  <<: *artifacts
+
+
+opensuse-leap:
+  image: opensuse/leap
+  stage: build
+  variables:
+    OS: opensuse-leap
+  <<: *build_opensuse
+  <<: *artifacts
+
+
