@@ -1,13 +1,25 @@
-# How to contribute to terraform-libvirt-plugin:
+# How to contribute to terraform-provider-libvirt
 
-## Workflow/requirements for a PR:
+## Checklist
 
-- Undocumented feature do not exist.
-Document each new feature.
-- Untested features do not exist.
-To ensure that what we code really works, relevant flows should be covered via acceptance tests.
-So when thinking about a contribution, also think about testability. All tests can be run local without the need of CI. Have a look at the Testing section (later on this page)
-`make` testacc will run all the tests for example.
+### New features
+
+  - Is your issue/contribution related with enabling some setting/option exposed by libvirt that the plugin does not yet support, or requires changing/extending the provider terraform schema?
+    - [ ] Consider creating a discussion/issue to discuss the enthusiasm of the team about the enhancement and discuss different approaches
+    - [ ] Make sure you explain why this option is important to you, why it should be important to everyone. Describe your use-case with detail and provide examples where possible.
+    - [ ] If it is a very special case, consider using the _XSLT_ support in the provider to tweak the definition instead of opening an issue
+  - [ ] Does the feature you added include documentation in the [expected place](https://github.com/dmacvicar/terraform-provider-libvirt/tree/master/website/docs)?
+  - [ ] Does your feature include the appropriate tests?
+
+### Bugfixes
+
+- Does this fix a bug or something that does not work as expected?
+  - [ ] If there is an issue open, please mention it in the Pull Request
+  - [ ] If there is not an issue open, consider including information on where it happens and how to reproduce it, following the [issues template](ISSUE_TEMPLATE.md)
+- [ ] Maintainers do not have expertise in every libvirt setting, so please, describe how the new or current feature works and how it is used. Link to the appropriate documentation
+- [ ] Does your PR follow the conventions below?
+
+## Implementation notes
 
 - Creation and update resource. Consider to implement the `update` CRUD of terraform-libvirt  of an existing resource and also testing it in testacc. 
 For example if an user rerun 2 times a terraform apply with a different parameter, this call will update the existing resource with the new parameter.
@@ -17,7 +29,6 @@ An example of updating a resource in testacc is here: https://github.com/dmacvic
 ## Conventions
 
 * Use [commit.style](https://commit.style/) for git commit messages
-
 
 ## Some words about the design-architecture of this project:
 
@@ -32,7 +43,11 @@ For example the `domain` resource, and others are organized like follow:
    you can imagine the `resource` file as a sort of "main" file for each resource.
 - `resource_libvirt_domain_test.go` ( contains testacc for resource)
 
-# Testing
+## Testing
+
+To ensure that what we code really works, relevant flows should be covered via acceptance tests.
+So when thinking about a contribution, also think about testability. All tests can be run local without the need of CI. Have a look at the Testing section (later on this page)
+`make` testacc will run all the tests for example.
 
 ## Running the tests (testacc)
 
@@ -72,9 +87,7 @@ Take a look at Terraform's docs about [writing acceptance tests](https://github.
 
 For resource names etc, use random names with the helper function. Take example from other testacc.
 
-
-
-### Provider terraform useful devel info:
+## Other learning resources
 
 https://www.terraform.io/docs/plugins/provider.html
 
@@ -84,7 +97,7 @@ https://godoc.org/github.com/libvirt/libvirt-go-xml
 https://godoc.org/github.com/libvirt/libvirt-go
 
 
-### Easy Issues for newbies:
+## Easy issues for newbies:
 
 We try to keep easy issues for new contributors with label : https://github.com/dmacvicar/terraform-provider-libvirt/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22.
 
