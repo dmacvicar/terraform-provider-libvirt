@@ -16,8 +16,9 @@ const (
 )
 
 // randomMACAddress returns a randomized MAC address
+// with libvirt prefix
 func randomMACAddress() (string, error) {
-	buf := make([]byte, 6)
+	buf := make([]byte, 3)
 	_, err := rand.Read(buf)
 	if err != nil {
 		return "", err
@@ -33,8 +34,8 @@ func randomMACAddress() (string, error) {
 		buf[0] = 0xee
 	}
 
-	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x",
-		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]), nil
+	return fmt.Sprintf("52:54:00:%02x:%02x:%02x",
+		buf[0], buf[1], buf[2]), nil
 }
 
 // randomPort returns a random port
