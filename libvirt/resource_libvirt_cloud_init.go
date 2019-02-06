@@ -109,7 +109,7 @@ func resourceCloudInitDiskDelete(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
-	return removeVolume(client, key)
+	return volumeDelete(client, key)
 }
 
 func resourceCloudInitDiskExists(d *schema.ResourceData, meta interface{}) (bool, error) {
@@ -125,7 +125,7 @@ func resourceCloudInitDiskExists(d *schema.ResourceData, meta interface{}) (bool
 	}
 
 	volPoolName := d.Get("pool").(string)
-	volume, err := lookupVolumeReallyHard(client, volPoolName, key)
+	volume, err := volumeLookupReallyHard(client, volPoolName, key)
 	if err != nil {
 		return false, err
 	}
