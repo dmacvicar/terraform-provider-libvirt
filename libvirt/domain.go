@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 // deprecated, now defaults to not use it, but we warn the user
@@ -712,6 +712,49 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 		}
 
 		domainDef.Devices.Interfaces = append(domainDef.Devices.Interfaces, netIface)
+	}
+
+	return nil
+}
+
+func setHostdevs(d *schema.ResourceData, domainDef *libvirtxml.Domain,
+	virConn *libvirt.Connect, partialNetIfaces map[string]*pendingMapping,
+	waitForLeases *[]*libvirtxml.DomainInterface) error {
+	for i := 0; i < d.Get("hostdev.#").(int); i++ {
+		prefix := fmt.Sprintf("hostdev.%d", i)
+
+		hostdev := libvirtxml.DomainHostdev{
+			Managed: "yes",
+		}
+
+		var domain uint
+		if domainI, ok := d.GetOk(prefix + ".domain"); ok {
+			domain = (uint)(domainI.(int))
+		}
+		var bus uint
+		if busI, ok := d.GetOk(prefix + ".bus"); ok {
+			bus = (uint)(busI.(int))
+		}
+		var solt uint
+		if soltI, ok := d.GetOk(prefix + ".solt"); ok {
+			solt = (uint)(soltI.(int))
+		}
+		var function uint
+		if functionI, ok := d.GetOk(prefix + ".function"); ok {
+			function = (uint)(functionI.(int))
+		}
+		hostdev.SubsysPCI = &libvirtxml.DomainHostdevSubsysPCI{
+			Source: &libvirtxml.DomainHostdevSubsysPCISource{
+				Address: &libvirtxml.DomainAddressPCI{
+					Domain:   &domain,
+					Bus:      &bus,
+					Slot:     &solt,
+					Function: &function,
+				},
+			},
+		}
+
+		domainDef.Devices.Hostdevs = append(domainDef.Devices.Hostdevs, hostdev)
 	}
 
 	return nil

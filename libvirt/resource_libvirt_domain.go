@@ -12,7 +12,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 type pendingMapping struct {
@@ -269,6 +269,34 @@ func resourceLibvirtDomain() *schema.Resource {
 					},
 				},
 			},
+			"hostdev": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"domain": {
+							Type:     schema.TypeInt,
+							Required: true,
+							ForceNew: true,
+						},
+						"bus": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							ForceNew: true,
+						},
+						"solt": {
+							Type:     schema.TypeInt,
+							Required: true,
+							ForceNew: true,
+						},
+						"function": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							ForceNew: true,
+						},
+					},
+				},
+			},
 			"cpu": {
 				Type:     schema.TypeMap,
 				Optional: true,
@@ -455,6 +483,10 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	partialNetIfaces := make(map[string]*pendingMapping, d.Get("network_interface.#").(int))
 
 	if err := setNetworkInterfaces(d, &domainDef, virConn, partialNetIfaces, &waitForLeases); err != nil {
+		return err
+	}
+
+	if err := setHostdevs(d, &domainDef, virConn, partialNetIfaces, &waitForLeases); err != nil {
 		return err
 	}
 

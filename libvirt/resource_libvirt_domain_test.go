@@ -420,6 +420,45 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_Hostdev(t *testing.T) {
+	var domain libvirt.Domain
+	randomDomainName := acctest.RandString(10)
+	var config = fmt.Sprintf(`
+	resource "libvirt_domain" "%s" {
+		name              = "%s"
+
+		disk {
+			file = "/var/lib/libvirt/images/tcl.iso"
+		}
+		hostdev = {
+			domain = 0
+			bus = 6
+			solt = 10
+			function = 0
+		}
+		hostdev = {
+			domain = 0
+			bus = 4
+			solt = 0
+			function = 1
+		}
+	}`, randomDomainName, randomDomainName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
 	var domain libvirt.Domain
 	var network libvirt.Network
