@@ -1,9 +1,10 @@
 dist:     trusty
 sudo:     false
 language: go
-
 go:
   - 1.11
+env:
+  - GO111MODULE=on
 go_import_path: github.com/dmacvicar/terraform-provider-libvirt
 install:        true
 before_script:
