@@ -15,22 +15,17 @@
 package types
 
 import (
-	"errors"
 	"path/filepath"
 
+	"github.com/coreos/ignition/config/shared/errors"
 	"github.com/coreos/ignition/config/validate/report"
-)
-
-var (
-	ErrNoFilesystem     = errors.New("no filesystem specified")
-	ErrBothIDAndNameSet = errors.New("cannot set both id and name")
 )
 
 func (n Node) ValidateFilesystem() report.Report {
 	r := report.Report{}
 	if n.Filesystem == "" {
 		r.Add(report.Entry{
-			Message: ErrNoFilesystem.Error(),
+			Message: errors.ErrNoFilesystem.Error(),
 			Kind:    report.EntryError,
 		})
 	}
@@ -60,7 +55,7 @@ func (nu NodeUser) Validate() report.Report {
 	r := report.Report{}
 	if nu.ID != nil && nu.Name != "" {
 		r.Add(report.Entry{
-			Message: ErrBothIDAndNameSet.Error(),
+			Message: errors.ErrBothIDAndNameSet.Error(),
 			Kind:    report.EntryError,
 		})
 	}
@@ -70,7 +65,7 @@ func (ng NodeGroup) Validate() report.Report {
 	r := report.Report{}
 	if ng.ID != nil && ng.Name != "" {
 		r.Add(report.Entry{
-			Message: ErrBothIDAndNameSet.Error(),
+			Message: errors.ErrBothIDAndNameSet.Error(),
 			Kind:    report.EntryError,
 		})
 	}

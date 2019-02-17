@@ -1,1 +1,0 @@
-module "B" { source = "../B" }

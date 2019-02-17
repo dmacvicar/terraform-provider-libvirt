@@ -15,17 +15,10 @@
 package types
 
 import (
-	"errors"
-
 	"github.com/coreos/go-semver/semver"
 
+	"github.com/coreos/ignition/config/shared/errors"
 	"github.com/coreos/ignition/config/validate/report"
-)
-
-var (
-	ErrOldVersion     = errors.New("incorrect config version (too old)")
-	ErrNewVersion     = errors.New("incorrect config version (too new)")
-	ErrInvalidVersion = errors.New("invalid config version (couldn't parse)")
 )
 
 func (c ConfigReference) ValidateSource() report.Report {
@@ -47,13 +40,13 @@ func (v Ignition) Semver() (*semver.Version, error) {
 func (v Ignition) Validate() report.Report {
 	tv, err := v.Semver()
 	if err != nil {
-		return report.ReportFromError(ErrInvalidVersion, report.EntryError)
+		return report.ReportFromError(errors.ErrInvalidVersion, report.EntryError)
 	}
 	if MaxVersion.Major > tv.Major {
-		return report.ReportFromError(ErrOldVersion, report.EntryError)
+		return report.ReportFromError(errors.ErrOldVersion, report.EntryError)
 	}
 	if MaxVersion.LessThan(*tv) {
-		return report.ReportFromError(ErrNewVersion, report.EntryError)
+		return report.ReportFromError(errors.ErrNewVersion, report.EntryError)
 	}
 	return report.Report{}
 }

@@ -21,7 +21,6 @@ package grpc
 import (
 	"bytes"
 	"compress/gzip"
-	"context"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -32,6 +31,7 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/encoding"
@@ -155,7 +155,7 @@ func (d *gzipDecompressor) Type() string {
 type callInfo struct {
 	compressorType        string
 	failFast              bool
-	stream                ClientStream
+	stream                *clientStream
 	maxReceiveMessageSize *int
 	maxSendMessageSize    *int
 	creds                 credentials.PerRPCCredentials
@@ -598,18 +598,13 @@ func checkRecvPayload(pf payloadFormat, recvCompress string, haveCompressor bool
 	return nil
 }
 
-type payloadInfo struct {
-	wireLength        int // The compressed length got from wire.
-	uncompressedBytes []byte
-}
-
-func recvAndDecompress(p *parser, s *transport.Stream, dc Decompressor, maxReceiveMessageSize int, payInfo *payloadInfo, compressor encoding.Compressor) ([]byte, error) {
+func recvAndDecompress(p *parser, s *transport.Stream, dc Decompressor, maxReceiveMessageSize int, inPayload *stats.InPayload, compressor encoding.Compressor) ([]byte, error) {
 	pf, d, err := p.recvMsg(maxReceiveMessageSize)
 	if err != nil {
 		return nil, err
 	}
-	if payInfo != nil {
-		payInfo.wireLength = len(d)
+	if inPayload != nil {
+		inPayload.WireLength = len(d)
 	}
 
 	if st := checkRecvPayload(pf, s.RecvCompress(), compressor != nil || dc != nil); st != nil {
@@ -646,16 +641,20 @@ func recvAndDecompress(p *parser, s *transport.Stream, dc Decompressor, maxRecei
 // For the two compressor parameters, both should not be set, but if they are,
 // dc takes precedence over compressor.
 // TODO(dfawley): wrap the old compressor/decompressor using the new API?
-func recv(p *parser, c baseCodec, s *transport.Stream, dc Decompressor, m interface{}, maxReceiveMessageSize int, payInfo *payloadInfo, compressor encoding.Compressor) error {
-	d, err := recvAndDecompress(p, s, dc, maxReceiveMessageSize, payInfo, compressor)
+func recv(p *parser, c baseCodec, s *transport.Stream, dc Decompressor, m interface{}, maxReceiveMessageSize int, inPayload *stats.InPayload, compressor encoding.Compressor) error {
+	d, err := recvAndDecompress(p, s, dc, maxReceiveMessageSize, inPayload, compressor)
 	if err != nil {
 		return err
 	}
 	if err := c.Unmarshal(d, m); err != nil {
 		return status.Errorf(codes.Internal, "grpc: failed to unmarshal the received message %v", err)
 	}
-	if payInfo != nil {
-		payInfo.uncompressedBytes = d
+	if inPayload != nil {
+		inPayload.RecvTime = time.Now()
+		inPayload.Payload = m
+		// TODO truncate large payload.
+		inPayload.Data = d
+		inPayload.Length = len(d)
 	}
 	return nil
 }
@@ -703,31 +702,6 @@ func ErrorDesc(err error) string {
 // Deprecated: use status.Errorf instead.
 func Errorf(c codes.Code, format string, a ...interface{}) error {
 	return status.Errorf(c, format, a...)
-}
-
-// toRPCErr converts an error into an error from the status package.
-func toRPCErr(err error) error {
-	if err == nil || err == io.EOF {
-		return err
-	}
-	if err == io.ErrUnexpectedEOF {
-		return status.Error(codes.Internal, err.Error())
-	}
-	if _, ok := status.FromError(err); ok {
-		return err
-	}
-	switch e := err.(type) {
-	case transport.ConnectionError:
-		return status.Error(codes.Unavailable, e.Desc)
-	default:
-		switch err {
-		case context.DeadlineExceeded:
-			return status.Error(codes.DeadlineExceeded, err.Error())
-		case context.Canceled:
-			return status.Error(codes.Canceled, err.Error())
-		}
-	}
-	return status.Error(codes.Unknown, err.Error())
 }
 
 // setCallInfoCodec should only be called after CallOptions have been applied.

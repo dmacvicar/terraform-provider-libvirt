@@ -1,1 +1,0 @@
-result_type = object({})
