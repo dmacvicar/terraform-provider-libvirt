@@ -45,7 +45,7 @@ vet:
 	fi
 
 golint:
-	golint ./libvirt
+	go run golang.org/x/lint/golint ./libvirt
 
 gofmtcheck:
 	bash travis/run-gofmt
