@@ -10,7 +10,7 @@ require (
 	github.com/coreos/go-systemd v0.0.0-20190212144455-93d5ec2c7f76 // indirect
 	github.com/coreos/ignition v0.23.0 // indirect
 	github.com/davecgh/go-spew v1.1.1
-	github.com/hashicorp/go-getter v0.0.0-20181119194526-bd1edc22f8ea // indirect
+	github.com/hashicorp/go-getter v1.0.3 // indirect
 	github.com/hashicorp/go-hclog v0.0.0-20181001195459-61d530d6c27f // indirect
 	github.com/hashicorp/go-plugin v0.0.0-20181030172320-54b6ff97d818 // indirect
 	github.com/hashicorp/go-uuid v1.0.0 // indirect
@@ -29,6 +29,7 @@ require (
 	github.com/mattn/goveralls v0.0.2
 	github.com/mitchellh/cli v1.0.0 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/mitchellh/hashstructure v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
@@ -42,7 +43,6 @@ require (
 	go4.org v0.0.0-20181109185143-00e24f1b2599 // indirect
 	golang.org/x/crypto v0.0.0-20181112202954-3d3f9f413869 // indirect
 	golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3
-	golang.org/x/sys v0.0.0-20181119195503-ec83556a53fe // indirect
 	golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e // indirect
 	google.golang.org/genproto v0.0.0-20181109154231-b5d43981345b // indirect
 )

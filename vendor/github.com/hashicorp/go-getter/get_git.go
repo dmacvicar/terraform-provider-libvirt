@@ -1,6 +1,7 @@
 package getter
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -8,22 +9,26 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	urlhelper "github.com/hashicorp/go-getter/helper/url"
-	"github.com/hashicorp/go-safetemp"
-	"github.com/hashicorp/go-version"
+	safetemp "github.com/hashicorp/go-safetemp"
+	version "github.com/hashicorp/go-version"
 )
 
 // GitGetter is a Getter implementation that will download a module from
 // a git repository.
-type GitGetter struct{}
+type GitGetter struct {
+	getter
+}
 
 func (g *GitGetter) ClientMode(_ *url.URL) (ClientMode, error) {
 	return ClientModeDir, nil
 }
 
 func (g *GitGetter) Get(dst string, u *url.URL) error {
+	ctx := g.Context()
 	if _, err := exec.LookPath("git"); err != nil {
 		return fmt.Errorf("git must be available and on the PATH")
 	}
@@ -104,9 +109,9 @@ func (g *GitGetter) Get(dst string, u *url.URL) error {
 		return err
 	}
 	if err == nil {
-		err = g.update(dst, sshKeyFile, ref)
+		err = g.update(ctx, dst, sshKeyFile, ref)
 	} else {
-		err = g.clone(dst, sshKeyFile, u)
+		err = g.clone(ctx, dst, sshKeyFile, u)
 	}
 	if err != nil {
 		return err
@@ -120,7 +125,7 @@ func (g *GitGetter) Get(dst string, u *url.URL) error {
 	}
 
 	// Lastly, download any/all submodules.
-	return g.fetchSubmodules(dst, sshKeyFile)
+	return g.fetchSubmodules(ctx, dst, sshKeyFile)
 }
 
 // GetFile for Git doesn't support updating at this time. It will download
@@ -158,16 +163,16 @@ func (g *GitGetter) checkout(dst string, ref string) error {
 	return getRunCommand(cmd)
 }
 
-func (g *GitGetter) clone(dst, sshKeyFile string, u *url.URL) error {
-	cmd := exec.Command("git", "clone", u.String(), dst)
+func (g *GitGetter) clone(ctx context.Context, dst, sshKeyFile string, u *url.URL) error {
+	cmd := exec.CommandContext(ctx, "git", "clone", u.String(), dst)
 	setupGitEnv(cmd, sshKeyFile)
 	return getRunCommand(cmd)
 }
 
-func (g *GitGetter) update(dst, sshKeyFile, ref string) error {
+func (g *GitGetter) update(ctx context.Context, dst, sshKeyFile, ref string) error {
 	// Determine if we're a branch. If we're NOT a branch, then we just
 	// switch to master prior to checking out
-	cmd := exec.Command("git", "show-ref", "-q", "--verify", "refs/heads/"+ref)
+	cmd := exec.CommandContext(ctx, "git", "show-ref", "-q", "--verify", "refs/heads/"+ref)
 	cmd.Dir = dst
 
 	if getRunCommand(cmd) != nil {
@@ -189,8 +194,8 @@ func (g *GitGetter) update(dst, sshKeyFile, ref string) error {
 }
 
 // fetchSubmodules downloads any configured submodules recursively.
-func (g *GitGetter) fetchSubmodules(dst, sshKeyFile string) error {
-	cmd := exec.Command("git", "submodule", "update", "--init", "--recursive")
+func (g *GitGetter) fetchSubmodules(ctx context.Context, dst, sshKeyFile string) error {
+	cmd := exec.CommandContext(ctx, "git", "submodule", "update", "--init", "--recursive")
 	cmd.Dir = dst
 	setupGitEnv(cmd, sshKeyFile)
 	return getRunCommand(cmd)
@@ -207,7 +212,7 @@ func setupGitEnv(cmd *exec.Cmd, sshKeyFile string) {
 	// with versions of Go < 1.9.
 	env := os.Environ()
 	for i, v := range env {
-		if strings.HasPrefix(v, gitSSHCommand) {
+		if strings.HasPrefix(v, gitSSHCommand) && len(v) > len(gitSSHCommand) {
 			sshCmd = []string{v}
 
 			env[i], env[len(env)-1] = env[len(env)-1], env[i]
@@ -222,6 +227,9 @@ func setupGitEnv(cmd *exec.Cmd, sshKeyFile string) {
 
 	if sshKeyFile != "" {
 		// We have an SSH key temp file configured, tell ssh about this.
+		if runtime.GOOS == "windows" {
+			sshKeyFile = strings.Replace(sshKeyFile, `\`, `/`, -1)
+		}
 		sshCmd = append(sshCmd, "-i", sshKeyFile)
 	}
 
@@ -247,8 +255,17 @@ func checkGitVersion(min string) error {
 	if len(fields) < 3 {
 		return fmt.Errorf("Unexpected 'git version' output: %q", string(out))
 	}
+	v := fields[2]
+	if runtime.GOOS == "windows" && strings.Contains(v, ".windows.") {
+		// on windows, git version will return for example:
+		// git version 2.20.1.windows.1
+		// Which does not follow the semantic versionning specs
+		// https://semver.org. We remove that part in order for
+		// go-version to not error.
+		v = v[:strings.Index(v, ".windows.")]
+	}
 
-	have, err := version.NewVersion(fields[2])
+	have, err := version.NewVersion(v)
 	if err != nil {
 		return err
 	}
