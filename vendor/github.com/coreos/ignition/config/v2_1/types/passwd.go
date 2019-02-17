@@ -15,15 +15,30 @@
 package types
 
 import (
-	"github.com/coreos/ignition/config/shared/errors"
+	"errors"
+
 	"github.com/coreos/ignition/config/validate/report"
+)
+
+var (
+	ErrPasswdCreateDeprecated      = errors.New("the create object has been deprecated in favor of user-level options")
+	ErrPasswdCreateAndGecos        = errors.New("cannot use both the create object and the user-level gecos field")
+	ErrPasswdCreateAndGroups       = errors.New("cannot use both the create object and the user-level groups field")
+	ErrPasswdCreateAndHomeDir      = errors.New("cannot use both the create object and the user-level homeDir field")
+	ErrPasswdCreateAndNoCreateHome = errors.New("cannot use both the create object and the user-level noCreateHome field")
+	ErrPasswdCreateAndNoLogInit    = errors.New("cannot use both the create object and the user-level noLogInit field")
+	ErrPasswdCreateAndNoUserGroup  = errors.New("cannot use both the create object and the user-level noUserGroup field")
+	ErrPasswdCreateAndPrimaryGroup = errors.New("cannot use both the create object and the user-level primaryGroup field")
+	ErrPasswdCreateAndShell        = errors.New("cannot use both the create object and the user-level shell field")
+	ErrPasswdCreateAndSystem       = errors.New("cannot use both the create object and the user-level system field")
+	ErrPasswdCreateAndUID          = errors.New("cannot use both the create object and the user-level uid field")
 )
 
 func (p PasswdUser) Validate() report.Report {
 	r := report.Report{}
 	if p.Create != nil {
 		r.Add(report.Entry{
-			Message: errors.ErrPasswdCreateDeprecated.Error(),
+			Message: ErrPasswdCreateDeprecated.Error(),
 			Kind:    report.EntryWarning,
 		})
 		addErr := func(err error) {
@@ -33,34 +48,34 @@ func (p PasswdUser) Validate() report.Report {
 			})
 		}
 		if p.Gecos != "" {
-			addErr(errors.ErrPasswdCreateAndGecos)
+			addErr(ErrPasswdCreateAndGecos)
 		}
 		if len(p.Groups) > 0 {
-			addErr(errors.ErrPasswdCreateAndGroups)
+			addErr(ErrPasswdCreateAndGroups)
 		}
 		if p.HomeDir != "" {
-			addErr(errors.ErrPasswdCreateAndHomeDir)
+			addErr(ErrPasswdCreateAndHomeDir)
 		}
 		if p.NoCreateHome {
-			addErr(errors.ErrPasswdCreateAndNoCreateHome)
+			addErr(ErrPasswdCreateAndNoCreateHome)
 		}
 		if p.NoLogInit {
-			addErr(errors.ErrPasswdCreateAndNoLogInit)
+			addErr(ErrPasswdCreateAndNoLogInit)
 		}
 		if p.NoUserGroup {
-			addErr(errors.ErrPasswdCreateAndNoUserGroup)
+			addErr(ErrPasswdCreateAndNoUserGroup)
 		}
 		if p.PrimaryGroup != "" {
-			addErr(errors.ErrPasswdCreateAndPrimaryGroup)
+			addErr(ErrPasswdCreateAndPrimaryGroup)
 		}
 		if p.Shell != "" {
-			addErr(errors.ErrPasswdCreateAndShell)
+			addErr(ErrPasswdCreateAndShell)
 		}
 		if p.System {
-			addErr(errors.ErrPasswdCreateAndSystem)
+			addErr(ErrPasswdCreateAndSystem)
 		}
 		if p.UID != nil {
-			addErr(errors.ErrPasswdCreateAndUID)
+			addErr(ErrPasswdCreateAndUID)
 		}
 	}
 	return r

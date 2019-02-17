@@ -15,16 +15,21 @@
 package types
 
 import (
-	"errors"
+	"fmt"
+
+	"github.com/coreos/ignition/config/validate/report"
 )
 
-var (
-	ErrFileIllegalMode = errors.New("illegal file mode")
-)
-
-func validateMode(m int) error {
-	if m < 0 || m > 07777 {
-		return ErrFileIllegalMode
+func (s Link) Validate() report.Report {
+	r := report.Report{}
+	if !s.Hard {
+		err := validatePath(s.Target)
+		if err != nil {
+			r.Add(report.Entry{
+				Message: fmt.Sprintf("problem with target path %q: %v", s.Target, err),
+				Kind:    report.EntryError,
+			})
+		}
 	}
-	return nil
+	return r
 }
