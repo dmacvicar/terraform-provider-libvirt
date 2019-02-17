@@ -64,10 +64,10 @@ Before building, you will need the following
 * latest [golang](https://golang.org/dl/) version
 * `cgo` is required by the [libvirt-go](https://github.com/libvirt/libvirt-go) package. `export CGO_ENABLED="1"`
 
-This project uses [glide](https://github.com/Masterminds/glide) to vendor all its
+This project uses [go modules](https://github.com/golang/go/wiki/Modules) to vendor all its
 dependencies.
 
-You do not have to interact with `glide` since the vendored packages are **already included in the repo**.
+You do not have to interact with `modules` since the vendored packages are **already included in the repo**.
 
 Ensure you have the latest version of Go installed on your system, terraform usually
 takes advantage of features available only inside of the latest stable release.
@@ -77,7 +77,15 @@ You need also need libvirt-dev(el) package installed.
 ```console
 go get github.com/dmacvicar/terraform-provider-libvirt
 cd $GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt
-go install
+make
+```
+
+If you are using Go >= 1.11, you don't need to build inside GOPATH:
+
+```
+export GO111MODULE=on
+export GOFLAGS=-mod=vendor
+make
 ```
 
 You will now find the binary at `$GOPATH/bin/terraform-provider-libvirt`.
