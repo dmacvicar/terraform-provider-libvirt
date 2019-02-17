@@ -16,6 +16,7 @@ addons:
   apt:
     packages:
     - libvirt-dev
+    - xsltproc
 script:
   - make fmt-check
   - make vet-check
