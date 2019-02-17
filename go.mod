@@ -25,7 +25,7 @@ require (
 	github.com/libvirt/libvirt-go v4.8.0+incompatible
 	github.com/libvirt/libvirt-go-xml v0.0.0-20181119112618-a782befec7b4
 	github.com/mattn/go-colorable v0.1.0 // indirect
-	github.com/mattn/goveralls v0.0.2 // indirect
+	github.com/mattn/goveralls v0.0.2
 	github.com/mitchellh/cli v1.0.0 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
