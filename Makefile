@@ -19,7 +19,6 @@ install:
 # - run some particular test: make test TEST_ARGS="-run TestAccLibvirtDomain_Cpu"
 test:
 	go test -v $(TEST_ARGS_DEF) $(TEST_ARGS) ./libvirt
-	go test -v .
 
 # acceptance tests
 # usage:
@@ -34,11 +33,10 @@ test:
 #   TF_LOG=DEBUG make testacc TEST_ARGS="-run TestAccLibvirtNet*"
 #
 testacc:
-	go test -v .
 	./travis/run-tests-acceptance $(TEST_ARGS)
 
 vet-check:
-	go vet . ./libvirt
+	go vet ./libvirt
 
 lint-check:
 	go run golang.org/x/lint/golint -set_exit_status ./libvirt .
