@@ -7,7 +7,7 @@ require (
 	github.com/c4milo/gotoolkit v0.0.0-20170704181456-e37eeabad07e // indirect
 	github.com/coreos/go-semver v0.2.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20190212144455-93d5ec2c7f76 // indirect
-	github.com/coreos/ignition v0.30.0 // indirect
+	github.com/coreos/ignition v0.23.0 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/hashicorp/go-getter v0.0.0-20181119194526-bd1edc22f8ea // indirect
 	github.com/hashicorp/go-hclog v0.0.0-20181001195459-61d530d6c27f // indirect
