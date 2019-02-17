@@ -5,6 +5,7 @@ go:
   - 1.11.x
 env:
   - GO111MODULE=on
+  - GOFLAGS=-mod=vendor
 git:
   depth: 1
   go_import_path: github.com/dmacvicar/terraform-provider-libvirt
