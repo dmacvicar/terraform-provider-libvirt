@@ -1,6 +1,7 @@
 module github.com/dmacvicar/terraform-provider-libvirt
 
 require (
+	github.com/ajeddeloh/go-json v0.0.0-20170920214419-6a2fe990e083 // indirect
 	github.com/apparentlymart/go-cidr v0.0.0-20180915144716-1755c023625e // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/blang/semver v0.0.0-20180723201105-3c1074078d32 // indirect
@@ -19,8 +20,8 @@ require (
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/hashicorp/terraform v0.11.10
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
+	github.com/hooklift/assert v0.0.0-20170704181755-9d1defd6d214 // indirect
 	github.com/hooklift/iso9660 v1.0.0
-	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af // indirect
 	github.com/libvirt/libvirt-go v4.8.0+incompatible
 	github.com/libvirt/libvirt-go-xml v0.0.0-20181119112618-a782befec7b4
@@ -38,6 +39,7 @@ require (
 	github.com/terraform-providers/terraform-provider-ignition v1.0.1
 	github.com/vincent-petithory/dataurl v0.0.0-20160330182126-9a301d65acbb // indirect
 	github.com/zclconf/go-cty v0.0.0-20181017232614-01c5aba823a6 // indirect
+	go4.org v0.0.0-20181109185143-00e24f1b2599 // indirect
 	golang.org/x/crypto v0.0.0-20181112202954-3d3f9f413869 // indirect
 	golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3
 	golang.org/x/sys v0.0.0-20181119195503-ec83556a53fe // indirect
