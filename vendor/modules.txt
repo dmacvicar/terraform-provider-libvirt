@@ -42,6 +42,8 @@ github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
 github.com/aws/aws-sdk-go/private/protocol/query/queryutil
 # github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 github.com/bgentry/go-netrc/netrc
+# github.com/bgentry/speakeasy v0.1.0
+github.com/bgentry/speakeasy
 # github.com/blang/semver v0.0.0-20180723201105-3c1074078d32
 github.com/blang/semver
 # github.com/c4milo/gotoolkit v0.0.0-20170704181456-e37eeabad07e
@@ -143,9 +145,9 @@ github.com/hashicorp/yamux
 github.com/hooklift/iso9660
 # github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
 github.com/jmespath/go-jmespath
-# github.com/libvirt/libvirt-go v4.8.0+incompatible
+# github.com/libvirt/libvirt-go v5.0.0+incompatible
 github.com/libvirt/libvirt-go
-# github.com/libvirt/libvirt-go-xml v0.0.0-20181119112618-a782befec7b4
+# github.com/libvirt/libvirt-go-xml v5.0.0+incompatible
 github.com/libvirt/libvirt-go-xml
 # github.com/mattn/go-colorable v0.1.0
 github.com/mattn/go-colorable
