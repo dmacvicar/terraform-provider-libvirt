@@ -93,6 +93,47 @@ func newCCResolverWrapper(cc *ClientConn) (*ccResolverWrapper, error) {
 	return ccr, nil
 }
 
+func (ccr *ccResolverWrapper) start() {
+	go ccr.watcher()
+}
+
+// watcher processes address updates and service config updates sequentially.
+// Otherwise, we need to resolve possible races between address and service
+// config (e.g. they specify different balancer types).
+func (ccr *ccResolverWrapper) watcher() {
+	for {
+		select {
+		case <-ccr.done:
+			return
+		default:
+		}
+
+		select {
+		case addrs := <-ccr.addrCh:
+			select {
+			case <-ccr.done:
+				return
+			default:
+			}
+			grpclog.Infof("ccResolverWrapper: sending new addresses to cc: %v", addrs)
+			if channelz.IsOn() {
+				ccr.addChannelzTraceEvent(addrs)
+			}
+			ccr.cc.handleResolvedAddrs(addrs, nil)
+		case sc := <-ccr.scCh:
+			select {
+			case <-ccr.done:
+				return
+			default:
+			}
+			grpclog.Infof("ccResolverWrapper: got new service config: %v", sc)
+			ccr.cc.handleServiceConfig(sc)
+		case <-ccr.done:
+			return
+		}
+	}
+}
+
 func (ccr *ccResolverWrapper) resolveNow(o resolver.ResolveNowOption) {
 	ccr.resolver.ResolveNow(o)
 }
@@ -105,27 +146,20 @@ func (ccr *ccResolverWrapper) close() {
 // NewAddress is called by the resolver implemenetion to send addresses to gRPC.
 func (ccr *ccResolverWrapper) NewAddress(addrs []resolver.Address) {
 	select {
-	case <-ccr.done:
-		return
+	case <-ccr.addrCh:
 	default:
 	}
-	grpclog.Infof("ccResolverWrapper: sending new addresses to cc: %v", addrs)
-	if channelz.IsOn() {
-		ccr.addChannelzTraceEvent(addrs)
-	}
-	ccr.cc.handleResolvedAddrs(addrs, nil)
+	ccr.addrCh <- addrs
 }
 
 // NewServiceConfig is called by the resolver implemenetion to send service
 // configs to gRPC.
 func (ccr *ccResolverWrapper) NewServiceConfig(sc string) {
 	select {
-	case <-ccr.done:
-		return
+	case <-ccr.scCh:
 	default:
 	}
-	grpclog.Infof("ccResolverWrapper: got new service config: %v", sc)
-	ccr.cc.handleServiceConfig(sc)
+	ccr.scCh <- sc
 }
 
 func (ccr *ccResolverWrapper) addChannelzTraceEvent(addrs []resolver.Address) {

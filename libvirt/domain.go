@@ -286,7 +286,7 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 			case "address":
 				listenAddress := d.Get(prefix + ".listen_address")
 				listener.Address = &libvirtxml.DomainGraphicListenerAddress{
-					listenAddress.(string),
+					Address: listenAddress.(string),
 				}
 			case "network":
 				listener.Network = &libvirtxml.DomainGraphicListenerNetwork{}

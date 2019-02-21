@@ -1,22 +1,25 @@
 dist:     trusty
 sudo:     false
 language: go
-
 go:
-  - 1.9
-go_import_path: github.com/dmacvicar/terraform-provider-libvirt
+  - 1.11.x
+env:
+  - GO111MODULE=on GOFLAGS=-mod=vendor
+git:
+  depth: 1
+  go_import_path: github.com/dmacvicar/terraform-provider-libvirt
 install:        true
 before_script:
-  - go get github.com/mattn/goveralls
-  - go get golang.org/x/lint/golint
+  - curl -sLo /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_linux_amd64.zip
+  - sudo unzip /tmp/terraform.zip -d /usr/local/bin
 addons:
   apt:
     packages:
     - libvirt-dev
+    - xsltproc
 script:
-  - make gofmtcheck
-  - make vet
-  - golint -set_exit_status libvirt/
-  - curl -sLo /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_linux_amd64.zip
-  - sudo unzip /tmp/terraform.zip -d /usr/local/bin
-  - travis/validate_terraform_files.sh
+  - make fmt-check
+  - make vet-check
+  - make lint-check
+  - make tf-check
+  - make test

@@ -5,8 +5,10 @@ TEST_ARGS_DEF := -covermode=count -coverprofile=profile.cov
 
 default: build
 
-build: gofmtcheck golint vet
+terraform-provider-libvirt:
 	go build -ldflags "${LDFLAGS}"
+
+build: fmt-check lint-check vet-check terraform-provider-libvirt
 
 install:
 	go install -ldflags "${LDFLAGS}"
@@ -17,7 +19,6 @@ install:
 # - run some particular test: make test TEST_ARGS="-run TestAccLibvirtDomain_Cpu"
 test:
 	go test -v $(TEST_ARGS_DEF) $(TEST_ARGS) ./libvirt
-	go test -v .
 
 # acceptance tests
 # usage:
@@ -32,28 +33,24 @@ test:
 #   TF_LOG=DEBUG make testacc TEST_ARGS="-run TestAccLibvirtNet*"
 #
 testacc:
-	go test -v .
 	./travis/run-tests-acceptance $(TEST_ARGS)
 
-vet:
-	@echo "go vet ."
-	@go vet $$(go list ./... | grep -v vendor/) ; if [ $$? -eq 1 ]; then \
-		echo ""; \
-		echo "Vet found suspicious constructs. Please check the reported constructs"; \
-		echo "and fix them if necessary before submitting the code for review."; \
-		exit 1; \
-	fi
+vet-check:
+	go vet ./libvirt
 
-golint:
-	golint ./libvirt
+lint-check:
+	go run golang.org/x/lint/golint -set_exit_status ./libvirt .
 
-gofmtcheck:
-	bash travis/run-gofmt
+fmt-check:
+	go fmt ./libvirt .
 
-fmt:
-	(cd libvirt && go fmt .)
+tf-check:
+	terraform fmt -write=false -check=true -diff=true examples/
 
 clean:
+	rm -f terraform-provider-libvirt
+
+cleanup:
 	./travis/cleanup.sh
 
-.PHONY: build install test vet fmt golint
+.PHONY: build install test testacc vet-check fmt-check lint-check
