@@ -100,8 +100,12 @@ github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348 h1:MtvEpTB6LX3v
 github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348/go.mod h1:B69LEHPfb2qLo0BaaOLcbitczOKLWTsrBG9LczfCD4k=
 github.com/libvirt/libvirt-go v4.8.0+incompatible h1:WOc3H5XYt75yo6K1LEYkPiZEfyC25WP+m2KDMse1eb4=
 github.com/libvirt/libvirt-go v4.8.0+incompatible/go.mod h1:34zsnB4iGeOv7Byj6qotuW8Ya4v4Tr43ttjz/F0wjLE=
+github.com/libvirt/libvirt-go v5.0.0+incompatible h1:IUbnpRXdveEHGNqZrckQAihg65OuHYb/b90yV89c6yQ=
+github.com/libvirt/libvirt-go v5.0.0+incompatible/go.mod h1:34zsnB4iGeOv7Byj6qotuW8Ya4v4Tr43ttjz/F0wjLE=
 github.com/libvirt/libvirt-go-xml v0.0.0-20181119112618-a782befec7b4 h1:NcZk5b94y3C3RTAYuvbcwjuJQ5uxkhn1WG6fmaUna+o=
 github.com/libvirt/libvirt-go-xml v0.0.0-20181119112618-a782befec7b4/go.mod h1:oBlgD3xOA01ihiK5stbhFzvieyW+jVS6kbbsMVF623A=
+github.com/libvirt/libvirt-go-xml v5.0.0+incompatible h1:zSZ7uRWGGgvyzDHPrA+3sYrTf+Jtx4izPWYQhHfAOqc=
+github.com/libvirt/libvirt-go-xml v5.0.0+incompatible/go.mod h1:oBlgD3xOA01ihiK5stbhFzvieyW+jVS6kbbsMVF623A=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-colorable v0.1.0 h1:v2XXALHHh6zHfYTJ+cSkwtyffnaOyR1MXaA91mTrb8o=
 github.com/mattn/go-colorable v0.1.0/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=

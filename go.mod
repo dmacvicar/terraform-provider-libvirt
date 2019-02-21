@@ -23,8 +23,8 @@ require (
 	github.com/hooklift/assert v0.0.0-20170704181755-9d1defd6d214 // indirect
 	github.com/hooklift/iso9660 v1.0.0
 	github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af // indirect
-	github.com/libvirt/libvirt-go v4.8.0+incompatible
-	github.com/libvirt/libvirt-go-xml v0.0.0-20181119112618-a782befec7b4
+	github.com/libvirt/libvirt-go v5.0.0+incompatible
+	github.com/libvirt/libvirt-go-xml v5.0.0+incompatible
 	github.com/mattn/go-colorable v0.1.0 // indirect
 	github.com/mattn/goveralls v0.0.2
 	github.com/mitchellh/cli v1.0.0 // indirect
