@@ -676,17 +676,16 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 							break
 						}
 					}
-					if !wait {
-						return fmt.Errorf("Cannot map '%s': we are not waiting for DHCP lease and no IP has been provided", hostname)
-					}
-					// the resource specifies a hostname but not an IP, so we must wait until we
-					// have a valid lease and then read the IP we have been assigned, so we can
-					// do the mapping
-					log.Printf("[DEBUG] Do not have an IP for '%s' yet: will wait until DHCP provides one...", hostname)
-					partialNetIfaces[strings.ToUpper(mac)] = &pendingMapping{
-						mac:      strings.ToUpper(mac),
-						hostname: hostname,
-						network:  network,
+					if wait {
+						// the resource specifies a hostname but not an IP, so we must wait until we
+						// have a valid lease and then read the IP we have been assigned, so we can
+						// do the mapping
+						log.Printf("[DEBUG] Do not have an IP for '%s' yet: will wait until DHCP provides one...", hostname)
+						partialNetIfaces[strings.ToUpper(mac)] = &pendingMapping{
+							mac:      strings.ToUpper(mac),
+							hostname: hostname,
+							network:  network,
+						}
 					}
 				}
 			}
