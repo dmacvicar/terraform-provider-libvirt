@@ -23,6 +23,7 @@ func Provider() terraform.ResourceProvider {
 			"libvirt_domain":         resourceLibvirtDomain(),
 			"libvirt_volume":         resourceLibvirtVolume(),
 			"libvirt_network":        resourceLibvirtNetwork(),
+			"libvirt_pool":           resourceLibvirtPool(),
 			"libvirt_cloudinit_disk": resourceCloudInitDisk(),
 			"libvirt_ignition":       resourceIgnition(),
 		},
