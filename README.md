@@ -167,7 +167,6 @@ Be aware that this variables may be subject to change again in future versions.
    ceph-open-terrarium is a way to quickly configure, deploy, tests CEPH cluster without or with [Deepsea](https://github.com/SUSE/DeepSea)
 
 * [kubic](https://github.com/kubic-project)
-    *   [kubic-kvm](https://github.com/kubic-project/automation/tree/master/caasp-kvm): configure, deploy openSUSE MicroOS Container Operating System with terraform
     *   [kubic-init](https://github.com/kubic-project/kubic-init) a "init" container for Kubic Project
 ## Authors
 
