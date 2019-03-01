@@ -166,3 +166,11 @@ func getDomainFromResource(d *schema.ResourceData) *libvirtxml.NetworkDomain {
 
 	return domain
 }
+
+func getMTUFromResource(d *schema.ResourceData) *libvirtxml.NetworkMTU {
+	if mtu, ok := d.GetOk("mtu"); ok {
+		return &libvirtxml.NetworkMTU{Size: uint(mtu.(int))}
+	}
+
+	return nil
+}

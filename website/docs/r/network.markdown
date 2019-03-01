@@ -34,6 +34,10 @@ resource "libvirt_network" "kube_network" {
   # (only necessary in "bridge" mode)
   # bridge = "br7"
 
+  # (optional) the MTU for the network. If not supplied, the underlying device's
+  # default is used (usually 1500)
+  # mtu = 9000
+
   # (Optional) DNS configuration
   dns {
     # (Optional, default false)
@@ -111,6 +115,9 @@ The following arguments are supported:
 * `bridge` - (Optional) The bridge device defines the name of a bridge
    device which will be used to construct the virtual network (when not provided,
    it will be automatically obtained by libvirt in `none`, `nat` and `route` modes).
+* `mtu` - (Optional) The MTU to set for the underlying network interfaces. When
+   not supplied, libvirt will use the default for the interface, usually 1500.
+   Libvirt version 5.1 and greater will advertise this value to nodes via DHCP.
 * `autostart` - (Optional) Set to `true` to start the network on host boot up.
   If not specified `false` is assumed.
 * `routes` - (Optional) a list of static routes. A `cidr` and a `gateway` must

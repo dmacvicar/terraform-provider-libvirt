@@ -474,3 +474,31 @@ func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 		},
 	})
 }
+
+func TestAccLibvirtNetwork_MTU(t *testing.T) {
+	var network libvirt.Network
+	randomNetworkResource := acctest.RandString(10)
+	randomNetworkName := acctest.RandString(10)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "%s" {
+					name      = "%s"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					autostart = true
+					mtu = 9999
+				}`, randomNetworkResource, randomNetworkName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckNetworkExists("libvirt_network."+randomNetworkResource, &network),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "mtu", "9999"),
+				),
+			},
+		},
+	})
+}
