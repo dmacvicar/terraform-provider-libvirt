@@ -68,6 +68,11 @@ func resourceLibvirtNetwork() *schema.Resource {
 				Computed: true,
 				ForceNew: false,
 			},
+			"mtu": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Required: false,
+			},
 			"addresses": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -366,6 +371,8 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	// use a bridge provided by the user, or create one otherwise (libvirt will assign on automatically when empty)
 	networkDef.Bridge = getBridgeFromResource(d)
 
+	networkDef.MTU = getMTUFromResource(d)
+
 	// check the network mode
 	networkDef.Forward = &libvirtxml.NetworkForward{
 		Mode: getNetModeFromResource(d),
@@ -517,6 +524,10 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 
 	d.Set("name", networkDef.Name)
 	d.Set("bridge", networkDef.Bridge.Name)
+
+	if networkDef.MTU != nil {
+		d.Set("mtu", networkDef.MTU.Size)
+	}
 
 	if networkDef.Forward != nil {
 		d.Set("mode", networkDef.Forward.Mode)
