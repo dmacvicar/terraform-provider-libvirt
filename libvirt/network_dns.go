@@ -201,6 +201,17 @@ func getDNSForwardersFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkD
 	return dnsForwarders, nil
 }
 
+// getDNSEnableFromResource returns string to enable ("yes") or disable ("no") dns
+// in the network definition
+func getDNSEnableFromResource(d *schema.ResourceData) (string, error) {
+	if dnsLocalOnly, ok := d.GetOk(dnsPrefix + ".enabled"); ok {
+		if dnsLocalOnly.(bool) {
+			return "yes", nil // this "boolean" must be "yes"|"no"
+		}
+	}
+	return "no", nil
+}
+
 // getDNSSRVFromResource returns a list of libvirt's DNS SRVs
 // in the network definition
 func getDNSSRVFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDNSSRV, error) {
