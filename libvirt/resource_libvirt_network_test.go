@@ -65,6 +65,60 @@ func TestAccLibvirtNetwork_LocalOnly(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtNetwork_DNSEnable(t *testing.T) {
+	randomNetworkResource := acctest.RandString(10)
+	randomNetworkName := acctest.RandString(10)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "%s" {
+					name      = "%s"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dns {
+						enabled = true
+					}
+				}`, randomNetworkResource, randomNetworkName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.enabled", "true"),
+					testAccCheckLibvirtNetworkDNSEnableOrDisable("libvirt_network."+randomNetworkResource, true),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtNetwork_DNSDisable(t *testing.T) {
+	randomNetworkResource := acctest.RandString(10)
+	randomNetworkName := acctest.RandString(10)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "%s" {
+					name      = "%s"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dns {
+						enabled = false
+					}
+				}`, randomNetworkResource, randomNetworkName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.enabled", "false"),
+					testAccCheckLibvirtNetworkDNSEnableOrDisable("libvirt_network."+randomNetworkResource, false),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtNetwork_DNSForwarders(t *testing.T) {
 	randomNetworkResource := acctest.RandString(10)
 	randomNetworkName := acctest.RandString(10)

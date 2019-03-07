@@ -293,3 +293,27 @@ func testAccCheckLibvirtNetworkLocalOnly(name string, expectLocalOnly bool) reso
 		return nil
 	}
 }
+
+// testAccCheckLibvirtNetworkDNSEnable checks the dns-enable property of the Domain
+func testAccCheckLibvirtNetworkDNSEnableOrDisable(name string, expectDNS bool) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		networkDef, err := getNetworkDef(s, name, *virConn)
+		if err != nil {
+			return err
+		}
+		if expectDNS {
+			if networkDef.DNS == nil || networkDef.DNS.Enable != "yes" {
+				return fmt.Errorf("networkDef.DNS.Enable is not true")
+			}
+		}
+		if !expectDNS {
+			if networkDef.DNS != nil && networkDef.DNS.Enable != "no" {
+				return fmt.Errorf("networkDef.DNS.Enable is true")
+			}
+		}
+		return nil
+	}
+}

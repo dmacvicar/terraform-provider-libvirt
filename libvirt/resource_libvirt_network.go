@@ -92,6 +92,12 @@ func resourceLibvirtNetwork() *schema.Resource {
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"enabled": {
+							Type:     schema.TypeBool,
+							Default:  true,
+							Optional: true,
+							Required: false,
+						},
 						"local_only": {
 							Type:     schema.TypeBool,
 							Default:  false,
@@ -394,6 +400,11 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		}
 		networkDef.IPs = ips
 
+		dnsEnabled, err := getDNSEnableFromResource(d)
+		if err != nil {
+			return err
+		}
+
 		dnsForwarders, err := getDNSForwardersFromResource(d)
 		if err != nil {
 			return err
@@ -409,14 +420,13 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			return err
 		}
 
-		if len(dnsForwarders) > 0 || len(dnsSRVs) > 0 || len(dnsHosts) > 0 {
-			dns := libvirtxml.NetworkDNS{
-				Forwarders: dnsForwarders,
-				Host:       dnsHosts,
-				SRVs:       dnsSRVs,
-			}
-			networkDef.DNS = &dns
+		dns := libvirtxml.NetworkDNS{
+			Enable:     dnsEnabled,
+			Forwarders: dnsForwarders,
+			Host:       dnsHosts,
+			SRVs:       dnsSRVs,
 		}
+		networkDef.DNS = &dns
 
 	} else if networkDef.Forward.Mode == netModeBridge {
 		if networkDef.Bridge.Name == "" {
