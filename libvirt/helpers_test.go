@@ -118,7 +118,7 @@ func testAccCheckNetworkExists(name string, network *libvirt.Network) resource.T
 		}
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
-		fmt.Printf("%s", virConn)
+		fmt.Printf("%p", virConn)
 		networkRetrived, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
 		if err != nil {
 			return err
