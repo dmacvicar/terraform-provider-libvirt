@@ -317,6 +317,76 @@ func TestAccLibvirtDomain_URLDisk(t *testing.T) {
 
 }
 
+func TestAccLibvirtDomain_MultiISODisks(t *testing.T) {
+	var domain libvirt.Domain
+	randomDomainName := acctest.RandString(10)
+
+	isoPath, err := filepath.Abs("testdata/tcl.iso")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var configFourDisks = fmt.Sprintf(`
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		disk {
+			file = "%s"
+		}
+		disk {
+			file = "%s"
+		}
+		disk {
+			file = "%s"
+		}
+		disk {
+			file = "%s"
+		}
+	}`, randomDomainName, randomDomainName, isoPath, isoPath, isoPath, isoPath)
+
+	var configWithCloudInit = fmt.Sprintf(`
+	resource "libvirt_cloudinit_disk" "%s" {
+		name      = "%s"
+		user_data = "#cloud-config"
+	}
+
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		cloudinit = "${libvirt_cloudinit_disk.%s.id}"
+		disk {
+			file = "%s"
+		}
+		disk {
+			file = "%s"
+		}
+		disk {
+			file = "%s"
+		}
+	}`, randomDomainName, randomDomainName, randomDomainName, randomDomainName, randomDomainName, isoPath, isoPath, isoPath)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: configFourDisks,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					testAccCheckLibvirtMultiISODisks(&domain),
+				),
+			},
+			{
+				Config: configWithCloudInit,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					testAccCheckLibvirtMultiISODisks(&domain),
+				),
+			},
+		},
+	})
+
+}
+
 func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
 	var domain libvirt.Domain
 	var kernel libvirt.StorageVol
@@ -902,6 +972,29 @@ func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.Tes
 				return fmt.Errorf("Disk hostname is not %s", u.Hostname())
 			}
 		}
+		return nil
+	}
+}
+
+func testAccCheckLibvirtMultiISODisks(domain *libvirt.Domain) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+
+		domainDef, err := getXMLDomainDefFromLibvirt(domain)
+		if err != nil {
+			return fmt.Errorf("Error getting libvirt XML defintion from existing libvirt domain: %s", err)
+		}
+
+		disks := domainDef.Devices.Disks
+		for _, disk := range disks {
+			if disk.Device != "cdrom" {
+				return fmt.Errorf("Disk device type is not cdrom")
+			}
+		}
+
+		if len(disks) != 4 {
+			return fmt.Errorf("Expected amount of disks not found")
+		}
+
 		return nil
 	}
 }

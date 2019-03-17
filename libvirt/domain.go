@@ -202,7 +202,8 @@ func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml
 	disk := libvirtxml.DomainDisk{
 		Device: "cdrom",
 		Target: &libvirtxml.DomainDiskTarget{
-			Dev: "hda",
+			// Last device letter possible with a single IDE controller on i440FX
+			Dev: "hdd",
 			Bus: "ide",
 		},
 		Driver: &libvirtxml.DomainDiskDriver{
@@ -408,6 +409,8 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 
 func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
 	var scsiDisk = false
+	var numOfISOs = 0
+
 	for i := 0; i < d.Get("disk.#").(int); i++ {
 		disk := newDefDisk(i)
 
@@ -512,13 +515,15 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 			if strings.HasSuffix(file.(string), ".iso") {
 				disk.Device = "cdrom"
 				disk.Target = &libvirtxml.DomainDiskTarget{
-					Dev: "hda",
+					Dev: fmt.Sprintf("hd%s", diskLetterForIndex(numOfISOs)),
 					Bus: "ide",
 				}
 				disk.Driver = &libvirtxml.DomainDiskDriver{
 					Name: "qemu",
 					Type: "raw",
 				}
+
+				numOfISOs++
 			}
 		}
 
