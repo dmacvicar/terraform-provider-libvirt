@@ -177,7 +177,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			}
 			baseVolume, err = client.libvirt.LookupStorageVolByKey(baseVolumeID.(string))
 			if err != nil {
-				return fmt.Errorf("Can't retrieve volume %s: %v", baseVolumeID.(string), err)
+				return fmt.Errorf("Can't retrieve volume ID '%s': %v", baseVolumeID.(string), err)
 			}
 		}
 
@@ -193,7 +193,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			}
 			baseVolume, err = baseVolumePool.LookupStorageVolByName(baseVolumeName.(string))
 			if err != nil {
-				return fmt.Errorf("Can't retrieve volume %s: %v", baseVolumeName.(string), err)
+				return fmt.Errorf("Can't retrieve base volume with name '%s': %v", baseVolumeName.(string), err)
 			}
 		}
 		if baseVolume != nil {
@@ -260,9 +260,14 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	if err := volumeWaitForExists(client.libvirt, key); err != nil {
+		return err
+	}
+
 	return resourceLibvirtVolumeRead(d, meta)
 }
 
+// resourceLibvirtVolumeRead returns the current state for a volume resource
 func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
 	virConn := client.libvirt
@@ -270,7 +275,7 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	volume, err := lookupVolumeReallyHard(client, d.Get("pool").(string), d.Id())
+	volume, err := volumeLookupReallyHard(client, d.Get("pool").(string), d.Id())
 	if err != nil {
 		return err
 	}
@@ -322,21 +327,23 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
+// resourceLibvirtVolumeDelete removed a volume resource
 func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
 	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	return removeVolume(client, d.Id())
+	return volumeDelete(client, d.Id())
 }
 
+// resourceLibvirtVolumeExists returns True if the volume resource exists
 func resourceLibvirtVolumeExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	log.Printf("[DEBUG] Check if resource libvirt_volume exists")
 	client := meta.(*Client)
 
 	volPoolName := d.Get("pool").(string)
-	volume, err := lookupVolumeReallyHard(client, volPoolName, d.Id())
+	volume, err := volumeLookupReallyHard(client, volPoolName, d.Id())
 	if err != nil {
 		return false, err
 	}

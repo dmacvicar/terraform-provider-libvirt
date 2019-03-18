@@ -92,5 +92,5 @@ func resourceIgnitionDelete(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return removeVolume(client, key)
+	return volumeDelete(client, key)
 }

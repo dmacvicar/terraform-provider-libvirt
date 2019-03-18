@@ -128,7 +128,7 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 					if err != nil {
 						panic(err)
 					}
-					removeVolume(client, id)
+					volumeDelete(client, id)
 				},
 			},
 		},
