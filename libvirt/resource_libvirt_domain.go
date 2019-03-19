@@ -768,9 +768,9 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				"file": diskDef.Source.File,
 			}
 		} else if diskDef.Source.File != nil {
-			// LEGACY way of handling volumes using "file", which we replaced
-			// by the diskdef.Source.Volume once we realized it existed.
-			// This code will be removed in future versions of the provider.
+			// Volumes need to be defined in libvirt XML using File paths
+			// to allow libvirt security helper utilities correctly identify the
+			// storage to apply the correct access polices
 			virVol, err := virConn.LookupStorageVolByPath(diskDef.Source.File.File)
 			if err != nil {
 				return fmt.Errorf("Error retrieving volume for disk: %s", err)
@@ -786,6 +786,9 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				"volume_id": virVolKey,
 			}
 		} else {
+			// Compatibility way of handling volumes from XML, which is replaced
+			// by switching to use file paths to ensure libvirt security helper
+			// utilities can apply the correct access policies.
 			pool, err := virConn.LookupStoragePoolByName(diskDef.Source.Volume.Pool)
 			if err != nil {
 				return fmt.Errorf("Error retrieving pool for disk: %s", err)

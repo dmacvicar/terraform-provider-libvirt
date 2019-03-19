@@ -428,19 +428,9 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 				return fmt.Errorf("Can't retrieve volume %s: %v", volumeKey.(string), err)
 			}
 
-			diskVolumeName, err := diskVolume.GetName()
+			diskVolumeFile, err := diskVolume.GetPath()
 			if err != nil {
-				return fmt.Errorf("Can't retrieve name for volume %s", volumeKey.(string))
-			}
-
-			diskPool, err := diskVolume.LookupPoolByVolume()
-			if err != nil {
-				return fmt.Errorf("Can't retrieve pool for volume %s", volumeKey.(string))
-			}
-
-			diskPoolName, err := diskPool.GetName()
-			if err != nil {
-				return fmt.Errorf("Can't retrieve name for pool of volume %s", volumeKey.(string))
+				return fmt.Errorf("Can't retrieve volume file %s", volumeKey.(string))
 			}
 
 			// find out the format of the volume in order to set the appropriate
@@ -469,9 +459,8 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 			}
 
 			disk.Source = &libvirtxml.DomainDiskSource{
-				Volume: &libvirtxml.DomainDiskSourceVolume{
-					Pool:   diskPoolName,
-					Volume: diskVolumeName,
+				File: &libvirtxml.DomainDiskSourceFile{
+					File: diskVolumeFile,
 				},
 			}
 		} else if rawURL, ok := d.GetOk(prefix + ".url"); ok {
