@@ -6,8 +6,8 @@ provider "libvirt" {
 # adapt the build number 
 resource "libvirt_volume" "leap15" {
   name   = "leap15-qcow2"
-  pool   = "default"
-  source = "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.0/images/openSUSE-Leap-15.0-OpenStack.x86_64-0.0.4-Buildlp150.12.63.qcow2"
+  pool   = "vg0"
+  source = "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.0/images/openSUSE-Leap-15.0-OpenStack.x86_64-0.0.4-Buildlp150.12.131.qcow2"
   format = "qcow2"
 }
 
