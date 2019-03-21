@@ -329,7 +329,7 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 			return fmt.Errorf("Error serializing update for network %s: %s", networkName, err)
 		}
 
-		log.Printf("[DEBUG] Updating bridge for libvirt network '%s' with XML: %s", network, networkBridge.Name)
+		log.Printf("[DEBUG] Updating bridge for libvirt network '%s' with XML: %s", networkName, networkBridge.Name)
 		err = network.Update(libvirt.NETWORK_UPDATE_COMMAND_MODIFY, libvirt.NETWORK_SECTION_BRIDGE, -1,
 			data, libvirt.NETWORK_UPDATE_AFFECT_LIVE|libvirt.NETWORK_UPDATE_AFFECT_CONFIG)
 		if err != nil {
@@ -348,7 +348,7 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 			return fmt.Errorf("serialize update: %s", err)
 		}
 
-		log.Printf("[DEBUG] Updating domain for libvirt network '%s' with XML: %s", network, data)
+		log.Printf("[DEBUG] Updating domain for libvirt network '%s' with XML: %s", networkName, data)
 		err = network.Update(libvirt.NETWORK_UPDATE_COMMAND_MODIFY, libvirt.NETWORK_SECTION_DOMAIN, -1,
 			data, libvirt.NETWORK_UPDATE_AFFECT_LIVE|libvirt.NETWORK_UPDATE_AFFECT_CONFIG)
 		if err != nil {
