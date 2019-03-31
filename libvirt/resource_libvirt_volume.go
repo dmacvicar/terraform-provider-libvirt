@@ -196,8 +196,9 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 				return fmt.Errorf("Can't retrieve base volume with name '%s': %v", baseVolumeName.(string), err)
 			}
 		}
+
 		if baseVolume != nil {
-			backingStoreDef, err := newDefBackingStoreFromLibvirt(baseVolume)
+			backingStoreFragmentDef, err := newDefBackingStoreFromLibvirt(baseVolume)
 			if err != nil {
 				return fmt.Errorf("Could not retrieve backing store definition: %s", err.Error())
 			}
@@ -213,7 +214,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 					return fmt.Errorf("When 'size' is specified, it shouldn't be smaller than the backing store specified with 'base_volume_id' or 'base_volume_name/base_volume_pool'")
 				}
 			}
-			volumeDef.BackingStore = &backingStoreDef
+			volumeDef.BackingStore = &backingStoreFragmentDef
 		}
 	}
 	if _, ok := d.GetOk("size"); ok {
