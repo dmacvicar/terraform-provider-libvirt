@@ -164,13 +164,16 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		volumeDef.Capacity.Unit = "B"
 		volumeDef.Capacity.Value = size
 	} else {
+		// the volume does not have a source image to upload
 
-		// the volume does not have a source image to upload, first handle
-		// whether it has a backing image
-		//
+		// if size is given, set it to the specified value
+		if _, ok := d.GetOk("size"); ok {
+			volumeDef.Capacity.Value = uint64(d.Get("size").(int))
+		}
+
+		//first handle whether it has a backing image
 		// backing images can be specified by either (id), or by (name, pool)
 		var baseVolume *libvirt.StorageVol
-
 		if baseVolumeID, ok := d.GetOk("base_volume_id"); ok {
 			if _, ok := d.GetOk("base_volume_name"); ok {
 				return fmt.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given")
@@ -179,9 +182,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			if err != nil {
 				return fmt.Errorf("Can't retrieve volume ID '%s': %v", baseVolumeID.(string), err)
 			}
-		}
-
-		if baseVolumeName, ok := d.GetOk("base_volume_name"); ok {
+		} else if baseVolumeName, ok := d.GetOk("base_volume_name"); ok {
 			baseVolumePool := pool
 			if _, ok := d.GetOk("base_volume_pool"); ok {
 				baseVolumePoolName := d.Get("base_volume_pool").(string)
@@ -202,24 +203,26 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			if err != nil {
 				return fmt.Errorf("Could not retrieve backing store definition: %s", err.Error())
 			}
-			if _, ok := d.GetOk("size"); ok {
-				// does the backing store have some size information?, check at least that it is not smaller than the backing store
-				volumeDef.Capacity.Value = uint64(d.Get("size").(int))
-				backingStoreVolumeDef, err := newDefVolumeFromLibvirt(baseVolume)
-				if err != nil {
-					return err
-				}
 
-				if backingStoreVolumeDef.Capacity != nil && volumeDef.Capacity.Value < backingStoreVolumeDef.Capacity.Value {
-					return fmt.Errorf("When 'size' is specified, it shouldn't be smaller than the backing store specified with 'base_volume_id' or 'base_volume_name/base_volume_pool'")
-				}
+			backingStoreVolumeDef, err := newDefVolumeFromLibvirt(baseVolume)
+			if err != nil {
+				return err
+			}
+
+			// if the volumen does not specify size, set it to the size of the backing store
+			if _, ok := d.GetOk("size"); !ok {
+				volumeDef.Capacity.Value = backingStoreVolumeDef.Capacity.Value
+			}
+
+			// Always check that the size, specified or taken from the backing store
+			// is at least the size of the backing store itself
+			if backingStoreVolumeDef.Capacity != nil && volumeDef.Capacity.Value < backingStoreVolumeDef.Capacity.Value {
+				return fmt.Errorf("When 'size' is specified, it shouldn't be smaller than the backing store specified with 'base_volume_id' or 'base_volume_name/base_volume_pool'")
 			}
 			volumeDef.BackingStore = &backingStoreFragmentDef
 		}
 	}
-	if _, ok := d.GetOk("size"); ok {
-		volumeDef.Capacity.Value = uint64(d.Get("size").(int))
-	}
+
 	data, err := xmlMarshallIndented(volumeDef)
 	if err != nil {
 		return fmt.Errorf("Error serializing libvirt volume: %s", err)
