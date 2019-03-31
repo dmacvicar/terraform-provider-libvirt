@@ -122,8 +122,7 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
 	var volume libvirt.StorageVol
 	var volume2 libvirt.StorageVol
-	randomVolumeResource := acctest.RandString(10)
-	randomVolumeName := acctest.RandString(10)
+	random := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -131,18 +130,18 @@ func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-				resource "libvirt_volume" "%s" {
-					name = "%s"
+				resource "libvirt_volume" "backing-%s" {
+					name = "backing-%s"
 					size =  1073741824
 				}
-				resource "libvirt_volume" "backing-store" {
-					name = "backing-store"
-					base_volume_id = "${libvirt_volume.%s.id}"
+				resource "libvirt_volume" "%s" {
+					name = "%s"
+					base_volume_id = "${libvirt_volume.backing-%s.id}"
 			        }
-				`, randomVolumeResource, randomVolumeName, randomVolumeResource),
+				`, random, random, random, random, random),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeResource, &volume),
-					testAccCheckLibvirtVolumeIsBackingStore("libvirt_volume.backing-store", &volume2),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.backing-" + random, &volume),
+					testAccCheckLibvirtVolumeIsBackingStore("libvirt_volume." + random, &volume2),
 				),
 			},
 		},
@@ -152,8 +151,7 @@ func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
 func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 	var volume libvirt.StorageVol
 	var volume2 libvirt.StorageVol
-	randomVolumeResource := acctest.RandString(10)
-	randomVolumeName := acctest.RandString(10)
+	random := acctest.RandString(10)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -161,17 +159,18 @@ func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
-					resource "libvirt_volume" "%s" {
-						name = "%s"
-						size =  1073741824
-					}
-					resource "libvirt_volume" "backing-store" {
-						name = "backing-store"
-						base_volume_name = "${libvirt_volume.%s.name}"
-				  }	`, randomVolumeResource, randomVolumeName, randomVolumeResource),
+				resource "libvirt_volume" "backing-%s" {
+					name = "backing-%s"
+					size =  1073741824
+				}
+				resource "libvirt_volume" "%s" {
+					name = "%s"
+                    base_volume_name = "${libvirt_volume.backing-%s.name}"
+			        }
+				`, random, random, random, random, random),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeResource, &volume),
-					testAccCheckLibvirtVolumeIsBackingStore("libvirt_volume.backing-store", &volume2),
+					testAccCheckLibvirtVolumeExists("libvirt_volume.backing-"+random, &volume),
+					testAccCheckLibvirtVolumeIsBackingStore("libvirt_volume." + random, &volume2),
 				),
 			},
 		},
