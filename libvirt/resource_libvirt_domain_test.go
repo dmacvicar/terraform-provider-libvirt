@@ -1315,6 +1315,32 @@ func TestAccLibvirtDomain_ShutoffMultiDomainsRunning(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_CaseInsensitiveAttrs_MAC(t *testing.T) {
+	randomDomainName := acctest.RandString(10)
+	var config = fmt.Sprintf(`
+	resource "libvirt_domain" "%s" {
+		name      = "%s"
+        network_interface {
+            mac = "52:54:00:b2:2f:88"
+        }
+	}`, randomDomainName, randomDomainName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain."+randomDomainName, "network_interface.0.mac", "52:54:00:b2:2f:88"),
+				),
+				ExpectNonEmptyPlan: false,
+			},
+		},
+	})
+}
+
 func testAccCheckLibvirtDomainStateEqual(name string, domain *libvirt.Domain, exptectedState string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
