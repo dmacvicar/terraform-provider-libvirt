@@ -209,7 +209,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 				return err
 			}
 
-			// if the volumen does not specify size, set it to the size of the backing store
+			// if the volume does not specify size, set it to the size of the backing store
 			if _, ok := d.GetOk("size"); !ok {
 				volumeDef.Capacity.Value = backingStoreVolumeDef.Capacity.Value
 			}
