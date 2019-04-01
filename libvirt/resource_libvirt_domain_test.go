@@ -1333,8 +1333,10 @@ func TestAccLibvirtDomain_CaseInsensitiveAttrs_MAC(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("libvirt_domain."+randomDomainName, "network_interface.0.mac", "52:54:00:b2:2f:88"),
+					// libvirt always returns upper-cased
+					resource.TestCheckResourceAttr("libvirt_domain."+randomDomainName, "network_interface.0.mac", "52:54:00:B2:2F:88"),
 				),
+				// because the attribute is case insensitive, there should be no plan
 				ExpectNonEmptyPlan: false,
 			},
 		},
