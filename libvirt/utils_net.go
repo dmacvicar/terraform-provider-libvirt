@@ -19,6 +19,7 @@ const (
 // with libvirt prefix
 func randomMACAddress() (string, error) {
 	buf := make([]byte, 3)
+	rand.Seed(time.Now().UnixNano())
 	_, err := rand.Read(buf)
 	if err != nil {
 		return "", err
