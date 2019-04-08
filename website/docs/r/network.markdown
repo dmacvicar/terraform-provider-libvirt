@@ -39,7 +39,11 @@ resource "libvirt_network" "kube_network" {
   # mtu = 9000
 
   # (Optional) DNS configuration
-  dns {
+  dns = {
+    # (Optional, default false)
+    # Set to true, if no other option is specified and you still want to 
+    # enable dns.
+    enable = true
     # (Optional, default false)
     # true: DNS requests under this domain will only be resolved by the
     # virtual network's own DNS server
