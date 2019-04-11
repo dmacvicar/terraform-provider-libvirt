@@ -1,0 +1,27 @@
+[Unit]
+Description=QEMU Agent
+After=docker.service
+[Service]
+ExecStartPre=/usr/bin/docker load -i /mnt/images/qemu-guest-agent.tar
+ExecStart=/usr/bin/docker run \
+  --privileged=true \
+  --cap-add=ALL \
+  --net=host \
+  --name=qemu-guest-agent \
+  -e container=1 \
+  -e HOST=/host \
+  -e TERM=xterm \
+  -v /dev/virtio-ports:/dev/virtio-ports \
+  -v /etc/os-release:/etc/os-release:ro \
+  -v /dev:/dev \
+  -v /proc:/hostproc \
+  -v /run/systemd:/run/systemd \
+  -v /var/log/qemu-ga:/var/log/qemu-ga:rw \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  --entrypoint qemu-ga \
+  rancher/os-qemuguestagent:v2.8.1-2 \
+  -- -v
+Restart=on-failure
+RestartSec=10
+[Install]
+WantedBy=multi-user.target
