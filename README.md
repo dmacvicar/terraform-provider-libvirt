@@ -92,7 +92,7 @@ You will now find the binary at `$GOPATH/bin/terraform-provider-libvirt`.
 
 # Installing
 
-*  Check that libvirt daemon 1.2.14 or newer is running on the hypervisor
+*  Check that libvirt daemon 1.2.14 or newer is running on the hypervisor (`virsh version --daemon`)
 * `mkisofs` is required to use the [CloudInit](website/docs/r/cloudinit.html.markdown)
 
 [Copied from the Terraform documentation](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins):
