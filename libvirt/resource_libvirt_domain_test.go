@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -894,6 +895,51 @@ func TestAccLibvirtDomain_Filesystems(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccLibvirtDomain_Tags(t *testing.T) {
+	var domain libvirt.Domain
+	randomDomainName := acctest.RandString(10)
+	randomTagName1 := acctest.RandString(10)
+	randomTagValue1 := acctest.RandString(10)
+
+	var config = fmt.Sprintf(`
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		tags {
+			%s = "%s"
+		}
+	}
+	`, randomDomainName, randomDomainName, randomTagName1, randomTagValue1)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "tags."+randomTagName1, randomTagValue1),
+					testAccCheckLibvirtDomainDescription(&domain, func(domainDef libvirtxml.Domain) error {
+						if domainDef.Metadata == nil {
+							return fmt.Errorf("No metadata was created")
+						}
+						instanceXML := TerraformInstanceXML{}
+						var err error
+						if err = xml.Unmarshal([]byte(domainDef.Metadata.XML), &instanceXML); err != nil {
+							return err
+						}
+						tags := instanceXML.Tags
+						if tags[0].Key != randomTagName1 || tags[0].Value != randomTagValue1 {
+							return fmt.Errorf("Failed to create metadata tags XML structure")
+						}
+						return nil
+					}),
+				),
+			},
+		}})
 }
 
 func TestAccLibvirtDomain_Consoles(t *testing.T) {

@@ -43,6 +43,7 @@ func newDomainDef() libvirtxml.Domain {
 				Type: "hvm",
 			},
 		},
+		Metadata: &libvirtxml.DomainMetadata{},
 		Memory: &libvirtxml.DomainMemory{
 			Unit:  "MiB",
 			Value: 512,

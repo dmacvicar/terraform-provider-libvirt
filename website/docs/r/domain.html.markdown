@@ -59,6 +59,7 @@ The following arguments are supported:
    [below](#define-boot-device-order).
 * `emulator` - (Optional) The path of the emulator to use
 * `qemu_agent` (Optional) By default is disabled, set to true for enabling it. More info [qemu-agent](https://wiki.libvirt.org/page/Qemu_guest_agent).
+* `tags` - (Optional) A hashmap of tags that are associated with the domain.
 ### Kernel and boot arguments
 
 * `kernel` - (Optional) The path of the kernel to boot
@@ -544,6 +545,17 @@ Set hd as default and fallback to network.
 ```hcl
 boot_device {
   dev = [ "hd", "network"]
+}
+```
+
+### Add tags to the domain
+
+By setting tags for the domain you can more easily filter and export the terraform state to external tools:
+
+```hcl
+tags {
+  type = "master"
+  etcd = "true"
 }
 ```
 

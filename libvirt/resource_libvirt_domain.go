@@ -45,8 +45,8 @@ func resourceLibvirtDomain() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"metadata": {
-				Type:     schema.TypeString,
+			"tags": {
+				Type:     schema.TypeMap,
 				Optional: true,
 				ForceNew: false,
 			},
@@ -469,6 +469,10 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	setFirmware(d, &domainDef)
 	setBootDevices(d, &domainDef)
 
+	if err := setMetadata(d, &domainDef); err != nil {
+		return err
+	}
+
 	if err := setCoreOSIgnition(d, &domainDef); err != nil {
 		return err
 	}
@@ -641,6 +645,33 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		d.SetPartial("cloudinit")
 	}
 
+	if d.HasChange("tags") {
+		// Grab currently live metadata
+		out := TerraformInstanceXML{}
+		var onlineMetadata string
+		onlineMetadata, err = domain.GetMetadata(libvirt.DOMAIN_METADATA_ELEMENT,
+			"https://terraform.io", libvirt.DOMAIN_AFFECT_LIVE|libvirt.DOMAIN_AFFECT_CONFIG)
+		if err != nil {
+			return err
+		}
+		if err = xml.Unmarshal([]byte(onlineMetadata), &out); err != nil {
+			return err
+		}
+
+		var outXML string
+		if outXML, err = tagsToXML(d.Get("tags").(map[string]interface{}), &out); err != nil {
+			return err
+		}
+		log.Printf("[DEBUG] New Metadata XML: %s", outXML)
+
+		// Update live and stored config with new metadata
+		err = domain.SetMetadata(libvirt.DOMAIN_METADATA_ELEMENT, outXML, "terraform", "https://terraform.io",
+			libvirt.DOMAIN_AFFECT_LIVE|libvirt.DOMAIN_AFFECT_CONFIG)
+		if err != nil {
+			return err
+		}
+	}
+
 	if d.HasChange("autostart") {
 		err = domain.SetAutostart(d.Get("autostart").(bool))
 		if err != nil {
@@ -733,6 +764,10 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("cpu", domainDef.CPU)
 	d.Set("arch", domainDef.OS.Type.Arch)
 	d.Set("autostart", autostart)
+
+	if err := getMetadata(d, &domainDef); err != nil {
+		return err
+	}
 
 	cmdLines, err := splitKernelCmdLine(domainDef.OS.Cmdline)
 	if err != nil {
