@@ -64,6 +64,12 @@ The following arguments are supported:
   volume is going to be searched inside of `pool`.
 * `base_volume_pool` - (Optional) The name of the storage pool containing the
   volume defined by `base_volume_name`.
+* `clone` - (Optional) If set to true, clone the backing volume instead of
+  copying it. Useful for network volumes such as Ceph RBD. Changes the call
+  equivalent from `vol-create-from` to `vol-clone`.
+  *Note* Libvirt currently has a bug with Ceph RBD clones. This will be fixed in Libvirt 5.3.0. The patch is available
+  on the [livir-mailinglist](https://www.redhat.com/archives/libvir-list/2019-April/msg01483.html) and can be applied
+  to all libvirt versions 2 or higher.
 
 ### Altering libvirt's generated volume XML definition
 

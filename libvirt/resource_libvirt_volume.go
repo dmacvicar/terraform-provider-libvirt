@@ -43,6 +43,12 @@ func resourceLibvirtVolume() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"clone": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: true,
+				Default:  false,
+			},
 			"base_volume_id": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -124,6 +130,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		volumeDef.Target.Format.Type = givenFormat.(string)
 	}
 
+	var baseVolume *libvirt.StorageVol
 	// an source image was given, this mean we can't choose size
 	if source, ok := d.GetOk("source"); ok {
 		// source and size conflict
@@ -173,7 +180,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 		//first handle whether it has a backing image
 		// backing images can be specified by either (id), or by (name, pool)
-		var baseVolume *libvirt.StorageVol
 		if baseVolumeID, ok := d.GetOk("base_volume_id"); ok {
 			if _, ok := d.GetOk("base_volume_name"); ok {
 				return fmt.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given")
@@ -234,8 +240,13 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error applying XSLT stylesheet: %s", err)
 	}
 
+	var volume *libvirt.StorageVol
 	// create the volume
-	volume, err := pool.StorageVolCreateXML(data, 0)
+	if baseVolume != nil && d.Get("clone").(bool) {
+		volume, err = pool.StorageVolCreateXMLFrom(data, baseVolume, 0)
+	} else {
+		volume, err = pool.StorageVolCreateXML(data, 0)
+	}
 	if err != nil {
 		return fmt.Errorf("Error creating libvirt volume: %s", err)
 	}
