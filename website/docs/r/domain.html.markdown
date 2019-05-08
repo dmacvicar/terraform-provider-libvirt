@@ -463,14 +463,25 @@ resource "libvirt_domain" "my_machine" {
 }
 ```
 
-~> **Note well:**
-  <ul>
-    <li>You can repeat the `console` block to create more than one console, in the
-        same way that you can repeat `disk` blocks (see [above](#handling-disks)).</li>
-    <li>The `target_type` is optional for the first console and defaults to `serial`.</li>
-    <li>All subsequent `console` blocks must specify a `target_type` of `virtio`.</li>
-    <li>The `source_path` is optional for all consoles.</li>
-  </ul>
+Attributes:
+
+* `type` - Console device type. Valid values are "pty" and "tcp".
+* `target_port` - Target port
+* `target_type` - (Optional) for the first console and defaults to `serial`.
+  Subsequent `console` blocks must have a different type - usually `virtio`.
+
+Additional attributes when type is "pty":
+
+* `source_path` - (Optional) Source path
+
+Additional attributes when type is "tcp":
+
+* `source_host` - (Optional) IP address to listen on. Defaults to 127.0.0.1.
+* `source_service` - (Optional) Port number or a service name. Defaults to a
+  random port.
+
+Note that you can repeat the `console` block to create more than one console.
+This works the same way as with the `disk` blocks (see [above](#handling-disks)).
 
 See [libvirt Domain XML Console element](https://libvirt.org/formatdomain.html#elementsConsole)
 for more information.

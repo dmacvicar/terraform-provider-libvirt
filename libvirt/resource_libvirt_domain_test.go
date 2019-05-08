@@ -833,6 +833,13 @@ func TestAccLibvirtDomain_Consoles(t *testing.T) {
 			target_type = "virtio"
 			source_path = "/dev/pts/2"
 		}
+		console {
+			type        = "tcp"
+			target_port = "0"
+			target_type = "virtio"
+			source_host = "127.0.1.1"
+			source_service = "cisco-sccp"
+		}
 	}`, randomDomainName, randomDomainName)
 
 	resource.Test(t, resource.TestCase{
@@ -858,6 +865,16 @@ func TestAccLibvirtDomain_Consoles(t *testing.T) {
 						"libvirt_domain."+randomDomainName, "console.1.target_type", "virtio"),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomDomainName, "console.1.source_path", "/dev/pts/2"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "console.2.type", "tcp"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "console.2.target_port", "0"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "console.2.target_type", "virtio"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "console.2.source_host", "127.0.1.1"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "console.2.source_service", "cisco-sccp"),
 				),
 			},
 		},
