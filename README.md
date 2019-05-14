@@ -77,7 +77,7 @@ You need also need libvirt-dev(el) package installed.
 ```console
 go get github.com/dmacvicar/terraform-provider-libvirt
 cd $GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt
-make
+make install
 ```
 
 If you are using Go >= 1.11, you don't need to build inside GOPATH:
@@ -85,7 +85,7 @@ If you are using Go >= 1.11, you don't need to build inside GOPATH:
 ```
 export GO111MODULE=on
 export GOFLAGS=-mod=vendor
-make
+make install
 ```
 
 You will now find the binary at `$GOPATH/bin/terraform-provider-libvirt`.
