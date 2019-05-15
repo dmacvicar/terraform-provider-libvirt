@@ -3,10 +3,16 @@ provider "libvirt" {
   uri = "qemu:///system"
 }
 
+resource "libvirt_pool" "ubuntu" {
+  name = "ubuntu"
+  type = "dir"
+  path = "/tmp/terraform-provider-libvirt-pool-ubuntu"
+}
+
 # We fetch the latest ubuntu release image from their mirrors
 resource "libvirt_volume" "ubuntu-qcow2" {
   name   = "ubuntu-qcow2"
-  pool   = "default"
+  pool   = "${libvirt_pool.ubuntu.name}"
   source = "https://cloud-images.ubuntu.com/releases/xenial/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
   format = "qcow2"
 }
@@ -27,6 +33,7 @@ resource "libvirt_cloudinit_disk" "commoninit" {
   name           = "commoninit.iso"
   user_data      = "${data.template_file.user_data.rendered}"
   network_config = "${data.template_file.network_config.rendered}"
+  pool           = "${libvirt_pool.ubuntu.name}"
 }
 
 # Create the machine
