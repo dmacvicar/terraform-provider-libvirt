@@ -71,6 +71,21 @@ func getResourceFromTerraformState(resourceName string, state *terraform.State) 
 
 // ** resource specifics helpers **
 
+// getPoolFromTerraformState lookup pool by name and return the libvirt pool from a terraform state
+func getPoolFromTerraformState(name string, state *terraform.State, virConn libvirt.Connect) (*libvirt.StoragePool, error) {
+	rs, err := getResourceFromTerraformState(name, state)
+	if err != nil {
+		return nil, err
+	}
+
+	pool, err := virConn.LookupStoragePoolByUUIDString(rs.Primary.ID)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[DEBUG]:The ID is %s", rs.Primary.ID)
+	return pool, nil
+}
+
 // getVolumeFromTerraformState lookup volume by name and return the libvirt volume from a terraform state
 func getVolumeFromTerraformState(name string, state *terraform.State, virConn libvirt.Connect) (*libvirt.StorageVol, error) {
 	rs, err := getResourceFromTerraformState(name, state)
