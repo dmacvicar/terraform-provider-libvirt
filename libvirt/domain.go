@@ -500,7 +500,16 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 
 			if strings.HasSuffix(url.Path, ".iso") {
 				disk.Device = "cdrom"
+				disk.Target = &libvirtxml.DomainDiskTarget{
+					Dev: fmt.Sprintf("hd%s", diskLetterForIndex(numOfISOs)),
+					Bus: "ide",
+				}
+				disk.Driver = &libvirtxml.DomainDiskDriver{
+					Name: "qemu",
+				}
+				numOfISOs++
 			}
+
 			if !strings.HasSuffix(url.Path, ".qcow2") {
 				disk.Driver.Type = "raw"
 			}
@@ -524,6 +533,10 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 				}
 
 				numOfISOs++
+			}
+
+			if !strings.HasSuffix(file.(string), ".qcow2") {
+				disk.Driver.Type = "raw"
 			}
 		}
 
