@@ -79,9 +79,18 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 	var configVolAttached = fmt.Sprintf(`
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+
 	resource "libvirt_volume" "%s" {
 		name = "%s"
+        pool = "${libvirt_pool.%s.name}"
 	}
 
 	resource "libvirt_domain" "%s" {
@@ -89,7 +98,7 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 		disk {
 			volume_id = "${libvirt_volume.%s.id}"
 		}
-	}`, randomVolumeName, randomVolumeName, randomDomainName, randomDomainName, randomVolumeName)
+	}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeName, randomVolumeName, randomPoolName, randomDomainName, randomDomainName, randomVolumeName)
 
 	var configVolDettached = fmt.Sprintf(`
 	resource "libvirt_domain" "%s" {
@@ -125,14 +134,24 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 
 	var configVolAttached = fmt.Sprintf(`
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+
 	resource "libvirt_volume" "%s" {
 		name = "%s"
+        pool = "${libvirt_pool.%s.name}"
 	}
 
 	resource "libvirt_volume" "%s" {
 		name = "%s"
+        pool = "${libvirt_pool.%s.name}"
 	}
 
 	resource "libvirt_domain" "%s" {
@@ -144,7 +163,7 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 		disk {
 			volume_id = "${libvirt_volume.%s.id}"
 		}
-	}`, randomVolumeName, randomVolumeName, randomVolumeName2, randomVolumeName2, randomDomainName, randomDomainName, randomVolumeName, randomVolumeName2)
+	}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeName, randomVolumeName, randomPoolName, randomVolumeName2, randomVolumeName2, randomPoolName, randomDomainName, randomDomainName, randomVolumeName, randomVolumeName2)
 
 	var configVolDettached = fmt.Sprintf(`
 	resource "libvirt_domain" "%s" {
@@ -183,17 +202,27 @@ func TestAccLibvirtDomain_VolumeDriver(t *testing.T) {
 	var volumeQCOW2 libvirt.StorageVol
 	randomVolumeQCOW2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeRaw := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
 	var config = fmt.Sprintf(`
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+
 	resource "libvirt_volume" "%s" {
 		name = "%s"
         format = "raw"
+        pool = "${libvirt_pool.%s.name}"
 	}
 
 	resource "libvirt_volume" "%s" {
 		name = "%s"
         format = "qcow2"
+        pool = "${libvirt_pool.%s.name}"
 	}
 
 	resource "libvirt_domain" "%s" {
@@ -205,7 +234,7 @@ func TestAccLibvirtDomain_VolumeDriver(t *testing.T) {
 		disk {
 			volume_id = "${libvirt_volume.%s.id}"
 		}
-	}`, randomVolumeRaw, randomVolumeRaw, randomVolumeQCOW2, randomVolumeQCOW2, randomDomainName, randomDomainName, randomVolumeRaw, randomVolumeQCOW2)
+	}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeRaw, randomVolumeRaw, randomPoolName, randomVolumeQCOW2, randomVolumeQCOW2, randomPoolName, randomDomainName, randomDomainName, randomVolumeRaw, randomVolumeQCOW2)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -237,9 +266,18 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 	var domain libvirt.Domain
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 	var configScsi = fmt.Sprintf(`
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+
 	resource "libvirt_volume" "%s" {
 		name = "%s"
+        pool = "${libvirt_pool.%s.name}"
 	}
 
 	resource "libvirt_domain" "%s" {
@@ -249,7 +287,7 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 			scsi      = "true"
 			wwn       = "000000123456789a"
 		}
-	}`, randomVolumeName, randomVolumeName, randomDomainName, randomDomainName, randomVolumeName)
+	}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeName, randomVolumeName, randomPoolName, randomDomainName, randomDomainName, randomVolumeName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -324,6 +362,8 @@ func TestAccLibvirtDomain_URLDisk(t *testing.T) {
 func TestAccLibvirtDomain_MultiISODisks(t *testing.T) {
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 
 	isoPath, err := filepath.Abs("testdata/tcl.iso")
 	if err != nil {
@@ -348,9 +388,16 @@ func TestAccLibvirtDomain_MultiISODisks(t *testing.T) {
 	}`, randomDomainName, randomDomainName, isoPath, isoPath, isoPath, isoPath)
 
 	var configWithCloudInit = fmt.Sprintf(`
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+
 	resource "libvirt_cloudinit_disk" "%s" {
 		name      = "%s"
 		user_data = "#cloud-config"
+        pool      = "${libvirt_pool.%s.name}"
 	}
 
 	resource "libvirt_domain" "%s" {
@@ -365,7 +412,7 @@ func TestAccLibvirtDomain_MultiISODisks(t *testing.T) {
 		disk {
 			file = "%s"
 		}
-	}`, randomDomainName, randomDomainName, randomDomainName, randomDomainName, randomDomainName, isoPath, isoPath, isoPath)
+	}`, randomPoolName, randomPoolName, randomPoolPath, randomDomainName, randomDomainName, randomPoolName, randomDomainName, randomDomainName, randomDomainName, isoPath, isoPath, isoPath)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -395,20 +442,28 @@ func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
 	var domain libvirt.Domain
 	var kernel libvirt.StorageVol
 	var initrd libvirt.StorageVol
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
 	var config = fmt.Sprintf(`
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+
 	resource "libvirt_volume" "kernel" {
 		source = "testdata/tetris.elf"
 		name   = "kernel"
-		pool   = "default"
+        pool   = "${libvirt_pool.%s.name}"
 		format = "raw"
 	}
 
 	resource "libvirt_volume" "initrd" {
 		source = "testdata/initrd.img"
 		name   = "initrd"
-		pool   = "default"
+        pool   = "${libvirt_pool.%s.name}"
 		format = "raw"
 	}
 
@@ -426,7 +481,7 @@ func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
 				foo = "2"
 			}
 		]
-	}`, randomDomainName)
+	}`, randomPoolName, randomPoolName, randomPoolPath, randomPoolName, randomPoolName, randomDomainName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -568,9 +623,18 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 	var config = fmt.Sprintf(`
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+
 	resource "libvirt_volume" "%s" {
 		name = "%s"
+        pool = "${libvirt_pool.%s.name}"
 	}
 
 	resource "libvirt_domain" "%s" {
@@ -580,11 +644,18 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 			autoport    = "true"
 			listen_type = "none"
 		}
-	}`, randomVolumeName, randomVolumeName, randomDomainName, randomDomainName)
+	}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeName, randomVolumeName, randomPoolName, randomDomainName, randomDomainName)
 
 	var configListenAddress = fmt.Sprintf(`
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+
 	resource "libvirt_volume" "%s" {
 		name = "%s"
+        pool = "${libvirt_pool.%s.name}"
 	}
 
 	resource "libvirt_domain" "%s" {
@@ -595,7 +666,7 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 			listen_type = "address"
 			listen_address = "127.0.1.1"
 		}
-	}`, randomVolumeName, randomVolumeName, randomDomainName, randomDomainName)
+	}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeName, randomVolumeName, randomPoolName, randomDomainName, randomDomainName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -644,6 +715,8 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 	var domain libvirt.Domain
 	var volume libvirt.StorageVol
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 	randomIgnitionName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	var config = fmt.Sprintf(`
 	data "ignition_systemd_unit" "acceptance-test-systemd" {
@@ -657,16 +730,23 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 		]
 	}
 
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+
 	resource "libvirt_ignition" "%s" {
 		name    = "ignition"
 		content = "${data.ignition_config.acceptance-test-config.rendered}"
+        pool    = "${libvirt_pool.%s.name}"
 	}
 
 	resource "libvirt_domain" "%s" {
 		name            = "terraform-test-domain"
 		coreos_ignition = "${libvirt_ignition.%s.id}"
 	}
-	`, randomIgnitionName, randomDomainName, randomIgnitionName)
+	`, randomPoolName, randomPoolName, randomPoolPath, randomIgnitionName, randomPoolName, randomDomainName, randomIgnitionName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -1279,6 +1359,8 @@ func TestAccLibvirtDomain_ShutoffDomain(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -1286,8 +1368,15 @@ func TestAccLibvirtDomain_ShutoffDomain(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
+                resource "libvirt_pool" "%s" {
+                    name = "%s"
+                    type = "dir"
+                    path = "%s"
+                }
+
 			    resource "libvirt_volume" "%s" {
 			    	name = "%s"
+                    pool = "${libvirt_pool.%s.name}"
 			    }
 			    resource "libvirt_domain" "%s" {
 			    	name = "%s"
@@ -1295,7 +1384,7 @@ func TestAccLibvirtDomain_ShutoffDomain(t *testing.T) {
 			    	disk {
 			    		volume_id = "${libvirt_volume.%s.id}"
 			    		}
-			    }`, randomVolumeName, randomVolumeName, randomDomainName, randomDomainName, randomVolumeName),
+			    }`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeName, randomVolumeName, randomPoolName, randomDomainName, randomDomainName, randomVolumeName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
 					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeName, &volume),

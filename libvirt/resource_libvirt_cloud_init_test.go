@@ -13,6 +13,8 @@ import (
 func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 	// this structs are contents values we expect.
 	expectedContents := Expected{UserData: "#cloud-config", NetworkConfig: "network:", MetaData: "instance-id: bamboo"}
 	expectedContents2 := Expected{UserData: "#cloud-config2", NetworkConfig: "network2:", MetaData: "instance-id: bamboo2"}
@@ -27,12 +29,18 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: fmt.Sprintf(`
+					resource "libvirt_pool" "%s" {
+								name = "%s"
+								type = "dir"
+								path = "%s"
+                            }
 					resource "libvirt_cloudinit_disk" "%s" {
 								name           = "%s"
 								user_data      = "#cloud-config"
 								meta_data = "instance-id: bamboo"
 								network_config = "network:"
-							}`, randomResourceName, randomIsoName),
+                                pool           = "${libvirt_pool.%s.name}"
+							}`, randomPoolName, randomPoolName, randomPoolPath, randomResourceName, randomIsoName, randomPoolName),
 
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
@@ -43,12 +51,18 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 			},
 			{
 				Config: fmt.Sprintf(`
+					resource "libvirt_pool" "%s" {
+								name = "%s"
+								type = "dir"
+								path = "%s"
+                            }
 					resource "libvirt_cloudinit_disk" "%s" {
 								name           = "%s"
 								user_data      = "#cloud-config2"
 								meta_data = "instance-id: bamboo2"
 								network_config = "network2:"
-							}`, randomResourceName, randomIsoName),
+                                pool           = "${libvirt_pool.%s.name}"
+							}`, randomPoolName, randomPoolName, randomPoolPath, randomResourceName, randomIsoName, randomPoolName),
 
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
@@ -59,10 +73,16 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 			},
 			{
 				Config: fmt.Sprintf(`
+					resource "libvirt_pool" "%s" {
+								name = "%s"
+								type = "dir"
+								path = "%s"
+                            }
 					resource "libvirt_cloudinit_disk" "%s" {
 								name           = "%s"
 								user_data      = "#cloud-config2"
-							}`, randomResourceName, randomIsoName),
+                                pool           = "${libvirt_pool.%s.name}"
+							}`, randomPoolName, randomPoolName, randomPoolPath, randomResourceName, randomIsoName, randomPoolName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
@@ -74,10 +94,16 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 			// https://github.com/dmacvicar/terraform-provider-libvirt/issues/313
 			{
 				Config: fmt.Sprintf(`
+                        resource "libvirt_pool" "%s" {
+								    name = "%s"
+                                    type = "dir"
+                                    path = "%s"
+                                }
 						resource "libvirt_cloudinit_disk" "%s" {
 									name           = "%s"
 									user_data      = "#cloud-config4"
-								}`, randomResourceName, randomIsoName),
+                                    pool           = "${libvirt_pool.%s.name}"
+								}`, randomPoolName, randomPoolName, randomPoolPath, randomResourceName, randomIsoName, randomPoolName),
 				ExpectNonEmptyPlan: true,
 				PlanOnly:           true,
 				Check: resource.ComposeTestCheckFunc(
@@ -98,13 +124,20 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 
 	testAccCheckLibvirtCloudInitConfigBasic := fmt.Sprintf(`
-    	resource "libvirt_cloudinit_disk" "%s" {
-  	  name           = "%s"
-			pool           = "default"
+        resource "libvirt_pool" "%s" {
+            name = "%s"
+            type = "dir"
+            path = "%s"
+        }
+        resource "libvirt_cloudinit_disk" "%s" {
+            name           = "%s"
+            pool           = "${libvirt_pool.%s.name}"
 			user_data      = "#cloud-config\nssh_authorized_keys: []\n"
-		}`, randomResourceName, randomResourceName)
+		}`, randomPoolName, randomPoolName, randomPoolPath, randomResourceName, randomResourceName, randomPoolName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
