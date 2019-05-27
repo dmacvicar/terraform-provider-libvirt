@@ -1,20 +1,9 @@
 #!/bin/bash
 set -x
 
-sudo mknod /dev/kvm c 10 232
+# This script is run as root
 
-sudo apt -t trusty-backports install -y lxd
+# Workaround: https://github.com/git-lfs/git-lfs/issues/3474#issuecomment-454237261
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6B05F25D762E3157
 
-sudo sed -i 's/LXD_IPV4_ADDR=".*"/LXD_IPV4_ADDR="192.168.123.1"/' /etc/default/lxd-bridge
-sudo sed -i 's/LXD_IPV4_NETMASK=".*"/LXD_IPV4_NETMASK="255.255.255.0"/' /etc/default/lxd-bridge
-sudo sed -i 's/LXD_IPV4_NETWORK=".*"/LXD_IPV4_NETWORK="192.168.123.0\/24"/' /etc/default/lxd-bridge
-sudo sed -i 's/LXD_IPV4_DHCP_RANGE=".*"/LXD_IPV4_DHCP_RANGE="192.168.123.2,192.168.123.12"/' /etc/default/lxd-bridge
-sudo sed -i 's/LXD_IPV4_DHCP_MAX=".*"/LXD_IPV4_DHCP_MAX="10"/' /etc/default/lxd-bridge
-
-sudo service libvirtd restart
-sudo service lxd restart
-
-sudo lxc launch ubuntu:zesty libvirt -c security.privileged=true
-sudo lxc config device add libvirt code disk source=`pwd` path=code
-sudo lxc config device add libvirt kvm unix-char path=/dev/kvm
-sudo lxc info libvirt
+mknod /dev/kvm c 10 232

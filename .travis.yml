@@ -4,7 +4,7 @@ language: go
 go:
   - 1.11.x
 env:
-  - GO111MODULE=on GOFLAGS=-mod=vendor
+  - GO111MODULE=on GOFLAGS=-mod=vendor LIBVIRT_DEFAULT_URI='qemu+unix:///session' TF_LIBVIRT_DISABLE_PRIVILEGED_TESTS=1 TF_LIBVIRT_RNG_DEV='/dev/random' TF_LOG=DEBUG
 git:
   depth: 1
   go_import_path: github.com/dmacvicar/terraform-provider-libvirt
@@ -12,10 +12,15 @@ install:        true
 before_script:
   - curl -sLo /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.12.0/terraform_0.12.0_linux_amd64.zip
   - sudo unzip /tmp/terraform.zip -d /usr/local/bin
+  - sudo bash ./travis/setup-host
 addons:
   apt:
     packages:
     - libvirt-dev
+    - libvirt-daemon
+    - qemu-system-x86
+    - qemu-utils
+    - genisoimage
     - xsltproc
 script:
   - make fmt-check
@@ -23,3 +28,4 @@ script:
   - make lint-check
   - make tf-check
   - make test
+  - make testacc TEST_ARGS="-test.failfast"
