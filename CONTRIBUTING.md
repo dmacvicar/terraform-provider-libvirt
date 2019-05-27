@@ -67,6 +67,13 @@ Or run a group of test with a verbose loglevel:
 TF_LOG=DEBUG make testacc TEST_ARGS="-run TestAccLibvirtNet*"
 ```
 
+If you run the tests on an unprivileged connection (e.g session libvirt), some of the acceptance tests will need to be disabled (mainly the networking ones) through an environment
+variable:
+
+```bash
+LIBVIRT_DEFAULT_URI='qemu+unix:///session' TF_LIBVIRT_DISABLE_PRIVILEGED_TESTS=1 make testacc
+```
+
 ### Code coverage:
 
 Run first the testacc suite.

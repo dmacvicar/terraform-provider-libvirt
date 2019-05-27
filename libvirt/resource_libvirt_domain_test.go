@@ -448,6 +448,8 @@ func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -498,6 +500,8 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	var domain libvirt.Domain
 	var network libvirt.Network
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -813,6 +817,8 @@ func TestAccLibvirtDomain_Filesystems(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Consoles(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	var config = fmt.Sprintf(`
@@ -1430,6 +1436,8 @@ func TestAccLibvirtDomain_Import(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_XSLT_UnsupportedAttribute(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -1494,6 +1502,8 @@ EOF
 // Therefore we explicitly advise against using it with existing
 // schema attributes
 func TestAccLibvirtDomain_XSLT_SupportedAttribute(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -1552,6 +1562,8 @@ EOF
 // changed whitespace in the xslt should create an empty plan
 // as the supress diff function should take care of seeing they are equivalent
 func TestAccLibvirtDomain_XSLT_Whitespace(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
