@@ -789,11 +789,6 @@ func TestAccLibvirtDomain_Filesystems(t *testing.T) {
 			target   = "tmp"
 			readonly = false
 		}
-		filesystem {
-			source   = "/proc"
-			target   = "proc"
-			readonly = true
-		}
 	}`, randomDomainName, randomDomainName)
 
 	resource.Test(t, resource.TestCase{
@@ -811,12 +806,6 @@ func TestAccLibvirtDomain_Filesystems(t *testing.T) {
 						"libvirt_domain."+randomDomainName, "filesystem.0.target", "tmp"),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomDomainName, "filesystem.0.readonly", "false"),
-					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomDomainName, "filesystem.1.source", "/proc"),
-					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomDomainName, "filesystem.1.target", "proc"),
-					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomDomainName, "filesystem.1.readonly", "true"),
 				),
 			},
 		},
