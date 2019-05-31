@@ -74,6 +74,13 @@ variable:
 LIBVIRT_DEFAULT_URI='qemu+unix:///session' TF_LIBVIRT_DISABLE_PRIVILEGED_TESTS=1 make testacc
 ```
 
+If '/dev/random' is not available on the platform you run the acceptance tests on, you can override the device used
+through an environment variable as well:
+
+```bash
+TF_LIBVIRT_RNG_DEV='/dev/random' make testacc
+```
+
 ### Code coverage:
 
 Run first the testacc suite.
