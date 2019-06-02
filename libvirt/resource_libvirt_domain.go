@@ -277,6 +277,18 @@ func resourceLibvirtDomain() *schema.Resource {
 							Optional: true,
 							ForceNew: true,
 						},
+						"source_host": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+							Default:  "127.0.0.1",
+						},
+						"source_service": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+							Default:  "0",
+						},
 						"target_port": {
 							Type:     schema.TypeString,
 							Required: true,

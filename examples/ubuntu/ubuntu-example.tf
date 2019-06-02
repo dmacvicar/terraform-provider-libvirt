@@ -58,7 +58,7 @@ resource "libvirt_domain" "domain-ubuntu" {
   }
 
   console {
-    type        = "pty"
+    type        = "tcp"
     target_type = "virtio"
     target_port = "1"
   }
