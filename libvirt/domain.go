@@ -464,6 +464,52 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 				return fmt.Errorf("Can't retrieve name for pool of volume %s", volumeKey.(string))
 			}
 
+			if _, ok := d.GetOk(prefix + ".ceph"); ok {
+				// To have the same ceph config usable over all disks we need a list
+				if d.Get(prefix+".ceph.#").(int) > 1 {
+					return fmt.Errorf("Only one ceph auth block can be defined")
+				}
+				ceph := prefix + ".ceph.0"
+				disk.Auth = &libvirtxml.DomainDiskAuth{
+					Username: d.Get(ceph + ".user").(string),
+					Secret: &libvirtxml.DomainDiskSecret{
+						Type: "ceph",
+						UUID: d.Get(ceph + ".uuid").(string),
+					},
+				}
+
+				disk.Source = &libvirtxml.DomainDiskSource{
+					Network: &libvirtxml.DomainDiskSourceNetwork{
+						Protocol: "rbd",
+						// Name in ceph is the ceph rbd pool + / + disk name
+						Name: fmt.Sprintf("%s/%s", d.Get(ceph+".pool").(string), diskVolumeName),
+					},
+				}
+
+				// Just converting []interface{} to []string. Isn't this fun?
+				var cephMons []string
+				if mons, ok := d.GetOk(ceph + ".mons"); ok {
+					cephMons = make([]string, len(mons.([]interface{})))
+					for i, m := range mons.([]interface{}) {
+						cephMons[i] = m.(string)
+					}
+				} else {
+					return fmt.Errorf("Can't retrieve ceph mons: %v", err)
+				}
+
+				// All ceph mons are assumed in URI format or will otherwise cause an error
+				for _, mon := range cephMons {
+					uri, err := url.Parse(mon)
+					if err != nil {
+						return fmt.Errorf("Failed to parse mon URI %s: %v", mon, err)
+					}
+					disk.Source.Network.Hosts = append(disk.Source.Network.Hosts, libvirtxml.DomainDiskSourceHost{
+						Name: uri.Hostname(),
+						Port: uri.Port(),
+					})
+				}
+			}
+
 			// find out the format of the volume in order to set the appropriate
 			// driver
 			volumeDef, err := newDefVolumeFromLibvirt(diskVolume)
@@ -489,11 +535,14 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 				log.Printf("[WARN] Disk volume has no format specified: %s", volumeKey.(string))
 			}
 
-			disk.Source = &libvirtxml.DomainDiskSource{
-				Volume: &libvirtxml.DomainDiskSourceVolume{
-					Pool:   diskPoolName,
-					Volume: diskVolumeName,
-				},
+			// Default to "volume" disk if not otherwise specified
+			if disk.Source == nil {
+				disk.Source = &libvirtxml.DomainDiskSource{
+					Volume: &libvirtxml.DomainDiskSourceVolume{
+						Pool:   diskPoolName,
+						Volume: diskVolumeName,
+					},
+				}
 			}
 		} else if rawURL, ok := d.GetOk(prefix + ".url"); ok {
 			// Support for remote, read-only http disks

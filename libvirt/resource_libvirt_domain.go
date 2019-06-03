@@ -159,6 +159,34 @@ func resourceLibvirtDomain() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
+						"ceph": {
+							Type:     schema.TypeList,
+							Optional: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"user": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"uuid": {
+										Type:             schema.TypeString,
+										DiffSuppressFunc: suppress.CaseDifference,
+										Required:         true,
+									},
+									"pool": {
+										Type:     schema.TypeString,
+										Required: true,
+									},
+									"mons": {
+										Type:     schema.TypeList,
+										Required: true,
+										Elem: &schema.Schema{
+											Type: schema.TypeString,
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
