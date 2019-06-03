@@ -244,6 +244,15 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	// create the volume
 	if baseVolume != nil && d.Get("clone").(bool) {
 		volume, err = pool.StorageVolCreateXMLFrom(data, baseVolume, 0)
+		// Bug fix for libvirts ceph storage driver ignoring capacity information
+		if err == nil {
+			var info *libvirt.StorageVolInfo
+			info, err = volume.GetInfo()
+			if err == nil && info.Capacity < volumeDef.Capacity.Value {
+				log.Printf("[DEBUG] Intended size: %d | Actual size: %d. Resizing", volumeDef.Capacity.Value, info.Capacity)
+				err = volume.Resize(volumeDef.Capacity.Value, 0)
+			}
+		}
 	} else {
 		volume, err = pool.StorageVolCreateXML(data, 0)
 	}
