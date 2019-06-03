@@ -241,6 +241,7 @@ While `volume_id`, `url` and `file` are optional, it is intended that you use on
 model is set to `virtio-scsi`
 * `wwn` - (Optional) Specify a WWN to use for the disk if the disk is using
 a scsi controller, if not specified then a random wwn is generated for the disk
+* `ceph` - (Optional) Add Ceph configuration. Detailed explanation below.
 
 
 ```hcl
@@ -305,6 +306,76 @@ resource "libvirt_domain" "my_machine" {
 resource "libvirt_domain" "my_machine" {
   ...
   disk = [var.disk_map_list]
+}
+```
+
+#### Ceph network disks
+
+One common source for disks in Libvirt are Ceph rbd disks . As Ceph requires
+additional configuration when we need to add these to the disk that references
+a Ceph volume that was previously designated.
+
+The following config options are **required** when Ceph disks are used:
+
+* user - (string) The Ceph user that will be used to access the disks
+* uuid - (string) UUID of the Libvirt secret for the Ceph user
+* pool - (string) The RBD disk pool the disks are placed in. Note that is not
+         necessairly the same as the Libvirt pool
+* mons - (list of strings) URI-formated Ceph MON addresses. The format is
+         required to be `rbd://<ip>:<port>`. No default port is assumed.
+
+A simple example could look like this:
+
+```hcl
+resource "libvirt_volume" "simple-datastore" {
+  pool = "rbd"
+  name = "emptydisk"
+  size = "${10 * 1024 * 1024 * 1024}"
+}
+
+resource "libvirt_domain" "cool-vm" {
+  ...
+  disks {
+    volume_id = "${libvirt_volume.simple-datastore.id}"
+    ceph =  {
+      user = "libvirt"
+      uuid = "6bad09f0-0a7e-4c31-a854-113769c23d5c"
+      pool = "vmdisks"
+      mons = [
+        "rbd://127.0.0.1:6789",
+        "rbd://127.0.0.2:6789"
+      ]
+    }
+  }
+}
+```
+
+To make it easier to reference multiple disks on the same Ceph storage the
+config can be copied between disks. e.g. using Locals
+
+```hcl
+locals {
+  ceph_config = {
+    user = "libvirt"
+    uuid = "6bad09f0-0a7e-4c31-a854-113769c23d5c"
+    pool = "vmdisks"
+    mons = [
+      "rbd://127.0.0.1:6789",
+      "rbd://127.0.0.2:6789"
+    ]
+  }
+}
+
+resource "libvirt_domain" "cool-vm" {
+  ...
+  disks {
+    volume_id = "${libvirt_volume.os-drive.id}"
+    ceph = ["${local.ceph_config}"]
+  }
+  disks {
+    volume_id = "${libvirt_volume.simple-datastore.id}"
+    ceph = ["${local.ceph_config}"]
+  }
 }
 ```
 
