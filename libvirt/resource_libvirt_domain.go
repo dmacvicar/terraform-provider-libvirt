@@ -469,7 +469,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	setFirmware(d, &domainDef)
 	setBootDevices(d, &domainDef)
 
-	if err := setMetadata(d, &domainDef); err != nil {
+	if err := setMetadataFromXML(d, &domainDef); err != nil {
 		return err
 	}
 
@@ -765,7 +765,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("arch", domainDef.OS.Type.Arch)
 	d.Set("autostart", autostart)
 
-	if err := getMetadata(d, &domainDef); err != nil {
+	if err := getMetadataFromXML(d, &domainDef); err != nil {
 		return err
 	}
 

@@ -37,7 +37,7 @@ func tagsToXML(tags map[string]interface{}, metadata *TerraformInstanceXML) (out
 	return string(bytesOut), nil
 }
 
-func setMetadata(d *schema.ResourceData, domain *libvirtxml.Domain) (err error) {
+func setMetadataFromXML(d *schema.ResourceData, domain *libvirtxml.Domain) (err error) {
 	metadata := TerraformInstanceXML{}
 	if err = xml.Unmarshal([]byte(domain.Metadata.XML), &metadata); domain.Metadata.XML != "" && err != nil {
 		return fmt.Errorf("XML Unmarshal Error: %s", err)
@@ -56,7 +56,7 @@ func setMetadata(d *schema.ResourceData, domain *libvirtxml.Domain) (err error) 
 	return nil
 }
 
-func getMetadata(d *schema.ResourceData, domain *libvirtxml.Domain) error {
+func getMetadataFromXML(d *schema.ResourceData, domain *libvirtxml.Domain) error {
 	if domain.Metadata != nil && domain.Metadata.XML != "" {
 		metadata := TerraformInstanceXML{}
 		if err := xml.Unmarshal([]byte(domain.Metadata.XML), &metadata); err != nil {
