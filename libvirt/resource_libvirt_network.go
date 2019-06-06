@@ -9,8 +9,8 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirt "github.com/libvirt/libvirt-go"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 const (
@@ -219,9 +219,10 @@ func resourceLibvirtNetwork() *schema.Resource {
 				},
 			},
 			"routes": {
-				Type:     schema.TypeList,
-				Optional: true,
-				ForceNew: true,
+				Type:       schema.TypeList,
+				Optional:   true,
+				ForceNew:   true,
+				ConfigMode: schema.SchemaConfigModeAttr,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"cidr": {
