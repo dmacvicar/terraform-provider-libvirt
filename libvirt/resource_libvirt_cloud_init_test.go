@@ -12,12 +12,12 @@ import (
 
 func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 	var volume libvirt.StorageVol
-	randomResourceName := acctest.RandString(10)
+	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	// this structs are contents values we expect.
 	expectedContents := Expected{UserData: "#cloud-config", NetworkConfig: "network:", MetaData: "instance-id: bamboo"}
 	expectedContents2 := Expected{UserData: "#cloud-config2", NetworkConfig: "network2:", MetaData: "instance-id: bamboo2"}
 	expectedContentsEmpty := Expected{UserData: "#cloud-config2", NetworkConfig: "", MetaData: ""}
-	randomIsoName := acctest.RandString(10) + ".iso"
+	randomIsoName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha) + ".iso"
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
@@ -97,7 +97,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 // This test should fail without a proper "Exists" implementation
 func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	var volume libvirt.StorageVol
-	randomResourceName := acctest.RandString(10)
+	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
 	testAccCheckLibvirtCloudInitConfigBasic := fmt.Sprintf(`
     	resource "libvirt_cloudinit_disk" "%s" {

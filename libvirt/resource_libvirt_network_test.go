@@ -12,9 +12,9 @@ import (
 )
 
 func TestAccLibvirtNetwork_Addresses(t *testing.T) {
-	randomNetworkResource := acctest.RandString(10)
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkResourceFull := "libvirt_network." + randomNetworkResource
-	randomNetworkName := acctest.RandString(10)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -39,8 +39,8 @@ func TestAccLibvirtNetwork_Addresses(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_LocalOnly(t *testing.T) {
-	randomNetworkResource := acctest.RandString(10)
-	randomNetworkName := acctest.RandString(10)
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -66,8 +66,8 @@ func TestAccLibvirtNetwork_LocalOnly(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DNSEnable(t *testing.T) {
-	randomNetworkResource := acctest.RandString(10)
-	randomNetworkName := acctest.RandString(10)
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -93,8 +93,8 @@ func TestAccLibvirtNetwork_DNSEnable(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DNSDisable(t *testing.T) {
-	randomNetworkResource := acctest.RandString(10)
-	randomNetworkName := acctest.RandString(10)
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -120,8 +120,8 @@ func TestAccLibvirtNetwork_DNSDisable(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DNSForwarders(t *testing.T) {
-	randomNetworkResource := acctest.RandString(10)
-	randomNetworkName := acctest.RandString(10)
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -173,8 +173,8 @@ func TestAccLibvirtNetwork_DNSForwarders(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
-	randomNetworkResource := acctest.RandString(10)
-	randomNetworkName := acctest.RandString(10)
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -303,8 +303,8 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 
 func TestAccLibvirtNetwork_Import(t *testing.T) {
 	var network libvirt.Network
-	randomNetworkResource := acctest.RandString(10)
-	randomNetworkName := acctest.RandString(10)
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resourceName := "libvirt_network." + randomNetworkResource
 
 	resource.Test(t, resource.TestCase{
@@ -333,8 +333,8 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
-	randomNetworkResource := acctest.RandString(10)
-	randomNetworkName := acctest.RandString(10)
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -361,8 +361,8 @@ func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
-	randomNetworkResource := acctest.RandString(10)
-	randomNetworkName := acctest.RandString(10)
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -389,8 +389,8 @@ func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_BridgedMode(t *testing.T) {
-	randomNetworkName := acctest.RandString(10)
-	randomBridgeName := acctest.RandString(10)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomBridgeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -446,7 +446,7 @@ func TestAccLibvirtNetwork_StaticRoutes(t *testing.T) {
 		}
 	}
 
-	randomNetworkName := acctest.RandString(10)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	config := fmt.Sprintf(`
 					resource "libvirt_network" "%s" {
 					name      = "%s"
@@ -490,8 +490,8 @@ func TestAccLibvirtNetwork_StaticRoutes(t *testing.T) {
 
 func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 	var network libvirt.Network
-	randomNetworkResource := acctest.RandString(10)
-	randomNetworkName := acctest.RandString(10)
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -531,8 +531,8 @@ func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 
 func TestAccLibvirtNetwork_MTU(t *testing.T) {
 	var network libvirt.Network
-	randomNetworkResource := acctest.RandString(10)
-	randomNetworkName := acctest.RandString(10)
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,

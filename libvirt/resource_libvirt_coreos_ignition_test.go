@@ -12,7 +12,7 @@ import (
 
 func TestAccLibvirtIgnition_Basic(t *testing.T) {
 	var volume libvirt.StorageVol
-	randomServiceName := acctest.RandString(10) + ".service"
+	randomServiceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha) + ".service"
 	randomIgnitionName := acctest.RandString(9)
 	var config = fmt.Sprintf(`
 	data "ignition_systemd_unit" "acceptance-test-systemd" {

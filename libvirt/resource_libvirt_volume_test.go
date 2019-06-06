@@ -94,8 +94,8 @@ func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirt.Storag
 
 func TestAccLibvirtVolume_Basic(t *testing.T) {
 	var volume libvirt.StorageVol
-	randomVolumeResource := acctest.RandString(10)
-	randomVolumeName := acctest.RandString(10)
+	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -122,7 +122,7 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
 	var volume libvirt.StorageVol
 	var volume2 libvirt.StorageVol
-	random := acctest.RandString(10)
+	random := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -153,7 +153,7 @@ func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
 func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 	var volume libvirt.StorageVol
 	var volume2 libvirt.StorageVol
-	random := acctest.RandString(10)
+	random := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -187,8 +187,8 @@ func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 // This test should fail without a proper "Exists" implementation
 func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 	var volume libvirt.StorageVol
-	randomVolumeResource := acctest.RandString(10)
-	randomVolumeName := acctest.RandString(10)
+	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	testAccCheckLibvirtVolumeConfigBasic := fmt.Sprintf(`
 	resource "libvirt_volume" "%s" {
 		name = "%s"
@@ -223,9 +223,9 @@ func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 }
 
 func TestAccLibvirtVolume_UniqueName(t *testing.T) {
-	randomVolumeName := acctest.RandString(10)
-	randomVolumeResource2 := acctest.RandString(10)
-	randomVolumeResource := acctest.RandString(10)
+	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeResource2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	config := fmt.Sprintf(`
 	resource "libvirt_volume" "%s" {
 		name = "%s"
@@ -253,8 +253,8 @@ func TestAccLibvirtVolume_UniqueName(t *testing.T) {
 
 func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 	var volume libvirt.StorageVol
-	randomVolumeResource := acctest.RandString(10)
-	randomVolumeName := acctest.RandString(10)
+	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
 	fws := fileWebServer{}
 	if err := fws.Start(); err != nil {
@@ -294,10 +294,10 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 func TestAccLibvirtVolume_DownloadFromSourceFormat(t *testing.T) {
 	var volumeRaw libvirt.StorageVol
 	var volumeQCOW2 libvirt.StorageVol
-	randomVolumeNameRaw := acctest.RandString(10)
-	randomVolumeNameQCOW := acctest.RandString(10)
-	randomVolumeResourceRaw := acctest.RandString(10)
-	randomVolumeResourceQCOW := acctest.RandString(10)
+	randomVolumeNameRaw := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeNameQCOW := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeResourceRaw := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeResourceQCOW := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	qcow2Path, err := filepath.Abs("testdata/test.qcow2")
 	if err != nil {
 		t.Fatal(err)
@@ -343,8 +343,8 @@ func TestAccLibvirtVolume_DownloadFromSourceFormat(t *testing.T) {
 
 func TestAccLibvirtVolume_Format(t *testing.T) {
 	var volume libvirt.StorageVol
-	randomVolumeResource := acctest.RandString(10)
-	randomVolumeName := acctest.RandString(10)
+	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -374,8 +374,8 @@ func TestAccLibvirtVolume_Format(t *testing.T) {
 
 func TestAccLibvirtVolume_Import(t *testing.T) {
 	var volume libvirt.StorageVol
-	randomVolumeResource := acctest.RandString(10)
-	randomVolumeName := acctest.RandString(10)
+	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
