@@ -123,7 +123,7 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 	var domain libvirt.Domain
 	var volume libvirt.StorageVol
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	randomVolumeName2 := acctest.RandString(9)
+	randomVolumeName2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
 	var configVolAttached = fmt.Sprintf(`
@@ -182,7 +182,7 @@ func TestAccLibvirtDomain_VolumeDriver(t *testing.T) {
 	var volumeRaw libvirt.StorageVol
 	var volumeQCOW2 libvirt.StorageVol
 	randomVolumeQCOW2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	randomVolumeRaw := acctest.RandString(9)
+	randomVolumeRaw := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
 	var config = fmt.Sprintf(`
