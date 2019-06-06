@@ -61,8 +61,8 @@ func testAccCheckLibvirtPoolDoesNotExists(n string, pool *libvirt.StoragePool) r
 
 func TestAccLibvirtPool_Basic(t *testing.T) {
 	var pool libvirt.StoragePool
-	randomPoolResource := acctest.RandString(10)
-	randomPoolName := acctest.RandString(10)
+	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -94,8 +94,8 @@ func TestAccLibvirtPool_Basic(t *testing.T) {
 // This test should fail without a proper "Exists" implementation
 func TestAccLibvirtPool_ManuallyDestroyed(t *testing.T) {
 	var pool libvirt.StoragePool
-	randomPoolResource := acctest.RandString(10)
-	randomPoolName := acctest.RandString(10)
+	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
 	testAccCheckLibvirtPoolConfigBasic := fmt.Sprintf(`
 	resource "libvirt_pool" "%s" {
@@ -131,9 +131,9 @@ func TestAccLibvirtPool_ManuallyDestroyed(t *testing.T) {
 }
 
 func TestAccLibvirtPool_UniqueName(t *testing.T) {
-	randomPoolName := acctest.RandString(10)
-	randomPoolResource2 := acctest.RandString(10)
-	randomPoolResource := acctest.RandString(10)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolResource2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
 	poolPath2 := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName + "-2"
 	config := fmt.Sprintf(`
@@ -164,8 +164,8 @@ func TestAccLibvirtPool_UniqueName(t *testing.T) {
 }
 
 func TestAccLibvirtPool_NoDirPath(t *testing.T) {
-	randomPoolResource := acctest.RandString(10)
-	randomPoolName := acctest.RandString(10)
+	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
