@@ -101,11 +101,13 @@ resource "libvirt_domain" "domain-suse" {
 
   kernel = "${libvirt_volume.kernel.id}"
 
-  cmdline {
+  cmdline = [
+   {
     arg1 = "value1"
     arg2 = "value2"
     "_" = "rw nosplash"
-  }
+   }
+  ]
 }
 ```
 
@@ -120,48 +122,31 @@ the following examples:
 ```hcl
 resource "libvirt_domain" "my_machine" {
   //...
-
-  cmdline {
-    arg1 = "value1"
-  }
-  cmdline {
-    arg2 = "value2"
-  }
-}
+		cmdline = [
+			{
+				foo = "1"
+				bar = "bye"
+			},
+			{
+				foo = "2"
+			}
+		]
 ```
 
 ```hcl
 resource "libvirt_domain" "my_machine" {
   ...
-  cmdline = [
-    {
-      arg1 = "value1"
-    },
-    {
-      arg2 = "value2"
-    }
-  ]
+		cmdline = [
+			{
+				foo = "1"
+				bar = "bye"
+			},
+			{
+				foo = "2"
+			}
+		]
 }
 ```
-The kernel supports passing the same option multiple times. If you need this, use separate cmdline blocks.
-
-```hcl
-resource "libvirt_domain" "my_machine" {
-  //...
-
-  cmdline {
-    arg1 = "value1"
-  }
-  cmdline {
-    arg1 = "value2"
-  }
-}
-```
-
-~> **Note well:** `kernel` and `initrd` have to be specified at the same time; `cmdline`
-   arguments can be specified only when `kernel` and `initrd` have been defined.
-   Otherwise libvirt will refuse to start the domain.
-
 ### UEFI images
 
 Some extra arguments are also provided for using UEFI images:

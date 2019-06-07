@@ -412,13 +412,18 @@ func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
 		name   = "terraform-test-domain"
 		kernel = "${libvirt_volume.kernel.id}"
 		initrd = "${libvirt_volume.initrd.id}"
-		cmdline {
-			foo = 1
-			bar = "bye"
+
+
+		cmdline = [ 
+			{
+			arg1 = "value1"
+			}
+		 ]
+		cmdline = [
+		 {
+			arg1 = "value2"
 		}
-		cmdline {
-			foo = 2
-		}
+		]
 	}`, randomDomainName)
 
 	resource.Test(t, resource.TestCase{
