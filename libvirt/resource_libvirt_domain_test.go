@@ -681,7 +681,7 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 	var config = fmt.Sprintf(`
 	resource "libvirt_domain" "%s" {
 		name = "%s"
-		cpu {
+		cpu  = {
 			mode = "custom"
 		}
 	}`, randomDomainName, randomDomainName)
