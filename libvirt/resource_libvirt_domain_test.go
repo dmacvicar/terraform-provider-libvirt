@@ -458,10 +458,10 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 
 	resource "libvirt_domain" "%s" {
 		name              = "%s"
-		network_interface = {
+		network_interface  {
 			network_name = "default"
 		}
-		network_interface = {
+		network_interface  {
 			network_name   = "default"
 			mac            = "52:54:00:A9:F5:17"
 			wait_for_lease = true

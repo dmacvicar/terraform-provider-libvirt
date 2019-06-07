@@ -7,8 +7,8 @@ import (
 	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirt "github.com/libvirt/libvirt-go"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 func TestAccLibvirtNetwork_Addresses(t *testing.T) {
@@ -134,18 +134,16 @@ func TestAccLibvirtNetwork_DNSForwarders(t *testing.T) {
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
 					dns {
-						forwarders = [
-						  {
-						    address = "8.8.8.8",
-					          },
-						  {
-						    address = "10.10.0.67",
-						    domain = "my.domain.com",
-						  },
-						  {
-						    domain = "hello.com",
-						  },
-						]
+						forwarders {
+						    address = "8.8.8.8"
+					       }
+						forwarders {
+						    address = "10.10.0.67"
+						    domain = "my.domain.com"
+						  }
+						forwarders {
+						    domain = "hello.com"
+						  }
 					}
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
@@ -187,20 +185,18 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
 					dns {
-						hosts = [
-						  {
-							  hostname = "myhost1",
-							  ip = "1.1.1.1",
-						  },
-						  {
-							  hostname = "myhost1",
-							  ip = "1.1.1.2",
-						  },
-						  {
-							  hostname = "myhost2",
-							  ip = "1.1.1.1",
-						  },
-						]
+						hosts  {
+							  hostname = "myhost1"
+							  ip = "1.1.1.1"
+						  }
+						 hosts {
+							  hostname = "myhost1"
+							  ip = "1.1.1.2"
+						  }
+						 hosts {
+							  hostname = "myhost2"
+							  ip = "1.1.1.1"
+						  }
 					}
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
@@ -234,12 +230,10 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
 					dns {
-						hosts = [
-						  {
-							  hostname = "myhost1",
-							  ip = "1.1.1.1",
-						  },
-						]
+						hosts {
+							  hostname = "myhost1"
+							  ip = "1.1.1.1"
+						  }
 					}
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
@@ -262,23 +256,21 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
 					dns {
-						hosts = [
-						  {
-							  hostname = "myhost1",
-							  ip = "1.1.1.1",
-						  },
+						hosts {
+							  hostname = "myhost1"
+							  ip = "1.1.1.1"
+						  }
 # Without https:#www.redhat.com/archives/libvir-list/2018-November/msg00231.html, this raises:
 #
 #   update DNS hosts: add {{ } 1.1.1.2 [{myhost1}]}: virError(Code=55, Domain=19, Message='Requested operation is not valid: there is already at least one DNS HOST record with a matching field in network fo64d9y6w9')
 #						  {
-#							  hostname = "myhost1",
-#							  ip = "1.1.1.2",
+#							  hostname = "myhost1"
+#							  ip = "1.1.1.2"
 #						  },
-						  {
-							  hostname = "myhost2",
-							  ip = "1.1.1.1",
-						  },
-						]
+						  hosts {
+							  hostname = "myhost2"
+							  ip = "1.1.1.1"
+						  }
 					}
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
