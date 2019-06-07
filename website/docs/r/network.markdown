@@ -54,34 +54,30 @@ resource "libvirt_network" "kube_network" {
 
     # (Optional) one or more DNS forwarder entries.  One or both of
     # "address" and "domain" must be specified.  The format is:
-    # forwarders = [
-    #   {
+    # forwarders {
     #     address = "my address"
     #     domain = "my domain"
-    #   }
-    # ]
+    #  } 
+    # 
 
     # (Optional) one or more DNS host entries.  Both of
     # "ip" and "hostname" must be specified.  The format is:
-    # hosts = [
-    #   {
+    # hosts  {
     #     hostname = "my_hostname"
     #     ip = "my.ip.address.1"
-    #   },
-    #   {
+    #   }
+    # hosts {
     #     hostname = "my_hostname"
     #     ip = "my.ip.address.2"
-    #   },
-    # ]
+    #   }
+    # 
 
     # (Optional) one or more static routes.
     # "cidr" and "gateway" must be specified. The format is:
-    # routes = [
-    #   {
+    # routes {
     #     cidr = "10.17.0.0/16"
     #     gateway = "10.18.0.2"
-    #   },
-    # ]
+    #   }
   }
 }
 ```
@@ -142,7 +138,7 @@ An advanced example of round-robin DNS (using DNS host templates) follows:
 resource "libvirt_network" "my_network" {
   ...
   dns = {
-    hosts = [ "${flatten(data.libvirt_network_dns_host_template.hosts.*.rendered)}" ]
+    hosts { "${flatten(data.libvirt_network_dns_host_template.hosts.*.rendered)}" }
   }
   ...
 }

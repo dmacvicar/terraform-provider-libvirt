@@ -479,7 +479,7 @@ The optional `cpu` block allows to configure CPU mode. Example:
 ```hcl
 resource "libvirt_domain" "my_machine" {
   ...
-  cpu {
+  cpu = {
     mode = "host-passthrough"
   }
 }
