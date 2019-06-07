@@ -448,12 +448,11 @@ func TestAccLibvirtNetwork_StaticRoutes(t *testing.T) {
 					dhcp {
 						enabled = false
 					}
-					routes = [
-						{
+					routes {
 							cidr = "10.18.0.0/16"
 							gateway = "10.17.3.2"
-						},
-					]}`,
+						}
+					}`,
 		randomNetworkName, randomNetworkName)
 
 	resource.Test(t, resource.TestCase{
