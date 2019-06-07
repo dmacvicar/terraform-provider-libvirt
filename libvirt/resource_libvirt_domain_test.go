@@ -1446,7 +1446,7 @@ func TestAccLibvirtDomain_XSLT_UnsupportedAttribute(t *testing.T) {
 
 	resource "libvirt_domain" "%s" {
 	  name = "%s"
-	  network_interface = {
+	  network_interface {
 	    network_name = "default"
 	  }
       xml {
@@ -1510,7 +1510,7 @@ func TestAccLibvirtDomain_XSLT_SupportedAttribute(t *testing.T) {
 
 	resource "libvirt_domain" "%s" {
 	  name = "%s"
-	  network_interface = {
+	  network_interface  {
 	    network_name = "default"
 	  }
       xml {
@@ -1568,7 +1568,7 @@ func TestAccLibvirtDomain_XSLT_Whitespace(t *testing.T) {
 
 	resource "libvirt_domain" "%s" {
 	  name = "%s"
-	  network_interface = {
+	  network_interface  {
 	    network_name = "default"
 	  }
       xml {
@@ -1601,7 +1601,7 @@ EOF
 
 	resource "libvirt_domain" "%s" {
 	  name = "%s"
-	  network_interface = {
+	  network_interface  {
 	    network_name = "default"
 	  }
       xml {
