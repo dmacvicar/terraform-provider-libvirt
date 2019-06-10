@@ -17,21 +17,21 @@ Manages a storage volume in libvirt. For more information see
 # Base OS image to use to create a cluster of different
 # nodes
 resource "libvirt_volume" "opensuse_leap" {
-  name = "opensuse_leap"
+  name   = "opensuse_leap"
   source = "http://download.opensuse.org/repositories/Cloud:/Images:/Leap_42.1/images/openSUSE-Leap-42.1-OpenStack.x86_64.qcow2"
 }
 
 # volume to attach to the "master" domain as main disk
 resource "libvirt_volume" "master" {
   name           = "master.qcow2"
-  base_volume_id = "${libvirt_volume.opensuse_leap.id}"
+  base_volume_id = libvirt_volume.opensuse_leap.id
 }
 
 # volumes to attach to the "workers" domains as main disk
 resource "libvirt_volume" "worker" {
   name           = "worker_${count.index}.qcow2"
-  base_volume_id = "${libvirt_volume.opensuse_leap.id}"
-  count          = "${var.workers_count}"
+  base_volume_id = libvirt_volume.opensuse_leap.id
+  count          = var.workers_count
 }
 ```
 
