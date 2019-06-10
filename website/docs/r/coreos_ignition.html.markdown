@@ -56,17 +56,17 @@ data "ignition_systemd_unit" "example" {
 # Ignition config include the previous defined systemd unit data source
 data "ignition_config" "example" {
   systemd = [
-      "${data.ignition_systemd_unit.example.id}",
+      "data.ignition_systemd_unit.example.id",
   ]
 }
 
 resource "libvirt_ignition" "ignition" {
   name = "ignition"
-  content = "${data.ignition_config.example.rendered}"
+  content = data.ignition_config.example.rendered
 }
 
 resource "libvirt_domain" "my_machine" {
-  coreos_ignition = "${libvirt_ignition.ignition.id}"
+  coreos_ignition = libvirt_ignition.ignition.id
   ...
 }
 ```

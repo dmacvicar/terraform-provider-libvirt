@@ -71,17 +71,17 @@ Given that you can define a volume from a remote http file, this means, you can 
 ```hcl
 resource "libvirt_volume" "kernel" {
   source = "http://download.opensuse.org/tumbleweed/repo/oss/boot/x86_64/loader/linux"
-  name = "kernel"
-  pool = "default"
+  name   = "kernel"
+  pool   = "default"
   format = "raw"
 }
 
 resource "libvirt_domain" "domain-suse" {
-  name = "suse"
+  name   = "suse"
   memory = "1024"
-  vcpu = 1
+  vcpu   = 1
 
-  kernel = "${libvirt_volume.kernel.id}"
+  kernel = libvirt_volume.kernel.id
 
   // ...
 }
@@ -95,11 +95,11 @@ You can use it in the same way as the kernel.
 
 ```hcl
 resource "libvirt_domain" "domain-suse" {
-  name = "suse"
+  name   = "suse"
   memory = "1024"
-  vcpu = 1
+  vcpu   = 1
 
-  kernel = "${libvirt_volume.kernel.id}"
+  kernel = libvirt_volume.kernel.id
 
   cmdline = [
    {
@@ -168,12 +168,12 @@ So you should typically use the firmware as this,
 
 ```hcl
 resource "libvirt_domain" "my_machine" {
-  name = "my_machine"
+  name     = "my_machine"
   firmware = "/usr/share/qemu/ovmf-x86_64-code.bin"
-  memory = "2048"
+  memory   = "2048"
 
   disk {
-    volume_id = "${libvirt_volume.volume.id}"
+    volume_id = libvirt_volume.volume.id
   }
   ...
 }
@@ -192,7 +192,7 @@ look like this:
 
 ```hcl
 resource "libvirt_domain" "my_machine" {
-  name = "my_machine"
+  name     = "my_machine"
   firmware = "/usr/share/qemu/ovmf-x86_64-code.bin"
   nvram {
     file = "/usr/local/share/qemu/custom-vars.bin"
@@ -200,7 +200,7 @@ resource "libvirt_domain" "my_machine" {
   memory = "2048"
 
   disk {
-    volume_id = "${libvirt_volume.volume.id}"
+    volume_id = libvirt_volume.volume.id
   }
   ...
 }
@@ -212,7 +212,7 @@ coming from a template, the domain definition should look like this:
 
 ```hcl
 resource "libvirt_domain" "my_machine" {
-  name = "my_machine"
+  name     = "my_machine"
   firmware = "/usr/share/qemu/ovmf-x86_64-code.bin"
   nvram {
     file = "/usr/local/share/qemu/custom-vars.bin"
@@ -221,7 +221,7 @@ resource "libvirt_domain" "my_machine" {
   memory = "2048"
 
   disk {
-    volume_id = "${libvirt_volume.volume.id}"
+    volume_id = libvirt_volume.volume.id
   }
   ...
 }
@@ -245,20 +245,20 @@ a scsi controller, if not specified then a random wwn is generated for the disk
 
 ```hcl
 resource "libvirt_volume" "leap" {
-  name = "leap"
+  name   = "leap"
   source = "http://someurl/openSUSE_Leap-42.1.qcow2"
 }
 
 resource "libvirt_volume" "mydisk" {
-  name = "mydisk"
-  base_volume_id = "${libvirt_volume.leap.id}"
+  name           = "mydisk"
+  base_volume_id = libvirt_volume.leap.id
 }
 
 resource "libvirt_domain" "domain1" {
   name = "domain1"
   disk {
-    volume_id = "${libvirt_volume.mydisk.id}"
-    scsi = "true"
+    volume_id = libvirt_volume.mydisk.id
+    scsi      = "true"
   }
 
   disk {
@@ -279,10 +279,10 @@ the following examples:
 resource "libvirt_domain" "my_machine" {
   ...
   disk {
-    volume_id = "${libvirt_volume.volume1.id}"
+    volume_id = libvirt_volume.volume1.id
   }
   disk {
-    volume_id = "${libvirt_volume.volume2.id}"
+    volume_id = libvirt_volume.volume2.id
   }
 }
 ```
@@ -292,10 +292,10 @@ resource "libvirt_domain" "my_machine" {
   ...
   disk = [
     {
-      volume_id = "${libvirt_volume.volume1.id}"
+      volume_id = libvirt_volume.volume1.id
     },
     {
-      volume_id = "${libvirt_volume.volume2.id}"
+      volume_id = libvirt_volume.volume2.id
     }
   ]
 }
@@ -304,7 +304,7 @@ resource "libvirt_domain" "my_machine" {
 ```hcl
 resource "libvirt_domain" "my_machine" {
   ...
-  disk = ["${var.disk_map_list}"]
+  disk = [var.disk_map_list]
 }
 ```
 
@@ -319,10 +319,10 @@ resource "libvirt_domain" "domain1" {
   name = "domain1"
 
   network_interface {
-    network_id = "${libvirt_network.net1.id}"
-    hostname = "master"
-    addresses = ["10.17.3.3"]
-    mac = "AA:BB:CC:11:22:22"
+    network_id     = libvirt_network.net1.id
+    hostname       = "master"
+    addresses      = ["10.17.3.3"]
+    mac            = "AA:BB:CC:11:22:22"
     wait_for_lease = true
   }
 }
@@ -408,7 +408,7 @@ The `graphics` block will look as follows:
 resource "libvirt_domain" "my_machine" {
   ...
   graphics {
-    type = "vnc"
+    type        = "vnc"
     listen_type = "address"
   }
 }
@@ -440,7 +440,7 @@ The block looks as follows:
 resource "libvirt_domain" "my_machine" {
   ...
   console {
-    type = "pty"
+    type        = "pty"
     target_port = "0"
     target_type = <"serial" or "virtio">
     source_path = "/dev/pts/4"
@@ -513,13 +513,13 @@ Example:
 
 ```hcl
 filesystem {
-  source = "/tmp"
-  target = "tmp"
+  source   = "/tmp"
+  target   = "tmp"
   readonly = false
 }
 filesystem {
-  source = "/proc"
-  target = "proc"
+  source   = "/proc"
+  target   = "proc"
   readonly = true
 }
 ```

@@ -138,14 +138,14 @@ An advanced example of round-robin DNS (using DNS host templates) follows:
 resource "libvirt_network" "my_network" {
   ...
   dns = {
-    hosts { "${flatten(data.libvirt_network_dns_host_template.hosts.*.rendered)}" }
+    hosts { flatten(data.libvirt_network_dns_host_template.hosts.*.rendered) }
   }
   ...
 }
 
 data "libvirt_network_dns_host_template" "hosts" {
-  count = "${var.host_count}"
-  ip = "${var.host_ips[count.index]}"
+  count    = var.host_count
+  ip       = var.host_ips[count.index]
   hostname = "my_host"
 }
 ```
@@ -154,17 +154,17 @@ An advanced example of setting up multiple SRV records using DNS SRV templates i
 
 ```hcl
 data "libvirt_network_dns_srv_template" "etcd_cluster" {
-  count = "${var.etcd_count}"
-  service = "etcd-server"
+  count    = var.etcd_count
+  service  = "etcd-server"
   protocol = "tcp"
-  domain = "${discovery_domain}"
-  target = "${var.cluster_name}-etcd-${count.index}.${discovery_domain}"
+  domain   = var.discovery_domain
+  target   = "${var.cluster_name}-etcd-${count.index}.${discovery_domain}"
 }
 
 resource "libvirt_network" "k8snet" {
   ...
   dns = [{
-    srvs = [ "${flatten(data.libvirt_network_dns_srv_template.etcd_cluster.*.rendered)}" ]
+    srvs = [ flatten(data.libvirt_network_dns_srv_template.etcd_cluster.*.rendered) ]
   }]
   ...
 }
@@ -179,7 +179,7 @@ resource "libvirt_network" "k8snet" {
 					mode      = "nat"
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
-					dhcp {
+					dhcp = {
 						enabled = true
 					}
 ```
