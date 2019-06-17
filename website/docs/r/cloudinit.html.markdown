@@ -15,12 +15,12 @@ used to customize a domain during first boot.
 
 ```hcl
 resource "libvirt_cloudinit_disk" "commoninit" {
-  name = "commoninit.iso"
-  user_data          = "${data.template_file.user_data.rendered}"
+  name      = "commoninit.iso"
+  user_data = data.template_file.user_data.rendered
 }
 
 data "template_file" "user_data" {
-  template = "${file("${path.module}/cloud_init.cfg")}"
+  template = file("${path.module}/cloud_init.cfg")
 }
 
 ```
@@ -36,7 +36,7 @@ chpasswd:
 ```
 
 In this example we change with help of cloud-init the root pwd.
-Take also insipiration from ubuntu.tf https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/examples/ubuntu/ubuntu-example.tf
+Take also insipiration from ubuntu.tf https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/examples/v0.12/ubuntu/ubuntu-example.tf
 
 ## Argument Reference
 
