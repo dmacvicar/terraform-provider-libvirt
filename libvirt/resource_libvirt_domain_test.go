@@ -413,16 +413,14 @@ func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
 		kernel = "${libvirt_volume.kernel.id}"
 		initrd = "${libvirt_volume.initrd.id}"
 
-
-		cmdline = [ 
-			{
-			arg1 = "value1"
-			}
-		 ]
 		cmdline = [
-		 {
-			arg1 = "value2"
-		}
+			{
+				foo = "1"
+				bar = "bye"
+			},
+			{
+				foo = "2"
+			}
 		]
 	}`, randomDomainName)
 
