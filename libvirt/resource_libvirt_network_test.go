@@ -12,6 +12,8 @@ import (
 )
 
 func TestAccLibvirtNetwork_Addresses(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkResourceFull := "libvirt_network." + randomNetworkResource
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -39,6 +41,8 @@ func TestAccLibvirtNetwork_Addresses(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_LocalOnly(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
@@ -66,6 +70,8 @@ func TestAccLibvirtNetwork_LocalOnly(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DNSEnable(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
@@ -93,6 +99,8 @@ func TestAccLibvirtNetwork_DNSEnable(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DNSDisable(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
@@ -120,6 +128,8 @@ func TestAccLibvirtNetwork_DNSDisable(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DNSForwarders(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
@@ -171,6 +181,8 @@ func TestAccLibvirtNetwork_DNSForwarders(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
@@ -294,6 +306,8 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_Import(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	var network libvirt.Network
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -325,6 +339,8 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
@@ -353,6 +369,8 @@ func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
@@ -381,6 +399,8 @@ func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_BridgedMode(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomBridgeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
@@ -405,6 +425,7 @@ func TestAccLibvirtNetwork_BridgedMode(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_StaticRoutes(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
 
 	checkRoutes := func(resourceName string) resource.TestCheckFunc {
 		return func(s *terraform.State) error {
@@ -480,6 +501,8 @@ func TestAccLibvirtNetwork_StaticRoutes(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_Autostart(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	var network libvirt.Network
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -521,6 +544,8 @@ func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 }
 
 func TestAccLibvirtNetwork_MTU(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
 	var network libvirt.Network
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)

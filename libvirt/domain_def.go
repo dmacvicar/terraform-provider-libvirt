@@ -69,14 +69,6 @@ func newDomainDef() libvirtxml.Domain {
 					},
 				},
 			},
-			RNGs: []libvirtxml.DomainRNG{
-				{
-					Model: "virtio",
-					Backend: &libvirtxml.DomainRNGBackend{
-						Random: &libvirtxml.DomainRNGBackendRandom{Device: "/dev/urandom"},
-					},
-				},
-			},
 		},
 		Features: &libvirtxml.DomainFeatureList{
 			PAE:  &libvirtxml.DomainFeature{},
@@ -89,6 +81,21 @@ func newDomainDef() libvirtxml.Domain {
 		domainDef.Type = v
 	} else {
 		domainDef.Type = "kvm"
+	}
+
+	// FIXME: We should allow setting this from configuration as well.
+	rngDev := os.Getenv("TF_LIBVIRT_RNG_DEV")
+	if rngDev == "" {
+		rngDev = "/dev/urandom"
+	}
+
+	domainDef.Devices.RNGs = []libvirtxml.DomainRNG{
+		{
+			Model: "virtio",
+			Backend: &libvirtxml.DomainRNGBackend{
+				Random: &libvirtxml.DomainRNGBackendRandom{Device: rngDev},
+			},
+		},
 	}
 
 	return domainDef

@@ -14,6 +14,8 @@ func TestAccLibvirtIgnition_Basic(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomServiceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha) + ".service"
 	randomIgnitionName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 	var config = fmt.Sprintf(`
 	data "ignition_systemd_unit" "acceptance-test-systemd" {
 		name    = "%s"
@@ -26,11 +28,18 @@ func TestAccLibvirtIgnition_Basic(t *testing.T) {
 		]
 	}
 
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+
 	resource "libvirt_ignition" "ignition" {
 		name    = "%s"
 		content = "${data.ignition_config.acceptance-test-config.rendered}"
+        pool    = "${libvirt_pool.%s.name}"
 	}
-	`, randomServiceName, randomIgnitionName)
+	`, randomServiceName, randomPoolName, randomPoolName, randomPoolPath, randomIgnitionName, randomPoolName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -44,7 +53,7 @@ func TestAccLibvirtIgnition_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_ignition.ignition", "name", randomIgnitionName),
 					resource.TestCheckResourceAttr(
-						"libvirt_ignition.ignition", "pool", "default"),
+						"libvirt_ignition.ignition", "pool", randomPoolName),
 				),
 			},
 		},

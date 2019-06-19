@@ -50,6 +50,12 @@ func testAccEnabled() bool {
 	return v == "1" || strings.ToLower(v) == "true"
 }
 
+func skipIfPrivilegedDisabled(t *testing.T) {
+	if os.Getenv("TF_LIBVIRT_DISABLE_PRIVILEGED_TESTS") != "" {
+		t.Skip("skipping test; Enviornemnt variable `TF_LIBVIRT_DISABLE_PRIVILEGED_TESTS` is set")
+	}
+}
+
 // //////////////////////////////////////////////////////////////////
 // general
 // //////////////////////////////////////////////////////////////////
