@@ -70,6 +70,7 @@ resource "libvirt_domain" "coreos-machine" {
     # Requires qemu-agent container if network is not native to libvirt
     wait_for_lease = true
   }
+
   ## mounts filesystem local to the kvm host. used to patch in the
   ## qemu-guest-agent as docker container
   #filesystem {
@@ -78,7 +79,7 @@ resource "libvirt_domain" "coreos-machine" {
   #  readonly = true
   #}
   tags {
-    OS       = "CoreOS"
+    OS = "CoreOS"
     NodeType = "${count.index <= 3 ? "master" : "worker"}"
   }
 }
