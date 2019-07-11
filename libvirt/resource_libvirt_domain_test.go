@@ -906,7 +906,7 @@ func TestAccLibvirtDomain_Tags(t *testing.T) {
 	var config = fmt.Sprintf(`
 	resource "libvirt_domain" "%s" {
 		name = "%s"
-		tags {
+		tags = {
 			%s = "%s"
 		}
 	}

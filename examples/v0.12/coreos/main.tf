@@ -5,7 +5,7 @@ provider "libvirt" {
 
 # -[Variables]-------------------------------------------------------------
 variable "hosts" {
-  default = 1
+  default = 7
 }
 
 variable "hostname_format" {
@@ -38,8 +38,8 @@ resource "libvirt_ignition" "ignition" {
 resource "libvirt_domain" "coreos-machine" {
   count  = var.hosts
   name   = format(var.hostname_format, count.index + 1)
-  vcpu   = "1"
-  memory = "2048"
+  vcpu   = count.index <= 3 ? 4 : 8
+  memory = count.index <= 3 ? 4096 : 16384
 
   ## Use qemu-agent in conjunction with the container
   #qemu_agent = true
@@ -77,6 +77,10 @@ resource "libvirt_domain" "coreos-machine" {
   #  target = "qemu_docker_images"
   #  readonly = true
   #}
+  tags = {
+    OS = "CoreOS"
+    NodeType = "${count.index <= 3 ? "master" : "worker"}"
+  }
 }
 
 # -[Output]-------------------------------------------------------------

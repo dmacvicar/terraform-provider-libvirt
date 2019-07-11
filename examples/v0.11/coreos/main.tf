@@ -78,7 +78,7 @@ resource "libvirt_domain" "coreos-machine" {
   #  target = "qemu_docker_images"
   #  readonly = true
   #}
-  tags {
+  tags = {
     OS = "CoreOS"
     NodeType = "${count.index <= 3 ? "master" : "worker"}"
   }
