@@ -52,7 +52,7 @@ resource "libvirt_domain" "coreos-machine" {
   graphics {
     ## Bug in linux up to 4.14-rc2
     ## https://bugzilla.redhat.com/show_bug.cgi?id=1432684
-    ## No Spice/VNC available if more then one machine is generated at a time
+    ## No Spice/VNC available if more than one machine is generated at a time
     ## Comment the address line, uncomment the none line and the console block below
     #listen_type = "none"
     listen_type = "address"
