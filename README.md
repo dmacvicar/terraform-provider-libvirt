@@ -82,7 +82,7 @@ Clone repository to: `$GOPATH/src/github.com/dmacvicar/terraform-provider-libvir
 
 ```console
 mkdir -p $GOPATH/src/github.com/dmacvicar; cd $GOPATH/src/github.com/dmacvicar
-git clone git@github.com:dmacvicar/terraform-provider-libvirt
+git clone https://github.com/dmacvicar/terraform-provider-libvirt.git
 ```
 
 Enter the provider directory and build the provider
