@@ -58,11 +58,13 @@ Follow the instructions for your distribution:
 
 ## Building from source
 
-Before building, you will need the following
+### Requirements
 
-* libvirt 1.2.14 or newer development headers
-* latest [golang](https://golang.org/dl/) version
-* `cgo` is required by the [libvirt-go](https://github.com/libvirt/libvirt-go) package. `export CGO_ENABLED="1"`
+-	[Terraform](https://www.terraform.io/downloads.html) 0.11.x
+-	[Go](https://golang.org/doc/install) (to build the provider plugin)
+-   [libvirt](https://libvirt.org/downloads.html) 1.2.14 or newer development headers
+-   `cgo` is required by the [libvirt-go](https://github.com/libvirt/libvirt-go) package. `export CGO_ENABLED="1"`
+
 
 This project uses [go modules](https://github.com/golang/go/wiki/Modules) to vendor all its
 dependencies.
@@ -74,8 +76,18 @@ takes advantage of features available only inside of the latest stable release.
 
 You need also need libvirt-dev(el) package installed.
 
+###Building The Provider
+
+Clone repository to: `$GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt`
+
 ```console
-go get github.com/dmacvicar/terraform-provider-libvirt
+mkdir -p $GOPATH/src/github.com/dmacvicar; cd $GOPATH/src/github.com/dmacvicar
+git clone git@github.com:dmacvicar/terraform-provider-libvirt
+```
+
+Enter the provider directory and build the provider
+
+```console
 cd $GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt
 make install
 ```
