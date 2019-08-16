@@ -43,7 +43,7 @@ RUN apt-get update \
 
 # Copy Terraform Files
 # COPY libvirt.tf /root/
-COPY . /root/
+
 # Terraform commands
 # RUN terraform init
 
