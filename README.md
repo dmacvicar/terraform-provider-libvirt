@@ -60,10 +60,10 @@ Follow the instructions for your distribution:
 
 ### Requirements
 
--	[Terraform](https://www.terraform.io/downloads.html) 0.11.x
+-	[Terraform](https://www.terraform.io/downloads.html)
 -	[Go](https://golang.org/doc/install) (to build the provider plugin)
--   [libvirt](https://libvirt.org/downloads.html) 1.2.14 or newer development headers
--   `cgo` is required by the [libvirt-go](https://github.com/libvirt/libvirt-go) package. `export CGO_ENABLED="1"`
+-	[libvirt](https://libvirt.org/downloads.html) 1.2.14 or newer development headers
+-	`cgo` is required by the [libvirt-go](https://github.com/libvirt/libvirt-go) package. `export CGO_ENABLED="1"`
 
 
 This project uses [go modules](https://github.com/golang/go/wiki/Modules) to vendor all its
@@ -76,7 +76,7 @@ takes advantage of features available only inside of the latest stable release.
 
 You need also need libvirt-dev(el) package installed.
 
-###Building The Provider
+### Building The Provider
 
 Clone repository to: `$GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt`
 
