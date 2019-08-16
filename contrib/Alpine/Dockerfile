@@ -33,9 +33,10 @@ COPY --from=libvirt /go/bin/terraform-provider-libvirt /root/.terraform.d/plugin
 
 # Install Dependencies
 # Libvirt is needed to run the provider. libxslt needed to use XML/XSLT. cdrkit needed to use cloud init images
+# openssh-client to talk to remote libvirt server
 RUN apk update \
     && apk upgrade \
-    && apk add --no-cache libvirt gcc libxslt cdrkit
+    && apk add --no-cache libvirt gcc libxslt cdrkit openssh-client
 
 # Copy Terraform Files
 # COPY libvirt.tf /root/
