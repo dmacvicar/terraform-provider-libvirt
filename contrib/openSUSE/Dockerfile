@@ -28,7 +28,7 @@ WORKDIR /root/
 RUN mkdir -p /root/.terraform.d/plugins/${GO_OS}_${GO_ARCH}/
 
 # Copy binaries from containers
-COPY --from=terraform /go/bin/terraform /bin/
+COPY --from=terraform /bin/terraform /bin/
 COPY --from=libvirt /go/bin/terraform-provider-libvirt /root/.terraform.d/plugins/${GO_OS}_${GO_ARCH}/
 
 # Install Dependencies
