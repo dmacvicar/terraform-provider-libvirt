@@ -43,4 +43,4 @@ RUN apk update \
 # Terraform commands
 # RUN terraform init
 
-ENTRYPOINT /bin/bash
+ENTRYPOINT /bin/ash

@@ -33,16 +33,17 @@ COPY --from=libvirt /go/bin/terraform-provider-libvirt /root/.terraform.d/plugin
 
 # Install Dependencies
 # libvirt0 is needed to run the provider. xsltproc needed to use XML/XSLT. mkisofs needed to use cloud init images
+# ca-certificates to avoid terraform init 509 error
 RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get install \
     -y --no-install-recommends \
-    libvirt0 xsltproc mkisofs \
+    libvirt0 xsltproc mkisofs ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Terraform Files
 # COPY libvirt.tf /root/
-
+COPY . /root/
 # Terraform commands
 # RUN terraform init
 
