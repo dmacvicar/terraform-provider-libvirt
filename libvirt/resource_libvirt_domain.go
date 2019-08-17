@@ -105,6 +105,12 @@ func resourceLibvirtDomain() *schema.Resource {
 				ForceNew: true,
 				Default:  "",
 			},
+			"fw_cfg_name": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				Default:  "opt/com.coreos/config",
+			},
 			"filesystem": {
 				Type:     schema.TypeList,
 				Optional: true,

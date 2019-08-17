@@ -236,16 +236,20 @@ func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain) err
 		if err != nil {
 			return err
 		}
+		// `fw_cfg_name` stands for firmware config is defined by a key and a value
+		// credits for this cryptic name: https://github.com/qemu/qemu/commit/81b2b81062612ebeac4cd5333a3b15c7d79a5a3d
+		if fwCfg, ok := d.GetOk("fw_cfg_name"); ok {
 
-		domainDef.QEMUCommandline = &libvirtxml.DomainQEMUCommandline{
-			Args: []libvirtxml.DomainQEMUCommandlineArg{
-				{
-					Value: "-fw_cfg",
+			domainDef.QEMUCommandline = &libvirtxml.DomainQEMUCommandline{
+				Args: []libvirtxml.DomainQEMUCommandlineArg{
+					{
+						Value: "-fw_cfg",
+					},
+					{
+						Value: fmt.Sprintf("name=%s,file=%s", fwCfg, ignitionKey),
+					},
 				},
-				{
-					Value: fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionKey),
-				},
-			},
+			}
 		}
 	}
 
