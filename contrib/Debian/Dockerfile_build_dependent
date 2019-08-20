@@ -10,7 +10,7 @@ ARG TERRAFORM_VERSION=0.12.0
 # Grab the Terraform binary
 FROM hashicorp/terraform:$TERRAFORM_VERSION AS terraform
 
-# Gran the Terraform Libvirt Provider binary
+# Grab the Terraform Libvirt Provider binary
 FROM provider-libvirt:v0.5.2-debian AS libvirt
 
 # Base Image
