@@ -21,7 +21,7 @@ Build appropriate `Build` container, in this case it would be `Dockerfile_musl`:
 docker build -f Dockerfile_musl -t provider-libvirt:v0.5.2-musl . --build-arg VERSION=v0.5.2
 ```
 
-Now build the Alpine container:
+Now build the Main container:
 ```console
 docker build -f Dockerfile_build_dependent -t terraform:development-alpine . --build-arg GO_OS=linux --build-arg GO_ARCH=amd64 --build-arg TERRAFORM_VERSION=0.11.14
 ```
