@@ -39,7 +39,7 @@ branch/tag of the terraform libvirt provider.
 
 
 
-Examples:
+Build Examples:
 ```console
 docker build -f Dockerfile_glibc -t provider-libvirt:v0.5.2-glibc . --build-arg VERSION=v0.5.2
 ``` 
@@ -56,30 +56,72 @@ This command would checkout the `master` branch, thus building the latest code.
 For the `distro` containers there are three build args, `TERRAFORM_VERSION`, `GO_ARCH`, and `GO_OS`.
 
 The build arg, `TERRAFORM_VERSION`, lets you select which terraform version you want to run. By default this is set to 
-`0.12.0`, but can be overwritten by setting it as a Docker `build-arg`.
+`0.12.0`, but can be overwritten by setting it in a Docker `build-arg`.
 
 The `GO_ARCH` and `GO_OS` need to be passed in when building the container as they do **not** have defaults. The purpose
-of these args are to allow multiple architectures to run these docker containers. If you are unsure of what your 
-`GO_ARCH` and `GO_OS` should be please refer to 
-[this](https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63). For most users running on `amd64`, use 
-`GO_OS=linux` and `GO_ARCH=amd64`.
+of these args are to allow multiple architectures to run these docker containers, see 
+[below](#Running-on-non-supported-Terraform-Architectures) . If you are unsure of what your `GO_ARCH` and `GO_OS` 
+should be please refer to [this](https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63). For most users 
+running on `amd64`, use `GO_OS=linux` and `GO_ARCH=amd64`.
 
-If you are using `s390x`, change `GO_ARCH` to `GO_ARCH=s390x`.
 
-Examples:
+Docker Build Examples:
 ```console
-docker build -f Dockerfile -t terraform:development-tumbleweed . --build-arg GO_OS=linux --build-arg GO_ARCH=amd64 --build-arg TERRAFORM_VERSION=0.11.14
+docker build -f Dockerfile_build_dependent -t terraform:development-tumbleweed . --build-arg GO_OS=linux --build-arg GO_ARCH=amd64 --build-arg TERRAFORM_VERSION=0.11.14
 ```
 
 This command builds a distro container, tags it as `terraform:development-tumbleweed`, sets the `GO_OS` to linux and
 `GO_ARCH` to amd64 and sets the terraform version to `0.11.14`.
 
 ```console
-docker build -f Dockerfile -t terraform:development-debian . --build-arg GO_OS=linux --build-arg GO_ARCH=s390x
+docker build -f Dockerfile_build_dependent -t terraform:development-debian . --build-arg GO_OS=linux --build-arg GO_ARCH=s390x
 ```
 
 This command builds a distro container, tags it as `terraform:development-debian`, sets the `GO_OS` to linux and
 `GO_ARCH` to s390x and will use the default value of `0.12.0` for terraform.
+
+### Running on non-supported Terraform Architectures 
+Terraform currently does support other architectures other then `amd64`, thus running on other architectures like 
+`s390x` can be troublesome. 
+
+Luckily, the docker containers only need a slight modification to run on `s390x`. **Note**: The `Build` containers will run
+on any architectures that support GO and should not need modification.
+
+In the distro containers you should see a line like:
+
+```dockerfile
+# Grab the Terraform binary
+FROM hashicorp/terraform:$TERRAFORM_VERSION AS terraform
+``` 
+
+Currently, that is pulling in the official Terraform docker container. To get it to work on your desired architecture
+you need to build the Terraform binary yourself. You can do that by building the Dockerfile below:
+
+```dockerfile
+FROM golang:alpine
+
+ARG TERRAFORM_VERSION
+ENV TERRAFORM_VERSION=$TERRAFORM_VERSION
+
+RUN apk add --update git bash openssh
+
+ENV TF_DEV=true
+ENV TF_RELEASE=true
+
+WORKDIR $GOPATH/src/github.com/hashicorp/terraform
+RUN git clone https://github.com/hashicorp/terraform.git ./ && \
+    git checkout v${TERRAFORM_VERSION} && \
+    /bin/bash scripts/build.sh
+
+WORKDIR $GOPATH
+ENTRYPOINT ["terraform"]
+``` 
+
+With this Dockerfile built, you now need to swap the `FROM hashicorp/terraform:$TERRAFORM_VERSION AS terraform` with 
+your images tag.
+
+**Note**: Even if you get the terraform binary built for your respective architecture you might need to built other
+providers you utilize in your terraform files, as the default providers are not built for unsupported architectures.
 
 ### Tips and Tricks
 - The use of Docker Volumes helps transfer Terraform config files back and forth between your local system and the docker
