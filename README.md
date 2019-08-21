@@ -168,6 +168,10 @@ Be aware that this variables may be subject to change again in future versions.
 
 * [kubic](https://github.com/kubic-project)
     *   [kubic-terraform-kvm](https://github.com/kubic-project/kubic-terraform-kvm) Kubic Terraform script using KVM/libvirt
+
+* [Community Driven Docker Examples](contrib/)
+   Docker examples showing how to use the Libirt Provider
+
 ## Authors
 
 * Duncan Mac-Vicar P. <dmacvicar@suse.de>
