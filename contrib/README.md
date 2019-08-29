@@ -1,7 +1,6 @@
 # Community Driven Docker Examples
-These docker containers are meant to serve as an isolated develop/deployment environment. Each docker container has the 
-terraform libvirt provider built and placed in the custom plugins folder. The most common use case for these containers 
-is to run your terraform environment in a isolate container talking to a `remote` libvirt system. 
+These docker containers are meant to serve as an isolated development environment. The most common use case for these 
+containers is to run your terraform environment in a isolate container talking to a `remote` libvirt system. 
 
 Please refer to the distro's `README.md` for specific instructions.
 
@@ -10,62 +9,70 @@ folder will compile the terraform libvirt provider for you. Please refer to the 
 information and instructions.
 
 ## Table of Content
+
+**Distro Containers**
 - [Alpine Containers](Alpine/)
-- [Build Containers](Build/)
 - [Debian Conainers](Debian/)
 - [openSUSE Containers](openSUSE/)
 
+**Build Containers**
+- [Build Containers](Build/)
+
+
+## Quickstart
+ 1. Grab the all-in-one container for the distro you want, in this case we are using `openSUSE`
+     ```console
+     git clone https://github.com/dmacvicar/terraform-provider-libvirt.git; cd ./terraform-provider-libvirt/contrib/openSUSE/
+     ```
+ 2. Build the all-in-one container
+    ```console
+    docker build -f Dockerfile_all_in_one -t terraform:development-tumbleweed . --build-arg GO_OS=linux --build-arg GO_ARCH=amd64
+    ```
+ 3. Run the docker container
+    ```console
+    docker run -it terraform:development-tumbleweed /bin/bash
+    ```
 
 ## General Usage
 There are two types of containers you'll find for each distro, `All-in-One` and `Build-Dependent`.
 
 ### All-in-One v.s Build-Dependent Containers
 The `All-in-One` container is a single Dockerfile that you can build and run. The Dockerfile takes advantage of 
-Docker's multi-stage build functionality. It allows you to build a binary or object in a "sub container" and then 
-access the binary or object in your "main container". This Dockerfile is useful if you want to get up and running 
+Docker's multi-stage build functionality. It allows you to build a binary object in a "sub container" and then 
+access the binary object in your "main container". This Dockerfile is useful if you want to get up and running 
 quickly, but might lead to confusion down the road if plan on using multiple versions of the terraform libvirt provider.
 
 The `Build-Dependent` container relies on another Dockerfile which contains the build of the plugin. To use this 
 container you need to first build the appropriate build Dockerfile and tag it correctly. Once that is done, you are
 able to reference it inside the `Build-Dependent`'s Dockerfile. This design is useful when you are dealing with 
-multiple versions of the terraform libvirt provider such as a stable build, `0.5.2`, which works with Terraform `0.11.X` 
-and the less stable branch, `master`, which currently works with Terraform `0.12.x`.
+multiple versions of the terraform libvirt provider such as, `0.5.2`, which works with Terraform `0.11.X` 
+and the latest branch, `master`, which currently works with Terraform `0.12.x`.
 
-### Build Args
-There are a couple build args to be aware of when building these various containers.
+### Build Argument Reference
+The following arguments are supported:
 
-For the `Build` containers, you will only need to worry about the `VERSION` arg. The `VERSION` arg lets you build a specific
-branch/tag of the terraform libvirt provider.
+- `VERSION` - (Required) A name of a branch or tag of the terraform libvirt plugin to build
+- `TERRAFORM_VERSION` - (Optional) - A tag of the official docker terraform image to pull from
+- `GO_ARCH` - (Required) The GO name of your given architecture
+- `GO_OS` - (Required) The GO name of your given OS
 
+### Examples
+`Build` containers examples:
 
-
-Build Examples:
 ```console
 docker build -f Dockerfile_glibc -t provider-libvirt:v0.5.2-glibc . --build-arg VERSION=v0.5.2
 ``` 
 
-This command would checkout the tag `v0.5.2`, thus building the terraform libvirt provider with the given code in 
-`v0.5.2`.
+This command would checkout the tag `v0.5.2`.
 
 ```console
 docker build -f Dockerfile_glibc -t provider-libvirt:master-glibc . --build-arg VERSION=master
 ```
 
-This command would checkout the `master` branch, thus building the latest code. 
+This command would checkout the `master` branch.
 
-For the `distro` containers there are three build args, `TERRAFORM_VERSION`, `GO_ARCH`, and `GO_OS`.
+`distro` containers examples:
 
-The build arg, `TERRAFORM_VERSION`, lets you select which terraform version you want to run. By default this is set to 
-`0.12.0`, but can be overwritten by setting it in a Docker `build-arg`.
-
-The `GO_ARCH` and `GO_OS` need to be passed in when building the container as they do **not** have defaults. The purpose
-of these args are to allow multiple architectures to run these docker containers, see 
-[below](#Running-on-non-supported-Terraform-Architectures) . If you are unsure of what your `GO_ARCH` and `GO_OS` 
-should be please refer to [this](https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63). For most users 
-running on `amd64`, use `GO_OS=linux` and `GO_ARCH=amd64`.
-
-
-Docker Build Examples:
 ```console
 docker build -f Dockerfile_build_dependent -t terraform:development-tumbleweed . --build-arg GO_OS=linux --build-arg GO_ARCH=amd64 --build-arg TERRAFORM_VERSION=0.11.14
 ```
@@ -84,7 +91,7 @@ This command builds a distro container, tags it as `terraform:development-debian
 Terraform currently does support other architectures other then `amd64`, thus running on other architectures like 
 `s390x` can be troublesome. 
 
-Luckily, the docker containers only need a slight modification to run on `s390x`. **Note**: The `Build` containers will run
+The docker containers only needs a slight modification to run on `s390x`. **Note**: The `Build` containers will run
 on any architectures that support GO and should not need modification.
 
 In the distro containers you should see a line like:
@@ -118,14 +125,14 @@ ENTRYPOINT ["terraform"]
 ``` 
 
 With this Dockerfile built, you now need to swap the `FROM hashicorp/terraform:$TERRAFORM_VERSION AS terraform` with 
-your images tag.
+your images name and tag.
 
-**Note**: Even if you get the terraform binary built for your respective architecture you might need to built other
-providers you utilize in your terraform files, as the default providers are not built for unsupported architectures.
+**Note**: Even if you get the terraform binary built for your respective architecture, you might need to built other
+providers you utilize in your terraform files. As the default providers are not built for unsupported architectures.
 
 ### Tips and Tricks
-- The use of Docker Volumes helps transfer Terraform config files back and forth between your local system and the docker
-container.
+- The use of Docker Volumes helps transfer Terraform config files back and forth between your local system and the 
+docker container.
 
 - Most `remote` libvirt systems require SSH Key auth. To generate a new SSH Key in Dockerfile use the following code:
     ```dockerfile

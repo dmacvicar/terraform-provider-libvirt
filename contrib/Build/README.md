@@ -9,11 +9,7 @@ the benefit of storing the binary in the container, thus you could use a `docker
 on your local system. 
 
 ## General Usage
-As stated before in the general [README](../), these containers have build args. `VERSION` controls what 
-build/version of the terraform libvirt provider you are going to compile. You can set `VERSION` to any branch or tag of
-the repo. If you set `VERSION` to `v0.5.2` it would build that specific branch/tag of the project. Another common 
-branch to set it to would be `master`. 
-
+As stated before in the general [README](../), these containers have build arguments. 
 
 To build the two containers use these commands:
 

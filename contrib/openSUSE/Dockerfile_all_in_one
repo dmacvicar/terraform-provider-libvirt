@@ -4,6 +4,9 @@ ARG GO_OS
 # Set to arch name of your system
 ARG GO_ARCH
 
+# Terraform Version
+ARG TERRAFORM_VERSION=0.12.0
+
 # Provider Version
 ARG VERSION
 
