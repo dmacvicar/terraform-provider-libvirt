@@ -184,6 +184,10 @@ Be aware that this variables may be subject to change again in future versions.
 * [kubic](https://github.com/kubic-project)
     *   [kubic-terraform-kvm](https://github.com/kubic-project/kubic-terraform-kvm) Kubic Terraform script using KVM/libvirt
 
+* [Openshift 4 Installer](https://github.com/openshift/installer)
+  The Openshift 4 Installer uses Terraform for cluster orchestration and relies on terroform-provider-libvirt for
+  libvirt platform.
+
 ## Authors
 
 * Duncan Mac-Vicar P. <dmacvicar@suse.de>
