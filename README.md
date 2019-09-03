@@ -175,11 +175,15 @@ Be aware that this variables may be subject to change again in future versions.
 * [sumaform](https://github.com/moio/sumaform)
    sumaform is a way to quickly configure, deploy, test [Uyuni](https://www.uyuni-project.org/) and [SUSE Manager](https://www.suse.com/products/suse-manager/) setups with clients and servers.
 
+* [ha-cluster-sap](https://github.com/SUSE/ha-sap-terraform-deployments)
+  Automated HA and SAP Deployments in Public/Private Clouds (including Libvirt/KVM)
+
 * [ceph-open-terrarium](https://github.com/MalloZup/ceph-open-terrarium)
    ceph-open-terrarium is a way to quickly configure, deploy, tests CEPH cluster without or with [Deepsea](https://github.com/SUSE/DeepSea)
 
 * [kubic](https://github.com/kubic-project)
     *   [kubic-terraform-kvm](https://github.com/kubic-project/kubic-terraform-kvm) Kubic Terraform script using KVM/libvirt
+
 ## Authors
 
 * Duncan Mac-Vicar P. <dmacvicar@suse.de>
