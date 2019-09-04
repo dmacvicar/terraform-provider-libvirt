@@ -758,7 +758,7 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
 					testAccCheckIgnitionVolumeExists("libvirt_ignition."+randomIgnitionName, &volume),
-					testAccCheckIgnitionXML(&domain, &volume),
+					testAccCheckIgnitionXML(&domain, &volume, "opt/com.coreos/config"),
 				),
 			},
 		},
@@ -996,7 +996,7 @@ func testAccCheckLibvirtDomainExists(name string, domain *libvirt.Domain) resour
 	}
 }
 
-func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol) resource.TestCheckFunc {
+func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol, fwCfg string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		domainDef, err := getXMLDomainDefFromLibvirt(domain)
@@ -1008,7 +1008,7 @@ func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol)
 		if err != nil {
 			return err
 		}
-		ignStr := fmt.Sprintf("name=opt/com.coreos/config,file=%s", ignitionKey)
+		ignStr := fmt.Sprintf("name=%s,file=%s", fwCfg, ignitionKey)
 
 		cmdLine := domainDef.QEMUCommandline.Args
 		for i, cmd := range cmdLine {
@@ -1766,4 +1766,72 @@ func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 		}
 	}
 	return nil
+}
+
+func TestAccLibvirtDomain_FwCfgName(t *testing.T) {
+	/*
+		Ignition file is mounted of domain through `fw_cfg`.
+		`fw_cfg` stands for firmware config is defined by a key and a value.
+		The key is generally prefixed by `opt/`
+		The value can be a file
+
+		Finally the file will be mounted on /sys/firmware/qemu_fw_cfg/by_name/<key-name>
+
+		in example: CoreOS will fetch ignition file from /opt/com.coreos/config, but Flatcar Linux will fetch it from /opt/org.flatcar-linux/config
+
+		We need to test if we can override the key name.
+	*/
+	var domain libvirt.Domain
+	var volume libvirt.StorageVol
+	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomFwCfgName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
+	randomIgnitionName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	var config = fmt.Sprintf(`
+	data "ignition_systemd_unit" "acceptance-test-systemd" {
+		name    = "whatever.service"
+		content = "[Service]\nType=oneshot\nExecStart=/usr/bin/echo Hello World\n\n[Install]\nWantedBy=multi-user.target"
+	}
+
+	data "ignition_config" "acceptance-test-config-fw-cfg" {
+		systemd = [
+		"${data.ignition_systemd_unit.acceptance-test-systemd.id}",
+		]
+	}
+
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+
+	resource "libvirt_ignition" "%s" {
+		name    = "ignition"
+		content = "${data.ignition_config.acceptance-test-config-fw-cfg.rendered}"
+        pool    = "${libvirt_pool.%s.name}"
+	}
+
+	resource "libvirt_domain" "%s" {
+		name            = "%s"
+		coreos_ignition = "${libvirt_ignition.%s.id}"
+		fw_cfg_name = "%s"
+	}
+	`, randomPoolName, randomPoolName, randomPoolPath, randomIgnitionName, randomPoolName, randomDomainName, randomDomainName, randomIgnitionName, randomFwCfgName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					testAccCheckIgnitionVolumeExists("libvirt_ignition."+randomIgnitionName, &volume),
+					testAccCheckIgnitionXML(&domain, &volume, randomFwCfgName),
+				),
+			},
+		},
+	})
 }
