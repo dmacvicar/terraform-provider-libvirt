@@ -1,5 +1,5 @@
 # Debian Based Container
-This container is build from a `Debian` based distribution, in this case we are using `Ubuntu`.
+This container is built from a `Debian` based distribution, in this case we are using `Ubuntu`.
 
 **NOTE**: If pulling from the `build` containers, make sure to pull from the `glibc` container.
 

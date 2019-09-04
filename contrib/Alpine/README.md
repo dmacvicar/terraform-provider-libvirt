@@ -1,5 +1,5 @@
 # Alpine Container
-This container is build from the `Alpine` distribution. This container is meant to serve as a slim down minimalistic 
+This container is built from the `Alpine` distribution. This container is meant to serve as a slim down minimalistic 
 container.
 
 **NOTE**: If pulling from the `build` containers, make sure to pull from the `musl` container. Alpine uses `musl` instead

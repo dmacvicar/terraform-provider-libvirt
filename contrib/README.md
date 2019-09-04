@@ -1,6 +1,6 @@
 # Community Driven Docker Examples
 These docker containers are meant to serve as an isolated development environment. The most common use case for these 
-containers is to run your terraform environment in a isolate container talking to a `remote` libvirt system. 
+containers are to run your terraform environment in an isolate container talking to a `remote` libvirt system. 
 
 Please refer to the distro's `README.md` for specific instructions.
 
@@ -12,7 +12,7 @@ information and instructions.
 
 **Distro Containers**
 - [Alpine Containers](Alpine/)
-- [Debian Conainers](Debian/)
+- [Debian Containers](Debian/)
 - [openSUSE Containers](openSUSE/)
 
 **Build Containers**
@@ -127,7 +127,7 @@ ENTRYPOINT ["terraform"]
 With this Dockerfile built, you now need to swap the `FROM hashicorp/terraform:$TERRAFORM_VERSION AS terraform` with 
 your images name and tag.
 
-**Note**: Even if you get the terraform binary built for your respective architecture, you might need to built other
+**Note**: Even if you get the terraform binary built for your respective architecture, you might need to build other
 providers you utilize in your terraform files. As the default providers are not built for unsupported architectures.
 
 ### Tips and Tricks
