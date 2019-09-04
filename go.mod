@@ -25,3 +25,5 @@ require (
 	golang.org/x/lint v0.0.0-20181217174547-8f45f776aaf1
 	golang.org/x/tools v0.0.0-20181219222714-6e267b5cc78e // indirect
 )
+
+replace git.apache.org/thrift.git => github.com/apache/thrift v0.0.0-20180902110319-2566ecd5d999
