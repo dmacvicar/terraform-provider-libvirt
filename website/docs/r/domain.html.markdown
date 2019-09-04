@@ -50,6 +50,7 @@ The following arguments are supported:
 * `coreos_ignition` - (Optional) The
   [libvirt_ignition](/docs/providers/libvirt/r/coreos_ignition.html) resource
   that is to be used by the CoreOS domain.
+* `fw_cfg_name` - (Optional) The name of the firmware config path where ignition file is stored: default is `opt/com.coreos/config`. If you are using [Flatcar Linux](https://docs.flatcar-linux.org/os/booting-with-libvirt/#creating-the-domain-xml), the value is `opt/org.flatcar-linux/config`.
 * `arch` - (Optional) The architecture for the VM (probably x86_64 or i686),
   you normally won't need to set this unless you are building a special VM
 * `machine` - (Optional) The machine type,
