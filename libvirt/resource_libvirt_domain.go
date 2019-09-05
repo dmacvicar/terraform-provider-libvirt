@@ -469,7 +469,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	setFirmware(d, &domainDef)
 	setBootDevices(d, &domainDef)
 
-	if err := setCoreOSIgnition(d, &domainDef); err != nil {
+	if err := updateCoreOSIgnition(d, &domainDef, virConn); err != nil {
 		return err
 	}
 
