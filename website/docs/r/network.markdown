@@ -39,11 +39,11 @@ resource "libvirt_network" "kube_network" {
   # mtu = 9000
 
   # (Optional) DNS configuration
-  dns = {
+  dns {
     # (Optional, default false)
     # Set to true, if no other option is specified and you still want to 
     # enable dns.
-    enable = true
+    enabled = true
     # (Optional, default false)
     # true: DNS requests under this domain will only be resolved by the
     # virtual network's own DNS server
@@ -137,7 +137,7 @@ An advanced example of round-robin DNS (using DNS host templates) follows:
 ```hcl
 resource "libvirt_network" "my_network" {
   ...
-  dns = {
+  dns {
     hosts { flatten(data.libvirt_network_dns_host_template.hosts.*.rendered) }
   }
   ...
@@ -163,9 +163,9 @@ data "libvirt_network_dns_srv_template" "etcd_cluster" {
 
 resource "libvirt_network" "k8snet" {
   ...
-  dns = [{
+  dns {
     srvs = [ flatten(data.libvirt_network_dns_srv_template.etcd_cluster.*.rendered) ]
-  }]
+  }
   ...
 }
 ```
@@ -179,7 +179,7 @@ resource "libvirt_network" "k8snet" {
 					mode      = "nat"
 					domain    = "k8s.local"
 					addresses = ["10.17.3.0/24"]
-					dhcp = {
+					dhcp {
 						enabled = true
 					}
 ```
