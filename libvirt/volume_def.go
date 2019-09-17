@@ -60,11 +60,15 @@ func newDefBackingStoreFromLibvirt(baseVolume *libvirt.StorageVol) (libvirtxml.S
 	if err != nil {
 		return libvirtxml.StorageVolumeBackingStore{}, fmt.Errorf("could not get base image path: %s", err)
 	}
-	backingStoreDef := libvirtxml.StorageVolumeBackingStore{
-		Path: baseVolPath,
-		Format: &libvirtxml.StorageVolumeTargetFormat{
+	var backingStoreVolFormat *libvirtxml.StorageVolumeTargetFormat
+	if baseVolumeDef.Target.Format != nil {
+		backingStoreVolFormat = &libvirtxml.StorageVolumeTargetFormat{
 			Type: baseVolumeDef.Target.Format.Type,
-		},
+		}
+	}
+	backingStoreDef := libvirtxml.StorageVolumeBackingStore{
+		Path:   baseVolPath,
+		Format: backingStoreVolFormat,
 	}
 	return backingStoreDef, nil
 }
