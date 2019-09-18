@@ -14,6 +14,12 @@ a CoreOS Domain during first boot.
 
 ~> **Note:** to make use of Ignition files with CoreOS the host must be running QEMU v2.6 or greater.
 
+~> **Note:** On x86 platform `-fw_cfg` device is used to pass ignition to coreos, but on s390x platform
+`-fw_cfg` is not supported. As alternative, `guestfish` utility is used to inject ignition files into
+coreos image directly on s390x platform. So `guestfish` must be installed on the machine that running
+terraform libvirt provider on s390x platform. For more information, please
+refer to [coreos ignition support for s390x](https://github.com/dmacvicar/terraform-provider-libvirt/issues/624)
+
 ## Example Usage
 
 ```hcl
