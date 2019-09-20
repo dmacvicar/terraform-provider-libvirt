@@ -106,18 +106,12 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		return pool.Refresh(0)
 	})
 
-	// Check whether the storage volume already exists. Its name needs to be
-	// unique.
-	if _, err := pool.LookupStorageVolByName(d.Get("name").(string)); err == nil {
-		return fmt.Errorf("storage volume '%s' already exists", d.Get("name").(string))
+	volumeDef := newDefVolume()
+	if name, ok := d.GetOk("name"); ok {
+		volumeDef.Name = name.(string)
 	}
 
-	volumeDef := newDefVolume()
-	volumeDef.Name = d.Get("name").(string)
-
-	var (
-		img image
-	)
+	var img image
 
 	givenFormat, isFormatGiven := d.GetOk("format")
 	if isFormatGiven {
