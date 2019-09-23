@@ -351,6 +351,13 @@ func guestfishExecution(rootPath string, fileToUpload string) error {
 		return fmt.Errorf("Mount failed: %v, %s", err, getStderr(stderr))
 	}
 
+	// guestfish --remote -- mkdir-p /ignition
+	cmd = execCommand("guestfish", "--remote", "--", "mkdir-p", "/ignition")
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("Mkdir failed: %v, %s", err, getStderr(stderr))
+	}
+
 	// This is the real command that upload the file from current location (the local file system)
 	// to remote file location (the coreos file system)
 	// guestfish --remote -- upload $4 $3/$4
