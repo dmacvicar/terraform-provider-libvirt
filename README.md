@@ -188,7 +188,7 @@ Be aware that this variables may be subject to change again in future versions.
    Docker examples showing how to use the Libvirt Provider
 
 * [Openshift 4 Installer](https://github.com/openshift/installer)
-  The Openshift 4 Installer uses Terraform for cluster orchestration and relies on terroform-provider-libvirt for
+  The Openshift 4 Installer uses Terraform for cluster orchestration and relies on terraform-provider-libvirt for
   libvirt platform.
 
 ## Authors
