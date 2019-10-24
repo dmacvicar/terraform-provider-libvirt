@@ -246,16 +246,16 @@ func TestHelperCommand(t *testing.T) {
 	os.Exit(exitCode)
 }
 
-func TestGuestfishExecution(t *testing.T) {
+func TestGuestfishExecutionLocal(t *testing.T) {
 
 	execCommand = fakeExecCommand
 	defer func() {
 		execCommand = exec.Command
 	}()
 
-	err := guestfishExecution("/root/path", "my.ign")
+	err := guestfishExecutionLocal("/root/path", "my.ign")
 
 	if err != nil {
-		t.Errorf("failed to call guestfishExecution, error: %v", err)
+		t.Errorf("failed to call guestfishExecutionLocal, error: %v", err)
 	}
 }

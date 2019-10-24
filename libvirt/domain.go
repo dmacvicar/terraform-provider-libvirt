@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/sshconn"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
@@ -260,7 +262,6 @@ func getStderr(stderr io.ReadCloser) string {
 
 func inlineUpdateCoreOsIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
-
 		// Get the root disk (first disk) volume location
 		rootPath, err := getFirstDiskPath(d, domainDef, virConn)
 		if err != nil {
@@ -280,7 +281,11 @@ func inlineUpdateCoreOsIgnition(d *schema.ResourceData, domainDef *libvirtxml.Do
 		if err != nil {
 			return err
 		}
-		err = guestfishExecution(rootPath, fileToUpload)
+		connURI, err := virConn.GetURI()
+		if err != nil {
+			return err
+		}
+		err = guestfishExecution(rootPath, fileToUpload, connURI)
 		if err != nil {
 			return err
 		}
@@ -288,9 +293,103 @@ func inlineUpdateCoreOsIgnition(d *schema.ResourceData, domainDef *libvirtxml.Do
 	return nil
 }
 
+func getLibvirtHostFromURI(connURI string) string {
+	// Refer to libvirt URI: https://libvirt.org/uri.html
+	virHost := strings.Split(strings.SplitN(connURI, "//", 2)[1], "/")[0]
+	if strings.Contains(virHost, "@") {
+		virHost = strings.SplitN(virHost, "@", 2)[1]
+	}
+	virHost = strings.Split(virHost, ":")[0]
+	return virHost
+}
+
+func guestfishExecution(rootPath string, fileToUpload string, connURI string) error {
+	// If the adress is in the 127.0.0.0 block, or is localhost, or includes "///", then it is local
+	localReg := regexp.MustCompile(`:\/\/(127\.\d+\.\d+\.\d+|localhost)|///`)
+	if !localReg.MatchString(connURI) {
+		// get remote host from libvirtd remote URI
+		virHost := getLibvirtHostFromURI(connURI)
+		return guestfishExecutionRemote(rootPath, fileToUpload, virHost)
+	}
+	return guestfishExecutionLocal(rootPath, fileToUpload)
+}
+
+func guestfishExecutionRemote(rootPath string, fileToUpload string, virHost string) error {
+	// TODO: allow to specify sshd port and keypath
+	sshConn := &sshconn.SSHConn{
+		Host:    virHost,
+		Port:    22,
+		User:    "root",
+		Keypath: "",
+	}
+	err := sshConn.Connect()
+	if err != nil {
+		return fmt.Errorf("SSH connect failed: %v", err)
+	}
+	defer sshConn.Client.Close()
+
+	// eval  $(guestfish --listen -a $1)
+	output, err := sshConn.ExecCommand("guestfish --listen -a " + rootPath)
+	// get string of GUESTFISH_PID=xxxx
+	if err != nil {
+		return fmt.Errorf("Start guestfish server failed: %v", err)
+	}
+
+	setgfpid := strings.Split(output, ";")[0]
+	// guestfish --remote -- run
+	output, err = sshConn.ExecCommand(setgfpid + " guestfish --remote -- run")
+	if err != nil {
+		return fmt.Errorf("Launch failed: %v, %s", err, output)
+	}
+
+	// guestfish --remote -- exit
+	defer func() {
+		output, err = sshConn.ExecCommand(setgfpid + " guestfish --remote -- exit")
+	}()
+
+	// guestfish --remote -- findfs-label
+	output, err = sshConn.ExecCommand(setgfpid + " guestfish --remote -- findfs-label boot")
+	if err != nil {
+		return fmt.Errorf("Failed to find fs label: %v, %s", err, output)
+	}
+	bootDisk := strings.TrimSpace(string(output))
+	if len(bootDisk) == 0 {
+		return fmt.Errorf("failed to get the boot filesystem")
+	}
+
+	// guestfish --remote -- mount $2 /
+	output, err = sshConn.ExecCommand(setgfpid + " guestfish --remote -- mount " + bootDisk + " /")
+	if err != nil {
+		return fmt.Errorf("Mount failed: %v, %s", err, output)
+	}
+
+	// guestfish --remote -- mkdir-p /ignition
+	output, err = sshConn.ExecCommand(setgfpid + " guestfish --remote -- mkdir-p /ignition")
+	if err != nil {
+		return fmt.Errorf("Mkdir failed: %v, %s", err, output)
+	}
+
+	// This is the real command that upload the file from current location (the local file system)
+	// to remote file location (the coreos file system)
+	// guestfish --remote -- upload $4 $3/$4
+	fileRemoteLocation := "/ignition/config.ign"
+	output, err = sshConn.ExecCommand(setgfpid + " guestfish --remote -- upload " + fileToUpload + " " + fileRemoteLocation)
+	if err != nil {
+		return fmt.Errorf("Upload failed: %v, %s", err, output)
+	}
+
+	// guestfish --remote -- umount-all
+	output, err = sshConn.ExecCommand(setgfpid + " guestfish --remote -- umount-all")
+	if err != nil {
+		return fmt.Errorf("Unmount failed: %v, %s", err, output)
+	}
+
+	return nil
+}
+
 var execCommand = exec.Command
 
-func guestfishExecution(rootPath string, fileToUpload string) error {
+func guestfishExecutionLocal(rootPath string, fileToUpload string) error {
 	// This is the file in coreos image going to be copied from local
 	fileRemoteLocation := "/ignition/config.ign"
 
