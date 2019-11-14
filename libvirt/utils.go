@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	libvirt "github.com/libvirt/libvirt-go"
+
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -14,6 +16,15 @@ var diskLetters = []rune("abcdefghijklmnopqrstuvwxyz")
 
 // LibVirtConIsNil is a global string error msg
 const LibVirtConIsNil string = "the libvirt connection was nil"
+
+// getConnArch return the arch of the connector
+func getConnArch(virConn *libvirt.Connect) (string, error) {
+	NodeInfo, err := virConn.GetNodeInfo()
+	if err != nil {
+		return "", fmt.Errorf("Cannot get host's node info: %s", err)
+	}
+	return NodeInfo.Model, nil
+}
 
 // diskLetterForIndex return diskLetters for index
 func diskLetterForIndex(i int) string {

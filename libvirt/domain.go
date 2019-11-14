@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -20,7 +19,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 // deprecated, now defaults to not use it, but we warn the user
@@ -235,6 +234,37 @@ func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml
 	return disk, nil
 }
 
+func newDiskForConfigDrive(virConn *libvirt.Connect, volumeKey string) (libvirtxml.DomainDisk, error) {
+	disk := libvirtxml.DomainDisk{
+		Device: "cdrom",
+		Target: &libvirtxml.DomainDiskTarget{
+			// s390 platform doesn't support IDE controller, it shoule be virtio controller
+			Dev: "vdb",
+			Bus: "scsi",
+		},
+		Driver: &libvirtxml.DomainDiskDriver{
+			Name: "qemu",
+			Type: "raw",
+		},
+	}
+	diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
+	if err != nil {
+		return disk, fmt.Errorf("Can't retrieve volume %s: %v", volumeKey, err)
+	}
+	diskVolumeFile, err := diskVolume.GetPath()
+	if err != nil {
+		return disk, fmt.Errorf("Error retrieving volume file: %s", err)
+	}
+
+	disk.Source = &libvirtxml.DomainDiskSource{
+		File: &libvirtxml.DomainDiskSourceFile{
+			File: diskVolumeFile,
+		},
+	}
+
+	return disk, nil
+}
+
 func getFirstDiskPath(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) (string, error) {
 	prefix := fmt.Sprintf("disk.%d", 0)
 
@@ -405,11 +435,18 @@ func fwcfgUpdateCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Dom
 }
 
 func updateCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
-	if runtime.GOARCH == "s390x" || runtime.GOARCH == "s390" {
-		// There is no support for fw_cfg in s390x, so instead of doing fw_cfg
-		// we have to inline update the coreos ignition file
-		return inlineUpdateCoreOsIgnition(d, domainDef, virConn)
+	arch, err := getConnArch(virConn)
+	if err != nil {
+		return fmt.Errorf("Cannot get host's arch info: %s", err)
 	}
+
+	if arch == "s390x" || arch == "s390" {
+		log.Printf("[DEBUG]the arch is s390, will ues config drive")
+		// There is no support for fw_cfg in s390x, so instead of doing fw_cfg
+		// we have to use config drive to support coreos ignition
+		return setIgnitionConfigDrive(d, domainDef, virConn)
+	}
+	log.Printf("[DEBUG]the arch is x86 or others, will use fw_cfg")
 	return fwcfgUpdateCoreOSIgnition(d, domainDef)
 }
 
@@ -538,6 +575,23 @@ func setBootDevices(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 			}
 		}
 	}
+}
+
+func setIgnitionConfigDrive(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
+	if ignition, ok := d.GetOk("coreos_ignition"); ok {
+		log.Printf("[DEBUG] add config drive xml for coreos_ignition on s390x ")
+		ignitionID, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
+		if err != nil {
+			return err
+		}
+		disk, err := newDiskForConfigDrive(virConn, ignitionID)
+		if err != nil {
+			return err
+		}
+		domainDef.Devices.Disks = append(domainDef.Devices.Disks, disk)
+	}
+
+	return nil
 }
 
 func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
