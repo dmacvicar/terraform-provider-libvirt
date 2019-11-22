@@ -153,7 +153,7 @@ Look at more advanced examples [here](examples/)
 
 ### Using multiple hypervisors / provider instances
 
-You can target different libvirt hosts instantiating the [provider multiple times](https://www.terraform.io/docs/configuration/providers.html#multiple-provider-instances). [Example](examples/multiple).
+You can target different libvirt hosts instantiating the [provider multiple times](https://www.terraform.io/docs/configuration/providers.html#multiple-provider-instances). [Example](examples/v0.12/multiple).
 
 
 ### Using qemu-agent
