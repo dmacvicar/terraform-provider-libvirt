@@ -9,9 +9,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/dmacvicar/terraform-provider-libvirt/libvirt"
 	"github.com/hashicorp/terraform/plugin"
 	libvirtgo "github.com/libvirt/libvirt-go"
-	"github.com/muroj/terraform-provider-libvirt/libvirt"
 )
 
 var version = "was not built correctly" // set via the Makefile

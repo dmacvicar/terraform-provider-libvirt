@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/suppress"
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
-	"github.com/muroj/terraform-provider-libvirt/libvirt/helper/suppress"
 )
 
 type pendingMapping struct {
@@ -792,7 +792,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				"file": diskDef.Source.File,
 			}
 		} else if diskDef.Source.Block != nil {
-			log.Printf("[DEBUG] Setting block device for '%s'", diskDef.Source.Block.Dev)
 			disk = map[string]interface{}{
 				"block_device": diskDef.Source.Block,
 			}

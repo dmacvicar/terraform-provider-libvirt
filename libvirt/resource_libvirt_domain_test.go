@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"strings"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/acctest"
@@ -310,10 +310,10 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 
 func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 	var domain libvirt.Domain
-	
+
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDeviceName := acctest.RandStringFromCharSet(33, acctest.CharSetAlpha)
-	
+
 	tmpfile, loopdev, err := createTempBlockDev(randomDeviceName)
 
 	if err != nil {
@@ -330,8 +330,6 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 		}
 
 	}`, randomDomainName, randomDomainName, tmpfile)
-
-	fmt.Printf(configBlockDevice)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -350,7 +348,7 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 
 	cmd := exec.Command("sudo", "losetup", "--detach", loopdev)
 	if err := cmd.Run(); err != nil {
-		fmt.Errorf("Error detaching loop device %s: %s", loopdev, err)
+		log.Printf("Error detaching loop device %s: %s\n", loopdev, err)
 	}
 }
 
@@ -1212,34 +1210,36 @@ func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel
 	}
 }
 
-// Creates a temporary block device on the host to allow testing of block device support
-// Returns a string with the full path to the ISO file
+// Creates a temporary block device and mounts it to an available loop device
+// Returns a the full path to the block device and the associated loop device
 func createTempBlockDev(devname string) (string, string, error) {
 	fmt.Printf("Creating a temporary block device\n")
-	
+
 	// Create a 1MB temp file
 	filename := "/tmp/" + devname
-	cmd := exec.Command("dd", "if=/dev/urandom", "of=" + filename, "bs=1024", "count=1024")
-	fmt.Printf("Executing command: %s\n", cmd)
+	cmd := exec.Command("dd", "if=/dev/urandom", "of="+filename, "bs=1024", "count=1024")
+	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
-		return "", 	"", fmt.Errorf("Error creating file %s: %s", filename, err)
+		return "", "", fmt.Errorf("Error creating file %s: %s", filename, err)
 	}
 
 	// Format the file
 	cmd = exec.Command("mkfs.ext4", "-F", "-q", filename)
+	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
-		return "", 	"", fmt.Errorf("Error formatting file system: %s", err)
+		return "", "", fmt.Errorf("Error formatting file system: %s", err)
 	}
 
 	// Find an available loop device
 	loopdev, err := exec.Command("losetup", "--find").Output()
+	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err != nil {
-		return "", 	"", fmt.Errorf("Error searching for available loop device: %s", err)
+		return "", "", fmt.Errorf("Error searching for available loop device: %s", err)
 	}
 
 	// Mount the file to a loop device
 	cmd = exec.Command("sudo", "losetup", "--read-only", strings.TrimRight(string(loopdev), "\n"), filename)
-	fmt.Printf("Executing command: %s\n", cmd)
+	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
 		return "", "", fmt.Errorf("Error mounting block device: %s", err)
 	}
