@@ -19,6 +19,7 @@ const (
 	netModeRoute    = "route"
 	netModeBridge   = "bridge"
 	dnsPrefix       = "dns.0"
+	dhcpPrefix      = "dhcp.0"
 )
 
 // a libvirt network resource
@@ -214,6 +215,27 @@ func resourceLibvirtNetwork() *schema.Resource {
 							Default:  true,
 							Optional: true,
 							Required: false,
+						},
+						"hosts": {
+							Type:     schema.TypeList,
+							ForceNew: false,
+							Optional: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"ip": {
+										Type:     schema.TypeString,
+										Optional: true,
+									},
+									"name": {
+										Type:     schema.TypeString,
+										Optional: true,
+									},
+									"mac": {
+										Type:     schema.TypeString,
+										Optional: true,
+									},
+								},
+							},
 						},
 					},
 				},

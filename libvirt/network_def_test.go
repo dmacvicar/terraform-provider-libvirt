@@ -81,6 +81,10 @@ func TestNetworkDefUnmarshall(t *testing.T) {
 	if len(b.IPs) == 0 {
 		t.Errorf("wrong number of IPs: %d", len(b.IPs))
 	}
+
+	if len(b.IPs[0].DHCP.Hosts) == 0 {
+		t.Errorf("wrong number of DHCP hosts: %d", len(b.IPs[0].DHCP.Hosts))
+	}
 	_, err2 := xmlMarshallIndented(b)
 	if err2 != nil {
 		t.Fatalf("marshalling error\n%s", spew.Sdump(b))
