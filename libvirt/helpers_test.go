@@ -176,6 +176,40 @@ func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
 	return nil
 }
 
+// testAccCheckDHCPHosts checks the expected DHCP hosts in a network
+func testAccCheckDhcpHosts(name string, expected []libvirtxml.NetworkDHCPHost) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+		networkDef, err := getNetworkDef(s, name, *virConn)
+		if err != nil {
+			return err
+		}
+
+		// FIXME currently we assume there is only one ip dhcp range active
+		actual := networkDef.IPs[0].DHCP.Hosts
+		if len(expected) != len(actual) {
+			return fmt.Errorf("len(expected): %d != len(actual): %d", len(expected), len(actual))
+		}
+
+		for i, a := range actual {
+			e := expected[i]
+
+			if a.Name != e.Name {
+				return fmt.Errorf("host[%d] expected name(%s) does not meet actual name(%s)", i, e.Name, a.Name)
+			}
+			if a.MAC != e.MAC {
+				return fmt.Errorf("host[%d] expected mac(%s) does not meet actual mac(%s)", i, e.MAC, a.MAC)
+			}
+			if a.IP != e.IP {
+				return fmt.Errorf("host[%d] expected ip(%s) does not meet actual ip(%s)", i, e.IP, a.IP)
+			}
+		}
+
+		return nil
+	}
+}
+
 // testAccCheckDNSHosts checks the expected DNS hosts in a network
 func testAccCheckDNSHosts(name string, expected []libvirtxml.NetworkDNSHost) resource.TestCheckFunc {
 	return func(s *terraform.State) error {

@@ -338,6 +338,125 @@ func TestAccLibvirtNetwork_Import(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtNetwork_DhcpHosts(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "%s" {
+					name      = "%s"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dhcp {
+						enabled = true
+						host {
+							name = "myhost1"
+							ip   = "1.1.1.1"
+							mac  = "00:11:22:33:44:55"
+						}
+					}
+				}`, randomNetworkResource, randomNetworkName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.enabled", "true"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.host.0.name", "myhost1"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.host.0.ip", "1.1.1.1"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.host.0.mac", "00:11:22:33:44:55"),
+					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network."+randomNetworkResource, "enabled"),
+					testAccCheckDhcpHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDHCPHost{
+						{
+							IP:   "1.1.1.1",
+							Name: "myhost1",
+							MAC:  "00:11:22:33:44:55",
+						},
+					}),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "%s" {
+					name      = "%s"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dhcp {
+						enabled = true
+						host {
+							name = "myhost1"
+							ip   = "1.1.1.1"
+							mac  = "00:11:22:33:44:55"
+						}
+						host {
+							name = "myhost2"
+							ip   = "1.1.1.2"
+							mac  = "66:77:88:99:aa:bb"
+						}
+					}
+				}`, randomNetworkResource, randomNetworkName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.enabled", "true"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.host.0.name", "myhost1"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.host.0.ip", "1.1.1.1"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.host.0.mac", "00:11:22:33:44:55"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.host.1.name", "myhost2"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.host.1.ip", "1.1.1.2"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.host.1.mac", "66:77:88:99:aa:bb"),
+					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network."+randomNetworkResource, "enabled"),
+					testAccCheckDhcpHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDHCPHost{
+						{
+							IP:   "1.1.1.1",
+							Name: "myhost1",
+							MAC:  "00:11:22:33:44:55",
+						},
+						{
+							IP:   "1.1.1.2",
+							Name: "myhost2",
+							MAC:  "66:77:88:99:aa:bb",
+						},
+					}),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "%s" {
+					name      = "%s"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dhcp {
+						enabled = true
+						host {
+							name = "myhost2"
+							ip   = "1.1.1.2"
+							mac  = "66:77:88:99:aa:bb"
+						}
+					}
+				}`, randomNetworkResource, randomNetworkName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.enabled", "true"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.host.0.name", "myhost2"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.host.0.ip", "1.1.1.2"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.host.0.mac", "66:77:88:99:aa:bb"),
+					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network."+randomNetworkResource, "enabled"),
+					testAccCheckDhcpHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDHCPHost{
+						{
+							IP:   "1.1.1.2",
+							Name: "myhost2",
+							MAC:  "66:77:88:99:aa:bb",
+						},
+					}),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 

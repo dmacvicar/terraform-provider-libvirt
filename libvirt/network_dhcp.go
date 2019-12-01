@@ -3,6 +3,7 @@ package libvirt
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"reflect"
 
@@ -14,7 +15,8 @@ import (
 // from the network definition
 func getDHCPHostsFromResource(d *schema.ResourceData, num int) ([]libvirtxml.NetworkDHCPHost, error) {
 	var dhcpHosts []libvirtxml.NetworkDHCPHost
-	prefix := fmt.Sprintf(dhcpPrefix+".%d.hosts", num)
+	prefix := fmt.Sprintf(dhcpPrefix+".%d.host", num)
+	log.Printf("using prefix: %s\n", prefix)
 	if dhcpHostCount, ok := d.GetOk(prefix + ".#"); ok {
 		for i := 0; i < dhcpHostCount.(int); i++ {
 			hostPrefix := fmt.Sprintf(prefix+".%d", i)
@@ -25,13 +27,13 @@ func getDHCPHostsFromResource(d *schema.ResourceData, num int) ([]libvirtxml.Net
 			}
 			name := d.Get(hostPrefix + ".name").(string)
 			mac := d.Get(hostPrefix + ".mac").(string)
-			id := d.Get(hostPrefix + ".id").(string)
+			//id := d.Get(hostPrefix + ".id").(string)
 
 			dhcpHosts = append(dhcpHosts, libvirtxml.NetworkDHCPHost{
 				IP:   address,
 				Name: name,
 				MAC:  mac,
-				ID:   id,
+				//	ID:   id,
 			})
 		}
 	}
@@ -39,24 +41,24 @@ func getDHCPHostsFromResource(d *schema.ResourceData, num int) ([]libvirtxml.Net
 	return dhcpHosts, nil
 }
 
-// updateDNSHosts detects changes in the DNS hosts entries
+// updateDHCPHosts detects changes in the DHCP host entries
 // updating the network definition accordingly
-func updateDHCPHosts(d *schema.ResourceData, network *libvirt.Network) error {
-	hostsKey := dhcpPrefix + ".hosts"
-	if d.HasChange(hostsKey) {
-		oldInterface, newInterface := d.GetChange(hostsKey)
+func updateDHCPHosts(d *schema.ResourceData, num int, network *libvirt.Network) error {
+	prefix := fmt.Sprintf(dhcpPrefix+".%d.host", num)
+	if d.HasChange(prefix) {
+		oldInterface, newInterface := d.GetChange(prefix)
 
-		oldEntries, err := parseNetworkDNSHostsChange(oldInterface)
+		oldEntries, err := parseNetworkDhcpHostsChange(oldInterface)
 		if err != nil {
-			return fmt.Errorf("parse old %s: %s", hostsKey, err)
+			return fmt.Errorf("parse old %s: %s", prefix, err)
 		}
 
-		newEntries, err := parseNetworkDNSHostsChange(newInterface)
+		newEntries, err := parseNetworkDhcpHostsChange(newInterface)
 		if err != nil {
-			return fmt.Errorf("parse new %s: %s", hostsKey, err)
+			return fmt.Errorf("parse new %s: %s", prefix, err)
 		}
 
-		// process all the old DNS entries that must be removed
+		// process all the old DHCP entries that must be removed
 		for _, oldEntry := range oldEntries {
 			found := false
 			for _, newEntry := range newEntries {
@@ -74,13 +76,15 @@ func updateDHCPHosts(d *schema.ResourceData, network *libvirt.Network) error {
 				return fmt.Errorf("serialize update: %s", err)
 			}
 
-			err = network.Update(libvirt.NETWORK_UPDATE_COMMAND_DELETE, libvirt.NETWORK_SECTION_DNS_HOST, -1, data, libvirt.NETWORK_UPDATE_AFFECT_LIVE|libvirt.NETWORK_UPDATE_AFFECT_CONFIG)
+			log.Printf("[DEBUG] genetated delete dhcp host xml: %s\n", data)
+
+			err = network.Update(libvirt.NETWORK_UPDATE_COMMAND_DELETE, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, data, libvirt.NETWORK_UPDATE_AFFECT_LIVE|libvirt.NETWORK_UPDATE_AFFECT_CONFIG)
 			if err != nil {
 				return fmt.Errorf("delete %s: %s", oldEntry.IP, err)
 			}
 		}
 
-		// process all the new DNS entries that must be added
+		// process all the new DHCP entries that must be added
 		for _, newEntry := range newEntries {
 			found := false
 			for _, oldEntry := range oldEntries {
@@ -98,13 +102,14 @@ func updateDHCPHosts(d *schema.ResourceData, network *libvirt.Network) error {
 				return fmt.Errorf("serialize update: %s", err)
 			}
 
-			err = network.Update(libvirt.NETWORK_UPDATE_COMMAND_ADD_LAST, libvirt.NETWORK_SECTION_DNS_HOST, -1, data, libvirt.NETWORK_UPDATE_AFFECT_LIVE|libvirt.NETWORK_UPDATE_AFFECT_CONFIG)
+			log.Printf("[DEBUG] genetated add host xml: %s\n", data)
+			err = network.Update(libvirt.NETWORK_UPDATE_COMMAND_ADD_LAST, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, data, libvirt.NETWORK_UPDATE_AFFECT_LIVE|libvirt.NETWORK_UPDATE_AFFECT_CONFIG)
 			if err != nil {
 				return fmt.Errorf("add %v: %s", newEntry, err)
 			}
 		}
 
-		d.SetPartial(hostsKey)
+		d.SetPartial(prefix)
 	}
 
 	return nil
@@ -123,16 +128,6 @@ func parseNetworkDhcpHostsChange(change interface{}) (entries []libvirtxml.Netwo
 		entryMap, ok := entryInterface.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("entry %d is not a map", i)
-		}
-
-		idInterface, ok := entryMap["name"]
-		if !ok {
-			return nil, fmt.Errorf("entry %d.name is missing", i)
-		}
-
-		id, ok := idInterface.(string)
-		if !ok {
-			return nil, fmt.Errorf("entry %d.id is not a string", i)
 		}
 
 		ipInterface, ok := entryMap["ip"]
@@ -169,7 +164,6 @@ func parseNetworkDhcpHostsChange(change interface{}) (entries []libvirtxml.Netwo
 			IP:   ip,
 			Name: name,
 			MAC:  mac,
-			ID:   id,
 		})
 	}
 
