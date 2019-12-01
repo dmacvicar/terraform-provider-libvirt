@@ -11,16 +11,8 @@ import (
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
-type DHCPHost struct {
-	ID   string
-	Name string
-	Mac  string
-	Ip   string
-}
-
 // from the network definition
 func getDHCPHostsFromResource(d *schema.ResourceData, num int) ([]libvirtxml.NetworkDHCPHost, error) {
-	dhcpHostsList := []DHCPHost{}
 	var dhcpHosts []libvirtxml.NetworkDHCPHost
 	prefix := fmt.Sprintf(dhcpPrefix+".%d.hosts", num)
 	if dhcpHostCount, ok := d.GetOk(prefix + ".#"); ok {
@@ -35,7 +27,6 @@ func getDHCPHostsFromResource(d *schema.ResourceData, num int) ([]libvirtxml.Net
 			mac := d.Get(hostPrefix + ".mac").(string)
 			id := d.Get(hostPrefix + ".id").(string)
 
-			dhcpHostsList = append(dhcpHostsList)
 			dhcpHosts = append(dhcpHosts, libvirtxml.NetworkDHCPHost{
 				IP:   address,
 				Name: name,
