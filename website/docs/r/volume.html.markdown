@@ -64,6 +64,11 @@ The following arguments are supported:
   volume is going to be searched inside of `pool`.
 * `base_volume_pool` - (Optional) The name of the storage pool containing the
   volume defined by `base_volume_name`.
+* `base_volume_copy` - (Optional) If set to `true`, [virStorageVolCreateXMLFrom]
+  is invoked rather than default [virStorageVolCreateXML] when creating from
+  base volume. This allows to create copies of volumes not associated with base
+  volumes in libvirt xml definitions, create copies (not snapshots) of lvm volumes
+  which also can be larger than the base volume, etc.
 
 ### Altering libvirt's generated volume XML definition
 
@@ -80,3 +85,7 @@ See the domain option with the same name for more information and examples.
 ## Attributes Reference
 
 * `id` - a unique identifier for the resource
+
+
+[virStorageVolCreateXMLFrom]: <https://libvirt.org/html/libvirt-libvirt-storage.html#virStorageVolCreateXMLFrom>
+[virStorageVolCreateXML]: <https://libvirt.org/html/libvirt-libvirt-storage.html#virStorageVolCreateXML>

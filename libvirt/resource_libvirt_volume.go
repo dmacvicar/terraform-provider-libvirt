@@ -58,6 +58,12 @@ func resourceLibvirtVolume() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"base_volume_copy": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: true,
+				Default:  false,
+			},
 			"xml": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -118,6 +124,8 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		volumeDef.Target.Format.Type = givenFormat.(string)
 	}
 
+	var baseVolume *libvirt.StorageVol
+
 	// an source image was given, this mean we can't choose size
 	if source, ok := d.GetOk("source"); ok {
 		// source and size conflict
@@ -167,7 +175,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 		//first handle whether it has a backing image
 		// backing images can be specified by either (id), or by (name, pool)
-		var baseVolume *libvirt.StorageVol
 		if baseVolumeID, ok := d.GetOk("base_volume_id"); ok {
 			if _, ok := d.GetOk("base_volume_name"); ok {
 				return fmt.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given")
@@ -192,7 +199,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			}
 		}
 
-		if baseVolume != nil {
+		if !d.Get("base_volume_copy").(bool) && baseVolume != nil {
 			backingStoreFragmentDef, err := newDefBackingStoreFromLibvirt(baseVolume)
 			if err != nil {
 				return fmt.Errorf("Could not retrieve backing store definition: %s", err.Error())
@@ -214,6 +221,8 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 				return fmt.Errorf("When 'size' is specified, it shouldn't be smaller than the backing store specified with 'base_volume_id' or 'base_volume_name/base_volume_pool'")
 			}
 			volumeDef.BackingStore = &backingStoreFragmentDef
+		} else if d.Get("base_volume_copy").(bool) && baseVolume == nil {
+			return fmt.Errorf("Can't find base volume to copy to '%s'", d.Get("name").(string))
 		}
 	}
 
@@ -229,7 +238,12 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	// create the volume
-	volume, err := pool.StorageVolCreateXML(data, 0)
+	var volume *libvirt.StorageVol
+	if d.Get("base_volume_copy").(bool) {
+		volume, err = pool.StorageVolCreateXMLFrom(data, baseVolume, 0)
+	} else {
+		volume, err = pool.StorageVolCreateXML(data, 0)
+	}
 	if err != nil {
 		return fmt.Errorf("Error creating libvirt volume: %s", err)
 	}

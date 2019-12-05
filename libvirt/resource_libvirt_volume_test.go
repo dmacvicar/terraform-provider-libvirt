@@ -92,6 +92,33 @@ func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirt.Storag
 	}
 }
 
+func testAccCheckLibvirtVolumeIsNotBackingStore(name string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		vol, err := getVolumeFromTerraformState(name, state, *virConn)
+		if err != nil {
+			return err
+		}
+
+		volXMLDesc, err := vol.GetXMLDesc(0)
+		if err != nil {
+			return fmt.Errorf("Error retrieving libvirt volume XML description: %s", err)
+		}
+
+		volumeDef := newDefVolume()
+		err = xml.Unmarshal([]byte(volXMLDesc), &volumeDef)
+		if err != nil {
+			return fmt.Errorf("Error reading libvirt volume XML description: %s", err)
+		}
+		if volumeDef.BackingStore != nil {
+			return fmt.Errorf("FAIL: the volume was not supposed to be a backingstore, but it is")
+		}
+
+		return nil
+	}
+}
+
 func TestAccLibvirtVolume_Basic(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -201,6 +228,90 @@ func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_volume."+random, "size", "1073741824"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtVolume_BackingStoreCopyDir(t *testing.T) {
+	var volume libvirt.StorageVol
+	var volume2 libvirt.StorageVol
+	random := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + random
+	// for qcow2 file images regardless of user specified size, the final size will
+	// be the same as the backing image's size. This is so because libvirt
+	// invokes qemu-img create followed by qemu-img convert for StorageVolCreateXMLFrom.
+	// This behavior can be tested like this:
+	// $ qemu-img create -f qcow2 test.qcow2 1024K
+	// $ qemu-img info test.qcow2
+	// $ qemu-img create -f qcow2 test-copy.qcow2 2048K
+	// $ qemu-img info test-copy.qcow2
+	// $ qemu-img convert -f qcow2 -O qcow2 test.qcow2 test-copy.qcow2
+	// $ qemu-img info test-copy.qcow2
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: resource.ComposeAggregateTestCheckFunc(
+			testAccCheckLibvirtVolumeDestroy,
+			testAccCheckLibvirtPoolDestroy,
+		),
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+                resource "libvirt_pool" "%s" {
+                    name = "%s"
+                    type = "dir"
+                    path = "%s"
+                }
+				resource "libvirt_volume" "backing-%s" {
+					name = "backing-%s"
+					size = 1000448
+                    pool = "${libvirt_pool.%s.name}"
+				}
+				resource "libvirt_volume" "%s" {
+					name = "%s"
+					base_volume_copy = true
+					base_volume_id = "${libvirt_volume.backing-%s.id}"
+                    pool = "${libvirt_pool.%s.name}"
+			        }
+				`, random, random, randomPoolPath, random, random, random, random, random, random, random),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtVolumeExists("libvirt_volume.backing-"+random, &volume),
+					testAccCheckLibvirtVolumeIsNotBackingStore("libvirt_volume."+random, &volume2),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtVolume_NoBackingStoreCopyError(t *testing.T) {
+	random := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + random
+	expectedError := regexp.MustCompile(fmt.Sprintf(
+		"Can't find base volume to copy to '%s'", random,
+	))
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: resource.ComposeAggregateTestCheckFunc(
+			testAccCheckLibvirtVolumeDestroy,
+			testAccCheckLibvirtPoolDestroy,
+		),
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+                resource "libvirt_pool" "%s" {
+                    name = "%s"
+                    type = "dir"
+                    path = "%s"
+                }
+				resource "libvirt_volume" "%s" {
+					name = "%s"
+					base_volume_copy = true
+                    pool = "${libvirt_pool.%s.name}"
+			        }
+				`, random, random, randomPoolPath, random, random, random),
+				ExpectError: expectedError,
 			},
 		},
 	})
