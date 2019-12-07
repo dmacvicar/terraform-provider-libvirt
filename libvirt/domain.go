@@ -198,14 +198,26 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 	return interfaces, nil
 }
 
-func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml.DomainDisk, error) {
-	disk := libvirtxml.DomainDisk{
-		Device: "cdrom",
-		Target: &libvirtxml.DomainDiskTarget{
+func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string, arch string) (libvirtxml.DomainDisk, error) {
+	var target *libvirtxml.DomainDiskTarget
+	switch arch {
+	case "s390", "s390x":
+		target = &libvirtxml.DomainDiskTarget{
+			// s390 platform doesn't support IDE controllers
+			Dev: "vdb",
+			Bus: "scsi",
+		}
+	default:
+		target = &libvirtxml.DomainDiskTarget{
 			// Last device letter possible with a single IDE controller on i440FX
 			Dev: "hdd",
 			Bus: "ide",
-		},
+		}
+	}
+
+	disk := libvirtxml.DomainDisk{
+		Device: "cdrom",
+		Target: target,
 		Driver: &libvirtxml.DomainDiskDriver{
 			Name: "qemu",
 			Type: "raw",
@@ -613,13 +625,13 @@ func setFilesystems(d *schema.ResourceData, domainDef *libvirtxml.Domain) error 
 	return nil
 }
 
-func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
+func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect, arch string) error {
 	if cloudinit, ok := d.GetOk("cloudinit"); ok {
 		cloudinitID, err := getCloudInitVolumeKeyFromTerraformID(cloudinit.(string))
 		if err != nil {
 			return err
 		}
-		disk, err := newDiskForCloudInit(virConn, cloudinitID)
+		disk, err := newDiskForCloudInit(virConn, cloudinitID, arch)
 		if err != nil {
 			return err
 		}
