@@ -40,9 +40,6 @@ var supportedCommands = [][]string{
 		"guestfish", "--remote", "--", "mount", "*", "/",
 	},
 	{
-		"guestfish", "--remote", "--", "mkdir-p", "/ignition",
-	},
-	{
 		"guestfish", "--remote", "--", "upload", "*.ign", "/ignition/config.ign",
 	},
 	{
@@ -70,9 +67,6 @@ var supportedCommandTree = map[string]interface{}{
 					".*": map[string]interface{}{
 						"/": nil,
 					},
-				},
-				"mkdir-p": map[string]interface{}{
-					"/ignition": nil,
 				},
 				"upload": map[string]interface{}{
 					".*.ign": map[string]interface{}{
@@ -190,13 +184,6 @@ func validateCommandSemanticsAndGenerateOutput(args ...string) (bool, string) {
 	if newArgs[3] == "mount" {
 		if Started == currentGuestfishStatus {
 			currentGuestfishStatus = Mounted
-			return true, ""
-		}
-		return false, errMsg
-	}
-
-	if newArgs[3] == "mkdir-p" {
-		if Mounted == currentGuestfishStatus {
 			return true, ""
 		}
 		return false, errMsg
