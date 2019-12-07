@@ -1,16 +1,11 @@
 package libvirt
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/url"
-	"os"
-	"os/exec"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -235,143 +230,7 @@ func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml
 	return disk, nil
 }
 
-func getFirstDiskPath(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) (string, error) {
-	prefix := fmt.Sprintf("disk.%d", 0)
-
-	if volumeKey, ok := d.GetOk(prefix + ".volume_id"); ok {
-		diskVolume, err := virConn.LookupStorageVolByKey(volumeKey.(string))
-		if err != nil {
-			return "", fmt.Errorf("Error lookup storage disk volume: %s", err)
-		}
-		diskVolumeFile, err := diskVolume.GetPath()
-		if err != nil {
-			return "", fmt.Errorf("Error get path of disk volume: %s", err)
-		}
-		return diskVolumeFile, nil
-	}
-	return "", fmt.Errorf("failed to find disk 0")
-}
-
-func getStderr(stderr io.ReadCloser) string {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(stderr)
-	return buf.String()
-}
-
-func inlineUpdateCoreOsIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
-	if ignition, ok := d.GetOk("coreos_ignition"); ok {
-
-		// Get the root disk (first disk) volume location
-		rootPath, err := getFirstDiskPath(d, domainDef, virConn)
-		if err != nil {
-			return err
-		}
-
-		// Get the ingition file to be uploaded
-		ignitionKey, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
-		if err != nil {
-			return err
-		}
-		diskVolume, err := virConn.LookupStorageVolByKey(ignitionKey)
-		if err != nil {
-			return err
-		}
-		fileToUpload, err := diskVolume.GetPath()
-		if err != nil {
-			return err
-		}
-		err = guestfishExecution(rootPath, fileToUpload)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-var execCommand = exec.Command
-
-func guestfishExecution(rootPath string, fileToUpload string) error {
-	// This is the file in coreos image going to be copied from local
-	fileRemoteLocation := "/ignition/config.ign"
-
-	// eval  $(guestfish --listen -a $1)
-	cmd := execCommand("guestfish", "--listen", "-a", rootPath)
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("Get stdout failed: %v", err)
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return fmt.Errorf("Get stderr failed: %v", err)
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		return fmt.Errorf("Start command failed: %v", err)
-	}
-
-	// if the command start successfully, the output will be following format
-	// GUESTFISH_PID=xxxx; export GUESTFISH_PID, so we need get the PID and set by using os.Setenv
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(stdout)
-	guestfishPidLabel := strings.Split(buf.String(), ";")
-	guestfishPidValue := strings.Split(guestfishPidLabel[0], "=")
-	os.Setenv(guestfishPidValue[0], guestfishPidValue[1])
-
-	// guestfish --remote -- run
-	cmd = execCommand("guestfish", "--remote", "--", "run")
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Launch failed: %v, %s", err, getStderr(stderr))
-	}
-
-	// guestfish --remote -- exit
-	defer func() {
-		cmd := execCommand("guestfish", "--remote", "--", "exit")
-		cmd.Run()
-	}()
-
-	// guestfish --remote -- findfs-label
-	cmd = execCommand("guestfish", "--remote", "--", "findfs-label", "boot")
-	output, err := cmd.Output()
-
-	if err != nil {
-		return fmt.Errorf("Failed to find fs label: %v", err)
-	}
-
-	bootDisk := strings.TrimSpace(string(output))
-	if len(bootDisk) == 0 {
-		return fmt.Errorf("failed to get the boot filesystem")
-	}
-
-	// guestfish --remote -- mount $2 /
-	cmd = execCommand("guestfish", "--remote", "--", "mount", bootDisk, "/")
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Mount failed: %v, %s", err, getStderr(stderr))
-	}
-
-	// This is the real command that upload the file from current location (the local file system)
-	// to remote file location (the coreos file system)
-	// guestfish --remote -- upload $4 $3/$4
-	cmd = execCommand("guestfish", "--remote", "--", "upload", fileToUpload, fileRemoteLocation)
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Upload failed: %v, %s", err, getStderr(stderr))
-	}
-
-	// guestfish --remote -- umount-all
-	cmd = execCommand("guestfish", "--remote", "--", "umount-all")
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Unmount failed: %v, %s", err, getStderr(stderr))
-	}
-
-	return nil
-}
-
-// Use fw_cfg device to update coresos
-func fwcfgUpdateCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
+func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
 		ignitionKey, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
 		if err != nil {
@@ -395,15 +254,6 @@ func fwcfgUpdateCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Dom
 	}
 
 	return nil
-}
-
-func updateCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
-	if runtime.GOARCH == "s390x" || runtime.GOARCH == "s390" {
-		// There is no support for fw_cfg in s390x, so instead of doing fw_cfg
-		// we have to inline update the coreos ignition file
-		return inlineUpdateCoreOsIgnition(d, domainDef, virConn)
-	}
-	return fwcfgUpdateCoreOSIgnition(d, domainDef)
 }
 
 func setVideo(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
