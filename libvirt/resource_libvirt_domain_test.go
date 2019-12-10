@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/acctest"
@@ -304,6 +306,50 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 		},
 	})
 
+}
+
+func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
+	var domain libvirt.Domain
+
+	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomDeviceName := acctest.RandStringFromCharSet(33, acctest.CharSetAlpha)
+
+	tmpfile, loopdev, err := createTempBlockDev(randomDeviceName)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var configBlockDevice = fmt.Sprintf(`
+
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		
+		disk {
+			block_device = "%s"
+		}
+
+	}`, randomDomainName, randomDomainName, tmpfile)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: configBlockDevice,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					testAccCheckLibvirtBlockDevice(tmpfile, &domain),
+				),
+			},
+		},
+	})
+
+	cmd := exec.Command("sudo", "losetup", "--detach", loopdev)
+	if err := cmd.Run(); err != nil {
+		log.Printf("Error detaching loop device %s: %s\n", loopdev, err)
+	}
 }
 
 /* FIXME: Disable for now. It fails with:
@@ -1035,6 +1081,23 @@ func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.Test
 	})
 }
 
+func testAccCheckLibvirtBlockDevice(n string, domain *libvirt.Domain) resource.TestCheckFunc {
+	return testAccCheckLibvirtDomainDescription(domain, func(domainDef libvirtxml.Domain) error {
+		disks := domainDef.Devices.Disks
+		for _, disk := range disks {
+
+			if disk.Source.Block == nil {
+				return fmt.Errorf("Disk is not a block device")
+			}
+
+			if dev := disk.Source.Block.Dev; dev != n {
+				return fmt.Errorf("Disk source %s does not equal %s", dev, n)
+			}
+		}
+		return nil
+	})
+}
+
 func testAccCheckLibvirtDomainDescription(domain *libvirt.Domain, checkFunc func(libvirtxml.Domain) error) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		domainDef, err := getXMLDomainDefFromLibvirt(domain)
@@ -1145,6 +1208,45 @@ func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel
 		}
 		return nil
 	}
+}
+
+// Creates a temporary block device and mounts it to an available loop device
+// Returns a the full path to the block device and the associated loop device
+func createTempBlockDev(devname string) (string, string, error) {
+	fmt.Printf("Creating a temporary block device\n")
+
+	// Create a 1MB temp file
+	filename := "/tmp/" + devname
+	cmd := exec.Command("dd", "if=/dev/urandom", "of="+filename, "bs=1024", "count=1024")
+	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
+	if err := cmd.Run(); err != nil {
+		return "", "", fmt.Errorf("Error creating file %s: %s", filename, err)
+	}
+
+	// Format the file
+	cmd = exec.Command("mkfs.ext4", "-F", "-q", filename)
+	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
+	if err := cmd.Run(); err != nil {
+		return "", "", fmt.Errorf("Error formatting file system: %s", err)
+	}
+
+	// Find an available loop device
+	loopdev, err := exec.Command("losetup", "--find").Output()
+	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
+	if err != nil {
+		return "", "", fmt.Errorf("Error searching for available loop device: %s", err)
+	}
+
+	// Mount the file to a loop device
+	cmd = exec.Command("sudo", "losetup", "--read-only", strings.TrimRight(string(loopdev), "\n"), filename)
+	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
+	if err := cmd.Run(); err != nil {
+		return "", "", fmt.Errorf("Error mounting block device: %s", err)
+	}
+
+	log.Printf("Temporary block device %s mounted at %s", filename, loopdev)
+
+	return filename, strings.TrimRight(string(loopdev), "\n"), nil
 }
 
 func createNvramFile() (string, error) {

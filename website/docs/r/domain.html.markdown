@@ -235,8 +235,9 @@ The `disk` block supports:
 * `volume_id` - (Optional) The volume id to use for this disk.
 * `url` - (Optional) The http url to use as the block device for this disk (read-only)
 * `file` - (Optional) The filename to use as the block device for this disk (read-only)
+* `block_device` - (Optional) The path to the host device to use as the block device for this disk. 
 
-While `volume_id`, `url` and `file` are optional, it is intended that you use one of them.
+While `volume_id`, `url`, `file` and `block_device` are optional, it is intended that you use one of them.
 
 * `scsi` - (Optional, Boolean) Use a scsi controller for this disk.  The controller
 model is set to `virtio-scsi`
@@ -268,6 +269,10 @@ resource "libvirt_domain" "domain1" {
 
   disk {
     file = "/absolute/path/to/disk.iso"
+  }
+
+  disk {
+    block_device = "/dev/mapper/36005076802810e55400000000000145f"
   }
 }
 ```

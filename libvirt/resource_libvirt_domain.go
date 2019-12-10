@@ -165,6 +165,10 @@ func resourceLibvirtDomain() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
+						"block_device": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
 					},
 				},
 			},
@@ -792,6 +796,10 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		} else if diskDef.Device == "cdrom" {
 			disk = map[string]interface{}{
 				"file": diskDef.Source.File,
+			}
+		} else if diskDef.Source.Block != nil {
+			disk = map[string]interface{}{
+				"block_device": diskDef.Source.Block,
 			}
 		} else if diskDef.Source.File != nil {
 			// LEGACY way of handling volumes using "file", which we replaced
