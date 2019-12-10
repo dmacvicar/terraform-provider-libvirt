@@ -310,7 +310,7 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 
 	info, err := volume.GetInfo()
 	if err != nil {
-		return fmt.Errorf("error retrieving volume name: %s", err)
+		return fmt.Errorf("error retrieving volume info: %s", err)
 	}
 	d.Set("size", info.Capacity)
 
