@@ -1,16 +1,11 @@
 package libvirt
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/url"
-	"os"
-	"os/exec"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -203,14 +198,26 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 	return interfaces, nil
 }
 
-func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml.DomainDisk, error) {
-	disk := libvirtxml.DomainDisk{
-		Device: "cdrom",
-		Target: &libvirtxml.DomainDiskTarget{
+func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string, arch string) (libvirtxml.DomainDisk, error) {
+	var target *libvirtxml.DomainDiskTarget
+	switch arch {
+	case "s390", "s390x":
+		target = &libvirtxml.DomainDiskTarget{
+			// s390 platform doesn't support IDE controllers
+			Dev: "vdb",
+			Bus: "scsi",
+		}
+	default:
+		target = &libvirtxml.DomainDiskTarget{
 			// Last device letter possible with a single IDE controller on i440FX
 			Dev: "hdd",
 			Bus: "ide",
-		},
+		}
+	}
+
+	disk := libvirtxml.DomainDisk{
+		Device: "cdrom",
+		Target: target,
 		Driver: &libvirtxml.DomainDiskDriver{
 			Name: "qemu",
 			Type: "raw",
@@ -235,182 +242,51 @@ func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml
 	return disk, nil
 }
 
-func getFirstDiskPath(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) (string, error) {
-	prefix := fmt.Sprintf("disk.%d", 0)
-
-	if volumeKey, ok := d.GetOk(prefix + ".volume_id"); ok {
-		diskVolume, err := virConn.LookupStorageVolByKey(volumeKey.(string))
-		if err != nil {
-			return "", fmt.Errorf("Error lookup storage disk volume: %s", err)
-		}
-		diskVolumeFile, err := diskVolume.GetPath()
-		if err != nil {
-			return "", fmt.Errorf("Error get path of disk volume: %s", err)
-		}
-		return diskVolumeFile, nil
-	}
-	return "", fmt.Errorf("failed to find disk 0")
-}
-
-func getStderr(stderr io.ReadCloser) string {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(stderr)
-	return buf.String()
-}
-
-func inlineUpdateCoreOsIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
-	if ignition, ok := d.GetOk("coreos_ignition"); ok {
-
-		// Get the root disk (first disk) volume location
-		rootPath, err := getFirstDiskPath(d, domainDef, virConn)
-		if err != nil {
-			return err
-		}
-
-		// Get the ingition file to be uploaded
-		ignitionKey, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
-		if err != nil {
-			return err
-		}
-		diskVolume, err := virConn.LookupStorageVolByKey(ignitionKey)
-		if err != nil {
-			return err
-		}
-		fileToUpload, err := diskVolume.GetPath()
-		if err != nil {
-			return err
-		}
-		err = guestfishExecution(rootPath, fileToUpload)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-var execCommand = exec.Command
-
-func guestfishExecution(rootPath string, fileToUpload string) error {
-	// This is the file in coreos image going to be copied from local
-	fileRemoteLocation := "/ignition/config.ign"
-
-	// eval  $(guestfish --listen -a $1)
-	cmd := execCommand("guestfish", "--listen", "-a", rootPath)
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("Get stdout failed: %v", err)
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return fmt.Errorf("Get stderr failed: %v", err)
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		return fmt.Errorf("Start command failed: %v", err)
-	}
-
-	// if the command start successfully, the output will be following format
-	// GUESTFISH_PID=xxxx; export GUESTFISH_PID, so we need get the PID and set by using os.Setenv
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(stdout)
-	guestfishPidLabel := strings.Split(buf.String(), ";")
-	guestfishPidValue := strings.Split(guestfishPidLabel[0], "=")
-	os.Setenv(guestfishPidValue[0], guestfishPidValue[1])
-
-	// guestfish --remote -- run
-	cmd = execCommand("guestfish", "--remote", "--", "run")
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Launch failed: %v, %s", err, getStderr(stderr))
-	}
-
-	// guestfish --remote -- exit
-	defer func() {
-		cmd := execCommand("guestfish", "--remote", "--", "exit")
-		cmd.Run()
-	}()
-
-	// guestfish --remote -- findfs-label
-	cmd = execCommand("guestfish", "--remote", "--", "findfs-label", "boot")
-	output, err := cmd.Output()
-
-	if err != nil {
-		return fmt.Errorf("Failed to find fs label: %v", err)
-	}
-
-	bootDisk := strings.TrimSpace(string(output))
-	if len(bootDisk) == 0 {
-		return fmt.Errorf("failed to get the boot filesystem")
-	}
-
-	// guestfish --remote -- mount $2 /
-	cmd = execCommand("guestfish", "--remote", "--", "mount", bootDisk, "/")
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Mount failed: %v, %s", err, getStderr(stderr))
-	}
-
-	// guestfish --remote -- mkdir-p /ignition
-	cmd = execCommand("guestfish", "--remote", "--", "mkdir-p", "/ignition")
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Mkdir failed: %v, %s", err, getStderr(stderr))
-	}
-
-	// This is the real command that upload the file from current location (the local file system)
-	// to remote file location (the coreos file system)
-	// guestfish --remote -- upload $4 $3/$4
-	cmd = execCommand("guestfish", "--remote", "--", "upload", fileToUpload, fileRemoteLocation)
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Upload failed: %v, %s", err, getStderr(stderr))
-	}
-
-	// guestfish --remote -- umount-all
-	cmd = execCommand("guestfish", "--remote", "--", "umount-all")
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("Unmount failed: %v, %s", err, getStderr(stderr))
-	}
-
-	return nil
-}
-
-// Use fw_cfg device to update coresos
-func fwcfgUpdateCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
+func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect, arch string) error {
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
 		ignitionKey, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
 		if err != nil {
 			return err
 		}
-		// `fw_cfg_name` stands for firmware config is defined by a key and a value
-		// credits for this cryptic name: https://github.com/qemu/qemu/commit/81b2b81062612ebeac4cd5333a3b15c7d79a5a3d
-		if fwCfg, ok := d.GetOk("fw_cfg_name"); ok {
 
-			domainDef.QEMUCommandline = &libvirtxml.DomainQEMUCommandline{
-				Args: []libvirtxml.DomainQEMUCommandlineArg{
-					{
-						Value: "-fw_cfg",
+		switch arch {
+		case "i686", "x86_64", "aarch64":
+			// QEMU and the Linux kernel support the use of the Firmware
+			// Configuration Device on these architectures. Ignition will use
+			// this mechanism to read its configuration from the hypervisor.
+
+			// `fw_cfg_name` stands for firmware config is defined by a key and a value
+			// credits for this cryptic name: https://github.com/qemu/qemu/commit/81b2b81062612ebeac4cd5333a3b15c7d79a5a3d
+			if fwCfg, ok := d.GetOk("fw_cfg_name"); ok {
+				domainDef.QEMUCommandline = &libvirtxml.DomainQEMUCommandline{
+					Args: []libvirtxml.DomainQEMUCommandlineArg{
+						{
+							Value: "-fw_cfg",
+						},
+						{
+							Value: fmt.Sprintf("name=%s,file=%s", fwCfg, ignitionKey),
+						},
 					},
-					{
-						Value: fmt.Sprintf("name=%s,file=%s", fwCfg, ignitionKey),
-					},
-				},
+				}
 			}
+		case "s390", "s390x":
+			// System Z does not support any of the same pass-through
+			// mechanisms as Ignition. As a temporary workaround, the OpenStack
+			// Config Drive can be used instead. The Ignition volume already
+			// contains a Config Drive at this point.
+
+			disk, err := newDiskForCloudInit(virConn, ignitionKey, arch)
+			if err != nil {
+				return err
+			}
+
+			domainDef.Devices.Disks = append(domainDef.Devices.Disks, disk)
+		default:
+			return fmt.Errorf("Ignition not supported on %q", arch)
 		}
 	}
 
 	return nil
-}
-
-func updateCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
-	if runtime.GOARCH == "s390x" || runtime.GOARCH == "s390" {
-		// There is no support for fw_cfg in s390x, so instead of doing fw_cfg
-		// we have to inline update the coreos ignition file
-		return inlineUpdateCoreOsIgnition(d, domainDef, virConn)
-	}
-	return fwcfgUpdateCoreOSIgnition(d, domainDef)
 }
 
 func setVideo(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
@@ -770,13 +646,13 @@ func setFilesystems(d *schema.ResourceData, domainDef *libvirtxml.Domain) error 
 	return nil
 }
 
-func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
+func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect, arch string) error {
 	if cloudinit, ok := d.GetOk("cloudinit"); ok {
 		cloudinitID, err := getCloudInitVolumeKeyFromTerraformID(cloudinit.(string))
 		if err != nil {
 			return err
 		}
-		disk, err := newDiskForCloudInit(virConn, cloudinitID)
+		disk, err := newDiskForCloudInit(virConn, cloudinitID, arch)
 		if err != nil {
 			return err
 		}
