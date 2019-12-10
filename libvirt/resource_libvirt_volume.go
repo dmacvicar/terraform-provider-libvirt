@@ -310,7 +310,13 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 
 	info, err := volume.GetInfo()
 	if err != nil {
-		return fmt.Errorf("error retrieving volume info: %s", err)
+		virErr := err.(libvirt.Error)
+		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
+			return fmt.Errorf("error retrieving volume info: %s", err)
+		}
+		log.Printf("Volume '%s' may have been deleted outside Terraform", d.Id())
+		d.SetId("")
+		return nil
 	}
 	d.Set("size", info.Capacity)
 
