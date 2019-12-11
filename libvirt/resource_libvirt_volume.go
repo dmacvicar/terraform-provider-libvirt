@@ -254,10 +254,10 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	if _, ok := d.GetOk("source"); ok {
 		err = img.Import(newCopier(client.libvirt, volume, volumeDef.Capacity.Value), volumeDef)
 		if err != nil {
-		//  don't save volume ID  in case of error. This will taint the volume after.
-		// If we don't throw away the id, we will keep instead a broken volume.
-		// see for reference: https://github.com/dmacvicar/terraform-provider-libvirt/issues/494
-		d.Set("id", "")	
+			//  don't save volume ID  in case of error. This will taint the volume after.
+			// If we don't throw away the id, we will keep instead a broken volume.
+			// see for reference: https://github.com/dmacvicar/terraform-provider-libvirt/issues/494
+			d.Set("id", "")
 			return fmt.Errorf("Error while uploading source %s: %s", img.String(), err)
 		}
 	}
@@ -310,7 +310,13 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 
 	info, err := volume.GetInfo()
 	if err != nil {
-		return fmt.Errorf("error retrieving volume name: %s", err)
+		virErr := err.(libvirt.Error)
+		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
+			return fmt.Errorf("error retrieving volume info: %s", err)
+		}
+		log.Printf("Volume '%s' may have been deleted outside Terraform", d.Id())
+		d.SetId("")
+		return nil
 	}
 	d.Set("size", info.Capacity)
 
