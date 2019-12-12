@@ -97,12 +97,21 @@ func volumeDelete(client *Client, key string) error {
 	// Does not solve the problem but it makes it happen less often.
 	_, err = volume.GetXMLDesc(0)
 	if err != nil {
-		return fmt.Errorf("Can't retrieve volume %s XML desc: %s", key, err)
+		virErr := err.(libvirt.Error)
+		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
+			return fmt.Errorf("Can't retrieve volume %s XML desc: %s", key, err)
+		}
+		// Volume is probably gone already, getting its XML description is pointless
 	}
 
 	err = volume.Delete(0)
 	if err != nil {
-		return fmt.Errorf("Can't delete volume %s: %s", key, err)
+		virErr := err.(libvirt.Error)
+		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
+			return fmt.Errorf("Can't delete volume %s: %s", key, err)
+		}
+		// Volume is gone already
+		return nil
 	}
 
 	return volumeWaitDeleted(client.libvirt, key)
