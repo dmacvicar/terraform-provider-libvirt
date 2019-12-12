@@ -231,7 +231,16 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	// create the volume
 	volume, err := pool.StorageVolCreateXML(data, 0)
 	if err != nil {
-		return fmt.Errorf("Error creating libvirt volume: %s", err)
+		virErr := err.(libvirt.Error)
+		if virErr.Code != libvirt.ERR_STORAGE_VOL_EXIST {
+			return fmt.Errorf("Error creating libvirt volume: %s", err)
+		}
+		// oops, volume exists already, read it and move on
+		volume, err = pool.LookupStorageVolByName(volumeDef.Name)
+		if err != nil {
+			return fmt.Errorf("Error looking up libvirt volume: %s", err)
+		}
+		log.Printf("[INFO] Volume about to be created was found and left as-is: %s", volumeDef.Name)
 	}
 	defer volume.Free()
 

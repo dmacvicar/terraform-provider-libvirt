@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"path/filepath"
-	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/acctest"
@@ -255,7 +254,8 @@ func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 	})
 }
 
-func TestAccLibvirtVolume_UniqueName(t *testing.T) {
+func TestAccLibvirtVolume_RepeatedName(t *testing.T) {
+	var volume libvirt.StorageVol
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeResource2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -289,8 +289,15 @@ func TestAccLibvirtVolume_UniqueName(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config:      config,
-				ExpectError: regexp.MustCompile(`storage volume '` + randomVolumeName + `' (exists already|already exists)`),
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeResource, &volume),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume."+randomVolumeResource, "name", randomVolumeName),
+					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeResource2, &volume),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume."+randomVolumeResource2, "name", randomVolumeName),
+				),
 			},
 		},
 	})
