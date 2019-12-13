@@ -2,42 +2,43 @@ package ignition
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 
 	"github.com/coreos/ignition/config/v2_1/types"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func resourceFile() *schema.Resource {
+func dataSourceFile() *schema.Resource {
 	return &schema.Resource{
 		Exists: resourceFileExists,
 		Read:   resourceFileRead,
 		Schema: map[string]*schema.Schema{
-			"filesystem": &schema.Schema{
+			"filesystem": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"path": &schema.Schema{
+			"path": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"content": &schema.Schema{
+			"content": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"mime": &schema.Schema{
+						"mime": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
 							Default:  "text/plain",
 						},
 
-						"content": &schema.Schema{
+						"content": {
 							Type:     schema.TypeString,
 							Required: true,
 							ForceNew: true,
@@ -45,24 +46,24 @@ func resourceFile() *schema.Resource {
 					},
 				},
 			},
-			"source": &schema.Schema{
+			"source": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"source": &schema.Schema{
+						"source": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
 						},
-						"compression": &schema.Schema{
+						"compression": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
 						},
-						"verification": &schema.Schema{
+						"verification": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
@@ -70,27 +71,31 @@ func resourceFile() *schema.Resource {
 					},
 				},
 			},
-			"mode": &schema.Schema{
+			"mode": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
 			},
-			"uid": &schema.Schema{
+			"uid": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
 			},
-			"gid": &schema.Schema{
+			"gid": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
+			},
+			"rendered": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 	}
 }
 
 func resourceFileRead(d *schema.ResourceData, meta interface{}) error {
-	id, err := buildFile(d, globalCache)
+	id, err := buildFile(d)
 	if err != nil {
 		return err
 	}
@@ -100,7 +105,7 @@ func resourceFileRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceFileExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	id, err := buildFile(d, globalCache)
+	id, err := buildFile(d)
 	if err != nil {
 		return false, err
 	}
@@ -108,7 +113,7 @@ func resourceFileExists(d *schema.ResourceData, meta interface{}) (bool, error) 
 	return id == d.Id(), nil
 }
 
-func buildFile(d *schema.ResourceData, c *cache) (string, error) {
+func buildFile(d *schema.ResourceData) (string, error) {
 	_, hasContent := d.GetOk("content")
 	_, hasSource := d.GetOk("source")
 	if hasContent && hasSource {
@@ -164,7 +169,13 @@ func buildFile(d *schema.ResourceData, c *cache) (string, error) {
 		file.Group = types.NodeGroup{ID: &gid}
 	}
 
-	return c.addFile(file), nil
+	b, err := json.Marshal(file)
+	if err != nil {
+		return "", err
+	}
+	d.Set("rendered", string(b))
+
+	return hash(string(b)), nil
 }
 
 func encodeDataURL(mime, content string) string {

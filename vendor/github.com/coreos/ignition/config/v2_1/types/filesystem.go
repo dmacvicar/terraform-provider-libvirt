@@ -15,56 +15,40 @@
 package types
 
 import (
-	"errors"
-	"fmt"
-
+	"github.com/coreos/ignition/config/shared/errors"
 	"github.com/coreos/ignition/config/validate/report"
-)
-
-var (
-	ErrFilesystemInvalidFormat     = errors.New("invalid filesystem format")
-	ErrFilesystemNoMountPath       = errors.New("filesystem is missing mount or path")
-	ErrFilesystemMountAndPath      = errors.New("filesystem has both mount and path defined")
-	ErrUsedCreateAndMountOpts      = errors.New("cannot use both create object and mount-level options field")
-	ErrUsedCreateAndWipeFilesystem = errors.New("cannot use both create object and wipeFilesystem field")
-	ErrWarningCreateDeprecated     = errors.New("the create object has been deprecated in favor of mount-level options")
-	ErrExt4LabelTooLong            = errors.New("filesystem labels cannot be longer than 16 characters when using ext4")
-	ErrBtrfsLabelTooLong           = errors.New("filesystem labels cannot be longer than 256 characters when using btrfs")
-	ErrXfsLabelTooLong             = errors.New("filesystem labels cannot be longer than 12 characters when using xfs")
-	ErrSwapLabelTooLong            = errors.New("filesystem labels cannot be longer than 15 characters when using swap")
-	ErrVfatLabelTooLong            = errors.New("filesystem labels cannot be longer than 11 characters when using vfat")
 )
 
 func (f Filesystem) Validate() report.Report {
 	r := report.Report{}
 	if f.Mount == nil && f.Path == nil {
 		r.Add(report.Entry{
-			Message: ErrFilesystemNoMountPath.Error(),
+			Message: errors.ErrFilesystemNoMountPath.Error(),
 			Kind:    report.EntryError,
 		})
 	}
 	if f.Mount != nil {
 		if f.Path != nil {
 			r.Add(report.Entry{
-				Message: ErrFilesystemMountAndPath.Error(),
+				Message: errors.ErrFilesystemMountAndPath.Error(),
 				Kind:    report.EntryError,
 			})
 		}
 		if f.Mount.Create != nil {
 			if f.Mount.WipeFilesystem {
 				r.Add(report.Entry{
-					Message: ErrUsedCreateAndWipeFilesystem.Error(),
+					Message: errors.ErrUsedCreateAndWipeFilesystem.Error(),
 					Kind:    report.EntryError,
 				})
 			}
 			if len(f.Mount.Options) > 0 {
 				r.Add(report.Entry{
-					Message: ErrUsedCreateAndMountOpts.Error(),
+					Message: errors.ErrUsedCreateAndMountOpts.Error(),
 					Kind:    report.EntryError,
 				})
 			}
 			r.Add(report.Entry{
-				Message: ErrWarningCreateDeprecated.Error(),
+				Message: errors.ErrWarningCreateDeprecated.Error(),
 				Kind:    report.EntryWarning,
 			})
 		}
@@ -76,7 +60,7 @@ func (f Filesystem) ValidatePath() report.Report {
 	r := report.Report{}
 	if f.Path != nil && validatePath(*f.Path) != nil {
 		r.Add(report.Entry{
-			Message: fmt.Sprintf("filesystem %q: path not absolute", f.Name),
+			Message: errors.ErrPathRelative.Error(),
 			Kind:    report.EntryError,
 		})
 	}
@@ -89,7 +73,7 @@ func (m Mount) Validate() report.Report {
 	case "ext4", "btrfs", "xfs", "swap", "vfat":
 	default:
 		r.Add(report.Entry{
-			Message: ErrFilesystemInvalidFormat.Error(),
+			Message: errors.ErrFilesystemInvalidFormat.Error(),
 			Kind:    report.EntryError,
 		})
 	}
@@ -117,7 +101,7 @@ func (m Mount) ValidateLabel() report.Report {
 		if len(*m.Label) > 16 {
 			// source: man mkfs.ext4
 			r.Add(report.Entry{
-				Message: ErrExt4LabelTooLong.Error(),
+				Message: errors.ErrExt4LabelTooLong.Error(),
 				Kind:    report.EntryError,
 			})
 		}
@@ -125,7 +109,7 @@ func (m Mount) ValidateLabel() report.Report {
 		if len(*m.Label) > 256 {
 			// source: man mkfs.btrfs
 			r.Add(report.Entry{
-				Message: ErrBtrfsLabelTooLong.Error(),
+				Message: errors.ErrBtrfsLabelTooLong.Error(),
 				Kind:    report.EntryError,
 			})
 		}
@@ -133,7 +117,7 @@ func (m Mount) ValidateLabel() report.Report {
 		if len(*m.Label) > 12 {
 			// source: man mkfs.xfs
 			r.Add(report.Entry{
-				Message: ErrXfsLabelTooLong.Error(),
+				Message: errors.ErrXfsLabelTooLong.Error(),
 				Kind:    report.EntryError,
 			})
 		}
@@ -143,7 +127,7 @@ func (m Mount) ValidateLabel() report.Report {
 		// 15 characters, so let's enforce that.
 		if len(*m.Label) > 15 {
 			r.Add(report.Entry{
-				Message: ErrSwapLabelTooLong.Error(),
+				Message: errors.ErrSwapLabelTooLong.Error(),
 				Kind:    report.EntryError,
 			})
 		}
@@ -151,7 +135,7 @@ func (m Mount) ValidateLabel() report.Report {
 		if len(*m.Label) > 11 {
 			// source: man mkfs.fat
 			r.Add(report.Entry{
-				Message: ErrVfatLabelTooLong.Error(),
+				Message: errors.ErrVfatLabelTooLong.Error(),
 				Kind:    report.EntryError,
 			})
 		}

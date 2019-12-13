@@ -53,6 +53,8 @@ func (bb *baseBuilder) Name() string {
 	return bb.name
 }
 
+var _ balancer.V2Balancer = (*baseBalancer)(nil) // Assert that we implement V2Balancer
+
 type baseBalancer struct {
 	cc            balancer.ClientConn
 	pickerBuilder PickerBuilder
@@ -67,14 +69,22 @@ type baseBalancer struct {
 }
 
 func (b *baseBalancer) HandleResolvedAddrs(addrs []resolver.Address, err error) {
-	if err != nil {
-		grpclog.Infof("base.baseBalancer: HandleResolvedAddrs called with error %v", err)
-		return
+	panic("not implemented")
+}
+
+func (b *baseBalancer) ResolverError(error) {
+	// Ignore
+}
+
+func (b *baseBalancer) UpdateClientConnState(s balancer.ClientConnState) error {
+	// TODO: handle s.ResolverState.Err (log if not nil) once implemented.
+	// TODO: handle s.ResolverState.ServiceConfig?
+	if grpclog.V(2) {
+		grpclog.Infoln("base.baseBalancer: got new ClientConn state: ", s)
 	}
-	grpclog.Infoln("base.baseBalancer: got new resolved addresses: ", addrs)
 	// addrsSet is the set converted from addrs, it's used for quick lookup of an address.
 	addrsSet := make(map[resolver.Address]struct{})
-	for _, a := range addrs {
+	for _, a := range s.ResolverState.Addresses {
 		addrsSet[a] = struct{}{}
 		if _, ok := b.subConns[a]; !ok {
 			// a is a new address (not existing in b.subConns).
@@ -97,6 +107,7 @@ func (b *baseBalancer) HandleResolvedAddrs(addrs []resolver.Address, err error) 
 			// The entry will be deleted in HandleSubConnStateChange.
 		}
 	}
+	return nil
 }
 
 // regeneratePicker takes a snapshot of the balancer, and generates a picker
@@ -120,10 +131,19 @@ func (b *baseBalancer) regeneratePicker() {
 }
 
 func (b *baseBalancer) HandleSubConnStateChange(sc balancer.SubConn, s connectivity.State) {
-	grpclog.Infof("base.baseBalancer: handle SubConn state change: %p, %v", sc, s)
+	panic("not implemented")
+}
+
+func (b *baseBalancer) UpdateSubConnState(sc balancer.SubConn, state balancer.SubConnState) {
+	s := state.ConnectivityState
+	if grpclog.V(2) {
+		grpclog.Infof("base.baseBalancer: handle SubConn state change: %p, %v", sc, s)
+	}
 	oldS, ok := b.scStates[sc]
 	if !ok {
-		grpclog.Infof("base.baseBalancer: got state changes for an unknown SubConn: %p, %v", sc, s)
+		if grpclog.V(2) {
+			grpclog.Infof("base.baseBalancer: got state changes for an unknown SubConn: %p, %v", sc, s)
+		}
 		return
 	}
 	b.scStates[sc] = s

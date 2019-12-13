@@ -15,22 +15,16 @@
 package types
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 
+	"github.com/coreos/ignition/config/shared/errors"
 	"github.com/coreos/ignition/config/validate/report"
 )
 
 const (
 	guidRegexStr = "^(|[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12})$"
-)
-
-var (
-	ErrLabelTooLong         = errors.New("partition labels may not exceed 36 characters")
-	ErrDoesntMatchGUIDRegex = errors.New("doesn't match the form \"01234567-89AB-CDEF-EDCB-A98765432101\"")
-	ErrLabelContainsColon   = errors.New("partition label will be truncated to text before the colon")
 )
 
 func (p Partition) ValidateLabel() report.Report {
@@ -42,7 +36,7 @@ func (p Partition) ValidateLabel() report.Report {
 	// with udev naming /dev/disk/by-partlabel/*.
 	if len(p.Label) > 36 {
 		r.Add(report.Entry{
-			Message: ErrLabelTooLong.Error(),
+			Message: errors.ErrLabelTooLong.Error(),
 			Kind:    report.EntryError,
 		})
 	}
@@ -50,7 +44,7 @@ func (p Partition) ValidateLabel() report.Report {
 	// sgdisk uses colons for delimitting compound arguments and does not allow escaping them.
 	if strings.Contains(p.Label, ":") {
 		r.Add(report.Entry{
-			Message: ErrLabelContainsColon.Error(),
+			Message: errors.ErrLabelContainsColon.Error(),
 			Kind:    report.EntryWarning,
 		})
 	}
@@ -75,7 +69,7 @@ func validateGUID(guid string) report.Report {
 		})
 	} else if !ok {
 		r.Add(report.Entry{
-			Message: ErrDoesntMatchGUIDRegex.Error(),
+			Message: errors.ErrDoesntMatchGUIDRegex.Error(),
 			Kind:    report.EntryError,
 		})
 	}

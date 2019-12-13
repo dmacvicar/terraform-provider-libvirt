@@ -1,88 +1,94 @@
 package ignition
 
 import (
+	"encoding/json"
+
 	"github.com/coreos/ignition/config/v2_1/types"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func resourceUser() *schema.Resource {
+func dataSourceUser() *schema.Resource {
 	return &schema.Resource{
 		Exists: resourceUserExists,
 		Read:   resourceUserRead,
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"password_hash": &schema.Schema{
+			"password_hash": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"ssh_authorized_keys": &schema.Schema{
+			"ssh_authorized_keys": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"uid": &schema.Schema{
+			"uid": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
 			},
-			"gecos": &schema.Schema{
+			"gecos": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"home_dir": &schema.Schema{
+			"home_dir": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"no_create_home": &schema.Schema{
+			"no_create_home": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
 			},
-			"primary_group": &schema.Schema{
+			"primary_group": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"groups": &schema.Schema{
+			"groups": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"no_user_group": &schema.Schema{
+			"no_user_group": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
 			},
-			"no_log_init": &schema.Schema{
+			"no_log_init": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
 			},
-			"shell": &schema.Schema{
+			"shell": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"system": &schema.Schema{
+			"system": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
+			},
+			"rendered": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 	}
 }
 
 func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
-	id, err := buildUser(d, globalCache)
+	id, err := buildUser(d)
 	if err != nil {
 		return err
 	}
@@ -92,7 +98,7 @@ func resourceUserRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceUserExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	id, err := buildUser(d, globalCache)
+	id, err := buildUser(d)
 	if err != nil {
 		return false, err
 	}
@@ -100,7 +106,7 @@ func resourceUserExists(d *schema.ResourceData, meta interface{}) (bool, error) 
 	return id == d.Id(), nil
 }
 
-func buildUser(d *schema.ResourceData, c *cache) (string, error) {
+func buildUser(d *schema.ResourceData) (string, error) {
 	user := types.PasswdUser{
 		Name:         d.Get("name").(string),
 		UID:          getInt(d, "uid"),
@@ -123,7 +129,13 @@ func buildUser(d *schema.ResourceData, c *cache) (string, error) {
 		user.PasswordHash = &pwd
 	}
 
-	return c.addUser(&user), handleReport(user.Validate())
+	b, err := json.Marshal(user)
+	if err != nil {
+		return "", err
+	}
+	d.Set("rendered", string(b))
+
+	return hash(string(b)), handleReport(user.Validate())
 }
 
 func castSliceInterfaceToPasswdUserGroup(i []interface{}) []types.PasswdUserGroup {
