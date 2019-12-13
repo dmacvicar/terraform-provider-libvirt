@@ -24,7 +24,7 @@ func TestAccLibvirtIgnition_Basic(t *testing.T) {
 
 	data "ignition_config" "acceptance-test-config" {
 		systemd = [
-		"${data.ignition_systemd_unit.acceptance-test-systemd.id}",
+		"${data.ignition_systemd_unit.acceptance-test-systemd.rendered}",
 		]
 	}
 

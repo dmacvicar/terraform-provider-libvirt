@@ -726,7 +726,7 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 
 	data "ignition_config" "acceptance-test-config" {
 		systemd = [
-		"${data.ignition_systemd_unit.acceptance-test-systemd.id}",
+		"${data.ignition_systemd_unit.acceptance-test-systemd.rendered}",
 		]
 	}
 
@@ -1796,7 +1796,7 @@ func TestAccLibvirtDomain_FwCfgName(t *testing.T) {
 
 	data "ignition_config" "acceptance-test-config-fw-cfg" {
 		systemd = [
-		"${data.ignition_systemd_unit.acceptance-test-systemd.id}",
+		"${data.ignition_systemd_unit.acceptance-test-systemd.rendered}",
 		]
 	}
 

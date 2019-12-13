@@ -1,18 +1,18 @@
 data "ignition_config" "ignition" {
   users = [
-    data.ignition_user.core.id,
+    data.ignition_user.core.rendered,
   ]
 
   files = [
-    element(data.ignition_file.hostname.*.id, count.index)
+    element(data.ignition_file.hostname.*.rendered, count.index)
   ]
 
   networkd = [
-    "${data.ignition_networkd_unit.network-dhcp.id}",
+    "${data.ignition_networkd_unit.network-dhcp.rendered}",
   ]
 
   systemd = [
-    "${data.ignition_systemd_unit.etcd-member[count.index].id}",
+    "${data.ignition_systemd_unit.etcd-member[count.index].rendered}",
   ]
 
   count = var.hosts
