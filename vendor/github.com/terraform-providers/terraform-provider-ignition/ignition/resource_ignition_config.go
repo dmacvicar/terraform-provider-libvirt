@@ -2,21 +2,22 @@ package ignition
 
 import (
 	"encoding/json"
-	"fmt"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/pkg/errors"
+
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 
 	"github.com/coreos/ignition/config/v2_1/types"
 )
 
 var configReferenceResource = &schema.Resource{
 	Schema: map[string]*schema.Schema{
-		"source": &schema.Schema{
+		"source": {
 			Type:     schema.TypeString,
 			ForceNew: true,
 			Required: true,
 		},
-		"verification": &schema.Schema{
+		"verification": {
 			Type:     schema.TypeString,
 			ForceNew: true,
 			Optional: true,
@@ -24,75 +25,75 @@ var configReferenceResource = &schema.Resource{
 	},
 }
 
-func resourceConfig() *schema.Resource {
+func dataSourceConfig() *schema.Resource {
 	return &schema.Resource{
 		Exists: resourceIgnitionFileExists,
 		Read:   resourceIgnitionFileRead,
 		Schema: map[string]*schema.Schema{
-			"disks": &schema.Schema{
+			"disks": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"arrays": &schema.Schema{
+			"arrays": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"filesystems": &schema.Schema{
+			"filesystems": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"files": &schema.Schema{
+			"files": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"directories": &schema.Schema{
+			"directories": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"links": &schema.Schema{
+			"links": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"systemd": &schema.Schema{
+			"systemd": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"networkd": &schema.Schema{
+			"networkd": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"users": &schema.Schema{
+			"users": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"groups": &schema.Schema{
+			"groups": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"replace": &schema.Schema{
+			"replace": {
 				Type:     schema.TypeList,
 				ForceNew: true,
 				Optional: true,
 				MaxItems: 1,
 				Elem:     configReferenceResource,
 			},
-			"append": &schema.Schema{
+			"append": {
 				Type:     schema.TypeList,
 				ForceNew: true,
 				Optional: true,
 				Elem:     configReferenceResource,
 			},
-			"rendered": &schema.Schema{
+			"rendered": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -101,7 +102,7 @@ func resourceConfig() *schema.Resource {
 }
 
 func resourceIgnitionFileRead(d *schema.ResourceData, meta interface{}) error {
-	rendered, err := renderConfig(d, globalCache)
+	rendered, err := renderConfig(d)
 	if err != nil {
 		return err
 	}
@@ -115,7 +116,7 @@ func resourceIgnitionFileRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceIgnitionFileExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	rendered, err := renderConfig(d, globalCache)
+	rendered, err := renderConfig(d)
 	if err != nil {
 		return false, err
 	}
@@ -123,8 +124,8 @@ func resourceIgnitionFileExists(d *schema.ResourceData, meta interface{}) (bool,
 	return hash(rendered) == d.Id(), nil
 }
 
-func renderConfig(d *schema.ResourceData, c *cache) (string, error) {
-	i, err := buildConfig(d, c)
+func renderConfig(d *schema.ResourceData) (string, error) {
+	i, err := buildConfig(d)
 	if err != nil {
 		return "", err
 	}
@@ -138,7 +139,7 @@ func renderConfig(d *schema.ResourceData, c *cache) (string, error) {
 	return string(bytes), nil
 }
 
-func buildConfig(d *schema.ResourceData, c *cache) (*types.Config, error) {
+func buildConfig(d *schema.ResourceData) (*types.Config, error) {
 	var err error
 	config := &types.Config{}
 	config.Ignition, err = buildIgnition(d)
@@ -146,22 +147,22 @@ func buildConfig(d *schema.ResourceData, c *cache) (*types.Config, error) {
 		return nil, err
 	}
 
-	config.Storage, err = buildStorage(d, c)
+	config.Storage, err = buildStorage(d)
 	if err != nil {
 		return nil, err
 	}
 
-	config.Systemd, err = buildSystemd(d, c)
+	config.Systemd, err = buildSystemd(d)
 	if err != nil {
 		return nil, err
 	}
 
-	config.Networkd, err = buildNetworkd(d, c)
+	config.Networkd, err = buildNetworkd(d)
 	if err != nil {
 		return nil, err
 	}
 
-	config.Passwd, err = buildPasswd(d, c)
+	config.Passwd, err = buildPasswd(d)
 	if err != nil {
 		return nil, err
 	}
@@ -210,151 +211,167 @@ func buildConfigReference(raw map[string]interface{}) (*types.ConfigReference, e
 	return r, nil
 }
 
-func buildStorage(d *schema.ResourceData, c *cache) (types.Storage, error) {
+func buildStorage(d *schema.ResourceData) (types.Storage, error) {
 	storage := types.Storage{}
 
-	for _, id := range d.Get("disks").([]interface{}) {
-		if id == nil {
+	for _, disk := range d.Get("disks").([]interface{}) {
+		if disk == nil {
 			continue
 		}
-		d, ok := c.disks[id.(string)]
-		if !ok {
-			return storage, fmt.Errorf("invalid disk %q, unknown disk id", id)
+
+		d := types.Disk{}
+		err := json.Unmarshal([]byte(disk.(string)), &d)
+		if err != nil {
+			return storage, errors.Wrap(err, "No valid JSON found, make sure you're using .rendered and not .id")
 		}
 
-		storage.Disks = append(storage.Disks, *d)
+		storage.Disks = append(storage.Disks, d)
 	}
 
-	for _, id := range d.Get("arrays").([]interface{}) {
-		if id == nil {
+	for _, array := range d.Get("arrays").([]interface{}) {
+		if array == nil {
 			continue
 		}
-		a, ok := c.arrays[id.(string)]
-		if !ok {
-			return storage, fmt.Errorf("invalid raid %q, unknown raid id", id)
+
+		a := types.Raid{}
+		err := json.Unmarshal([]byte(array.(string)), &a)
+		if err != nil {
+			return storage, errors.Wrap(err, "No valid JSON found, make sure you're using .rendered and not .id")
 		}
 
-		storage.Raid = append(storage.Raid, *a)
+		storage.Raid = append(storage.Raid, a)
 	}
 
-	for _, id := range d.Get("filesystems").([]interface{}) {
-		if id == nil {
+	for _, fs := range d.Get("filesystems").([]interface{}) {
+		if fs == nil {
 			continue
 		}
-		f, ok := c.filesystems[id.(string)]
-		if !ok {
-			return storage, fmt.Errorf("invalid filesystem %q, unknown filesystem id", id)
+
+		f := types.Filesystem{}
+		err := json.Unmarshal([]byte(fs.(string)), &f)
+		if err != nil {
+			return storage, errors.Wrap(err, "No valid JSON found, make sure you're using .rendered and not .id")
 		}
 
-		storage.Filesystems = append(storage.Filesystems, *f)
+		storage.Filesystems = append(storage.Filesystems, f)
 	}
 
-	for _, id := range d.Get("files").([]interface{}) {
-		if id == nil {
+	for _, file := range d.Get("files").([]interface{}) {
+		if file == nil {
 			continue
 		}
-		f, ok := c.files[id.(string)]
-		if !ok {
-			return storage, fmt.Errorf("invalid file %q, unknown file id", id)
+
+		f := types.File{}
+		err := json.Unmarshal([]byte(file.(string)), &f)
+		if err != nil {
+			return storage, errors.Wrap(err, "No valid JSON found, make sure you're using .rendered and not .id")
 		}
 
-		storage.Files = append(storage.Files, *f)
+		storage.Files = append(storage.Files, f)
 	}
 
-	for _, id := range d.Get("directories").([]interface{}) {
-		if id == nil {
+	for _, dir := range d.Get("directories").([]interface{}) {
+		if dir == nil {
 			continue
 		}
-		f, ok := c.directories[id.(string)]
-		if !ok {
-			return storage, fmt.Errorf("invalid file %q, unknown directory id", id)
+
+		f := types.Directory{}
+		err := json.Unmarshal([]byte(dir.(string)), &f)
+		if err != nil {
+			return storage, errors.Wrap(err, "No valid JSON found, make sure you're using .rendered and not .id")
 		}
 
-		storage.Directories = append(storage.Directories, *f)
+		storage.Directories = append(storage.Directories, f)
 	}
 
-	for _, id := range d.Get("links").([]interface{}) {
-		if id == nil {
+	for _, link := range d.Get("links").([]interface{}) {
+		if link == nil {
 			continue
 		}
-		f, ok := c.links[id.(string)]
-		if !ok {
-			return storage, fmt.Errorf("invalid file %q, unknown link id", id)
+
+		f := types.Link{}
+		err := json.Unmarshal([]byte(link.(string)), &f)
+		if err != nil {
+			return storage, errors.Wrap(err, "No valid JSON found, make sure you're using .rendered and not .id")
 		}
 
-		storage.Links = append(storage.Links, *f)
+		storage.Links = append(storage.Links, f)
 	}
 
 	return storage, nil
 
 }
 
-func buildSystemd(d *schema.ResourceData, c *cache) (types.Systemd, error) {
+func buildSystemd(d *schema.ResourceData) (types.Systemd, error) {
 	systemd := types.Systemd{}
 
-	for _, id := range d.Get("systemd").([]interface{}) {
-		if id == nil {
+	for _, unit := range d.Get("systemd").([]interface{}) {
+		if unit == nil {
 			continue
 		}
 
-		u, ok := c.systemdUnits[id.(string)]
-		if !ok {
-			return systemd, fmt.Errorf("invalid systemd unit %q, unknown systemd unit id", id)
+		u := types.Unit{}
+		err := json.Unmarshal([]byte(unit.(string)), &u)
+		if err != nil {
+			return systemd, errors.Wrap(err, "No valid JSON found, make sure you're using .rendered and not .id")
 		}
 
-		systemd.Units = append(systemd.Units, *u)
+		systemd.Units = append(systemd.Units, u)
 	}
 
 	return systemd, nil
 
 }
 
-func buildNetworkd(d *schema.ResourceData, c *cache) (types.Networkd, error) {
+func buildNetworkd(d *schema.ResourceData) (types.Networkd, error) {
 	networkd := types.Networkd{}
 
-	for _, id := range d.Get("networkd").([]interface{}) {
-		if id == nil {
+	for _, unit := range d.Get("networkd").([]interface{}) {
+		if unit == nil {
 			continue
 		}
 
-		u, ok := c.networkdUnits[id.(string)]
-		if !ok {
-			return networkd, fmt.Errorf("invalid networkd unit %q, unknown networkd unit id", id)
+		u := types.Networkdunit{}
+		err := json.Unmarshal([]byte(unit.(string)), &u)
+		if err != nil {
+			return networkd, errors.Wrap(err, "No valid JSON found, make sure you're using .rendered and not .id")
 		}
 
-		networkd.Units = append(networkd.Units, *u)
+		networkd.Units = append(networkd.Units, u)
 	}
 
 	return networkd, nil
 }
 
-func buildPasswd(d *schema.ResourceData, c *cache) (types.Passwd, error) {
+func buildPasswd(d *schema.ResourceData) (types.Passwd, error) {
 	passwd := types.Passwd{}
 
-	for _, id := range d.Get("users").([]interface{}) {
-		if id == nil {
+	for _, user := range d.Get("users").([]interface{}) {
+		if user == nil {
 			continue
 		}
 
-		u, ok := c.users[id.(string)]
-		if !ok {
-			return passwd, fmt.Errorf("invalid user %q, unknown user id", id)
+		u := types.PasswdUser{}
+		err := json.Unmarshal([]byte(user.(string)), &u)
+		if err != nil {
+			return passwd, errors.Wrap(err, "No valid JSON found, make sure you're using .rendered and not .id")
 		}
 
-		passwd.Users = append(passwd.Users, *u)
+		passwd.Users = append(passwd.Users, u)
 	}
 
-	for _, id := range d.Get("groups").([]interface{}) {
-		if id == nil {
+	for _, group := range d.Get("groups").([]interface{}) {
+		if group == nil {
 			continue
 		}
 
-		g, ok := c.groups[id.(string)]
-		if !ok {
-			return passwd, fmt.Errorf("invalid group %q, unknown group id", id)
+		g := types.PasswdGroup{}
+		err := json.Unmarshal([]byte(group.(string)), &g)
+		if err != nil {
+			return passwd, errors.Wrap(err, "No valid JSON found, make sure you're using .rendered and not .id")
 		}
 
-		passwd.Groups = append(passwd.Groups, *g)
+		passwd.Groups = append(passwd.Groups, g)
 	}
 
 	return passwd, nil

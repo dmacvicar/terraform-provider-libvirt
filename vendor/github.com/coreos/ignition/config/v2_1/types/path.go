@@ -15,17 +15,14 @@
 package types
 
 import (
-	"errors"
 	"path"
-)
 
-var (
-	ErrPathRelative = errors.New("path not absolute")
+	"github.com/coreos/ignition/config/shared/errors"
 )
 
 func validatePath(p string) error {
 	if !path.IsAbs(p) {
-		return ErrPathRelative
+		return errors.ErrPathRelative
 	}
 	return nil
 }

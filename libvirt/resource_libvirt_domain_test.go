@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/acctest"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	libvirt "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
@@ -772,7 +772,7 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 
 	data "ignition_config" "acceptance-test-config" {
 		systemd = [
-		"${data.ignition_systemd_unit.acceptance-test-systemd.id}",
+		"${data.ignition_systemd_unit.acceptance-test-systemd.rendered}",
 		]
 	}
 
@@ -1898,7 +1898,7 @@ func TestAccLibvirtDomain_FwCfgName(t *testing.T) {
 
 	data "ignition_config" "acceptance-test-config-fw-cfg" {
 		systemd = [
-		"${data.ignition_systemd_unit.acceptance-test-systemd.id}",
+		"${data.ignition_systemd_unit.acceptance-test-systemd.rendered}",
 		]
 	}
 

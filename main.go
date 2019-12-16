@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt"
-	"github.com/hashicorp/terraform/plugin"
+	"github.com/hashicorp/terraform-plugin-sdk/plugin"
 	libvirtgo "github.com/libvirt/libvirt-go"
 )
 

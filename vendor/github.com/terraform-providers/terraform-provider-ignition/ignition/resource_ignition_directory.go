@@ -1,46 +1,52 @@
 package ignition
 
 import (
+	"encoding/json"
+
 	"github.com/coreos/ignition/config/v2_1/types"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func resourceDirectory() *schema.Resource {
+func dataSourceDirectory() *schema.Resource {
 	return &schema.Resource{
 		Exists: resourceDirectoryExists,
 		Read:   resourceDirectoryRead,
 		Schema: map[string]*schema.Schema{
-			"filesystem": &schema.Schema{
+			"filesystem": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"path": &schema.Schema{
+			"path": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"mode": &schema.Schema{
+			"mode": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
 			},
-			"uid": &schema.Schema{
+			"uid": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
 			},
-			"gid": &schema.Schema{
+			"gid": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
+			},
+			"rendered": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 	}
 }
 
 func resourceDirectoryRead(d *schema.ResourceData, meta interface{}) error {
-	id, err := buildDirectory(d, globalCache)
+	id, err := buildDirectory(d)
 	if err != nil {
 		return err
 	}
@@ -50,7 +56,7 @@ func resourceDirectoryRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceDirectoryExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	id, err := buildDirectory(d, globalCache)
+	id, err := buildDirectory(d)
 	if err != nil {
 		return false, err
 	}
@@ -58,7 +64,7 @@ func resourceDirectoryExists(d *schema.ResourceData, meta interface{}) (bool, er
 	return id == d.Id(), nil
 }
 
-func buildDirectory(d *schema.ResourceData, c *cache) (string, error) {
+func buildDirectory(d *schema.ResourceData) (string, error) {
 	dir := &types.Directory{}
 	dir.Filesystem = d.Get("filesystem").(string)
 	if err := handleReport(dir.ValidateFilesystem()); err != nil {
@@ -85,5 +91,11 @@ func buildDirectory(d *schema.ResourceData, c *cache) (string, error) {
 		dir.Group = types.NodeGroup{ID: &gid}
 	}
 
-	return c.addDirectory(dir), nil
+	b, err := json.Marshal(dir)
+	if err != nil {
+		return "", err
+	}
+	d.Set("rendered", string(b))
+
+	return hash(string(b)), nil
 }

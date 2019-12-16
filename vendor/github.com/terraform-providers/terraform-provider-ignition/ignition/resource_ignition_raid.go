@@ -1,42 +1,48 @@
 package ignition
 
 import (
+	"encoding/json"
+
 	"github.com/coreos/ignition/config/v2_1/types"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func resourceRaid() *schema.Resource {
+func dataSourceRaid() *schema.Resource {
 	return &schema.Resource{
 		Exists: resourceRaidExists,
 		Read:   resourceRaidRead,
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"level": &schema.Schema{
+			"level": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"devices": &schema.Schema{
+			"devices": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
-			"spares": &schema.Schema{
+			"spares": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
+			},
+			"rendered": {
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 	}
 }
 
 func resourceRaidRead(d *schema.ResourceData, meta interface{}) error {
-	id, err := buildRaid(d, globalCache)
+	id, err := buildRaid(d)
 	if err != nil {
 		return err
 	}
@@ -46,7 +52,7 @@ func resourceRaidRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceRaidExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	id, err := buildRaid(d, globalCache)
+	id, err := buildRaid(d)
 	if err != nil {
 		return false, err
 	}
@@ -54,7 +60,7 @@ func resourceRaidExists(d *schema.ResourceData, meta interface{}) (bool, error) 
 	return id == d.Id(), nil
 }
 
-func buildRaid(d *schema.ResourceData, c *cache) (string, error) {
+func buildRaid(d *schema.ResourceData) (string, error) {
 	raid := &types.Raid{
 		Name:   d.Get("name").(string),
 		Level:  d.Get("level").(string),
@@ -73,5 +79,11 @@ func buildRaid(d *schema.ResourceData, c *cache) (string, error) {
 		return "", err
 	}
 
-	return c.addRaid(raid), nil
+	b, err := json.Marshal(raid)
+	if err != nil {
+		return "", err
+	}
+	d.Set("rendered", string(b))
+
+	return hash(string(b)), nil
 }

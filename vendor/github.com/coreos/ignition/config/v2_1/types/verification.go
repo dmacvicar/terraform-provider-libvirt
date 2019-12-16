@@ -17,16 +17,10 @@ package types
 import (
 	"crypto"
 	"encoding/hex"
-	"errors"
 	"strings"
 
+	"github.com/coreos/ignition/config/shared/errors"
 	"github.com/coreos/ignition/config/validate/report"
-)
-
-var (
-	ErrHashMalformed    = errors.New("malformed hash specifier")
-	ErrHashWrongSize    = errors.New("incorrect size for hash sum")
-	ErrHashUnrecognized = errors.New("unrecognized hash function")
 )
 
 // HashParts will return the sum and function (in that order) of the hash stored
@@ -38,7 +32,7 @@ func (v Verification) HashParts() (string, string, error) {
 	}
 	parts := strings.SplitN(*v.Hash, "-", 2)
 	if len(parts) != 2 {
-		return "", "", ErrHashMalformed
+		return "", "", errors.ErrHashMalformed
 	}
 
 	return parts[0], parts[1], nil
@@ -66,7 +60,7 @@ func (v Verification) Validate() report.Report {
 		hash = crypto.SHA512
 	default:
 		r.Add(report.Entry{
-			Message: ErrHashUnrecognized.Error(),
+			Message: errors.ErrHashUnrecognized.Error(),
 			Kind:    report.EntryError,
 		})
 		return r
@@ -74,7 +68,7 @@ func (v Verification) Validate() report.Report {
 
 	if len(sum) != hex.EncodedLen(hash.Size()) {
 		r.Add(report.Entry{
-			Message: ErrHashWrongSize.Error(),
+			Message: errors.ErrHashWrongSize.Error(),
 			Kind:    report.EntryError,
 		})
 	}

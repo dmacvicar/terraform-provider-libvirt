@@ -15,8 +15,7 @@
 package types
 
 import (
-	"fmt"
-
+	"github.com/coreos/ignition/config/shared/errors"
 	"github.com/coreos/ignition/config/validate/report"
 )
 
@@ -26,7 +25,7 @@ func (n Raid) ValidateLevel() report.Report {
 	case "linear", "raid0", "0", "stripe":
 		if n.Spares != 0 {
 			r.Add(report.Entry{
-				Message: fmt.Sprintf("spares unsupported for %q arrays", n.Level),
+				Message: errors.ErrSparesUnsupportedForLevel.Error(),
 				Kind:    report.EntryError,
 			})
 		}
@@ -37,7 +36,7 @@ func (n Raid) ValidateLevel() report.Report {
 	case "raid10", "10":
 	default:
 		r.Add(report.Entry{
-			Message: fmt.Sprintf("unrecognized raid level: %q", n.Level),
+			Message: errors.ErrUnrecognizedRaidLevel.Error(),
 			Kind:    report.EntryError,
 		})
 	}
@@ -49,7 +48,7 @@ func (n Raid) ValidateDevices() report.Report {
 	for _, d := range n.Devices {
 		if err := validatePath(string(d)); err != nil {
 			r.Add(report.Entry{
-				Message: fmt.Sprintf("array %q: device path not absolute: %q", n.Name, d),
+				Message: errors.ErrPathRelative.Error(),
 				Kind:    report.EntryError,
 			})
 		}

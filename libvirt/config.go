@@ -1,7 +1,7 @@
 package libvirt
 
 import (
-	"github.com/hashicorp/terraform/helper/mutexkv"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/mutexkv"
 	libvirt "github.com/libvirt/libvirt-go"
 	"log"
 )

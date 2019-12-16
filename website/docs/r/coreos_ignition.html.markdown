@@ -63,7 +63,7 @@ data "ignition_systemd_unit" "example" {
 # Ignition config include the previous defined systemd unit data source
 data "ignition_config" "example" {
   systemd = [
-      "data.ignition_systemd_unit.example.id",
+      "data.ignition_systemd_unit.example.rendered",
   ]
 }
 

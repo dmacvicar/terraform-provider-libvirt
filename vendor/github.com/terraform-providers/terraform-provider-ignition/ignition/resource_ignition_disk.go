@@ -1,52 +1,54 @@
 package ignition
 
 import (
+	"encoding/json"
+
 	"github.com/coreos/ignition/config/v2_1/types"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func resourceDisk() *schema.Resource {
+func dataSourceDisk() *schema.Resource {
 	return &schema.Resource{
 		Exists: resourceDiskExists,
 		Read:   resourceDiskRead,
 		Schema: map[string]*schema.Schema{
-			"device": &schema.Schema{
+			"device": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"wipe_table": &schema.Schema{
+			"wipe_table": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
 			},
-			"partition": &schema.Schema{
+			"partition": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"label": &schema.Schema{
+						"label": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
 						},
-						"number": &schema.Schema{
+						"number": {
 							Type:     schema.TypeInt,
 							Optional: true,
 							ForceNew: true,
 						},
-						"size": &schema.Schema{
+						"size": {
 							Type:     schema.TypeInt,
 							Optional: true,
 							ForceNew: true,
 						},
-						"start": &schema.Schema{
+						"start": {
 							Type:     schema.TypeInt,
 							Optional: true,
 							ForceNew: true,
 						},
-						"type_guid": &schema.Schema{
+						"type_guid": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
@@ -54,12 +56,16 @@ func resourceDisk() *schema.Resource {
 					},
 				},
 			},
+			"rendered": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
 
 func resourceDiskRead(d *schema.ResourceData, meta interface{}) error {
-	id, err := buildDisk(d, globalCache)
+	id, err := buildDisk(d)
 	if err != nil {
 		return err
 	}
@@ -69,7 +75,7 @@ func resourceDiskRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceDiskExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	id, err := buildDisk(d, globalCache)
+	id, err := buildDisk(d)
 	if err != nil {
 		return false, err
 	}
@@ -77,7 +83,7 @@ func resourceDiskExists(d *schema.ResourceData, meta interface{}) (bool, error) 
 	return id == d.Id(), nil
 }
 
-func buildDisk(d *schema.ResourceData, c *cache) (string, error) {
+func buildDisk(d *schema.ResourceData) (string, error) {
 	disk := &types.Disk{
 		Device:    d.Get("device").(string),
 		WipeTable: d.Get("wipe_table").(bool),
@@ -116,5 +122,11 @@ func buildDisk(d *schema.ResourceData, c *cache) (string, error) {
 		return "", err
 	}
 
-	return c.addDisk(disk), nil
+	b, err := json.Marshal(disk)
+	if err != nil {
+		return "", err
+	}
+	d.Set("rendered", string(b))
+
+	return hash(string(b)), nil
 }

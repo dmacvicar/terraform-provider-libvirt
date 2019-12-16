@@ -4,17 +4,17 @@
 
 data "ignition_config" "startup" {
   users = [
-    data.ignition_user.core.id,
+    data.ignition_user.core.rendered,
   ]
 
   files = [
-    element(data.ignition_file.hostname.*.id, count.index),
+    element(data.ignition_file.hostname.*.rendered, count.index),
   ]
 
   ## Relevant for the QEMU Guest Agent example
   #systemd = [
-  #  "${data.ignition_systemd_unit.mount-images.id}",
-  #  "${data.ignition_systemd_unit.qemu-agent.id}"
+  #  "${data.ignition_systemd_unit.mount-images.rendered}",
+  #  "${data.ignition_systemd_unit.qemu-agent.rendered}"
   #]
   count = var.hosts
 }

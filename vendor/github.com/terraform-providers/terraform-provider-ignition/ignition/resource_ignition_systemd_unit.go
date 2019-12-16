@@ -1,11 +1,13 @@
 package ignition
 
 import (
+	"encoding/json"
+
 	"github.com/coreos/ignition/config/v2_1/types"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-func resourceSystemdUnit() *schema.Resource {
+func dataSourceSystemdUnit() *schema.Resource {
 	return &schema.Resource{
 		Exists: resourceSystemdUnitExists,
 		Read:   resourceSystemdUnitRead,
@@ -50,12 +52,16 @@ func resourceSystemdUnit() *schema.Resource {
 					},
 				},
 			},
+			"rendered": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
 
 func resourceSystemdUnitRead(d *schema.ResourceData, meta interface{}) error {
-	id, err := buildSystemdUnit(d, globalCache)
+	id, err := buildSystemdUnit(d)
 	if err != nil {
 		return err
 	}
@@ -65,7 +71,7 @@ func resourceSystemdUnitRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceSystemdUnitExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	id, err := buildSystemdUnit(d, globalCache)
+	id, err := buildSystemdUnit(d)
 	if err != nil {
 		return false, err
 	}
@@ -73,7 +79,7 @@ func resourceSystemdUnitExists(d *schema.ResourceData, meta interface{}) (bool, 
 	return id == d.Id(), nil
 }
 
-func buildSystemdUnit(d *schema.ResourceData, c *cache) (string, error) {
+func buildSystemdUnit(d *schema.ResourceData) (string, error) {
 	enabled := d.Get("enabled").(bool)
 	unit := &types.Unit{
 		Name:     d.Get("name").(string),
@@ -105,5 +111,11 @@ func buildSystemdUnit(d *schema.ResourceData, c *cache) (string, error) {
 		unit.Dropins = append(unit.Dropins, d)
 	}
 
-	return c.addSystemdUnit(unit), nil
+	b, err := json.Marshal(unit)
+	if err != nil {
+		return "", err
+	}
+	d.Set("rendered", string(b))
+
+	return hash(string(b)), nil
 }
