@@ -432,8 +432,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		if networkDef.Bridge.Name == "" {
 			return fmt.Errorf("'bridge' must be provided when using the bridged network mode")
 		}
-		// Bridges cannot forward
-		networkDef.Forward = nil
+		networkDef.Bridge.STP = ""
 	} else {
 		return fmt.Errorf("unsupported network mode '%s'", networkDef.Forward.Mode)
 	}
