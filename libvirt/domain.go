@@ -201,9 +201,9 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string, arch string) (libvirtxml.DomainDisk, error) {
 	var target *libvirtxml.DomainDiskTarget
 	switch arch {
-	case "s390", "s390x":
+	case "s390", "s390x", "ppc64", "ppc64le":
 		target = &libvirtxml.DomainDiskTarget{
-			// s390 platform doesn't support IDE controllers
+			// s390 and ppc64 platforms don't support IDE controllers
 			Dev: "vdb",
 			Bus: "scsi",
 		}
@@ -269,8 +269,8 @@ func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, vir
 					},
 				}
 			}
-		case "s390", "s390x":
-			// System Z does not support any of the same pass-through
+		case "s390", "s390x", "ppc64", "ppc64le":
+			// System Z and PowerPC do not support any of the same pass-through
 			// mechanisms as Ignition. As a temporary workaround, the OpenStack
 			// Config Drive can be used instead. The Ignition volume already
 			// contains a Config Drive at this point.
@@ -303,7 +303,8 @@ func setVideo(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
 }
 
 func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch string) error {
-	if arch == "s390x" || arch == "ppc64" {
+        // For s390x, ppc64 and ppc64le spice is not supported
+	if arch == "s390x" || strings.HasPrefix(arch, "ppc64") {
 		domainDef.Devices.Graphics = nil
 		return nil
 	}
