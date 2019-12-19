@@ -76,7 +76,7 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 	switch arch {
 	case "i686", "x86_64", "aarch64":
 		userdataPath = ignPath
-	case "s390", "s390x":
+	case "s390", "s390x", "ppc64", "ppc64le":
 		configDrivePath := filepath.Join(tmpDir, "config.iso")
 		cmd := exec.Command(
 			"mkisofs",
