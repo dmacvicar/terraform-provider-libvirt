@@ -102,6 +102,26 @@ make install
 
 You will now find the binary at `$GOPATH/bin/terraform-provider-libvirt`.
 
+#### Windows
+
+To build it on Windows (64bit) one can use MinGW64 (http://www.msys2.org/)
+
+Install Golang on Windows  
+Clone terraform-provider-libvirt repository  
+Open MinGW64 Console
+```console
+pacman -S mingw-w64-x86_64-libvirt
+export PATH=$PATH:/c/Go/bin
+pacman -S mingw-w64-x86_64-pkg-config
+pacman -S mingw-w64-x86_64-glib2
+pacman -S mingw-w64-x86_64-dbus-glib
+pacman -S mingw-w64-x86_64-libssh
+pacman -S mingw-w64-x86_64-yajl
+export GO111MODULE=on
+export GOFLAGS=-mod=vendor
+go install
+```
+
 # Installing
 
 *  Check that libvirt daemon 1.2.14 or newer is running on the hypervisor (`virsh version --daemon`)
