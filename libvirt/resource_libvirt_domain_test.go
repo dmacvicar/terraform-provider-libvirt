@@ -1210,10 +1210,10 @@ func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel
 	}
 }
 
-// Creates a temporary block device and mounts it to an available loop device
-// Returns a the full path to the block device and the associated loop device
+// Creates a temporary file and attaches it to an available loop device
+// Returns a the full path to the temporary file and the associated loop device
 func createTempBlockDev(devname string) (string, string, error) {
-	fmt.Printf("Creating a temporary block device\n")
+	fmt.Printf("Creating a temporary file for loop device\n")
 
 	// Create a 1MB temp file
 	filename := "/tmp/" + devname
@@ -1241,10 +1241,10 @@ func createTempBlockDev(devname string) (string, string, error) {
 	cmd = exec.Command("sudo", "/sbin/losetup", "--read-only", strings.TrimRight(string(loopdev), "\n"), filename)
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
-		return "", "", fmt.Errorf("Error mounting block device: %s", err)
+		return "", "", fmt.Errorf("Error setting up loop device: %s", err)
 	}
 
-	log.Printf("Temporary block device %s mounted at %s", filename, loopdev)
+	log.Printf("Temporary file %s attached to loop device %s", filename, loopdev)
 
 	return filename, strings.TrimRight(string(loopdev), "\n"), nil
 }
