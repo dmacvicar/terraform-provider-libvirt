@@ -315,12 +315,12 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 	randomDeviceName := acctest.RandStringFromCharSet(33, acctest.CharSetAlpha)
 
 	tmpfile, loopdev, err := createTempBlockDev(randomDeviceName)
-	defer func() {		
+	defer func() {
 		if err := os.Remove(tmpfile); err != nil {
 			log.Printf("Error removing temporary file %s: %s\n", tmpfile, err)
 		}
 	}()
-	
+
 	defer func() {
 		cmd := exec.Command("sudo", "/sbin/losetup", "--detach", loopdev)
 		if err := cmd.Run(); err != nil {
