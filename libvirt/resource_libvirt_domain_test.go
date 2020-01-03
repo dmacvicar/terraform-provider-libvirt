@@ -1246,7 +1246,7 @@ func createTempBlockDev(devname string) (string, string, error) {
 	loopdev := strings.TrimRight(string(loopdevStr), "\n")
 
 	// give the same permissions to the loop device as the backing file
-	cmd = exec.Command("chown", "--reference", filename, loopdev)
+	cmd = exec.Command("sudo", "chown", "--reference", filename, loopdev)
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
 		return "", "", fmt.Errorf("Error copying permissions from %s: %s", filename, err)
