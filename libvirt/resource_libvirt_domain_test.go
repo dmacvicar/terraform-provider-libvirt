@@ -1224,7 +1224,7 @@ func createTempBlockDev(devname string) (string, string, error) {
 
 	// Create a 1MB temp file
 	filename := filepath.Join(os.TempDir(), devname)
-	cmd := exec.Command("dd", "if=/dev/urandom", "of="+filename, "bs=1024", "count=1024")
+	cmd := exec.Command("dd", "if=/dev/zero", "of="+filename, "bs=1024", "count=1024")
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
 		return "", "", fmt.Errorf("Error creating file %s: %s", filename, err)
@@ -1238,14 +1238,22 @@ func createTempBlockDev(devname string) (string, string, error) {
 	}
 
 	// Find an available loop device
-	loopdev, err := exec.Command("/sbin/losetup", "--find").Output()
+	loopdevStr, err := exec.Command("/sbin/losetup", "--find").Output()
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err != nil {
 		return "", "", fmt.Errorf("Error searching for available loop device: %s", err)
 	}
+	loopdev := strings.TrimRight(string(loopdevStr), "\n")
+
+	// give the same permissions to the loop device as the backing file
+	cmd = exec.Command("chown", "--reference", filename, loopdev)
+	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
+	if err := cmd.Run(); err != nil {
+		return "", "", fmt.Errorf("Error copying permissions from %s: %s", filename, err)
+	}
 
 	// Mount the file to a loop device
-	cmd = exec.Command("sudo", "/sbin/losetup", strings.TrimRight(string(loopdev), "\n"), filename)
+	cmd = exec.Command("sudo", "/sbin/losetup", loopdev, filename)
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
 		return "", "", fmt.Errorf("Error setting up loop device: %s", err)
