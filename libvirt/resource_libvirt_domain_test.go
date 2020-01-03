@@ -1238,7 +1238,7 @@ func createTempBlockDev(devname string) (string, string, error) {
 	}
 
 	// Mount the file to a loop device
-	cmd = exec.Command("sudo", "/sbin/losetup", "--read-only", strings.TrimRight(string(loopdev), "\n"), filename)
+	cmd = exec.Command("sudo", "/sbin/losetup", strings.TrimRight(string(loopdev), "\n"), filename)
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
 		return "", "", fmt.Errorf("Error setting up loop device: %s", err)
