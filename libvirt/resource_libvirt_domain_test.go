@@ -314,7 +314,19 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDeviceName := acctest.RandStringFromCharSet(33, acctest.CharSetAlpha)
 
-	_, loopdev, err := createTempBlockDev(randomDeviceName)
+	tmpfile, loopdev, err := createTempBlockDev(randomDeviceName)
+	defer func() {		
+		if err := os.Remove(tmpfile); err != nil {
+			log.Printf("Error removing temporary file %s: %s\n", tmpfile, err)
+		}
+	}()
+	
+	defer func() {
+		cmd := exec.Command("sudo", "/sbin/losetup", "--detach", loopdev)
+		if err := cmd.Run(); err != nil {
+			log.Printf("Error detaching loop device %s: %s\n", loopdev, err)
+		}
+	}()
 
 	if err != nil {
 		t.Fatal(err)
@@ -345,11 +357,6 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 			},
 		},
 	})
-
-	cmd := exec.Command("sudo", "/sbin/losetup", "--detach", loopdev)
-	if err := cmd.Run(); err != nil {
-		log.Printf("Error detaching loop device %s: %s\n", loopdev, err)
-	}
 }
 
 /* FIXME: Disable for now. It fails with:
