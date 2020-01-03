@@ -1216,7 +1216,7 @@ func createTempBlockDev(devname string) (string, string, error) {
 	fmt.Printf("Creating a temporary file for loop device\n")
 
 	// Create a 1MB temp file
-	filename := "/tmp/" + devname
+	filename := filepath.Join(os.TempDir(), devname)
 	cmd := exec.Command("dd", "if=/dev/urandom", "of="+filename, "bs=1024", "count=1024")
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
