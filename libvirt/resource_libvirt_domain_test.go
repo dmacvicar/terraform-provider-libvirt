@@ -314,7 +314,7 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDeviceName := acctest.RandStringFromCharSet(33, acctest.CharSetAlpha)
 
-	tmpfile, loopdev, err := createTempBlockDev(randomDeviceName)
+	_, loopdev, err := createTempBlockDev(randomDeviceName)
 
 	if err != nil {
 		t.Fatal(err)
@@ -329,7 +329,7 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 			block_device = "%s"
 		}
 
-	}`, randomDomainName, randomDomainName, tmpfile)
+	}`, randomDomainName, randomDomainName, loopdev)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -340,7 +340,7 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 				Config: configBlockDevice,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
-					testAccCheckLibvirtBlockDevice(tmpfile, &domain),
+					testAccCheckLibvirtBlockDevice(loopdev, &domain),
 				),
 			},
 		},
