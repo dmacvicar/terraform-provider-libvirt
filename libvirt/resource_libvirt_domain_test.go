@@ -346,7 +346,7 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 		},
 	})
 
-	cmd := exec.Command("sudo", "losetup", "--detach", loopdev)
+	cmd := exec.Command("sudo", "/sbin/losetup", "--detach", loopdev)
 	if err := cmd.Run(); err != nil {
 		log.Printf("Error detaching loop device %s: %s\n", loopdev, err)
 	}
@@ -1224,21 +1224,21 @@ func createTempBlockDev(devname string) (string, string, error) {
 	}
 
 	// Format the file
-	cmd = exec.Command("mkfs.ext4", "-F", "-q", filename)
+	cmd = exec.Command("/sbin/mkfs.ext4", "-F", "-q", filename)
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
 		return "", "", fmt.Errorf("Error formatting file system: %s", err)
 	}
 
 	// Find an available loop device
-	loopdev, err := exec.Command("losetup", "--find").Output()
+	loopdev, err := exec.Command("/sbin/losetup", "--find").Output()
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err != nil {
 		return "", "", fmt.Errorf("Error searching for available loop device: %s", err)
 	}
 
 	// Mount the file to a loop device
-	cmd = exec.Command("sudo", "losetup", "--read-only", strings.TrimRight(string(loopdev), "\n"), filename)
+	cmd = exec.Command("sudo", "/sbin/losetup", "--read-only", strings.TrimRight(string(loopdev), "\n"), filename)
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
 		return "", "", fmt.Errorf("Error mounting block device: %s", err)
