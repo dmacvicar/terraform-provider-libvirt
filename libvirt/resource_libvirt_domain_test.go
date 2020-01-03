@@ -1238,7 +1238,8 @@ func createTempBlockDev(devname string) (string, string, error) {
 	}
 
 	// Find an available loop device
-	loopdevStr, err := exec.Command("/sbin/losetup", "--find").Output()
+	cmd = exec.Command("/sbin/losetup", "--find")
+	loopdevStr, err := cmd.Output()
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err != nil {
 		return "", "", fmt.Errorf("Error searching for available loop device: %s", err)
