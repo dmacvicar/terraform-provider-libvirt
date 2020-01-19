@@ -35,6 +35,18 @@ func getCanonicalMachineName(caps libvirtxml.Caps, arch string, virttype string,
 			return machine.Name, nil
 		}
 	}
+
+	for _, domain := range guest.Arch.Domains {
+		for _, machine := range domain.Machines {
+			if machine.Name == targetmachine {
+				if machine.Canonical != "" {
+					return machine.Canonical, nil
+				}
+				return machine.Name, nil
+			}
+		}
+	}
+
 	return "", fmt.Errorf("[WARN] Cannot find machine type %s for %s/%s in %v", targetmachine, virttype, arch, caps)
 }
 
