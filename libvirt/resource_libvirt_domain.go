@@ -159,7 +159,6 @@ func resourceLibvirtDomain() *schema.Resource {
 						"scsi": {
 							Type:     schema.TypeBool,
 							Optional: true,
-							Default:  false,
 						},
 						"wwn": {
 							Type:     schema.TypeString,
