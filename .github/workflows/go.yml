@@ -13,6 +13,9 @@ jobs:
         go-version: 1.13
       id: go
 
+    - name: Install libvirt devel
+      run: apt-get update && apt-get install libvirt libvirt-dev
+
     - name: Check out code into the Go module directory
       uses: actions/checkout@v1
 
