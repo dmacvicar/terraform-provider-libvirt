@@ -441,6 +441,8 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 		}
 
 		autoport := d.Get(prefix + ".autoport").(bool)
+		port := d.Get(prefix + ".port").(int)
+		passwd := d.Get(prefix + ".passwd").(string)
 		listener := libvirtxml.DomainGraphicListener{}
 
 		if listenType, ok := d.GetOk(prefix + ".listen_type"); ok {
@@ -473,6 +475,14 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 				VNC: &libvirtxml.DomainGraphicVNC{},
 			}
 			domainDef.Devices.Graphics[0].VNC.AutoPort = formatBoolYesNo(autoport)
+			if autoport == false {
+				domainDef.Devices.Graphics[0].VNC.Port = port
+			}else{
+				domainDef.Devices.Graphics[0].VNC.Port = -1
+			}
+			if passwd =! '' {
+				domainDef.Devices.Graphics[0].VNC.Passwd = passwd
+			}
 			domainDef.Devices.Graphics[0].VNC.Listeners = []libvirtxml.DomainGraphicListener{
 				listener,
 			}

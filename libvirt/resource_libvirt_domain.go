@@ -236,6 +236,14 @@ func resourceLibvirtDomain() *schema.Resource {
 							Optional: true,
 							Default:  "spice",
 						},
+						"port": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
+						"passwd": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
 						"autoport": {
 							Type:     schema.TypeBool,
 							Optional: true,
