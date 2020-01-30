@@ -480,7 +480,7 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 			}else{
 				domainDef.Devices.Graphics[0].VNC.Port = -1
 			}
-			if passwd =! '' {
+			if len(passwd) > 0 {
 				domainDef.Devices.Graphics[0].VNC.Passwd = passwd
 			}
 			domainDef.Devices.Graphics[0].VNC.Listeners = []libvirtxml.DomainGraphicListener{
