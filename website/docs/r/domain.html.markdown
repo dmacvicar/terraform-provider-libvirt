@@ -415,6 +415,22 @@ resource "libvirt_domain" "my_machine" {
 }
 ```
 
+To have more control of VNC access:
+
+```hcl
+resource "libvirt_domain" "my_machine" {
+  ...
+  graphics {
+    type           = "vnc"
+    listen_type    = "address"
+    port           = "5901"
+    passwd         = "apasswordphrase"
+    listen_address = "127.0.0.1"
+    autoport       = "false"
+  }
+}
+```
+
 The video card type can be changed from libvirt default `cirrus` to
 `vga` or others as described in [Video Card Elements](https://libvirt.org/formatdomain.html#elementsVideo)
 
