@@ -66,10 +66,6 @@ func TestAccLibvirtDomain_Description(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomResourceName, "name", randomDomainName),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomResourceName, "memory", "512"),
-					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomResourceName, "vcpu", "1"),
-                    resource.TestCheckResourceAttr(
                         "libvirt_domain."+randomResourceName, "description", "unit test description"),
 				),
 			},
