@@ -566,10 +566,15 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
+	// We save runnig state to not mix what we have and what we want
+	requiredStatus := d.Get("running")
+
 	err = resourceLibvirtDomainRead(d, meta)
 	if err != nil {
 		return err
 	}
+
+	d.Set("running", requiredStatus)
 
 	// we must read devices again in order to set some missing ip/MAC/host mappings
 	for i := 0; i < d.Get("network_interface.#").(int); i++ {
@@ -740,6 +745,11 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error reading domain autostart setting: %s", err)
 	}
 
+	domainRunningNow, err := domainIsRunning(*domain)
+	if err != nil {
+		return fmt.Errorf("Error reading domain running state : %s", err)
+	}
+
 	d.Set("name", domainDef.Name)
 	d.Set("vcpu", domainDef.VCPU)
 	d.Set("memory", domainDef.Memory)
@@ -748,6 +758,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("cpu", domainDef.CPU)
 	d.Set("arch", domainDef.OS.Type.Arch)
 	d.Set("autostart", autostart)
+	d.Set("running", domainRunningNow)
 
 	cmdLines, err := splitKernelCmdLine(domainDef.OS.Cmdline)
 	if err != nil {
