@@ -25,6 +25,9 @@ The following arguments are supported:
 
 * `name` - (Required) A unique name for the resource, required by libvirt.
   Changing this forces a new resource to be created.
+* `description` - (Optional) The description for domain.
+  Changing this forces a new resource to be created.
+  This data is not used by libvirt in any way, it can contain any information the user wants.
 * `cpu` - (Optional) Configures CPU mode. See [below](#cpu-mode) for more
   details.
 * `vcpu` - (Optional) The amount of virtual CPUs. If not specified, a single CPU

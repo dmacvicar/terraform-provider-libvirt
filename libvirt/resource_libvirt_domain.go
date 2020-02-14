@@ -45,6 +45,11 @@ func resourceLibvirtDomain() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"metadata": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -456,6 +461,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	domainDef.VCPU = &libvirtxml.DomainVCPU{
 		Value: d.Get("vcpu").(int),
 	}
+	domainDef.Description = d.Get("description").(string)
 
 	domainDef.OS.Kernel = d.Get("kernel").(string)
 	domainDef.OS.Initrd = d.Get("initrd").(string)
@@ -751,6 +757,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.Set("name", domainDef.Name)
+	d.Set("description", domainDef.Description)
 	d.Set("vcpu", domainDef.VCPU)
 	d.Set("memory", domainDef.Memory)
 	d.Set("firmware", domainDef.OS.Loader)
