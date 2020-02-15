@@ -240,7 +240,7 @@ func resourceLibvirtDomain() *schema.Resource {
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
-						"passwd": {
+						"password": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},

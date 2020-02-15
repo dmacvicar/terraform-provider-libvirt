@@ -424,7 +424,7 @@ resource "libvirt_domain" "my_machine" {
     type           = "vnc"
     listen_type    = "address"
     port           = "5901"
-    passwd         = "apasswordphrase"
+    password       = "apasswordphrase"
     listen_address = "127.0.0.1"
     autoport       = "false"
   }

@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 // deprecated, now defaults to not use it, but we warn the user
@@ -441,8 +441,6 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 		}
 
 		autoport := d.Get(prefix + ".autoport").(bool)
-		port := d.Get(prefix + ".port").(int)
-		passwd := d.Get(prefix + ".passwd").(string)
 		listener := libvirtxml.DomainGraphicListener{}
 
 		if listenType, ok := d.GetOk(prefix + ".listen_type"); ok {
@@ -476,12 +474,16 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 			}
 			domainDef.Devices.Graphics[0].VNC.AutoPort = formatBoolYesNo(autoport)
 			if autoport == false {
-				domainDef.Devices.Graphics[0].VNC.Port = port
-			}else{
-				domainDef.Devices.Graphics[0].VNC.Port = -1
+				// If autoport is false port should be defined
+				if port, ok := d.GetOk(prefix + ".port"); ok {
+					domainDef.Devices.Graphics[0].VNC.Port = port.(int)
+				} else {
+					//If autoport is set to false but port is undefined then set to -1 (auto-allocation)
+					domainDef.Devices.Graphics[0].VNC.Port = -1
+				}
 			}
-			if len(passwd) > 0 {
-				domainDef.Devices.Graphics[0].VNC.Passwd = passwd
+			if password, ok := d.GetOk(prefix + ".password"); ok {
+				domainDef.Devices.Graphics[0].VNC.Passwd = password.(string)
 			}
 			domainDef.Devices.Graphics[0].VNC.Listeners = []libvirtxml.DomainGraphicListener{
 				listener,

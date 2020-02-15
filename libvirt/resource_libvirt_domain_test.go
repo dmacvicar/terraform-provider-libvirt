@@ -668,6 +668,30 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 		}
 	}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeName, randomVolumeName, randomPoolName, randomDomainName, randomDomainName)
 
+	var configVNCportPassword = fmt.Sprintf(`
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+
+	resource "libvirt_volume" "%s" {
+		name = "%s"
+        pool = "${libvirt_pool.%s.name}"
+	}
+
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		graphics {
+			type        = "vnc"
+			autoport    = "false"
+			listen_type = "address"
+			listen_address = "127.0.1.1"
+			port = "55421"
+			password = "aSTRONGpassword"
+		}
+	}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeName, randomVolumeName, randomPoolName, randomDomainName, randomDomainName)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -705,6 +729,31 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 						"libvirt_domain."+randomDomainName, "graphics.0.listen_type", "address"),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomDomainName, "graphics.0.listen_address", "127.0.1.1"),
+				),
+			},
+		},
+	})
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: configVNCportPassword,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.type", "vnc"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.autoport", "false"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.listen_type", "address"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.listen_address", "127.0.1.1"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.port", "55421"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.password", "aSTRONGpassword"),
 				),
 			},
 		},
