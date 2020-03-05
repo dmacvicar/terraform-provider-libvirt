@@ -17,9 +17,9 @@ import (
 )
 
 type pendingMapping struct {
-	mac      string
-	hostname string
-	network  *libvirt.Network
+	mac         string
+	hostname    string
+	networkName string
 }
 
 func init() {
@@ -144,9 +144,9 @@ func resourceLibvirtDomain() *schema.Resource {
 				},
 			},
 			"disk": {
-				Type:     schema.TypeList,
-				Optional: true,
-				ForceNew: true,
+				Type:       schema.TypeList,
+				Optional:   true,
+				ForceNew:   true,
 				ConfigMode: schema.SchemaConfigModeAttr,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -586,7 +586,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	// we must read devices again in order to set some missing ip/MAC/host mappings
 	for i := 0; i < d.Get("network_interface.#").(int); i++ {
 		prefix := fmt.Sprintf("network_interface.%d", i)
-
 		mac := strings.ToUpper(d.Get(prefix + ".mac").(string))
 
 		// if we were waiting for an IP address for this MAC, go ahead.
@@ -594,16 +593,26 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 			// we should have the address now
 			addressesI, ok := d.GetOk(prefix + ".addresses")
 			if !ok {
-				return fmt.Errorf("Did not obtain the IP address for MAC=%s", mac)
+				log.Printf("Did not obtain the IP address for MAC=%s", mac)
+				continue
 			}
+
+			network, err := virConn.LookupNetworkByName(pending.networkName)
+			if err != nil {
+				log.Printf("Can't retrieve network '%s'", pending.networkName)
+				continue
+			}
+
 			for _, addressI := range addressesI.([]interface{}) {
 				address := addressI.(string)
 				log.Printf("[INFO] Finally adding IP/MAC/host=%s/%s/%s", address, mac, pending.hostname)
-				updateOrAddHost(pending.network, address, mac, pending.hostname)
+
+				err = updateOrAddHost(network, address, mac, pending.hostname)
 				if err != nil {
-					return fmt.Errorf("Could not add IP/MAC/host=%s/%s/%s: %s", address, mac, pending.hostname, err)
+					log.Printf("Could not add IP/MAC/host=%s/%s/%s: %s", address, mac, pending.hostname, err)
 				}
 			}
+			network.Free()
 		}
 	}
 
@@ -914,6 +923,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		netIface["wait_for_lease"] = d.Get(prefix + ".wait_for_lease").(bool)
+		netIface["hostname"] = d.Get(prefix + ".hostname").(string)
 		netIface["addresses"] = addressesForMac(mac)
 		log.Printf("[DEBUG] read: addresses for '%s': %+v", mac, netIface["addresses"])
 
