@@ -24,7 +24,12 @@ See [variables.tf](variables.tf) for a full listing!
 
 See [outputs.tf](outputs.tf) for a full listing!
 
+
+## Example
+
+See main.tf in examples for sample usage, includes a full working kubernetes cluster with persistent storage and dashboards for kubernetes, ceph and prometheus 
+
 ## Future Improvements
 
-* Make sub-cluster initialization modular. I.e. be able to pick kubernetes, docker etc and layer on top of the VMs
+* Make sub-cluster initialization modular. I.e. be able to pick kubernetes, cloudera/hortonworks etc and layer on top of the VMs
 
