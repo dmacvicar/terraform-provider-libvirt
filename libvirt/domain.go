@@ -706,23 +706,58 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 		}
 
 		// connect to the interface to the network... first, look for the network
-		if n, ok := d.GetOk(prefix + ".network_name"); ok {
-			// when using a "network_name" we do not try to do anything: we just
-			// connect to that network
-			netIface.Source = &libvirtxml.DomainInterfaceSource{
-				Network: &libvirtxml.DomainInterfaceSourceNetwork{
-					Network: n.(string),
-				},
+		var network *libvirt.Network
+		var err error
+
+		if networkName, ok := d.GetOk(prefix + ".network_name"); ok {
+			network, err = virConn.LookupNetworkByName(networkName.(string))
+			if err != nil {
+				return fmt.Errorf("Can't retrieve network '%s'", networkName.(string))
 			}
+			defer network.Free()
+
 		} else if networkUUID, ok := d.GetOk(prefix + ".network_id"); ok {
 			// when using a "network_id" we are referring to a "network resource"
 			// we have defined somewhere else...
-			network, err := virConn.LookupNetworkByUUIDString(networkUUID.(string))
+			network, err = virConn.LookupNetworkByUUIDString(networkUUID.(string))
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network ID %s", networkUUID)
 			}
 			defer network.Free()
 
+		} else if bridgeNameI, ok := d.GetOk(prefix + ".bridge"); ok {
+			netIface.Source = &libvirtxml.DomainInterfaceSource{
+				Bridge: &libvirtxml.DomainInterfaceSourceBridge{
+					Bridge: bridgeNameI.(string),
+				},
+			}
+		} else if devI, ok := d.GetOk(prefix + ".vepa"); ok {
+			netIface.Source = &libvirtxml.DomainInterfaceSource{
+				Direct: &libvirtxml.DomainInterfaceSourceDirect{
+					Dev:  devI.(string),
+					Mode: "vepa",
+				},
+			}
+		} else if devI, ok := d.GetOk(prefix + ".macvtap"); ok {
+			netIface.Source = &libvirtxml.DomainInterfaceSource{
+				Direct: &libvirtxml.DomainInterfaceSourceDirect{
+					Dev:  devI.(string),
+					Mode: "bridge",
+				},
+			}
+		} else if devI, ok := d.GetOk(prefix + ".passthrough"); ok {
+			netIface.Source = &libvirtxml.DomainInterfaceSource{
+				Direct: &libvirtxml.DomainInterfaceSourceDirect{
+					Dev:  devI.(string),
+					Mode: "passthrough",
+				},
+			}
+		} else {
+			// no network has been specified: we are on our own
+		}
+
+		// if we got a network
+		if network != nil {
 			networkName, err := network.GetName()
 			if err != nil {
 				return fmt.Errorf("Error retrieving network name: %s", err)
@@ -763,10 +798,13 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 						// have a valid lease and then read the IP we have been assigned, so we can
 						// do the mapping
 						log.Printf("[DEBUG] Do not have an IP for '%s' yet: will wait until DHCP provides one...", hostname)
+						if err != nil {
+							return err
+						}
 						partialNetIfaces[strings.ToUpper(mac)] = &pendingMapping{
-							mac:      strings.ToUpper(mac),
-							hostname: hostname,
-							network:  network,
+							mac:         strings.ToUpper(mac),
+							hostname:    hostname,
+							networkName: networkName,
 						}
 					}
 				}
@@ -777,35 +815,6 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 					Network: networkName,
 				},
 			}
-		} else if bridgeNameI, ok := d.GetOk(prefix + ".bridge"); ok {
-			netIface.Source = &libvirtxml.DomainInterfaceSource{
-				Bridge: &libvirtxml.DomainInterfaceSourceBridge{
-					Bridge: bridgeNameI.(string),
-				},
-			}
-		} else if devI, ok := d.GetOk(prefix + ".vepa"); ok {
-			netIface.Source = &libvirtxml.DomainInterfaceSource{
-				Direct: &libvirtxml.DomainInterfaceSourceDirect{
-					Dev:  devI.(string),
-					Mode: "vepa",
-				},
-			}
-		} else if devI, ok := d.GetOk(prefix + ".macvtap"); ok {
-			netIface.Source = &libvirtxml.DomainInterfaceSource{
-				Direct: &libvirtxml.DomainInterfaceSourceDirect{
-					Dev:  devI.(string),
-					Mode: "bridge",
-				},
-			}
-		} else if devI, ok := d.GetOk(prefix + ".passthrough"); ok {
-			netIface.Source = &libvirtxml.DomainInterfaceSource{
-				Direct: &libvirtxml.DomainInterfaceSourceDirect{
-					Dev:  devI.(string),
-					Mode: "passthrough",
-				},
-			}
-		} else {
-			// no network has been specified: we are on our own
 		}
 
 		domainDef.Devices.Interfaces = append(domainDef.Devices.Interfaces, netIface)

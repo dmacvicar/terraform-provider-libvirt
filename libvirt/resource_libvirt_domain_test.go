@@ -66,7 +66,7 @@ func TestAccLibvirtDomain_Description(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomResourceName, "name", randomDomainName),
 					resource.TestCheckResourceAttr(
-                        "libvirt_domain."+randomResourceName, "description", "unit test description"),
+						"libvirt_domain."+randomResourceName, "description", "unit test description"),
 				),
 			},
 		},
@@ -603,17 +603,21 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	resource "libvirt_domain" "%s" {
 		name              = "%s"
 		network_interface  {
-			network_name = "default"
+                        network_name = "${libvirt_network.%s.name}"
+                        hostname       = "myhost"
+			mac            = "52:54:00:A9:F5:17"
+			wait_for_lease = true
 		}
 		network_interface  {
-			network_name   = "default"
-			mac            = "52:54:00:A9:F5:17"
+                        network_id = "${libvirt_network.%s.id}"
+                        hostname       = "myhost"
+			mac            = "52:54:00:A9:F5:19"
 			wait_for_lease = true
 		}
 		disk {
 			file = "%s/testdata/tcl.iso"
 		}
-	}`, randomNetworkName, randomNetworkName, randomDomainName, randomDomainName, currentDir)
+	}`, randomNetworkName, randomNetworkName, randomDomainName, randomDomainName, randomNetworkName, randomNetworkName, currentDir)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -621,13 +625,23 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: config,
+				Config:             config,
+				ExpectNonEmptyPlan: false, // TODO: find why if set to true, the test fails
+				Destroy:            false,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomDomainName, "network_interface.0.network_name", "default"),
+						"libvirt_domain."+randomDomainName, "network_interface.0.network_name", randomNetworkName),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomDomainName, "network_interface.1.mac", "52:54:00:A9:F5:17"),
+						"libvirt_domain."+randomDomainName, "network_interface.0.mac", "52:54:00:A9:F5:17"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "network_interface.0.hostname", "myhost"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "network_interface.1.network_name", randomNetworkName),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "network_interface.1.mac", "52:54:00:A9:F5:19"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "network_interface.1.hostname", "myhost"),
 				),
 			},
 		},
