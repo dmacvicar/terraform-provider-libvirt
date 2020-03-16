@@ -626,8 +626,7 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:             config,
-				ExpectNonEmptyPlan: false, // TODO: find why if set to true, the test fails
-				Destroy:            false,
+				ExpectNonEmptyPlan: false, 
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
 					resource.TestCheckResourceAttr(
