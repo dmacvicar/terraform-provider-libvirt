@@ -198,26 +198,14 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 	return interfaces, nil
 }
 
-func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string, arch string) (libvirtxml.DomainDisk, error) {
-	var target *libvirtxml.DomainDiskTarget
-	switch arch {
-	case "s390", "s390x", "ppc64", "ppc64le":
-		target = &libvirtxml.DomainDiskTarget{
-			// s390 and ppc64 platforms don't support IDE controllers
-			Dev: "vdb",
-			Bus: "scsi",
-		}
-	default:
-		target = &libvirtxml.DomainDiskTarget{
+func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml.DomainDisk, error) {
+	disk := libvirtxml.DomainDisk{
+		Device: "cdrom",
+		Target: &libvirtxml.DomainDiskTarget{
 			// Last device letter possible with a single IDE controller on i440FX
 			Dev: "hdd",
 			Bus: "ide",
-		}
-	}
-
-	disk := libvirtxml.DomainDisk{
-		Device: "cdrom",
-		Target: target,
+		},
 		Driver: &libvirtxml.DomainDiskDriver{
 			Name: "qemu",
 			Type: "raw",
@@ -270,17 +258,31 @@ func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, vir
 				}
 			}
 		case "s390", "s390x", "ppc64", "ppc64le":
-			// System Z and PowerPC do not support any of the same pass-through
-			// mechanisms as Ignition. As a temporary workaround, the OpenStack
-			// Config Drive can be used instead. The Ignition volume already
-			// contains a Config Drive at this point.
-
-			disk, err := newDiskForCloudInit(virConn, ignitionKey, arch)
-			if err != nil {
-				return err
+			// System Z and PowerPC do not support the Firmware Configuration
+			// device. After a discussion about the best way to support a similar
+			// method for qemu in https://github.com/coreos/ignition/issues/928,
+			// decided on creating a virtio-blk device with a serial of ignition
+			// which contains the ignition config and have ignition support for
+			// reading from the device which landed in https://github.com/coreos/ignition/pull/936
+			igndisk := libvirtxml.DomainDisk{
+				Device: "disk",
+				Source: &libvirtxml.DomainDiskSource{
+					File: &libvirtxml.DomainDiskSourceFile{
+						File: ignitionKey,
+					},
+				},
+				Target: &libvirtxml.DomainDiskTarget{
+					Dev: "vdb",
+					Bus: "virtio",
+				},
+				Driver: &libvirtxml.DomainDiskDriver{
+					Name: "qemu",
+					Type: "raw",
+				},
+				ReadOnly: &libvirtxml.DomainDiskReadOnly{},
+				Serial:   "ignition",
 			}
-
-			domainDef.Devices.Disks = append(domainDef.Devices.Disks, disk)
+			domainDef.Devices.Disks = append(domainDef.Devices.Disks, igndisk)
 		default:
 			return fmt.Errorf("Ignition not supported on %q", arch)
 		}
@@ -655,13 +657,13 @@ func setFilesystems(d *schema.ResourceData, domainDef *libvirtxml.Domain) error 
 	return nil
 }
 
-func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect, arch string) error {
+func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
 	if cloudinit, ok := d.GetOk("cloudinit"); ok {
 		cloudinitID, err := getCloudInitVolumeKeyFromTerraformID(cloudinit.(string))
 		if err != nil {
 			return err
 		}
-		disk, err := newDiskForCloudInit(virConn, cloudinitID, arch)
+		disk, err := newDiskForCloudInit(virConn, cloudinitID)
 		if err != nil {
 			return err
 		}

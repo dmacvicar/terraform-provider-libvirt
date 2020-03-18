@@ -16,10 +16,9 @@ a CoreOS Domain during first boot.
 
 ~> **Note:** On the i686 (x86), x86\_64 (AMD64), and aarch64 (ARM64) platforms,
 the QEMU firmware config device (`-fw_cfg`) is used to pass Ignition configs
-into the guests. On the s390x (IBM Z) platform however, the QEMU firmware
-config device is not supported. As alternative, the OpenStack config-drive
-mechanism is instead used. The `mkisofs` utility must be installed into the
-path and Ignition must be run with the `--provider=openstack` flag.
+into the guests. On the s390x (IBM Z) and PowerPC platforms however, the QEMU firmware
+config device is not supported. As an alternative, a virtio-blk device is created with a serial
+of `ignition` which ignition recognizes and reads the config from the device
 
 ## Example Usage
 
