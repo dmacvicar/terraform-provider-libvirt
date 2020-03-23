@@ -99,7 +99,9 @@ func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterfa
 	log.Printf("[DEBUG] ifaces with addresses: %+v\n", ifacesWithAddr)
 
 	for _, ifaceWithAddr := range ifacesWithAddr {
-		if mac == strings.ToUpper(ifaceWithAddr.Hwaddr) {
+		if mac == strings.ToUpper(ifaceWithAddr.Hwaddr) ||
+			strings.Replace(mac, "00", "0", -1) == strings.ToUpper(ifaceWithAddr.Hwaddr) {
+
 			log.Printf("[DEBUG] found IPs for MAC=%+v: %+v\n", mac, ifaceWithAddr.Addrs)
 			return true, false, nil
 		}
