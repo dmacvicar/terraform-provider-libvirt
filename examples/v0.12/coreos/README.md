@@ -11,7 +11,7 @@ with their own Ignition configuration
 
 
 ### Supported architectures
-This example will work on i686 (x86), x86\_64 (AMD64), aarch64 (ARM64), s390x (IBM Z) and IBM PowerPC. On i686, x86\_64, and aarch64, the Terraform provider uses QEMU's firmware configuration (fw\_cfg) device to pass the Ignition config through to the Ignition instance running in the virtual machine. In order for this to work, Ignition needs to be run with `--provider=qemu`. Unfortunately, QEMU doesn't support the firmware configuration device for s390x and PowerPC guests, so the Terraform provider falls back to using an OpenStack config-drive instead. The config-drive will automatically be created by the provider, provided that `mkisofs` is installed in the path, so no changes are necessary to the Terraform templates. Ignition needs to be run with `--provider=openstack` when inside of an s390x or PowerPc guest in order to find the config-drive.
+This example will work on i686 (x86), x86\_64 (AMD64), aarch64 (ARM64), s390x (IBM Z) and IBM PowerPC. On i686, x86\_64, and aarch64, the Terraform provider uses QEMU's firmware configuration (fw\_cfg) device to pass the Ignition config through to the Ignition instance running in the virtual machine. In order for this to work, Ignition needs to be run with `--provider=qemu`. Unfortunately, QEMU doesn't support the firmware configuration device for s390x and PowerPC guests, so alternatively, a virtio-blk device is created with a serial of `ignition` which ignition detects and reads.
 
 
 ### Using the QEMU Guest Agent
