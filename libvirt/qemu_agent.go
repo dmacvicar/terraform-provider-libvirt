@@ -3,6 +3,8 @@ package libvirt
 import (
 	"encoding/json"
 	"log"
+	"net"
+	"regexp"
 	"strings"
 	"time"
 
@@ -30,6 +32,27 @@ type QemuAgentInterfaceIPAddress struct {
 	Type    string `json:"ip-address-type"`
 	Address string `json:"ip-address"`
 	Prefix  uint   `json:"prefix"`
+}
+
+func hwAddrNormalization(hwaddr string) string {
+	var re = regexp.MustCompile(`[:-]`)
+	hwaddrBytes := re.Split(hwaddr, -1)
+	var hwaddrBytesNormalized []string
+	for _, value := range hwaddrBytes {
+		if len(value) == 1 {
+			hwaddrBytesNormalized = append(hwaddrBytesNormalized, "0"+value)
+		} else {
+			hwaddrBytesNormalized = append(hwaddrBytesNormalized, value)
+		}
+	}
+
+	hwaddrNormalized, err := net.ParseMAC(strings.Join(hwaddrBytesNormalized, ":"))
+
+	if err != nil {
+		log.Printf("[DEBUG] HWAddr parse error: %s", err)
+	}
+
+	return strings.ToUpper(hwaddrNormalized.String())
 }
 
 func qemuAgentInterfacesRefreshFunc(domain Domain, wait4ipv4 bool) resource.StateRefreshFunc {
@@ -66,7 +89,7 @@ func qemuAgentInterfacesRefreshFunc(domain Domain, wait4ipv4 bool) resource.Stat
 
 			libVirtIface := libvirt.DomainInterface{
 				Name:   iface.Name,
-				Hwaddr: iface.Hwaddr}
+				Hwaddr: hwAddrNormalization(iface.Hwaddr)}
 
 			ipv4Assigned := false
 			for _, addr := range iface.IPAddresses {
