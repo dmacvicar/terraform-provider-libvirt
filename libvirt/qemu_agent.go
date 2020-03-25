@@ -52,7 +52,7 @@ func hwAddrNormalization(hwaddr string) string {
 		log.Printf("[DEBUG] HWAddr parse error: %s", err)
 	}
 
-	return strings.ToUpper(hwaddrNormalized.String())
+	return hwaddrNormalized.String()
 }
 
 func qemuAgentInterfacesRefreshFunc(domain Domain, wait4ipv4 bool) resource.StateRefreshFunc {
