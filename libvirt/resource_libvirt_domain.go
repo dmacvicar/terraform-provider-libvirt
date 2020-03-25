@@ -895,8 +895,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		// not sure if using the target device name is a better idea here
 		var addrs []string
 		for _, ifaceWithAddr := range ifacesWithAddr {
-			if strings.ToUpper(ifaceWithAddr.Hwaddr) == mac ||
-				strings.ToUpper(ifaceWithAddr.Hwaddr) == strings.Replace(mac, "00", "0", -1) {
+			if strings.ToUpper(ifaceWithAddr.Hwaddr) == mac {
 				for _, addr := range ifaceWithAddr.Addrs {
 					addrs = append(addrs, addr.Addr)
 				}
