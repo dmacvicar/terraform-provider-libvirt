@@ -43,6 +43,9 @@ func getNetModeFromResource(d *schema.ResourceData) string {
 	return strings.ToLower(d.Get("mode").(string))
 }
 
+func getNetDevFromResource(d *schema.ResourceData) string {
+	return strings.ToLower(d.Get("dev").(string))
+}
 // getIPsFromResource gets the IPs configurations from the resource definition
 func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) {
 	addresses, ok := d.GetOk("addresses")

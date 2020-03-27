@@ -62,6 +62,11 @@ func resourceLibvirtNetwork() *schema.Resource {
 				ForceNew: true,
 				Default:  netModeNat,
 			},
+			"dev": { // device for forward
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
+			},
 			"bridge": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -382,6 +387,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	// check the network mode
 	networkDef.Forward = &libvirtxml.NetworkForward{
 		Mode: getNetModeFromResource(d),
+		Dev: getNetDevFromResource(d),
 	}
 	if networkDef.Forward.Mode == netModeIsolated || networkDef.Forward.Mode == netModeNat || networkDef.Forward.Mode == netModeRoute {
 
