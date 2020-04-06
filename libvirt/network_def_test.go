@@ -32,7 +32,7 @@ func TestNetworkDefUnmarshall(t *testing.T) {
 			<bridge name="virbr0" stp="on" delay="5" macTableManager="libvirt"/>
 			<mac address='00:16:3E:5D:C7:9E'/>
 			<domain name="example.com" localOnly="no"/>
-			<forward mode='nat'>
+			<forward mode='nat' dev='eth0'>
 				<nat>
 					<address start='1.2.3.4' end='1.2.3.10'/>
 				</nat>
@@ -71,6 +71,9 @@ func TestNetworkDefUnmarshall(t *testing.T) {
 	}
 	if b.Forward.Mode != "nat" {
 		t.Errorf("wrong forward mode: '%s'", b.Forward.Mode)
+	}
+	if b.Forward.Dev != "eth0" {
+		t.Errorf("wrong forward dev: '%s'", b.Forward.Dev)
 	}
 	if len(b.Forward.NAT.Addresses) == 0 {
 		t.Errorf("wrong number of addresses: %s", b.Forward.NAT.Addresses)
