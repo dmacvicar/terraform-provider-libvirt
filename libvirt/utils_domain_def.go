@@ -21,20 +21,39 @@ func getGuestForArchType(caps libvirtxml.Caps, arch string, virttype string) (li
 	return libvirtxml.CapsGuest{}, fmt.Errorf("[DEBUG] Could not find any guests for architecure type %s/%s", virttype, arch)
 }
 
+func lookupMachine(machines []libvirtxml.CapsGuestMachine, targetmachine string) string {
+	for _, machine := range machines {
+		if machine.Name == targetmachine {
+			if machine.Canonical != "" {
+				return machine.Canonical
+			}
+			return machine.Name
+		}
+	}
+	return ""
+}
+
 func getCanonicalMachineName(caps libvirtxml.Caps, arch string, virttype string, targetmachine string) (string, error) {
 	guest, err := getGuestForArchType(caps, arch, virttype)
 	if err != nil {
 		return "", err
 	}
 
-	for _, machine := range guest.Arch.Machines {
-		if machine.Name == targetmachine {
-			if machine.Canonical != "" {
-				return machine.Canonical, nil
-			}
-			return machine.Name, nil
+	/* Machine entries can be in the guest.Arch.Machines level as well as
+	   under each guest.Arch.Domains[].Machines */
+
+	name := lookupMachine(guest.Arch.Machines, targetmachine)
+	if name != "" {
+		return name, nil
+	}
+
+	for _, domain := range guest.Arch.Domains {
+		name := lookupMachine(domain.Machines, targetmachine)
+		if name != "" {
+			return name, nil
 		}
 	}
+
 	return "", fmt.Errorf("[WARN] Cannot find machine type %s for %s/%s in %v", targetmachine, virttype, arch, caps)
 }
 
