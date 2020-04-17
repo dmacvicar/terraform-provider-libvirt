@@ -89,6 +89,7 @@ func transformXML(xml string, xslt string) (string, error) {
 		xmlFile.Name())
 	transformedXML, err := cmd.Output()
 	if err != nil {
+		log.Printf("[ERROR] Failed to run xsltproc (is it installed?)")
 		return xml, err
 	}
 	log.Printf("[DEBUG] Transformed XML with user specified XSLT:\n%s", transformedXML)
