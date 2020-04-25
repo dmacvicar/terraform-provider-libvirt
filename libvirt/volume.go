@@ -68,7 +68,12 @@ func volumeWaitDeleted(virConn *libvirt.Connect, key string) error {
 func volumeDelete(client *Client, key string) error {
 	volume, err := client.libvirt.LookupStorageVolByKey(key)
 	if err != nil {
-		return fmt.Errorf("Can't retrieve volume %s: %v", key, err)
+		virErr := err.(libvirt.Error)
+		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
+			return fmt.Errorf("volumeDelete: Can't retrieve volume %s: %v", key, err)
+		}
+		// Volume already deleted.
+		return nil
 	}
 	defer volume.Free()
 
