@@ -46,6 +46,7 @@ func getNetModeFromResource(d *schema.ResourceData) string {
 func getNetDevFromResource(d *schema.ResourceData) string {
 	return strings.ToLower(d.Get("dev").(string))
 }
+
 // getIPsFromResource gets the IPs configurations from the resource definition
 func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) {
 	addresses, ok := d.GetOk("addresses")
@@ -132,13 +133,18 @@ func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.Netw
 	return dni, dhcp, nil
 }
 
-// getBridgeFromResource returns a libvirt's NetworkBridge
-// from the ResourceData provided.
+// getBridgeFromResource returns a libvirt's NetworkBridge from the
+// ResourceData provided or creates a new one if not specified
+// based on the network name.
 func getBridgeFromResource(d *schema.ResourceData) *libvirtxml.NetworkBridge {
-	// use a bridge provided by the user, or create one otherwise (libvirt will assign on automatically when empty)
-	bridgeName := ""
+	// use a bridge provided by the user, or create one otherwise
+	log.Printf("VEMVEMVEMVEMVEMVEMVEMVEMVEMVEM")
+	var bridgeName string
 	if b, ok := d.GetOk("bridge"); ok {
 		bridgeName = b.(string)
+	} else {
+		netName, _ := d.GetOk("name")
+		bridgeName = netName.(string) + "-br"
 	}
 
 	bridge := &libvirtxml.NetworkBridge{
