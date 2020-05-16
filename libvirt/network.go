@@ -138,7 +138,6 @@ func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.Netw
 // based on the network name.
 func getBridgeFromResource(d *schema.ResourceData) *libvirtxml.NetworkBridge {
 	// use a bridge provided by the user, or create one otherwise
-	log.Printf("VEMVEMVEMVEMVEMVEMVEMVEMVEMVEM")
 	var bridgeName string
 	if b, ok := d.GetOk("bridge"); ok {
 		bridgeName = b.(string)
