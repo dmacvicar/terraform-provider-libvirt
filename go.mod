@@ -11,7 +11,7 @@ require (
 	github.com/mattn/goveralls v0.0.2
 	github.com/mitchellh/packer v1.3.2
 	github.com/pborman/uuid v1.2.0 // indirect
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.5.1
 	github.com/terraform-providers/terraform-provider-ignition v1.2.1
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
 )
