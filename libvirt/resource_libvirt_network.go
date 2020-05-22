@@ -475,6 +475,12 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 	err = network.Create()
 	if err != nil {
+		// in some cases, the network creation fails but an artifact is created
+		// an 'broken network". Remove the network in case of failure
+		// see https://github.com/dmacvicar/terraform-provider-libvirt/issues/739
+		// don't handle the error for destroying
+		network.Destroy()
+		network.Undefine()
 		return fmt.Errorf("Error creating libvirt network: %s", err)
 	}
 	defer network.Free()
