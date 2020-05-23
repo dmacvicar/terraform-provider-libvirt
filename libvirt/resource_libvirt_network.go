@@ -387,7 +387,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	// check the network mode
 	networkDef.Forward = &libvirtxml.NetworkForward{
 		Mode: getNetModeFromResource(d),
-		Dev: getNetDevFromResource(d),
+		Dev:  getNetDevFromResource(d),
 	}
 	if networkDef.Forward.Mode == netModeIsolated || networkDef.Forward.Mode == netModeNat || networkDef.Forward.Mode == netModeRoute {
 
@@ -475,7 +475,13 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 	err = network.Create()
 	if err != nil {
-		return fmt.Errorf("Error clearing libvirt network: %s", err)
+		// in some cases, the network creation fails but an artifact is created
+		// an 'broken network". Remove the network in case of failure
+		// see https://github.com/dmacvicar/terraform-provider-libvirt/issues/739
+		// don't handle the error for destroying
+		network.Destroy()
+		network.Undefine()
+		return fmt.Errorf("Error creating libvirt network: %s", err)
 	}
 	defer network.Free()
 
@@ -639,22 +645,24 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 	if err != nil {
 		return fmt.Errorf("Couldn't determine if network is active: %s", err)
 	}
+	// network can be in 2 states, handles this case by case
+
+	// in case network is inactive just undefine it
 	if !active {
-		// we have to restart an inactive network, otherwise it won't be
-		// possible to remove it.
-		if err := network.Create(); err != nil {
-			return fmt.Errorf("Cannot restart an inactive network %s", err)
+		if err := network.Undefine(); err != nil {
+			return fmt.Errorf("Couldn't undefine libvirt network: %s", err)
 		}
 	}
+	// network is active, so we need to destroy it and undefine it
+	if active {
+		if err := network.Destroy(); err != nil {
+			return fmt.Errorf("When destroying libvirt network: %s", err)
+		}
 
-	if err := network.Destroy(); err != nil {
-		return fmt.Errorf("When destroying libvirt network: %s", err)
+		if err := network.Undefine(); err != nil {
+			return fmt.Errorf("Couldn't undefine libvirt network: %s", err)
+		}
 	}
-
-	if err := network.Undefine(); err != nil {
-		return fmt.Errorf("Couldn't undefine libvirt network: %s", err)
-	}
-
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{"ACTIVE"},
 		Target:     []string{"NOT-EXISTS"},
