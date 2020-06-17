@@ -35,17 +35,41 @@ func TestFormatBoolYesNo(t *testing.T) {
 }
 
 func TestIPsRange(t *testing.T) {
-	_, net, err := net.ParseCIDR("192.168.18.1/24")
-	if err != nil {
-		t.Errorf("When parsing network: %s", err)
+	tt := []struct {
+		name         string
+		inputCIDR    string
+		expectdStart string
+		expectedEnd  string
+	}{
+		{
+			name:         "IPv4 range",
+			inputCIDR:    "192.168.18.1/24",
+			expectdStart: "192.168.18.0",
+			expectedEnd:  "192.168.18.255",
+		},
+		{
+			name:         "IPv6 range",
+			inputCIDR:    "fdff:beef:beef::1/64",
+			expectdStart: "fdff:beef:beef::",
+			expectedEnd:  "fdff:beef:beef::ffff",
+		},
 	}
 
-	start, end := networkRange(net)
-	if start.String() != "192.168.18.0" {
-		t.Errorf("unexpected range start for '%s': %s", net, start)
-	}
-	if end.String() != "192.168.18.255" {
-		t.Errorf("unexpected range start for '%s': %s", net, start)
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			_, net, err := net.ParseCIDR(tc.inputCIDR)
+			if err != nil {
+				t.Errorf("When parsing network: %s", err)
+			}
+
+			start, end := networkRange(net)
+			if start.String() != tc.expectdStart {
+				t.Errorf("unexpected range start for '%s': %s, expected: %s", net, start, tc.expectdStart)
+			}
+			if end.String() != tc.expectedEnd {
+				t.Errorf("unexpected range end for '%s': %s, expected: %s", net, end, tc.expectedEnd)
+			}
+		})
 	}
 }
 

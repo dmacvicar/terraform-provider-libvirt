@@ -60,17 +60,38 @@ func freeNetworkInterface(basename string) (string, error) {
 	return "", fmt.Errorf("could not obtain a free network interface")
 }
 
+func getNetMaskWithMax16Bits(m net.IPMask) net.IPMask {
+	ones, bits := m.Size()
+
+	if bits-ones > 16 {
+		if bits == 128 {
+			// IPv6 Mask with max 16 bits
+			return net.CIDRMask(128-16, 128)
+		}
+
+		// IPv4 Mask with max 16 bits
+		return net.CIDRMask(32-16, 32)
+	}
+
+	return m
+}
+
 // networkRange calculates the first and last IP addresses in an IPNet
 func networkRange(network *net.IPNet) (net.IP, net.IP) {
 	netIP := network.IP.To4()
-	lastIP := net.IPv4(0, 0, 0, 0).To4()
+	lastIP := net.IPv4zero.To4()
 	if netIP == nil {
 		netIP = network.IP.To16()
 		lastIP = net.IPv6zero.To16()
 	}
 	firstIP := netIP.Mask(network.Mask)
+	// intermeditate network mask with max 16 bits for hosts
+	// We need a mask with max 16 bits since libvirt only supports 65535) IP's per subnet
+	// 2^16 = 65536 (minus broadcast and .1)
+	intMask := getNetMaskWithMax16Bits(network.Mask)
+
 	for i := 0; i < len(lastIP); i++ {
-		lastIP[i] = netIP[i] | ^network.Mask[i]
+		lastIP[i] = netIP[i] | ^intMask[i]
 	}
 	return firstIP, lastIP
 }
