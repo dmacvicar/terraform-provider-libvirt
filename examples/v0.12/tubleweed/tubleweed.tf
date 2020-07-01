@@ -4,10 +4,10 @@ provider "libvirt" {
 }
 
 # adapt the build number 
-resource "libvirt_volume" "leap15" {
-  name   = "leap15-qcow2"
+resource "libvirt_volume" "tubleweed" {
+  name   = "tubleweed"
   pool   = "default"
-  source = "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.0/images/openSUSE-Leap-15.0-OpenStack.x86_64-0.0.4-Buildlp150.12.131.qcow2"
+  source = "http://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-JeOS.x86_64-kvm-and-xen.qcow2"
   format = "qcow2"
 }
 
@@ -30,8 +30,8 @@ resource "libvirt_cloudinit_disk" "commoninit" {
 }
 
 # Create the machine
-resource "libvirt_domain" "domain-leap15" {
-  name   = "leap15-terraform"
+resource "libvirt_domain" "domain-tubleweed" {
+  name   = "tubleweed-terraform"
   memory = "512"
   vcpu   = 1
 
@@ -57,7 +57,7 @@ resource "libvirt_domain" "domain-leap15" {
   }
 
   disk {
-    volume_id = libvirt_volume.leap15.id
+    volume_id = libvirt_volume.tubleweed.id
   }
 
   graphics {
