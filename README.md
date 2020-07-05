@@ -97,6 +97,7 @@ If you are using Go >= 1.11, you don't need to build inside GOPATH:
 ```
 export GO111MODULE=on
 export GOFLAGS=-mod=vendor
+go mod vendor
 make install
 ```
 
