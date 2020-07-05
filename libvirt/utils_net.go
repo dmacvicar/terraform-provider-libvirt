@@ -117,7 +117,7 @@ func (fws *fileWebServer) Start() error {
 
 	handler := http.NewServeMux()
 	handler.Handle("/", http.FileServer(http.Dir(dir)))
-	fws.server = &http.Server{Addr: fmt.Sprintf(":%d", fws.Port), Handler: handler}
+	fws.server = &http.Server{Addr: fmt.Sprintf("127.0.0.1:%d", fws.Port), Handler: handler}
 	ln, err := net.Listen("tcp", fws.server.Addr)
 	if err != nil {
 		return err
