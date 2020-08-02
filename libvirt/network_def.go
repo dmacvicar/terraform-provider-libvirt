@@ -81,14 +81,18 @@ func getHostXMLDesc(ip, mac, name string) string {
 func addHost(n *libvirt.Network, ip, mac, name string) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)
 	log.Printf("Adding host with XML:\n%s", xmlDesc)
-	return n.Update(libvirt.NETWORK_UPDATE_COMMAND_ADD_LAST, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, xmlDesc, libvirt.NETWORK_UPDATE_AFFECT_CURRENT)
+	// From https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
+	// Update live and config for hosts to make update permanent across reboots
+	return n.Update(libvirt.NETWORK_UPDATE_COMMAND_ADD_LAST, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, xmlDesc, libvirt.NETWORK_UPDATE_AFFECT_CONFIG | libvirt.NETWORK_UPDATE_AFFECT_LIVE)
 }
 
 // Update a static host from the network
 func updateHost(n *libvirt.Network, ip, mac, name string) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)
 	log.Printf("Updating host with XML:\n%s", xmlDesc)
-	return n.Update(libvirt.NETWORK_UPDATE_COMMAND_MODIFY, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, xmlDesc, libvirt.NETWORK_UPDATE_AFFECT_CURRENT)
+	// From https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
+	// Update live and config for hosts to make update permanent across reboots
+	return n.Update(libvirt.NETWORK_UPDATE_COMMAND_MODIFY, libvirt.NETWORK_SECTION_IP_DHCP_HOST, -1, xmlDesc, libvirt.NETWORK_UPDATE_AFFECT_CONFIG | libvirt.NETWORK_UPDATE_AFFECT_LIVE)
 }
 
 // Tries to update first, if that fails, it will add it
