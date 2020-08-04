@@ -105,8 +105,8 @@ func TestBrokenNetworkDefUnmarshall(t *testing.T) {
 func TestHasDHCPNoForwardSet(t *testing.T) {
 	net := libvirtxml.Network{}
 
-	if HasDHCP(net) {
-		t.Error("Expected to not have forward enabled")
+	if !HasDHCP(net) {
+		t.Error("Expected to have DHCP")
 	}
 }
 

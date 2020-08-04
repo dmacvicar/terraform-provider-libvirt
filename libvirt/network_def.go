@@ -15,6 +15,9 @@ func HasDHCP(net libvirtxml.Network) bool {
 		if net.Forward.Mode == "nat" || net.Forward.Mode == "route" || net.Forward.Mode == "" {
 			return true
 		}
+	} else {
+		// isolated network
+		return true
 	}
 	return false
 }
