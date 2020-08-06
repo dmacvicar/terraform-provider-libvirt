@@ -199,3 +199,75 @@ func TestGetHostXMLDesc(t *testing.T) {
 		t.Errorf("expected name %s, got %s", name, dd.Name)
 	}
 }
+
+func TestGetNetworkIdx(t *testing.T) {
+	// some testing XML from the official docs (some unsupported attrs will be just ignored)
+	networkXML := `
+<network connections='4'>
+  <name>k8snet</name>
+  <uuid>95c5ea13-b367-4a09-8a0e-b68b48563948</uuid>
+  <forward mode='nat'>
+    <nat>
+      <port start='1024' end='65535'/>
+    </nat>
+  </forward>
+  <bridge name='k8snet-br' stp='on' delay='0'/>
+  <mac address='52:54:00:6a:05:7a'/>
+  <dns enable='yes'/>
+  <ip family='ipv4' address='192.168.122.0' prefix='24'>
+  </ip>
+  <ip family='ipv6' address='2001:db8:ca2:2::' prefix='64'>
+  </ip>
+</network>
+	`
+
+	tt := []struct{
+		name string
+		networkXML string
+		ipAddress string
+		expectedIdx int
+	}{
+		{
+			name: "IPv4 address in IPv4 network address",
+			networkXML: networkXML,
+			ipAddress: "192.168.122.254",
+			expectedIdx: 0,
+		},
+		{
+			name: "IPv6 address in IPv6 network address",
+			networkXML: networkXML,
+			ipAddress: "2001:db8:ca2:2::ff",
+			expectedIdx: 1,
+		},
+		{
+			name: "IPv4 address not in IPv4 network address",
+			networkXML: networkXML,
+			ipAddress: "172.16.0.254",
+			expectedIdx: -1,
+		},
+		{
+			name: "IPv6 address not in IPv6 network address",
+			networkXML: networkXML,
+			ipAddress: "2001:ffff:ffff:2::ff",
+			expectedIdx: -1,
+		},
+		{
+			name: "No libvirt XML is provided",
+			networkXML: "",
+			ipAddress: "2001:ffff:ffff:2::ff",
+			expectedIdx: -1,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T){
+			net, _ := newDefNetworkFromXML(tc.networkXML)
+
+			idx, _ := getNetworkIdx(&net, tc.ipAddress)
+			if idx != tc.expectedIdx {
+				t.Logf("expected network idx: %d, got %d\n", tc.expectedIdx, idx)
+				t.Fail()
+			}
+		})
+	}
+}
