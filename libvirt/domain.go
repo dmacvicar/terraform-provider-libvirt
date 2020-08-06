@@ -18,12 +18,6 @@ import (
 	"github.com/libvirt/libvirt-go-xml"
 )
 
-// deprecated, now defaults to not use it, but we warn the user
-const skipQemuAgentEnvVar = "TF_SKIP_QEMU_AGENT"
-
-// if explicitly enabled
-const useQemuAgentEnvVar = "TF_USE_QEMU_AGENT"
-
 const domWaitLeaseStillWaiting = "waiting-addresses"
 const domWaitLeaseDone = "all-addresses-obtained"
 

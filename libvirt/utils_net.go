@@ -48,18 +48,6 @@ func randomPort() int {
 	return rand.Intn(maxPort-minPort) + minPort
 }
 
-// freeNetworkInterface returns a free network interface
-func freeNetworkInterface(basename string) (string, error) {
-	for i := 0; i < maxIfaceNum; i++ {
-		ifaceName := fmt.Sprintf("%s%d", basename, i)
-		_, err := net.InterfaceByName(ifaceName)
-		if err != nil {
-			return ifaceName, nil
-		}
-	}
-	return "", fmt.Errorf("could not obtain a free network interface")
-}
-
 func getNetMaskWithMax16Bits(m net.IPMask) net.IPMask {
 	ones, bits := m.Size()
 
@@ -85,7 +73,7 @@ func networkRange(network *net.IPNet) (net.IP, net.IP) {
 		lastIP = net.IPv6zero.To16()
 	}
 	firstIP := netIP.Mask(network.Mask)
-	// intermeditate network mask with max 16 bits for hosts
+	// intermediate network mask with max 16 bits for hosts
 	// We need a mask with max 16 bits since libvirt only supports 65535) IP's per subnet
 	// 2^16 = 65536 (minus broadcast and .1)
 	intMask := getNetMaskWithMax16Bits(network.Mask)
