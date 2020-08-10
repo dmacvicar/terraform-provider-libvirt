@@ -107,4 +107,3 @@ func TestAccLibvirtDomainConsoles(t *testing.T) {
 		},
 	})
 }
-

@@ -221,46 +221,46 @@ func TestGetNetworkIdx(t *testing.T) {
 </network>
 	`
 
-	tt := []struct{
-		name string
-		networkXML string
-		ipAddress string
+	tt := []struct {
+		name        string
+		networkXML  string
+		ipAddress   string
 		expectedIdx int
 	}{
 		{
-			name: "IPv4 address in IPv4 network address",
-			networkXML: networkXML,
-			ipAddress: "192.168.122.254",
+			name:        "IPv4 address in IPv4 network address",
+			networkXML:  networkXML,
+			ipAddress:   "192.168.122.254",
 			expectedIdx: 0,
 		},
 		{
-			name: "IPv6 address in IPv6 network address",
-			networkXML: networkXML,
-			ipAddress: "2001:db8:ca2:2::ff",
+			name:        "IPv6 address in IPv6 network address",
+			networkXML:  networkXML,
+			ipAddress:   "2001:db8:ca2:2::ff",
 			expectedIdx: 1,
 		},
 		{
-			name: "IPv4 address not in IPv4 network address",
-			networkXML: networkXML,
-			ipAddress: "172.16.0.254",
+			name:        "IPv4 address not in IPv4 network address",
+			networkXML:  networkXML,
+			ipAddress:   "172.16.0.254",
 			expectedIdx: -1,
 		},
 		{
-			name: "IPv6 address not in IPv6 network address",
-			networkXML: networkXML,
-			ipAddress: "2001:ffff:ffff:2::ff",
+			name:        "IPv6 address not in IPv6 network address",
+			networkXML:  networkXML,
+			ipAddress:   "2001:ffff:ffff:2::ff",
 			expectedIdx: -1,
 		},
 		{
-			name: "No libvirt XML is provided",
-			networkXML: "",
-			ipAddress: "2001:ffff:ffff:2::ff",
+			name:        "No libvirt XML is provided",
+			networkXML:  "",
+			ipAddress:   "2001:ffff:ffff:2::ff",
 			expectedIdx: -1,
 		},
 	}
 
 	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T){
+		t.Run(tc.name, func(t *testing.T) {
 			net, _ := newDefNetworkFromXML(tc.networkXML)
 
 			idx, _ := getNetworkIdx(&net, tc.ipAddress)
