@@ -142,8 +142,14 @@ func getBridgeFromResource(d *schema.ResourceData) *libvirtxml.NetworkBridge {
 	if b, ok := d.GetOk("bridge"); ok {
 		bridgeName = b.(string)
 	} else {
-		netName, _ := d.GetOk("name")
-		bridgeName = netName.(string) + "-br"
+		netNameI, _ := d.GetOk("name")
+		netName := netNameI.(string)
+		// Interface names are limited to 15 characters, so the network
+		// name has to be trimmed to 12.
+		if len(netName) > 12 {
+			netName = netName[:12]
+		}
+		bridgeName = netName + "-br"
 	}
 
 	bridge := &libvirtxml.NetworkBridge{
