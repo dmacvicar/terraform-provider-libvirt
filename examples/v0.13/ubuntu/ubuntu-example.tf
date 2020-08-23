@@ -1,3 +1,13 @@
+terraform {
+ required_version = ">= 0.13"
+  required_providers {
+    libvirt = {
+      source  = "dmacvicar/libvirt"
+      version = "0.6.2"
+    }
+  }
+}
+
 # instance the provider
 provider "libvirt" {
   uri = "qemu:///system"
@@ -72,10 +82,6 @@ resource "libvirt_domain" "domain-ubuntu" {
     listen_type = "address"
     autoport    = true
   }
-}
-
-terraform {
-  required_version = ">= 0.12"
 }
 
 # IPs: use wait_for_lease true or after creation use terraform refresh and terraform show for the ips of domain

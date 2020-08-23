@@ -1,3 +1,16 @@
+terraform {
+  required_version = ">= 0.13"
+  required_providers {
+    libvirt = {
+      source  = "dmacvicar/libvirt"
+      version = "0.6.2"
+    }
+    ignition = {
+      source = "terraform-providers/ignition"
+    }
+  }
+}
+
 # -[Provider]--------------------------------------------------------------
 provider "libvirt" {
   uri = "qemu:///system"
@@ -82,8 +95,4 @@ resource "libvirt_domain" "coreos-machine" {
 # -[Output]-------------------------------------------------------------
 output "ipv4" {
   value = libvirt_domain.coreos-machine.*.network_interface.0.addresses
-}
-
-terraform {
-  required_version = ">= 0.12"
 }

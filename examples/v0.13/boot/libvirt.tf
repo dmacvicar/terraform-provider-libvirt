@@ -1,3 +1,14 @@
+terraform {
+ required_version = ">= 0.13"
+  required_providers {
+    libvirt = {
+      source  = "dmacvicar/libvirt"
+      version = "0.6.3"
+    }
+  }
+}
+
+
 provider "libvirt" {
   uri = "qemu:///system"
 }
@@ -33,8 +44,4 @@ resource "libvirt_domain" "domain-debian9-qcow2" {
     type        = "vnc"
     listen_type = "address"
   }
-}
-
-terraform {
-  required_version = ">= 0.12"
 }
