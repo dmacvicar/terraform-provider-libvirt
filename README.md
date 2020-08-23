@@ -9,7 +9,10 @@ ___
 This is a terraform provider that lets you provision
 servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraform.io/).
 
+
 ## Table of Content
+
+- [Migrating to terraform v13](docs/migration-13.md)
 - [Introduction and Goals](#intro)
 - [Downloading](#downloading)
 - [Installing](#installing)
