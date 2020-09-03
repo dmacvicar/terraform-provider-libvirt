@@ -28,6 +28,7 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 - [Domains](website/docs/r/domain.html.markdown)
 - [Networks](website/docs/r/network.markdown)
 - [Volumes](website/docs/r/volume.html.markdown)
+- [Pools](website/docs/r/pool.html.markdown)
 
 # Introduction & Goals
 
