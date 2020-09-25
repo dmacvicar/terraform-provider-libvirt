@@ -445,7 +445,13 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 				Type: "telnet",
 			}
 		case "pty":
-			fallthrough
+			if sourcePath, ok := d.GetOk(prefix + ".source_path"); ok {
+				console.Source = &libvirtxml.DomainChardevSource{
+					Pty: &libvirtxml.DomainChardevSourcePty{
+						Path: sourcePath.(string),
+					},
+				}
+			}
 		default:
 			if sourcePath, ok := d.GetOk(prefix + ".source_path"); ok {
 				console.Source = &libvirtxml.DomainChardevSource{
