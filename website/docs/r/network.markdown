@@ -35,8 +35,9 @@ resource "libvirt_network" "kube_network" {
 
   # (optional) the bridge device defines the name of a bridge device
   # which will be used to construct the virtual network.
+  # (only necessary in "bridge" mode)
   # If left undefined and is required, name will be { resource.name }-br
-  # bridge = "k8snet-br"
+  # bridge = "br7"
 
   # (optional) the MTU for the network. If not supplied, the underlying device's
   # default is used (usually 1500)

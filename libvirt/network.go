@@ -133,23 +133,13 @@ func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.Netw
 	return dni, dhcp, nil
 }
 
-// getBridgeFromResource returns a libvirt's NetworkBridge from the
-// ResourceData provided or creates a new one if not specified
-// based on the network name.
+// getBridgeFromResource returns a libvirt's NetworkBridge
+// from the ResourceData provided.
 func getBridgeFromResource(d *schema.ResourceData) *libvirtxml.NetworkBridge {
-	// use a bridge provided by the user, or create one otherwise
-	var bridgeName string
+	// use a bridge provided by the user, or create one otherwise (libvirt will assign on automatically when empty)
+	bridgeName := ""
 	if b, ok := d.GetOk("bridge"); ok {
 		bridgeName = b.(string)
-	} else {
-		netNameI, _ := d.GetOk("name")
-		netName := netNameI.(string)
-		// Interface names are limited to 15 characters, so the network
-		// name has to be trimmed to 12.
-		if len(netName) > 12 {
-			netName = netName[:12]
-		}
-		bridgeName = netName + "-br"
 	}
 
 	bridge := &libvirtxml.NetworkBridge{
