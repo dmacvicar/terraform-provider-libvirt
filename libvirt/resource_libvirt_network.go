@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 const (
@@ -54,7 +54,8 @@ func resourceLibvirtNetwork() *schema.Resource {
 			"domain": {
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: false,
+				// libvirt cannot update it so force new
+				ForceNew: true,
 			},
 			"mode": { // can be "none", "nat" (default), "route", "bridge"
 				Type:     schema.TypeString,
@@ -342,25 +343,6 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 		}
 
 		d.SetPartial("bridge")
-	}
-
-	// detect changes in the domain
-	if d.HasChange("domain") {
-		networkDomain := getDomainFromResource(d)
-
-		data, err := xmlMarshallIndented(networkDomain)
-		if err != nil {
-			return fmt.Errorf("serialize update: %s", err)
-		}
-
-		log.Printf("[DEBUG] Updating domain for libvirt network '%s' with XML: %s", networkName, data)
-		err = network.Update(libvirt.NETWORK_UPDATE_COMMAND_MODIFY, libvirt.NETWORK_SECTION_DOMAIN, -1,
-			data, libvirt.NETWORK_UPDATE_AFFECT_LIVE|libvirt.NETWORK_UPDATE_AFFECT_CONFIG)
-		if err != nil {
-			return fmt.Errorf("Error when updating domain in %s: %s", networkName, err)
-		}
-
-		d.SetPartial("domain")
 	}
 
 	d.Partial(false)
