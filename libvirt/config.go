@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/mutexkv"
 	libvirt "github.com/libvirt/libvirt-go"
 	"log"
+	"sync"
 )
 
 // Config struct for the libvirt-provider
@@ -15,6 +16,9 @@ type Config struct {
 type Client struct {
 	libvirt     *libvirt.Connect
 	poolMutexKV *mutexkv.MutexKV
+	// define only one network at a time
+	// https://gitlab.com/libvirt/libvirt/-/issues/78
+	networkMutex sync.Mutex
 }
 
 // Client libvirt, generate libvirt client given URI
