@@ -113,7 +113,7 @@ func qemuAgentGetInterfacesInfo(domain Domain, wait4ipv4 bool) []libvirt.DomainI
 		Pending:    []string{qemuGetIfaceWait},
 		Target:     []string{qemuGetIfaceDone},
 		Refresh:    qemuAgentInterfacesRefreshFunc(domain, wait4ipv4),
-		MinTimeout:  1 * time.Minute,
+		MinTimeout: 1 * time.Minute,
 		Delay:      30 * time.Second, // Wait this time before starting checks
 		Timeout:    5 * time.Minute,
 	}
