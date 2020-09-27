@@ -468,17 +468,18 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error applying XSLT stylesheet: %s", err)
 	}
 
-	var network *libvirt.Network
-	{ // define only one network at a time
+	network, err := func() (*libvirt.Network, error) {
+		// define only one network at a time
 		// see https://gitlab.com/libvirt/libvirt/-/issues/78
 		meta.(*Client).networkMutex.Lock()
 		defer meta.(*Client).networkMutex.Unlock()
 
 		log.Printf("[DEBUG] Creating libvirt network at %s: %s", connectURI, data)
-		network, err = virConn.NetworkDefineXML(data)
-		if err != nil {
-			return fmt.Errorf("Error defining libvirt network: %s - %s", err, data)
-		}
+		return virConn.NetworkDefineXML(data)
+	}()
+
+	if err != nil {
+		return fmt.Errorf("Error defining libvirt network: %s - %s", err, data)
 	}
 
 	err = network.Create()
