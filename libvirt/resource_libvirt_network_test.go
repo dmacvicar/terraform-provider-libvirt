@@ -127,6 +127,61 @@ func TestAccLibvirtNetwork_DNSDisable(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtNetwork_TwoNetworks(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
+	randomNetworkResource1 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName1 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+
+	randomNetworkResource2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+					resource "libvirt_network" "%s" {
+					  name = "%s"
+					  mode = "nat"
+					  addresses = [ "10.0.1.0/24" ]
+					  dhcp {
+						enabled = true
+					  }
+					  dns {
+						enabled = true
+						local_only = true
+					  }
+					}
+
+					output "%s" {
+					  value = libvirt_network.%s.name
+					}
+
+					resource "libvirt_network" "%s" {
+					  name = "%s"
+					  mode = "nat"
+					  addresses = [ "10.10.1.0/24" ]
+					  dhcp {
+						enabled = true
+					  }
+					  dns {
+						enabled = true
+						local_only = true
+					  }
+					}
+
+					output "%s" {
+					  value = libvirt_network.%s.name
+					}`, randomNetworkResource1, randomNetworkName1, randomNetworkResource1, randomNetworkResource1,
+					randomNetworkResource2, randomNetworkName2, randomNetworkResource2, randomNetworkResource2),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtNetwork_DNSForwarders(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 
