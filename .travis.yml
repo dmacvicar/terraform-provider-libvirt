@@ -26,5 +26,4 @@ script:
   - make vet-check
   - make lint-check
   - make tf-check
-  - make test
   - make testacc TEST_ARGS="-test.failfast"
