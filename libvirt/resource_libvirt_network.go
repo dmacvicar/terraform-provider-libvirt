@@ -35,6 +35,9 @@ const (
 // "addresses" can contain (0 or 1) ipv4 and (0 or 1) ipv6 subnets
 // "mode" can be one of: "nat" (default), "isolated"
 //
+// Not all resources support update, for those that require ForceNew
+// check here: https://gitlab.com/search?utf8=%E2%9C%93&search=virNetworkDefUpdateNoSupport&group_id=130330&project_id=192693&search_code=true&repository_ref=master
+//
 func resourceLibvirtNetwork() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceLibvirtNetworkCreate,
