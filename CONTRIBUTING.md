@@ -5,7 +5,7 @@
 ### New features
 
   - Is your issue/contribution related with enabling some setting/option exposed by libvirt that the plugin does not yet support, or requires changing/extending the provider terraform schema?
-    - [ ] Consider creating a discussion/issue to discuss the enthusiasm of the team about the enhancement and discuss different approaches
+    - [ ] Start with discussion/issue to discuss the enthusiasm of the team about the enhancement and discuss different approaches and mention @dmacvicar.
     - [ ] Make sure you explain why this option is important to you, why it should be important to everyone. Describe your use-case with detail and provide examples where possible.
     - [ ] If it is a very special case, consider using the _XSLT_ support in the provider to tweak the definition instead of opening an issue
   - [ ] Does the feature you added include documentation in the [expected place](https://github.com/dmacvicar/terraform-provider-libvirt/tree/master/website/docs)?
