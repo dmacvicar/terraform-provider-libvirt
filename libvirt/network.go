@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 func waitForNetworkActive(network libvirt.Network) resource.StateRefreshFunc {
