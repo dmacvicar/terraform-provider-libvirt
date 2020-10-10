@@ -1,4 +1,3 @@
 #!/bin/bash
 set -x
 # This script is run as root
-mknod /dev/kvm c 10 232
