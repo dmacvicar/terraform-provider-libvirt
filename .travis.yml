@@ -2,9 +2,9 @@ os:       linux
 dist:     focal
 language: go
 go:
-  - 1.11.x
+  - 1.13.x
 env:
-  - GO111MODULE=on GOFLAGS=-mod=vendor LIBVIRT_DEFAULT_URI='qemu+unix:///session' TF_LIBVIRT_DISABLE_PRIVILEGED_TESTS=1 TF_LIBVIRT_RNG_DEV='/dev/random'
+  - GOFLAGS=-mod=vendor LIBVIRT_DEFAULT_URI='qemu+unix:///session' TF_LIBVIRT_DISABLE_PRIVILEGED_TESTS=1 TF_LIBVIRT_RNG_DEV='/dev/random'
 git:
   depth: 1
 install:        true
