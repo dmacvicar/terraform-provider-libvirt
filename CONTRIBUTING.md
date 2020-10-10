@@ -14,6 +14,7 @@
 ### Bugfixes
 
 - Does this fix a bug or something that does not work as expected?
+  - [ ] If possible, start the fix with a single testcase reproducing the issue in a separate commit
   - [ ] If there is an issue open, please mention it in the Pull Request
   - [ ] If there is not an issue open, consider including information on where it happens and how to reproduce it, following the [issues template](.github/ISSUE_TEMPLATE.md)
 - [ ] Maintainers do not have expertise in every libvirt setting, so please, describe how the new or current feature works and how it is used. Link to the appropriate documentation
