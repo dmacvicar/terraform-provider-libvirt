@@ -1,9 +1,0 @@
-#!/bin/bash
-set -x
-
-# This script is run as root
-
-# Workaround: https://github.com/git-lfs/git-lfs/issues/3474#issuecomment-454237261
-apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6B05F25D762E3157
-
-mknod /dev/kvm c 10 232

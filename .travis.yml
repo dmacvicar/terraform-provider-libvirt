@@ -1,17 +1,16 @@
 os:       linux
-dist:     xenial
+dist:     focal
 language: go
 go:
-  - 1.11.x
+  - 1.13.x
 env:
-  - GO111MODULE=on GOFLAGS=-mod=vendor LIBVIRT_DEFAULT_URI='qemu+unix:///session' TF_LIBVIRT_DISABLE_PRIVILEGED_TESTS=1 TF_LIBVIRT_RNG_DEV='/dev/random'
+  - GOFLAGS=-mod=vendor LIBVIRT_DEFAULT_URI='qemu+unix:///session' TF_LIBVIRT_DISABLE_PRIVILEGED_TESTS=1 TF_LIBVIRT_RNG_DEV='/dev/random'
 git:
   depth: 1
 install:        true
 before_script:
   - curl -sLo /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.12.0/terraform_0.12.0_linux_amd64.zip
   - sudo unzip /tmp/terraform.zip -d /usr/local/bin
-  - sudo bash ./travis/setup-host
 addons:
   apt:
     packages:
@@ -26,5 +25,4 @@ script:
   - make vet-check
   - make lint-check
   - make tf-check
-  - make test
   - make testacc TEST_ARGS="-test.failfast"
