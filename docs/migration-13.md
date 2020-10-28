@@ -23,7 +23,7 @@ https://github.com/dmacvicar/terraform-provider-libvirt/tree/master/examples/v0.
 
 The major change from 0.12 to 0.13 is the Explicit Provider Source Locations.
 
-In your `main.tf` this will be the needed change. 
+With the local plugin package in place, the final step is to add a [provider requirement](https://www.terraform.io/docs/configuration/provider-requirements.html) to each of the modules in your configuration to state which provider you mean when you say "libvirt" elsewhere in the module. Add the next code snippet to the `main.tf` file (including all imported modules using this libvirt provider):
 
 ```hcl
 
