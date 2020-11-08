@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/hooklift/iso9660"
 	libvirt "github.com/libvirt/libvirt-go"
-	"github.com/mitchellh/packer/common/uuid"
 )
 
 const userDataFileName string = "user-data"
@@ -119,7 +119,7 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 // The ID is made by the volume ID (the internal one used by libvirt)
 // joined by the ";" with a UUID
 func (ci *defCloudInit) buildTerraformKey(volumeKey string) string {
-	return fmt.Sprintf("%s;%s", volumeKey, uuid.TimeOrderedUUID())
+	return fmt.Sprintf("%s;%s", volumeKey, uuid.New())
 }
 
 func getCloudInitVolumeKeyFromTerraformID(id string) (string, error) {

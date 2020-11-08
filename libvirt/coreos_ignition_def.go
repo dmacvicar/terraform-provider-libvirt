@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/google/uuid"
 	libvirt "github.com/libvirt/libvirt-go"
-	"github.com/mitchellh/packer/common/uuid"
 )
 
 type defIgnition struct {
@@ -104,7 +104,7 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 // The ID is made by the volume ID (the internal one used by libvirt)
 // joined by the ";" with a UUID
 func (ign *defIgnition) buildTerraformKey(volumeKey string) string {
-	return fmt.Sprintf("%s;%s", volumeKey, uuid.TimeOrderedUUID())
+	return fmt.Sprintf("%s;%s", volumeKey, uuid.New())
 }
 
 func getIgnitionVolumeKeyFromTerraformID(id string) (string, error) {
