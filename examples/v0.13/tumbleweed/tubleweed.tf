@@ -17,7 +17,7 @@ provider "libvirt" {
 resource "libvirt_volume" "tumbleweed" {
   name   = "tumbleweed"
   pool   = "default"
-  source = "http://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-JeOS.x86_64-kvm-and-xen.qcow2"
+  source = "http://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-JeOS.x86_64-OpenStack-Cloud.qcow2"
   format = "qcow2"
 }
 
