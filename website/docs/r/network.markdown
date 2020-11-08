@@ -20,10 +20,6 @@ resource "libvirt_network" "kube_network" {
 
   # mode can be: "nat" (default), "none", "route", "bridge"
   mode = "nat"
-  
-  # (optional) the network device for forward
-  # should be the network device or bridge. prevents talk between nat networks
-  # dev = "eth0"
 
   #  the domain used by the DNS server in this network
   domain = "k8s.local"
