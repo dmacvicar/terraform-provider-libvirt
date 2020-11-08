@@ -3,7 +3,7 @@ terraform {
   required_providers {
     libvirt = {
       source  = "dmacvicar/libvirt"
-      version = "0.6.2"
+     version = "0.6.2"
     }
   }
 }
@@ -14,8 +14,8 @@ provider "libvirt" {
 }
 
 # adapt the build number 
-resource "libvirt_volume" "tubleweed" {
-  name   = "tubleweed"
+resource "libvirt_volume" "tumbleweed" {
+  name   = "tumbleweed"
   pool   = "default"
   source = "http://download.opensuse.org/tumbleweed/appliances/openSUSE-Tumbleweed-JeOS.x86_64-kvm-and-xen.qcow2"
   format = "qcow2"
@@ -40,8 +40,8 @@ resource "libvirt_cloudinit_disk" "commoninit" {
 }
 
 # Create the machine
-resource "libvirt_domain" "domain-tubleweed" {
-  name   = "tubleweed-terraform"
+resource "libvirt_domain" "domain-tumbleweed" {
+  name   = "tumbleweed-terraform"
   memory = "512"
   vcpu   = 1
 
@@ -67,7 +67,7 @@ resource "libvirt_domain" "domain-tubleweed" {
   }
 
   disk {
-    volume_id = libvirt_volume.tubleweed.id
+    volume_id = libvirt_volume.tumbleweed.id
   }
 
   graphics {
