@@ -1,14 +1,14 @@
 package libvirt
 
-import libvirt "github.com/libvirt/libvirt-go"
+import libvirtc "github.com/libvirt/libvirt-go"
 
 // StreamIO libvirt struct
 type StreamIO struct {
-	Stream libvirt.Stream
+	Stream libvirtc.Stream
 }
 
 // NewStreamIO returns libvirt StreamIO
-func NewStreamIO(s libvirt.Stream) *StreamIO {
+func NewStreamIO(s libvirtc.Stream) *StreamIO {
 	return &StreamIO{Stream: s}
 }
 

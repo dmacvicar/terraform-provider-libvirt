@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
@@ -259,7 +259,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 }
 
 func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	virConn := meta.(*Client).libvirt
+	virConn := meta.(*Client).libvirtc
 	if virConn == nil {
 		return false, fmt.Errorf(LibVirtConIsNil)
 	}
@@ -267,7 +267,7 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 	if err != nil {
 		// If the network couldn't be found, don't return an error otherwise
 		// Terraform won't create it again.
-		if lverr, ok := err.(libvirt.Error); ok && lverr.Code == libvirt.ERR_NO_NETWORK {
+		if lverr, ok := err.(libvirtc.Error); ok && lverr.Code == libvirtc.ERR_NO_NETWORK {
 			return false, nil
 		}
 		return false, err
@@ -280,8 +280,8 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 // resourceLibvirtNetworkUpdate updates dynamically some attributes in the network
 func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 	// check the list of things that can be changed dynamically
-	// in https://wiki.libvirt.org/page/Networking#virsh_net-update
-	virConn := meta.(*Client).libvirt
+	// in https://wiki.libvirtc.org/page/Networking#virsh_net-update
+	virConn := meta.(*Client).libvirtc
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -334,8 +334,8 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 		}
 
 		log.Printf("[DEBUG] Updating bridge for libvirt network '%s' with XML: %s", networkName, networkBridge.Name)
-		err = network.Update(libvirt.NETWORK_UPDATE_COMMAND_MODIFY, libvirt.NETWORK_SECTION_BRIDGE, -1,
-			data, libvirt.NETWORK_UPDATE_AFFECT_LIVE|libvirt.NETWORK_UPDATE_AFFECT_CONFIG)
+		err = network.Update(libvirtc.NETWORK_UPDATE_COMMAND_MODIFY, libvirtc.NETWORK_SECTION_BRIDGE, -1,
+			data, libvirtc.NETWORK_UPDATE_AFFECT_LIVE|libvirtc.NETWORK_UPDATE_AFFECT_CONFIG)
 		if err != nil {
 			return fmt.Errorf("Error when updating bridge in %s: %s", networkName, err)
 		}
@@ -349,8 +349,8 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 
 // resourceLibvirtNetworkCreate creates a libvirt network from the resource definition
 func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) error {
-	// see https://libvirt.org/formatnetwork.html
-	virConn := meta.(*Client).libvirt
+	// see https://libvirtc.org/formatnetwork.html
+	virConn := meta.(*Client).libvirtc
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -447,7 +447,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error applying XSLT stylesheet: %s", err)
 	}
 
-	network, err := func() (*libvirt.Network, error) {
+	network, err := func() (*libvirtc.Network, error) {
 		// define only one network at a time
 		// see https://gitlab.com/libvirt/libvirt/-/issues/78
 		meta.(*Client).networkMutex.Lock()
@@ -515,7 +515,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read resource libvirt_network")
 
-	virConn := meta.(*Client).libvirt
+	virConn := meta.(*Client).libvirtc
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -617,7 +617,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) error {
-	virConn := meta.(*Client).libvirt
+	virConn := meta.(*Client).libvirtc
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}

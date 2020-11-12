@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 	"io/ioutil"
 	"log"
@@ -18,7 +18,7 @@ import (
 )
 
 func TestAccLibvirtDomain_Basic(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
@@ -46,7 +46,7 @@ func TestAccLibvirtDomain_Basic(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Description(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
@@ -73,7 +73,7 @@ func TestAccLibvirtDomain_Description(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Detailed(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
@@ -103,8 +103,8 @@ func TestAccLibvirtDomain_Detailed(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Volume(t *testing.T) {
-	var domain libvirt.Domain
-	var volume libvirt.StorageVol
+	var domain libvirtc.Domain
+	var volume libvirtc.StorageVol
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -157,8 +157,8 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
-	var domain libvirt.Domain
-	var volume libvirt.StorageVol
+	var domain libvirtc.Domain
+	var volume libvirtc.StorageVol
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -225,9 +225,9 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 
 // tests that disk driver is set correctly for the volume format
 func TestAccLibvirtDomain_VolumeDriver(t *testing.T) {
-	var domain libvirt.Domain
-	var volumeRaw libvirt.StorageVol
-	var volumeQCOW2 libvirt.StorageVol
+	var domain libvirtc.Domain
+	var volumeRaw libvirtc.StorageVol
+	var volumeQCOW2 libvirtc.StorageVol
 	randomVolumeQCOW2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeRaw := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -291,7 +291,7 @@ func TestAccLibvirtDomain_VolumeDriver(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -335,7 +335,7 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDeviceName := acctest.RandStringFromCharSet(33, acctest.CharSetAlpha)
@@ -390,7 +390,7 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
    unsupported configuration: disk type 'virtio' of 'vda' does not support ejectable media
 
 func TestAccLibvirtDomain_URLDisk(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	fws := fileWebServer{}
 	if err := fws.Start(); err != nil {
@@ -439,7 +439,7 @@ func TestAccLibvirtDomain_URLDisk(t *testing.T) {
 }*/
 
 func TestAccLibvirtDomain_MultiISODisks(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
@@ -518,9 +518,9 @@ func TestAccLibvirtDomain_MultiISODisks(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
-	var domain libvirt.Domain
-	var kernel libvirt.StorageVol
-	var initrd libvirt.StorageVol
+	var domain libvirtc.Domain
+	var kernel libvirtc.StorageVol
+	var initrd libvirtc.StorageVol
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -584,7 +584,7 @@ func TestAccLibvirtDomain_KernelInitrdCmdline(t *testing.T) {
 func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
@@ -649,8 +649,8 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 
-	var domain libvirt.Domain
-	var network libvirt.Network
+	var domain libvirtc.Domain
+	var network libvirtc.Network
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
@@ -711,7 +711,7 @@ func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Graphics(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -804,8 +804,8 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
-	var domain libvirt.Domain
-	var volume libvirt.StorageVol
+	var domain libvirtc.Domain
+	var volume libvirtc.StorageVol
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
@@ -858,7 +858,7 @@ func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Cpu(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
 	var config = fmt.Sprintf(`
@@ -887,7 +887,7 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Video(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
 	var config = fmt.Sprintf(`
@@ -916,7 +916,7 @@ func TestAccLibvirtDomain_Video(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Autostart(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	var autostartTrue = fmt.Sprintf(`
 	resource "libvirt_domain" "%s" {
@@ -954,7 +954,7 @@ func TestAccLibvirtDomain_Autostart(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_Filesystems(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
 	var config = fmt.Sprintf(`
@@ -988,7 +988,7 @@ func TestAccLibvirtDomain_Filesystems(t *testing.T) {
 	})
 }
 
-func testAccCheckLibvirtDomainExists(name string, domain *libvirt.Domain) resource.TestCheckFunc {
+func testAccCheckLibvirtDomainExists(name string, domain *libvirtc.Domain) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
 		rs, err := getResourceFromTerraformState(name, state)
@@ -996,7 +996,7 @@ func testAccCheckLibvirtDomainExists(name string, domain *libvirt.Domain) resour
 			return err
 		}
 
-		virConn := testAccProvider.Meta().(*Client).libvirt
+		virConn := testAccProvider.Meta().(*Client).libvirtc
 
 		retrieveDomain, err := virConn.LookupDomainByUUIDString(rs.Primary.ID)
 
@@ -1021,7 +1021,7 @@ func testAccCheckLibvirtDomainExists(name string, domain *libvirt.Domain) resour
 	}
 }
 
-func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol, fwCfg string) resource.TestCheckFunc {
+func testAccCheckIgnitionXML(domain *libvirtc.Domain, volume *libvirtc.StorageVol, fwCfg string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		domainDef, err := getXMLDomainDefFromLibvirt(domain)
@@ -1045,7 +1045,7 @@ func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol,
 	}
 }
 
-func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.TestCheckFunc {
+func testAccCheckLibvirtScsiDisk(n string, domain *libvirtc.Domain) resource.TestCheckFunc {
 	return testAccCheckLibvirtDomainDescription(domain, func(domainDef libvirtxml.Domain) error {
 		disks := domainDef.Devices.Disks
 		for _, disk := range disks {
@@ -1060,7 +1060,7 @@ func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.Test
 	})
 }
 
-func testAccCheckLibvirtBlockDevice(n string, domain *libvirt.Domain) resource.TestCheckFunc {
+func testAccCheckLibvirtBlockDevice(n string, domain *libvirtc.Domain) resource.TestCheckFunc {
 	return testAccCheckLibvirtDomainDescription(domain, func(domainDef libvirtxml.Domain) error {
 		disks := domainDef.Devices.Disks
 		for _, disk := range disks {
@@ -1077,7 +1077,7 @@ func testAccCheckLibvirtBlockDevice(n string, domain *libvirt.Domain) resource.T
 	})
 }
 
-func testAccCheckLibvirtDomainDescription(domain *libvirt.Domain, checkFunc func(libvirtxml.Domain) error) resource.TestCheckFunc {
+func testAccCheckLibvirtDomainDescription(domain *libvirtc.Domain, checkFunc func(libvirtxml.Domain) error) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		domainDef, err := getXMLDomainDefFromLibvirt(domain)
 		if err != nil {
@@ -1087,7 +1087,7 @@ func testAccCheckLibvirtDomainDescription(domain *libvirt.Domain, checkFunc func
 	}
 }
 
-func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.TestCheckFunc {
+func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirtc.Domain) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		domainDef, err := getXMLDomainDefFromLibvirt(domain)
@@ -1117,7 +1117,7 @@ func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.Tes
 	}
 }
 
-func testAccCheckLibvirtMultiISODisks(domain *libvirt.Domain) resource.TestCheckFunc {
+func testAccCheckLibvirtMultiISODisks(domain *libvirtc.Domain) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		domainDef, err := getXMLDomainDefFromLibvirt(domain)
@@ -1140,10 +1140,10 @@ func testAccCheckLibvirtMultiISODisks(domain *libvirt.Domain) resource.TestCheck
 	}
 }
 
-func testAccCheckLibvirtDestroyLeavesIPs(name string, ip string, network *libvirt.Network) resource.TestCheckFunc {
+func testAccCheckLibvirtDestroyLeavesIPs(name string, ip string, network *libvirtc.Network) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
-		virConn := testAccProvider.Meta().(*Client).libvirt
+		virConn := testAccProvider.Meta().(*Client).libvirtc
 		networkDef, err := getNetworkDef(state, name, *virConn)
 		if err != nil {
 			return err
@@ -1159,7 +1159,7 @@ func testAccCheckLibvirtDestroyLeavesIPs(name string, ip string, network *libvir
 	}
 }
 
-func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel *libvirt.StorageVol, initrd *libvirt.StorageVol) resource.TestCheckFunc {
+func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirtc.Domain, kernel *libvirtc.StorageVol, initrd *libvirtc.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		domainDef, err := getXMLDomainDefFromLibvirt(domain)
@@ -1286,7 +1286,7 @@ func TestAccLibvirtDomainFirmware(t *testing.T) {
 }
 
 func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, firmware string) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	var config = fmt.Sprintf(`
 	resource "libvirt_domain" "%s" {
@@ -1324,7 +1324,7 @@ func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, fir
 		t.Fatal(err)
 	}
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	var config = fmt.Sprintf(`
 	resource "libvirt_domain" "%s" {
 		name     = "terraform-test-firmware-with-template"
@@ -1359,7 +1359,7 @@ func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, fir
 }
 
 func TestAccLibvirtDomain_MachineType(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	// Using machine type of pc as this is earliest QEMU target
 	// and so most likely to be available
@@ -1385,7 +1385,7 @@ func TestAccLibvirtDomain_MachineType(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_ArchType(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	// Using i686 as architecture in case anyone running tests on an i686 only host
 	var config = fmt.Sprintf(`
@@ -1410,7 +1410,7 @@ func TestAccLibvirtDomain_ArchType(t *testing.T) {
 	})
 }
 
-func testAccCheckLibvirtNetworkExists(name string, network *libvirt.Network) resource.TestCheckFunc {
+func testAccCheckLibvirtNetworkExists(name string, network *libvirtc.Network) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
 		rs, err := getResourceFromTerraformState(name, state)
@@ -1418,7 +1418,7 @@ func testAccCheckLibvirtNetworkExists(name string, network *libvirt.Network) res
 			return err
 		}
 
-		virConn := testAccProvider.Meta().(*Client).libvirt
+		virConn := testAccProvider.Meta().(*Client).libvirtc
 
 		retrieveNetwork, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
 
@@ -1445,8 +1445,8 @@ func testAccCheckLibvirtNetworkExists(name string, network *libvirt.Network) res
 
 // we want to destroy (shutdown volume after creation)
 func TestAccLibvirtDomain_ShutoffDomain(t *testing.T) {
-	var domain libvirt.Domain
-	var volume libvirt.StorageVol
+	var domain libvirtc.Domain
+	var volume libvirtc.StorageVol
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -1485,8 +1485,8 @@ func TestAccLibvirtDomain_ShutoffDomain(t *testing.T) {
 	})
 }
 func TestAccLibvirtDomain_ShutoffMultiDomainsRunning(t *testing.T) {
-	var domain libvirt.Domain
-	var domain2 libvirt.Domain
+	var domain libvirtc.Domain
+	var domain2 libvirtc.Domain
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -1541,7 +1541,7 @@ func TestAccLibvirtDomain_CaseInsensitiveAttrs_MAC(t *testing.T) {
 	})
 }
 
-func testAccCheckLibvirtDomainStateEqual(name string, domain *libvirt.Domain, exptectedState string) resource.TestCheckFunc {
+func testAccCheckLibvirtDomainStateEqual(name string, domain *libvirtc.Domain, exptectedState string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		rs, err := getResourceFromTerraformState(name, s)
@@ -1549,7 +1549,7 @@ func testAccCheckLibvirtDomainStateEqual(name string, domain *libvirt.Domain, ex
 			return err
 		}
 
-		virConn := testAccProvider.Meta().(*Client).libvirt
+		virConn := testAccProvider.Meta().(*Client).libvirtc
 
 		retrieveDomain, err := virConn.LookupDomainByUUIDString(rs.Primary.ID)
 
@@ -1581,7 +1581,7 @@ func testAccCheckLibvirtDomainStateEqual(name string, domain *libvirt.Domain, ex
 }
 
 func TestAccLibvirtDomain_Import(t *testing.T) {
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
 	resource.Test(t, resource.TestCase{
@@ -1617,7 +1617,7 @@ func TestAccLibvirtDomain_Import(t *testing.T) {
 func TestAccLibvirtDomain_XSLT_UnsupportedAttribute(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
@@ -1683,7 +1683,7 @@ EOF
 func TestAccLibvirtDomain_XSLT_SupportedAttribute(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
@@ -1743,7 +1743,7 @@ EOF
 func TestAccLibvirtDomain_XSLT_Whitespace(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
@@ -1842,7 +1842,7 @@ EOF
 }
 
 func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
-	virtConn := testAccProvider.Meta().(*Client).libvirt
+	virtConn := testAccProvider.Meta().(*Client).libvirtc
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "libvirt_domain" {
 			continue
@@ -1871,8 +1871,8 @@ func TestAccLibvirtDomain_FwCfgName(t *testing.T) {
 
 		We need to test if we can override the key name.
 	*/
-	var domain libvirt.Domain
-	var volume libvirt.StorageVol
+	var domain libvirtc.Domain
+	var volume libvirtc.StorageVol
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomFwCfgName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)

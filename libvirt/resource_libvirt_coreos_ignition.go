@@ -65,7 +65,7 @@ func resourceIgnitionCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceIgnitionRead(d *schema.ResourceData, meta interface{}) error {
-	virConn := meta.(*Client).libvirt
+	virConn := meta.(*Client).libvirtc
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}

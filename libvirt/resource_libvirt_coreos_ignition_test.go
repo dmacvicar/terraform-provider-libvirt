@@ -7,11 +7,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 func TestAccLibvirtIgnition_Basic(t *testing.T) {
-	var volume libvirt.StorageVol
+	var volume libvirtc.StorageVol
 	randomServiceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha) + ".service"
 	randomIgnitionName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -60,9 +60,9 @@ func TestAccLibvirtIgnition_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckIgnitionVolumeExists(name string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+func testAccCheckIgnitionVolumeExists(name string, volume *libvirtc.StorageVol) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirt
+		virConn := testAccProvider.Meta().(*Client).libvirtc
 
 		rs, err := getResourceFromTerraformState(name, state)
 		if err != nil {
@@ -95,7 +95,7 @@ func testAccCheckIgnitionVolumeExists(name string, volume *libvirt.StorageVol) r
 }
 
 func testAccCheckLibvirtIgnitionDestroy(s *terraform.State) error {
-	virtConn := testAccProvider.Meta().(*Client).libvirt
+	virtConn := testAccProvider.Meta().(*Client).libvirtc
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "libvirt_ignition" {
 			continue

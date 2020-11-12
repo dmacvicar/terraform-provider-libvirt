@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 const (
@@ -15,15 +15,15 @@ const (
 )
 
 // volumeExists returns "EXISTS" or "NOT-EXISTS" depending on the current volume existence
-func volumeExists(virConn *libvirt.Connect, key string) resource.StateRefreshFunc {
+func volumeExists(virConn *libvirtc.Connect, key string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		vol, err := virConn.LookupStorageVolByKey(key)
 		if err != nil {
-			if err.(libvirt.Error).Code == libvirt.ERR_NO_STORAGE_VOL {
+			if err.(libvirtc.Error).Code == libvirtc.ERR_NO_STORAGE_VOL {
 				log.Printf("Volume %s does not exist", key)
 				return virConn, "NOT-EXISTS", nil
 			}
-			log.Printf("Volume %s: error: %s", key, err.(libvirt.Error).Message)
+			log.Printf("Volume %s: error: %s", key, err.(libvirtc.Error).Message)
 		}
 		defer vol.Free()
 		return virConn, volExistsID, err
@@ -31,7 +31,7 @@ func volumeExists(virConn *libvirt.Connect, key string) resource.StateRefreshFun
 }
 
 // volumeWaitForExists waits for a storage volume to be up and timeout after 5 minutes.
-func volumeWaitForExists(virConn *libvirt.Connect, key string) error {
+func volumeWaitForExists(virConn *libvirtc.Connect, key string) error {
 	log.Printf("Waiting for volume %s to be active...", key)
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{volNotExistsID},
@@ -48,7 +48,7 @@ func volumeWaitForExists(virConn *libvirt.Connect, key string) error {
 }
 
 // volumeWaitDeleted waits for a storage volume to be removed
-func volumeWaitDeleted(virConn *libvirt.Connect, key string) error {
+func volumeWaitDeleted(virConn *libvirtc.Connect, key string) error {
 	log.Printf("Waiting for volume %s to be deleted...", key)
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{volExistsID},
@@ -66,10 +66,10 @@ func volumeWaitDeleted(virConn *libvirt.Connect, key string) error {
 
 // volumeDelete removes the volume identified by `key` from libvirt
 func volumeDelete(client *Client, key string) error {
-	volume, err := client.libvirt.LookupStorageVolByKey(key)
+	volume, err := client.libvirtc.LookupStorageVolByKey(key)
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
+		virErr := err.(libvirtc.Error)
+		if virErr.Code != libvirtc.ERR_NO_STORAGE_VOL {
 			return fmt.Errorf("volumeDelete: Can't retrieve volume %s: %v", key, err)
 		}
 		// Volume already deleted.
@@ -102,8 +102,8 @@ func volumeDelete(client *Client, key string) error {
 	// Does not solve the problem but it makes it happen less often.
 	_, err = volume.GetXMLDesc(0)
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
+		virErr := err.(libvirtc.Error)
+		if virErr.Code != libvirtc.ERR_NO_STORAGE_VOL {
 			return fmt.Errorf("Can't retrieve volume %s XML desc: %s", key, err)
 		}
 		// Volume is probably gone already, getting its XML description is pointless
@@ -111,31 +111,31 @@ func volumeDelete(client *Client, key string) error {
 
 	err = volume.Delete(0)
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
+		virErr := err.(libvirtc.Error)
+		if virErr.Code != libvirtc.ERR_NO_STORAGE_VOL {
 			return fmt.Errorf("Can't delete volume %s: %s", key, err)
 		}
 		// Volume is gone already
 		return nil
 	}
 
-	return volumeWaitDeleted(client.libvirt, key)
+	return volumeWaitDeleted(client.libvirtc, key)
 }
 
 // tries really hard to find volume with `key`
 // it will try to start the pool if it does not find it
 //
 // You have to call volume.Free() on the returned volume
-func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*libvirt.StorageVol, error) {
-	virConn := client.libvirt
+func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*libvirtc.StorageVol, error) {
+	virConn := client.libvirtc
 	if virConn == nil {
 		return nil, fmt.Errorf(LibVirtConIsNil)
 	}
 
 	volume, err := virConn.LookupStorageVolByKey(key)
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
+		virErr := err.(libvirtc.Error)
+		if virErr.Code != libvirtc.ERR_NO_STORAGE_VOL {
 			return nil, fmt.Errorf("Can't retrieve volume %s", key)
 		}
 		log.Printf("[INFO] Volume %s not found, attempting to start its pool", key)
@@ -163,8 +163,8 @@ func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*li
 		// attempt a new lookup
 		volume, err = virConn.LookupStorageVolByKey(key)
 		if err != nil {
-			virErr := err.(libvirt.Error)
-			if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
+			virErr := err.(libvirtc.Error)
+			if virErr.Code != libvirtc.ERR_NO_STORAGE_VOL {
 				return nil, fmt.Errorf("Can't retrieve volume %s", key)
 			}
 			// does not exist, but no error

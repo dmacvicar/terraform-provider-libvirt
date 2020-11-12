@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 type defIgnition struct {
@@ -32,7 +32,7 @@ func newIgnitionDef() defIgnition {
 // uploads it to the libVirt pool
 // Returns a string holding terraform's internal ID of this resource
 func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
-	pool, err := client.libvirt.LookupStoragePoolByName(ign.PoolName)
+	pool, err := client.libvirtc.LookupStoragePoolByName(ign.PoolName)
 	if err != nil {
 		return "", fmt.Errorf("can't find storage pool '%s'", ign.PoolName)
 	}
@@ -87,7 +87,7 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 	defer volume.Free()
 
 	// upload ignition file
-	err = img.Import(newCopier(client.libvirt, volume, volumeDef.Capacity.Value), volumeDef)
+	err = img.Import(newCopier(client.libvirtc, volume, volumeDef.Capacity.Value), volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error while uploading ignition file %s: %s", img.String(), err)
 	}
@@ -156,7 +156,7 @@ func (ign *defIgnition) createFile() (string, error) {
 }
 
 // Creates a new defIgnition object from provided id
-func newIgnitionDefFromRemoteVol(virConn *libvirt.Connect, id string) (defIgnition, error) {
+func newIgnitionDefFromRemoteVol(virConn *libvirtc.Connect, id string) (defIgnition, error) {
 	ign := defIgnition{}
 
 	key, err := getIgnitionVolumeKeyFromTerraformID(id)

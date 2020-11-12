@@ -14,7 +14,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
 )
 
@@ -23,7 +23,7 @@ const domWaitLeaseDone = "all-addresses-obtained"
 
 var errDomainInvalidState = errors.New("invalid state for domain")
 
-func domainWaitForLeases(domain *libvirt.Domain, waitForLeases []*libvirtxml.DomainInterface,
+func domainWaitForLeases(domain *libvirtc.Domain, waitForLeases []*libvirtxml.DomainInterface,
 	timeout time.Duration, rd *schema.ResourceData) error {
 	waitFunc := func() (interface{}, string, error) {
 
@@ -76,7 +76,7 @@ func domainWaitForLeases(domain *libvirt.Domain, waitForLeases []*libvirtxml.Dom
 	return err
 }
 
-func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterface, rd *schema.ResourceData) (found bool, ignore bool, err error) {
+func domainIfaceHasAddress(domain libvirtc.Domain, iface libvirtxml.DomainInterface, rd *schema.ResourceData) (found bool, ignore bool, err error) {
 
 	mac := strings.ToUpper(iface.MAC.Address)
 	if mac == "" {
@@ -103,7 +103,7 @@ func domainIfaceHasAddress(domain libvirt.Domain, iface libvirtxml.DomainInterfa
 	return false, false, nil
 }
 
-func domainGetState(domain libvirt.Domain) (string, error) {
+func domainGetState(domain libvirtc.Domain) (string, error) {
 	state, _, err := domain.GetState()
 	if err != nil {
 		return "", err
@@ -112,21 +112,21 @@ func domainGetState(domain libvirt.Domain) (string, error) {
 	var stateStr string
 
 	switch state {
-	case libvirt.DOMAIN_NOSTATE:
+	case libvirtc.DOMAIN_NOSTATE:
 		stateStr = "nostate"
-	case libvirt.DOMAIN_RUNNING:
+	case libvirtc.DOMAIN_RUNNING:
 		stateStr = "running"
-	case libvirt.DOMAIN_BLOCKED:
+	case libvirtc.DOMAIN_BLOCKED:
 		stateStr = "blocked"
-	case libvirt.DOMAIN_PAUSED:
+	case libvirtc.DOMAIN_PAUSED:
 		stateStr = "paused"
-	case libvirt.DOMAIN_SHUTDOWN:
+	case libvirtc.DOMAIN_SHUTDOWN:
 		stateStr = "shutdown"
-	case libvirt.DOMAIN_CRASHED:
+	case libvirtc.DOMAIN_CRASHED:
 		stateStr = "crashed"
-	case libvirt.DOMAIN_PMSUSPENDED:
+	case libvirtc.DOMAIN_PMSUSPENDED:
 		stateStr = "pmsuspended"
-	case libvirt.DOMAIN_SHUTOFF:
+	case libvirtc.DOMAIN_SHUTOFF:
 		stateStr = "shutoff"
 	default:
 		stateStr = fmt.Sprintf("unknown: %v", state)
@@ -135,23 +135,23 @@ func domainGetState(domain libvirt.Domain) (string, error) {
 	return stateStr, nil
 }
 
-func domainIsRunning(domain libvirt.Domain) (bool, error) {
+func domainIsRunning(domain libvirtc.Domain) (bool, error) {
 	state, _, err := domain.GetState()
 	if err != nil {
 		return false, fmt.Errorf("Couldn't get state of domain: %s", err)
 	}
 
-	return state == libvirt.DOMAIN_RUNNING, nil
+	return state == libvirtc.DOMAIN_RUNNING, nil
 }
 
-func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libvirt.DomainInterface, error) {
+func domainGetIfacesInfo(domain libvirtc.Domain, rd *schema.ResourceData) ([]libvirtc.DomainInterface, error) {
 	domainRunningNow, err := domainIsRunning(domain)
 	if err != nil {
-		return []libvirt.DomainInterface{}, err
+		return []libvirtc.DomainInterface{}, err
 	}
 	if !domainRunningNow {
 		log.Print("[DEBUG] no interfaces could be obtained: domain not running")
-		return []libvirt.DomainInterface{}, nil
+		return []libvirtc.DomainInterface{}, nil
 	}
 
 	qemuAgentEnabled := rd.Get("qemu_agent").(bool)
@@ -170,19 +170,19 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 	} else {
 		log.Printf("[DEBUG] qemu-agent is not used")
 	}
-	var interfaces []libvirt.DomainInterface
+	var interfaces []libvirtc.DomainInterface
 
 	// get all the interfaces attached to libvirt networks
 	log.Print("[DEBUG] no interfaces could be obtained with qemu-agent: falling back to the libvirt API")
 
-	interfaces, err = domain.ListAllInterfaceAddresses(libvirt.DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+	interfaces, err = domain.ListAllInterfaceAddresses(libvirtc.DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
 	if err != nil {
 		switch err.(type) {
 		default:
 			return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
-		case libvirt.Error:
-			virErr := err.(libvirt.Error)
-			if virErr.Code != libvirt.ERR_OPERATION_INVALID || virErr.Domain != libvirt.FROM_QEMU {
+		case libvirtc.Error:
+			virErr := err.(libvirtc.Error)
+			if virErr.Code != libvirtc.ERR_OPERATION_INVALID || virErr.Domain != libvirtc.FROM_QEMU {
 				return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
 			}
 		}
@@ -192,7 +192,7 @@ func domainGetIfacesInfo(domain libvirt.Domain, rd *schema.ResourceData) ([]libv
 	return interfaces, nil
 }
 
-func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml.DomainDisk, error) {
+func newDiskForCloudInit(virConn *libvirtc.Connect, volumeKey string) (libvirtxml.DomainDisk, error) {
 	disk := libvirtxml.DomainDisk{
 		Device: "cdrom",
 		Target: &libvirtxml.DomainDiskTarget{
@@ -224,7 +224,7 @@ func newDiskForCloudInit(virConn *libvirt.Connect, volumeKey string) (libvirtxml
 	return disk, nil
 }
 
-func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect, arch string) error {
+func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirtc.Connect, arch string) error {
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
 		ignitionKey, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
 		if err != nil {
@@ -465,7 +465,7 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	}
 }
 
-func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
+func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirtc.Connect) error {
 	var scsiDisk = false
 	var numOfISOs = 0
 
@@ -657,7 +657,7 @@ func setFilesystems(d *schema.ResourceData, domainDef *libvirtxml.Domain) error 
 	return nil
 }
 
-func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Connect) error {
+func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirtc.Connect) error {
 	if cloudinit, ok := d.GetOk("cloudinit"); ok {
 		cloudinitID, err := getCloudInitVolumeKeyFromTerraformID(cloudinit.(string))
 		if err != nil {
@@ -674,7 +674,7 @@ func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn 
 }
 
 func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
-	virConn *libvirt.Connect, partialNetIfaces map[string]*pendingMapping,
+	virConn *libvirtc.Connect, partialNetIfaces map[string]*pendingMapping,
 	waitForLeases *[]*libvirtxml.DomainInterface) error {
 	for i := 0; i < d.Get("network_interface.#").(int); i++ {
 		prefix := fmt.Sprintf("network_interface.%d", i)
@@ -708,7 +708,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 		}
 
 		// connect to the interface to the network... first, look for the network
-		var network *libvirt.Network
+		var network *libvirtc.Network
 		var err error
 
 		if networkName, ok := d.GetOk(prefix + ".network_name"); ok {
@@ -825,7 +825,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 	return nil
 }
 
-func destroyDomainByUserRequest(d *schema.ResourceData, domain *libvirt.Domain) error {
+func destroyDomainByUserRequest(d *schema.ResourceData, domain *libvirtc.Domain) error {
 	if d.Get("running").(bool) {
 		return nil
 	}
@@ -842,7 +842,7 @@ func destroyDomainByUserRequest(d *schema.ResourceData, domain *libvirt.Domain) 
 		return fmt.Errorf("Couldn't get info about domain: %s", err)
 	}
 
-	if state == libvirt.DOMAIN_RUNNING || state == libvirt.DOMAIN_PAUSED {
+	if state == libvirtc.DOMAIN_RUNNING || state == libvirtc.DOMAIN_PAUSED {
 		if err := domain.Destroy(); err != nil {
 			return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
 		}

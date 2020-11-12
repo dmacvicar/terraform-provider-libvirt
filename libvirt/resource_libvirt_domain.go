@@ -12,7 +12,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/suppress"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
@@ -415,14 +415,14 @@ func resourceLibvirtDomain() *schema.Resource {
 func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	log.Printf("[DEBUG] Check if resource libvirt_domain exists")
 
-	virConn := meta.(*Client).libvirt
+	virConn := meta.(*Client).libvirtc
 	if virConn == nil {
 		return false, fmt.Errorf(LibVirtConIsNil)
 	}
 
 	domain, err := virConn.LookupDomainByUUIDString(d.Id())
 	if err != nil {
-		if err.(libvirt.Error).Code == libvirt.ERR_NO_DOMAIN {
+		if err.(libvirtc.Error).Code == libvirtc.ERR_NO_DOMAIN {
 			return false, nil
 		}
 		return false, err
@@ -435,7 +435,7 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Create resource libvirt_domain")
 
-	virConn := meta.(*Client).libvirt
+	virConn := meta.(*Client).libvirtc
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -623,7 +623,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Update resource libvirt_domain")
 
-	virConn := meta.(*Client).libvirt
+	virConn := meta.(*Client).libvirtc
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -664,7 +664,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 		err = domain.UpdateDeviceFlags(
 			string(data),
-			libvirt.DOMAIN_DEVICE_MODIFY_CONFIG|libvirt.DOMAIN_DEVICE_MODIFY_CURRENT|libvirt.DOMAIN_DEVICE_MODIFY_LIVE)
+			libvirtc.DOMAIN_DEVICE_MODIFY_CONFIG|libvirtc.DOMAIN_DEVICE_MODIFY_CURRENT|libvirtc.DOMAIN_DEVICE_MODIFY_LIVE)
 		if err != nil {
 			return fmt.Errorf("Error while changing the cloudinit volume: %s", err)
 		}
@@ -723,7 +723,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read resource libvirt_domain")
 
-	virConn := meta.(*Client).libvirt
+	virConn := meta.(*Client).libvirtc
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -985,7 +985,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Delete resource libvirt_domain")
 
-	virConn := meta.(*Client).libvirt
+	virConn := meta.(*Client).libvirtc
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -1018,14 +1018,14 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Couldn't get info about domain: %s", err)
 	}
 
-	if state == libvirt.DOMAIN_RUNNING || state == libvirt.DOMAIN_PAUSED {
+	if state == libvirtc.DOMAIN_RUNNING || state == libvirtc.DOMAIN_PAUSED {
 		if err := domain.Destroy(); err != nil {
 			return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
 		}
 	}
 
-	if err := domain.UndefineFlags(libvirt.DOMAIN_UNDEFINE_NVRAM); err != nil {
-		if e := err.(libvirt.Error); e.Code == libvirt.ERR_NO_SUPPORT || e.Code == libvirt.ERR_INVALID_ARG {
+	if err := domain.UndefineFlags(libvirtc.DOMAIN_UNDEFINE_NVRAM); err != nil {
+		if e := err.(libvirtc.Error); e.Code == libvirtc.ERR_NO_SUPPORT || e.Code == libvirtc.ERR_INVALID_ARG {
 			log.Printf("libvirt does not support undefine flags: will try again without flags")
 			if err := domain.Undefine(); err != nil {
 				return fmt.Errorf("Couldn't undefine libvirt domain: %s", err)

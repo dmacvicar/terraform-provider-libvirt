@@ -15,7 +15,7 @@ func Provider() terraform.ResourceProvider {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("LIBVIRT_DEFAULT_URI", nil),
-				Description: "libvirt connection URI for operations. See https://libvirt.org/uri.html",
+				Description: "libvirt connection URI for operations. See https://libvirtc.org/uri.html",
 			},
 		},
 
@@ -45,12 +45,12 @@ var globalClientMap = make(map[string]*Client)
 func CleanupLibvirtConnections() {
 	for uri, client := range globalClientMap {
 		log.Printf("[DEBUG] cleaning up connection for URI: %s", uri)
-		alive, err := client.libvirt.IsAlive()
+		alive, err := client.libvirtc.IsAlive()
 		if err != nil {
 			log.Printf("[ERROR] cannot determine libvirt connection status: %v", err)
 		}
 		if alive {
-			ret, err := client.libvirt.Close()
+			ret, err := client.libvirtc.Close()
 			if err != nil {
 				log.Printf("[ERROR] cannot close libvirt connection %d - %v", ret, err)
 			}

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 func init() {
@@ -42,8 +42,8 @@ func TestSplitKernelEmptyCmdLine(t *testing.T) {
 	}
 }
 
-func connect(t *testing.T) *libvirt.Connect {
-	conn, err := libvirt.NewConnect(os.Getenv("LIBVIRT_DEFAULT_URI"))
+func connect(t *testing.T) *libvirtc.Connect {
+	conn, err := libvirtc.NewConnect(os.Getenv("LIBVIRT_DEFAULT_URI"))
 	if err != nil {
 		t.Fatal(err)
 	}

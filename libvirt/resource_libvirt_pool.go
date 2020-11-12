@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
 )
 
@@ -92,7 +92,7 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 
 	// Check whether the storage pool already exists. Its name needs to be
 	// unique.
-	if _, err := client.libvirt.LookupStoragePoolByName(poolName); err == nil {
+	if _, err := client.libvirtc.LookupStoragePoolByName(poolName); err == nil {
 		return fmt.Errorf("storage pool '%s' already exists", poolName)
 	}
 	log.Printf("[DEBUG] Pool with name '%s' does not exist yet", poolName)
@@ -121,7 +121,7 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	// create the pool
-	pool, err := client.libvirt.StoragePoolDefineXML(data, 0)
+	pool, err := client.libvirtc.StoragePoolDefineXML(data, 0)
 	if err != nil {
 		return fmt.Errorf("Error creating libvirt storage pool: %s", err)
 	}
@@ -161,7 +161,7 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("[INFO] Pool ID: %s", d.Id())
 
-	if err := poolWaitForExists(client.libvirt, id); err != nil {
+	if err := poolWaitForExists(client.libvirtc, id); err != nil {
 		return err
 	}
 
@@ -170,7 +170,7 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceLibvirtPoolRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
-	virConn := client.libvirt
+	virConn := client.libvirtc
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -235,15 +235,15 @@ func resourceLibvirtPoolDelete(d *schema.ResourceData, meta interface{}) error {
 func resourceLibvirtPoolExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	log.Printf("[DEBUG] Check if resource libvirt_pool exists")
 	client := meta.(*Client)
-	virConn := client.libvirt
+	virConn := client.libvirtc
 	if virConn == nil {
 		return false, fmt.Errorf(LibVirtConIsNil)
 	}
 
 	pool, err := virConn.LookupStoragePoolByUUIDString(d.Id())
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != libvirt.ERR_NO_STORAGE_POOL {
+		virErr := err.(libvirtc.Error)
+		if virErr.Code != libvirtc.ERR_NO_STORAGE_POOL {
 			return false, fmt.Errorf("Can't retrieve pool %s", d.Id())
 		}
 		// does not exist, but no error
