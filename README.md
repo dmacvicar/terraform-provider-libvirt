@@ -70,10 +70,7 @@ Follow the instructions for your distribution:
 -	`cgo` is required by the [libvirt-go](https://github.com/libvirt/libvirt-go) package. `export CGO_ENABLED="1"`
 
 
-This project uses [go modules](https://github.com/golang/go/wiki/Modules) to vendor all its
-dependencies.
-
-You do not have to interact with `modules` since the vendored packages are **already included in the repo**.
+This project uses [go modules](https://github.com/golang/go/wiki/Modules) to declare its dependencies.
 
 Ensure you have the latest version of Go installed on your system, terraform usually
 takes advantage of features available only inside of the latest stable release.
@@ -82,30 +79,12 @@ You need also need libvirt-dev(el) package installed.
 
 ### Building The Provider
 
-Clone repository to: `$GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt`
-
-```console
-mkdir -p $GOPATH/src/github.com/dmacvicar; cd $GOPATH/src/github.com/dmacvicar
+```
 git clone https://github.com/dmacvicar/terraform-provider-libvirt.git
+make
 ```
 
-Enter the provider directory and build the provider
-
-```console
-cd $GOPATH/src/github.com/dmacvicar/terraform-provider-libvirt
-make install
-```
-
-If you are using Go >= 1.11, you don't need to build inside GOPATH:
-
-```
-export GO111MODULE=on
-export GOFLAGS=-mod=vendor
-go mod vendor
-make install
-```
-
-You will now find the binary at `$GOPATH/bin/terraform-provider-libvirt`.
+The binary will be called `terraform-provider-libvirt`.
 
 #### Windows
 
@@ -122,8 +101,6 @@ pacman -S mingw-w64-x86_64-glib2
 pacman -S mingw-w64-x86_64-dbus-glib
 pacman -S mingw-w64-x86_64-libssh
 pacman -S mingw-w64-x86_64-yajl
-export GO111MODULE=on
-export GOFLAGS=-mod=vendor
 go install
 ```
 
