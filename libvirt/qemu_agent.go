@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 const qemuGetIfaceWait = "qemu-agent-wait"
@@ -35,12 +35,12 @@ type QemuAgentInterfaceIPAddress struct {
 func qemuAgentInterfacesRefreshFunc(domain Domain, wait4ipv4 bool) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 
-		var interfaces []libvirt.DomainInterface
+		var interfaces []libvirtc.DomainInterface
 
 		log.Printf("[DEBUG] sending command to qemu-agent")
 		result, err := domain.QemuAgentCommand(
 			"{\"execute\":\"guest-network-get-interfaces\"}",
-			libvirt.DOMAIN_QEMU_AGENT_COMMAND_DEFAULT,
+			libvirtc.DOMAIN_QEMU_AGENT_COMMAND_DEFAULT,
 			0)
 		if err != nil {
 			log.Printf("[DEBUG] command error: %s", err)
@@ -64,7 +64,7 @@ func qemuAgentInterfacesRefreshFunc(domain Domain, wait4ipv4 bool) resource.Stat
 				continue
 			}
 
-			libVirtIface := libvirt.DomainInterface{
+			libVirtIface := libvirtc.DomainInterface{
 				Name:   iface.Name,
 				Hwaddr: iface.Hwaddr}
 
@@ -75,17 +75,17 @@ func qemuAgentInterfacesRefreshFunc(domain Domain, wait4ipv4 bool) resource.Stat
 					continue
 				}
 
-				libVirtAddr := libvirt.DomainIPAddress{
+				libVirtAddr := libvirtc.DomainIPAddress{
 					Addr:   addr.Address,
 					Prefix: addr.Prefix,
 				}
 
 				switch strings.ToLower(addr.Type) {
 				case "ipv4":
-					libVirtAddr.Type = int(libvirt.IP_ADDR_TYPE_IPV4)
+					libVirtAddr.Type = int(libvirtc.IP_ADDR_TYPE_IPV4)
 					ipv4Assigned = true
 				case "ipv6":
-					libVirtAddr.Type = int(libvirt.IP_ADDR_TYPE_IPV6)
+					libVirtAddr.Type = int(libvirtc.IP_ADDR_TYPE_IPV6)
 				default:
 					log.Printf("[ERROR] Cannot handle unknown address type %s", addr.Type)
 					continue
@@ -107,7 +107,7 @@ func qemuAgentInterfacesRefreshFunc(domain Domain, wait4ipv4 bool) resource.Stat
 // When wait4ipv4 is turned on the code will not report interfaces that don't
 // have a ipv4 address set. This is useful when a domain gets the ipv6 address
 // before the ipv4 one.
-func qemuAgentGetInterfacesInfo(domain Domain, wait4ipv4 bool) []libvirt.DomainInterface {
+func qemuAgentGetInterfacesInfo(domain Domain, wait4ipv4 bool) []libvirtc.DomainInterface {
 
 	qemuAgentQuery := &resource.StateChangeConf{
 		Pending:    []string{qemuGetIfaceWait},
@@ -120,8 +120,8 @@ func qemuAgentGetInterfacesInfo(domain Domain, wait4ipv4 bool) []libvirt.DomainI
 
 	interfaces, err := qemuAgentQuery.WaitForState()
 	if err != nil {
-		return []libvirt.DomainInterface{}
+		return []libvirtc.DomainInterface{}
 	}
 
-	return interfaces.([]libvirt.DomainInterface)
+	return interfaces.([]libvirtc.DomainInterface)
 }

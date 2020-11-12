@@ -8,12 +8,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
-func testAccCheckLibvirtPoolExists(name string, pool *libvirt.StoragePool) resource.TestCheckFunc {
+func testAccCheckLibvirtPoolExists(name string, pool *libvirtc.StoragePool) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirt
+		virConn := testAccProvider.Meta().(*Client).libvirtc
 
 		rs, err := getResourceFromTerraformState(name, state)
 		if err != nil {
@@ -40,9 +40,9 @@ func testAccCheckLibvirtPoolExists(name string, pool *libvirt.StoragePool) resou
 	}
 }
 
-func testAccCheckLibvirtPoolDoesNotExists(n string, pool *libvirt.StoragePool) resource.TestCheckFunc {
+func testAccCheckLibvirtPoolDoesNotExists(n string, pool *libvirtc.StoragePool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirt
+		virConn := testAccProvider.Meta().(*Client).libvirtc
 
 		id, err := pool.GetUUIDString()
 		if err != nil {
@@ -60,7 +60,7 @@ func testAccCheckLibvirtPoolDoesNotExists(n string, pool *libvirt.StoragePool) r
 }
 
 func TestAccLibvirtPool_Basic(t *testing.T) {
-	var pool libvirt.StoragePool
+	var pool libvirtc.StoragePool
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
@@ -93,7 +93,7 @@ func TestAccLibvirtPool_Basic(t *testing.T) {
 // This allows Terraform users to manually delete resources without breaking Terraform.
 // This test should fail without a proper "Exists" implementation
 func TestAccLibvirtPool_ManuallyDestroyed(t *testing.T) {
-	var pool libvirt.StoragePool
+	var pool libvirtc.StoragePool
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
@@ -184,7 +184,7 @@ func TestAccLibvirtPool_NoDirPath(t *testing.T) {
 }
 
 func testAccCheckLibvirtPoolDestroy(state *terraform.State) error {
-	virConn := testAccProvider.Meta().(*Client).libvirt
+	virConn := testAccProvider.Meta().(*Client).libvirtc
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "libvirt_pool" {
 			continue

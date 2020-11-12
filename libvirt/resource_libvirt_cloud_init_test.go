@@ -7,11 +7,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
-	var volume libvirt.StorageVol
+	var volume libvirtc.StorageVol
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
@@ -122,7 +122,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 // This allows Terraform users to manually delete resources without breaking Terraform.
 // This test should fail without a proper "Exists" implementation
 func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
-	var volume libvirt.StorageVol
+	var volume libvirtc.StorageVol
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
@@ -168,9 +168,9 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	})
 }
 
-func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirtc.StorageVol) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirt
+		virConn := testAccProvider.Meta().(*Client).libvirtc
 
 		rs, err := getResourceFromTerraformState(volumeName, state)
 		if err != nil {
@@ -205,9 +205,9 @@ type Expected struct {
 	UserData, NetworkConfig, MetaData string
 }
 
-func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName string, volume *libvirtc.StorageVol) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirt
+		virConn := testAccProvider.Meta().(*Client).libvirtc
 
 		rs, err := getResourceFromTerraformState(volumeName, state)
 		if err != nil {

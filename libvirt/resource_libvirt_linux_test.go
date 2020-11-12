@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 func createPts() (string, error) {
@@ -33,7 +33,7 @@ func createPts() (string, error) {
 func TestAccLibvirtDomainConsoles(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 
-	var domain libvirt.Domain
+	var domain libvirtc.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
 	pts1, err := createPts()

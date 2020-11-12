@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 func resourceLibvirtVolume() *schema.Resource {
@@ -94,7 +94,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	client.poolMutexKV.Lock(poolName)
 	defer client.poolMutexKV.Unlock(poolName)
 
-	pool, err := client.libvirt.LookupStoragePoolByName(poolName)
+	pool, err := client.libvirtc.LookupStoragePoolByName(poolName)
 	if err != nil {
 		return fmt.Errorf("can't find storage pool '%s'", poolName)
 	}
@@ -167,12 +167,12 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 		//first handle whether it has a backing image
 		// backing images can be specified by either (id), or by (name, pool)
-		var baseVolume *libvirt.StorageVol
+		var baseVolume *libvirtc.StorageVol
 		if baseVolumeID, ok := d.GetOk("base_volume_id"); ok {
 			if _, ok := d.GetOk("base_volume_name"); ok {
 				return fmt.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given")
 			}
-			baseVolume, err = client.libvirt.LookupStorageVolByKey(baseVolumeID.(string))
+			baseVolume, err = client.libvirtc.LookupStorageVolByKey(baseVolumeID.(string))
 			if err != nil {
 				return fmt.Errorf("Can't retrieve volume ID '%s': %v", baseVolumeID.(string), err)
 			}
@@ -180,7 +180,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			baseVolumePool := pool
 			if _, ok := d.GetOk("base_volume_pool"); ok {
 				baseVolumePoolName := d.Get("base_volume_pool").(string)
-				baseVolumePool, err = client.libvirt.LookupStoragePoolByName(baseVolumePoolName)
+				baseVolumePool, err = client.libvirtc.LookupStoragePoolByName(baseVolumePoolName)
 				if err != nil {
 					return fmt.Errorf("can't find storage pool '%s'", baseVolumePoolName)
 				}
@@ -231,8 +231,8 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	// create the volume
 	volume, err := pool.StorageVolCreateXML(data, 0)
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != libvirt.ERR_STORAGE_VOL_EXIST {
+		virErr := err.(libvirtc.Error)
+		if virErr.Code != libvirtc.ERR_STORAGE_VOL_EXIST {
 			return fmt.Errorf("Error creating libvirt volume: %s", err)
 		}
 		// oops, volume exists already, read it and move on
@@ -261,7 +261,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	// upload source if present
 	if _, ok := d.GetOk("source"); ok {
-		err = img.Import(newCopier(client.libvirt, volume, volumeDef.Capacity.Value), volumeDef)
+		err = img.Import(newCopier(client.libvirtc, volume, volumeDef.Capacity.Value), volumeDef)
 		if err != nil {
 			//  don't save volume ID  in case of error. This will taint the volume after.
 			// If we don't throw away the id, we will keep instead a broken volume.
@@ -271,7 +271,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	if err := volumeWaitForExists(client.libvirt, key); err != nil {
+	if err := volumeWaitForExists(client.libvirtc, key); err != nil {
 		return err
 	}
 
@@ -281,7 +281,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 // resourceLibvirtVolumeRead returns the current state for a volume resource
 func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
-	virConn := client.libvirt
+	virConn := client.libvirtc
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -319,8 +319,8 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 
 	info, err := volume.GetInfo()
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != libvirt.ERR_NO_STORAGE_VOL {
+		virErr := err.(libvirtc.Error)
+		if virErr.Code != libvirtc.ERR_NO_STORAGE_VOL {
 			return fmt.Errorf("error retrieving volume info: %s", err)
 		}
 		log.Printf("Volume '%s' may have been deleted outside Terraform", d.Id())

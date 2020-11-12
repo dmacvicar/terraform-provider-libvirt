@@ -9,12 +9,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
-func testAccCheckLibvirtVolumeExists(name string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+func testAccCheckLibvirtVolumeExists(name string, volume *libvirtc.StorageVol) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirt
+		virConn := testAccProvider.Meta().(*Client).libvirtc
 
 		rs, err := getResourceFromTerraformState(name, state)
 		if err != nil {
@@ -41,9 +41,9 @@ func testAccCheckLibvirtVolumeExists(name string, volume *libvirt.StorageVol) re
 	}
 }
 
-func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirtc.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirt
+		virConn := testAccProvider.Meta().(*Client).libvirtc
 
 		key, err := volume.GetKey()
 		if err != nil {
@@ -60,9 +60,9 @@ func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.StorageVol
 	}
 }
 
-func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirtc.StorageVol) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirt
+		virConn := testAccProvider.Meta().(*Client).libvirtc
 
 		vol, err := getVolumeFromTerraformState(name, state, *virConn)
 		if err != nil {
@@ -92,7 +92,7 @@ func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirt.Storag
 }
 
 func TestAccLibvirtVolume_Basic(t *testing.T) {
-	var volume libvirt.StorageVol
+	var volume libvirtc.StorageVol
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -128,8 +128,8 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 }
 
 func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
-	var volume libvirt.StorageVol
-	var volume2 libvirt.StorageVol
+	var volume libvirtc.StorageVol
+	var volume2 libvirtc.StorageVol
 	random := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + random
 	resource.Test(t, resource.TestCase{
@@ -167,8 +167,8 @@ func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
 }
 
 func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
-	var volume libvirt.StorageVol
-	var volume2 libvirt.StorageVol
+	var volume libvirtc.StorageVol
+	var volume2 libvirtc.StorageVol
 	random := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + random
 	resource.Test(t, resource.TestCase{
@@ -210,7 +210,7 @@ func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 // This allows Terraform users to manually delete resources without breaking Terraform.
 // This test should fail without a proper "Exists" implementation
 func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
-	var volume libvirt.StorageVol
+	var volume libvirtc.StorageVol
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -255,7 +255,7 @@ func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 }
 
 func TestAccLibvirtVolume_RepeatedName(t *testing.T) {
-	var volume libvirt.StorageVol
+	var volume libvirtc.StorageVol
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeResource2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -304,7 +304,7 @@ func TestAccLibvirtVolume_RepeatedName(t *testing.T) {
 }
 
 func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
-	var volume libvirt.StorageVol
+	var volume libvirtc.StorageVol
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -353,8 +353,8 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 }
 
 func TestAccLibvirtVolume_DownloadFromSourceFormat(t *testing.T) {
-	var volumeRaw libvirt.StorageVol
-	var volumeQCOW2 libvirt.StorageVol
+	var volumeRaw libvirtc.StorageVol
+	var volumeQCOW2 libvirtc.StorageVol
 	randomVolumeNameRaw := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeNameQCOW := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeResourceRaw := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -412,7 +412,7 @@ func TestAccLibvirtVolume_DownloadFromSourceFormat(t *testing.T) {
 }
 
 func TestAccLibvirtVolume_Format(t *testing.T) {
-	var volume libvirt.StorageVol
+	var volume libvirtc.StorageVol
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -452,7 +452,7 @@ func TestAccLibvirtVolume_Format(t *testing.T) {
 }
 
 func TestAccLibvirtVolume_Import(t *testing.T) {
-	var volume libvirt.StorageVol
+	var volume libvirtc.StorageVol
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -493,7 +493,7 @@ func TestAccLibvirtVolume_Import(t *testing.T) {
 }
 
 func testAccCheckLibvirtVolumeDestroy(state *terraform.State) error {
-	virConn := testAccProvider.Meta().(*Client).libvirt
+	virConn := testAccProvider.Meta().(*Client).libvirtc
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "libvirt_volume" {
 			continue

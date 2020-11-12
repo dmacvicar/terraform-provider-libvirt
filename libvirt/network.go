@@ -8,11 +8,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
-func waitForNetworkActive(network libvirt.Network) resource.StateRefreshFunc {
+func waitForNetworkActive(network libvirtc.Network) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		active, err := network.IsActive()
 		if err != nil {
@@ -26,11 +26,11 @@ func waitForNetworkActive(network libvirt.Network) resource.StateRefreshFunc {
 }
 
 // waitForNetworkDestroyed waits for a network to destroyed
-func waitForNetworkDestroyed(virConn *libvirt.Connect, uuid string) resource.StateRefreshFunc {
+func waitForNetworkDestroyed(virConn *libvirtc.Connect, uuid string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		log.Printf("Waiting for network %s to be destroyed", uuid)
 		network, err := virConn.LookupNetworkByUUIDString(uuid)
-		if err.(libvirt.Error).Code == libvirt.ERR_NO_NETWORK {
+		if err.(libvirtc.Error).Code == libvirtc.ERR_NO_NETWORK {
 			return virConn, "NOT-EXISTS", nil
 		}
 		defer network.Free()

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
-func newCopier(virConn *libvirt.Connect, volume *libvirt.StorageVol, size uint64) func(src io.Reader) error {
+func newCopier(virConn *libvirtc.Connect, volume *libvirtc.StorageVol, size uint64) func(src io.Reader) error {
 	copier := func(src io.Reader) error {
 		var bytesCopied int64
 

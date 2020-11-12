@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	libvirt "github.com/libvirt/libvirt-go"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 const (
@@ -15,15 +15,15 @@ const (
 )
 
 // poolExists returns "EXISTS" or "NOT-EXISTS" depending on the current pool existence
-func poolExists(virConn *libvirt.Connect, uuid string) resource.StateRefreshFunc {
+func poolExists(virConn *libvirtc.Connect, uuid string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		pool, err := virConn.LookupStoragePoolByUUIDString(uuid)
 		if err != nil {
-			if err.(libvirt.Error).Code == libvirt.ERR_NO_STORAGE_POOL {
+			if err.(libvirtc.Error).Code == libvirtc.ERR_NO_STORAGE_POOL {
 				log.Printf("Pool %s does not exist", uuid)
 				return virConn, "NOT-EXISTS", nil
 			}
-			log.Printf("Pool %s: error: %s", uuid, err.(libvirt.Error).Message)
+			log.Printf("Pool %s: error: %s", uuid, err.(libvirtc.Error).Message)
 		}
 		if pool != nil {
 			defer pool.Free()
@@ -33,7 +33,7 @@ func poolExists(virConn *libvirt.Connect, uuid string) resource.StateRefreshFunc
 }
 
 // poolWaitForExists waits for a storage pool to be up and timeout after 5 minutes.
-func poolWaitForExists(virConn *libvirt.Connect, uuid string) error {
+func poolWaitForExists(virConn *libvirtc.Connect, uuid string) error {
 	log.Printf("Waiting for pool %s to be active...", uuid)
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{poolNotExistsID},
@@ -52,7 +52,7 @@ func poolWaitForExists(virConn *libvirt.Connect, uuid string) error {
 }
 
 // poolWaitDeleted waits for a storage pool to be removed
-func poolWaitDeleted(virConn *libvirt.Connect, uuid string) error {
+func poolWaitDeleted(virConn *libvirtc.Connect, uuid string) error {
 	log.Printf("Waiting for pool %s to be deleted...", uuid)
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{poolExistsID},
@@ -72,7 +72,7 @@ func poolWaitDeleted(virConn *libvirt.Connect, uuid string) error {
 
 // deletePool deletes the pool identified by `uuid` from libvirt
 func deletePool(client *Client, uuid string) error {
-	virConn := client.libvirt
+	virConn := client.libvirtc
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -94,7 +94,7 @@ func deletePool(client *Client, uuid string) error {
 		return fmt.Errorf("error retrieving storage pool info: %s", err)
 	}
 
-	if info.State != libvirt.STORAGE_POOL_INACTIVE {
+	if info.State != libvirtc.STORAGE_POOL_INACTIVE {
 		err := pool.Destroy()
 		if err != nil {
 			return fmt.Errorf("error deleting storage pool: %s", err)
@@ -111,5 +111,5 @@ func deletePool(client *Client, uuid string) error {
 		return fmt.Errorf("error deleting storage pool: %s", err)
 	}
 
-	return poolWaitDeleted(client.libvirt, uuid)
+	return poolWaitDeleted(client.libvirtc, uuid)
 }
