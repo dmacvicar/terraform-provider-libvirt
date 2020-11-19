@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 
-	libvirtc "github.com/libvirt/libvirt-go"
+	libvirt "github.com/digitalocean/go-libvirt"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
@@ -111,7 +111,7 @@ func splitKernelCmdLine(cmdLine string) ([]map[string]string, error) {
 	return cmdLines, nil
 }
 
-func getHostArchitecture(virConn *libvirtc.Connect) (string, error) {
+func getHostArchitecture(virConn *libvirt.Libvirt) (string, error) {
 	type HostCapabilities struct {
 		XMLName xml.Name `xml:"capabilities"`
 		Host    struct {
@@ -123,7 +123,7 @@ func getHostArchitecture(virConn *libvirtc.Connect) (string, error) {
 		}
 	}
 
-	info, err := virConn.GetCapabilities()
+	info, err := virConn.Capabilities()
 	if err != nil {
 		return "", err
 	}
@@ -134,11 +134,12 @@ func getHostArchitecture(virConn *libvirtc.Connect) (string, error) {
 	return capabilities.Host.CPU.Arch, nil
 }
 
-func getHostCapabilities(virConn *libvirtc.Connect) (libvirtxml.Caps, error) {
+//
+func getHostCapabilities(virConn *libvirt.Libvirt) (libvirtxml.Caps, error) {
 	// We should perhaps think of storing this on the connect object
 	// on first call to avoid the back and forth
 	caps := libvirtxml.Caps{}
-	capsXML, err := virConn.GetCapabilities()
+	capsXML, err := virConn.Capabilities()
 	if err != nil {
 		return caps, err
 	}

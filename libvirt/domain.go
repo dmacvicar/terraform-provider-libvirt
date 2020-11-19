@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirtc "github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
 )
 
@@ -23,11 +23,11 @@ const domWaitLeaseDone = "all-addresses-obtained"
 
 var errDomainInvalidState = errors.New("invalid state for domain")
 
-func domainWaitForLeases(domain *libvirtc.Domain, waitForLeases []*libvirtxml.DomainInterface,
+func domainWaitForLeases(virConn *libvirt.Libvirt, domain libvirt.Domain, waitForLeases []*libvirtxml.DomainInterface,
 	timeout time.Duration, rd *schema.ResourceData) error {
 	waitFunc := func() (interface{}, string, error) {
 
-		state, err := domainGetState(*domain)
+		state, err := domainGetState(virConn, domain)
 		if err != nil {
 			return false, "", err
 		}
@@ -44,7 +44,7 @@ func domainWaitForLeases(domain *libvirtc.Domain, waitForLeases []*libvirtxml.Do
 
 		// check we have IPs for all the interfaces we are waiting for
 		for _, iface := range waitForLeases {
-			found, ignore, err := domainIfaceHasAddress(*domain, *iface, rd)
+			found, ignore, err := domainIfaceHasAddress(virConn, domain, *iface, rd)
 			if err != nil {
 				return false, "", err
 			}
@@ -76,7 +76,7 @@ func domainWaitForLeases(domain *libvirtc.Domain, waitForLeases []*libvirtxml.Do
 	return err
 }
 
-func domainIfaceHasAddress(domain libvirtc.Domain, iface libvirtxml.DomainInterface, rd *schema.ResourceData) (found bool, ignore bool, err error) {
+func domainIfaceHasAddress(virConn *libvirt.Libvirt, domain libvirt.Domain, iface libvirtxml.DomainInterface, rd *schema.ResourceData) (found bool, ignore bool, err error) {
 
 	mac := strings.ToUpper(iface.MAC.Address)
 	if mac == "" {
@@ -86,14 +86,14 @@ func domainIfaceHasAddress(domain libvirtc.Domain, iface libvirtxml.DomainInterf
 	}
 
 	log.Printf("[DEBUG] waiting for network address for iface=%s\n", mac)
-	ifacesWithAddr, err := domainGetIfacesInfo(domain, rd)
+	ifacesWithAddr, err := domainGetIfacesInfo(virConn, domain, rd)
 	if err != nil {
 		return false, false, fmt.Errorf("Error retrieving interface addresses: %s", err)
 	}
 	log.Printf("[DEBUG] ifaces with addresses: %+v\n", ifacesWithAddr)
 
 	for _, ifaceWithAddr := range ifacesWithAddr {
-		if mac == strings.ToUpper(ifaceWithAddr.Hwaddr) {
+		if len(ifaceWithAddr.Hwaddr) > 0 && (mac == strings.ToUpper(ifaceWithAddr.Hwaddr[0])) {
 			log.Printf("[DEBUG] found IPs for MAC=%+v: %+v\n", mac, ifaceWithAddr.Addrs)
 			return true, false, nil
 		}
@@ -103,30 +103,30 @@ func domainIfaceHasAddress(domain libvirtc.Domain, iface libvirtxml.DomainInterf
 	return false, false, nil
 }
 
-func domainGetState(domain libvirtc.Domain) (string, error) {
-	state, _, err := domain.GetState()
+func domainGetState(virConn *libvirt.Libvirt, domain libvirt.Domain) (string, error) {
+	state, _, err := virConn.DomainGetState(domain, 0)
 	if err != nil {
 		return "", err
 	}
 
 	var stateStr string
 
-	switch state {
-	case libvirtc.DOMAIN_NOSTATE:
+	switch libvirt.DomainState(state) {
+	case libvirt.DomainNostate:
 		stateStr = "nostate"
-	case libvirtc.DOMAIN_RUNNING:
+	case libvirt.DomainRunning:
 		stateStr = "running"
-	case libvirtc.DOMAIN_BLOCKED:
+	case libvirt.DomainBlocked:
 		stateStr = "blocked"
-	case libvirtc.DOMAIN_PAUSED:
+	case libvirt.DomainPaused:
 		stateStr = "paused"
-	case libvirtc.DOMAIN_SHUTDOWN:
+	case libvirt.DomainShutdown:
 		stateStr = "shutdown"
-	case libvirtc.DOMAIN_CRASHED:
+	case libvirt.DomainCrashed:
 		stateStr = "crashed"
-	case libvirtc.DOMAIN_PMSUSPENDED:
+	case libvirt.DomainPmsuspended:
 		stateStr = "pmsuspended"
-	case libvirtc.DOMAIN_SHUTOFF:
+	case libvirt.DomainShutoff:
 		stateStr = "shutoff"
 	default:
 		stateStr = fmt.Sprintf("unknown: %v", state)
@@ -135,64 +135,47 @@ func domainGetState(domain libvirtc.Domain) (string, error) {
 	return stateStr, nil
 }
 
-func domainIsRunning(domain libvirtc.Domain) (bool, error) {
-	state, _, err := domain.GetState()
+func domainIsRunning(virConn *libvirt.Libvirt, domain libvirt.Domain) (bool, error) {
+	state, _, err := virConn.DomainGetState(domain, 0)
 	if err != nil {
 		return false, fmt.Errorf("Couldn't get state of domain: %s", err)
 	}
 
-	return state == libvirtc.DOMAIN_RUNNING, nil
+	return libvirt.DomainState(state) == libvirt.DomainRunning, nil
 }
 
-func domainGetIfacesInfo(domain libvirtc.Domain, rd *schema.ResourceData) ([]libvirtc.DomainInterface, error) {
-	domainRunningNow, err := domainIsRunning(domain)
+func domainGetIfacesInfo(virConn *libvirt.Libvirt, domain libvirt.Domain, rd *schema.ResourceData) ([]libvirt.DomainInterface, error) {
+	domainRunningNow, err := domainIsRunning(virConn, domain)
 	if err != nil {
-		return []libvirtc.DomainInterface{}, err
+		return []libvirt.DomainInterface{}, err
 	}
 	if !domainRunningNow {
 		log.Print("[DEBUG] no interfaces could be obtained: domain not running")
-		return []libvirtc.DomainInterface{}, nil
+		return []libvirt.DomainInterface{}, nil
 	}
 
 	qemuAgentEnabled := rd.Get("qemu_agent").(bool)
 	if qemuAgentEnabled {
-		// get all the interfaces using the qemu-agent, this includes also
-		// interfaces that are not attached to networks managed by libvirt
-		// (eg. bridges, macvtap,...)
-		log.Print("[DEBUG] fetching networking interfaces using qemu-agent")
-		interfaces := qemuAgentGetInterfacesInfo(&domain, true)
-		if len(interfaces) > 0 {
-			// the agent will always return all the interfaces, both the
-			// ones managed by libvirt and the ones attached to bridge interfaces
-			// or macvtap. Hence it has the highest priority
-			return interfaces, nil
-		}
+		log.Print("[DEBUG] Not implemented")
 	} else {
 		log.Printf("[DEBUG] qemu-agent is not used")
 	}
-	var interfaces []libvirtc.DomainInterface
+	var interfaces []libvirt.DomainInterface
 
 	// get all the interfaces attached to libvirt networks
 	log.Print("[DEBUG] no interfaces could be obtained with qemu-agent: falling back to the libvirt API")
 
-	interfaces, err = domain.ListAllInterfaceAddresses(libvirtc.DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE)
+	interfaces, err = virConn.DomainInterfaceAddresses(domain, uint32(libvirt.DomainInterfaceAddressesSrcLease), 0)
+	// FIXME with C bindings we did not return error for ErrOperationInvalid or e.Domain == FromQemu
 	if err != nil {
-		switch err.(type) {
-		default:
-			return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
-		case libvirtc.Error:
-			virErr := err.(libvirtc.Error)
-			if virErr.Code != libvirtc.ERR_OPERATION_INVALID || virErr.Domain != libvirtc.FROM_QEMU {
-				return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
-			}
-		}
+		return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
 	}
 	log.Printf("[DEBUG] Interfaces info obtained with libvirt API:\n%s\n", spew.Sdump(interfaces))
 
 	return interfaces, nil
 }
 
-func newDiskForCloudInit(virConn *libvirtc.Connect, volumeKey string) (libvirtxml.DomainDisk, error) {
+func newDiskForCloudInit(virConn *libvirt.Libvirt, volumeKey string) (libvirtxml.DomainDisk, error) {
 	disk := libvirtxml.DomainDisk{
 		Device: "cdrom",
 		Target: &libvirtxml.DomainDiskTarget{
@@ -206,11 +189,11 @@ func newDiskForCloudInit(virConn *libvirtc.Connect, volumeKey string) (libvirtxm
 		},
 	}
 
-	diskVolume, err := virConn.LookupStorageVolByKey(volumeKey)
+	diskVolume, err := virConn.StorageVolLookupByKey(volumeKey)
 	if err != nil {
 		return disk, fmt.Errorf("Can't retrieve volume %s: %v", volumeKey, err)
 	}
-	diskVolumeFile, err := diskVolume.GetPath()
+	diskVolumeFile, err := virConn.StorageVolGetPath(diskVolume)
 	if err != nil {
 		return disk, fmt.Errorf("Error retrieving volume file: %s", err)
 	}
@@ -224,7 +207,7 @@ func newDiskForCloudInit(virConn *libvirtc.Connect, volumeKey string) (libvirtxm
 	return disk, nil
 }
 
-func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirtc.Connect, arch string) error {
+func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch string) error {
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
 		ignitionKey, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
 		if err != nil {
@@ -465,7 +448,7 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	}
 }
 
-func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirtc.Connect) error {
+func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt) error {
 	var scsiDisk = false
 	var numOfISOs = 0
 
@@ -484,29 +467,19 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 		}
 
 		if volumeKey, ok := d.GetOk(prefix + ".volume_id"); ok {
-			diskVolume, err := virConn.LookupStorageVolByKey(volumeKey.(string))
+			diskVolume, err := virConn.StorageVolLookupByKey(volumeKey.(string))
 			if err != nil {
 				return fmt.Errorf("Can't retrieve volume %s: %v", volumeKey.(string), err)
 			}
 
-			diskVolumeName, err := diskVolume.GetName()
-			if err != nil {
-				return fmt.Errorf("Can't retrieve name for volume %s", volumeKey.(string))
-			}
-
-			diskPool, err := diskVolume.LookupPoolByVolume()
+			diskPool, err := virConn.StoragePoolLookupByVolume(diskVolume)
 			if err != nil {
 				return fmt.Errorf("Can't retrieve pool for volume %s", volumeKey.(string))
 			}
 
-			diskPoolName, err := diskPool.GetName()
-			if err != nil {
-				return fmt.Errorf("Can't retrieve name for pool of volume %s", volumeKey.(string))
-			}
-
 			// find out the format of the volume in order to set the appropriate
 			// driver
-			volumeDef, err := newDefVolumeFromLibvirt(diskVolume)
+			volumeDef, err := newDefVolumeFromLibvirt(virConn, diskVolume)
 			if err != nil {
 				return err
 			}
@@ -531,8 +504,8 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 
 			disk.Source = &libvirtxml.DomainDiskSource{
 				Volume: &libvirtxml.DomainDiskSourceVolume{
-					Pool:   diskPoolName,
-					Volume: diskVolumeName,
+					Pool:   diskPool.Name,
+					Volume: diskVolume.Name,
 				},
 			}
 		} else if rawURL, ok := d.GetOk(prefix + ".url"); ok {
@@ -657,7 +630,7 @@ func setFilesystems(d *schema.ResourceData, domainDef *libvirtxml.Domain) error 
 	return nil
 }
 
-func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirtc.Connect) error {
+func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt) error {
 	if cloudinit, ok := d.GetOk("cloudinit"); ok {
 		cloudinitID, err := getCloudInitVolumeKeyFromTerraformID(cloudinit.(string))
 		if err != nil {
@@ -674,7 +647,7 @@ func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn 
 }
 
 func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
-	virConn *libvirtc.Connect, partialNetIfaces map[string]*pendingMapping,
+	virConn *libvirt.Libvirt, partialNetIfaces map[string]*pendingMapping,
 	waitForLeases *[]*libvirtxml.DomainInterface) error {
 	for i := 0; i < d.Get("network_interface.#").(int); i++ {
 		prefix := fmt.Sprintf("network_interface.%d", i)
@@ -708,24 +681,23 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 		}
 
 		// connect to the interface to the network... first, look for the network
-		var network *libvirtc.Network
+		var network libvirt.Network
 		var err error
 
 		if networkName, ok := d.GetOk(prefix + ".network_name"); ok {
-			network, err = virConn.LookupNetworkByName(networkName.(string))
+			network, err = virConn.NetworkLookupByName(networkName.(string))
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network '%s'", networkName.(string))
 			}
-			defer network.Free()
-
 		} else if networkUUID, ok := d.GetOk(prefix + ".network_id"); ok {
 			// when using a "network_id" we are referring to a "network resource"
 			// we have defined somewhere else...
-			network, err = virConn.LookupNetworkByUUIDString(networkUUID.(string))
+			var uuid libvirt.UUID
+			copy(uuid[:], networkUUID.(string))
+			network, err = virConn.NetworkLookupByUUID(uuid)
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network ID %s", networkUUID)
 			}
-			defer network.Free()
 
 		} else if bridgeNameI, ok := d.GetOk(prefix + ".bridge"); ok {
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
@@ -759,12 +731,10 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 		}
 
 		// if we got a network
-		if network != nil {
-			networkName, err := network.GetName()
-			if err != nil {
-				return fmt.Errorf("Error retrieving network name: %s", err)
-			}
-			networkDef, err := getXMLNetworkDefFromLibvirt(network)
+		// FIXME
+		//		if network != nil {
+		if network.Name != "" {
+			networkDef, err := getXMLNetworkDefFromLibvirt(virConn, network)
 
 			// only for DHCP, we update the host table of the network
 			if HasDHCP(networkDef) {
@@ -781,8 +751,8 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 							return fmt.Errorf("Could not parse addresses '%s'", address)
 						}
 
-						log.Printf("[INFO] Adding IP/MAC/host=%s/%s/%s to %s", ip.String(), mac, hostname, networkName)
-						if err := updateOrAddHost(network, ip.String(), mac, hostname); err != nil {
+						log.Printf("[INFO] Adding IP/MAC/host=%s/%s/%s to %s", ip.String(), mac, hostname, network.Name)
+						if err := updateOrAddHost(virConn, network, ip.String(), mac, hostname); err != nil {
 							return err
 						}
 					}
@@ -806,7 +776,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 						partialNetIfaces[strings.ToUpper(mac)] = &pendingMapping{
 							mac:         strings.ToUpper(mac),
 							hostname:    hostname,
-							networkName: networkName,
+							networkName: network.Name,
 						}
 					}
 				}
@@ -814,7 +784,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
 				Network: &libvirtxml.DomainInterfaceSourceNetwork{
-					Network: networkName,
+					Network: network.Name,
 				},
 			}
 		}
@@ -825,25 +795,19 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 	return nil
 }
 
-func destroyDomainByUserRequest(d *schema.ResourceData, domain *libvirtc.Domain) error {
+func destroyDomainByUserRequest(virConn *libvirt.Libvirt, d *schema.ResourceData, domain libvirt.Domain) error {
 	if d.Get("running").(bool) {
 		return nil
 	}
 
-	domainID, err := domain.GetUUIDString()
-
-	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt domain id: %s", err)
-	}
-
-	log.Printf("Destroying libvirt domain %s", domainID)
-	state, _, err := domain.GetState()
+	log.Printf("Destroying libvirt domain %v", domain.UUID)
+	state, _, err := virConn.DomainGetState(domain, 0)
 	if err != nil {
 		return fmt.Errorf("Couldn't get info about domain: %s", err)
 	}
 
-	if state == libvirtc.DOMAIN_RUNNING || state == libvirtc.DOMAIN_PAUSED {
-		if err := domain.Destroy(); err != nil {
+	if libvirt.DomainState(state) == libvirt.DomainRunning || libvirt.DomainState(state) == libvirt.DomainPaused {
+		if err := virConn.DomainDestroy(domain); err != nil {
 			return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
 		}
 	}
