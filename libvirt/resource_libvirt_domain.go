@@ -435,7 +435,7 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Create resource libvirt_domain")
 
-	virConn := meta.(*Client).libvirtc
+	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}

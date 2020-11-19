@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"os"
 
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirtc "github.com/libvirt/libvirt-go"
+	//libvirtc "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 // from existing domain return its  XMLdefintion
-func getXMLDomainDefFromLibvirt(domain *libvirtc.Domain) (libvirtxml.Domain, error) {
-	domainXMLDesc, err := domain.GetXMLDesc(0)
+func getXMLDomainDefFromLibvirt(virConn *libvirt.Libvirt, domain libvirt.Domain) (libvirtxml.Domain, error) {
+	
+	domainXMLDesc, err := libvirt.DomainGetXMLDesc(domain, 0)
 	if err != nil {
 		return libvirtxml.Domain{}, fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
 	}
@@ -104,7 +106,7 @@ func newDomainDef() libvirtxml.Domain {
 	return domainDef
 }
 
-func newDomainDefForConnection(virConn *libvirtc.Connect, rd *schema.ResourceData) (libvirtxml.Domain, error) {
+func newDomainDefForConnection(virConn *libvirt.Libvirt, rd *schema.ResourceData) (libvirtxml.Domain, error) {
 	d := newDomainDef()
 
 	if arch, ok := rd.GetOk("arch"); ok {
