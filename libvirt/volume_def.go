@@ -4,7 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 
-	libvirtc "github.com/libvirt/libvirt-go"
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/libvirt/libvirt-go-xml"
 )
 
@@ -35,14 +35,10 @@ func newDefVolumeFromXML(s string) (libvirtxml.StorageVolume, error) {
 	return volumeDef, nil
 }
 
-func newDefVolumeFromLibvirt(volume *libvirtc.StorageVol) (libvirtxml.StorageVolume, error) {
-	name, err := volume.GetName()
+func newDefVolumeFromLibvirt(virConn *libvirt.Libvirt, volume libvirt.StorageVol) (libvirtxml.StorageVolume, error) {
+	volumeDefXML, err := virConn.StorageVolGetXMLDesc(volume, 0)
 	if err != nil {
-		return libvirtxml.StorageVolume{}, fmt.Errorf("could not get name for volume: %s", err)
-	}
-	volumeDefXML, err := volume.GetXMLDesc(0)
-	if err != nil {
-		return libvirtxml.StorageVolume{}, fmt.Errorf("could not get XML description for volume %s: %s", name, err)
+		return libvirtxml.StorageVolume{}, fmt.Errorf("could not get XML description for volume %s: %s", volume.Name, err)
 	}
 	volumeDef, err := newDefVolumeFromXML(volumeDefXML)
 	if err != nil {
@@ -51,12 +47,12 @@ func newDefVolumeFromLibvirt(volume *libvirtc.StorageVol) (libvirtxml.StorageVol
 	return volumeDef, nil
 }
 
-func newDefBackingStoreFromLibvirt(baseVolume *libvirtc.StorageVol) (libvirtxml.StorageVolumeBackingStore, error) {
-	baseVolumeDef, err := newDefVolumeFromLibvirt(baseVolume)
+func newDefBackingStoreFromLibvirt(virConn *libvirt.Libvirt, baseVolume libvirt.StorageVol) (libvirtxml.StorageVolumeBackingStore, error) {
+	baseVolumeDef, err := newDefVolumeFromLibvirt(virConn, baseVolume)
 	if err != nil {
 		return libvirtxml.StorageVolumeBackingStore{}, fmt.Errorf("could not get volume: %s", err)
 	}
-	baseVolPath, err := baseVolume.GetPath()
+	baseVolPath, err := virConn.StorageVolGetPath(baseVolume)
 	if err != nil {
 		return libvirtxml.StorageVolumeBackingStore{}, fmt.Errorf("could not get base image path: %s", err)
 	}

@@ -427,7 +427,6 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 		}
 		return false, err
 	}
-	defer domain.Free()
 
 	return true, nil
 }
@@ -485,7 +484,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	setFirmware(d, &domainDef)
 	setBootDevices(d, &domainDef)
 
-	if err := setCoreOSIgnition(d, &domainDef, virConn, arch); err != nil {
+	if err := setCoreOSIgnition(d, &domainDef, arch); err != nil {
 		return err
 	}
 
@@ -541,7 +540,6 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("Error creating libvirt domain: %s", err)
 	}
-	defer domain.Free()
 
 	id, err := domain.GetUUIDString()
 	if err != nil {
@@ -597,7 +595,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				continue
 			}
 
-			network, err := virConn.LookupNetworkByName(pending.networkName)
+			network, err := virConn.NetworkLookupByName(pending.networkName)
 			if err != nil {
 				log.Printf("Can't retrieve network '%s'", pending.networkName)
 				continue
@@ -607,12 +605,11 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				address := addressI.(string)
 				log.Printf("[INFO] Finally adding IP/MAC/host=%s/%s/%s", address, mac, pending.hostname)
 
-				err = updateOrAddHost(network, address, mac, pending.hostname)
+				err = updateOrAddHost(virConn, network, address, mac, pending.hostname)
 				if err != nil {
 					log.Printf("Could not add IP/MAC/host=%s/%s/%s: %s", address, mac, pending.hostname, err)
 				}
 			}
-			network.Free()
 		}
 	}
 
@@ -631,7 +628,6 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
-	defer domain.Free()
 
 	domainRunningNow, err := domainIsRunning(*domain)
 	if err != nil {
@@ -692,7 +688,6 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network ID %s", networkUUID)
 			}
-			defer network.Free()
 
 			networkName, err := network.GetName()
 			if err != nil {
@@ -732,7 +727,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
-	defer domain.Free()
 
 	xmlDesc, err := domain.GetXMLDesc(0)
 	if err != nil {
@@ -831,7 +825,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			if err != nil {
 				return fmt.Errorf("Error retrieving volume for disk: %s", err)
 			}
-			defer virVol.Free()
 
 			virVolKey, err := virVol.GetKey()
 			if err != nil {
@@ -846,13 +839,11 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			if err != nil {
 				return fmt.Errorf("Error retrieving pool for disk: %s", err)
 			}
-			defer pool.Free()
 
 			virVol, err := pool.LookupStorageVolByName(diskDef.Source.Volume.Volume)
 			if err != nil {
 				return fmt.Errorf("Error retrieving volume for disk: %s", err)
 			}
-			defer virVol.Free()
 
 			virVolKey, err := virVol.GetKey()
 			if err != nil {
@@ -927,7 +918,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
 			}
-			defer network.Free()
 
 			netIface["network_id"], err = network.GetUUIDString()
 			if err != nil {
@@ -996,7 +986,6 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
-	defer domain.Free()
 
 	xmlDesc, err := domain.GetXMLDesc(0)
 	if err != nil {

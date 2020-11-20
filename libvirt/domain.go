@@ -15,6 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	libvirtc "github.com/libvirt/libvirt-go"
+	libvirt "github.com/digitalocean/go-libvirt"
+
 	"github.com/libvirt/libvirt-go-xml"
 )
 
@@ -224,7 +226,7 @@ func newDiskForCloudInit(virConn *libvirtc.Connect, volumeKey string) (libvirtxm
 	return disk, nil
 }
 
-func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirtc.Connect, arch string) error {
+func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch string) error {
 	if ignition, ok := d.GetOk("coreos_ignition"); ok {
 		ignitionKey, err := getIgnitionVolumeKeyFromTerraformID(ignition.(string))
 		if err != nil {
@@ -465,7 +467,7 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	}
 }
 
-func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirtc.Connect) error {
+func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt) error {
 	var scsiDisk = false
 	var numOfISOs = 0
 
@@ -484,29 +486,19 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 		}
 
 		if volumeKey, ok := d.GetOk(prefix + ".volume_id"); ok {
-			diskVolume, err := virConn.LookupStorageVolByKey(volumeKey.(string))
+			diskVolume, err := virConn.StorageVolLookupByKey(volumeKey.(string))
 			if err != nil {
 				return fmt.Errorf("Can't retrieve volume %s: %v", volumeKey.(string), err)
 			}
 
-			diskVolumeName, err := diskVolume.GetName()
-			if err != nil {
-				return fmt.Errorf("Can't retrieve name for volume %s", volumeKey.(string))
-			}
-
-			diskPool, err := diskVolume.LookupPoolByVolume()
+			diskPool, err := virConn.StoragePoolLookupByVolume(diskVolume)
 			if err != nil {
 				return fmt.Errorf("Can't retrieve pool for volume %s", volumeKey.(string))
 			}
 
-			diskPoolName, err := diskPool.GetName()
-			if err != nil {
-				return fmt.Errorf("Can't retrieve name for pool of volume %s", volumeKey.(string))
-			}
-
 			// find out the format of the volume in order to set the appropriate
 			// driver
-			volumeDef, err := newDefVolumeFromLibvirt(diskVolume)
+			volumeDef, err := newDefVolumeFromLibvirt(virConn, diskVolume)
 			if err != nil {
 				return err
 			}
@@ -531,8 +523,8 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 
 			disk.Source = &libvirtxml.DomainDiskSource{
 				Volume: &libvirtxml.DomainDiskSourceVolume{
-					Pool:   diskPoolName,
-					Volume: diskVolumeName,
+					Pool:   diskPool.Name,
+					Volume: diskVolume.Name,
 				},
 			}
 		} else if rawURL, ok := d.GetOk(prefix + ".url"); ok {
@@ -674,7 +666,7 @@ func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn 
 }
 
 func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
-	virConn *libvirtc.Connect, partialNetIfaces map[string]*pendingMapping,
+	virConn *libvirt.Libvirt, partialNetIfaces map[string]*pendingMapping,
 	waitForLeases *[]*libvirtxml.DomainInterface) error {
 	for i := 0; i < d.Get("network_interface.#").(int); i++ {
 		prefix := fmt.Sprintf("network_interface.%d", i)
@@ -708,24 +700,23 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 		}
 
 		// connect to the interface to the network... first, look for the network
-		var network *libvirtc.Network
+		var network libvirt.Network
 		var err error
 
 		if networkName, ok := d.GetOk(prefix + ".network_name"); ok {
-			network, err = virConn.LookupNetworkByName(networkName.(string))
+			network, err = virConn.NetworkLookupByName(networkName.(string))
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network '%s'", networkName.(string))
 			}
-			defer network.Free()
-
 		} else if networkUUID, ok := d.GetOk(prefix + ".network_id"); ok {
 			// when using a "network_id" we are referring to a "network resource"
 			// we have defined somewhere else...
-			network, err = virConn.LookupNetworkByUUIDString(networkUUID.(string))
-			if err != nil {
+			var uuid libvirt.UUID
+			copy(uuid[:], networkUUID.(string))
+			network, err = virConn.NetworkLookupByUUID(uuid)
+						if err != nil {
 				return fmt.Errorf("Can't retrieve network ID %s", networkUUID)
 			}
-			defer network.Free()
 
 		} else if bridgeNameI, ok := d.GetOk(prefix + ".bridge"); ok {
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
@@ -759,12 +750,10 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 		}
 
 		// if we got a network
-		if network != nil {
-			networkName, err := network.GetName()
-			if err != nil {
-				return fmt.Errorf("Error retrieving network name: %s", err)
-			}
-			networkDef, err := getXMLNetworkDefFromLibvirt(network)
+		// FIXME
+		//		if network != nil {
+		if network.Name != "" {
+			networkDef, err := getXMLNetworkDefFromLibvirt(virConn, network)
 
 			// only for DHCP, we update the host table of the network
 			if HasDHCP(networkDef) {
@@ -781,7 +770,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 							return fmt.Errorf("Could not parse addresses '%s'", address)
 						}
 
-						log.Printf("[INFO] Adding IP/MAC/host=%s/%s/%s to %s", ip.String(), mac, hostname, networkName)
+						log.Printf("[INFO] Adding IP/MAC/host=%s/%s/%s to %s", ip.String(), mac, hostname, network.Name)
 						if err := updateOrAddHost(network, ip.String(), mac, hostname); err != nil {
 							return err
 						}
@@ -806,7 +795,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 						partialNetIfaces[strings.ToUpper(mac)] = &pendingMapping{
 							mac:         strings.ToUpper(mac),
 							hostname:    hostname,
-							networkName: networkName,
+							networkName: network.Name,
 						}
 					}
 				}
@@ -825,7 +814,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 	return nil
 }
 
-func destroyDomainByUserRequest(d *schema.ResourceData, domain *libvirtc.Domain) error {
+func destroyDomainByUserRequest(d *schema.ResourceData, domain libvirt.Domain) error {
 	if d.Get("running").(bool) {
 		return nil
 	}

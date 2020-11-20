@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 
+	libvirt "github.com/digitalocean/go-libvirt"
 	libvirtc "github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
 )
@@ -33,8 +34,8 @@ func newDefNetworkFromXML(s string) (libvirtxml.Network, error) {
 	return networkDef, nil
 }
 
-func getXMLNetworkDefFromLibvirt(network Network) (libvirtxml.Network, error) {
-	networkXMLDesc, err := network.GetXMLDesc(0)
+func getXMLNetworkDefFromLibvirt(virConn *libvirt.Libvirt, network libvirt.Network) (libvirtxml.Network, error) {
+	networkXMLDesc, err := virConn.NetworkGetXMLDesc(network, 0)
 	if err != nil {
 		return libvirtxml.Network{}, fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
 	}
@@ -123,8 +124,8 @@ func getNetworkIdx(n *libvirtxml.Network, ip string) (int, error) {
 }
 
 // Tries to update first, if that fails, it will add it
-func updateOrAddHost(n *libvirtc.Network, ip, mac, name string) error {
-	xmlNet, _ := getXMLNetworkDefFromLibvirt(n)
+func updateOrAddHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string) error {
+	xmlNet, _ := getXMLNetworkDefFromLibvirt(virConn, n)
 	// We don't check the error above
 	// if we can't parse the network to xml for some kind fo reasons
 	// we will return the default '-1' value.
