@@ -10,10 +10,9 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/suppress"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirtc "github.com/libvirt/libvirt-go"
-	libvirt "github.com/digitalocean/go-libvirt"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
@@ -560,7 +559,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[INFO] Domain ID: %s", d.Id())
 
 	if len(waitForLeases) > 0 {
-		err = domainWaitForLeases(domain, waitForLeases, d.Timeout(schema.TimeoutCreate), d)
+		err = domainWaitForLeases(virConn, domain, waitForLeases, d.Timeout(schema.TimeoutCreate), d)
 		if err != nil {
 			ipNotFoundMsg := "Error: couldn't retrieve IP address of domain." +
 				"Please check following: \n" +
@@ -616,7 +615,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	destroyDomainByUserRequest(d, domain)
+	destroyDomainByUserRequest(virConn, d, domain)
 	return nil
 }
 
@@ -666,7 +665,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 		err = virConn.DomainUpdateDeviceFlags(domain,
 			string(data),
-			libvirt.DomainDeviceModifyConfig | libvirt.DomainDeviceModifyCurrent | libvirt.DomainDeviceModifyLive)
+			libvirt.DomainDeviceModifyConfig|libvirt.DomainDeviceModifyCurrent|libvirt.DomainDeviceModifyLive)
 		if err != nil {
 			return fmt.Errorf("Error while changing the cloudinit volume: %s", err)
 		}
@@ -933,7 +932,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
 			}
 
-			networkDef, err := getXMLNetworkDefFromLibvirt(network)
+			networkDef, err := getXMLNetworkDefFromLibvirt(virConn, network)
 			if err != nil {
 				return err
 			}
@@ -992,12 +991,13 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Deleting domain %s", d.Id())
 
 	var uuid libvirt.UUID
-	domain, err := virConn.DomainLookupByUUIDString(d.Id())
+	copy(uuid[:], d.Id())
+	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
 
-	xmlDesc, err := domain.GetXMLDesc(0)
+	xmlDesc, err := virConn.DomainGetXMLDesc(domain, 0)
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
 	}
