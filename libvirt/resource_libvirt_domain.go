@@ -13,6 +13,7 @@ import (
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/suppress"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	libvirtc "github.com/libvirt/libvirt-go"
+	libvirt "github.com/digitalocean/go-libvirt"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
@@ -415,12 +416,14 @@ func resourceLibvirtDomain() *schema.Resource {
 func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	log.Printf("[DEBUG] Check if resource libvirt_domain exists")
 
-	virConn := meta.(*Client).libvirtc
+	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return false, fmt.Errorf(LibVirtConIsNil)
 	}
 
-	domain, err := virConn.LookupDomainByUUIDString(d.Id())
+	var uuid libvirt.UUID
+	copy(uuid[:], d.Id())
+	_, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
 		if err.(libvirtc.Error).Code == libvirtc.ERR_NO_DOMAIN {
 			return false, nil
@@ -530,21 +533,21 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if autostart, ok := d.GetOk("autostart"); ok {
-		err = domain.SetAutostart(autostart.(bool))
+		var autostartInt int32
+		if autostart.(bool) {
+			autostartInt = 1
+		}
+		err = virConn.DomainSetAutostart(domain, autostartInt)
 		if err != nil {
 			return fmt.Errorf("Error setting autostart for domain: %s", err)
 		}
 	}
 
-	err = domain.Create()
+	err = virConn.DomainCreate(domain)
 	if err != nil {
 		return fmt.Errorf("Error creating libvirt domain: %s", err)
 	}
-
-	id, err := domain.GetUUIDString()
-	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt domain id: %s", err)
-	}
+	id := fmt.Sprintf("%v", domain.UUID)
 	d.SetId(id)
 
 	// the domain ID must always be saved, otherwise it won't be possible to cleanup a domain
@@ -620,16 +623,19 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Update resource libvirt_domain")
 
-	virConn := meta.(*Client).libvirtc
+	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
-	domain, err := virConn.LookupDomainByUUIDString(d.Id())
+
+	var uuid libvirt.UUID
+	copy(uuid[:], d.Id())
+	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
 
-	domainRunningNow, err := domainIsRunning(*domain)
+	domainRunningNow, err := domainIsRunning(virConn, domain)
 	if err != nil {
 		return err
 	}
@@ -702,8 +708,8 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 				if ip == nil {
 					return fmt.Errorf("Could not parse addresses '%s'", address)
 				}
-				log.Printf("[INFO] Updating IP/MAC/host=%s/%s/%s in '%s' network", ip.String(), mac, hostname, networkName)
-				if err := updateOrAddHost(network, ip.String(), mac, hostname); err != nil {
+				log.Printf("[INFO] Updating IP/MAC/host=%s/%s/%s in '%s' network", ip.String(), mac, hostname, network.Name)
+				if err := updateOrAddHost(virConn, network, ip.String(), mac, hostname); err != nil {
 					return err
 				}
 			}
@@ -975,14 +981,15 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Delete resource libvirt_domain")
 
-	virConn := meta.(*Client).libvirtc
+	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
 	log.Printf("[DEBUG] Deleting domain %s", d.Id())
 
-	domain, err := virConn.LookupDomainByUUIDString(d.Id())
+	var uuid libvirt.UUID
+	domain, err := virConn.DomainLookupByUUIDString(d.Id())
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
