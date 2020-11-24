@@ -593,7 +593,9 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 				numOfISOs++
 			}
 
-			if !strings.HasSuffix(file.(string), ".qcow2") {
+			if strings.HasSuffix(file.(string), ".qcow2") {
+				disk.Driver.Type = "qcow2"
+			} else {
 				disk.Driver.Type = "raw"
 			}
 		} else if blockDev, ok := d.GetOk(prefix + ".block_device"); ok {
