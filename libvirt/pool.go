@@ -98,9 +98,17 @@ func deletePool(client *Client, uuid string) error {
 		}
 	}
 
-	err = virConn.StoragePoolDelete(pool, 0)
+	poolDef, err := newDefPoolFromLibvirt(virConn, pool)
 	if err != nil {
-		return fmt.Errorf("error deleting storage pool: %s", err)
+		return err
+	}
+
+	// if the logical pool has no source device then the volume group existed before we created the pool, so we don't delete it
+	if poolDef.Type == "dir" || (poolDef.Type == "logical" && poolDef.Source != nil && poolDef.Source.Device != nil) {
+		err = virConn.StoragePoolDelete(pool, 0)
+		if err != nil {
+			return fmt.Errorf("error deleting storage pool: %w", err)
+		}
 	}
 
 	err = virConn.StoragePoolUndefine(pool)
