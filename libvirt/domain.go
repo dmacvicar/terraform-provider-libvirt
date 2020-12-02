@@ -15,7 +15,6 @@ import (
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirtc "github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
 )
 
@@ -167,16 +166,9 @@ func domainGetIfacesInfo(virConn *libvirt.Libvirt, domain libvirt.Domain, rd *sc
 	log.Print("[DEBUG] no interfaces could be obtained with qemu-agent: falling back to the libvirt API")
 
 	interfaces, err = virConn.DomainInterfaceAddresses(domain, uint32(libvirt.DomainInterfaceAddressesSrcLease), 0)
+	// FIXME with C bindings we did not return error for ErrOperationInvalid or e.Domain == FromQemu
 	if err != nil {
-		switch err.(type) {
-		default:
-			return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
-		case libvirtc.Error:
-			virErr := err.(libvirtc.Error)
-			if virErr.Code != libvirtc.ERR_OPERATION_INVALID || virErr.Domain != libvirtc.FROM_QEMU {
-				return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
-			}
-		}
+		return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
 	}
 	log.Printf("[DEBUG] Interfaces info obtained with libvirt API:\n%s\n", spew.Sdump(interfaces))
 

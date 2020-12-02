@@ -14,7 +14,7 @@ import (
 // from existing domain return its  XMLdefintion
 func getXMLDomainDefFromLibvirt(virConn *libvirt.Libvirt, domain libvirt.Domain) (libvirtxml.Domain, error) {
 
-	domainXMLDesc, err := libvirt.DomainGetXMLDesc(domain, 0)
+	domainXMLDesc, err := virConn.DomainGetXMLDesc(domain, 0)
 	if err != nil {
 		return libvirtxml.Domain{}, fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
 	}

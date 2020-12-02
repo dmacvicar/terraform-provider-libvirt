@@ -423,13 +423,15 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 	var uuid libvirt.UUID
 	copy(uuid[:], d.Id())
 	_, err := virConn.DomainLookupByUUID(uuid)
+	// FIXME
+	// In the past, with the C bindings, we were able to peek in the error
+	// to make sure the error was errNoDomain. If it was not, we returned
+	// false, err
+	// We can't peek into the error with this bindings, as the type is not
+	// exported (libvirt.libvirtError and errNoDomain)
 	if err != nil {
-		if err.(libvirtc.Error).Code == libvirtc.ERR_NO_DOMAIN {
-			return false, nil
-		}
-		return false, err
+		return false, nil
 	}
-
 	return true, nil
 }
 
@@ -696,7 +698,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 			var uuid libvirt.UUID
 			copy(uuid[:], networkUUID.(string))
-			network, err := virConn.NetworkLookupkByUUID(uuid)
+			network, err := virConn.NetworkLookupByUUID(uuid)
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network ID %s", networkUUID)
 			}
@@ -726,17 +728,19 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read resource libvirt_domain")
 
-	virConn := meta.(*Client).libvirtc
+	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	domain, err := virConn.LookupDomainByUUIDString(d.Id())
+	var uuid libvirt.UUID
+	copy(uuid[:], d.Id())
+	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
 	}
 
-	xmlDesc, err := domain.GetXMLDesc(0)
+	xmlDesc, err := virConn.DomainGetXMLDesc(domain, 0)
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
 	}
@@ -753,12 +757,12 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
 	}
 
-	autostart, err := domain.GetAutostart()
+	autostart, err := virConn.DomainGetAutostart(domain)
 	if err != nil {
 		return fmt.Errorf("Error reading domain autostart setting: %s", err)
 	}
 
-	domainRunningNow, err := domainIsRunning(*domain)
+	domainRunningNow, err := domainIsRunning(virConn, domain)
 	if err != nil {
 		return fmt.Errorf("Error reading domain running state : %s", err)
 	}
@@ -829,37 +833,27 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			// LEGACY way of handling volumes using "file", which we replaced
 			// by the diskdef.Source.Volume once we realized it existed.
 			// This code will be removed in future versions of the provider.
-			virVol, err := virConn.LookupStorageVolByPath(diskDef.Source.File.File)
-			if err != nil {
-				return fmt.Errorf("Error retrieving volume for disk: %s", err)
-			}
-
-			virVolKey, err := virVol.GetKey()
+			virVol, err := virConn.StorageVolLookupByPath(diskDef.Source.File.File)
 			if err != nil {
 				return fmt.Errorf("Error retrieving volume for disk: %s", err)
 			}
 
 			disk = map[string]interface{}{
-				"volume_id": virVolKey,
+				"volume_id": virVol.Key,
 			}
 		} else {
-			pool, err := virConn.LookupStoragePoolByName(diskDef.Source.Volume.Pool)
+			pool, err := virConn.StoragePoolLookupByName(diskDef.Source.Volume.Pool)
 			if err != nil {
 				return fmt.Errorf("Error retrieving pool for disk: %s", err)
 			}
 
-			virVol, err := pool.LookupStorageVolByName(diskDef.Source.Volume.Volume)
+			virVol, err := virConn.StorageVolLookupByName(pool, diskDef.Source.Volume.Volume)
 			if err != nil {
 				return fmt.Errorf("Error retrieving volume for disk: %s", err)
 			}
 
-			virVolKey, err := virVol.GetKey()
-			if err != nil {
-				return fmt.Errorf("Error retrieving volume key for disk: %s", err)
-			}
-
 			disk = map[string]interface{}{
-				"volume_id": virVolKey,
+				"volume_id": virVol.Key,
 			}
 		}
 
@@ -879,7 +873,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("filesystems", filesystems)
 
 	// lookup interfaces with addresses
-	ifacesWithAddr, err := domainGetIfacesInfo(*domain, d)
+	ifacesWithAddr, err := domainGetIfacesInfo(virConn, domain, d)
 	if err != nil {
 		return fmt.Errorf("Error retrieving interface addresses: %s", err)
 	}
@@ -889,7 +883,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		// not sure if using the target device name is a better idea here
 		var addrs []string
 		for _, ifaceWithAddr := range ifacesWithAddr {
-			if strings.ToUpper(ifaceWithAddr.Hwaddr) == mac {
+			if len(ifaceWithAddr.Hwaddr) > 0 && strings.ToUpper(ifaceWithAddr.Hwaddr[0]) == mac {
 				for _, addr := range ifaceWithAddr.Addrs {
 					addrs = append(addrs, addr.Addr)
 				}
@@ -922,12 +916,12 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		log.Printf("[DEBUG] read: addresses for '%s': %+v", mac, netIface["addresses"])
 
 		if networkInterfaceDef.Source.Network != nil {
-			network, err := virConn.LookupNetworkByName(networkInterfaceDef.Source.Network.Network)
+			network, err := virConn.NetworkLookupByName(networkInterfaceDef.Source.Network.Network)
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
 			}
 
-			netIface["network_id"], err = network.GetUUIDString()
+			netIface["network_id"] = network.UUID
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
 			}
@@ -1012,26 +1006,21 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
 	}
 
-	state, _, err := domain.GetState()
+	state, _, err := virConn.DomainGetState(domain, 0)
 	if err != nil {
 		return fmt.Errorf("Couldn't get info about domain: %s", err)
 	}
 
-	if state == libvirtc.DOMAIN_RUNNING || state == libvirtc.DOMAIN_PAUSED {
-		if err := domain.Destroy(); err != nil {
+	if state == int32(libvirt.DomainRunning) || state == int32(libvirt.DomainPaused) {
+		if err := virConn.DomainDestroy(domain); err != nil {
 			return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
 		}
 	}
 
-	if err := domain.UndefineFlags(libvirtc.DOMAIN_UNDEFINE_NVRAM); err != nil {
-		if e := err.(libvirtc.Error); e.Code == libvirtc.ERR_NO_SUPPORT || e.Code == libvirtc.ERR_INVALID_ARG {
-			log.Printf("libvirt does not support undefine flags: will try again without flags")
-			if err := domain.Undefine(); err != nil {
-				return fmt.Errorf("Couldn't undefine libvirt domain: %s", err)
-			}
-		} else {
-			return fmt.Errorf("Couldn't undefine libvirt domain with flags: %s", err)
-		}
+	// FIXME with C bindings we first tried with libvirt.DomainUndefineNvram, and if we got
+	// ErrNoSupport or ErrInvalidArg, then we tried without flags
+	if err := virConn.DomainUndefineFlags(domain, 0); err != nil {
+		return fmt.Errorf("Couldn't undefine libvirt domain: %s", err)
 	}
 
 	return nil

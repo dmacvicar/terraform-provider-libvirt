@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	libvirtc "github.com/libvirt/libvirt-go"
 	"github.com/libvirt/libvirt-go-xml"
@@ -15,7 +16,7 @@ import (
 
 // updateDNSHosts detects changes in the DNS hosts entries
 // updating the network definition accordingly
-func updateDNSHosts(d *schema.ResourceData, network *libvirtc.Network) error {
+func updateDNSHosts(d *schema.ResourceData, network libvirt.Network) error {
 	hostsKey := dnsPrefix + ".hosts"
 	if d.HasChange(hostsKey) {
 		oldInterface, newInterface := d.GetChange(hostsKey)

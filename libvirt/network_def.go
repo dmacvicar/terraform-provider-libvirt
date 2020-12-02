@@ -83,21 +83,21 @@ func getHostXMLDesc(ip, mac, name string) string {
 }
 
 // Adds a new static host to the network
-func addHost(n *libvirtc.Network, ip, mac, name string, xmlIdx int) error {
+func addHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, xmlIdx int) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)
 	log.Printf("Adding host with XML:\n%s", xmlDesc)
 	// From https://libvirtc.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
 	// Update live and config for hosts to make update permanent across reboots
-	return n.Update(libvirtc.NETWORK_UPDATE_COMMAND_ADD_LAST, libvirtc.NETWORK_SECTION_IP_DHCP_HOST, xmlIdx, xmlDesc, libvirtc.NETWORK_UPDATE_AFFECT_CONFIG|libvirtc.NETWORK_UPDATE_AFFECT_LIVE)
+	return virConn.NetworkUpdate(n, uint32(libvirt.NetworkUpdateCommandAddLast), uint32(libvirt.NetworkSectionIPDhcpHost), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
 }
 
 // Update a static host from the network
-func updateHost(n *libvirtc.Network, ip, mac, name string, xmlIdx int) error {
+func updateHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, xmlIdx int) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)
 	log.Printf("Updating host with XML:\n%s", xmlDesc)
 	// From https://libvirtc.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
 	// Update live and config for hosts to make update permanent across reboots
-	return n.Update(libvirtc.NETWORK_UPDATE_COMMAND_MODIFY, libvirtc.NETWORK_SECTION_IP_DHCP_HOST, xmlIdx, xmlDesc, libvirtc.NETWORK_UPDATE_AFFECT_CONFIG|libvirtc.NETWORK_UPDATE_AFFECT_LIVE)
+	return virConn.NetworkUpdate(n, uint32(libvirt.NetworkUpdateCommandModify), uint32(libvirt.NetworkSectionIPDhcpHost), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
 }
 
 // Get the network index of the target network
@@ -134,9 +134,9 @@ func updateOrAddHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name 
 		log.Printf("Error during detecting network index: %s\nUsing default value: %d", err, xmlIdx)
 	}
 
-	err = updateHost(n, ip, mac, name, xmlIdx)
+	err = updateHost(virConn, n, ip, mac, name, xmlIdx)
 	if virErr, ok := err.(libvirtc.Error); ok && virErr.Code == libvirtc.ERR_OPERATION_INVALID && virErr.Domain == libvirtc.FROM_NETWORK {
-		return addHost(n, ip, mac, name, xmlIdx)
+		return addHost(virConn, n, ip, mac, name, xmlIdx)
 	}
 	return err
 }
