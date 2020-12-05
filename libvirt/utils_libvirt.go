@@ -19,7 +19,7 @@ func int2bool(b int) bool {
 	return b == 1
 }
 
-func bool2int(b bool) int {
+func bool2int(b bool) int32 {
 	var i int
 	if b {
 		i = 1
