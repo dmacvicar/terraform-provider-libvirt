@@ -478,7 +478,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{"BUILD"},
 		Target:     []string{"ACTIVE"},
-		Refresh:    waitForNetworkActive(network),
+		Refresh:    waitForNetworkActive(virConn, network),
 		Timeout:    1 * time.Minute,
 		Delay:      5 * time.Second,
 		MinTimeout: 3 * time.Second,
