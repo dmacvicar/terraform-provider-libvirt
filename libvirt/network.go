@@ -9,17 +9,16 @@ import (
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirtc "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
-func waitForNetworkActive(network libvirtc.Network) resource.StateRefreshFunc {
+func waitForNetworkActive(virConn *libvirt.Libvirt, network libvirt.Network) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
-		active, err := network.IsActive()
+		active, err := virConn.NetworkIsActive(network)
 		if err != nil {
 			return nil, "", err
 		}
-		if active {
+		if active == 1 {
 			return network, "ACTIVE", nil
 		}
 		return network, "BUILD", err
