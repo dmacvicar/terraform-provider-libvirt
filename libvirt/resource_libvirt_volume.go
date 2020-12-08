@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	libvirtc "github.com/libvirt/libvirt-go"
 )
@@ -85,6 +86,10 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
+	virConn := meta.(*Client).libvirt
+	if virConn == nil {
+		return fmt.Errorf(LibVirtConIsNil)
+	}
 
 	poolName := "default"
 	if _, ok := d.GetOk("pool"); ok {
@@ -94,18 +99,19 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	client.poolMutexKV.Lock(poolName)
 	defer client.poolMutexKV.Unlock(poolName)
 
-	pool, err := client.libvirtc.LookupStoragePoolByName(poolName)
+	pool, err := virConn.StoragePoolLookupByName(poolName)
 	if err != nil {
 		return fmt.Errorf("can't find storage pool '%s'", poolName)
 	}
-	defer pool.Free()
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
 	waitForSuccess("error refreshing pool for volume", func() error {
-		return pool.Refresh(0)
+		return virConn.StoragePoolRefresh(pool, 0)
 	})
 
+	// TODO create new definition per gist notes
+	// volumeDef := volumeDefinitionDefault()
 	volumeDef := newDefVolume()
 	if name, ok := d.GetOk("name"); ok {
 		volumeDef.Name = name.(string)
@@ -165,14 +171,15 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			volumeDef.Capacity.Value = uint64(d.Get("size").(int))
 		}
 
-		//first handle whether it has a backing image
+		// first handle whether it has a backing image
 		// backing images can be specified by either (id), or by (name, pool)
-		var baseVolume *libvirtc.StorageVol
+
+		var baseVolume libvirt.StorageVol
 		if baseVolumeID, ok := d.GetOk("base_volume_id"); ok {
 			if _, ok := d.GetOk("base_volume_name"); ok {
 				return fmt.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given")
 			}
-			baseVolume, err = client.libvirtc.LookupStorageVolByKey(baseVolumeID.(string))
+			baseVolume, err = virConn.StorageVolLookupByKey(baseVolumeID.(string))
 			if err != nil {
 				return fmt.Errorf("Can't retrieve volume ID '%s': %v", baseVolumeID.(string), err)
 			}
@@ -180,25 +187,26 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			baseVolumePool := pool
 			if _, ok := d.GetOk("base_volume_pool"); ok {
 				baseVolumePoolName := d.Get("base_volume_pool").(string)
-				baseVolumePool, err = client.libvirtc.LookupStoragePoolByName(baseVolumePoolName)
+				baseVolumePool, err = virConn.StoragePoolLookupByName(baseVolumePoolName)
 				if err != nil {
 					return fmt.Errorf("can't find storage pool '%s'", baseVolumePoolName)
 				}
-				defer baseVolumePool.Free()
 			}
-			baseVolume, err = baseVolumePool.LookupStorageVolByName(baseVolumeName.(string))
+			baseVolume, err = virConn.StorageVolLookupByName(baseVolumePool, baseVolumeName.(string))
 			if err != nil {
 				return fmt.Errorf("Can't retrieve base volume with name '%s': %v", baseVolumeName.(string), err)
 			}
 		}
 
-		if baseVolume != nil {
-			backingStoreFragmentDef, err := newDefBackingStoreFromLibvirt(baseVolume)
+		// FIXME - confirm test behaviour accurate
+		// if baseVolume != nil {
+		if baseVolume.Name != "" {
+			backingStoreFragmentDef, err := newDefBackingStoreFromLibvirt(virConn, baseVolume)
 			if err != nil {
 				return fmt.Errorf("Could not retrieve backing store definition: %s", err.Error())
 			}
 
-			backingStoreVolumeDef, err := newDefVolumeFromLibvirt(baseVolume)
+			backingStoreVolumeDef, err := newDefVolumeFromLibvirt(virConn, baseVolume)
 			if err != nil {
 				return err
 			}
@@ -229,31 +237,26 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	// create the volume
-	volume, err := pool.StorageVolCreateXML(data, 0)
+	volume, err := virConn.StorageVolCreateXML(pool, data, 0)
 	if err != nil {
 		virErr := err.(libvirtc.Error)
 		if virErr.Code != libvirtc.ERR_STORAGE_VOL_EXIST {
 			return fmt.Errorf("Error creating libvirt volume: %s", err)
 		}
 		// oops, volume exists already, read it and move on
-		volume, err = pool.LookupStorageVolByName(volumeDef.Name)
+		volume, err = virConn.StorageVolLookupByName(pool, volumeDef.Name)
 		if err != nil {
 			return fmt.Errorf("Error looking up libvirt volume: %s", err)
 		}
 		log.Printf("[INFO] Volume about to be created was found and left as-is: %s", volumeDef.Name)
 	}
-	defer volume.Free()
 
 	// we use the key as the id
-	key, err := volume.GetKey()
-	if err != nil {
-		return fmt.Errorf("Error retrieving volume key: %s", err)
-	}
-	d.SetId(key)
+	d.SetId(volume.Key)
 
 	// make sure we record the id even if the rest of this gets interrupted
 	d.Partial(true)
-	d.Set("id", key)
+	d.Set("id", volume.Key)
 	d.SetPartial("id")
 	d.Partial(false)
 
@@ -271,7 +274,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	if err := volumeWaitForExists(client.libvirtc, key); err != nil {
+	if err := volumeWaitForExists(client.libvirtc, volume.Key); err != nil {
 		return err
 	}
 
