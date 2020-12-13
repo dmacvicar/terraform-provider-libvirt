@@ -13,8 +13,6 @@ import (
 
 func newCopier(virConn *libvirt.Libvirt, volume *libvirt.StorageVol, size uint64) func(src io.Reader) error {
 	copier := func(src io.Reader) error {
-		var bytesCopied int64
-
 		// FIXME - validate behaviour
 		// https://github.com/digitalocean/go-libvirt/pull/63/files#
 
