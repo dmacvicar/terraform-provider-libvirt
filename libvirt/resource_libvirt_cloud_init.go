@@ -81,7 +81,7 @@ func resourceCloudInitDiskCreate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceCloudInitDiskRead(d *schema.ResourceData, meta interface{}) error {
-	virConn := meta.(*Client).libvirtc
+	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}

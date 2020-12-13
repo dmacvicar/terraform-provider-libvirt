@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/google/uuid"
 	"github.com/hooklift/iso9660"
-	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 const userDataFileName string = "user-data"
@@ -53,12 +53,15 @@ func removeTmpIsoDirectory(iso string) {
 }
 
 func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
+	virConn := client.libvirt
+	if virConn == nil {
+		return "", fmt.Errorf(LibVirtConIsNil)
+	}
 
-	pool, err := client.libvirtc.LookupStoragePoolByName(ci.PoolName)
+	pool, err := virConn.StoragePoolLookupByName(ci.PoolName)
 	if err != nil {
 		return "", fmt.Errorf("can't find storage pool '%s'", ci.PoolName)
 	}
-	defer pool.Free()
 
 	client.poolMutexKV.Lock(ci.PoolName)
 	defer client.poolMutexKV.Unlock(ci.PoolName)
@@ -66,7 +69,7 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
 	waitForSuccess("Error refreshing pool for volume", func() error {
-		return pool.Refresh(0)
+		return virConn.StoragePoolRefresh(pool, 0)
 	})
 
 	volumeDef := newDefVolume()
@@ -95,22 +98,21 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 	}
 
 	// create the volume
-	volume, err := pool.StorageVolCreateXML(string(volumeDefXML), 0)
+	volume, err := virConn.StorageVolCreateXML(pool, string(volumeDefXML), 0)
 	if err != nil {
 		return "", fmt.Errorf("Error creating libvirt volume for cloudinit device %s: %s", ci.Name, err)
 	}
-	defer volume.Free()
 
 	// upload ISO file
-	err = img.Import(newCopier(client.libvirtc, volume, uint64(size)), volumeDef)
+	err = img.Import(newCopier(virConn, &volume, uint64(size)), volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error while uploading cloudinit %s: %s", img.String(), err)
 	}
 
-	key, err := volume.GetKey()
-	if err != nil {
-		return "", fmt.Errorf("Error retrieving volume key: %s", err)
+	if volume.Key == "" {
+		return "", fmt.Errorf("Error retrieving volume key")
 	}
+	key := volume.Key
 
 	return ci.buildTerraformKey(key), nil
 }
@@ -191,7 +193,7 @@ func (ci *defCloudInit) createFiles() (string, error) {
 
 // Creates a new defCloudInit object starting from a ISO volume handled by
 // libvirt
-func newCloudInitDefFromRemoteISO(virConn *libvirtc.Connect, id string) (defCloudInit, error) {
+func newCloudInitDefFromRemoteISO(virConn *libvirt.Libvirt, id string) (defCloudInit, error) {
 	ci := defCloudInit{}
 
 	key, err := getCloudInitVolumeKeyFromTerraformID(id)
@@ -199,23 +201,22 @@ func newCloudInitDefFromRemoteISO(virConn *libvirtc.Connect, id string) (defClou
 		return ci, err
 	}
 
-	volume, err := virConn.LookupStorageVolByKey(key)
+	volume, err := virConn.StorageVolLookupByKey(key)
 	if err != nil {
 		return ci, fmt.Errorf("Can't retrieve volume %s: %v", key, err)
 	}
-	defer volume.Free()
 
-	err = ci.setCloudInitDiskNameFromExistingVol(volume)
+	err = ci.setCloudInitDiskNameFromExistingVol(virConn, volume)
 	if err != nil {
 		return ci, err
 	}
 
-	err = ci.setCloudInitPoolNameFromExistingVol(volume)
+	err = ci.setCloudInitPoolNameFromExistingVol(virConn, volume)
 	if err != nil {
 		return ci, err
 	}
 
-	isoFile, err := downloadISO(virConn, *volume)
+	isoFile, err := downloadISO(virConn, volume)
 	if isoFile != nil {
 		defer os.Remove(isoFile.Name())
 		defer isoFile.Close()
@@ -224,7 +225,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirtc.Connect, id string) (defClou
 		return ci, err
 	}
 
-	err = ci.setCloudInitDataFromExistingCloudInitDisk(virConn, volume, isoFile)
+	err = ci.setCloudInitDataFromExistingCloudInitDisk(virConn, isoFile)
 	if err != nil {
 		return ci, err
 	}
@@ -232,7 +233,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirtc.Connect, id string) (defClou
 }
 
 // setCloudInitDataFromExistingCloudInitDisk read and set UserData, MetaData, and NetworkConfig from existing CloudInitDisk
-func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvirtc.Connect, volume *libvirtc.StorageVol, isoFile *os.File) error {
+func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvirt.Libvirt, isoFile *os.File) error {
 	isoReader, err := iso9660.NewReader(isoFile)
 	if err != nil {
 		return fmt.Errorf("Error initializing ISO reader: %s", err)
@@ -267,28 +268,28 @@ func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvi
 	return nil
 }
 
+// FIXME Consider doing this inline.
 // setCloudInitPoolNameFromExistingVol retrieve poolname from an existing CloudInitDisk
-func (ci *defCloudInit) setCloudInitPoolNameFromExistingVol(volume *libvirtc.StorageVol) error {
-	volPool, err := volume.LookupPoolByVolume()
+func (ci *defCloudInit) setCloudInitPoolNameFromExistingVol(virConn *libvirt.Libvirt, volume libvirt.StorageVol) error {
+	volPool, err := virConn.StoragePoolLookupByVolume(volume)
 	if err != nil {
 		return fmt.Errorf("Error retrieving pool for cloudinit volume: %s", err)
 	}
-	defer volPool.Free()
 
-	ci.PoolName, err = volPool.GetName()
-	if err != nil {
-		return fmt.Errorf("Error retrieving pool name: %s", err)
+	if volPool.Name == "" {
+		return fmt.Errorf("Error retrieving pool name")
 	}
+	ci.PoolName = volPool.Name
 	return nil
 }
 
+// FIXME Consider doing this inline.
 // setCloudInitDisklNameFromVol retrieve CloudInitname from an existing CloudInitDisk
-func (ci *defCloudInit) setCloudInitDiskNameFromExistingVol(volume *libvirtc.StorageVol) error {
-	var err error
-	ci.Name, err = volume.GetName()
-	if err != nil {
-		return fmt.Errorf("Error retrieving cloudinit volume name: %s", err)
+func (ci *defCloudInit) setCloudInitDiskNameFromExistingVol(virConn *libvirt.Libvirt, volume libvirt.StorageVol) error {
+	if volume.Name == "" {
+		return fmt.Errorf("Error retrieving cloudinit volume name")
 	}
+	ci.Name = volume.Name
 	return nil
 }
 
@@ -305,7 +306,7 @@ func readIso9660File(file os.FileInfo) ([]byte, error) {
 // Downloads the ISO identified by `key` to a local tmp file.
 // Returns a pointer to the ISO file. Note well: you have to close this file
 // pointer when you are done.
-func downloadISO(virConn *libvirtc.Connect, volume libvirtc.StorageVol) (*os.File, error) {
+func downloadISO(virConn *libvirt.Libvirt, volume libvirt.StorageVol) (*os.File, error) {
 	// get Volume info (required to get size later)
 	var bytesCopied int64
 
@@ -331,6 +332,7 @@ func downloadISO(virConn *libvirtc.Connect, volume libvirtc.StorageVol) (*os.Fil
 	}()
 
 	err = volume.Download(stream, 0, info.Capacity, 0)
+
 	if err != nil {
 		stream.Abort()
 		return tmpFile, fmt.Errorf("Error by downloading content to libvirt volume:%s", err)
