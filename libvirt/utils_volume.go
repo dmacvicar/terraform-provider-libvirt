@@ -8,51 +8,36 @@ import (
 	"strings"
 	"time"
 
-	libvirtc "github.com/libvirt/libvirt-go"
+	libvirt "github.com/digitalocean/go-libvirt"
 )
 
-func newCopier(virConn *libvirtc.Connect, volume *libvirtc.StorageVol, size uint64) func(src io.Reader) error {
+func newCopier(virConn *libvirt.Libvirt, volume *libvirt.StorageVol, size uint64) func(src io.Reader) error {
 	copier := func(src io.Reader) error {
 		var bytesCopied int64
 
-		stream, err := virConn.NewStream(0)
-		if err != nil {
-			return err
-		}
+		// FIXME - validate behaviour
+		// https://github.com/digitalocean/go-libvirt/pull/63/files#
 
-		defer func() {
-			stream.Free()
-		}()
-
-		if err := volume.Upload(stream, 0, size, 0); err != nil {
-			stream.Abort()
+		r, w := io.Pipe()
+		if err := virConn.StorageVolUpload(*volume, r, 0, size, 0); err != nil {
 			return fmt.Errorf("Error while uploading volume %s", err)
 		}
 
-		sio := NewStreamIO(*stream)
-
-		bytesCopied, err = io.Copy(sio, src)
+		bytesCopied, err := io.Copy(w, src)
 		// if we get unexpected EOF this mean that connection was closed suddently from server side
 		// the problem is not on the plugin but on server hosting currupted images
 		if err == io.ErrUnexpectedEOF {
-			stream.Abort()
-			return fmt.Errorf("Error: transfer was unexpectedly closed from the server while downloading. Please try again later or check the server hosting sources")
+			return w.CloseWithError(fmt.Errorf("Error: transfer was unexpectedly closed from the server while downloading. Please try again later or check the server hosting sources"))
 		}
 		if err != nil {
-			stream.Abort()
-			return fmt.Errorf("Error while copying source to volume %s", err)
+			return w.CloseWithError(fmt.Errorf("Error while copying source to volume %s", err))
 		}
 
 		log.Printf("%d bytes uploaded\n", bytesCopied)
 		if uint64(bytesCopied) != size {
-			stream.Abort()
-			return fmt.Errorf("Error during volume Upload. BytesCopied: %d != %d volume.size", bytesCopied, size)
+			return w.CloseWithError(fmt.Errorf("Error during volume Upload. BytesCopied: %d != %d volume.size", bytesCopied, size))
 		}
 
-		if err := stream.Finish(); err != nil {
-			stream.Abort()
-			return fmt.Errorf("Error by terminating libvirt stream %s", err)
-		}
 		return nil
 	}
 	return copier
