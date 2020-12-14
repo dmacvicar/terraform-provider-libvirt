@@ -112,9 +112,8 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 	if volume.Key == "" {
 		return "", fmt.Errorf("Error retrieving volume key")
 	}
-	key := volume.Key
 
-	return ci.buildTerraformKey(key), nil
+	return ci.buildTerraformKey(volume.Key), nil
 }
 
 // create a unique ID for terraform use
@@ -308,12 +307,13 @@ func readIso9660File(file os.FileInfo) ([]byte, error) {
 // pointer when you are done.
 func downloadISO(virConn *libvirt.Libvirt, volume libvirt.StorageVol) (*os.File, error) {
 	// get Volume info (required to get size later)
-	var bytesCopied int64
-
-	info, err := volume.GetInfo()
+	_, size, _, err := virConn.StorageVolGetInfo(volume)
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving info for volume: %s", err)
 	}
+
+	r, w := io.Pipe()
+	defer w.Close()
 
 	// create tmp file for the ISO
 	tmpFile, err := ioutil.TempFile("", "cloudinit")
@@ -322,41 +322,25 @@ func downloadISO(virConn *libvirt.Libvirt, volume libvirt.StorageVol) (*os.File,
 	}
 
 	// download ISO file
-	stream, err := virConn.NewStream(0)
-	if err != nil {
-		return tmpFile, err
+	if err := virConn.StorageVolDownload(volume, w, 0, size, 0); err != nil {
+		return tmpFile, fmt.Errorf("Error while uploading volume %s", err)
 	}
 
-	defer func() {
-		stream.Free()
-	}()
-
-	err = volume.Download(stream, 0, info.Capacity, 0)
-
 	if err != nil {
-		stream.Abort()
 		return tmpFile, fmt.Errorf("Error by downloading content to libvirt volume:%s", err)
 	}
-	sio := NewStreamIO(*stream)
 
-	bytesCopied, err = io.Copy(tmpFile, sio)
+	bytesCopied, err := io.Copy(tmpFile, r)
 	if err != nil {
 		return tmpFile, fmt.Errorf("Error while copying remote volume to local disk: %s", err)
 	}
 
-	if uint64(bytesCopied) != info.Capacity {
-		stream.Abort()
-		return tmpFile, fmt.Errorf("Error while copying remote volume to local disk, bytesCopied %d !=  %d volume.size", bytesCopied, info.Capacity)
-	}
-
-	err = stream.Finish()
-	if err != nil {
-		stream.Abort()
-		return tmpFile, fmt.Errorf("Error by terminating libvirt stream %s", err)
+	log.Printf("%d bytes downloaded", bytesCopied)
+	if uint64(bytesCopied) != size {
+		return tmpFile, fmt.Errorf("Error while copying remote volume to local disk, bytesCopied %d !=  %d volume.size", bytesCopied, size)
 	}
 
 	tmpFile.Seek(0, 0)
-	log.Printf("%d bytes downloaded", bytesCopied)
 
 	return tmpFile, nil
 }

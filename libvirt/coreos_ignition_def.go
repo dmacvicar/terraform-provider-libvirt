@@ -32,11 +32,15 @@ func newIgnitionDef() defIgnition {
 // uploads it to the libVirt pool
 // Returns a string holding terraform's internal ID of this resource
 func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
-	pool, err := client.libvirtc.LookupStoragePoolByName(ign.PoolName)
+	virConn := client.libvirt
+	if virConn == nil {
+		return "", fmt.Errorf(LibVirtConIsNil)
+	}
+
+	pool, err := virConn.StoragePoolLookupByName(ign.PoolName)
 	if err != nil {
 		return "", fmt.Errorf("can't find storage pool '%s'", ign.PoolName)
 	}
-	defer pool.Free()
 
 	client.poolMutexKV.Lock(ign.PoolName)
 	defer client.poolMutexKV.Unlock(ign.PoolName)
@@ -44,7 +48,7 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
 	waitForSuccess("Error refreshing pool for volume", func() error {
-		return pool.Refresh(0)
+		return virConn.StoragePoolRefresh(pool, 0)
 	})
 
 	volumeDef := newDefVolume()
@@ -80,24 +84,22 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 	}
 
 	// create the volume
-	volume, err := pool.StorageVolCreateXML(string(volumeDefXML), 0)
+	volume, err := virConn.StorageVolCreateXML(pool, string(volumeDefXML), 0)
 	if err != nil {
 		return "", fmt.Errorf("Error creating libvirt volume for Ignition %s: %s", ign.Name, err)
 	}
-	defer volume.Free()
 
 	// upload ignition file
-	err = img.Import(newCopier(client.libvirtc, volume, volumeDef.Capacity.Value), volumeDef)
+	err = img.Import(newCopier(virConn, &volume, volumeDef.Capacity.Value), volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("Error while uploading ignition file %s: %s", img.String(), err)
 	}
 
-	key, err := volume.GetKey()
-	if err != nil {
-		return "", fmt.Errorf("Error retrieving volume key: %s", err)
+	if volume.Key == "" {
+		return "", fmt.Errorf("Error retrieving volume key")
 	}
 
-	return ign.buildTerraformKey(key), nil
+	return ign.buildTerraformKey(volume.Key), nil
 }
 
 // create a unique ID for terraform use

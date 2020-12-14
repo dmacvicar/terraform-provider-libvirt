@@ -285,7 +285,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 // resourceLibvirtVolumeRead returns the current state for a volume resource
 func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
-	virConn := client.libvirtc
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
