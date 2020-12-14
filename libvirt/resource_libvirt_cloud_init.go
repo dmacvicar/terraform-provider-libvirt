@@ -47,7 +47,7 @@ func resourceCloudInitDisk() *schema.Resource {
 func resourceCloudInitDiskCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] creating cloudinit")
 	client := meta.(*Client)
-	virConn := client.libvirtc
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
