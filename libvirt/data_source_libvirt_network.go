@@ -156,3 +156,58 @@ func resourceLibvirtNetworkDNSSRVRead(d *schema.ResourceData, meta interface{}) 
 
 	return nil
 }
+
+// a libvirt network dnsmasq template datasource
+//
+// Datasource example:
+//
+// data "libvirt_network_dnsmasq_options_template" "options" {
+//   count = length(var.libvirt_dnsmasq_options)
+//   option_name = keys(var.libvirt_dnsmasq_options)[count.index]
+//   option_value = values(var.libvirt_dnsmasq_options)[count.index]
+// }
+//
+// resource "libvirt_network" "k8snet" {
+//   ...
+//   dnsmasq_options = [{
+//     options = [ "${flatten(data.libvirt_network_dnsmasq_options_template.options.*.rendered)}" ]
+//   }]
+//   ...
+// }
+//
+func datasourceLibvirtNetworkDnsmasqOptionsTemplate() *schema.Resource {
+	return &schema.Resource{
+		Read: resourceLibvirtNetworkDnsmasqOptionsRead,
+		Schema: map[string]*schema.Schema{
+			"option_name": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"option_value": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"rendered": {
+				Type: schema.TypeMap,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Computed: true,
+			},
+		},
+	}
+}
+
+func resourceLibvirtNetworkDnsmasqOptionsRead(d *schema.ResourceData, meta interface{}) error {
+	dnsmasqOption := map[string]interface{}{}
+	if name, ok := d.GetOk("option_name"); ok {
+		dnsmasqOption["option_name"] = name.(string)
+	}
+	if value, ok := d.GetOk("option_value"); ok {
+		dnsmasqOption["option_value"] = value.(string)
+	}
+	d.Set("rendered", dnsmasqOption)
+	d.SetId(strconv.Itoa(hashcode.String(fmt.Sprintf("%v", dnsmasqOption))))
+
+	return nil
+}

@@ -627,3 +627,45 @@ func TestAccLibvirtNetwork_MTU(t *testing.T) {
 		},
 	})
 }
+
+func TestAccLibvirtNetwork_DnsmasqOptions(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
+	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtNetworkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "%s" {
+					name      = "%s"
+					domain    = "k8s.local"
+					addresses = ["10.17.3.0/24"]
+					dnsmasq_options {
+						options  {
+							option_name = "server"
+							option_value = "/tt.testing/1.1.1.1"
+						}
+						options {
+							option_name = "address"
+							option_value = "/.apps.tt.testing/1.1.1.2"
+						}
+					}
+				}`, randomNetworkResource, randomNetworkName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dnsmasq_options.0.options.0.option_name", "server"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dnsmasq_options.0.options.0.option_value", "/tt.testing/1.1.1.1"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dnsmasq_options.0.options.1.option_name", "address"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dnsmasq_options.0.options.1.option_value", "/.apps.tt.testing/1.1.1.2"),
+					testAccCheckDnsmasqOptions("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDnsmasqOption{
+						{Value: "server=/tt.testing/1.1.1.1"},
+						{Value: "address=/.apps.tt.testing/1.1.1.2"},
+					}),
+				),
+			},
+		},
+	})
+}

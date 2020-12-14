@@ -79,6 +79,22 @@ resource "libvirt_network" "kube_network" {
     #     gateway = "10.18.0.2"
     #   }
   }
+
+  # (Optional) Dnsmasq options configuration
+  dnsmasq_options {
+    # (Optional) one or more option entries.  Both of
+    # "option_name" and "option_value" must be specified.  The format is:
+    # options  {
+    #     option_name = "server"
+    #     option_value = "/base.domain/my.ip.address.1"
+    #   }
+    # options {
+    #     option_name = "address"
+    #     ip = "/.api.base.domain/my.ip.address.2"
+    #   }
+    #
+  }
+
 }
 ```
 
@@ -182,6 +198,30 @@ resource "libvirt_network" "k8snet" {
 					dhcp {
 						enabled = true
 					}
+```
+
+* `dnsmasq_options` - (Optional) configuration of Dnsmasq options for the network
+  You need to provide a list of option name and value pairs.
+
+  * `options` - (Optional) a Dnsmasq option entry block. You can have one or more of these
+   blocks in your definition. You must specify both `option_name` and `option_value`.
+
+  An example of setting Dnsmasq options (using Dnsmasq option templates) follows:
+
+```hcl
+        resource "libvirt_network" "my_network" {
+          ...
+          dnsmasq_options {
+            options { flatten(data.libvirt_network_dnsmasq_options_template.options.*.rendered) }
+          }
+          ...
+        }
+
+        data "libvirt_network_dnsmasq_options_template" "options" {
+          count = length(var.libvirt_dnsmasq_options)
+          option_name = keys(var.libvirt_dnsmasq_options)[count.index]
+          option_value = values(var.libvirt_dnsmasq_options)[count.index]
+        }
 ```
 
 ### Altering libvirt's generated network XML definition
