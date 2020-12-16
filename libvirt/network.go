@@ -174,3 +174,23 @@ func getMTUFromResource(d *schema.ResourceData) *libvirtxml.NetworkMTU {
 
 	return nil
 }
+
+// getDNSMasqOptionFromResource returns a list of dnsmasq options
+// from the network definition
+func getDNSMasqOptionFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDnsmasqOption, error) {
+	var dnsmasqOption []libvirtxml.NetworkDnsmasqOption
+	dnsmasqOptionPrefix := "dnsmasq_options.0"
+	if dnsmasqOptionCount, ok := d.GetOk(dnsmasqOptionPrefix + ".options.#"); ok {
+		for i := 0; i < dnsmasqOptionCount.(int); i++ {
+			dnsmasqOptionsPrefix := fmt.Sprintf(dnsmasqOptionPrefix+".options.%d", i)
+
+			optionName := d.Get(dnsmasqOptionsPrefix + ".option_name").(string)
+			optionValue := d.Get(dnsmasqOptionsPrefix + ".option_value").(string)
+			dnsmasqOption = append(dnsmasqOption, libvirtxml.NetworkDnsmasqOption{
+				Value: optionName + "=" + optionValue,
+			})
+		}
+	}
+
+	return dnsmasqOption, nil
+}
