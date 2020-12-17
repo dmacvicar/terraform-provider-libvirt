@@ -20,7 +20,7 @@ func int2bool(b int) bool {
 }
 
 func bool2int(b bool) int32 {
-	var i int
+	var i int32
 	if b {
 		i = 1
 	}

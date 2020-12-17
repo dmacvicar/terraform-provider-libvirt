@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	libvirtc "github.com/libvirt/libvirt-go"
 )
@@ -126,13 +127,13 @@ func volumeDelete(client *Client, key string) error {
 // it will try to start the pool if it does not find it
 //
 // You have to call volume.Free() on the returned volume
-func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*libvirtc.StorageVol, error) {
-	virConn := client.libvirtc
+func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*libvirt.StorageVol, error) {
+	virConn := client.libvirt
 	if virConn == nil {
 		return nil, fmt.Errorf(LibVirtConIsNil)
 	}
 
-	volume, err := virConn.LookupStorageVolByKey(key)
+	volume, err := virConn.StorageVolLookupByKey(key)
 	if err != nil {
 		virErr := err.(libvirtc.Error)
 		if virErr.Code != libvirtc.ERR_NO_STORAGE_VOL {
@@ -140,28 +141,27 @@ func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*li
 		}
 		log.Printf("[INFO] Volume %s not found, attempting to start its pool", key)
 
-		volPool, err := virConn.LookupStoragePoolByName(volPoolName)
+		volPool, err := virConn.StoragePoolLookupByName(volPoolName)
 		if err != nil {
 			return nil, fmt.Errorf("Error retrieving pool %s for volume %s: %s", volPoolName, key, err)
 		}
-		defer volPool.Free()
 
-		active, err := volPool.IsActive()
+		active, err := virConn.StoragePoolIsActive(volPool)
 		if err != nil {
 			return nil, fmt.Errorf("error retrieving status of pool %s for volume %s: %s", volPoolName, key, err)
 		}
-		if active {
+		if active == 1 {
 			log.Printf("Can't retrieve volume %s (and pool is active)", key)
 			return nil, nil
 		}
 
-		err = volPool.Create(0)
+		err = virConn.StoragePoolCreate(volPool, 0)
 		if err != nil {
 			return nil, fmt.Errorf("error starting pool %s: %s", volPoolName, err)
 		}
 
 		// attempt a new lookup
-		volume, err = virConn.LookupStorageVolByKey(key)
+		volume, err = virConn.StorageVolLookupByKey(key)
 		if err != nil {
 			virErr := err.(libvirtc.Error)
 			if virErr.Code != libvirtc.ERR_NO_STORAGE_VOL {
@@ -171,5 +171,5 @@ func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*li
 			return nil, nil
 		}
 	}
-	return volume, nil
+	return &volume, nil
 }

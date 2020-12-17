@@ -133,7 +133,6 @@ func resourceCloudInitDiskExists(d *schema.ResourceData, meta interface{}) (bool
 	if volume == nil {
 		return false, nil
 	}
-	defer volume.Free()
 
 	return true, nil
 }
