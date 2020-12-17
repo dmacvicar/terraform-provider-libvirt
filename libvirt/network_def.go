@@ -8,7 +8,7 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	libvirtc "github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 // HasDHCP checks if the network has a DHCP server managed by libvirt
@@ -37,7 +37,7 @@ func newDefNetworkFromXML(s string) (libvirtxml.Network, error) {
 func getXMLNetworkDefFromLibvirt(virConn *libvirt.Libvirt, network libvirt.Network) (libvirtxml.Network, error) {
 	networkXMLDesc, err := virConn.NetworkGetXMLDesc(network, 0)
 	if err != nil {
-		return libvirtxml.Network{}, fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+		return libvirtxml.Network{}, fmt.Errorf("Error retrieving libvirt network XML description: %s", err)
 	}
 	networkDef := libvirtxml.Network{}
 	err = xml.Unmarshal([]byte(networkXMLDesc), &networkDef)

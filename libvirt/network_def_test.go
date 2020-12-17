@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 func init() {
@@ -127,11 +127,12 @@ func TestHasDHCPForwardSet(t *testing.T) {
 }
 
 func TestNetworkFromLibvirtError(t *testing.T) {
+	virConn := testAccProvider.Meta().(*Client).libvirtc
 	net := NetworkMock{
 		GetXMLDescError: errors.New("boom"),
 	}
 
-	_, err := getXMLNetworkDefFromLibvirt(net)
+	_, err := getXMLNetworkDefFromLibvirt(virConn, net)
 	if err == nil {
 		t.Error("Expected error")
 	}
