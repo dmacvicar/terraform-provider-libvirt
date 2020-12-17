@@ -285,7 +285,10 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 // resourceLibvirtVolumeRead returns the current state for a volume resource
 func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
-	virConn := client.libvirt
+	if client.libvirt == nil {
+		return fmt.Errorf(LibVirtConIsNil)
+	}
+	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -300,28 +303,26 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 		d.SetId("")
 		return nil
 	}
-	defer volume.Free()
 
-	volName, err := volume.GetName()
-	if err != nil {
-		return fmt.Errorf("error retrieving volume name: %s", err)
+	volName := volume.Name
+	if volName == "" {
+		return fmt.Errorf("error retrieving volume name")
 	}
 
-	volPool, err := volume.LookupPoolByVolume()
+	volPool, err := virConn.StoragePoolLookupByVolume(*volume)
 	if err != nil {
 		return fmt.Errorf("error retrieving pool for volume: %s", err)
 	}
-	defer volPool.Free()
 
-	volPoolName, err := volPool.GetName()
-	if err != nil {
-		return fmt.Errorf("error retrieving pool name: %s", err)
+	volPoolName := volPool.Name
+	if volPoolName == "" {
+		return fmt.Errorf("error retrieving pool name")
 	}
 
 	d.Set("pool", volPoolName)
 	d.Set("name", volName)
 
-	info, err := volume.GetInfo()
+	_, size, _, err := virConn.StorageVolGetInfo(*volume)
 	if err != nil {
 		virErr := err.(libvirtc.Error)
 		if virErr.Code != libvirtc.ERR_NO_STORAGE_VOL {
@@ -331,9 +332,9 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 		d.SetId("")
 		return nil
 	}
-	d.Set("size", info.Capacity)
+	d.Set("size", size)
 
-	volumeDef, err := newDefVolumeFromLibvirt(volume)
+	volumeDef, err := newDefVolumeFromLibvirt(virConn, *volume)
 	if err != nil {
 		return err
 	}
@@ -372,7 +373,6 @@ func resourceLibvirtVolumeExists(d *schema.ResourceData, meta interface{}) (bool
 	if volume == nil {
 		return false, nil
 	}
-	defer volume.Free()
 
 	return true, nil
 }
