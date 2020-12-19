@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	libvirtc "github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 func resourceLibvirtPool() *schema.Resource {
@@ -76,7 +76,8 @@ func resourceLibvirtPool() *schema.Resource {
 
 func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
-	if client.libvirt == nil {
+	virConn := client.libvirt
+	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
@@ -92,7 +93,7 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 
 	// Check whether the storage pool already exists. Its name needs to be
 	// unique.
-	if _, err := client.libvirtc.LookupStoragePoolByName(poolName); err == nil {
+	if _, err := virConn.StoragePoolLookupByName(poolName); err == nil {
 		return fmt.Errorf("storage pool '%s' already exists", poolName)
 	}
 	log.Printf("[DEBUG] Pool with name '%s' does not exist yet", poolName)
@@ -121,35 +122,34 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	// create the pool
-	pool, err := client.libvirtc.StoragePoolDefineXML(data, 0)
+	pool, err := virConn.StoragePoolDefineXML(data, 0)
 	if err != nil {
 		return fmt.Errorf("Error creating libvirt storage pool: %s", err)
 	}
-	defer pool.Free()
 
-	err = pool.Build(0)
+	err = virConn.StoragePoolBuild(pool, 0)
 	if err != nil {
 		return fmt.Errorf("Error building libvirt storage pool: %s", err)
 	}
 
-	err = pool.SetAutostart(true)
+	err = virConn.StoragePoolSetAutostart(pool, 1)
 	if err != nil {
 		return fmt.Errorf("Error setting up libvirt storage pool: %s", err)
 	}
 
-	err = pool.Create(0)
+	err = virConn.StoragePoolCreate(pool, 0)
 	if err != nil {
 		return fmt.Errorf("Error starting libvirt storage pool: %s", err)
 	}
 
-	err = pool.Refresh(0)
+	err = virConn.StoragePoolRefresh(pool, 0)
 	if err != nil {
 		return fmt.Errorf("Error refreshing libvirt storage pool: %s", err)
 	}
 
-	id, err := pool.GetUUIDString()
-	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt pool id: %s", err)
+	id := uuidString(pool.UUID)
+	if id == "" {
+		return fmt.Errorf("Error retrieving libvirt pool id: %s", pool.Name)
 	}
 	d.SetId(id)
 
@@ -170,36 +170,35 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceLibvirtPoolRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
-	virConn := client.libvirtc
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	pool, err := virConn.LookupStoragePoolByUUIDString(d.Id())
-	if pool == nil {
+	pool, err := virConn.StoragePoolLookupByUUID(parseUUID(d.Id()))
+	// TODO: validate change in test from empty struct to explicit error
+	if err != nil {
 		log.Printf("storage pool '%s' may have been deleted outside Terraform", d.Id())
 		d.SetId("")
 		return nil
 	}
-	defer pool.Free()
 
-	poolName, err := pool.GetName()
-	if err != nil {
+	if pool.Name == "" {
 		return fmt.Errorf("error retrieving pool name: %s", err)
 	}
-	d.Set("name", poolName)
+	d.Set("name", pool.Name)
 
-	info, err := pool.GetInfo()
+	_, capacity, allocation, available, err := virConn.StoragePoolGetInfo(pool)
 	if err != nil {
 		return fmt.Errorf("error retrieving pool info: %s", err)
 	}
-	d.Set("capacity", info.Capacity)
-	d.Set("allocation", info.Allocation)
-	d.Set("available", info.Available)
+	d.Set("capacity", capacity)
+	d.Set("allocation", allocation)
+	d.Set("available", available)
 
-	poolDefXML, err := pool.GetXMLDesc(0)
+	poolDefXML, err := virConn.StoragePoolGetXMLDesc(pool, 0)
 	if err != nil {
-		return fmt.Errorf("could not get XML description for pool %s: %s", poolName, err)
+		return fmt.Errorf("could not get XML description for pool %s: %s", pool.Name, err)
 	}
 
 	var poolDef libvirtxml.StoragePool
@@ -214,9 +213,9 @@ func resourceLibvirtPoolRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if poolPath == "" {
-		log.Printf("Pool %s has no path specified", poolName)
+		log.Printf("Pool %s has no path specified", pool.Name)
 	} else {
-		log.Printf("[DEBUG] Pool %s path: %s", poolName, poolPath)
+		log.Printf("[DEBUG] Pool %s path: %s", pool.Name, poolPath)
 		d.Set("path", poolPath)
 	}
 
@@ -235,12 +234,12 @@ func resourceLibvirtPoolDelete(d *schema.ResourceData, meta interface{}) error {
 func resourceLibvirtPoolExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	log.Printf("[DEBUG] Check if resource libvirt_pool exists")
 	client := meta.(*Client)
-	virConn := client.libvirtc
+	virConn := client.libvirt
 	if virConn == nil {
 		return false, fmt.Errorf(LibVirtConIsNil)
 	}
 
-	pool, err := virConn.LookupStoragePoolByUUIDString(d.Id())
+	_, err := virConn.StoragePoolLookupByUUID(parseUUID(d.Id()))
 	if err != nil {
 		virErr := err.(libvirtc.Error)
 		if virErr.Code != libvirtc.ERR_NO_STORAGE_POOL {
@@ -249,7 +248,6 @@ func resourceLibvirtPoolExists(d *schema.ResourceData, meta interface{}) (bool, 
 		// does not exist, but no error
 		return false, nil
 	}
-	defer pool.Free()
 
 	return true, nil
 }
