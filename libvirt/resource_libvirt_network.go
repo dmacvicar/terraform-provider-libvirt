@@ -239,6 +239,38 @@ func resourceLibvirtNetwork() *schema.Resource {
 					},
 				},
 			},
+			"dnsmasq_options": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"options": {
+							Type:     schema.TypeList,
+							Optional: true,
+							ForceNew: false,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"option_name": {
+										Type: schema.TypeString,
+										// This should be required, but Terraform does validation too early
+										// and therefore doesn't recognize that this is set when assigning from
+										// a rendered dnsmasq_options template.
+										Optional: true,
+									},
+									"option_value": {
+										Type: schema.TypeString,
+										// This should be required, but Terraform does validation too early
+										// and therefore doesn't recognize that this is set when assigning from
+										// a rendered dnsmasq_options template.
+										Optional: true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 			"xml": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -418,6 +450,15 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	} else {
 		return fmt.Errorf("unsupported network mode '%s'", networkDef.Forward.Mode)
 	}
+
+	dnsmasqOption, err := getDNSMasqOptionFromResource(d)
+	if err != nil {
+		return err
+	}
+	dnsMasqOptions := libvirtxml.NetworkDnsmasqOptions{
+		Option: dnsmasqOption,
+	}
+	networkDef.DnsmasqOptions = &dnsMasqOptions
 
 	// parse any static routes
 	routes, err := getRoutesFromResource(d)

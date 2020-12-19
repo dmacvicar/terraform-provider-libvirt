@@ -74,3 +74,26 @@ func TestAccLibvirtNetworkDataSource_DNSSRVTemplate(t *testing.T) {
 		},
 	})
 }
+
+func TestAccLibvirtNetworkDataSource_DNSDnsmasqTemplate(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+
+			{
+				Config: `data "libvirt_network_dnsmasq_options_template" "options" {
+  count = 2
+  option_name = "address"
+  option_value = "/.apps.tt${count.index}.testing/1.1.1.${count.index+1}"
+}`,
+				Check: resource.ComposeTestCheckFunc(
+					checkTemplate("data.libvirt_network_dnsmasq_options_template.options.0", "option_name", "address"),
+					checkTemplate("data.libvirt_network_dnsmasq_options_template.options.0", "option_value", "/.apps.tt0.testing/1.1.1.1"),
+					checkTemplate("data.libvirt_network_dnsmasq_options_template.options.1", "option_name", "address"),
+					checkTemplate("data.libvirt_network_dnsmasq_options_template.options.1", "option_value", "/.apps.tt1.testing/1.1.1.2"),
+				),
+			},
+		},
+	})
+}

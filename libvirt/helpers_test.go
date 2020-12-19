@@ -344,3 +344,35 @@ func testAccCheckLibvirtNetworkDNSEnableOrDisable(name string, expectDNS bool) r
 		return nil
 	}
 }
+
+// testAccCheckDnsmasqOptions checks the expected Dnsmasq options in a network
+func testAccCheckDnsmasqOptions(name string, expected []libvirtxml.NetworkDnsmasqOption) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+
+		virConn := testAccProvider.Meta().(*Client).libvirt
+		networkDef, err := getNetworkDef(s, name, *virConn)
+		if err != nil {
+			return err
+		}
+		if networkDef.DnsmasqOptions == nil {
+			return fmt.Errorf("DnsmasqOptions block not found in networkDef")
+		}
+		actual := networkDef.DnsmasqOptions.Option
+		if len(expected) != len(actual) {
+			return fmt.Errorf("len(expected): %d != len(actual): %d", len(expected), len(actual))
+		}
+		for _, e := range expected {
+			found := false
+			for _, a := range actual {
+				if reflect.DeepEqual(a.Value, e.Value) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("Unable to find:%v in: %v", e, actual)
+			}
+		}
+		return nil
+	}
+}
