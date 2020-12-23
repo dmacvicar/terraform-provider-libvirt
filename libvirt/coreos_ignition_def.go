@@ -173,17 +173,17 @@ func newIgnitionDefFromRemoteVol(virConn *libvirt.Libvirt, id string) (defIgniti
 
 	ign.Name = volume.Name
 	if ign.Name == "" {
-		return ign, fmt.Errorf("Error retrieving volume name")
+		return ign, fmt.Errorf("Error retrieving volume name from key: %s", key)
 	}
 
 	volPool, err := virConn.StoragePoolLookupByVolume(volume)
 	if err != nil {
-		return ign, fmt.Errorf("Error retrieving pool for volume")
+		return ign, fmt.Errorf("Error retrieving pool for volume: %s", volume.Name)
 	}
 
 	ign.PoolName = volPool.Name
 	if ign.PoolName == "" {
-		return ign, fmt.Errorf("Error retrieving pool name")
+		return ign, fmt.Errorf("Error retrieving pool name for volume: %s", volume.Name)
 	}
 
 	return ign, nil
