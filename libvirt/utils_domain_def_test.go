@@ -44,10 +44,7 @@ func TestSplitKernelEmptyCmdLine(t *testing.T) {
 
 func connect(t *testing.T) *libvirt.Libvirt {
 	conn := libvirt.Libvirt{}
-	URI := libvirt.QEMUSystem
-	if os.Getenv("LIBVIRT_DEFAULT_URI") != "" {
-		URI = libvirt.ConnectURI(os.Getenv("LIBVIRT_DEFAULT_URI"))
-	}
+	URI := libvirt.ConnectURI(os.Getenv("LIBVIRT_DEFAULT_URI"))
 	err := conn.ConnectToURI(URI)
 	if err != nil {
 		t.Fatal(err)

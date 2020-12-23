@@ -37,7 +37,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 					resource "libvirt_cloudinit_disk" "%s" {
 								name           = "%s"
 								user_data      = "#cloud-config"
-								meta_data = "instance-id: bamboo"
+								meta_data      = "instance-id: bamboo"
 								network_config = "network:"
                                 pool           = "${libvirt_pool.%s.name}"
 							}`, randomPoolName, randomPoolName, randomPoolPath, randomResourceName, randomIsoName, randomPoolName),
