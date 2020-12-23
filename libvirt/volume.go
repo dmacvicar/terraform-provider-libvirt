@@ -87,13 +87,12 @@ func volumeDelete(client *Client, key string) error {
 		return fmt.Errorf("Error retrieving pool for volume: %s", err)
 	}
 
-	poolName := volPool.Name
-	if poolName == "" {
+	if volPool.Name == "" {
 		return fmt.Errorf("Error retrieving name of pool for volume key: %s", volume.Key)
 	}
 
-	client.poolMutexKV.Lock(poolName)
-	defer client.poolMutexKV.Unlock(poolName)
+	client.poolMutexKV.Lock(volPool.Name)
+	defer client.poolMutexKV.Unlock(volPool.Name)
 
 	waitForSuccess("Error refreshing pool for volume", func() error {
 		return virConn.StoragePoolRefresh(volPool, 0)

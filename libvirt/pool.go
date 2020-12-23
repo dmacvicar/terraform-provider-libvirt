@@ -80,12 +80,12 @@ func deletePool(client *Client, uuid string) error {
 		return fmt.Errorf("error retrieving storage pool info: %s", err)
 	}
 
-	poolName := pool.Name
-	if poolName == "" {
-		return fmt.Errorf("error retrieving storage pool name: %s", err)
+	if pool.Name == "" {
+		return fmt.Errorf("error retrieving storage pool name for uuid: %s", uuid)
 	}
-	client.poolMutexKV.Lock(poolName)
-	defer client.poolMutexKV.Unlock(poolName)
+
+	client.poolMutexKV.Lock(pool.Name)
+	defer client.poolMutexKV.Unlock(pool.Name)
 
 	state, _, _, _, err := virConn.StoragePoolGetInfo(pool)
 	if err != nil {
