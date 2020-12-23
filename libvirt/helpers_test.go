@@ -150,12 +150,11 @@ func testAccCheckNetworkExists(name string, network *libvirt.Network) resource.T
 			return err
 		}
 
-		realID := networkRetrived.UUID
-		if uuidString(realID) == "" {
+		if uuidString(networkRetrived.UUID) == "" {
 			return fmt.Errorf("Domain UUID is blank")
 		}
 
-		if uuidString(realID) != rs.Primary.ID {
+		if uuidString(networkRetrived.UUID) != rs.Primary.ID {
 			return fmt.Errorf("Libvirt network not found")
 		}
 

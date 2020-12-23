@@ -1031,12 +1031,11 @@ func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol,
 			return fmt.Errorf("Error retrieving libvirt domain XML description from existing domain: %s", err)
 		}
 
-		ignitionKey := volume.Key
-		if ignitionKey == "" {
+		if volume.Key == "" {
 			return fmt.Errorf("Ignition key is blank")
 		}
 
-		ignStr := fmt.Sprintf("name=%s,file=%s", fwCfg, ignitionKey)
+		ignStr := fmt.Sprintf("name=%s,file=%s", fwCfg, volume.Key)
 
 		cmdLine := domainDef.QEMUCommandline.Args
 		for i, cmd := range cmdLine {
@@ -1174,20 +1173,18 @@ func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel
 			return fmt.Errorf("Error retrieving libvirt domain XML description from existing domain: %s", err)
 		}
 
-		key := kernel.Key
-		if key == "" {
+		if kernel.Key == "" {
 			return fmt.Errorf("Can't get kernel volume id")
 		}
-		if domainDef.OS.Kernel != key {
-			return fmt.Errorf("Kernel is not set correctly: '%s' vs '%s'", domainDef.OS.Kernel, key)
+		if domainDef.OS.Kernel != kernel.Key {
+			return fmt.Errorf("Kernel is not set correctly: '%s' vs '%s'", domainDef.OS.Kernel, kernel.Key)
 		}
 
-		key = initrd.Key
-		if key == "" {
+		if initrd.Key == "" {
 			return fmt.Errorf("Can't get initrd volume id")
 		}
-		if domainDef.OS.Initrd != key {
-			return fmt.Errorf("Initrd is not set correctly: '%s' vs '%s'", domainDef.OS.Initrd, key)
+		if domainDef.OS.Initrd != initrd.Key {
+			return fmt.Errorf("Initrd is not set correctly: '%s' vs '%s'", domainDef.OS.Initrd, initrd.Key)
 		}
 		if domainDef.OS.Cmdline != "bar=bye foo=1 foo=2" {
 			return fmt.Errorf("Kernel args not set correctly: '%s'", domainDef.OS.Cmdline)

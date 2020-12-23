@@ -26,13 +26,12 @@ func testAccCheckLibvirtVolumeExists(name string, volume *libvirt.StorageVol) re
 			return err
 		}
 
-		realID := retrievedVol.Key
-		if realID == "" {
-			return fmt.Errorf("Key is blank")
+		if retrievedVol.Key == "" {
+			return fmt.Errorf("key is blank")
 		}
 
-		if realID != rs.Primary.ID {
-			return fmt.Errorf("Resource ID and volume key does not match")
+		if retrievedVol.Key != rs.Primary.ID {
+			return fmt.Errorf("resource ID and volume key does not match")
 		}
 
 		*volume = *retrievedVol
@@ -45,14 +44,13 @@ func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.StorageVol
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		key := volume.Key
-		if key == "" {
+		if volume.Key == "" {
 			return fmt.Errorf("Can't retrieve volume key")
 		}
 
-		_, err := virConn.StorageVolLookupByKey(key)
+		_, err := virConn.StorageVolLookupByKey(volume.Key)
 		if err == nil {
-			return fmt.Errorf("Volume '%s' still exists", key)
+			return fmt.Errorf("Volume '%s' still exists", volume.Key)
 		}
 
 		return nil
@@ -81,8 +79,8 @@ func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirt.Storag
 		if volumeDef.BackingStore == nil {
 			return fmt.Errorf("FAIL: the volume was supposed to be a backingstore, but it is not")
 		}
-		value := volumeDef.BackingStore.Path
-		if value == "" {
+
+		if volumeDef.BackingStore.Path == "" {
 			return fmt.Errorf("FAIL: the volume was supposed to be a backingstore, but it is not")
 		}
 
@@ -242,11 +240,10 @@ func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 				Destroy: true,
 				PreConfig: func() {
 					client := testAccProvider.Meta().(*Client)
-					id := volume.Key
-					if id == "" {
+					if volume.Key == "" {
 						panic(fmt.Errorf("UUID is blank"))
 					}
-					volumeDelete(client, id)
+					volumeDelete(client, volume.Key)
 				},
 			},
 		},

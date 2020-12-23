@@ -157,11 +157,10 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 				Destroy: true,
 				PreConfig: func() {
 					client := testAccProvider.Meta().(*Client)
-					id := volume.Key
-					if id == "" {
+					if volume.Key == "" {
 						panic(fmt.Errorf("Key is blank"))
 					}
-					volumeDelete(client, id)
+					volumeDelete(client, volume.Key)
 				},
 			},
 		},
@@ -184,13 +183,12 @@ func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirt.Storag
 		if err != nil {
 			return err
 		}
-		realID := retrievedVol.Key
-		if realID == "" {
+		if retrievedVol.Key == "" {
 			return fmt.Errorf("UUID is blank")
 		}
 
-		if realID != cikey {
-			fmt.Printf("realID is: %s \ncloudinit key is %s", realID, cikey)
+		if retrievedVol.Key != cikey {
+			fmt.Printf("realID is: %s \ncloudinit key is %s", retrievedVol.Key, cikey)
 			return fmt.Errorf("Resource ID and cloudinit volume key does not match")
 		}
 
