@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/google/uuid"
-	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 type defIgnition struct {
@@ -158,7 +158,7 @@ func (ign *defIgnition) createFile() (string, error) {
 }
 
 // Creates a new defIgnition object from provided id
-func newIgnitionDefFromRemoteVol(virConn *libvirtc.Connect, id string) (defIgnition, error) {
+func newIgnitionDefFromRemoteVol(virConn *libvirt.Libvirt, id string) (defIgnition, error) {
 	ign := defIgnition{}
 
 	key, err := getIgnitionVolumeKeyFromTerraformID(id)
@@ -166,26 +166,24 @@ func newIgnitionDefFromRemoteVol(virConn *libvirtc.Connect, id string) (defIgnit
 		return ign, err
 	}
 
-	volume, err := virConn.LookupStorageVolByKey(key)
+	volume, err := virConn.StorageVolLookupByKey(key)
 	if err != nil {
 		return ign, fmt.Errorf("Can't retrieve volume %s: %v", key, err)
 	}
-	defer volume.Free()
 
-	ign.Name, err = volume.GetName()
-	if err != nil {
-		return ign, fmt.Errorf("Error retrieving volume name: %s", err)
+	ign.Name = volume.Name
+	if ign.Name == "" {
+		return ign, fmt.Errorf("Error retrieving volume name")
 	}
 
-	volPool, err := volume.LookupPoolByVolume()
+	volPool, err := virConn.StoragePoolLookupByVolume(volume)
 	if err != nil {
-		return ign, fmt.Errorf("Error retrieving pool for volume: %s", err)
+		return ign, fmt.Errorf("Error retrieving pool for volume")
 	}
-	defer volPool.Free()
 
-	ign.PoolName, err = volPool.GetName()
-	if err != nil {
-		return ign, fmt.Errorf("Error retrieving pool name: %s", err)
+	ign.PoolName = volPool.Name
+	if ign.PoolName == "" {
+		return ign, fmt.Errorf("Error retrieving pool name")
 	}
 
 	return ign, nil
