@@ -207,7 +207,7 @@ type Expected struct {
 
 func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName string, volume *libvirtc.StorageVol) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirtc
+		virConn := testAccProvider.Meta().(*Client).libvirt
 
 		rs, err := getResourceFromTerraformState(volumeName, state)
 		if err != nil {

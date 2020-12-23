@@ -3,10 +3,10 @@ package libvirt
 import (
 	"bytes"
 	"encoding/xml"
-	"errors"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	libvirt "github.com/digitalocean/go-libvirt"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
@@ -128,40 +128,31 @@ func TestHasDHCPForwardSet(t *testing.T) {
 
 func TestNetworkFromLibvirtError(t *testing.T) {
 	virConn := testAccProvider.Meta().(*Client).libvirt
-	net := NetworkMock{
-		GetXMLDescError: errors.New("boom"),
-	}
+	net := libvirt.Network{}
 
 	_, err := getXMLNetworkDefFromLibvirt(virConn, net)
 	if err == nil {
-		t.Error("Expected error")
+		t.Error("Expected error - empty network provided")
 	}
 }
 
 func TestNetworkFromLibvirtWrongResponse(t *testing.T) {
 	virConn := testAccProvider.Meta().(*Client).libvirt
-	net := NetworkMock{
-		GetXMLDescReply: "wrong xml",
+	net := libvirt.Network{
+		Name: "test",
+		UUID: libvirt.UUID{},
 	}
 
 	_, err := getXMLNetworkDefFromLibvirt(virConn, net)
 	if err == nil {
-		t.Error("Expected error")
+		t.Error("Expected error - uninitiated network provided")
 	}
 }
 
 func TestNetworkFromLibvirt(t *testing.T) {
 	virConn := testAccProvider.Meta().(*Client).libvirt
-	net := NetworkMock{
-		GetXMLDescReply: `
-		<network>
-		  <name>default</name>
-		  <forward mode='nat'>
-		    <nat>
-		      <port start='1024' end='65535'/>
-		    </nat>
-		  </forward>
-		</network>`,
+	net := libvirt.Network{
+		Name: "default",
 	}
 
 	dn, err := getXMLNetworkDefFromLibvirt(virConn, net)

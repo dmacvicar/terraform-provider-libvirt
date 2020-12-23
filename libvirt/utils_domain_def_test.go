@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	libvirtc "github.com/libvirt/libvirt-go"
+	"github.com/digitalocean/go-libvirt"
 )
 
 func init() {
@@ -42,13 +42,18 @@ func TestSplitKernelEmptyCmdLine(t *testing.T) {
 	}
 }
 
-func connect(t *testing.T) *libvirtc.Connect {
-	conn, err := libvirtc.NewConnect(os.Getenv("LIBVIRT_DEFAULT_URI"))
+func connect(t *testing.T) *libvirt.Libvirt {
+	conn := libvirt.Libvirt{}
+	URI := libvirt.QEMUSystem
+	if os.Getenv("LIBVIRT_DEFAULT_URI") != "" {
+		URI = libvirt.ConnectURI(os.Getenv("LIBVIRT_DEFAULT_URI"))
+	}
+	err := conn.ConnectToURI(URI)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	return conn
+	return &conn
 }
 
 func TestGetHostArchitecture(t *testing.T) {
@@ -58,7 +63,7 @@ func TestGetHostArchitecture(t *testing.T) {
 	}
 
 	conn := connect(t)
-	defer conn.Close()
+	defer conn.Disconnect()
 
 	arch, err := getHostArchitecture(conn)
 
@@ -80,7 +85,7 @@ func TestGetCanonicalMachineName(t *testing.T) {
 	}
 
 	conn := connect(t)
-	defer conn.Close()
+	defer conn.Disconnect()
 	arch := "x86_64"
 	virttype := "hvm"
 	machine := "pc"
@@ -107,7 +112,7 @@ func TestGetOriginalMachineName(t *testing.T) {
 	}
 
 	conn := connect(t)
-	defer conn.Close()
+	defer conn.Disconnect()
 	arch := "x86_64"
 	virttype := "hvm"
 	machine := "pc"
@@ -140,7 +145,7 @@ func TestGetHostCapabilties(t *testing.T) {
 
 	start := time.Now()
 	conn := connect(t)
-	defer conn.Close()
+	defer conn.Disconnect()
 	caps, err := getHostCapabilities(conn)
 	if err != nil {
 		t.Errorf("Can't get host capabilties")
