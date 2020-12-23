@@ -161,7 +161,7 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 
 	log.Printf("[INFO] Pool ID: %s", d.Id())
 
-	if err := poolWaitForExists(client.libvirtc, id); err != nil {
+	if err := poolWaitForExists(client.libvirt, id); err != nil {
 		return err
 	}
 

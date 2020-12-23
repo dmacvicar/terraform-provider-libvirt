@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"testing"
 
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
-	var volume libvirtc.StorageVol
+	var volume libvirt.StorageVol
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
@@ -122,7 +122,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 // This allows Terraform users to manually delete resources without breaking Terraform.
 // This test should fail without a proper "Exists" implementation
 func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
-	var volume libvirtc.StorageVol
+	var volume libvirt.StorageVol
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
@@ -157,9 +157,9 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 				Destroy: true,
 				PreConfig: func() {
 					client := testAccProvider.Meta().(*Client)
-					id, err := volume.GetKey()
-					if err != nil {
-						panic(err)
+					id := volume.Key
+					if id == "" {
+						panic(fmt.Errorf("Key is blank"))
 					}
 					volumeDelete(client, id)
 				},
@@ -168,9 +168,9 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	})
 }
 
-func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirtc.StorageVol) resource.TestCheckFunc {
+func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirtc
+		virConn := testAccProvider.Meta().(*Client).libvirt
 
 		rs, err := getResourceFromTerraformState(volumeName, state)
 		if err != nil {
@@ -180,13 +180,13 @@ func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirtc.Stora
 		if err != nil {
 			return err
 		}
-		retrievedVol, err := virConn.LookupStorageVolByKey(cikey)
+		retrievedVol, err := virConn.StorageVolLookupByKey(cikey)
 		if err != nil {
 			return err
 		}
-		realID, err := retrievedVol.GetKey()
-		if err != nil {
-			return err
+		realID := retrievedVol.Key
+		if realID == "" {
+			return fmt.Errorf("UUID is blank")
 		}
 
 		if realID != cikey {
@@ -194,7 +194,7 @@ func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirtc.Stora
 			return fmt.Errorf("Resource ID and cloudinit volume key does not match")
 		}
 
-		*volume = *retrievedVol
+		*volume = retrievedVol
 
 		return nil
 	}
@@ -205,7 +205,7 @@ type Expected struct {
 	UserData, NetworkConfig, MetaData string
 }
 
-func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName string, volume *libvirtc.StorageVol) resource.TestCheckFunc {
+func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName string, volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
