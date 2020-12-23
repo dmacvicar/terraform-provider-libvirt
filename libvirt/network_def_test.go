@@ -163,8 +163,10 @@ func TestNetworkFromLibvirt(t *testing.T) {
 		return
 	}
 	virConn := testAccProvider.Meta().(*Client).libvirt
-	net := libvirt.Network{
-		Name: "default",
+
+	net, err := virConn.NetworkLookupByName("default")
+	if err != nil {
+		t.Errorf("Unable to lookup 'default' network required for test")
 	}
 
 	dn, err := getXMLNetworkDefFromLibvirt(virConn, net)
