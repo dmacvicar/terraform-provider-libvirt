@@ -1268,7 +1268,7 @@ func TestAccLibvirtDomainFirmware(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	firmware := fmt.Sprintf("/usr/share/qemu/ovmf-x86_64-code.bin")
+	firmware := "/usr/share/qemu/ovmf-x86_64-code.bin"
 	if _, err := os.Stat(firmware); os.IsNotExist(err) {
 		firmware = "/usr/share/ovmf/OVMF.fd"
 		if _, err := os.Stat(firmware); os.IsNotExist(err) {
@@ -1276,7 +1276,7 @@ func TestAccLibvirtDomainFirmware(t *testing.T) {
 		}
 	}
 
-	template := fmt.Sprintf("/usr/share/qemu/ovmf-x86_64-vars.bin")
+	template := "/usr/share/qemu/ovmf-x86_64-vars.bin"
 	if _, err := os.Stat(template); os.IsNotExist(err) {
 		template = "/usr/share/qemu/OVMF.fd"
 		if _, err := os.Stat(template); os.IsNotExist(err) {
@@ -1500,7 +1500,7 @@ func TestAccLibvirtDomain_ShutoffMultiDomainsRunning(t *testing.T) {
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: fmt.Sprintf(`
+				Config: `
    				resource "libvirt_domain" "domainoff" {
 					name = "domainfalse"
 					vcpu = 1
@@ -1510,7 +1510,7 @@ func TestAccLibvirtDomain_ShutoffMultiDomainsRunning(t *testing.T) {
 					name = "domaintrue"
 					vcpu = 1
 					running = true
-				}`),
+				}`,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainStateEqual("libvirt_domain.domainoff", &domain, "shutoff"),
 					testAccCheckLibvirtDomainStateEqual("libvirt_domain.domainok", &domain2, "running"),

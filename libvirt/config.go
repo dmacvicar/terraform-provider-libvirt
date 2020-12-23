@@ -2,13 +2,14 @@ package libvirt
 
 import (
 	"fmt"
-	libvirt2 "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/mutexkv"
-	libvirtc "github.com/libvirt/libvirt-go"
 	"log"
 	"net"
 	"sync"
 	"time"
+
+	libvirt2 "github.com/digitalocean/go-libvirt"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/mutexkv"
+	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 // Config struct for the libvirt-provider
@@ -45,7 +46,7 @@ func (c *Config) Client() (*Client, error) {
 		return nil, fmt.Errorf("failed to connect: %w", err)
 	}
 
-	v, err := l.Version()
+	v, err := l.ConnectGetLibVersion()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve libvirt version: %w", err)
 	}

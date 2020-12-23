@@ -275,7 +275,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	if err := volumeWaitForExists(client.libvirtc, volume.Key); err != nil {
+	if err := volumeWaitForExists(client.libvirt, volume.Key); err != nil {
 		return err
 	}
 
