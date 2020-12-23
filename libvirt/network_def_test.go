@@ -127,6 +127,10 @@ func TestHasDHCPForwardSet(t *testing.T) {
 }
 
 func TestNetworkFromLibvirtError(t *testing.T) {
+	if !testAccEnabled() {
+		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
+		return
+	}
 	virConn := testAccProvider.Meta().(*Client).libvirt
 	net := libvirt.Network{}
 
@@ -137,6 +141,10 @@ func TestNetworkFromLibvirtError(t *testing.T) {
 }
 
 func TestNetworkFromLibvirtWrongResponse(t *testing.T) {
+	if !testAccEnabled() {
+		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
+		return
+	}
 	virConn := testAccProvider.Meta().(*Client).libvirt
 	net := libvirt.Network{
 		Name: "test",
@@ -150,6 +158,10 @@ func TestNetworkFromLibvirtWrongResponse(t *testing.T) {
 }
 
 func TestNetworkFromLibvirt(t *testing.T) {
+	if !testAccEnabled() {
+		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
+		return
+	}
 	virConn := testAccProvider.Meta().(*Client).libvirt
 	net := libvirt.Network{
 		Name: "default",
