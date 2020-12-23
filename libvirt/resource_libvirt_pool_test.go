@@ -5,32 +5,32 @@ import (
 	"regexp"
 	"testing"
 
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	libvirtc "github.com/libvirt/libvirt-go"
 )
 
-func testAccCheckLibvirtPoolExists(name string, pool *libvirtc.StoragePool) resource.TestCheckFunc {
+func testAccCheckLibvirtPoolExists(name string, pool *libvirt.StoragePool) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirtc
+		virConn := testAccProvider.Meta().(*Client).libvirt
 
 		rs, err := getResourceFromTerraformState(name, state)
 		if err != nil {
 			return fmt.Errorf("Failed to get resource: %s", err)
 		}
 
-		retrievedPool, err := getPoolFromTerraformState(name, state, *virConn)
+		retrievedPool, err := getPoolFromTerraformState(name, state, virConn)
 		if err != nil {
 			return fmt.Errorf("Failed to get pool: %s", err)
 		}
 
-		realID, err := retrievedPool.GetUUIDString()
-		if err != nil {
-			return fmt.Errorf("Failed to get UUID: %s", err)
+		realID := retrievedPool.UUID
+		if uuidString(realID) == "" {
+			return fmt.Errorf("UUID is blank")
 		}
 
-		if realID != rs.Primary.ID {
+		if uuidString(realID) != rs.Primary.ID {
 			return fmt.Errorf("Resource ID and pool ID does not match")
 		}
 
@@ -40,18 +40,18 @@ func testAccCheckLibvirtPoolExists(name string, pool *libvirtc.StoragePool) reso
 	}
 }
 
-func testAccCheckLibvirtPoolDoesNotExists(n string, pool *libvirtc.StoragePool) resource.TestCheckFunc {
+func testAccCheckLibvirtPoolDoesNotExists(n string, pool *libvirt.StoragePool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirtc
+		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		id, err := pool.GetUUIDString()
-		if err != nil {
-			return fmt.Errorf("Can't retrieve pool ID: %s", err)
+		id := pool.UUID
+
+		if uuidString(id) == "" {
+			return fmt.Errorf("UUID is blank")
 		}
 
-		pool, err := virConn.LookupStoragePoolByUUIDString(id)
+		_, err := virConn.StoragePoolLookupByUUID(id)
 		if err == nil {
-			pool.Free()
 			return fmt.Errorf("Pool '%s' still exists", id)
 		}
 
@@ -60,7 +60,7 @@ func testAccCheckLibvirtPoolDoesNotExists(n string, pool *libvirtc.StoragePool) 
 }
 
 func TestAccLibvirtPool_Basic(t *testing.T) {
-	var pool libvirtc.StoragePool
+	var pool libvirt.StoragePool
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
@@ -93,7 +93,7 @@ func TestAccLibvirtPool_Basic(t *testing.T) {
 // This allows Terraform users to manually delete resources without breaking Terraform.
 // This test should fail without a proper "Exists" implementation
 func TestAccLibvirtPool_ManuallyDestroyed(t *testing.T) {
-	var pool libvirtc.StoragePool
+	var pool libvirt.StoragePool
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
@@ -119,11 +119,11 @@ func TestAccLibvirtPool_ManuallyDestroyed(t *testing.T) {
 				Destroy: true,
 				PreConfig: func() {
 					client := testAccProvider.Meta().(*Client)
-					id, err := pool.GetUUIDString()
-					if err != nil {
-						panic(err)
+					id := pool.UUID
+					if uuidString(id) == "" {
+						panic(fmt.Errorf("UUID is blank"))
 					}
-					deletePool(client, id)
+					deletePool(client, uuidString(id))
 				},
 			},
 		},
@@ -184,12 +184,12 @@ func TestAccLibvirtPool_NoDirPath(t *testing.T) {
 }
 
 func testAccCheckLibvirtPoolDestroy(state *terraform.State) error {
-	virConn := testAccProvider.Meta().(*Client).libvirtc
+	virConn := testAccProvider.Meta().(*Client).libvirt
 	for _, rs := range state.RootModule().Resources {
 		if rs.Type != "libvirt_pool" {
 			continue
 		}
-		_, err := virConn.LookupStoragePoolByUUIDString(rs.Primary.ID)
+		_, err := virConn.StoragePoolLookupByUUID(parseUUID(rs.Primary.ID))
 		if err == nil {
 			return fmt.Errorf(
 				"Error waiting for pool (%s) to be destroyed: %s",
