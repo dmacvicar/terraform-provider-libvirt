@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	libvirtc "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
@@ -363,7 +363,7 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 func TestAccLibvirtNetwork_Import(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 
-	var network libvirtc.Network
+	var network libvirt.Network
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resourceName := "libvirt_network." + randomNetworkResource
@@ -484,8 +484,8 @@ func TestAccLibvirtNetwork_StaticRoutes(t *testing.T) {
 
 	checkRoutes := func(resourceName string) resource.TestCheckFunc {
 		return func(s *terraform.State) error {
-			virConn := testAccProvider.Meta().(*Client).libvirtc
-			networkDef, err := getNetworkDef(s, resourceName, *virConn)
+			virConn := testAccProvider.Meta().(*Client).libvirt
+			networkDef, err := getNetworkDef(s, resourceName, virConn)
 			if err != nil {
 				return err
 			}
@@ -558,7 +558,7 @@ func TestAccLibvirtNetwork_StaticRoutes(t *testing.T) {
 func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 
-	var network libvirtc.Network
+	var network libvirt.Network
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{
@@ -601,7 +601,7 @@ func TestAccLibvirtNetwork_Autostart(t *testing.T) {
 func TestAccLibvirtNetwork_MTU(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 
-	var network libvirtc.Network
+	var network libvirt.Network
 	randomNetworkResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	resource.Test(t, resource.TestCase{

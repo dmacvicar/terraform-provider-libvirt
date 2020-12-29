@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	libvirtc "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 	"github.com/terraform-providers/terraform-provider-ignition/ignition"
 )
@@ -80,33 +79,33 @@ func getResourceFromTerraformState(resourceName string, state *terraform.State) 
 // ** resource specifics helpers **
 
 // getPoolFromTerraformState lookup pool by name and return the libvirt pool from a terraform state
-func getPoolFromTerraformState(name string, state *terraform.State, virConn libvirtc.Connect) (*libvirtc.StoragePool, error) {
+func getPoolFromTerraformState(name string, state *terraform.State, virConn *libvirt.Libvirt) (*libvirt.StoragePool, error) {
 	rs, err := getResourceFromTerraformState(name, state)
 	if err != nil {
 		return nil, err
 	}
 
-	pool, err := virConn.LookupStoragePoolByUUIDString(rs.Primary.ID)
+	pool, err := virConn.StoragePoolLookupByUUID(parseUUID(rs.Primary.ID))
 	if err != nil {
 		return nil, err
 	}
 	log.Printf("[DEBUG]:The ID is %s", rs.Primary.ID)
-	return pool, nil
+	return &pool, nil
 }
 
 // getVolumeFromTerraformState lookup volume by name and return the libvirt volume from a terraform state
-func getVolumeFromTerraformState(name string, state *terraform.State, virConn libvirtc.Connect) (*libvirtc.StorageVol, error) {
+func getVolumeFromTerraformState(name string, state *terraform.State, virConn *libvirt.Libvirt) (*libvirt.StorageVol, error) {
 	rs, err := getResourceFromTerraformState(name, state)
 	if err != nil {
 		return nil, err
 	}
 
-	vol, err := virConn.LookupStorageVolByKey(rs.Primary.ID)
+	vol, err := virConn.StorageVolLookupByKey(rs.Primary.ID)
 	if err != nil {
 		return nil, err
 	}
 	log.Printf("[DEBUG]:The ID is %s", rs.Primary.ID)
-	return vol, nil
+	return &vol, nil
 }
 
 // helper used in network tests for retrieve xml network definition.
@@ -137,7 +136,7 @@ func getNetworkDef(state *terraform.State, name string, virConn *libvirt.Libvirt
 // //////////////////////////////////////////////////////////////////
 
 // testAccCheckNetworkExists checks that the network exists
-func testAccCheckNetworkExists(name string, network *libvirtc.Network) resource.TestCheckFunc {
+func testAccCheckNetworkExists(name string, network *libvirt.Network) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
 		rs, err := getResourceFromTerraformState(name, state)
@@ -145,22 +144,21 @@ func testAccCheckNetworkExists(name string, network *libvirtc.Network) resource.
 			return err
 		}
 
-		virConn := testAccProvider.Meta().(*Client).libvirtc
-		networkRetrived, err := virConn.LookupNetworkByUUIDString(rs.Primary.ID)
+		virConn := testAccProvider.Meta().(*Client).libvirt
+		networkRetrived, err := virConn.NetworkLookupByUUID(parseUUID(rs.Primary.ID))
 		if err != nil {
 			return err
 		}
 
-		realID, err := networkRetrived.GetUUIDString()
-		if err != nil {
-			return err
+		if uuidString(networkRetrived.UUID) == "" {
+			return fmt.Errorf("Domain UUID is blank")
 		}
 
-		if realID != rs.Primary.ID {
+		if uuidString(networkRetrived.UUID) != rs.Primary.ID {
 			return fmt.Errorf("Libvirt network not found")
 		}
 
-		*network = *networkRetrived
+		*network = networkRetrived
 
 		return nil
 	}
@@ -168,12 +166,12 @@ func testAccCheckNetworkExists(name string, network *libvirtc.Network) resource.
 
 // testAccCheckLibvirtNetworkDestroy checks that the network has been destroyed
 func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
-	virtConn := testAccProvider.Meta().(*Client).libvirtc
+	virtConn := testAccProvider.Meta().(*Client).libvirt
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "libvirt_network" {
 			continue
 		}
-		_, err := virtConn.LookupNetworkByUUIDString(rs.Primary.ID)
+		_, err := virtConn.NetworkLookupByUUID(parseUUID(rs.Primary.ID))
 		if err == nil {
 			return fmt.Errorf(
 				"Error waiting for network (%s) to be destroyed: %s",

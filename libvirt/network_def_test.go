@@ -3,10 +3,10 @@ package libvirt
 import (
 	"bytes"
 	"encoding/xml"
-	"errors"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	libvirt "github.com/digitalocean/go-libvirt"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
@@ -127,42 +127,49 @@ func TestHasDHCPForwardSet(t *testing.T) {
 }
 
 func TestNetworkFromLibvirtError(t *testing.T) {
-	virConn := testAccProvider.Meta().(*Client).libvirtc
-	net := NetworkMock{
-		GetXMLDescError: errors.New("boom"),
+	if !testAccEnabled() {
+		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
+		return
 	}
+	virConn := testAccProvider.Meta().(*Client).libvirt
+	net := libvirt.Network{}
 
 	_, err := getXMLNetworkDefFromLibvirt(virConn, net)
 	if err == nil {
-		t.Error("Expected error")
+		t.Error("Expected error - empty network provided")
 	}
 }
 
 func TestNetworkFromLibvirtWrongResponse(t *testing.T) {
-	net := NetworkMock{
-		GetXMLDescReply: "wrong xml",
+	if !testAccEnabled() {
+		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
+		return
+	}
+	virConn := testAccProvider.Meta().(*Client).libvirt
+	net := libvirt.Network{
+		Name: "test",
+		UUID: libvirt.UUID{},
 	}
 
-	_, err := getXMLNetworkDefFromLibvirt(net)
+	_, err := getXMLNetworkDefFromLibvirt(virConn, net)
 	if err == nil {
-		t.Error("Expected error")
+		t.Error("Expected error - uninitiated network provided")
 	}
 }
 
 func TestNetworkFromLibvirt(t *testing.T) {
-	net := NetworkMock{
-		GetXMLDescReply: `
-		<network>
-		  <name>default</name>
-		  <forward mode='nat'>
-		    <nat>
-		      <port start='1024' end='65535'/>
-		    </nat>
-		  </forward>
-		</network>`,
+	if !testAccEnabled() {
+		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
+		return
+	}
+	virConn := testAccProvider.Meta().(*Client).libvirt
+
+	net, err := virConn.NetworkLookupByName("default")
+	if err != nil {
+		t.Errorf("Unable to lookup 'default' network required for test")
 	}
 
-	dn, err := getXMLNetworkDefFromLibvirt(net)
+	dn, err := getXMLNetworkDefFromLibvirt(virConn, net)
 	if err != nil {
 		t.Errorf("Unexpected error %v", err)
 	}

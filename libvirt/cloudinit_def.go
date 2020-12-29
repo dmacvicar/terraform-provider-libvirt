@@ -276,7 +276,7 @@ func (ci *defCloudInit) setCloudInitPoolNameFromExistingVol(virConn *libvirt.Lib
 	}
 
 	if volPool.Name == "" {
-		return fmt.Errorf("Error retrieving pool name")
+		return fmt.Errorf("Error retrieving pool name for cloudinit volume: %s", volume.Name)
 	}
 	ci.PoolName = volPool.Name
 	return nil
@@ -286,7 +286,7 @@ func (ci *defCloudInit) setCloudInitPoolNameFromExistingVol(virConn *libvirt.Lib
 // setCloudInitDisklNameFromVol retrieve CloudInitname from an existing CloudInitDisk
 func (ci *defCloudInit) setCloudInitDiskNameFromExistingVol(virConn *libvirt.Libvirt, volume libvirt.StorageVol) error {
 	if volume.Name == "" {
-		return fmt.Errorf("Error retrieving cloudinit volume name")
+		return fmt.Errorf("Error retrieving cloudinit volume name for volume key: %s", volume.Key)
 	}
 	ci.Name = volume.Name
 	return nil

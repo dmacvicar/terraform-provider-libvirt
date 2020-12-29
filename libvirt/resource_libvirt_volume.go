@@ -275,7 +275,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	if err := volumeWaitForExists(client.libvirtc, volume.Key); err != nil {
+	if err := volumeWaitForExists(client.libvirt, volume.Key); err != nil {
 		return err
 	}
 
@@ -304,9 +304,8 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 		return nil
 	}
 
-	volName := volume.Name
-	if volName == "" {
-		return fmt.Errorf("error retrieving volume name")
+	if volume.Name == "" {
+		return fmt.Errorf("error retrieving volume name for volume: %s", d.Id())
 	}
 
 	volPool, err := virConn.StoragePoolLookupByVolume(*volume)
@@ -314,13 +313,12 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("error retrieving pool for volume: %s", err)
 	}
 
-	volPoolName := volPool.Name
-	if volPoolName == "" {
-		return fmt.Errorf("error retrieving pool name")
+	if volPool.Name == "" {
+		return fmt.Errorf("error retrieving pool name for volume: %s", volume.Name)
 	}
 
-	d.Set("pool", volPoolName)
-	d.Set("name", volName)
+	d.Set("pool", volPool.Name)
+	d.Set("name", volume.Name)
 
 	_, size, _, err := virConn.StorageVolGetInfo(*volume)
 	if err != nil {
@@ -340,9 +338,9 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if volumeDef.Target == nil || volumeDef.Target.Format == nil || volumeDef.Target.Format.Type == "" {
-		log.Printf("Volume has no format specified: %s", volName)
+		log.Printf("Volume has no format specified: %s", volume.Name)
 	} else {
-		log.Printf("[DEBUG] Volume %s format: %s", volName, volumeDef.Target.Format.Type)
+		log.Printf("[DEBUG] Volume %s format: %s", volume.Name, volumeDef.Target.Format.Type)
 		d.Set("format", volumeDef.Target.Format.Type)
 	}
 

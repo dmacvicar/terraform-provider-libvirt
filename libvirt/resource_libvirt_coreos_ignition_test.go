@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"testing"
 
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 func TestAccLibvirtIgnition_Basic(t *testing.T) {
-	var volume libvirtc.StorageVol
+	var volume libvirt.StorageVol
 	randomServiceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha) + ".service"
 	randomIgnitionName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -60,9 +60,9 @@ func TestAccLibvirtIgnition_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckIgnitionVolumeExists(name string, volume *libvirtc.StorageVol) resource.TestCheckFunc {
+func testAccCheckIgnitionVolumeExists(name string, volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirtc
+		virConn := testAccProvider.Meta().(*Client).libvirt
 
 		rs, err := getResourceFromTerraformState(name, state)
 		if err != nil {
@@ -74,28 +74,28 @@ func testAccCheckIgnitionVolumeExists(name string, volume *libvirtc.StorageVol) 
 			return err
 		}
 
-		retrievedVol, err := virConn.LookupStorageVolByKey(ignKey)
+		retrievedVol, err := virConn.StorageVolLookupByKey(ignKey)
 		if err != nil {
 			return err
 		}
 		fmt.Printf("The ID is %s", rs.Primary.ID)
 
-		realID, err := retrievedVol.GetKey()
-		if err != nil {
-			return err
+		realID := retrievedVol.Key
+		if realID == "" {
+			return fmt.Errorf("Resource key is blank")
 		}
 
 		if realID != ignKey {
 			return fmt.Errorf("Resource ID and volume key does not match")
 		}
 
-		*volume = *retrievedVol
+		*volume = retrievedVol
 		return nil
 	}
 }
 
 func testAccCheckLibvirtIgnitionDestroy(s *terraform.State) error {
-	virtConn := testAccProvider.Meta().(*Client).libvirtc
+	virtConn := testAccProvider.Meta().(*Client).libvirt
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "libvirt_ignition" {
 			continue
@@ -105,7 +105,7 @@ func testAccCheckLibvirtIgnitionDestroy(s *terraform.State) error {
 		if errKey != nil {
 			return errKey
 		}
-		_, err := virtConn.LookupStorageVolByKey(ignKey)
+		_, err := virtConn.StorageVolLookupByKey(ignKey)
 		if err == nil {
 			return fmt.Errorf(
 				"Error waiting for IgnitionVolume (%s) to be destroyed: %s",
