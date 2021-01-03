@@ -56,6 +56,11 @@ func CleanupLibvirtConnections() {
 				log.Printf("[ERROR] cannot close libvirt connection %d - %v", ret, err)
 			}
 		}
+		// TODO: Confirm appropriate IsAlive() validation
+		err = client.libvirt.ConnectClose()
+		if err != nil {
+			log.Printf("[ERROR] cannot close libvirt connection: %v", err)
+		}
 	}
 }
 
