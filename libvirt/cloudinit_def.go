@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"bufio"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -68,9 +69,12 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	waitForSuccess("Error refreshing pool for volume", func() error {
+	err = waitForSuccess("Error refreshing pool for volume", func() error {
 		return virConn.StoragePoolRefresh(pool, 0)
 	})
+	if err != nil {
+		return "", err
+	}
 
 	volumeDef := newDefVolume()
 	volumeDef.Name = ci.Name
@@ -312,25 +316,21 @@ func downloadISO(virConn *libvirt.Libvirt, volume libvirt.StorageVol) (*os.File,
 		return nil, fmt.Errorf("Error retrieving info for volume: %s", err)
 	}
 
-	r, w := io.Pipe()
-	defer w.Close()
-
 	// create tmp file for the ISO
 	tmpFile, err := ioutil.TempFile("", "cloudinit")
 	if err != nil {
 		return nil, fmt.Errorf("Cannot create tmp file: %s", err)
 	}
 
+	w := bufio.NewWriterSize(tmpFile, int(size))
+
 	// download ISO file
 	if err := virConn.StorageVolDownload(volume, w, 0, size, 0); err != nil {
-		return tmpFile, fmt.Errorf("Error while uploading volume %s", err)
+		return tmpFile, fmt.Errorf("Error while downloading volume: %s", err)
 	}
 
-	if err != nil {
-		return tmpFile, fmt.Errorf("Error by downloading content to libvirt volume:%s", err)
-	}
-
-	bytesCopied, err := io.Copy(tmpFile, r)
+	bytesCopied := w.Buffered()
+	err = w.Flush()
 	if err != nil {
 		return tmpFile, fmt.Errorf("Error while copying remote volume to local disk: %s", err)
 	}
