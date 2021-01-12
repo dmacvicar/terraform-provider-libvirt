@@ -3,6 +3,7 @@ module github.com/dmacvicar/terraform-provider-libvirt
 require (
 	github.com/c4milo/gotoolkit v0.0.0-20170704181456-e37eeabad07e // indirect
 	github.com/davecgh/go-spew v1.1.1
+	github.com/digitalocean/go-libvirt v0.0.0-20210112203132-25518eb2c840
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/terraform-plugin-sdk v1.4.0
 	github.com/hooklift/assert v0.0.0-20170704181755-9d1defd6d214 // indirect
@@ -11,7 +12,7 @@ require (
 	github.com/libvirt/libvirt-go-xml v5.10.0+incompatible
 	github.com/mattn/goveralls v0.0.2
 	github.com/pborman/uuid v1.2.0 // indirect
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	github.com/terraform-providers/terraform-provider-ignition v1.2.1
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
 )

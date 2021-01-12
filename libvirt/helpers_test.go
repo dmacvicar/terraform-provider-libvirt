@@ -348,7 +348,7 @@ func testAccCheckDnsmasqOptions(name string, expected []libvirtxml.NetworkDnsmas
 	return func(s *terraform.State) error {
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
-		networkDef, err := getNetworkDef(s, name, *virConn)
+		networkDef, err := getNetworkDef(s, name, virConn)
 		if err != nil {
 			return err
 		}
