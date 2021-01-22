@@ -636,7 +636,7 @@ func setFilesystems(d *schema.ResourceData, domainDef *libvirtxml.Domain) error 
 				},
 			}
 		} else {
-			return fmt.Errorf("Filesystem entry must have a 'source' set")
+			return fmt.Errorf("Filesystem entry %d must have a 'source' set", i)
 		}
 		if targetDir, ok := d.GetOk(prefix + ".target"); ok {
 			fs.Target = &libvirtxml.DomainFilesystemTarget{
