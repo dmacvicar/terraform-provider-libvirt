@@ -75,12 +75,13 @@ This project uses [go modules](https://github.com/golang/go/wiki/Modules) to dec
 Ensure you have the latest version of Go installed on your system, terraform usually
 takes advantage of features available only inside of the latest stable release.
 
-You need also need libvirt-dev(el) package installed.
+You also need the libvirt-dev(el) package installed.
 
 ### Building The Provider
 
 ```
 git clone https://github.com/dmacvicar/terraform-provider-libvirt.git
+cd terraform-provider-libvirt
 make
 ```
 
