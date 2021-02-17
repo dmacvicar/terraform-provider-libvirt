@@ -82,10 +82,10 @@ func qemuAgentInterfacesRefreshFunc(domain Domain, wait4ipv4 bool) resource.Stat
 
 				switch strings.ToLower(addr.Type) {
 				case "ipv4":
-					libVirtAddr.Type = int(libvirt.IP_ADDR_TYPE_IPV4)
+					libVirtAddr.Type = libvirt.IP_ADDR_TYPE_IPV4
 					ipv4Assigned = true
 				case "ipv6":
-					libVirtAddr.Type = int(libvirt.IP_ADDR_TYPE_IPV6)
+					libVirtAddr.Type = libvirt.IP_ADDR_TYPE_IPV6
 				default:
 					log.Printf("[ERROR] Cannot handle unknown address type %s", addr.Type)
 					continue

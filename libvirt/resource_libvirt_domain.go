@@ -460,7 +460,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		Unit:  "MiB",
 	}
 	domainDef.VCPU = &libvirtxml.DomainVCPU{
-		Value: d.Get("vcpu").(int),
+		Value: uint(d.Get("vcpu").(int)),
 	}
 	domainDef.Description = d.Get("description").(string)
 

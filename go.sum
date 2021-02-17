@@ -178,10 +178,10 @@ github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348 h1:MtvEpTB6LX3v
 github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348/go.mod h1:B69LEHPfb2qLo0BaaOLcbitczOKLWTsrBG9LczfCD4k=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
-github.com/libvirt/libvirt-go v5.10.0+incompatible h1:01fwkdUHH2hk4YyFNCr48OvSGqXYLzp9cofUpeyeLNc=
-github.com/libvirt/libvirt-go v5.10.0+incompatible/go.mod h1:34zsnB4iGeOv7Byj6qotuW8Ya4v4Tr43ttjz/F0wjLE=
-github.com/libvirt/libvirt-go-xml v5.10.0+incompatible h1:kcgVynR4a9cuh/kc7Ywl8XRBUxbqe05seR2qgN+yTno=
-github.com/libvirt/libvirt-go-xml v5.10.0+incompatible/go.mod h1:oBlgD3xOA01ihiK5stbhFzvieyW+jVS6kbbsMVF623A=
+github.com/libvirt/libvirt-go v7.0.0+incompatible h1:twXBsJe7klsz2Zogxm4GJF5aBRPmdY72RX8nDumB86A=
+github.com/libvirt/libvirt-go v7.0.0+incompatible/go.mod h1:34zsnB4iGeOv7Byj6qotuW8Ya4v4Tr43ttjz/F0wjLE=
+github.com/libvirt/libvirt-go-xml v7.0.0+incompatible h1:zY4SWe4hqy9c1XekUWeVS6ThYDbnK1YnIaq7kgMM8iE=
+github.com/libvirt/libvirt-go-xml v7.0.0+incompatible/go.mod h1:oBlgD3xOA01ihiK5stbhFzvieyW+jVS6kbbsMVF623A=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-colorable v0.1.1 h1:G1f5SKeVxmagw/IyvzvtZE4Gybcc4Tr1tf7I8z0XgOg=
 github.com/mattn/go-colorable v0.1.1/go.mod h1:FuOcm+DKB9mbwrcAfNl7/TZVBZ6rcnceauSikq3lYCQ=

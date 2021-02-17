@@ -183,7 +183,7 @@ func TestGetDomainInterfacesViaQemuAgent(t *testing.T) {
 	for _, addr := range interfaces[0].Addrs {
 		var expected string
 
-		if addr.Type == int(libvirt.IP_ADDR_TYPE_IPV4) {
+		if addr.Type == libvirt.IP_ADDR_TYPE_IPV4 {
 			expected = ipv4Addr
 		} else {
 			expected = ipv6Addr

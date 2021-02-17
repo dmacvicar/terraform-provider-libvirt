@@ -7,8 +7,8 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk v1.4.0
 	github.com/hooklift/assert v0.0.0-20170704181755-9d1defd6d214 // indirect
 	github.com/hooklift/iso9660 v1.0.0
-	github.com/libvirt/libvirt-go v5.10.0+incompatible
-	github.com/libvirt/libvirt-go-xml v5.10.0+incompatible
+	github.com/libvirt/libvirt-go v7.0.0+incompatible
+	github.com/libvirt/libvirt-go-xml v7.0.0+incompatible
 	github.com/mattn/goveralls v0.0.2
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/stretchr/testify v1.5.1
