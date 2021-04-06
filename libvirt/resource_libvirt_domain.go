@@ -561,15 +561,14 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	if len(waitForLeases) > 0 {
 		err = domainWaitForLeases(domain, waitForLeases, d.Timeout(schema.TimeoutCreate), d)
 		if err != nil {
-			ipNotFoundMsg := "Error: couldn't retrieve IP address of domain." +
-				"Please check following: \n" +
+			ipNotFoundMsg := "Please check following: \n" +
 				"1) is the domain running proplerly? \n" +
 				"2) has the network interface an IP address? \n" +
 				"3) Networking issues on your libvirt setup? \n " +
 				"4) is DHCP enabled on this Domain's network? \n" +
 				"5) if you use bridge network, the domain should have the pkg qemu-agent installed \n" +
 				"IMPORTANT: This error is not a terraform libvirt-provider error, but an error caused by your KVM/libvirt infrastructure configuration/setup"
-			return fmt.Errorf("%s \n %s", ipNotFoundMsg, err)
+			return fmt.Errorf("Error: couldn't retrieve IP address of domain id: %s. %s \n %s", d.Id(), ipNotFoundMsg, err)
 		}
 	}
 
