@@ -46,7 +46,7 @@ What is *NOT* in scope:
   
 ## Downloading
 
-Builds for openSUSE, CentOS, Ubuntu, Fedora are created with openSUSE's [OBS](https://build.opensuse.org). The build definitions are available for both the [stable](https://build.opensuse.org/package/show/systemsmanagement:terraform/terraform-provider-libvirt) and [master](https://build.opensuse.org/package/show/systemsmanagement:terraform:unstable/terraform-provider-libvirt) branches.
+Builds for openSUSE, Ubuntu, and Fedora are created with openSUSE's [OBS](https://build.opensuse.org). The build definitions are available for both the [stable](https://build.opensuse.org/package/show/systemsmanagement:terraform/terraform-provider-libvirt) and [master](https://build.opensuse.org/package/show/systemsmanagement:terraform:unstable/terraform-provider-libvirt) branches.
 
 ## Using published binaries/builds
 
@@ -75,12 +75,13 @@ This project uses [go modules](https://github.com/golang/go/wiki/Modules) to dec
 Ensure you have the latest version of Go installed on your system, terraform usually
 takes advantage of features available only inside of the latest stable release.
 
-You need also need libvirt-dev(el) package installed.
+You also need the libvirt-dev(el) package installed.
 
 ### Building The Provider
 
 ```
 git clone https://github.com/dmacvicar/terraform-provider-libvirt.git
+cd terraform-provider-libvirt
 make
 ```
 
