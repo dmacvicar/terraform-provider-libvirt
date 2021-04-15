@@ -20,7 +20,7 @@ func volumeExists(virConn *libvirt.Libvirt, key string) resource.StateRefreshFun
 	return func() (interface{}, string, error) {
 		_, err := virConn.StorageVolLookupByKey(key)
 		if err != nil {
-			if err.(libvirtc.Error).Code == libvirtc.ERR_NO_STORAGE_VOL {
+			if err.(libvirt.Error).Code == uint32(libvirtc.ERR_NO_STORAGE_VOL) {
 				log.Printf("Volume %s does not exist", key)
 				return virConn, "NOT-EXISTS", nil
 			}
@@ -135,8 +135,8 @@ func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*li
 
 	volume, err := virConn.StorageVolLookupByKey(key)
 	if err != nil {
-		virErr := err.(libvirtc.Error)
-		if virErr.Code != libvirtc.ERR_NO_STORAGE_VOL {
+		virErr := err.(libvirt.Error)
+		if virErr.Code != uint32(libvirtc.ERR_NO_STORAGE_VOL) {
 			return nil, fmt.Errorf("Can't retrieve volume %s", key)
 		}
 		log.Printf("[INFO] Volume %s not found, attempting to start its pool", key)
