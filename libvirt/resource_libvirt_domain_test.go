@@ -22,6 +22,7 @@ func TestAccLibvirtDomain_Basic(t *testing.T) {
 	var domain libvirt.Domain
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,

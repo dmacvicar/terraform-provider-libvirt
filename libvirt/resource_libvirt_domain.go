@@ -632,7 +632,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	copy(uuid[:], d.Id())
 	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
+		return fmt.Errorf("Error retrieving libvirt domain by update: %s", err)
 	}
 
 	domainRunningNow, err := domainIsRunning(virConn, domain)
@@ -736,7 +736,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	copy(uuid[:], d.Id())
 	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
+		return fmt.Errorf("Error retrieving libvirt domain by read: %s", err)
 	}
 
 	xmlDesc, err := virConn.DomainGetXMLDesc(domain, 0)
@@ -987,7 +987,7 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 	copy(uuid[:], d.Id())
 	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt domain: %s", err)
+		return fmt.Errorf("Error retrieving libvirt domain by delete: %s", err)
 	}
 
 	xmlDesc, err := virConn.DomainGetXMLDesc(domain, 0)

@@ -20,7 +20,7 @@ func poolExists(virConn *libvirt.Libvirt, uuid string) resource.StateRefreshFunc
 	return func() (interface{}, string, error) {
 		_, err := virConn.StoragePoolLookupByUUID(parseUUID(uuid))
 		if err != nil {
-			if err.(libvirtc.Error).Code == libvirtc.ERR_NO_STORAGE_POOL {
+			if err.(libvirt.Error).Code == uint32(libvirtc.ERR_NO_STORAGE_POOL) {
 				log.Printf("Pool %s does not exist", uuid)
 				return virConn, "NOT-EXISTS", nil
 			}
