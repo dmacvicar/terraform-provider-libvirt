@@ -334,6 +334,62 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 
 }
 
+func TestAccLibvirtDomain_ManySCSIDisks(t *testing.T) {
+	const diskcount = 512
+	var domain libvirt.Domain
+	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
+	var configScsi = fmt.Sprintf(`
+	resource "libvirt_pool" "%s" {
+		name = "%s"
+		type = "dir"
+		path = "%s"
+	}`, randomPoolName, randomPoolName, randomPoolPath)
+
+	for i := 0; i < diskcount; i++ {
+	    volName := fmt.Sprintf("volume_%03d",i)
+		configScsi += fmt.Sprintf(`
+	resource "libvirt_volume" "%s" {
+		name = "%s"
+		pool = "${libvirt_pool.%s.name}"
+	}`, volName, volName, randomPoolName)
+	}
+
+	configScsi += fmt.Sprintf(`
+	resource "libvirt_domain" "%s" {
+		name = "%s"`, randomDomainName, randomDomainName)
+
+	for i := 0; i < diskcount; i++ {
+		volName := fmt.Sprintf("volume_%03d",i)
+		configScsi += fmt.Sprintf(`
+		disk {
+			volume_id = "${libvirt_volume.%s.id}"
+			scsi      = "true"
+			wwn       = "123000123456789a"
+		}`, volName)
+	}
+
+	configScsi += `
+	}`
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: configScsi,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					testAccCheckLibvirtScsiDisk("123000123456789a", &domain),
+					testAccCheckLibvirtManyScsiDisk("123000123456789a", diskcount, &domain),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 	var domain libvirt.Domain
 
@@ -1055,6 +1111,16 @@ func testAccCheckLibvirtScsiDisk(n string, domain *libvirt.Domain) resource.Test
 			if wwn := disk.WWN; wwn != n {
 				return fmt.Errorf("Disk wwn %s is not equal to %s", wwn, n)
 			}
+		}
+		return nil
+	})
+}
+
+func testAccCheckLibvirtManyScsiDisk(n string, c int, domain *libvirt.Domain) resource.TestCheckFunc {
+	return testAccCheckLibvirtDomainDescription(domain, func(domainDef libvirtxml.Domain) error {
+		d := len(domainDef.Devices.Disks)
+		if d != c {
+			return fmt.Errorf("Too few scsi attached (%d != %d",d,c)
 		}
 		return nil
 	})
