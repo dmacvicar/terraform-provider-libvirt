@@ -116,6 +116,9 @@ At present Terraform can automatically install only the providers distributed by
 
 > On Linux and unix systems, in the sub-path `.terraform.d/plugins` in your user's home directory.
 
+after v0.13 ,[note about migration](https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/docs/migration-13.md),
+the location changes to `~/.local/share/terraform/plugins/registry.terraform.io/dmacvicar/libvirt/0.6.2/linux_amd64`
+
 > On Windows, in the sub-path `terraform.d/plugins` beneath your user's "Application Data" directory.
 
 terraform init will search this directory for additional plugins during plugin initialization.
