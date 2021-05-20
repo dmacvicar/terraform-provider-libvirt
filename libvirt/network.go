@@ -32,9 +32,9 @@ func waitForNetworkDestroyed(virConn *libvirt.Libvirt, uuidStr string) resource.
 		var uuid libvirt.UUID
 		copy(uuid[:], uuidStr)
 		_, err := virConn.NetworkLookupByUUID(uuid)
-		// FIXME
-		// In the past, with the C bindings, we were able to peek in the error
-		// to make sure the error was errNoNetwork.
+		if err.(libvirt.Error).Code == uint32(libvirt.ErrNoNetwork) {
+			return virConn, "NOT-EXISTS", nil
+		}
 		if err != nil {
 			return virConn, "NOT-EXISTS", nil
 		}

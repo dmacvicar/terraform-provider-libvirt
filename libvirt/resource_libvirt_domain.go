@@ -423,14 +423,11 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 	var uuid libvirt.UUID
 	copy(uuid[:], d.Id())
 	_, err := virConn.DomainLookupByUUID(uuid)
-	// FIXME
-	// In the past, with the C bindings, we were able to peek in the error
-	// to make sure the error was errNoDomain. If it was not, we returned
-	// false, err
-	// We can't peek into the error with this bindings, as the type is not
-	// exported (libvirt.libvirtError and errNoDomain)
 	if err != nil {
-		return false, nil
+		if libvirt.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
 	}
 	return true, nil
 }
@@ -1017,10 +1014,15 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	// FIXME with C bindings we first tried with libvirt.DomainUndefineNvram, and if we got
-	// ErrNoSupport or ErrInvalidArg, then we tried without flags
 	if err := virConn.DomainUndefineFlags(domain, 0); err != nil {
-		return fmt.Errorf("Couldn't undefine libvirt domain: %s", err)
+		if e := err.(libvirt.Error); e.Code == uint32(libvirt.ErrNoSupport) || e.Code == uint32(libvirt.ErrInvalidArg) {
+			log.Printf("libvirt does not support undefine flags: will try again without flags")
+			if err := virConn.DomainUndefine(domain); err != nil {
+				return fmt.Errorf("Couldn't undefine libvirt domain: %s", err)
+			}
+		} else {
+			return fmt.Errorf("Couldn't undefine libvirt domain with flags: %s", err)
+		}
 	}
 
 	return nil

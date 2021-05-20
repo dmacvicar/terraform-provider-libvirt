@@ -239,9 +239,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	// create the volume
 	volume, err := virConn.StorageVolCreateXML(pool, data, 0)
 	if err != nil {
-		// FIXME: use digitalocean error
-		virErr := err.(libvirtc.Error)
-		if virErr.Code != libvirtc.ERR_STORAGE_VOL_EXIST {
+		if err.(libvirt.Error).Code != uint32(libvirt.ErrStorageVolExist) {
 			return fmt.Errorf("Error creating libvirt volume: %s", err)
 		}
 		// oops, volume exists already, read it and move on

@@ -15,7 +15,7 @@ import (
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 const domWaitLeaseStillWaiting = "waiting-addresses"
@@ -166,9 +166,18 @@ func domainGetIfacesInfo(virConn *libvirt.Libvirt, domain libvirt.Domain, rd *sc
 	log.Print("[DEBUG] no interfaces could be obtained with qemu-agent: falling back to the libvirt API")
 
 	interfaces, err = virConn.DomainInterfaceAddresses(domain, uint32(libvirt.DomainInterfaceAddressesSrcLease), 0)
-	// FIXME with C bindings we did not return error for ErrOperationInvalid or e.Domain == FromQemu
 	if err != nil {
-		return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
+		switch err.(type) {
+		default:
+			return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
+		case libvirt.Error:
+			virErr := err.(libvirt.Error)
+			// FIXME ErrorDomain.fromQemu not available in libvirt.Error
+			// || libvirt.ErrorvirErr.Domain != libvirt.FROM_QEMU {
+			if virErr.Code != uint32(libvirt.ErrOperationInvalid) {
+				return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
+			}
+		}
 	}
 	log.Printf("[DEBUG] Interfaces info obtained with libvirt API:\n%s\n", spew.Sdump(interfaces))
 
@@ -730,9 +739,6 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 			// no network has been specified: we are on our own
 		}
 
-		// if we got a network
-		// FIXME
-		//		if network != nil {
 		if network.Name != "" {
 			networkDef, err := getXMLNetworkDefFromLibvirt(virConn, network)
 

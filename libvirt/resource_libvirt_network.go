@@ -299,12 +299,14 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 	var uuid libvirt.UUID
 	copy(uuid[:], d.Id())
 	_, err := virConn.NetworkLookupByUUID(uuid)
-	// FIXME
-	// In the past, with the C bindings, we were able to peek in the error
-	// to make sure the error was errNoNetwork. If it was not, we returned
-	// false, err
-	// We can't peek into the error with this bindings, as the type is not
-	// exported (libvirt.libvirtError and errNoNetwork)
+	if err != nil {
+		// If the network couldn't be found, don't return an error otherwise
+		// Terraform won't create it again.
+		if lverr, ok := err.(libvirt.Error); ok && lverr.Code == uint32(libvirt.ErrNoNetwork) {
+			return false, nil
+		}
+		return false, err
+	}
 	if err != nil {
 		return false, nil
 	}
