@@ -35,9 +35,6 @@ func waitForNetworkDestroyed(virConn *libvirt.Libvirt, uuidStr string) resource.
 		if err.(libvirt.Error).Code == uint32(libvirt.ErrNoNetwork) {
 			return virConn, "NOT-EXISTS", nil
 		}
-		if err != nil {
-			return virConn, "NOT-EXISTS", nil
-		}
 		return virConn, "ACTIVE", err
 	}
 }
