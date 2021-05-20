@@ -7,7 +7,6 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 const (
@@ -20,11 +19,11 @@ func poolExists(virConn *libvirt.Libvirt, uuid string) resource.StateRefreshFunc
 	return func() (interface{}, string, error) {
 		_, err := virConn.StoragePoolLookupByUUID(parseUUID(uuid))
 		if err != nil {
-			if err.(libvirt.Error).Code == uint32(libvirtc.ERR_NO_STORAGE_POOL) {
+			if err.(libvirt.Error).Code == uint32(libvirt.ErrNoStoragePool) {
 				log.Printf("Pool %s does not exist", uuid)
 				return virConn, "NOT-EXISTS", nil
 			}
-			log.Printf("Pool %s: error: %s", uuid, err.(libvirtc.Error).Message)
+			log.Printf("Pool %s: error: %s", uuid, err.(libvirt.Error).Message)
 		}
 		return virConn, poolExistsID, err
 	}

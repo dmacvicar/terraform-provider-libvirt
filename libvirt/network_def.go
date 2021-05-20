@@ -135,6 +135,7 @@ func updateOrAddHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name 
 	}
 
 	err = updateHost(virConn, n, ip, mac, name, xmlIdx)
+	// FIXME: libvirt.Error.DomainID is not available
 	if virErr, ok := err.(libvirtc.Error); ok && virErr.Code == libvirtc.ERR_OPERATION_INVALID && virErr.Domain == libvirtc.FROM_NETWORK {
 		return addHost(virConn, n, ip, mac, name, xmlIdx)
 	}

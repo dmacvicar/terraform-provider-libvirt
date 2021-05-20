@@ -7,7 +7,6 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirtc "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
@@ -243,7 +242,7 @@ func resourceLibvirtPoolExists(d *schema.ResourceData, meta interface{}) (bool, 
 	_, err := virConn.StoragePoolLookupByUUID(parseUUID(d.Id()))
 	if err != nil {
 		virErr := err.(libvirt.Error)
-		if virErr.Code != uint32(libvirtc.ERR_NO_STORAGE_POOL) {
+		if virErr.Code != uint32(libvirt.ErrNoStoragePool) {
 			return false, fmt.Errorf("Can't retrieve pool %s", d.Id())
 		}
 		// does not exist, but no error
