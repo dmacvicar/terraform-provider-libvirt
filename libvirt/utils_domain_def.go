@@ -129,7 +129,10 @@ func getHostArchitecture(virConn *libvirt.Libvirt) (string, error) {
 	}
 
 	capabilities := HostCapabilities{}
-	xml.Unmarshal([]byte(info), &capabilities)
+	err = xml.Unmarshal([]byte(info), &capabilities)
+	if err != nil {
+		return "", err
+	}
 
 	return capabilities.Host.CPU.Arch, nil
 }

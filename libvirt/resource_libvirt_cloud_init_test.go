@@ -188,7 +188,7 @@ func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirt.Storag
 		}
 
 		if retrievedVol.Key != cikey {
-			fmt.Printf("realID is: %s \ncloudinit key is %s", retrievedVol.Key, cikey)
+			fmt.Printf("retrievedVol.Key is: %s \ncloudinit key is %s", retrievedVol.Key, cikey)
 			return fmt.Errorf("Resource ID and cloudinit volume key does not match")
 		}
 

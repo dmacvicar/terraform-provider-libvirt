@@ -992,7 +992,6 @@ func TestAccLibvirtDomain_Filesystems(t *testing.T) {
 
 func testAccCheckLibvirtDomainExists(name string, domain *libvirt.Domain) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-
 		rs, err := getResourceFromTerraformState(name, state)
 		if err != nil {
 			return err
@@ -1000,7 +999,7 @@ func testAccCheckLibvirtDomainExists(name string, domain *libvirt.Domain) resour
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		retrieveDomain, err := virConn.DomainLookupByUUID(parseUUID(rs.Primary.ID))
+		retrievedDomain, err := virConn.DomainLookupByUUID(parseUUID(rs.Primary.ID))
 
 		if err != nil {
 			return err
@@ -1008,16 +1007,15 @@ func testAccCheckLibvirtDomainExists(name string, domain *libvirt.Domain) resour
 
 		log.Printf("The ID is %s", rs.Primary.ID)
 
-		realID := retrieveDomain.UUID
-		if uuidString(realID) == "" {
+		if uuidString(retrievedDomain.UUID) == "" {
 			return fmt.Errorf("UUID is blank")
 		}
 
-		if uuidString(realID) != rs.Primary.ID {
+		if uuidString(retrievedDomain.UUID) != rs.Primary.ID {
 			return fmt.Errorf("Libvirt domain not found")
 		}
 
-		*domain = retrieveDomain
+		*domain = retrievedDomain
 
 		return nil
 	}
@@ -1425,7 +1423,7 @@ func testAccCheckLibvirtNetworkExists(name string, network *libvirt.Network) res
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		retrieveNetwork, err := virConn.NetworkLookupByUUID(parseUUID(rs.Primary.ID))
+		retrievedNetwork, err := virConn.NetworkLookupByUUID(parseUUID(rs.Primary.ID))
 
 		if err != nil {
 			return err
@@ -1433,16 +1431,15 @@ func testAccCheckLibvirtNetworkExists(name string, network *libvirt.Network) res
 
 		log.Printf("The ID is %s", rs.Primary.ID)
 
-		realID := retrieveNetwork.UUID
-		if uuidString(realID) == "" {
+		if uuidString(retrievedNetwork.UUID) == "" {
 			return fmt.Errorf("UUID is blank")
 		}
 
-		if uuidString(realID) != rs.Primary.ID {
+		if uuidString(retrievedNetwork.UUID) != rs.Primary.ID {
 			return fmt.Errorf("Libvirt network not found")
 		}
 
-		network = &retrieveNetwork
+		network = &retrievedNetwork
 
 		return nil
 	}
@@ -1556,22 +1553,21 @@ func testAccCheckLibvirtDomainStateEqual(name string, domain *libvirt.Domain, ex
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		retrieveDomain, err := virConn.DomainLookupByUUID(parseUUID(rs.Primary.ID))
+		retrievedDomain, err := virConn.DomainLookupByUUID(parseUUID(rs.Primary.ID))
 
 		if err != nil {
 			return err
 		}
 
-		realID := retrieveDomain.UUID
-		if uuidString(realID) == "" {
+		if uuidString(retrievedDomain.UUID) == "" {
 			return fmt.Errorf("UUID is blank")
 		}
 
-		if uuidString(realID) != rs.Primary.ID {
+		if uuidString(retrievedDomain.UUID) != rs.Primary.ID {
 			return fmt.Errorf("Libvirt domain not found")
 		}
 
-		*domain = retrieveDomain
+		*domain = retrievedDomain
 		state, err := domainGetState(virConn, *domain)
 		if err != nil {
 			return fmt.Errorf("could not get domain state: %s", err)

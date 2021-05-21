@@ -702,7 +702,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 			// when using a "network_id" we are referring to a "network resource"
 			// we have defined somewhere else...
 			var uuid libvirt.UUID
-			copy(uuid[:], networkUUID.(string))
+			uuid = parseUUID(networkUUID.(string))
 			network, err = virConn.NetworkLookupByUUID(uuid)
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network ID %s", networkUUID)
@@ -806,7 +806,7 @@ func destroyDomainByUserRequest(virConn *libvirt.Libvirt, d *schema.ResourceData
 		return nil
 	}
 
-	log.Printf("Destroying libvirt domain %v", domain.UUID)
+	log.Printf("Destroying libvirt domain %s", uuidString(domain.UUID))
 	state, _, err := virConn.DomainGetState(domain, 0)
 	if err != nil {
 		return fmt.Errorf("Couldn't get info about domain: %s", err)

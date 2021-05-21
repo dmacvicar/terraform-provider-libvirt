@@ -30,7 +30,7 @@ func waitForNetworkDestroyed(virConn *libvirt.Libvirt, uuidStr string) resource.
 	return func() (interface{}, string, error) {
 		log.Printf("Waiting for network %s to be destroyed", uuidStr)
 		var uuid libvirt.UUID
-		copy(uuid[:], uuidStr)
+		uuid = parseUUID(uuidStr)
 		_, err := virConn.NetworkLookupByUUID(uuid)
 		if err.(libvirt.Error).Code == uint32(libvirt.ErrNoNetwork) {
 			return virConn, "NOT-EXISTS", nil
