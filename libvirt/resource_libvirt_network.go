@@ -307,9 +307,6 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 		}
 		return false, err
 	}
-	if err != nil {
-		return false, nil
-	}
 	return true, nil
 }
 
