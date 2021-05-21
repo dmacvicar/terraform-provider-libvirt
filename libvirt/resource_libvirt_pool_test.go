@@ -25,12 +25,11 @@ func testAccCheckLibvirtPoolExists(name string, pool *libvirt.StoragePool) resou
 			return fmt.Errorf("Failed to get pool: %s", err)
 		}
 
-		realID := retrievedPool.UUID
-		if uuidString(realID) == "" {
+		if uuidString(retrievedPool.UUID) == "" {
 			return fmt.Errorf("UUID is blank")
 		}
 
-		if uuidString(realID) != rs.Primary.ID {
+		if uuidString(retrievedPool.UUID) != rs.Primary.ID {
 			return fmt.Errorf("Resource ID and pool ID does not match")
 		}
 

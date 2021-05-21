@@ -297,7 +297,7 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 	}
 
 	var uuid libvirt.UUID
-	copy(uuid[:], d.Id())
+	uuid = parseUUID(d.Id())
 	_, err := virConn.NetworkLookupByUUID(uuid)
 	if err != nil {
 		// If the network couldn't be found, don't return an error otherwise
@@ -552,7 +552,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	var uuid libvirt.UUID
-	copy(uuid[:], d.Id())
+	uuid = parseUUID(d.Id())
 	network, err := virConn.NetworkLookupByUUID(uuid)
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt network: %s", err)
@@ -656,7 +656,8 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 	log.Printf("[DEBUG] Deleting network ID %s", d.Id())
 
 	var uuid libvirt.UUID
-	copy(uuid[:], d.Id())
+	uuid = parseUUID(d.Id())
+
 	network, err := virConn.NetworkLookupByUUID(uuid)
 	if err != nil {
 		return fmt.Errorf("When destroying libvirt network: error retrieving %s", err)

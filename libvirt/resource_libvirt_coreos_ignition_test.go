@@ -80,12 +80,11 @@ func testAccCheckIgnitionVolumeExists(name string, volume *libvirt.StorageVol) r
 		}
 		fmt.Printf("The ID is %s", rs.Primary.ID)
 
-		realID := retrievedVol.Key
-		if realID == "" {
+		if retrievedVol.Key == "" {
 			return fmt.Errorf("Resource key is blank")
 		}
 
-		if realID != ignKey {
+		if retrievedVol.Key != ignKey {
 			return fmt.Errorf("Resource ID and volume key does not match")
 		}
 

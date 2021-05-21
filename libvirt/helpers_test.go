@@ -61,7 +61,7 @@ func skipIfPrivilegedDisabled(t *testing.T) {
 // general
 // //////////////////////////////////////////////////////////////////
 
-// getResourceFromTerraformState get aresource by name
+// getResourceFromTerraformState get a resource by name
 // from terraform states produced during testacc
 // and return the resource
 func getResourceFromTerraformState(resourceName string, state *terraform.State) (*terraform.ResourceState, error) {
@@ -145,20 +145,20 @@ func testAccCheckNetworkExists(name string, network *libvirt.Network) resource.T
 		}
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
-		networkRetrived, err := virConn.NetworkLookupByUUID(parseUUID(rs.Primary.ID))
+		retrievedNetwork, err := virConn.NetworkLookupByUUID(parseUUID(rs.Primary.ID))
 		if err != nil {
 			return err
 		}
 
-		if uuidString(networkRetrived.UUID) == "" {
+		if uuidString(retrievedNetwork.UUID) == "" {
 			return fmt.Errorf("Domain UUID is blank")
 		}
 
-		if uuidString(networkRetrived.UUID) != rs.Primary.ID {
+		if uuidString(retrievedNetwork.UUID) != rs.Primary.ID {
 			return fmt.Errorf("Libvirt network not found")
 		}
 
-		*network = networkRetrived
+		*network = retrievedNetwork
 
 		return nil
 	}

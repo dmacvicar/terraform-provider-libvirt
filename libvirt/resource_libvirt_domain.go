@@ -421,7 +421,7 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 	}
 
 	var uuid libvirt.UUID
-	copy(uuid[:], d.Id())
+	uuid = parseUUID(d.Id())
 	_, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
 		if libvirt.IsNotFound(err) {
@@ -467,6 +467,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	domainDef.OS.Kernel = d.Get("kernel").(string)
 	domainDef.OS.Initrd = d.Get("initrd").(string)
 	domainDef.OS.Type.Arch = d.Get("arch").(string)
+
 	domainDef.OS.Type.Machine = d.Get("machine").(string)
 	domainDef.Devices.Emulator = d.Get("emulator").(string)
 
@@ -545,7 +546,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("Error creating libvirt domain: %s", err)
 	}
-	id := fmt.Sprintf("%v", domain.UUID)
+	id := uuidString(domain.UUID)
 	d.SetId(id)
 
 	// the domain ID must always be saved, otherwise it won't be possible to cleanup a domain
@@ -626,7 +627,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	var uuid libvirt.UUID
-	copy(uuid[:], d.Id())
+	uuid = parseUUID(d.Id())
 	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain by update: %s", err)
@@ -688,12 +689,13 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		prefix := fmt.Sprintf("network_interface.%d", i)
 		if d.HasChange(prefix+".hostname") || d.HasChange(prefix+".addresses") || d.HasChange(prefix+".mac") {
 			networkUUID, ok := d.GetOk(prefix + ".network_id")
+			fmt.Printf("[INFO]: NetworkUUID: %s\n", networkUUID)
 			if !ok {
 				continue
 			}
 
 			var uuid libvirt.UUID
-			copy(uuid[:], networkUUID.(string))
+			uuid = parseUUID(networkUUID.(string))
 			network, err := virConn.NetworkLookupByUUID(uuid)
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network ID %s", networkUUID)
@@ -730,7 +732,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	var uuid libvirt.UUID
-	copy(uuid[:], d.Id())
+	uuid = parseUUID(d.Id())
 	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain by read: %s", err)
@@ -981,7 +983,7 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Deleting domain %s", d.Id())
 
 	var uuid libvirt.UUID
-	copy(uuid[:], d.Id())
+	uuid = parseUUID(d.Id())
 	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain by delete: %s", err)
