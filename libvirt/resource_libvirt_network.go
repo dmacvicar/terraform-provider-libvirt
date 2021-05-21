@@ -313,7 +313,7 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 // resourceLibvirtNetworkUpdate updates dynamically some attributes in the network
 func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 	// check the list of things that can be changed dynamically
-	// in https://wiki.libvirtc.org/page/Networking#virsh_net-update
+	// in https://wiki.libvirt.org/page/Networking#virsh_net-update
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
@@ -326,12 +326,13 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 
 	d.Partial(true)
 
-	active, err := virConn.NetworkIsActive(network)
+	activeInt, err := virConn.NetworkIsActive(network)
 	if err != nil {
 		return fmt.Errorf("Error when getting network %s status during update: %s", network.Name, err)
 	}
 
-	if active > 0 {
+	active := activeInt == 1
+	if !active {
 		log.Printf("[DEBUG] Activating network %s", network.Name)
 		if err := virConn.NetworkCreate(network); err != nil {
 			return fmt.Errorf("Error when activating network %s during update: %s", network.Name, err)
@@ -665,9 +666,9 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Couldn't determine if network is active: %s", err)
 	}
 	// network can be in 2 states, handles this case by case
-	active := activeInt != 0
+	active := activeInt == 1
 	// in case network is inactive just undefine it
-	if active {
+	if !active {
 		if err := virConn.NetworkUndefine(network); err != nil {
 			return fmt.Errorf("Couldn't undefine libvirt network: %s", err)
 		}
