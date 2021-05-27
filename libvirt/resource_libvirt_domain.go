@@ -587,6 +587,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	for i := 0; i < d.Get("network_interface.#").(int); i++ {
 		prefix := fmt.Sprintf("network_interface.%d", i)
 		mac := strings.ToUpper(d.Get(prefix + ".mac").(string))
+		log.Printf("[DEBUG] Reading network_interface.%d with MAC: %s\n", i, mac)
 
 		// if we were waiting for an IP address for this MAC, go ahead.
 		if pending, ok := partialNetIfaces[mac]; ok {
@@ -690,7 +691,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		prefix := fmt.Sprintf("network_interface.%d", i)
 		if d.HasChange(prefix+".hostname") || d.HasChange(prefix+".addresses") || d.HasChange(prefix+".mac") {
 			networkUUID, ok := d.GetOk(prefix + ".network_id")
-			fmt.Printf("[INFO]: NetworkUUID: %s\n", networkUUID)
+			log.Printf("[INFO] NetworkUUID: %s\n", networkUUID)
 			if !ok {
 				continue
 			}
@@ -920,7 +921,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
 			}
 
-			netIface["network_id"] = network.UUID
+			netIface["network_id"] = uuidString(network.UUID)
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
 			}
