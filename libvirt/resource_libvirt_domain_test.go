@@ -604,14 +604,14 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 	resource "libvirt_domain" "%s" {
 		name              = "%s"
 		network_interface  {
-                        network_name = "${libvirt_network.%s.name}"
-                        hostname       = "myhost"
+			network_name = "${libvirt_network.%s.name}"
+			hostname       = "myhost"
 			mac            = "52:54:00:A9:F5:17"
 			wait_for_lease = true
 		}
 		network_interface  {
-                        network_id = "${libvirt_network.%s.id}"
-                        hostname       = "myhost"
+			network_id = "${libvirt_network.%s.id}"
+			hostname       = "myhost"
 			mac            = "52:54:00:A9:F5:19"
 			wait_for_lease = true
 		}
@@ -1005,7 +1005,7 @@ func testAccCheckLibvirtDomainExists(name string, domain *libvirt.Domain) resour
 			return err
 		}
 
-		log.Printf("The ID is %s", rs.Primary.ID)
+		log.Printf("[DEBUG] The ID is %s", rs.Primary.ID)
 
 		if uuidString(retrievedDomain.UUID) == "" {
 			return fmt.Errorf("UUID is blank")
@@ -1429,7 +1429,7 @@ func testAccCheckLibvirtNetworkExists(name string, network *libvirt.Network) res
 			return err
 		}
 
-		log.Printf("The ID is %s", rs.Primary.ID)
+		log.Printf("[DEBUG] The ID is %s", rs.Primary.ID)
 
 		if uuidString(retrievedNetwork.UUID) == "" {
 			return fmt.Errorf("UUID is blank")
