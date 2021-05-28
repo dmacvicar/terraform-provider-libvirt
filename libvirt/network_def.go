@@ -7,7 +7,6 @@ import (
 	"net"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	libvirtc "github.com/libvirt/libvirt-go"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
@@ -88,7 +87,10 @@ func addHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, 
 	log.Printf("Adding host with XML:\n%s", xmlDesc)
 	// From https://libvirtc.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
 	// Update live and config for hosts to make update permanent across reboots
-	return virConn.NetworkUpdate(n, uint32(libvirt.NetworkUpdateCommandAddLast), uint32(libvirt.NetworkSectionIPDhcpHost), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
+	// NOTE `command` and `section` params are reversed now and will need to be put back in order when fix flows through
+	// history: https://listman.redhat.com/archives/libvir-list/2021-March/msg00054.html
+	// merged fix: https://listman.redhat.com/archives/libvir-list/2021-March/msg00758.html
+	return virConn.NetworkUpdate(n, uint32(libvirt.NetworkSectionIPDhcpHost), uint32(libvirt.NetworkUpdateCommandAddLast), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
 }
 
 // Update a static host from the network
@@ -97,7 +99,10 @@ func updateHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name strin
 	log.Printf("Updating host with XML:\n%s", xmlDesc)
 	// From https://libvirtc.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
 	// Update live and config for hosts to make update permanent across reboots
-	return virConn.NetworkUpdate(n, uint32(libvirt.NetworkUpdateCommandModify), uint32(libvirt.NetworkSectionIPDhcpHost), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
+	// NOTE `command` and `section` params are reversed now and will need to be put back in order when fix flows through
+	// history: https://listman.redhat.com/archives/libvir-list/2021-March/msg00054.html
+	// merged fix: https://listman.redhat.com/archives/libvir-list/2021-March/msg00758.html
+	return virConn.NetworkUpdate(n, uint32(libvirt.NetworkSectionIPDhcpHost), uint32(libvirt.NetworkUpdateCommandModify), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
 }
 
 // Get the network index of the target network
@@ -127,7 +132,7 @@ func getNetworkIdx(n *libvirtxml.Network, ip string) (int, error) {
 func updateOrAddHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string) error {
 	xmlNet, _ := getXMLNetworkDefFromLibvirt(virConn, n)
 	// We don't check the error above
-	// if we can't parse the network to xml for some kind fo reasons
+	// if we can't parse the network to xml for some reason
 	// we will return the default '-1' value.
 	xmlIdx, err := getNetworkIdx(&xmlNet, ip)
 	if err == nil {
@@ -135,8 +140,10 @@ func updateOrAddHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name 
 	}
 
 	err = updateHost(virConn, n, ip, mac, name, xmlIdx)
-	// FIXME: libvirt.Error.DomainID is not available
-	if virErr, ok := err.(libvirtc.Error); ok && virErr.Code == libvirtc.ERR_OPERATION_INVALID && virErr.Domain == libvirtc.FROM_NETWORK {
+	// FIXME: libvirt.Error.DomainID is not available from library. Is it still required here?
+	//  && virErr.Error.DomainID == uint32(.....FromNetwork) {
+	if virErr, ok := err.(libvirt.Error); ok && virErr.Code == uint32(libvirt.ErrOperationInvalid) {
+		log.Printf("[DEBUG]: karl: updateOrAddHost before addHost()\n")
 		return addHost(virConn, n, ip, mac, name, xmlIdx)
 	}
 	return err
