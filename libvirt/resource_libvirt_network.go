@@ -363,7 +363,11 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 		}
 
 		log.Printf("[DEBUG] Updating bridge for libvirt network '%s' with XML: %s", network.Name, networkBridge.Name)
-		err = virConn.NetworkUpdate(network, uint32(libvirt.NetworkUpdateCommandModify), uint32(libvirt.NetworkSectionBridge), -1,
+
+		// NOTE `command` and `section` params are reversed now and will need to be put back in order when fix flows through
+		// history: https://listman.redhat.com/archives/libvir-list/2021-March/msg00054.html
+		// merged fix: https://listman.redhat.com/archives/libvir-list/2021-March/msg00758.html
+		err = virConn.NetworkUpdate(network, uint32(libvirt.NetworkSectionBridge), uint32(libvirt.NetworkUpdateCommandModify), -1,
 			data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
 		if err != nil {
 			return fmt.Errorf("Error when updating bridge in %s: %s", network.Name, err)

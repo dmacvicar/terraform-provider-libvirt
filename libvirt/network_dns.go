@@ -50,7 +50,10 @@ func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Ne
 				return fmt.Errorf("serialize update: %s", err)
 			}
 
-			err = virConn.NetworkUpdate(network, uint32(libvirt.NetworkUpdateCommandDelete), uint32(libvirt.NetworkSectionDNSHost), -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
+			// NOTE `command` and `section` params are reversed now and will need to be put back in order when fix flows through
+			// history: https://listman.redhat.com/archives/libvir-list/2021-March/msg00054.html
+			// merged fix: https://listman.redhat.com/archives/libvir-list/2021-March/msg00758.html
+			err = virConn.NetworkUpdate(network, uint32(libvirt.NetworkSectionDNSHost), uint32(libvirt.NetworkUpdateCommandDelete), -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
 			if err != nil {
 				return fmt.Errorf("delete %s: %s", oldEntry.IP, err)
 			}
@@ -74,7 +77,10 @@ func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Ne
 				return fmt.Errorf("serialize update: %s", err)
 			}
 
-			err = virConn.NetworkUpdate(network, uint32(libvirt.NetworkUpdateCommandAddLast), uint32(libvirt.NetworkSectionDNSHost), -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
+			// NOTE `command` and `section` params are reversed now and will need to be put back in order when fix flows through
+			// history: https://listman.redhat.com/archives/libvir-list/2021-March/msg00054.html
+			// merged fix: https://listman.redhat.com/archives/libvir-list/2021-March/msg00758.html
+			err = virConn.NetworkUpdate(network, uint32(libvirt.NetworkSectionDNSHost), uint32(libvirt.NetworkUpdateCommandAddLast), -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
 			if err != nil {
 				return fmt.Errorf("add %v: %s", newEntry, err)
 			}

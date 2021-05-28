@@ -4,7 +4,7 @@ require (
 	github.com/c4milo/gotoolkit v0.0.0-20170704181456-e37eeabad07e // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1
-	github.com/digitalocean/go-libvirt v0.0.0-20210412214802-a5621ba916fd
+	github.com/digitalocean/go-libvirt v0.0.0-20210524223541-696696fc24e0
 	github.com/google/go-cmp v0.5.1 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/terraform-plugin-sdk v1.4.0
@@ -17,6 +17,7 @@ require (
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/terraform-providers/terraform-provider-ignition v1.2.1
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
 	golang.org/x/sys v0.0.0-20210514084401-e8d321eab015 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
