@@ -697,8 +697,10 @@ func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
 			{
 				Config: configWithoutDomain,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckLibvirtDestroyLeavesIPs("libvirt_network."+randomNetworkName,
-						"192.0.0.2", &network),
+					testAccCheckLibvirtDestroyLeavesIPs(
+						"libvirt_network."+randomNetworkName,
+						"192.0.0.2", &network,
+					),
 				),
 			},
 			{
