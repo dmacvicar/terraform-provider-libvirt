@@ -1,14 +1,13 @@
 package libvirt
 
 import (
-	"github.com/digitalocean/go-libvirt"
-	libvirtc "github.com/libvirt/libvirt-go"
+	libvirt "github.com/digitalocean/go-libvirt"
 )
 
-// Domain Interface used to expose a libvirtc.Domain
+// Domain Interface used to expose a libvirt.Domain
 // Used to allow testing
 type Domain interface {
-	QemuAgentCommand(command string, timeout libvirtc.DomainQemuAgentCommandTimeout, flags uint32) (string, error)
+	QemuAgentCommand(command string, timeout int32, flags uint32) (string, error)
 }
 
 // Network interface used to expose a libvirt.Network
