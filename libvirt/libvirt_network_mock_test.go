@@ -1,7 +1,7 @@
 package libvirt
 
 import (
-	libvirtc "github.com/libvirt/libvirt-go"
+	libvirt "github.com/digitalocean/go-libvirt"
 )
 
 type NetworkMock struct {
@@ -9,6 +9,6 @@ type NetworkMock struct {
 	GetXMLDescError error
 }
 
-func (n NetworkMock) GetXMLDesc(flags libvirtc.NetworkXMLFlags) (string, error) {
+func (n NetworkMock) GetXMLDesc(flags libvirt.NetworkXMLFlags) (string, error) {
 	return n.GetXMLDescReply, n.GetXMLDescError
 }

@@ -382,7 +382,7 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 
 // resourceLibvirtNetworkCreate creates a libvirt network from the resource definition
 func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) error {
-	// see https://libvirtc.org/formatnetwork.html
+	// see https://libvirt.org/formatnetwork.html
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)

@@ -15,7 +15,7 @@ func Provider() terraform.ResourceProvider {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("LIBVIRT_DEFAULT_URI", nil),
-				Description: "libvirt connection URI for operations. See https://libvirtc.org/uri.html",
+				Description: "libvirt connection URI for operations. See https://libvirt.org/uri.html",
 			},
 		},
 
