@@ -6,7 +6,6 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 func resourceLibvirtVolume() *schema.Resource {
@@ -110,8 +109,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		return virConn.StoragePoolRefresh(pool, 0)
 	})
 
-	// TODO create new definition per gist notes
-	// volumeDef := volumeDefinitionDefault()
 	volumeDef := newDefVolume()
 	if name, ok := d.GetOk("name"); ok {
 		volumeDef.Name = name.(string)
@@ -239,7 +236,8 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	// create the volume
 	volume, err := virConn.StorageVolCreateXML(pool, data, 0)
 	if err != nil {
-		if err.(libvirt.Error).Code != uint32(libvirt.ErrStorageVolExist) {
+		virErr := err.(libvirt.Error)
+		if virErr.Code != uint32(libvirt.ErrStorageVolExist) {
 			return fmt.Errorf("Error creating libvirt volume: %s", err)
 		}
 		// oops, volume exists already, read it and move on
@@ -320,8 +318,8 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 
 	_, size, _, err := virConn.StorageVolGetInfo(*volume)
 	if err != nil {
-		virErr := err.(libvirtc.Error)
-		if virErr.Code != libvirtc.ERR_NO_STORAGE_VOL {
+		virErr := err.(libvirt.Error)
+		if virErr.Code != uint32(libvirt.ErrNoStorageVol) {
 			return fmt.Errorf("error retrieving volume info: %s", err)
 		}
 		log.Printf("Volume '%s' may have been deleted outside Terraform", d.Id())

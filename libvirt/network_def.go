@@ -85,7 +85,7 @@ func getHostXMLDesc(ip, mac, name string) string {
 func addHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, xmlIdx int) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)
 	log.Printf("Adding host with XML:\n%s", xmlDesc)
-	// From https://libvirtc.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
+	// From https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
 	// Update live and config for hosts to make update permanent across reboots
 	// NOTE `command` and `section` params are reversed now and will need to be put back in order when fix flows through
 	// history: https://listman.redhat.com/archives/libvir-list/2021-March/msg00054.html
@@ -97,7 +97,7 @@ func addHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, 
 func updateHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, xmlIdx int) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)
 	log.Printf("Updating host with XML:\n%s", xmlDesc)
-	// From https://libvirtc.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
+	// From https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
 	// Update live and config for hosts to make update permanent across reboots
 	// NOTE `command` and `section` params are reversed now and will need to be put back in order when fix flows through
 	// history: https://listman.redhat.com/archives/libvir-list/2021-March/msg00054.html
