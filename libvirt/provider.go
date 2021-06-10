@@ -46,18 +46,8 @@ var globalClientMap = make(map[string]*Client)
 func CleanupLibvirtConnections() {
 	for uri, client := range globalClientMap {
 		log.Printf("[DEBUG] cleaning up connection for URI: %s", uri)
-		alive, err := client.libvirtc.IsAlive()
-		if err != nil {
-			log.Printf("[ERROR] cannot determine libvirt connection status: %v", err)
-		}
-		if alive {
-			ret, err := client.libvirtc.Close()
-			if err != nil {
-				log.Printf("[ERROR] cannot close libvirt connection %d - %v", ret, err)
-			}
-		}
 		// TODO: Confirm appropriate IsAlive() validation
-		err = client.libvirt.ConnectClose()
+		err := client.libvirt.ConnectClose()
 		if err != nil {
 			log.Printf("[ERROR] cannot close libvirt connection: %v", err)
 		}
