@@ -4,12 +4,19 @@ import (
 	"fmt"
 	"log"
 	"net"
+
+	"net/url"
 	"sync"
 	"time"
 
+	"github.com/digitalocean/go-libvirt"
 	libvirt2 "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/mutexkv"
 	libvirtc "github.com/libvirt/libvirt-go"
+)
+
+const (
+	defaultUnixSock = "/var/run/libvirt/libvirt-sock"
 )
 
 // Config struct for the libvirt-provider
@@ -29,20 +36,43 @@ type Client struct {
 
 // Client libvirt, generate libvirt client given URI
 func (c *Config) Client() (*Client, error) {
+
+	u, err := url.Parse(c.URI)
+	if err != nil {
+		return nil, err
+	}
+
+	network := "unix"
+	address := ""
+	if u.Host != "" {
+		network = "tcp"
+		address = u.Host
+		if u.Port() != "" {
+			address = fmt.Sprintf("%s:%s", address, u.Port())
+		}
+	} else {
+		q := u.Query()
+		address = q.Get("socket")
+		if address == "" {
+			address = defaultUnixSock
+		}
+	}
+
 	libvirtClient, err := libvirtc.NewConnect(c.URI)
 	if err != nil {
 		return nil, err
 	}
 	log.Println("[INFO] Created libvirt client")
 
-	// TODO function url -> connection
-	conn, err := net.DialTimeout("unix", "/var/run/libvirt/libvirt-sock", 2*time.Second)
+	conn, err := net.DialTimeout(network, address, 2*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial libvirt: %w", err)
 	}
+	log.Printf("[INFO] Set up libvirt transport: %v\n", conn)
+
 
 	l := libvirt2.New(conn)
-	if err := l.Connect(); err != nil {
+	if err := l.ConnectToURI(libvirt.ConnectURI(c.URI)); err != nil {
 		return nil, fmt.Errorf("failed to connect: %w", err)
 	}
 
