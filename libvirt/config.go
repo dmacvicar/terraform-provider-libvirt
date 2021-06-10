@@ -9,10 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/digitalocean/go-libvirt"
-	libvirt2 "github.com/digitalocean/go-libvirt"
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/mutexkv"
-	libvirtc "github.com/libvirt/libvirt-go"
 )
 
 const (
@@ -26,8 +24,7 @@ type Config struct {
 
 // Client libvirt
 type Client struct {
-	libvirt     *libvirt2.Libvirt
-	libvirtc    *libvirtc.Connect
+	libvirt     *libvirt.Libvirt
 	poolMutexKV *mutexkv.MutexKV
 	// define only one network at a time
 	// https://gitlab.com/libvirt/libvirt/-/issues/78
@@ -58,20 +55,13 @@ func (c *Config) Client() (*Client, error) {
 		}
 	}
 
-	libvirtClient, err := libvirtc.NewConnect(c.URI)
-	if err != nil {
-		return nil, err
-	}
-	log.Println("[INFO] Created libvirt client")
-
 	conn, err := net.DialTimeout(network, address, 2*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial libvirt: %w", err)
 	}
 	log.Printf("[INFO] Set up libvirt transport: %v\n", conn)
 
-
-	l := libvirt2.New(conn)
+	l := libvirt.New(conn)
 	if err := l.ConnectToURI(libvirt.ConnectURI(c.URI)); err != nil {
 		return nil, fmt.Errorf("failed to connect: %w", err)
 	}
@@ -84,7 +74,6 @@ func (c *Config) Client() (*Client, error) {
 
 	client := &Client{
 		libvirt:     l,
-		libvirtc:    libvirtClient,
 		poolMutexKV: mutexkv.NewMutexKV(),
 	}
 
