@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	libvirt "github.com/digitalocean/go-libvirt"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
@@ -123,59 +122,6 @@ func TestHasDHCPForwardSet(t *testing.T) {
 				"Expected to have forward enabled with forward set to be '%s'",
 				mode)
 		}
-	}
-}
-
-func TestNetworkFromLibvirtError(t *testing.T) {
-	if !testAccEnabled() {
-		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
-		return
-	}
-	virConn := testAccProvider.Meta().(*Client).libvirt
-	net := libvirt.Network{}
-
-	_, err := getXMLNetworkDefFromLibvirt(virConn, net)
-	if err == nil {
-		t.Error("Expected error - empty network provided")
-	}
-}
-
-func TestNetworkFromLibvirtWrongResponse(t *testing.T) {
-	if !testAccEnabled() {
-		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
-		return
-	}
-	virConn := testAccProvider.Meta().(*Client).libvirt
-	net := libvirt.Network{
-		Name: "test",
-		UUID: libvirt.UUID{},
-	}
-
-	_, err := getXMLNetworkDefFromLibvirt(virConn, net)
-	if err == nil {
-		t.Error("Expected error - uninitiated network provided")
-	}
-}
-
-func TestNetworkFromLibvirt(t *testing.T) {
-	if !testAccEnabled() {
-		t.Logf("Acceptance tests skipped unless env 'TF_ACC' set")
-		return
-	}
-	virConn := testAccProvider.Meta().(*Client).libvirt
-
-	net, err := virConn.NetworkLookupByName("default")
-	if err != nil {
-		t.Errorf("Unable to lookup 'default' network required for test")
-	}
-
-	dn, err := getXMLNetworkDefFromLibvirt(virConn, net)
-	if err != nil {
-		t.Errorf("Unexpected error %v", err)
-	}
-
-	if dn.Forward.Mode != "nat" {
-		t.Errorf("Wrong forward mode: %s", dn.Forward.Mode)
 	}
 }
 
