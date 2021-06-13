@@ -13,7 +13,7 @@ servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraf
 ## Table of Content
 
 - [Migrating to terraform v13](docs/migration-13.md)
-- [Introduction and Goals](#intro)
+- [Introduction and Goals](#introduction--goals)
 - [Downloading](#downloading)
 - [Installing](#installing)
 - [Quickstart](#using-the-provider)
