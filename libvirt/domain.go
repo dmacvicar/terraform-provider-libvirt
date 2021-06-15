@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
-	"github.com/libvirt/libvirt-go-xml"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 const domWaitLeaseStillWaiting = "waiting-addresses"
@@ -346,6 +346,18 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 				VNC: &libvirtxml.DomainGraphicVNC{},
 			}
 			domainDef.Devices.Graphics[0].VNC.AutoPort = formatBoolYesNo(autoport)
+			if autoport == false {
+				// If autoport is false port should be defined
+				if port, ok := d.GetOk(prefix + ".port"); ok {
+					domainDef.Devices.Graphics[0].VNC.Port = port.(int)
+				} else {
+					//If autoport is set to false but port is undefined then set to -1 (auto-allocation)
+					domainDef.Devices.Graphics[0].VNC.Port = -1
+				}
+			}
+			if password, ok := d.GetOk(prefix + ".password"); ok {
+				domainDef.Devices.Graphics[0].VNC.Passwd = password.(string)
+			}
 			domainDef.Devices.Graphics[0].VNC.Listeners = []libvirtxml.DomainGraphicListener{
 				listener,
 			}
