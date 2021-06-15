@@ -130,7 +130,7 @@ func TestGetDomainInterfacesViaQemuAgentUnknownIpAddressType(t *testing.T) {
 
 func TestGetDomainInterfacesViaQemuAgent(t *testing.T) {
 	device := "eth0"
-	mac := "xx:yy:zz"
+	mac := "52:54:00:00:11:0e"
 	ipv4Addr := "192.168.1.1"
 	ipv6Addr := "2001:0db8:0000:0000:0000:ff00:0042:8329"
 
@@ -138,7 +138,7 @@ func TestGetDomainInterfacesViaQemuAgent(t *testing.T) {
 		Interfaces: []QemuAgentInterface{
 			{
 				Name:   device,
-				Hwaddr: mac,
+				Hwaddr: "52:54:0:00:11:e",
 				IPAddresses: []QemuAgentInterfaceIPAddress{
 					{
 						Type:    "ipv4",
