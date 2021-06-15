@@ -67,6 +67,16 @@ func resourceLibvirtPool() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+
+			// logical-specific attributes
+			"source_devices": {
+				Type:     schema.TypeList,
+				Optional: true,
+				ForceNew: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -81,8 +91,8 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	poolType := d.Get("type").(string)
-	if poolType != "dir" {
-		return fmt.Errorf("Only storage pools of type \"dir\" are supported")
+	if poolType != "dir" && poolType != "logical" {
+		return fmt.Errorf("Only storage pools of type \"dir\" and \"logical\" are supported")
 	}
 
 	poolName := d.Get("name").(string)
@@ -98,17 +108,56 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Pool with name '%s' does not exist yet", poolName)
 
 	poolPath := d.Get("path").(string)
-	if poolPath == "" {
-		return fmt.Errorf("\"path\" attribute is requires for storage pools of type \"dir\"")
+
+	var poolDef *libvirtxml.StoragePool
+	// In some cases we don't need to build the pool
+	needToBuild := true
+
+	if poolType == "dir" {
+		if poolPath == "" {
+			return fmt.Errorf("\"path\" attribute is requires for storage pools of type \"dir\"")
+		}
+
+		sourceDevices := d.Get("source_devices.#").(int)
+		if sourceDevices != 0 {
+			return fmt.Errorf("\"source_devices\" attribute cannot be used for storage pool of type \"dir\"")
+		}
+
+		poolDef = &libvirtxml.StoragePool{
+			Type: "dir",
+			Name: poolName,
+			Target: &libvirtxml.StoragePoolTarget{
+				Path: poolPath,
+			},
+		}
+	} else if poolType == "logical" {
+		// path is auto-generated for lvm pools, so we don't set/read it
+		if poolPath != "" {
+			return fmt.Errorf("\"path\" attribute cannot be used for storage pool of type \"logical\"")
+		}
+
+		poolDef = &libvirtxml.StoragePool{
+			Type: "logical",
+			Name: poolName,
+		}
+
+		var devices []libvirtxml.StoragePoolSourceDevice
+
+		for i := 0; i < d.Get("source_devices.#").(int); i++ {
+			device := d.Get(fmt.Sprintf("source_devices.%d", i)).(string)
+			devices = append(devices, libvirtxml.StoragePoolSourceDevice{Path: device})
+		}
+
+		if devices != nil {
+			poolDef.Source = &libvirtxml.StoragePoolSource{
+				Device: devices,
+			}
+		} else {
+			// if no source device given for logical pool, we don't need to build, just use the existing vg
+			needToBuild = false
+		}
 	}
 
-	poolDef := libvirtxml.StoragePool{
-		Type: "dir",
-		Name: poolName,
-		Target: &libvirtxml.StoragePoolTarget{
-			Path: poolPath,
-		},
-	}
 	data, err := xmlMarshallIndented(poolDef)
 	if err != nil {
 		return fmt.Errorf("Error serializing libvirt storage pool: %s", err)
@@ -127,9 +176,11 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	defer pool.Free()
 
-	err = pool.Build(0)
-	if err != nil {
-		return fmt.Errorf("Error building libvirt storage pool: %s", err)
+	if needToBuild {
+		err = pool.Build(0)
+		if err != nil {
+			return fmt.Errorf("Error building libvirt storage pool: %s", err)
+		}
 	}
 
 	err = pool.SetAutostart(true)
@@ -213,11 +264,14 @@ func resourceLibvirtPoolRead(d *schema.ResourceData, meta interface{}) error {
 		poolPath = poolDef.Target.Path
 	}
 
-	if poolPath == "" {
-		log.Printf("Pool %s has no path specified", poolName)
-	} else {
-		log.Printf("[DEBUG] Pool %s path: %s", poolName, poolPath)
-		d.Set("path", poolPath)
+	// for logical pool the path auto-generated, so we don't set/read it
+	if poolDef.Type != "logical" {
+		if poolPath == "" {
+			log.Printf("Pool %s has no path specified", poolName)
+		} else {
+			log.Printf("[DEBUG] Pool %s path: %s", poolName, poolPath)
+			d.Set("path", poolPath)
+		}
 	}
 
 	return nil
