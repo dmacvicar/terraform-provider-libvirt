@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/suppress"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	libvirt "github.com/libvirt/libvirt-go"
 )
@@ -32,10 +33,11 @@ func resourceLibvirtVolume() *schema.Resource {
 				ForceNew: true,
 			},
 			"size": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
+				Type:             schema.TypeInt,
+				Optional:         true,
+				Computed:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: suppress.Qcow2RoundOffset,
 			},
 			"format": {
 				Type:     schema.TypeString,
