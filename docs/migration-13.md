@@ -2,14 +2,14 @@
 
 1) Create the following directory:
 
-`mkdir -p ~/.local/share/terraform/plugins/registry.terraform.io/dmacvicar/libvirt/0.6.2/linux_amd64`
+`mkdir -p ~/.local/share/terraform/plugins/registry.terraform.io/dmacvicar/libvirt/0.6.3/linux_amd64`
 
-Where `0.6.2` is the version of the libvirt provider and `linux_amd64` is the architecture.
+Where `0.6.3` is the version of the libvirt provider and `linux_amd64` is the architecture.
 
 
 2) Move the provider-libvirt binary to that directory:
 
-`mv terraform-provider-libvirt  ~/.local/share/terraform/plugins/registry.terraform.io/dmacvicar/libvirt/0.6.2/linux_amd64`
+`mv terraform-provider-libvirt  ~/.local/share/terraform/plugins/registry.terraform.io/dmacvicar/libvirt/0.6.3/linux_amd64`
 
 Note: you can use a [released binary](https://github.com/dmacvicar/terraform-provider-libvirt/releases), or
 [build from source](https://github.com/dmacvicar/terraform-provider-libvirt#building-from-source).
@@ -33,7 +33,7 @@ terraform {
   required_providers {
     libvirt = {
       source  = "dmacvicar/libvirt"
-      version = "0.6.2"
+      version = "0.6.3"
     }
   }
 }
