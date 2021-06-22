@@ -18,6 +18,19 @@ before it can be used.
 provider focuses on [KVM](http://libvirt.org/drvqemu.html). Other drivers may not be
 working and haven't been tested.
 
+## The connection URI
+
+The provider understands [connection URIs](https://libvirt.org/uri.html). The supported transports are:
+
+* `tcp` (non-encrypted connection)
+* `unix` (UNIX domain socket)
+* `tls` (See [here](https://www.libvirt.org/tlscerts.html) for information how to setup certificates)
+* `ssh` (Secure shell)
+
+Unlike the original libvirt, the `ssh` transport is not implemented using the ssh command and therefore does not require `nc` (netcat) on the server side.
+
+As the provider does not use libvirt on the client side, not all connection URI options are supported or apply.
+
 ## Example Usage
 
 ```hcl
