@@ -21,7 +21,7 @@ func TestLocalImageDetermineType(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	url := fmt.Sprintf("file://%s", abspath)
+	url := fmt.Sprintf("file://%s", filepath.ToSlash(abspath))
 	image, err := newImage(url)
 	if err != nil {
 		t.Errorf("Could not create local image: %v", err)
