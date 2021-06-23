@@ -38,11 +38,10 @@ func TestLocalImageDetermineType(t *testing.T) {
 
 func TestLocalImageDownload(t *testing.T) {
 	content := []byte("this is a qcow image... well, it is not")
-	tmpfile, err := ioutil.TempFile("", "test-image-")
+	tmpfile, err := ioutil.TempFile(t.TempDir(), "test-image-")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tmpfile.Name())
 
 	t.Logf("Adding some content to %s", tmpfile.Name())
 	if _, err := tmpfile.Write(content); err != nil {
@@ -52,7 +51,7 @@ func TestLocalImageDownload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	url := fmt.Sprintf("file://%s", tmpfile.Name())
+	url := fmt.Sprintf("file://%s", filepath.ToSlash(tmpfile.Name()))
 	image, err := newImage(url)
 	if err != nil {
 		t.Errorf("Could not create local image: %v", err)
