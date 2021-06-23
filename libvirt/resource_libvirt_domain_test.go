@@ -337,6 +337,7 @@ func TestAccLibvirtDomain_ScsiDisk(t *testing.T) {
 }
 
 func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
+	skipIfAccDisabled(t)
 	var domain libvirt.Domain
 
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
