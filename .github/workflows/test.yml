@@ -29,6 +29,8 @@ jobs:
       - name: Build
         run: |
           make
+      - name: Test pre-requisites
+        run: sudo apt-get -y install xsltproc
       - name: Test
         run: |
           make test
