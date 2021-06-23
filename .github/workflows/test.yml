@@ -13,13 +13,19 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - {os: ubuntu-latest, go: 1.16}
+          - {os: windows-latest, go: 1.16}
+          - {os: macos-latest, go: 1.16}
     timeout-minutes: 5
     steps:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.16'
+          go-version: ${{ matrix.go }}
         id: go
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
@@ -34,3 +40,7 @@ jobs:
       - name: Test
         run: |
           make test
+      - uses: actions/upload-artifact@v2
+        with:
+          name: terraform-provider-libvirt-${{ matrix.os }}
+          path: ${{ github.workspace }}/terraform-provider-libvirt
