@@ -306,11 +306,8 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 
-	fws := fileWebServer{}
-	if err := fws.Start(); err != nil {
-		t.Fatal(err)
-	}
-	defer fws.Stop()
+	fws := newFileWebServer(t)
+	defer fws.Close()
 
 	content := []byte("a fake image")
 	url, _, err := fws.AddContent(content)

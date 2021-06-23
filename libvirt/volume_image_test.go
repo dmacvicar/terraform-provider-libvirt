@@ -78,11 +78,9 @@ func TestRemoteImageDetermineType(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fws := fileWebServer{}
-	if err := fws.Start(); err != nil {
-		t.Fatal(err)
-	}
-	defer fws.Stop()
+	fws := newFileWebServer(t)
+	fws.Start()
+	defer fws.Close()
 
 	url, _, err := fws.AddContent(content)
 	if err != nil {
@@ -163,11 +161,10 @@ func TestRemoteImageDownloadRetry(t *testing.T) {
 
 func TestRemoteImageDownload(t *testing.T) {
 	content := []byte("this is a qcow image... well, it is not")
-	fws := fileWebServer{}
-	if err := fws.Start(); err != nil {
-		t.Fatal(err)
-	}
-	defer fws.Stop()
+
+	fws := newFileWebServer(t)
+	fws.Start()
+	defer fws.Close()
 
 	url, tmpfile, err := fws.AddContent(content)
 	if err != nil {
