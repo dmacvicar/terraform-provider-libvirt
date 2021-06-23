@@ -348,7 +348,7 @@ func TestAccLibvirtDomain_ManySCSIDisks(t *testing.T) {
 	}`, randomPoolName, randomPoolName, randomPoolPath)
 
 	for i := 0; i < diskcount; i++ {
-	    volName := fmt.Sprintf("volume_%03d",i)
+		volName := fmt.Sprintf("volume_%03d", i)
 		configScsi += fmt.Sprintf(`
 	resource "libvirt_volume" "%s" {
 		name = "%s"
@@ -361,7 +361,7 @@ func TestAccLibvirtDomain_ManySCSIDisks(t *testing.T) {
 		name = "%s"`, randomDomainName, randomDomainName)
 
 	for i := 0; i < diskcount; i++ {
-		volName := fmt.Sprintf("volume_%03d",i)
+		volName := fmt.Sprintf("volume_%03d", i)
 		configScsi += fmt.Sprintf(`
 		disk {
 			volume_id = "${libvirt_volume.%s.id}"
@@ -1120,7 +1120,7 @@ func testAccCheckLibvirtManyScsiDisk(n string, c int, domain *libvirt.Domain) re
 	return testAccCheckLibvirtDomainDescription(domain, func(domainDef libvirtxml.Domain) error {
 		d := len(domainDef.Devices.Disks)
 		if d != c {
-			return fmt.Errorf("Too few scsi attached (%d != %d",d,c)
+			return fmt.Errorf("Too few scsi attached (%d != %d", d, c)
 		}
 		return nil
 	})
