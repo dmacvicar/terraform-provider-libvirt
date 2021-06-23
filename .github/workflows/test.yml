@@ -37,8 +37,15 @@ jobs:
       - name: Build
         run: |
           make
-      - name: Test pre-requisites
+      - name: Test pre-requisites (Linux)
         run: sudo apt-get -y install xsltproc
+        if: runner.os == 'Linux'
+      - name: Test pre-requisites (MacOS)
+        run: brew install libxslt
+        if: runner.os == 'MacOS'
+      - name: Test pre-requisites (Windows)
+        run: choco install xsltproc
+        if: runner.os == 'Windows'
       - name: Test
         run: |
           make test
