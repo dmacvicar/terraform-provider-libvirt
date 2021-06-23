@@ -1243,10 +1243,10 @@ func createTempBlockDev(devname string) (string, string, error) {
 	return filename, strings.TrimRight(string(loopdev), "\n"), nil
 }
 
-func createNvramFile() (string, error) {
+func createNvramFile(t *testing.T) (string, error) {
 	// size of an accepted, valid, nvram backing store
 	NVRAMDummyBuffer := make([]byte, 131072)
-	file, err := ioutil.TempFile("/tmp", "nvram")
+	file, err := ioutil.TempFile(t.TempDir(), "nvram")
 	if err != nil {
 		return "", err
 	}
@@ -1262,7 +1262,7 @@ func createNvramFile() (string, error) {
 }
 
 func TestAccLibvirtDomainFirmware(t *testing.T) {
-	NVRAMPath, err := createNvramFile()
+	NVRAMPath, err := createNvramFile(t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1325,7 +1325,7 @@ func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, f
 }
 
 func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, firmware string, template string) {
-	NVRAMPath, err := createNvramFile()
+	NVRAMPath, err := createNvramFile(t)
 	if err != nil {
 		t.Fatal(err)
 	}
