@@ -2,12 +2,8 @@ package libvirt
 
 import (
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net"
-	"net/http"
-	"os"
-	"path"
 	"time"
 )
 
@@ -82,64 +78,4 @@ func networkRange(network *net.IPNet) (net.IP, net.IP) {
 		lastIP[i] = netIP[i] | ^intMask[i]
 	}
 	return firstIP, lastIP
-}
-
-// a HTTP server that serves files in a directory, used mostly for testing
-type fileWebServer struct {
-	Dir  string
-	Port int
-	URL  string
-
-	server *http.Server
-}
-
-func (fws *fileWebServer) Start() error {
-	dir, err := ioutil.TempDir(fws.Dir, "")
-	if err != nil {
-		return err
-	}
-
-	fws.Dir = dir
-	fws.Port = randomPort()
-	fws.URL = fmt.Sprintf("http://127.0.0.1:%d", fws.Port)
-
-	handler := http.NewServeMux()
-	handler.Handle("/", http.FileServer(http.Dir(dir)))
-	fws.server = &http.Server{Addr: fmt.Sprintf("127.0.0.1:%d", fws.Port), Handler: handler}
-	ln, err := net.Listen("tcp", fws.server.Addr)
-	if err != nil {
-		return err
-	}
-	go fws.server.Serve(ln)
-	return nil
-}
-
-// Adds a file (with some content) in the directory served by the fileWebServer
-func (fws *fileWebServer) AddContent(content []byte) (string, *os.File, error) {
-	tmpfile, err := ioutil.TempFile(fws.Dir, "file-")
-	if err != nil {
-		return "", nil, err
-	}
-
-	if len(content) > 0 {
-		if _, err := tmpfile.Write(content); err != nil {
-			return "", nil, err
-		}
-	}
-
-	return fmt.Sprintf("%s/%s", fws.URL, path.Base(tmpfile.Name())), tmpfile, nil
-}
-
-// Symlinks a file into the directory server by the webserver
-func (fws *fileWebServer) AddFile(filePath string) (string, error) {
-	err := os.Symlink(filePath, path.Join(fws.Dir, path.Base(filePath)))
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%s/%s", fws.URL, path.Base(filePath)), nil
-}
-
-func (fws *fileWebServer) Stop() {
-	os.RemoveAll(fws.Dir)
 }
