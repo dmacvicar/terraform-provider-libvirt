@@ -45,10 +45,10 @@ func xsltDiffSupressFunc(k, old, new string, d *schema.ResourceData) bool {
 }
 
 // this function applies a XSLT transform to the xml data
-func transformXML(xml string, xslt string) (string, error) {
+func transformXML(xmlS string, xsltS string) (string, error) {
 	// empty xslt is a no-op
-	if strings.TrimSpace(xslt) == "" {
-		return xml, nil
+	if strings.TrimSpace(xsltS) == "" {
+		return xmlS, nil
 	}
 
 	xsltFile, err := ioutil.TempFile("", "terraform-provider-libvirt-xslt")
@@ -59,7 +59,7 @@ func transformXML(xml string, xslt string) (string, error) {
 
 	// we trim the xslt as it may contain space before the xml declaration
 	// because of HCL heredoc
-	if _, err := xsltFile.Write([]byte(strings.TrimSpace(xslt))); err != nil {
+	if _, err := xsltFile.Write([]byte(strings.TrimSpace(xsltS))); err != nil {
 		log.Fatal(err)
 	}
 
@@ -73,7 +73,7 @@ func transformXML(xml string, xslt string) (string, error) {
 	}
 	defer os.Remove(xmlFile.Name()) // clean up
 
-	if _, err := xmlFile.Write([]byte(xml)); err != nil {
+	if _, err := xmlFile.Write([]byte(xmlS)); err != nil {
 		log.Fatal(err)
 	}
 
@@ -90,10 +90,12 @@ func transformXML(xml string, xslt string) (string, error) {
 	transformedXML, err := cmd.Output()
 	if err != nil {
 		log.Printf("[ERROR] Failed to run xsltproc (is it installed?)")
-		return xml, err
+		return xmlS, err
 	}
 	log.Printf("[DEBUG] Transformed XML with user specified XSLT:\n%s", transformedXML)
-	return string(transformedXML), nil
+	//return strings.Trim(string(transformedXML), " \r\n"), nil
+
+	return string(transformedXML), err
 }
 
 // this function applies a XSLT transform to the xml data

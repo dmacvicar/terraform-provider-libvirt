@@ -46,6 +46,8 @@ func TestLocalImageDownload(t *testing.T) {
 	if _, err := tmpfile.Write(content); err != nil {
 		t.Fatal(err)
 	}
+	defer tmpfile.Close()
+
 	tmpfileStat, err := tmpfile.Stat()
 	if err != nil {
 		t.Fatal(err)
@@ -82,10 +84,11 @@ func TestRemoteImageDetermineType(t *testing.T) {
 	fws.Start()
 	defer fws.Close()
 
-	url, _, err := fws.AddContent(content)
+	url, tmpfile, err := fws.AddContent(content)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer tmpfile.Close()
 
 	image, err := newImage(url)
 	if err != nil {
@@ -170,6 +173,7 @@ func TestRemoteImageDownload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer tmpfile.Close()
 
 	tmpfileStat, err := tmpfile.Stat()
 	if err != nil {
