@@ -310,10 +310,11 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 	defer fws.Close()
 
 	content := []byte("a fake image")
-	url, _, err := fws.AddContent(content)
+	url, tmpfile, err := fws.AddContent(content)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer tmpfile.Close()
 
 	config := fmt.Sprintf(`
     resource "libvirt_pool" "%s" {
