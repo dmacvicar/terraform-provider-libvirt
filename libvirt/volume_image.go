@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -208,7 +209,7 @@ func newImage(source string) (image, error) {
 	if strings.HasPrefix(url.Scheme, "http") {
 		return &httpImage{url: url}, nil
 	} else if url.Scheme == "file" || url.Scheme == "" {
-		return &localImage{path: url.Path}, nil
+		return &localImage{path: filepath.FromSlash(url.Path)}, nil
 	} else {
 		return nil, fmt.Errorf("Don't know how to read from '%s': %s", url.String(), err)
 	}
