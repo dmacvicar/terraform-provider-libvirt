@@ -7,10 +7,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"github.com/libvirt/libvirt-go-xml"
 )
 
@@ -20,8 +22,7 @@ func TestLocalImageDetermineType(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	url := fmt.Sprintf("file://%s", filepath.ToSlash(abspath))
-	image, err := newImage(url)
+	image, err := newImage(abspath)
 	if err != nil {
 		t.Errorf("Could not create local image: %v", err)
 	}
@@ -41,6 +42,7 @@ func TestLocalImageDownload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer os.Remove(tmpfile.Name())
 
 	t.Logf("Adding some content to %s", tmpfile.Name())
 	if _, err := tmpfile.Write(content); err != nil {
@@ -52,26 +54,28 @@ func TestLocalImageDownload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	url := fmt.Sprintf("file://%s", filepath.ToSlash(tmpfile.Name()))
-	image, err := newImage(url)
+
+	image, err := newImage(tmpfile.Name())
 	if err != nil {
 		t.Errorf("Could not create local image: %v", err)
 	}
 
-	t.Logf("Importing %s", url)
+	t.Logf("Importing %s", tmpfile.Name())
 	vol := newDefVolume()
 	vol.Target.Timestamps = &libvirtxml.StorageVolumeTargetTimestamps{
 		Mtime: fmt.Sprintf("%d.%d", tmpfileStat.ModTime().Unix(), tmpfileStat.ModTime().Nanosecond()),
 	}
 
 	copier := func(r io.Reader) error {
-		t.Fatalf("ERROR: starting copy of %s... but the file is the same!", url)
+		require.FailNow(t, "This should not be run, as image has not changed. url: %s", tmpfile.Name())
 		return nil
 	}
+
 	if err = image.Import(copier, vol); err != nil {
-		t.Fatalf("Could not copy image from %s: %v", url, err)
+		require.NoError(t, err, "As the image was not modified and not copied, no error was expected. url: %s", tmpfile.Name())
 	}
-	t.Log("File not copied because modification time was the same")
+
+	t.Log("As expected, image not copied because modification time was the same")
 }
 
 func TestRemoteImageDetermineType(t *testing.T) {
