@@ -307,6 +307,7 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
 
 	fws := newFileWebServer(t)
+	fws.Start()
 	defer fws.Close()
 
 	content := []byte("a fake image")
