@@ -7,32 +7,90 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/libvirt/libvirt-go-xml"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestLocalImageDetermineType(t *testing.T) {
-	abspath, err := filepath.Abs("testdata/test.qcow2")
+func TestNewImage(t *testing.T) {
+
+	fixtures := []struct {
+		Name    string
+		Size    uint64
+		IsQCOW2 bool
+	}{
+		{"test.qcow2", 196616, true},
+		{"tcl.iso", 16834560, false},
+	}
+
+	testdata, err := filepath.Abs("testdata")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	image, err := newImage(abspath)
-	if err != nil {
-		t.Errorf("Could not create local image: %v", err)
-	}
+	fws := newFileWebServer(t)
+	fws.Start()
+	defer fws.Close()
 
-	qcow2, err := image.IsQCOW2()
-	if err != nil {
-		t.Errorf("Can't determine image type: %v", err)
-	}
-	if !qcow2 {
-		t.Errorf("Expected image to be recognized as QCOW2")
+	for _, fixture := range fixtures {
+		localPath := filepath.Join(testdata, fixture.Name)
+
+		var fileUrlStr string
+		if runtime.GOOS == "windows" {
+			fileUrlStr = "file:///" + localPath
+		} else {
+			fileUrlStr = "file://" + localPath
+		}
+
+		httpUrlStr, err := fws.AddFile(localPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		httpUrl, err := url.Parse(httpUrlStr)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		results := []struct {
+			Source   string
+			Image    image
+			AsString string
+		}{
+			{localPath, &localImage{path: localPath}, localPath},
+			{fileUrlStr, &localImage{path: localPath}, localPath},
+			{httpUrlStr, &httpImage{url: httpUrl}, httpUrlStr},
+		}
+
+		for _, ex := range results {
+			img, err := newImage(ex.Source)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
+			assert.Equal(t, ex.Image, img)
+			assert.Equal(t, ex.AsString, img.String(), ex.Source)
+			isQCOW2, err := img.IsQCOW2()
+			if err != nil {
+				t.Error(err)
+				continue
+			}
+			assert.Equal(t, fixture.IsQCOW2, isQCOW2)
+
+			size, err := img.Size()
+			if err != nil {
+				t.Error(err)
+				continue
+			}
+			assert.Equal(t, fixture.Size, size)
+		}
 	}
 }
 
@@ -55,9 +113,10 @@ func TestLocalImageDownload(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	image, err := newImage(tmpfile.Name())
+	url := "file:///" + tmpfile.Name()
+	image, err := newImage(url)
 	if err != nil {
-		t.Errorf("Could not create local image: %v", err)
+		t.Fatalf("Could not create local image: %v", err)
 	}
 
 	t.Logf("Importing %s", tmpfile.Name())
@@ -67,7 +126,7 @@ func TestLocalImageDownload(t *testing.T) {
 	}
 
 	copier := func(r io.Reader) error {
-		require.FailNow(t, "This should not be run, as image has not changed. url: %s", tmpfile.Name())
+		require.FailNow(t, fmt.Sprintf("This should not be run, as image has not changed. url: %s", url))
 		return nil
 	}
 
@@ -76,36 +135,6 @@ func TestLocalImageDownload(t *testing.T) {
 	}
 
 	t.Log("As expected, image not copied because modification time was the same")
-}
-
-func TestRemoteImageDetermineType(t *testing.T) {
-	content, err := ioutil.ReadFile("testdata/test.qcow2")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	fws := newFileWebServer(t)
-	fws.Start()
-	defer fws.Close()
-
-	url, tmpfile, err := fws.AddContent(content)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer tmpfile.Close()
-
-	image, err := newImage(url)
-	if err != nil {
-		t.Errorf("Could not create local image: %v", err)
-	}
-
-	qcow2, err := image.IsQCOW2()
-	if err != nil {
-		t.Errorf("Can't determine image type: %v", err)
-	}
-	if !qcow2 {
-		t.Errorf("Expected image to be recognized as QCOW2")
-	}
 }
 
 func TestRemoteImageDownloadRetry(t *testing.T) {
