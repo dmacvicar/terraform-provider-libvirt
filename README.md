@@ -4,7 +4,7 @@
 - Planning board: [Github Projects](https://github.com/dmacvicar/terraform-provider-libvirt/projects/1)
 
 
-![alpha](https://img.shields.io/badge/stability%3F-beta-yellow.svg) [![Build Status](https://travis-ci.org/dmacvicar/terraform-provider-libvirt.svg?branch=master)](https://travis-ci.org/dmacvicar/terraform-provider-libvirt)
+![alpha](https://img.shields.io/badge/stability%3F-beta-yellow.svg) [![Tests](https://github.com/dmacvicar/terraform-provider-libvirt/actions/workflows/test.yml/badge.svg)](https://github.com/dmacvicar/terraform-provider-libvirt/actions/workflows/test.yml)
 ___
 This is a terraform provider that lets you provision
 servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraform.io/).
