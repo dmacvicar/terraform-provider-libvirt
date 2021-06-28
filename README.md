@@ -9,27 +9,6 @@ ___
 This is a terraform provider that lets you provision
 servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraform.io/).
 
-
-## Table of Content
-
-- [Migrating to terraform v13](docs/migration-13.md)
-- [Introduction and Goals](#introduction--goals)
-- [Downloading](#downloading)
-- [Installing](#installing)
-- [Quickstart](#using-the-provider)
-- [Building from source](#building-from-source)
-- [How to contribute](CONTRIBUTING.md)
-- [Upstream project using this provider](#upstream-projects-using-terraform-libvirt)
-
-## Website Docs
-- [Libvirt Provider](website/docs/index.html.markdown)
-- [CloudInit](website/docs/r/cloudinit.html.markdown)
-- [CoreOS Ignition](website/docs/r/coreos_ignition.html.markdown)
-- [Domains](website/docs/r/domain.html.markdown)
-- [Networks](website/docs/r/network.markdown)
-- [Volumes](website/docs/r/volume.html.markdown)
-- [Pools](website/docs/r/pool.html.markdown)
-
 # Introduction & Goals
 
 This project exists:
