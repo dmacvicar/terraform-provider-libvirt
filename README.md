@@ -4,7 +4,8 @@
 - Planning board: [Github Projects](https://github.com/dmacvicar/terraform-provider-libvirt/projects/1)
 
 
-![alpha](https://img.shields.io/badge/stability%3F-beta-yellow.svg) [![Tests](https://github.com/dmacvicar/terraform-provider-libvirt/actions/workflows/test.yml/badge.svg)](https://github.com/dmacvicar/terraform-provider-libvirt/actions/workflows/test.yml)
+![alpha](https://img.shields.io/badge/stability%3F-beta-yellow.svg) [![Tests](https://github.com/dmacvicar/terraform-provider-libvirt/actions/workflows/test.yml/badge.svg)](https://github.com/dmacvicar/terraform-provider-libvirt/actions/workflows/test.yml) [![Registry](https://img.shields.io/badge/libvirt-Terraform%20Registry-blue)](https://registry.terraform.io/providers/dmacvicar/libvirt/latest/docs)
+
 ___
 This is a terraform provider that lets you provision
 servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraform.io/).
@@ -82,7 +83,7 @@ $ terraform apply
 $ terraform destroy
 ```
 
-Look at more advanced examples [here](examples/)
+Look at more advanced examples [here](examples/) and check the [documentation](https://registry.terraform.io/providers/dmacvicar/libvirt/latest/docs).
 
 ## Manual installation
 
