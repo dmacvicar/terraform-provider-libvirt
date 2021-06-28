@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -208,10 +209,21 @@ func newImage(source string) (image, error) {
 
 	if strings.HasPrefix(url.Scheme, "http") {
 		return &httpImage{url: url}, nil
+	} else if url.Scheme == "file" && runtime.GOOS == "windows" {
+		// workaround #1, file:///C:/foo/bar.iso URL on Windows path has "/" prefix
+		// making it invalid
+		return &localImage{path: filepath.Clean(strings.TrimPrefix(url.Path, "/"))}, nil
 	} else if url.Scheme == "file" || url.Scheme == "" {
-		return &localImage{path: filepath.FromSlash(url.Path)}, nil
+		return &localImage{path: url.Path}, nil
 	} else {
-		return nil, fmt.Errorf("Don't know how to read from '%s': %s", url.String(), err)
+		// workaround #2, plain path (eg. C:\foo\bar.iso) detected as URL
+		// with scheme "C". We check if the non-URL exists as path
+		if runtime.GOOS == "windows" {
+			if stat, err := os.Stat(url.String()); err == nil && !stat.IsDir() {
+				return &localImage{path: filepath.Clean(source)}, nil
+			}
+		}
+		return nil, fmt.Errorf("Don't know how to handle image URI from '%v' (scheme: %s)", url, url.Scheme)
 	}
 }
 
