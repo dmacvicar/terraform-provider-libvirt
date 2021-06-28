@@ -87,10 +87,9 @@ func addHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, 
 	log.Printf("Adding host with XML:\n%s", xmlDesc)
 	// From https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
 	// Update live and config for hosts to make update permanent across reboots
-	// NOTE `command` and `section` params are reversed now and will need to be put back in order when fix flows through
-	// history: https://listman.redhat.com/archives/libvir-list/2021-March/msg00054.html
-	// merged fix: https://listman.redhat.com/archives/libvir-list/2021-March/msg00758.html
-	return virConn.NetworkUpdate(n, uint32(libvirt.NetworkSectionIPDhcpHost), uint32(libvirt.NetworkUpdateCommandAddLast), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
+	//
+	// See networkUpdateWorkAroundLibvirt for more information about why this wrapper method exists
+	return (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(n, uint32(libvirt.NetworkSectionIPDhcpHost), uint32(libvirt.NetworkUpdateCommandAddLast), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
 }
 
 // Update a static host from the network
@@ -99,10 +98,9 @@ func updateHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name strin
 	log.Printf("Updating host with XML:\n%s", xmlDesc)
 	// From https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
 	// Update live and config for hosts to make update permanent across reboots
-	// NOTE `command` and `section` params are reversed now and will need to be put back in order when fix flows through
-	// history: https://listman.redhat.com/archives/libvir-list/2021-March/msg00054.html
-	// merged fix: https://listman.redhat.com/archives/libvir-list/2021-March/msg00758.html
-	return virConn.NetworkUpdate(n, uint32(libvirt.NetworkSectionIPDhcpHost), uint32(libvirt.NetworkUpdateCommandModify), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
+	//
+	// See networkUpdateWorkAroundLibvirt for more information about why this wrapper method exists
+	return (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(n, uint32(libvirt.NetworkSectionIPDhcpHost), uint32(libvirt.NetworkUpdateCommandModify), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
 }
 
 // Get the network index of the target network
