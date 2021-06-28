@@ -1246,7 +1246,7 @@ func createTempBlockDev(devname string) (string, string, error) {
 func createNvramFile(t *testing.T) (string, error) {
 	// size of an accepted, valid, nvram backing store
 	NVRAMDummyBuffer := make([]byte, 131072)
-	file, err := ioutil.TempFile(t.TempDir(), "nvram")
+	file, err := ioutil.TempFile("", "nvram")
 	if err != nil {
 		return "", err
 	}
@@ -1266,6 +1266,7 @@ func TestAccLibvirtDomainFirmware(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer os.Remove(NVRAMPath)
 
 	firmware := "/usr/share/qemu/ovmf-x86_64-code.bin"
 	if _, err := os.Stat(firmware); os.IsNotExist(err) {
