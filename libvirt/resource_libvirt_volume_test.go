@@ -3,6 +3,7 @@ package libvirt
 import (
 	"encoding/xml"
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -304,7 +305,7 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
+	randomPoolPath := t.TempDir()
 
 	fws := newFileWebServer(t)
 	fws.Start()
@@ -315,6 +316,7 @@ func TestAccLibvirtVolume_DownloadFromSource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer os.Remove(tmpfile.Name())
 	defer tmpfile.Close()
 
 	config := fmt.Sprintf(`
