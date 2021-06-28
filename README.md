@@ -43,39 +43,18 @@ What is *NOT* in scope:
 * To support every advanced feature [libvirt](https://libvirt.org/) supports
 
   This would make the mapping from terraform complicated and not maintanable. See the [How to contribute](CONTRIBUTING.md) section to understand how to approach new features.
-  
-## Downloading
 
-Builds for openSUSE, Ubuntu, and Fedora are created with openSUSE's [OBS](https://build.opensuse.org). The build definitions are available for both the [stable](https://build.opensuse.org/package/show/systemsmanagement:terraform/terraform-provider-libvirt) and [master](https://build.opensuse.org/package/show/systemsmanagement:terraform:unstable/terraform-provider-libvirt) branches.
+## Getting the libvirt provider
 
-## Using published binaries/builds
+The provide is available via the [Terraform Registry](https://registry.terraform.io/providers/dmacvicar/libvirt/latest).
 
-* *Stable releases*: Head to the [releases section](https://github.com/dmacvicar/terraform-provider-libvirt/releases) and download the latest stable release build for your distribution.
-* *git master builds*: Head to the [download area of the OBS project](https://download.opensuse.org/repositories/systemsmanagement:/terraform:/unstable/) and download the build for your distribution.
-
-## Using packages
-
-Follow the instructions for your distribution:
-
-* [Packages for stable releases](https://software.opensuse.org/download/package?project=systemsmanagement:terraform&package=terraform-provider-libvirt)
-* [Packages for current git master](https://software.opensuse.org/download/package?project=systemsmanagement:terraform:unstable&package=terraform-provider-libvirt)
+You can also manually download it from the [releases section](https://github.com/dmacvicar/terraform-provider-libvirt/releases) on Github
 
 ## Building from source
 
 ### Requirements
 
--	[Terraform](https://www.terraform.io/downloads.html)
--	[Go](https://golang.org/doc/install) (to build the provider plugin)
--	[libvirt](https://libvirt.org/downloads.html) 1.2.14 or newer development headers
--	`cgo` is required by the [libvirt-go](https://github.com/libvirt/libvirt-go) package. `export CGO_ENABLED="1"`
-
-
-This project uses [go modules](https://github.com/golang/go/wiki/Modules) to declare its dependencies.
-
-Ensure you have the latest version of Go installed on your system, terraform usually
-takes advantage of features available only inside of the latest stable release.
-
-You also need the libvirt-dev(el) package installed.
+-	[Go](https://golang.org/doc/install) is required for building.
 
 ### Building The Provider
 
@@ -87,28 +66,12 @@ make
 
 The binary will be called `terraform-provider-libvirt`.
 
-#### Windows
-
-To build it on Windows (64bit) one can use MinGW64 (http://www.msys2.org/)
-
-Install Golang on Windows  
-Clone terraform-provider-libvirt repository  
-Open MinGW64 Console
-```console
-pacman -S mingw-w64-x86_64-libvirt
-export PATH=$PATH:/c/Go/bin
-pacman -S mingw-w64-x86_64-pkg-config
-pacman -S mingw-w64-x86_64-glib2
-pacman -S mingw-w64-x86_64-dbus-glib
-pacman -S mingw-w64-x86_64-libssh
-pacman -S mingw-w64-x86_64-yajl
-go install
-```
-
 # Installing
 
 *  Check that libvirt daemon 1.2.14 or newer is running on the hypervisor (`virsh version --daemon`)
+*  [Terraform](https://www.terraform.io/downloads.html)
 * `mkisofs` is required to use the [CloudInit](website/docs/r/cloudinit.html.markdown)
+* `xsltproc` is required to transform generated libvirt XML
 
 [Copied from the Terraform documentation](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins):
 
@@ -198,7 +161,7 @@ Be aware that this variables may be subject to change again in future versions.
 
 ## Authors
 
-* Duncan Mac-Vicar P. <dmacvicar@suse.de>
+* Duncan Mac-Vicar P. <duncan@mac-vicar.eu>
 
 See also the list of [contributors](https://github.com/dmacvicar/terraform-provider-libvirt/graphs/contributors) who participated in this project.
 
