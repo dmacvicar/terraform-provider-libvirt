@@ -42,19 +42,19 @@ func TestNewImage(t *testing.T) {
 	for _, fixture := range fixtures {
 		localPath := filepath.Join(testdata, fixture.Name)
 
-		var fileUrlStr string
+		var fileURLStr string
 		if runtime.GOOS == "windows" {
-			fileUrlStr = "file:///" + localPath
+			fileURLStr = "file:///" + localPath
 		} else {
-			fileUrlStr = "file://" + localPath
+			fileURLStr = "file://" + localPath
 		}
 
-		httpUrlStr, err := fws.AddFile(localPath)
+		httpURLStr, err := fws.AddFile(localPath)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		httpUrl, err := url.Parse(httpUrlStr)
+		httpURL, err := url.Parse(httpURLStr)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -65,8 +65,8 @@ func TestNewImage(t *testing.T) {
 			AsString string
 		}{
 			{localPath, &localImage{path: localPath}, localPath},
-			{fileUrlStr, &localImage{path: localPath}, localPath},
-			{httpUrlStr, &httpImage{url: httpUrl}, httpUrlStr},
+			{fileURLStr, &localImage{path: localPath}, localPath},
+			{httpURLStr, &httpImage{url: httpURL}, httpURLStr},
 		}
 
 		for _, ex := range results {
