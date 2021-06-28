@@ -1250,7 +1250,12 @@ func createNvramFile(t *testing.T) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	file.Chmod(0777)
+
+	err = file.Chmod(0777)
+	if err != nil {
+		return "", err
+	}
+
 	_, err = file.Write(NVRAMDummyBuffer)
 	if err != nil {
 		return "", err
