@@ -44,52 +44,40 @@ What is *NOT* in scope:
 
   This would make the mapping from terraform complicated and not maintanable. See the [How to contribute](CONTRIBUTING.md) section to understand how to approach new features.
 
-## Getting the libvirt provider
+## Getting started
 
-The provide is available via the [Terraform Registry](https://registry.terraform.io/providers/dmacvicar/libvirt/latest).
+The provide is available for auto-installation from the [Terraform Registry](https://registry.terraform.io/providers/dmacvicar/libvirt/latest).
 
-You can also manually download it from the [releases section](https://github.com/dmacvicar/terraform-provider-libvirt/releases) on Github
+In your `main.tf` file, specify the version you want to use:
 
-## Building from source
 
-### Requirements
+```hcl
+terraform {
+  required_providers {
+    libvirt = {
+      source = "dmacvicar/libvirt"
+    }
+  }
+}
 
--	[Go](https://golang.org/doc/install) is required for building.
+provider "libvirt" {
+  # Configuration options
+}
+```
 
-### Building The Provider
+And now run terraform init:
 
 ```
-git clone https://github.com/dmacvicar/terraform-provider-libvirt.git
-cd terraform-provider-libvirt
-make
+$ terraform init
 ```
 
-The binary will be called `terraform-provider-libvirt`.
-
-# Installing
-
-*  Check that libvirt daemon 1.2.14 or newer is running on the hypervisor (`virsh version --daemon`)
-*  [Terraform](https://www.terraform.io/downloads.html)
-* `mkisofs` is required to use the [CloudInit](website/docs/r/cloudinit.html.markdown)
-* `xsltproc` is required to transform generated libvirt XML
-
-[Copied from the Terraform documentation](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins):
-
-At present Terraform can automatically install only the providers distributed by HashiCorp. Third-party providers can be manually installed by placing their plugin executables in one of the following locations depending on the host operating system:
-
-> On Linux and unix systems, in the sub-path `.terraform.d/plugins` in your user's home directory.
-
-> On Windows, in the sub-path `terraform.d/plugins` beneath your user's "Application Data" directory.
-
-terraform init will search this directory for additional plugins during plugin initialization.
-
-## Using the provider
+### Creating your first virtual machine
 
 Here is an example that will setup the following:
 
 + A virtual server resource
 
-(create this as libvirt.tf and run terraform commands from this directory):
+(create this as main.tf and run terraform commands from this directory):
 ```hcl
 provider "libvirt" {
     uri = "qemu:///system"
@@ -117,10 +105,25 @@ $ terraform destroy
 
 Look at more advanced examples [here](examples/)
 
+## Manual installation
+
+You can also manually download the provider from the [releases section](https://github.com/dmacvicar/terraform-provider-libvirt/releases) on Github. To install it, refer to the [Terraform documentation](https://www.terraform.io/docs/cli/config/config-file.html#provider-installation).
+
+## Building from source
+
+-	[Go](https://golang.org/doc/install) is required for building.
+
+```
+git clone https://github.com/dmacvicar/terraform-provider-libvirt.git
+cd terraform-provider-libvirt
+make
+```
+
+The binary will be called `terraform-provider-libvirt`.
+
 ### Using multiple hypervisors / provider instances
 
 You can target different libvirt hosts instantiating the [provider multiple times](https://www.terraform.io/docs/configuration/providers.html#multiple-provider-instances). [Example](examples/v0.12/multiple).
-
 
 ### Using qemu-agent
 
