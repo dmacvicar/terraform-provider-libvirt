@@ -133,7 +133,7 @@ func updateOrAddHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name 
 	// if we can't parse the network to xml for some reason
 	// we will return the default '-1' value.
 	xmlIdx, err := getNetworkIdx(&xmlNet, ip)
-	if err == nil {
+	if err != nil {
 		log.Printf("Error during detecting network index: %s\nUsing default value: %d", err, xmlIdx)
 	}
 
