@@ -100,7 +100,7 @@ func updateHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name strin
 	// Update live and config for hosts to make update permanent across reboots
 	//
 	// See networkUpdateWorkAroundLibvirt for more information about why this wrapper method exists
-	return (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(n, uint32(libvirt.NetworkSectionIPDhcpHost), uint32(libvirt.NetworkUpdateCommandModify), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
+	return (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(n, uint32(libvirt.NetworkUpdateCommandModify), uint32(libvirt.NetworkSectionIPDhcpHost), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
 }
 
 // Get the network index of the target network
