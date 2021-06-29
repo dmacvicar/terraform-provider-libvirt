@@ -19,6 +19,7 @@ const (
 	netModeRoute    = "route"
 	netModeBridge   = "bridge"
 	dnsPrefix       = "dns.0"
+	dhcpPrefix      = "dhcp"
 )
 
 // a libvirt network resource
@@ -219,6 +220,27 @@ func resourceLibvirtNetwork() *schema.Resource {
 							Optional: true,
 							Required: false,
 						},
+						"host": {
+							Type:     schema.TypeList,
+							ForceNew: false,
+							Optional: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"ip": {
+										Type:     schema.TypeString,
+										Optional: true,
+									},
+									"name": {
+										Type:     schema.TypeString,
+										Optional: true,
+									},
+									"mac": {
+										Type:     schema.TypeString,
+										Optional: true,
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -353,6 +375,12 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error updating DNS hosts for network %s: %s", network.Name, err)
 	}
 
+	// FIXME assuming only one dhcp address range can be active
+	err = updateDHCPHosts(d, 0, network)
+	if err != nil {
+		return fmt.Errorf("Error updating DHCP hosts for network %s: %s", networkName, err)
+	}
+
 	// detect changes in the bridge
 	if d.HasChange("bridge") {
 		networkBridge := getBridgeFromResource(d)
@@ -411,6 +439,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 
 		// if addresses are given set dhcp for these
 		ips, err := getIPsFromResource(d)
+		log.Printf("[DEBUG] got these ips %#v\n", ips[0].DHCP)
 		if err != nil {
 			return fmt.Errorf("Could not set DHCP from adresses '%s'", err)
 		}
