@@ -10,7 +10,7 @@ ___
 This is a terraform provider that lets you provision
 servers on a [libvirt](https://libvirt.org/) host via [Terraform](https://terraform.io/).
 
-# Introduction & Goals
+## Introduction & Goals
 
 This project exists:
 
@@ -26,7 +26,7 @@ What is *NOT* in scope:
 
 ## Getting started
 
-The provide is available for auto-installation from the [Terraform Registry](https://registry.terraform.io/providers/dmacvicar/libvirt/latest).
+The provider is available for auto-installation from the [Terraform Registry](https://registry.terraform.io/providers/dmacvicar/libvirt/latest).
 
 In your `main.tf` file, specify the version you want to use:
 
