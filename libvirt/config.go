@@ -5,8 +5,8 @@ import (
 	"log"
 	"sync"
 
-	uri "github.com/dmacvicar/terraform-provider-libvirt/libvirt/uri"
 	libvirt "github.com/digitalocean/go-libvirt"
+	uri "github.com/dmacvicar/terraform-provider-libvirt/libvirt/uri"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/mutexkv"
 )
 
