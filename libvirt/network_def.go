@@ -89,7 +89,7 @@ func addHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, 
 	// Update live and config for hosts to make update permanent across reboots
 	//
 	// See networkUpdateWorkAroundLibvirt for more information about why this wrapper method exists
-	return (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(n, uint32(libvirt.NetworkSectionIPDhcpHost), uint32(libvirt.NetworkUpdateCommandAddLast), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
+	return (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(n, uint32(libvirt.NetworkUpdateCommandAddLast), uint32(libvirt.NetworkSectionIPDhcpHost), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
 }
 
 // Update a static host from the network
