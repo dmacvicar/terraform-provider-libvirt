@@ -70,7 +70,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
-				ForceNew: false,
+				ForceNew: true,
 			},
 			"mtu": {
 				Type:     schema.TypeInt,
@@ -351,27 +351,6 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 	err = updateDNSHosts(d, meta, network)
 	if err != nil {
 		return fmt.Errorf("Error updating DNS hosts for network %s: %s", network.Name, err)
-	}
-
-	// detect changes in the bridge
-	if d.HasChange("bridge") {
-		networkBridge := getBridgeFromResource(d)
-
-		data, err := xmlMarshallIndented(networkBridge)
-		if err != nil {
-			return fmt.Errorf("Error serializing update for network %s: %s", network.Name, err)
-		}
-
-		log.Printf("[DEBUG] Updating bridge for libvirt network '%s' with XML: %s", network.Name, networkBridge.Name)
-
-		// See networkUpdateWorkAroundLibvirt for more information about why this wrapper method exists
-		err = (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(network, uint32(libvirt.NetworkSectionBridge), uint32(libvirt.NetworkUpdateCommandModify), -1,
-			data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
-		if err != nil {
-			return fmt.Errorf("Error when updating bridge in %s: %s", network.Name, err)
-		}
-
-		d.SetPartial("bridge")
 	}
 
 	d.Partial(false)
