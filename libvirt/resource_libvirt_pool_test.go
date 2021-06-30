@@ -58,6 +58,85 @@ func testAccCheckLibvirtPoolDoesNotExists(n string, pool *libvirt.StoragePool) r
 	}
 }
 
+func TestAccLibvirtPool_Import(t *testing.T) {
+	var pool libvirt.StoragePool
+	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	poolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtPoolDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+                    resource "libvirt_pool" "%s" {
+                            name = "%s"
+                            type = "dir"
+                            path = "%s"
+					}`, randomPoolResource, randomPoolName, poolPath),
+				Check:   testAccCheckLibvirtPoolExists("libvirt_pool."+randomPoolResource, &pool),
+				Destroy: false,
+			},
+			{
+				ResourceName: "libvirt_pool." + randomPoolResource,
+				ImportState:  true,
+				ImportStateCheck: func(instanceState []*terraform.InstanceState) error {
+					// check all instance state imported with same assert
+					for i, f := range instanceState {
+						if err := composeTestImportStateCheckFunc(
+							testImportStateCheckResourceAttr("libvirt_pool."+randomPoolResource, "name", randomPoolName),
+							testImportStateCheckResourceAttr("libvirt_pool."+randomPoolResource, "type", "dir"),
+							testImportStateCheckResourceAttr("libvirt_pool."+randomPoolResource, "path", poolPath),
+						)(f); err != nil {
+							return fmt.Errorf("Check InstanceState n°%d / %d error: %s", i+1, len(instanceState), err)
+						}
+					}
+
+					return nil
+				},
+			},
+		},
+	})
+}
+
+// ImportStateCheckFunc one import instance state check function
+// differ from github.com/hashicorp/terraform-plugin-sdk/helper/resource.ImportStateCheckFunc
+// which is multiple import Instance State check function
+type ImportStateCheckFunc func(is *terraform.InstanceState) error
+
+// composeTestImportStateCheckFunc compose multiple InstanceState check
+func composeTestImportStateCheckFunc(fs ...ImportStateCheckFunc) ImportStateCheckFunc {
+	return func(is *terraform.InstanceState) error {
+		for i, f := range fs {
+			if err := f(is); err != nil {
+				return fmt.Errorf("Check %d/%d error: %s", i+1, len(fs), err)
+			}
+		}
+
+		return nil
+	}
+}
+
+// testImportStateCheckResourceAttr assert if a terraform.InstanceState as attribute name[key] with value
+func testImportStateCheckResourceAttr(name string, key string, value string) ImportStateCheckFunc {
+	return func(instanceState *terraform.InstanceState) error {
+		if v, ok := instanceState.Attributes[key]; !ok || v != value {
+			if !ok {
+				return fmt.Errorf("%s: Attribute '%s' not found", name, key)
+			}
+
+			return fmt.Errorf(
+				"%s: Attribute '%s' expected %#v, got %#v",
+				name,
+				key,
+				value,
+				v)
+		}
+		return nil
+	}
+}
+
 func TestAccLibvirtPool_Basic(t *testing.T) {
 	var pool libvirt.StoragePool
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
