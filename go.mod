@@ -4,7 +4,7 @@ require (
 	github.com/c4milo/gotoolkit v0.0.0-20170704181456-e37eeabad07e // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1
-	github.com/digitalocean/go-libvirt v0.0.0-20210524223541-696696fc24e0
+	github.com/digitalocean/go-libvirt v0.0.0-20210615174804-eaff166426e3
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/terraform-plugin-sdk v1.9.0
