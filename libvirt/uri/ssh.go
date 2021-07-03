@@ -95,7 +95,7 @@ func (curi *ConnectionURI) dialSSH() (net.Conn, error) {
 		if err != nil {
 			return nil, err
 		}
-		username = u.Name
+		username = u.Username
 	}
 
 	cfg := ssh.ClientConfig{
