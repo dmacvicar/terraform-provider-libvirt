@@ -72,7 +72,6 @@ func (curi *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 	return result
 }
 
-// TODO handle known_hosts_verify, no_verify and sshauth URI options
 func (curi *ConnectionURI) dialSSH() (net.Conn, error) {
 	authMethods := curi.parseAuthMethods()
 	if len(authMethods) < 1 {
@@ -81,12 +80,24 @@ func (curi *ConnectionURI) dialSSH() (net.Conn, error) {
 	q := curi.Query()
 
 	knownHostsPath := q.Get("knownhosts")
+	knownHostsVerify := q.Get("known_hosts_verify")
+	doVerify := q.Get("no_verify") == ""
+
+	if knownHostsVerify == "ignore" {
+		doVerify = false
+	}
+
 	if knownHostsPath == "" {
 		knownHostsPath = defaultSSHKnownHostsPath
 	}
-	hostKeyCallback, err := knownhosts.New(os.ExpandEnv(knownHostsPath))
-	if err != nil {
-		return nil, fmt.Errorf("failed to read ssh known hosts: %w", err)
+
+	hostKeyCallback := ssh.InsecureIgnoreHostKey()
+	if doVerify {
+		cb, err := knownhosts.New(os.ExpandEnv(knownHostsPath))
+		if err != nil {
+			return nil, fmt.Errorf("failed to read ssh known hosts: %w", err)
+		}
+		hostKeyCallback = cb
 	}
 
 	username := curi.User.Username()
