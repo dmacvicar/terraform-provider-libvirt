@@ -468,6 +468,14 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 		if d.Get(prefix + ".scsi").(bool) {
 			disk.Target.Bus = "scsi"
 			scsiDisk = true
+			tmpInt := uint(0)
+			tmpIdx := uint(i)
+			disk.Address = &libvirtxml.DomainAddress{Drive: &libvirtxml.DomainAddressDrive{
+				Controller: &tmpInt,
+				Bus:        &tmpInt,
+				Target:     &tmpInt,
+				Unit:       &tmpIdx,
+			}}
 			if wwn, ok := d.GetOk(prefix + ".wwn"); ok {
 				disk.WWN = wwn.(string)
 			} else {
@@ -593,8 +601,10 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 
 	log.Printf("[DEBUG] scsiDisk: %t", scsiDisk)
 	if scsiDisk {
+		tmpIdx := uint(0)
 		domainDef.Devices.Controllers = append(domainDef.Devices.Controllers,
 			libvirtxml.DomainController{
+				Index: &tmpIdx,
 				Type:  "scsi",
 				Model: "virtio-scsi",
 			})
