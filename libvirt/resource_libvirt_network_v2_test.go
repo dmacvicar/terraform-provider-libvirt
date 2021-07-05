@@ -25,6 +25,7 @@ func TestAccLibvirtNetworkV2_Basic(t *testing.T) {
 					name = "%s"
 					domain {
                       name = "k8s.local"
+                      local_only = true
                     }
 					ip {
 					  address = "192.168.179.0"
@@ -55,6 +56,10 @@ func TestAccLibvirtNetworkV2_Basic(t *testing.T) {
                     }
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(randomNetworkResourceFull,
+						"domain.0.name", "k8s.local"),
+					resource.TestCheckResourceAttr(randomNetworkResourceFull,
+						"domain.0.local_only", "true"),
 					resource.TestCheckResourceAttr(randomNetworkResourceFull,
 						"ip.0.address", "192.168.179.0"),
 					resource.TestCheckResourceAttr(randomNetworkResourceFull,

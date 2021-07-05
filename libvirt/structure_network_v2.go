@@ -52,6 +52,10 @@ func flattenNetworkV2Domain(domain *libvirtxml.NetworkDomain) interface{} {
 	} else {
 		// no-op, we don't even set the value
 	}
+
+	if domain.Name != "" {
+		mDomain["name"] = domain.Name
+	}
 	return mDomain
 }
 
