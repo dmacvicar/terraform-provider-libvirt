@@ -16,6 +16,22 @@ func flattenNetworkV2DNSForwarders(list []libvirtxml.NetworkDNSForwarder) []inte
 	return forwarders
 }
 
+func flattenNetworkV2DNSHosts(list []libvirtxml.NetworkDNSHost) []interface{} {
+	result := make([]interface{}, 0, len(list))
+	for _, host := range list {
+		mHost := make(map[string]interface{})
+		if host.IP != "" {
+			mHost["ip"] = host.IP
+		}
+		// TODO we support a single hostname for now
+		if len(host.Hostnames) > 0  {
+			mHost["hostname"] = host.Hostnames[0]
+		}
+		result = append(result, mHost)
+	}
+	return result
+}
+
 func flattenNetworkV2IPs(list []libvirtxml.NetworkIP) []interface{} {
 	result := make([]interface{}, 0, len(list))
 	for _, ip := range list {
@@ -146,7 +162,11 @@ func flattenNetworkV2DNS(spec *libvirtxml.NetworkDNS) []interface{} {
 		// no-op. Use the libvirt default, without setting it in the config
 	}
 
-	// TODO txt host srv
+	if len(spec.Host) > 0 {
+		mDNS["host"] = flattenNetworkV2DNSHosts(spec.Host)
+	}
+
+	// TODO txt srv
 	return flattenAsArray(mDNS)
 }
 

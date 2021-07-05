@@ -149,7 +149,7 @@ func resourceLibvirtNetworkV2() *schema.Resource {
 								},
 							},
 						},
-						"hosts": {
+						"host": {
 							Type:     schema.TypeList,
 							ForceNew: false,
 							Optional: true,
@@ -162,6 +162,7 @@ func resourceLibvirtNetworkV2() *schema.Resource {
 										// a rendered dns_host template.
 										Optional: true,
 									},
+									// TODO make this a list?
 									"hostname": {
 										Type: schema.TypeString,
 										// This should be required, but Terraform does validation too early

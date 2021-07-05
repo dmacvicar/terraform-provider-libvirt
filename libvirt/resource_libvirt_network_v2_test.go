@@ -47,6 +47,14 @@ func TestAccLibvirtNetworkV2_Basic(t *testing.T) {
                         domain = "foo.bar"
                         addr = "154.34.77.11"
                       }
+                      host {
+                        ip = "1.3.4.5"
+                        hostname = "bim.bam"
+                      }
+                      host {
+                        ip = "1.3.4.6"
+                        hostname = "bim.bom"
+                      }
                     }
 
                     bridge {
@@ -71,6 +79,14 @@ func TestAccLibvirtNetworkV2_Basic(t *testing.T) {
 						"dns.0.forwarder.0.domain", "foo.bar"),
 					resource.TestCheckResourceAttr(randomNetworkResourceFull,
 						"dns.0.forwarder.0.addr", "154.34.77.11"),
+					resource.TestCheckResourceAttr(randomNetworkResourceFull,
+						"dns.0.host.0.ip", "1.3.4.5"),
+					resource.TestCheckResourceAttr(randomNetworkResourceFull,
+						"dns.0.host.0.hostname", "bim.bam"),
+					resource.TestCheckResourceAttr(randomNetworkResourceFull,
+						"dns.0.host.1.ip", "1.3.4.6"),
+					resource.TestCheckResourceAttr(randomNetworkResourceFull,
+						"dns.0.host.1.hostname", "bim.bom"),
 					resource.TestCheckResourceAttr(randomNetworkResourceFull,
 						"ip.0.address", "192.168.179.0"),
 					resource.TestCheckResourceAttr(randomNetworkResourceFull,
