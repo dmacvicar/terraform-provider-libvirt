@@ -2,7 +2,6 @@ package libvirt
 
 import (
 	"net"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
@@ -132,18 +131,22 @@ func flattenNetworkV2Routes(list []libvirtxml.NetworkRoute) []interface{} {
 	return result
 }
 
-func flattenNetworkV2DNS(spec *libvirtxml.NetworkDNS, specDomain *libvirtxml.NetworkDomain) []interface{} {
-	if spec == nil {
-		return []interface{}{}
+func flattenNetworkV2DNS(spec *libvirtxml.NetworkDNS) []interface{} {
+	mDNS := make(map[string]interface{})
+
+	if len(spec.Forwarders) > 0 {
+		mDNS["forwarder"] = flattenNetworkV2DNSForwarders(spec.Forwarders)
 	}
 
-	mDNS := map[string]interface{}{}
-	mDNS["forwarders"] = flattenNetworkV2DNSForwarders(spec.Forwarders)
-
-	if specDomain != nil {
-		mDNS["local_only"] = (strings.ToLower(specDomain.LocalOnly) == "yes")
+	if spec.Enable == "yes" {
+		mDNS["enable"] = true
+	} else if spec.Enable == "no" {
+		mDNS["enable"] = false
+	} else {
+		// no-op. Use the libvirt default, without setting it in the config
 	}
 
+	// TODO txt host srv
 	return flattenAsArray(mDNS)
 }
 
@@ -241,6 +244,45 @@ func expandNetworkV2Domain(configured []interface{}) *libvirtxml.NetworkDomain {
 		}
 	}
 	return &domain
+}
+
+func expandNetworkV2DNS(configured []interface{}) *libvirtxml.NetworkDNS {
+	if len(configured) == 0 {
+		return nil
+	}
+	data := configured[0].(map[string]interface{})
+
+	dns := libvirtxml.NetworkDNS{}
+	if v, ok := data["enable"]; ok {
+		if v.(bool) {
+			dns.Enable = "yes"
+		} else {
+			dns.Enable = "no"
+		}
+	}
+
+	if v, ok := data["forwarder"]; ok {
+		dns.Forwarders = expandNetworkV2DNSForwarders(v.([]interface{}))
+
+	}
+	return &dns
+}
+
+func expandNetworkV2DNSForwarders(configured []interface{}) []libvirtxml.NetworkDNSForwarder {
+	forwarders := make([]libvirtxml.NetworkDNSForwarder, 0, len(configured))
+
+	for _, raw := range configured {
+		data := raw.(map[string]interface{})
+		forwarder := libvirtxml.NetworkDNSForwarder{}
+		if v, ok := data["addr"]; ok {
+			forwarder.Addr = v.(string)
+		}
+		if v, ok := data["domain"]; ok {
+			forwarder.Domain = v.(string)
+		}
+		forwarders = append(forwarders, forwarder)
+	}
+	return forwarders
 }
 
 func expandNetworkV2Forward(configured []interface{}) *libvirtxml.NetworkForward {

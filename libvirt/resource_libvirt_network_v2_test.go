@@ -42,6 +42,13 @@ func TestAccLibvirtNetworkV2_Basic(t *testing.T) {
                       }
 					}
 
+                    dns {
+                      forwarder {
+                        domain = "foo.bar"
+                        addr = "154.34.77.11"
+                      }
+                    }
+
                     bridge {
                       name = "vbr-0"
                     }
@@ -60,6 +67,10 @@ func TestAccLibvirtNetworkV2_Basic(t *testing.T) {
 						"domain.0.name", "k8s.local"),
 					resource.TestCheckResourceAttr(randomNetworkResourceFull,
 						"domain.0.local_only", "true"),
+					resource.TestCheckResourceAttr(randomNetworkResourceFull,
+						"dns.0.forwarder.0.domain", "foo.bar"),
+					resource.TestCheckResourceAttr(randomNetworkResourceFull,
+						"dns.0.forwarder.0.addr", "154.34.77.11"),
 					resource.TestCheckResourceAttr(randomNetworkResourceFull,
 						"ip.0.address", "192.168.179.0"),
 					resource.TestCheckResourceAttr(randomNetworkResourceFull,

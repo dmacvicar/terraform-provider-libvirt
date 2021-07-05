@@ -3,6 +3,7 @@ package libvirt
 import (
 	"fmt"
 	"log"
+	"net"
 	"time"
 
 	libvirt "github.com/digitalocean/go-libvirt"
@@ -73,32 +74,25 @@ func resourceLibvirtNetworkV2() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"enabled": {
 							Type:     schema.TypeBool,
-							Default:  true,
 							Optional: true,
-							Required: false,
 						},
-						"local_only": {
-							Type:     schema.TypeBool,
-							Default:  false,
-							Optional: true,
-							Required: false,
-						},
-						"forwarders": {
+						"forwarder": {
 							Type:     schema.TypeList,
 							Optional: true,
 							ForceNew: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"address": {
+									"addr": {
 										Type:     schema.TypeString,
 										Optional: true,
-										Required: false,
 										ForceNew: true,
+										ValidateFunc:     validation.IsIPAddress,
+										StateFunc:        networkAddressStateFunc,
+										DiffSuppressFunc: networkAddressDiffSuppressFunc,
 									},
 									"domain": {
 										Type:     schema.TypeString,
 										Optional: true,
-										Required: false,
 										ForceNew: true,
 									},
 								},
@@ -311,6 +305,7 @@ func resourceLibvirtNetworkV2() *schema.Resource {
 						"prefix": {
 							Type:     schema.TypeInt,
 							Optional: true,
+							ValidateFunc: validation.IntBetween(1, net.IPv6len * 8),
 						},
 					},
 				},
