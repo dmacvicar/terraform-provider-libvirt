@@ -154,27 +154,30 @@ func domainGetIfacesInfo(virConn *libvirt.Libvirt, domain libvirt.Domain, rd *sc
 		return []libvirt.DomainInterface{}, nil
 	}
 
+	// setup source of interface address information
+	var addrsrc uint32
 	qemuAgentEnabled := rd.Get("qemu_agent").(bool)
 	if qemuAgentEnabled {
-		log.Print("[DEBUG] Not implemented")
+		addrsrc = uint32(libvirt.DomainInterfaceAddressesSrcAgent)
+		log.Printf("[DEBUG] qemu-agent used to query interface info")
 	} else {
-		log.Printf("[DEBUG] qemu-agent is not used")
+		addrsrc = uint32(libvirt.DomainInterfaceAddressesSrcLease)
+		log.Printf("[DEBUG] Obtain interface info from dhcp lease file")
 	}
-	var interfaces []libvirt.DomainInterface
 
 	// get all the interfaces attached to libvirt networks
-	log.Print("[DEBUG] no interfaces could be obtained with qemu-agent: falling back to the libvirt API")
-
-	interfaces, err = virConn.DomainInterfaceAddresses(domain, uint32(libvirt.DomainInterfaceAddressesSrcLease), 0)
+	var interfaces []libvirt.DomainInterface
+	interfaces, err = virConn.DomainInterfaceAddresses(domain, addrsrc, 0)
 	if err != nil {
 		switch err.(type) {
 		default:
 			return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
 		case libvirt.Error:
 			virErr := err.(libvirt.Error)
-			// FIXME ErrorDomain.fromQemu not available in libvirt.Error
-			// || libvirt.ErrorvirErr.Domain != libvirt.FROM_QEMU {
-			if virErr.Code != uint32(libvirt.ErrOperationInvalid) {
+
+			// Agent can be unresponsive if being installed/setup
+			if addrsrc == uint32(libvirt.DomainInterfaceAddressesSrcLease) && virErr.Code != uint32(libvirt.ErrOperationInvalid) ||
+				addrsrc == uint32(libvirt.DomainInterfaceAddressesSrcAgent) && virErr.Code != uint32(libvirt.ErrAgentUnresponsive) {
 				return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
 			}
 		}
