@@ -7,6 +7,7 @@ require (
 	github.com/digitalocean/go-libvirt v0.0.0-20210615174804-eaff166426e3
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/google/uuid v1.1.2
+	github.com/hashicorp/go-getter v1.4.0 // indirect
 	github.com/hashicorp/terraform-plugin-sdk v1.9.0
 	github.com/hooklift/assert v0.0.0-20170704181755-9d1defd6d214 // indirect
 	github.com/hooklift/iso9660 v1.0.0

@@ -7,11 +7,13 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	libvirt "github.com/digitalocean/go-libvirt"
+	getter "github.com/hashicorp/go-getter"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
@@ -643,6 +645,113 @@ func TestAccLibvirtDomain_NetworkInterface(t *testing.T) {
 						"libvirt_domain."+randomDomainName, "network_interface.1.mac", "52:54:00:A9:F5:19"),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomDomainName, "network_interface.1.hostname", "myhost"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtDomain_NetworkInterfaceQemuGuestAgentStaticIP(t *testing.T) {
+	skipIfPrivilegedDisabled(t)
+
+	var domain libvirt.Domain
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
+	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomNetworkName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+
+	currentDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal("Unexpected error:", err)
+	}
+
+	testvmimg := "alpine-qemu-agent-static-ip.qcow2"
+	sha256checksum := "210185c04b9350c4c2f654ee021cd034a67e42ae42b0c0ae1f04cf8989ac0d50"
+	urldir := "https://github.com/maseman/testvm-tflibvirt/releases/download/v1.0.0"
+
+	urlstr := fmt.Sprintf(`%s/%s?checksum=sha256:%s`, urldir, testvmimg, sha256checksum)
+	dstdir := path.Join(currentDir, "testdata")
+	testvmimgfullpath := path.Join(dstdir, testvmimg)
+
+	err = getter.GetAny(dstdir, urlstr)
+
+	if err != nil {
+		// cleanup if necessary
+		_, errstat := os.Stat(testvmimgfullpath)
+		if errstat == nil {
+			os.Remove(testvmimgfullpath)
+		}
+
+		t.Fatal("Download VM image error:", err)
+	}
+
+	var config = fmt.Sprintf(`
+
+	resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+	
+	// Runs alpine with qemu-agent and hard coded static IPv4 address on eth0 192.168.111.111
+	resource "libvirt_volume" "alpine-qga-staticip" {
+		source = "%s"
+		name   = "alpine-qga-staticip"
+        pool   = "${libvirt_pool.%s.name}"
+	}
+
+	resource "libvirt_network" "%s" {
+		name      = "%s"
+		mode      = "none"
+	}
+
+	resource "libvirt_domain" "%s" {
+		name              = "%s"
+		qemu_agent = true
+
+		network_interface  {
+			network_id = "${libvirt_network.%s.id}"
+			hostname       = "myhost"
+			mac            = "52:54:00:A9:F5:21"
+			wait_for_lease = true
+		}
+
+		disk {
+			volume_id = libvirt_volume.alpine-qga-staticip.id
+		}
+
+		console {
+			type        = "pty"
+			target_port = "0"
+			target_type = "serial"
+		}
+
+		console {
+			type        = "pty"
+			target_type = "virtio"
+			target_port = "1"
+		}
+
+	}`, randomPoolName, randomPoolName, randomPoolPath, testvmimgfullpath, randomPoolName, randomNetworkName, randomNetworkName, randomDomainName, randomDomainName, randomNetworkName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:             config,
+				ExpectNonEmptyPlan: false,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "network_interface.0.network_name", randomNetworkName),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "network_interface.0.mac", "52:54:00:A9:F5:21"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "network_interface.0.addresses.0", "192.168.111.111"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "network_interface.0.hostname", "myhost"),
 				),
 			},
 		},
