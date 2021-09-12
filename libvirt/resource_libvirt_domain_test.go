@@ -869,7 +869,7 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 	var config = fmt.Sprintf(`
 	resource "libvirt_domain" "%s" {
 		name = "%s"
-		cpu  = {
+		cpu  {
 			mode = "custom"
 		}
 	}`, randomDomainName, randomDomainName)
@@ -884,7 +884,7 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomDomainName, "cpu.mode", "custom"),
+						"libvirt_domain."+randomDomainName, "cpu.0.mode", "custom"),
 				),
 			},
 		},

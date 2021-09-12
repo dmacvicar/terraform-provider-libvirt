@@ -318,7 +318,8 @@ func resourceLibvirtDomain() *schema.Resource {
 				},
 			},
 			"cpu": {
-				Type:     schema.TypeMap,
+				Type:     schema.TypeList,
+				MaxItems: 1,
 				Optional: true,
 				ForceNew: true,
 				Elem: &schema.Resource{
@@ -449,7 +450,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		domainDef.Name = name.(string)
 	}
 
-	if cpuMode, ok := d.GetOk("cpu.mode"); ok {
+	if cpuMode, ok := d.GetOk("cpu.0.mode"); ok {
 		domainDef.CPU = &libvirtxml.DomainCPU{
 			Mode: cpuMode.(string),
 		}
