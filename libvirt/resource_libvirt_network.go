@@ -482,8 +482,14 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		// an 'broken network". Remove the network in case of failure
 		// see https://github.com/dmacvicar/terraform-provider-libvirt/issues/739
 		// don't handle the error for destroying
-		virConn.NetworkDestroy(network)
-		virConn.NetworkUndefine(network)
+		if err := virConn.NetworkDestroy(network); err != nil {
+			log.Printf("[WARNING] %w", err)
+		}
+
+		if err := virConn.NetworkUndefine(network); err != nil {
+			log.Printf("[WARNING] %w", err)
+		}
+
 		return fmt.Errorf("Error creating libvirt network: %s", err)
 	}
 	id := uuidString(network.UUID)
