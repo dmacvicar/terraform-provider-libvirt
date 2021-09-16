@@ -29,8 +29,9 @@ func waitForNetworkActive(virConn *libvirt.Libvirt, network libvirt.Network) res
 func waitForNetworkDestroyed(virConn *libvirt.Libvirt, uuidStr string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		log.Printf("Waiting for network %s to be destroyed", uuidStr)
-		var uuid libvirt.UUID
-		uuid = parseUUID(uuidStr)
+
+		uuid := parseUUID(uuidStr)
+
 		_, err := virConn.NetworkLookupByUUID(uuid)
 		if err.(libvirt.Error).Code == uint32(libvirt.ErrNoNetwork) {
 			return virConn, "NOT-EXISTS", nil
