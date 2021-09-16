@@ -8,12 +8,13 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func createClientCerts(pkipath string, caCertLoc string, caKeyLoc string) error {
@@ -46,13 +47,28 @@ func createClientCerts(pkipath string, caCertLoc string, caKeyLoc string) error 
 	clientKeyLoc := filepath.Join(pkipath, "clientkey.pem")
 
 	certOut, err := os.Create(clientCertLoc)
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: clientCert})
-	certOut.Close()
+	if err != nil {
+		return err
+	}
+
+	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: clientCert}); err != nil {
+		return err
+	}
+
+	if err := certOut.Close(); err != nil {
+		return err
+	}
 
 	keyOut, err := os.OpenFile(clientKeyLoc, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
-	err = keyOut.Close()
 	if err != nil {
+		return err
+	}
+
+	if err := pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
+		return err
+	}
+
+	if err := keyOut.Close(); err != nil {
 		return err
 	}
 
@@ -85,7 +101,11 @@ func createCACerts(pkipath string) error {
 	if err != nil {
 		return err
 	}
-	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: ca})
+
+	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: ca}); err != nil {
+		return err
+	}
+
 	err = certOut.Close()
 	if err != nil {
 		return err
@@ -96,9 +116,12 @@ func createCACerts(pkipath string) error {
 		return err
 	}
 
-	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
-	err = keyOut.Close()
-	if err != nil {
+
+	if err := pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
+		return err
+	}
+
+	if err := keyOut.Close(); err != nil {
 		return err
 	}
 
