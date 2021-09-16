@@ -158,9 +158,11 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 				PreConfig: func() {
 					client := testAccProvider.Meta().(*Client)
 					if volume.Key == "" {
-						panic(fmt.Errorf("Key is blank"))
+						t.Fatalf("Key is blank")
 					}
-					volumeDelete(client, volume.Key)
+					if err := volumeDelete(client, volume.Key); err != nil {
+						t.Fatal(err)
+					}
 				},
 			},
 		},
