@@ -463,8 +463,8 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 	}
 
 	uuid := parseUUID(d.Id())
-	_, err := virConn.DomainLookupByUUID(uuid)
-	if err != nil {
+
+	if _, err := virConn.DomainLookupByUUID(uuid); err != nil {
 		if libvirt.IsNotFound(err) {
 			return false, nil
 		}
