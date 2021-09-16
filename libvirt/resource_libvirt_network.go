@@ -296,10 +296,9 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 		return false, fmt.Errorf(LibVirtConIsNil)
 	}
 
-	var uuid libvirt.UUID
-	uuid = parseUUID(d.Id())
-	_, err := virConn.NetworkLookupByUUID(uuid)
-	if err != nil {
+	uuid := parseUUID(d.Id())
+
+	if _, err := virConn.NetworkLookupByUUID(uuid); err != nil {
 		// If the network couldn't be found, don't return an error otherwise
 		// Terraform won't create it again.
 		if lverr, ok := err.(libvirt.Error); ok && lverr.Code == uint32(libvirt.ErrNoNetwork) {
@@ -536,8 +535,8 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	var uuid libvirt.UUID
-	uuid = parseUUID(d.Id())
+	uuid := parseUUID(d.Id())
+
 	network, err := virConn.NetworkLookupByUUID(uuid)
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt network: %s", err)
