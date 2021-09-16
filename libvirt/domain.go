@@ -277,7 +277,7 @@ func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, arc
 	return nil
 }
 
-func setVideo(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
+func setVideo(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	prefix := "video.0"
 	if _, ok := d.GetOk(prefix); ok {
 		domainDef.Devices.Videos = append(domainDef.Devices.Videos, libvirtxml.DomainVideo{
@@ -286,8 +286,6 @@ func setVideo(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
 			},
 		})
 	}
-
-	return nil
 }
 
 func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch string) error {
@@ -366,7 +364,7 @@ func setCmdlineArgs(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	domainDef.OS.Cmdline = strings.Join(cmdlineArgs, " ")
 }
 
-func setFirmware(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
+func setFirmware(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	if firmware, ok := d.GetOk("firmware"); ok {
 		firmwareFile := firmware.(string)
 		domainDef.OS.Loader = &libvirtxml.DomainLoader{
@@ -388,8 +386,6 @@ func setFirmware(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
 			}
 		}
 	}
-
-	return nil
 }
 
 func setBootDevices(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
