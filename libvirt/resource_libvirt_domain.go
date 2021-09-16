@@ -669,8 +669,8 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	var uuid libvirt.UUID
-	uuid = parseUUID(d.Id())
+	uuid := parseUUID(d.Id())
+
 	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain by update: %s", err)
@@ -680,6 +680,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return err
 	}
+
 	if !domainRunningNow {
 		err = virConn.DomainCreate(domain)
 		if err != nil {
@@ -720,10 +721,12 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		if d.Get("autostart").(bool) {
 			autoStart = 1
 		}
+
 		err = virConn.DomainSetAutostart(domain, autoStart)
 		if err != nil {
 			return fmt.Errorf("Error setting autostart for domain: %s", err)
 		}
+
 		d.SetPartial("autostart")
 	}
 
