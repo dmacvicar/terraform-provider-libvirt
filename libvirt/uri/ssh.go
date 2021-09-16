@@ -47,7 +47,7 @@ func (curi *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 			conn, err := net.Dial("unix", socket)
 			// Ignore error, we just fall back to another auth method
 			if err != nil {
-				log.Printf("[ERROR] Unable to connect to SSH agent: %w", err)
+				log.Printf("[ERROR] Unable to connect to SSH agent: %v", err)
 				continue
 			}
 			agentClient := agent.NewClient(conn)
