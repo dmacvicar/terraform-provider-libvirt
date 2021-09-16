@@ -1331,10 +1331,6 @@ func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, f
 }
 
 func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, firmware string, template string) {
-	NVRAMPath, err := createNvramFile(t)
-	if err != nil {
-		t.Fatal(err)
-	}
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	var domain libvirt.Domain
 	var config = fmt.Sprintf(`
