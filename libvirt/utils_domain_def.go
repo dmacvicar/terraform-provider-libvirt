@@ -146,7 +146,12 @@ func getHostCapabilities(virConn *libvirt.Libvirt) (libvirtxml.Caps, error) {
 	if err != nil {
 		return caps, err
 	}
-	xml.Unmarshal([]byte(capsXML), &caps)
+
+	err = xml.Unmarshal([]byte(capsXML), &caps)
+	if err != nil {
+		return caps, err
+	}
+
 	log.Printf("[TRACE] Capabilities of host \n %+v", caps)
 	return caps, nil
 }
