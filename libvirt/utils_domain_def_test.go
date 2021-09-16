@@ -1,13 +1,11 @@
 package libvirt
 
 import (
-	"os"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/digitalocean/go-libvirt"
 )
 
 func init() {
@@ -40,17 +38,6 @@ func TestSplitKernelEmptyCmdLine(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-}
-
-func connect(t *testing.T) *libvirt.Libvirt {
-	conn := libvirt.Libvirt{}
-	URI := libvirt.ConnectURI(os.Getenv("LIBVIRT_DEFAULT_URI"))
-	err := conn.ConnectToURI(URI)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return &conn
 }
 
 func TestGetHostArchitecture(t *testing.T) {
