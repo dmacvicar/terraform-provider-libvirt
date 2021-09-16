@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func createClientCerts(pkipath string, caCertLoc string, caKeyLoc string) error {
@@ -140,7 +141,8 @@ func TestNonZeroString(t *testing.T) {
 func TestTLSConfig(t *testing.T) {
 	pkipath := t.TempDir()
 
-	createCACerts(pkipath)
+	err := createCACerts(pkipath)
+	require.NoError(t, err)
 
 	u, err := Parse(fmt.Sprintf("xxx+tls://servername/?no_verify=1&pkipath=%s", pkipath))
 	assert.NoError(t, err)
