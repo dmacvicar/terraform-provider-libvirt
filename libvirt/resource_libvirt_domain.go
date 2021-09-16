@@ -1031,8 +1031,8 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 
 	log.Printf("[DEBUG] Deleting domain %s", d.Id())
 
-	var uuid libvirt.UUID
-	uuid = parseUUID(d.Id())
+	uuid := parseUUID(d.Id())
+
 	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
 		return fmt.Errorf("Error retrieving libvirt domain by delete: %s", err)
