@@ -728,6 +728,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	netIfacesCount := d.Get("network_interface.#").(int)
+
 	for i := 0; i < netIfacesCount; i++ {
 		prefix := fmt.Sprintf("network_interface.%d", i)
 		if d.HasChange(prefix+".hostname") || d.HasChange(prefix+".addresses") || d.HasChange(prefix+".mac") {
@@ -737,8 +738,8 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 				continue
 			}
 
-			var uuid libvirt.UUID
-			uuid = parseUUID(networkUUID.(string))
+			uuid := parseUUID(networkUUID.(string))
+
 			network, err := virConn.NetworkLookupByUUID(uuid)
 			if err != nil {
 				return fmt.Errorf("Can't retrieve network ID %s", networkUUID)
@@ -749,11 +750,14 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 			addresses := d.Get(prefix + ".addresses")
 			for _, addressI := range addresses.([]interface{}) {
 				address := addressI.(string)
+
 				ip := net.ParseIP(address)
 				if ip == nil {
 					return fmt.Errorf("Could not parse addresses '%s'", address)
 				}
+
 				log.Printf("[INFO] Updating IP/MAC/host=%s/%s/%s in '%s' network", ip.String(), mac, hostname, network.Name)
+
 				if err := updateOrAddHost(virConn, network, ip.String(), mac, hostname); err != nil {
 					return err
 				}
@@ -762,7 +766,6 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	d.Partial(false)
-
 	return nil
 }
 
