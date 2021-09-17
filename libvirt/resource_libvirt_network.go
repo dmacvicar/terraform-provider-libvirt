@@ -639,8 +639,7 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 	}
 	log.Printf("[DEBUG] Deleting network ID %s", d.Id())
 
-	var uuid libvirt.UUID
-	uuid = parseUUID(d.Id())
+	uuid := parseUUID(d.Id())
 
 	network, err := virConn.NetworkLookupByUUID(uuid)
 	if err != nil {
