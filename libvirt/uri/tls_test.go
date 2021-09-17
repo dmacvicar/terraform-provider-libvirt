@@ -43,6 +43,9 @@ func createClientCerts(pkipath string, caCertLoc string, caKeyLoc string) error 
 	pub := &priv.PublicKey
 
 	clientCert, err := x509.CreateCertificate(rand.Reader, clientTemplate, ca, pub, chain.PrivateKey)
+	if err != nil {
+		return err
+	}
 
 	clientCertLoc := filepath.Join(pkipath, "clientcert.pem")
 	clientKeyLoc := filepath.Join(pkipath, "clientkey.pem")
