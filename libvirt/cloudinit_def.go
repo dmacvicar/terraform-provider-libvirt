@@ -258,13 +258,13 @@ func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvi
 		// the following filenames need to be like this because in the ios9660 reader
 		// joliet is not supported. https://github.com/hooklift/iso9660/blob/master/README.md#not-supported
 		if file.Name() == "/user_dat." {
-			ci.UserData = fmt.Sprintf("%s", dataBytes)
+			ci.UserData = string(dataBytes)
 		}
 		if file.Name() == "/meta_dat." {
-			ci.MetaData = fmt.Sprintf("%s", dataBytes)
+			ci.MetaData = string(dataBytes)
 		}
 		if file.Name() == "/network_." {
-			ci.NetworkConfig = fmt.Sprintf("%s", dataBytes)
+			ci.NetworkConfig = string(dataBytes)
 		}
 	}
 	log.Printf("[DEBUG]: Read cloud-init from file: %+v", ci)
