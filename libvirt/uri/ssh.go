@@ -55,13 +55,13 @@ func (curi *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 		case "privkey":
 			sshKey, err := ioutil.ReadFile(os.ExpandEnv(sshKeyPath))
 			if err != nil {
-				log.Printf("[ERROR] Failed to read ssh key: %w", err)
+				log.Printf("[ERROR] Failed to read ssh key: %v", err)
 				continue
 			}
 
 			signer, err := ssh.ParsePrivateKey(sshKey)
 			if err != nil {
-				log.Printf("[ERROR] Failed to parse ssh key: %w", err)
+				log.Printf("[ERROR] Failed to parse ssh key: %v", err)
 			}
 			result = append(result, ssh.PublicKeys(signer))
 		default:
