@@ -167,11 +167,10 @@ func domainGetIfacesInfo(virConn *libvirt.Libvirt, domain libvirt.Domain, rd *sc
 
 	interfaces, err = virConn.DomainInterfaceAddresses(domain, uint32(libvirt.DomainInterfaceAddressesSrcLease), 0)
 	if err != nil {
-		switch err.(type) {
+		switch virErr := err.(type) {
 		default:
-			return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", err)
+			return interfaces, fmt.Errorf("Error retrieving interface addresses: %s", virErr)
 		case libvirt.Error:
-			virErr := err.(libvirt.Error)
 			// FIXME ErrorDomain.fromQemu not available in libvirt.Error
 			// || libvirt.ErrorvirErr.Domain != libvirt.FROM_QEMU {
 			if virErr.Code != uint32(libvirt.ErrOperationInvalid) {
