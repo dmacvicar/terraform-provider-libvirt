@@ -59,7 +59,7 @@ func skipIfAccDisabled(t *testing.T) {
 
 func skipIfPrivilegedDisabled(t *testing.T) {
 	if os.Getenv("TF_LIBVIRT_DISABLE_PRIVILEGED_TESTS") != "" {
-		t.Skip("skipping test; Enviornemnt variable `TF_LIBVIRT_DISABLE_PRIVILEGED_TESTS` is set")
+		t.Skip("skipping test; Environment variable `TF_LIBVIRT_DISABLE_PRIVILEGED_TESTS` is set")
 	}
 }
 
