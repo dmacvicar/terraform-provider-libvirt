@@ -69,6 +69,11 @@ func (curi *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 			log.Printf("[WARN] Unsupported auth method: %s", v)
 		}
 	}
+
+	if sshPassword := q.Get("password"); sshPassword != "" {
+		result = append(result, ssh.Password(sshPassword))
+	}
+
 	return result
 }
 
