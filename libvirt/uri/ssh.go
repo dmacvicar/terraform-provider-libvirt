@@ -70,7 +70,7 @@ func (curi *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 		}
 	}
 
-	if sshPassword := q.Get("password"); sshPassword != "" {
+	if sshPassword, ok := curi.User.Password(); ok {
 		result = append(result, ssh.Password(sshPassword))
 	}
 
