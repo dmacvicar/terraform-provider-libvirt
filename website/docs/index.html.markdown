@@ -29,6 +29,8 @@ The provider understands [connection URIs](https://libvirt.org/uri.html). The su
 
 Unlike the original libvirt, the `ssh` transport is not implemented using the ssh command and therefore does not require `nc` (netcat) on the server side.
 
+Additionally, the `ssh` URI supports passwords using the `driver+ssh://[username:PASSWORD@][hostname][:port]/[path][?extraparameters]` syntax.
+
 As the provider does not use libvirt on the client side, not all connection URI options are supported or apply.
 
 ## Example Usage
