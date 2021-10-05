@@ -405,6 +405,7 @@ The block supports:
 * `listen_type` - "listen type", defaults to "none"
 * `listen_address` - (Optional) IP Address where the VNC listener should be started if
 `listen_type` is set to `address`. Defaults to 127.0.0.1
+* `websocket` - (Optional) Port to listen on for VNC WebSocket functionality (-1 meaning auto-allocation)
 
 On occasion we have found it necessary to set a `type` of `vnc` and a
 `listen_type` of `address` with certain builds of QEMU.
