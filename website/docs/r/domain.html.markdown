@@ -63,6 +63,7 @@ The following arguments are supported:
    [below](#define-boot-device-order).
 * `emulator` - (Optional) The path of the emulator to use
 * `qemu_agent` (Optional) By default is disabled, set to true for enabling it. More info [qemu-agent](https://wiki.libvirt.org/page/Qemu_guest_agent).
+* `tpm` (Optional) TPM device to attach to the domain. The `tpm` object structure is documented [below](#tpm-device).
 ### Kernel and boot arguments
 
 * `kernel` - (Optional) The path of the kernel to boot
@@ -555,6 +556,36 @@ boot_device {
   dev = [ "hd", "network"]
 }
 ```
+
+### TPM device
+
+The optional `tpm` block allows you to add a TPM device to the domain.
+
+Example:
+```hcl
+resource "libvirt_domain" "my_machine" {
+  ...
+  tpm {
+    backend_type    = "emulator"
+    backend_version = "2.0"
+  }
+}
+```
+
+Attributes:
+
+* `model` - (Optional) TPM model provided to the guest
+* `backend_type` - (Optional) TPM backend, either `passthrough` or `emulator` (default: `emulator`)
+
+Additional attributes when `backend_type` is "passthrough":
+
+* `backend_device_path` - (Optional) Path to TPM device on the host, ex: `/dev/tpm0`
+
+Additional attributes when `backend_type` is "emulator":
+
+* `backend_encryption_secret` - (Optional) [Secret object](https://libvirt.org/formatsecret.html) for encrypting the TPM state
+* `backend_version` - (Optional) TPM version
+* `backend_persistent_state` - (Optional) Keep the TPM state when a transient domain is powered off or undefined
 
 ### Altering libvirt's generated domain XML definition
 

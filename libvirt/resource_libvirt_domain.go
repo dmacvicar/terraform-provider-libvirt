@@ -395,6 +395,47 @@ func resourceLibvirtDomain() *schema.Resource {
 				Default:  false,
 				ForceNew: false,
 			},
+			"tpm": {
+				Type:     schema.TypeList,
+				Optional: true,
+				// Error defining libvirt domain: unsupported configuration: only a single TPM non-proxy device is supported
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"model": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+						"backend_type": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+							Default:  "emulator",
+						},
+						"backend_device_path": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+						"backend_encryption_secret": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+						"backend_version": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+						"backend_persistent_state": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							ForceNew: true,
+						},
+					},
+				},
+			},
 			"xml": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -461,7 +502,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		Unit:  "MiB",
 	}
 	domainDef.VCPU = &libvirtxml.DomainVCPU{
-		Value: d.Get("vcpu").(int),
+		Value: uint(d.Get("vcpu").(int)),
 	}
 	domainDef.Description = d.Get("description").(string)
 
@@ -486,6 +527,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	setCmdlineArgs(d, &domainDef)
 	setFirmware(d, &domainDef)
 	setBootDevices(d, &domainDef)
+	setTPMs(d, &domainDef)
 
 	if err := setCoreOSIgnition(d, &domainDef, arch); err != nil {
 		return err
