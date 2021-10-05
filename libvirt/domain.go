@@ -801,6 +801,48 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 	return nil
 }
 
+func setTPMs(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
+	prefix := "tpm.0"
+	if _, ok := d.GetOk(prefix); ok {
+		tpm := libvirtxml.DomainTPM{}
+		if model, ok := d.GetOk(".model"); ok {
+			tpm.Model = model.(string)
+		}
+
+		if backendType, ok := d.GetOk(prefix + ".backend_type"); ok {
+			tpm.Backend = &libvirtxml.DomainTPMBackend{}
+			switch backendType {
+			case "passthrough":
+				tpm.Backend.Passthrough = &libvirtxml.DomainTPMBackendPassthrough{}
+			case "emulator":
+				tpm.Backend.Emulator = &libvirtxml.DomainTPMBackendEmulator{}
+			}
+		}
+
+		if tpm.Backend.Passthrough != nil {
+			if devicePath, ok := d.GetOk(prefix + ".backend_device_path"); ok {
+				tpm.Backend.Passthrough.Device = &libvirtxml.DomainTPMBackendDevice{
+					Path: devicePath.(string),
+				}
+			}
+		}
+		if tpm.Backend.Emulator != nil {
+			if encryptionSecret, ok := d.GetOk(prefix + ".backend_encryption_secret"); ok {
+				tpm.Backend.Emulator.Encryption = &libvirtxml.DomainTPMBackendEncryption{
+					Secret: encryptionSecret.(string),
+				}
+			}
+			if backendVersion, ok := d.GetOk(prefix + ".backend_version"); ok {
+				tpm.Backend.Emulator.Version = backendVersion.(string)
+			}
+			if backendPersistentState, ok := d.GetOk(prefix + ".backend_persistent_state"); ok {
+				tpm.Backend.Emulator.PersistentState = formatBoolYesNo(backendPersistentState.(bool))
+			}
+		}
+		domainDef.Devices.TPMs = append(domainDef.Devices.TPMs, tpm)
+	}
+}
+
 func destroyDomainByUserRequest(virConn *libvirt.Libvirt, d *schema.ResourceData, domain libvirt.Domain) error {
 	if d.Get("running").(bool) {
 		return nil
