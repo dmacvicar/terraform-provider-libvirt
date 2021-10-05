@@ -341,6 +341,10 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 			domainDef.Devices.Graphics[0].VNC.Listeners = []libvirtxml.DomainGraphicListener{
 				listener,
 			}
+
+			if websocket, ok := d.GetOk(prefix + ".websocket"); ok {
+				domainDef.Devices.Graphics[0].VNC.WebSocket = websocket.(int)
+			}
 		default:
 			return fmt.Errorf("This provider only supports vnc/spice as graphics type. Provided: '%s'", graphicsType)
 		}

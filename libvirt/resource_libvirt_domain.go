@@ -260,6 +260,10 @@ func resourceLibvirtDomain() *schema.Resource {
 							Optional: true,
 							Default:  "127.0.0.1",
 						},
+						"websocket": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
 					},
 				},
 			},
