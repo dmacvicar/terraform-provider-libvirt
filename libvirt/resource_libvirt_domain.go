@@ -235,6 +235,7 @@ func resourceLibvirtDomain() *schema.Resource {
 				},
 			},
 			"graphics": {
+				ForceNew: true,
 				Type:     schema.TypeList,
 				Optional: true,
 				MaxItems: 1,
@@ -244,21 +245,25 @@ func resourceLibvirtDomain() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 							Default:  "spice",
+							ForceNew: true,
 						},
 						"autoport": {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  true,
+							ForceNew: true,
 						},
 						"listen_type": {
 							Type:     schema.TypeString,
 							Optional: true,
 							Default:  "none",
+							ForceNew: true,
 						},
 						"listen_address": {
 							Type:     schema.TypeString,
 							Optional: true,
 							Default:  "127.0.0.1",
+							ForceNew: true,
 						},
 					},
 				},
