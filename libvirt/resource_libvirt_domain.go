@@ -541,7 +541,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
-	if err := setDisks(d, &domainDef, virConn); err != nil {
+	if err := setDisks(d, &domainDef, virConn, arch); err != nil {
 		return err
 	}
 

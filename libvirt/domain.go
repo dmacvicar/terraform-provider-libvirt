@@ -465,7 +465,7 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	}
 }
 
-func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt) error {
+func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt, arch string) error {
 	var scsiDisk = false
 	var numOfISOs = 0
 
@@ -600,7 +600,9 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 	}
 
 	log.Printf("[DEBUG] scsiDisk: %t", scsiDisk)
-	if scsiDisk {
+	// always add an scsi controller on aarch64, otherwise
+	// the machine cannot access cdrom
+	if scsiDisk || arch == "aarch64" {
 		domainDef.Devices.Controllers = append(domainDef.Devices.Controllers,
 			libvirtxml.DomainController{
 				Type:  "scsi",
