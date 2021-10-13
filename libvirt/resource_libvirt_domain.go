@@ -549,7 +549,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 
-	if err := setCloudinit(d, &domainDef, virConn); err != nil {
+	if err := setCloudinit(d, &domainDef, virConn, arch); err != nil {
 		return err
 	}
 
@@ -705,7 +705,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 			return err
 		}
 
-		disk, err := newDiskForCloudInit(virConn, cloudinitID)
+		disk, err := newDiskForCloudInit(virConn, cloudinitID, "")
 		if err != nil {
 			return err
 		}
