@@ -582,6 +582,16 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 
 	err = virConn.DomainCreate(domain)
 	if err != nil {
+		// In some cases the domain creation fails but artifacts are crated.
+		// Remove any artifacts when creation fails.
+		if e := virConn.DomainDestroy(domain); e != nil {
+			log.Printf("[WARNING] %v", e)
+		}
+
+		if e := virConn.DomainUndefine(domain); e != nil {
+			log.Printf("[WARNING] %v", e)
+		}
+
 		return diag.Errorf("error creating libvirt domain: %s", err)
 	}
 
