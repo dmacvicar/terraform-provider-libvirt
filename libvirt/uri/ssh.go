@@ -64,11 +64,18 @@ func (curi *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 				log.Printf("[ERROR] Failed to parse ssh key: %v", err)
 			}
 			result = append(result, ssh.PublicKeys(signer))
+		case "ssh-password":
+			if sshPassword, ok := curi.User.Password(); ok {
+				result = append(result, ssh.Password(sshPassword))
+			} else {
+				log.Printf("[ERROR] Missing password in userinfo of URI authority section")
+			}
 		default:
 			// For future compatibility it's better to just warn and not error
 			log.Printf("[WARN] Unsupported auth method: %s", v)
 		}
 	}
+
 	return result
 }
 

@@ -29,8 +29,9 @@ func main() {
 	})
 }
 
-func printVersion(writer io.Writer) {
-	fmt.Fprintf(writer, "%s %s\n", os.Args[0], version)
+func printVersion(writer io.Writer) error {
+	_, err := fmt.Fprintf(writer, "%s %s\n", os.Args[0], version)
+	return err
 }
 
 func init() {
