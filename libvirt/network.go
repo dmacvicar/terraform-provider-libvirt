@@ -55,7 +55,7 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 	// check if DHCP must be enabled by default
 	var dhcpEnabled bool
 	netMode := getNetModeFromResource(d)
-	if netMode == netModeIsolated || netMode == netModeNat || netMode == netModeRoute {
+	if netMode == netModeIsolated || netMode == netModeNat || netMode == netModeRoute || netMode == netModeOpen {
 		dhcpEnabled = true
 	}
 

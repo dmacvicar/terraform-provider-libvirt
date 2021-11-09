@@ -17,6 +17,7 @@ const (
 	netModeIsolated = "none"
 	netModeNat      = "nat"
 	netModeRoute    = "route"
+	netModeOpen     = "open"
 	netModeBridge   = "bridge"
 	dnsPrefix       = "dns.0"
 )
@@ -60,7 +61,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 				// libvirt cannot update it so force new
 				ForceNew: true,
 			},
-			"mode": { // can be "none", "nat" (default), "route", "bridge"
+			"mode": { // can be "none", "nat" (default), "route", "open", "bridge"
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
@@ -377,13 +378,13 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	networkDef.Forward = &libvirtxml.NetworkForward{
 		Mode: getNetModeFromResource(d),
 	}
-	if networkDef.Forward.Mode == netModeIsolated || networkDef.Forward.Mode == netModeNat || networkDef.Forward.Mode == netModeRoute {
+	if networkDef.Forward.Mode == netModeIsolated || networkDef.Forward.Mode == netModeNat || networkDef.Forward.Mode == netModeRoute || networkDef.Forward.Mode == netModeOpen {
 
 		if networkDef.Forward.Mode == netModeIsolated {
 			// there is no forwarding when using an isolated network
 			networkDef.Forward = nil
-		} else if networkDef.Forward.Mode == netModeRoute {
-			// there is no NAT when using a routed network
+		} else if networkDef.Forward.Mode == netModeRoute || networkDef.Forward.Mode == netModeOpen {
+			// there is no NAT when using a routed or open network
 			networkDef.Forward.NAT = nil
 		}
 
