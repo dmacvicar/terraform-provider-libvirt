@@ -1,6 +1,7 @@
 package uri
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strconv"
+	"time"
 )
 
 const (
@@ -132,5 +134,11 @@ func (u *ConnectionURI) dialTLS() (net.Conn, error) {
 		return nil, err
 	}
 
-	return tls.Dial("tcp", fmt.Sprintf("%s:%s", u.Hostname(), port), tlsConfig)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	d := tls.Dialer{
+		Config: tlsConfig,
+	}
+	cancel()
+
+	return d.DialContext(ctx, "tcp", fmt.Sprintf("%s:%s", u.Hostname(), port))
 }
