@@ -53,4 +53,4 @@ clean:
 cleanup:
 	./travis/cleanup.sh
 
-.PHONY: build install test testacc vet-check fmt-check lint-check
+.PHONY: build install test testacc vet-check fmt-check lint-check terraform-provider-libvirt
