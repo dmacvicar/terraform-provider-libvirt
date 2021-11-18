@@ -20,6 +20,12 @@ func resourceLibvirtVolume() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"type": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "file",
+				ForceNew: true,
+			},
 			"pool": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -88,6 +94,14 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
+	}
+
+	volumeType := "file"
+	if _, ok := d.GetOk("type"); ok {
+		volumeType = d.Get("type").(string)
+	}
+	if volumeType != "file" && volumeType != "rbd" {
+		return fmt.Errorf("Only storage volumes of type \"dir\" and \"rbd\" are supported")
 	}
 
 	poolName := "default"
@@ -197,7 +211,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 		// FIXME - confirm test behaviour accurate
 		// if baseVolume != nil {
-		if baseVolume.Name != "" {
+		if baseVolume.Name != "" && volumeType == "file" {
 			backingStoreFragmentDef, err := newDefBackingStoreFromLibvirt(virConn, baseVolume)
 			if err != nil {
 				return fmt.Errorf("Could not retrieve backing store definition: %s", err.Error())
@@ -220,6 +234,14 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			}
 			volumeDef.BackingStore = &backingStoreFragmentDef
 		}
+
+		// Create a network RBD volume, get rid of permissions and backing store
+		// as libvirt does not support it yet
+		if volumeType == "rbd" {
+			volumeDef.Type = "network"
+			volumeDef.Target.Permissions = nil
+			volumeDef.BackingStore = nil
+		}
 	}
 
 	data, err := xmlMarshallIndented(volumeDef)
@@ -234,7 +256,25 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	}
 
 	// create the volume
-	volume, err := virConn.StorageVolCreateXML(pool, data, 0)
+	var volume libvirt.StorageVol
+	if volumeType == "rbd" {
+		// RBD requires proper volume cloning and does not support backing store copy
+		baseVolumePoolName := d.Get("base_volume_pool").(string)
+		baseVolumePool, err := virConn.StoragePoolLookupByName(baseVolumePoolName)
+		if err != nil {
+			return fmt.Errorf("can't find storage pool '%s'", baseVolumePoolName)
+		}
+
+		baseVolumeName, _ := d.GetOk("base_volume_name")
+		baseVolume, _ := virConn.StorageVolLookupByName(baseVolumePool, baseVolumeName.(string))
+		if err != nil {
+			return fmt.Errorf("Can't retrieve base volume with name '%s': %v", baseVolumeName.(string), err)
+		}
+
+		volume, err = virConn.StorageVolCreateXMLFrom(pool, data, baseVolume, 0)
+	} else {
+		volume, err = virConn.StorageVolCreateXML(pool, data, 0)
+	}
 	if err != nil {
 		virErr := err.(libvirt.Error)
 		if virErr.Code != uint32(libvirt.ErrStorageVolExist) {
@@ -246,6 +286,14 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			return fmt.Errorf("Error looking up libvirt volume: %s", err)
 		}
 		log.Printf("[INFO] Volume about to be created was found and left as-is: %s", volumeDef.Name)
+	}
+
+	// resize RBD network volumes, if required
+	if volumeType == "rbd" && volumeDef.Capacity.Value != 0 {
+		err = virConn.StorageVolResize(volume, volumeDef.Capacity.Value, 0)
+		if err != nil {
+			return fmt.Errorf("Error trying to resize the libvirt volume: %s", err)
+		}
 	}
 
 	// we use the key as the id

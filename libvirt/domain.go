@@ -474,6 +474,44 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 			}
 		}
 
+		if d.Get(prefix + ".rbd").(bool) {
+			rbdHost := d.Get(prefix + ".rbd_host").(string)
+			if rbdHost == "" {
+				return fmt.Errorf("Can't retrieve RBD host")
+			}
+
+			rbdPort := d.Get(prefix + ".rbd_port").(string)
+			if rbdPort == "" {
+				return fmt.Errorf("Can't retrieve RBD port")
+			}
+
+			rbdPool := d.Get(prefix + ".rbd_pool").(string)
+			if rbdPool == "" {
+				return fmt.Errorf("Can't retrieve RBD pool name")
+			}
+
+			rbdImage := d.Get(prefix + ".rbd_image").(string)
+			if rbdImage == "" {
+				return fmt.Errorf("Can't retrieve RBD image")
+			}
+
+			hosts := []libvirtxml.DomainDiskSourceHost{
+				{
+					Name: rbdHost,
+					Port: rbdPort,
+				},
+			}
+
+			disk.Driver.Cache = "writeback"
+			disk.Source = &libvirtxml.DomainDiskSource{
+				Network: &libvirtxml.DomainDiskSourceNetwork{
+					Protocol: "rbd",
+					Name:     rbdPool + "/" + rbdImage,
+					Hosts:    hosts,
+				},
+			}
+		}
+
 		if volumeKey, ok := d.GetOk(prefix + ".volume_id"); ok {
 			diskVolume, err := virConn.StorageVolLookupByKey(volumeKey.(string))
 			if err != nil {

@@ -241,7 +241,16 @@ The `disk` block supports:
 * `file` - (Optional) The filename to use as the block device for this disk (read-only)
 * `block_device` - (Optional) The path to the host device to use as the block device for this disk. 
 
-While `volume_id`, `url`, `file` and `block_device` are optional, it is intended that you use one of them.
+* `rbd` - (Optional, Boolean) Use an RBD image for this disk. The disk driver cache is set to `writeback`.
+* `rbd_host` - (Optional) The DNS/IP address of the Ceph Monitor(s) to connect to.
+* `rbd_port` - (Optional) The port number Ceph Monitor(s) to connect to. Defaults to `3300`.
+* `rbd_pool` - (Optional) The name of the RBD pool the image is located on.
+* `rbd_image` - (Optional) The name of the RBD image to be used.
+
+While `volume_id`, `url`, `file`, `block_device` and `rbd` are optional, it is intended that you use one of them.
+
+While using an RBD volume(`rbd` set to true), it is intended that you set the
+`rbd_host`, `rbd_port`, `rbd_pool` and `rbd_image` parameters as well.
 
 * `scsi` - (Optional, Boolean) Use a scsi controller for this disk.  The controller
 model is set to `virtio-scsi`
@@ -316,6 +325,44 @@ resource "libvirt_domain" "my_machine" {
   ...
   disk = [var.disk_map_list]
 }
+```
+
+Using a Ceph/RBD volume for disk is a matter of connecting properly to the Ceph Monitor.
+
+```hcl
+resource "libvirt_volume" "os-disk" {
+  name             = "os-disk"
+  type             = "rbd"
+  pool             = "rbd_pool"
+  format           = "raw"
+  base_volume_pool = "rbd_pool"
+  base_volume_name = "ubuntu-cloudimg-20.04"
+  size             = "53687091200" # 50 GB
+}
+
+resource "libvirt_domain" "domain1" {
+  name = "domain1"
+  disk {
+    rbd       = true
+    rbd_host  = "ceph.acme.com"
+    rbd_port  = "3300"
+    rbd_pool  = "rbd_pool"
+    rbd_image = "os-disk"
+  }
+}
+```
+
+For convenience, it is easier to configure the RBD pool at libvirt system level rather than Terraform level.
+This can be done once through `virsh pool-define pool.xml && virsh pool-start rbd_pool`, e.g.
+
+```xml
+<pool type="rbd">
+  <name>rbd_pool</name>
+  <source>
+    <name>rbd_pool</name>
+    <host name='ceph.acme.com' port='3300'/>
+  </source>
+</pool>
 ```
 
 ### Handling network interfaces
