@@ -104,6 +104,8 @@ The following arguments are supported:
 
 * `name` - (Required) A unique name for the resource, required by libvirt.
   Changing this forces a new resource to be created.
+* `region` - (Optional) The libvirt client region to create the resource to.
+* `az` - (Optional) The libvirt client availability-zone to create the resource to.
 * `domain` - (Optional) The domain used by the DNS server.
 * `addresses` - (Optional) A list of (0 or 1) IPv4 and (0 or 1) IPv6 subnets in
   CIDR notation.  This defines the subnets associated to that network.

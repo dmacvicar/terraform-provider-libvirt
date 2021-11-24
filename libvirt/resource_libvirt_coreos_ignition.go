@@ -13,6 +13,18 @@ func resourceIgnition() *schema.Resource {
 		Read:   resourceIgnitionRead,
 		Delete: resourceIgnitionDelete,
 		Schema: map[string]*schema.Schema{
+			"region": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "default",
+				ForceNew: true,
+			},
+			"az": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "default",
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -35,7 +47,10 @@ func resourceIgnition() *schema.Resource {
 
 func resourceIgnitionCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] creating ignition file")
-	client := meta.(*Client)
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
 	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -65,7 +80,11 @@ func resourceIgnitionCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceIgnitionRead(d *schema.ResourceData, meta interface{}) error {
-	virConn := meta.(*Client).libvirt
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -82,7 +101,10 @@ func resourceIgnitionRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceIgnitionDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*Client)
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
 	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}

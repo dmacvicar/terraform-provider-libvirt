@@ -25,6 +25,8 @@ The following arguments are supported:
 
 * `name` - (Required) A unique name for the resource, required by libvirt.
   Changing this forces a new resource to be created.
+* `region` - (Optional) The libvirt client region to create the resource to.
+* `az` - (Optional) The libvirt client availability-zone to create the resource to.
 * `description` - (Optional) The description for domain.
   Changing this forces a new resource to be created.
   This data is not used by libvirt in any way, it can contain any information the user wants.

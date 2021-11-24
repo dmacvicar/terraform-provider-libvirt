@@ -35,6 +35,8 @@ resource "libvirt_ignition" "ignition" {
 The following arguments are supported:
 
 * `name` - (Required) A unique name for the resource, required by libvirt.
+* `region` - (Optional) The libvirt client region to create the resource to.
+* `az` - (Optional) The libvirt client availability-zone to create the resource to.
 * `pool` - (Optional) The pool where the resource will be created.
   If not given, the `default` pool will be used.
 * `content` - (Required) This points to the source of the Ignition configuration

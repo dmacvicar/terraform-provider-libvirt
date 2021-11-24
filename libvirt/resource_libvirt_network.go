@@ -49,6 +49,18 @@ func resourceLibvirtNetwork() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 		Schema: map[string]*schema.Schema{
+			"region": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "default",
+				ForceNew: true,
+			},
+			"az": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "default",
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -291,7 +303,11 @@ func resourceLibvirtNetwork() *schema.Resource {
 }
 
 func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	virConn := meta.(*Client).libvirt
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return false, err
+	}
+	virConn := client.libvirt
 	if virConn == nil {
 		return false, fmt.Errorf(LibVirtConIsNil)
 	}
@@ -313,7 +329,11 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 	// check the list of things that can be changed dynamically
 	// in https://wiki.libvirt.org/page/Networking#virsh_net-update
-	virConn := meta.(*Client).libvirt
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -347,7 +367,7 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 	}
 
 	// detect changes in the DNS entries in this network
-	err = updateDNSHosts(d, meta, network)
+	err = updateDNSHosts(d, client, network)
 	if err != nil {
 		return fmt.Errorf("Error updating DNS hosts for network %s: %s", network.Name, err)
 	}
@@ -359,7 +379,11 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 // resourceLibvirtNetworkCreate creates a libvirt network from the resource definition
 func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) error {
 	// see https://libvirt.org/formatnetwork.html
-	virConn := meta.(*Client).libvirt
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -464,8 +488,8 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	network, err := func() (libvirt.Network, error) {
 		// define only one network at a time
 		// see https://gitlab.com/libvirt/libvirt/-/issues/78
-		meta.(*Client).networkMutex.Lock()
-		defer meta.(*Client).networkMutex.Unlock()
+		client.networkMutex.Lock()
+		defer client.networkMutex.Unlock()
 
 		log.Printf("[DEBUG] Creating libvirt network: %s", data)
 		return virConn.NetworkDefineXML(data)
@@ -530,7 +554,11 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read resource libvirt_network")
 
-	virConn := meta.(*Client).libvirt
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -633,7 +661,11 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 }
 
 func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) error {
-	virConn := meta.(*Client).libvirt
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}

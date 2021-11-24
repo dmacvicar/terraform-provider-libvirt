@@ -40,6 +40,18 @@ func resourceLibvirtDomain() *schema.Resource {
 			Create: schema.DefaultTimeout(5 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
+			"region": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "default",
+				ForceNew: true,
+			},
+			"az": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "default",
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -466,7 +478,11 @@ func resourceLibvirtDomain() *schema.Resource {
 func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	log.Printf("[DEBUG] Check if resource libvirt_domain exists")
 
-	virConn := meta.(*Client).libvirt
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return false, err
+	}
+	virConn := client.libvirt
 	if virConn == nil {
 		return false, fmt.Errorf(LibVirtConIsNil)
 	}
@@ -485,7 +501,11 @@ func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool
 func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Create resource libvirt_domain")
 
-	virConn := meta.(*Client).libvirt
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -673,7 +693,11 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Update resource libvirt_domain")
 
-	virConn := meta.(*Client).libvirt
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -784,7 +808,11 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read resource libvirt_domain")
 
-	virConn := meta.(*Client).libvirt
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -1033,7 +1061,11 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Delete resource libvirt_domain")
 
-	virConn := meta.(*Client).libvirt
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}

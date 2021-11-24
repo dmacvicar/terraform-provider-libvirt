@@ -36,6 +36,8 @@ The following arguments are supported:
 
 * `name` - (Required) A unique name for the resource, required by libvirt.
 * `type` - (Required) The type of the pool. Currently, only "dir" supported.
+* `region` - (Optional) The libvirt client region to create the resource to.
+* `az` - (Optional) The libvirt client availability-zone to create the resource to.
 * `path` - (Optional) The directory where the pool will keep all its volumes. This is only relevant to (and required by)
                       the "dir" type pools.
 

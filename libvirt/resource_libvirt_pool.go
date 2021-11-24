@@ -17,6 +17,18 @@ func resourceLibvirtPool() *schema.Resource {
 		Delete: resourceLibvirtPoolDelete,
 		Exists: resourceLibvirtPoolExists,
 		Schema: map[string]*schema.Schema{
+			"region": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "default",
+				ForceNew: true,
+			},
+			"az": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "default",
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -75,7 +87,10 @@ func resourceLibvirtPool() *schema.Resource {
 }
 
 func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*Client)
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
 	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
@@ -169,7 +184,10 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceLibvirtPoolRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*Client)
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
 	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
@@ -231,7 +249,10 @@ func resourceLibvirtPoolRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceLibvirtPoolDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*Client)
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
 	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -241,13 +262,16 @@ func resourceLibvirtPoolDelete(d *schema.ResourceData, meta interface{}) error {
 
 func resourceLibvirtPoolExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	log.Printf("[DEBUG] Check if resource (id : %s) libvirt_pool exists", d.Id())
-	client := meta.(*Client)
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return false, err
+	}
 	virConn := client.libvirt
 	if virConn == nil {
 		return false, fmt.Errorf(LibVirtConIsNil)
 	}
 
-	_, err := virConn.StoragePoolLookupByUUID(parseUUID(d.Id()))
+	_, err = virConn.StoragePoolLookupByUUID(parseUUID(d.Id()))
 	if err != nil {
 		virErr := err.(libvirt.Error)
 		if virErr.Code != uint32(libvirt.ErrNoStoragePool) {

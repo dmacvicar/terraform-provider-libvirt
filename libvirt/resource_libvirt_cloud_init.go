@@ -14,6 +14,18 @@ func resourceCloudInitDisk() *schema.Resource {
 		Delete: resourceCloudInitDiskDelete,
 		Exists: resourceCloudInitDiskExists,
 		Schema: map[string]*schema.Schema{
+			"region": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "default",
+				ForceNew: true,
+			},
+			"az": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "default",
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -46,7 +58,10 @@ func resourceCloudInitDisk() *schema.Resource {
 
 func resourceCloudInitDiskCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] creating cloudinit")
-	client := meta.(*Client)
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
 	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
@@ -81,7 +96,11 @@ func resourceCloudInitDiskCreate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceCloudInitDiskRead(d *schema.ResourceData, meta interface{}) error {
-	virConn := meta.(*Client).libvirt
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
+	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -99,7 +118,10 @@ func resourceCloudInitDiskRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceCloudInitDiskDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*Client)
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return err
+	}
 	if client.libvirt == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
@@ -114,7 +136,10 @@ func resourceCloudInitDiskDelete(d *schema.ResourceData, meta interface{}) error
 
 func resourceCloudInitDiskExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	log.Printf("[DEBUG] Check if resource libvirt_cloudinit_disk exists")
-	client := meta.(*Client)
+	client, err := resourceGetClient(d, meta)
+	if err != nil {
+		return false, err
+	}
 	if client.libvirt == nil {
 		return false, fmt.Errorf(LibVirtConIsNil)
 	}

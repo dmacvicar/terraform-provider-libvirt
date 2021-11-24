@@ -43,6 +43,8 @@ Take also insipiration from ubuntu.tf https://github.com/dmacvicar/terraform-pro
 The following arguments are supported:
 
 * `name` - (Required) A unique name for the resource, required by libvirt.
+* `region` - (Optional) The libvirt client region to create the resource to.
+* `az` - (Optional) The libvirt client availability-zone to create the resource to.
 * `pool` - (Optional) The pool where the resource will be created.
   If not given, the `default` pool will be used.
   For user_data, network_config and meta_data parameters have a look at upstream doc:

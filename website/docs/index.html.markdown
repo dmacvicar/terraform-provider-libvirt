@@ -51,8 +51,53 @@ resource "libvirt_domain" "test1" {
 
 The following keys can be used to configure the provider.
 
-* `uri` - (Required) The [connection URI](https://libvirt.org/uri.html) used
+* `uri` - (Optional) The [connection URI](https://libvirt.org/uri.html) used
   to connect to the libvirt host.
+* `host` - (Optional) An element describing a libvirt host. One may add a list of `host` to describe a full cluster.
+
+At least one `uri` or a `host` element is required.
+
+When using a `host`, users can specify:
+
+* `region` - (Optional) The region the libvirt instance is associated to.
+* `az` - (Optional) The availability-zone the libvirt instance is associated to.
+* `uri` - (Optional) The [connection URI](https://libvirt.org/uri.html) used
+  to connect to the libvirt host.
+
+# Multiple Hosts Configuration
+
+As Terraform is not able to iterate over providers, one can specify multiple hosts with associated
+regions and availability zones to allow resources to interate over those and use the correct libvirt connection.
+
+```hcl
+# Configure the Libvirt provider with multiple hosts
+provider "libvirt" {
+  host {
+    region = "us-west"
+    az     = "1"
+    uri    = "qemu+tcp://libvirt-us-west-1.acme.com/system"
+  }
+  host {
+    region = "us-east"
+    az     = "1"
+    uri    = "qemu+tcp://libvirt-us-east-1.acme.com/system"
+  }
+}
+
+locals {
+  instances = {
+    "1" = { region = "us-west", az = "1" },
+    "2" = { region = "us-east", az = "2" },
+  }
+}
+
+# Create a new domain with the same configuration on all regions
+resource "libvirt_domain" "test" {
+  for_each = local.instances
+  region = each.value.region
+  ...
+}
+```
 
 ## Environment variables
 

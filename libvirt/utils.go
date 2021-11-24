@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 var diskLetters = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -69,4 +70,21 @@ func formatBoolYesNo(b bool) string {
 		return "yes"
 	}
 	return "no"
+}
+
+// resourceGetClient provides associated client based on resource requested region/az parameters
+func resourceGetClient(d *schema.ResourceData, meta interface{}) (*Client, error) {
+	clients := meta.(*Clients)
+
+	region := "default"
+	if _, ok := d.GetOk("region"); ok {
+		region = d.Get("region").(string)
+	}
+
+	az := "default"
+	if _, ok := d.GetOk("az"); ok {
+		az = d.Get("az").(string)
+	}
+
+	return clients.Find(region, az)
 }

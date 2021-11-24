@@ -15,8 +15,8 @@ import (
 
 // updateDNSHosts detects changes in the DNS hosts entries
 // updating the network definition accordingly
-func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Network) error {
-	virConn := meta.(*Client).libvirt
+func updateDNSHosts(d *schema.ResourceData, client *Client, network libvirt.Network) error {
+	virConn := client.libvirt
 
 	hostsKey := dnsPrefix + ".hosts"
 	if d.HasChange(hostsKey) {
