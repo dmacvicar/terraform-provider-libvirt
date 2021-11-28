@@ -734,7 +734,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 				},
 			}
 		} else {
-			// no network has been specified: we are on our own
+			log.Printf("[WARN] no network has been specified")
 		}
 
 		if network.Name != "" {
