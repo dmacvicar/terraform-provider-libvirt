@@ -177,14 +177,17 @@ func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirt.Storag
 		if err != nil {
 			return err
 		}
+
 		cikey, err := getCloudInitVolumeKeyFromTerraformID(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
+
 		retrievedVol, err := virConn.StorageVolLookupByKey(cikey)
 		if err != nil {
 			return err
 		}
+
 		if retrievedVol.Key == "" {
 			return fmt.Errorf("UUID is blank")
 		}
@@ -215,6 +218,9 @@ func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName strin
 		}
 
 		cloudInitDiskDef, err := newCloudInitDefFromRemoteISO(virConn, rs.Primary.ID)
+		if err != nil {
+			return err
+		}
 
 		if cloudInitDiskDef.MetaData != expected.MetaData {
 			return fmt.Errorf("metadata '%s' content differs from expected Metadata %s", cloudInitDiskDef.MetaData, expected.MetaData)
