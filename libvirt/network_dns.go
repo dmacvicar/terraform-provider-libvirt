@@ -157,7 +157,7 @@ func getDNSHostsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDNSHos
 
 			address := d.Get(hostPrefix + ".ip").(string)
 			if net.ParseIP(address) == nil {
-				return nil, fmt.Errorf("Could not parse address '%s'", address)
+				return nil, fmt.Errorf("could not parse address '%s'", address)
 			}
 
 			dnsHostsMap[address] = append(dnsHostsMap[address], d.Get(hostPrefix+".hostname").(string))
@@ -191,7 +191,7 @@ func getDNSForwardersFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkD
 			if address, ok := d.GetOk(forwardPrefix + ".address"); ok {
 				ip := net.ParseIP(address.(string))
 				if ip == nil {
-					return nil, fmt.Errorf("Could not parse address '%s'", address)
+					return nil, fmt.Errorf("could not parse address '%s'", address)
 				}
 				forward.Addr = ip.String()
 			}
@@ -240,21 +240,21 @@ func getDNSSRVFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDNSSRV, 
 			if port, ok := d.GetOk(srvPrefix + ".port"); ok {
 				p, err := strconv.Atoi(port.(string))
 				if err != nil {
-					return nil, fmt.Errorf("Could not convert port '%s' to int", port)
+					return nil, fmt.Errorf("could not convert port '%s' to int", port)
 				}
 				srv.Port = uint(p)
 			}
 			if weight, ok := d.GetOk(srvPrefix + ".weight"); ok {
 				w, err := strconv.Atoi(weight.(string))
 				if err != nil {
-					return nil, fmt.Errorf("Could not convert weight '%s' to int", weight)
+					return nil, fmt.Errorf("could not convert weight '%s' to int", weight)
 				}
 				srv.Weight = uint(w)
 			}
 			if priority, ok := d.GetOk(srvPrefix + ".priority"); ok {
 				w, err := strconv.Atoi(priority.(string))
 				if err != nil {
-					return nil, fmt.Errorf("Could not convert priority '%s' to int", priority)
+					return nil, fmt.Errorf("could not convert priority '%s' to int", priority)
 				}
 				srv.Priority = uint(w)
 			}

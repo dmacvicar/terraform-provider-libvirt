@@ -55,7 +55,7 @@ func resourceLibvirtNetworkDNSHostRead(d *schema.ResourceData, meta interface{})
 	if address, ok := d.GetOk("ip"); ok {
 		ip := net.ParseIP(address.(string))
 		if ip == nil {
-			return fmt.Errorf("Could not parse address '%s'", address)
+			return fmt.Errorf("could not parse address '%s'", address)
 		}
 		dnsHost["ip"] = ip.String()
 	}

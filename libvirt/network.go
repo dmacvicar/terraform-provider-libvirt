@@ -90,7 +90,7 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHCP, error) {
 	_, ipNet, err := net.ParseCIDR(address)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Error parsing addresses definition '%s': %s", address, err)
+		return nil, nil, fmt.Errorf("error parsing addresses definition '%s': %s", address, err)
 	}
 	ones, bits := ipNet.Mask.Size()
 	family := "ipv4"
@@ -99,7 +99,7 @@ func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.Netw
 	}
 	ipsRange := 2 ^ bits - 2 ^ ones
 	if ipsRange < 4 {
-		return nil, nil, fmt.Errorf("Netmask seems to be too strict: only %d IPs available (%s)", ipsRange-3, family)
+		return nil, nil, fmt.Errorf("netmask seems to be too strict: only %d IPs available (%s)", ipsRange-3, family)
 	}
 
 	// we should calculate the range served by DHCP. For example, for

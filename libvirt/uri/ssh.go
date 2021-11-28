@@ -81,7 +81,7 @@ func (u *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 	authMethods := u.parseAuthMethods()
 	if len(authMethods) < 1 {
-		return nil, fmt.Errorf("Could not configure SSH authentication methods")
+		return nil, fmt.Errorf("could not configure SSH authentication methods")
 	}
 	q := u.Query()
 

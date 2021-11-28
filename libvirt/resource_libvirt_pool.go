@@ -83,7 +83,7 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 
 	poolType := d.Get("type").(string)
 	if poolType != "dir" {
-		return fmt.Errorf("Only storage pools of type \"dir\" are supported")
+		return fmt.Errorf("only storage pools of type \"dir\" are supported")
 	}
 
 	poolName := d.Get("name").(string)
@@ -112,44 +112,44 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	data, err := xmlMarshallIndented(poolDef)
 	if err != nil {
-		return fmt.Errorf("Error serializing libvirt storage pool: %s", err)
+		return fmt.Errorf("error serializing libvirt storage pool: %s", err)
 	}
 	log.Printf("[DEBUG] Generated XML for libvirt storage pool:\n%s", data)
 
 	data, err = transformResourceXML(data, d)
 	if err != nil {
-		return fmt.Errorf("Error applying XSLT stylesheet: %s", err)
+		return fmt.Errorf("error applying XSLT stylesheet: %s", err)
 	}
 
 	// create the pool
 	pool, err := virConn.StoragePoolDefineXML(data, 0)
 	if err != nil {
-		return fmt.Errorf("Error creating libvirt storage pool: %s", err)
+		return fmt.Errorf("error creating libvirt storage pool: %s", err)
 	}
 
 	err = virConn.StoragePoolBuild(pool, 0)
 	if err != nil {
-		return fmt.Errorf("Error building libvirt storage pool: %s", err)
+		return fmt.Errorf("error building libvirt storage pool: %s", err)
 	}
 
 	err = virConn.StoragePoolSetAutostart(pool, 1)
 	if err != nil {
-		return fmt.Errorf("Error setting up libvirt storage pool: %s", err)
+		return fmt.Errorf("error setting up libvirt storage pool: %s", err)
 	}
 
 	err = virConn.StoragePoolCreate(pool, 0)
 	if err != nil {
-		return fmt.Errorf("Error starting libvirt storage pool: %s", err)
+		return fmt.Errorf("error starting libvirt storage pool: %s", err)
 	}
 
 	err = virConn.StoragePoolRefresh(pool, 0)
 	if err != nil {
-		return fmt.Errorf("Error refreshing libvirt storage pool: %s", err)
+		return fmt.Errorf("error refreshing libvirt storage pool: %s", err)
 	}
 
 	id := uuidString(pool.UUID)
 	if id == "" {
-		return fmt.Errorf("Error retrieving libvirt pool id: %s", pool.Name)
+		return fmt.Errorf("error retrieving libvirt pool id: %s", pool.Name)
 	}
 	d.SetId(id)
 
@@ -250,7 +250,7 @@ func resourceLibvirtPoolExists(d *schema.ResourceData, meta interface{}) (bool, 
 	if err != nil {
 		virErr := err.(libvirt.Error)
 		if virErr.Code != uint32(libvirt.ErrNoStoragePool) {
-			return false, fmt.Errorf("Can't retrieve pool %s", d.Id())
+			return false, fmt.Errorf("can't retrieve pool %s", d.Id())
 		}
 		// does not exist, but no error
 		return false, nil

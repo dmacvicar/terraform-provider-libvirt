@@ -75,7 +75,7 @@ func resourceIgnitionRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", ign.Name)
 
 	if err != nil {
-		return fmt.Errorf("Error while retrieving remote volume: %s", err)
+		return fmt.Errorf("error while retrieving remote volume: %s", err)
 	}
 
 	return nil
