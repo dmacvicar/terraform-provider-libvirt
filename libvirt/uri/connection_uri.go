@@ -8,6 +8,11 @@ import (
 	"net"
 	"net/url"
 	"strings"
+	"time"
+)
+
+const (
+	dialTimeout = 2*time.Second
 )
 
 type ConnectionURI struct {
