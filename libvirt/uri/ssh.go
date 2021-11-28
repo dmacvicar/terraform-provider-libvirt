@@ -22,8 +22,8 @@ const (
 	defaultSSHAuthMethods    = "agent,privkey"
 )
 
-func (curi *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
-	q := curi.Query()
+func (u *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
+	q := u.Query()
 
 	authMethods := q.Get("sshauth")
 	if authMethods == "" {
@@ -65,7 +65,7 @@ func (curi *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 			}
 			result = append(result, ssh.PublicKeys(signer))
 		case "ssh-password":
-			if sshPassword, ok := curi.User.Password(); ok {
+			if sshPassword, ok := u.User.Password(); ok {
 				result = append(result, ssh.Password(sshPassword))
 			} else {
 				log.Printf("[ERROR] Missing password in userinfo of URI authority section")
@@ -79,12 +79,12 @@ func (curi *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 	return result
 }
 
-func (curi *ConnectionURI) dialSSH() (net.Conn, error) {
-	authMethods := curi.parseAuthMethods()
+func (u *ConnectionURI) dialSSH() (net.Conn, error) {
+	authMethods := u.parseAuthMethods()
 	if len(authMethods) < 1 {
 		return nil, fmt.Errorf("Could not configure SSH authentication methods")
 	}
-	q := curi.Query()
+	q := u.Query()
 
 	knownHostsPath := q.Get("knownhosts")
 	knownHostsVerify := q.Get("known_hosts_verify")
@@ -107,7 +107,7 @@ func (curi *ConnectionURI) dialSSH() (net.Conn, error) {
 		hostKeyCallback = cb
 	}
 
-	username := curi.User.Username()
+	username := u.User.Username()
 	if username == "" {
 		u, err := user.Current()
 		if err != nil {
@@ -123,12 +123,12 @@ func (curi *ConnectionURI) dialSSH() (net.Conn, error) {
 		Timeout:         2 * time.Second,
 	}
 
-	port := curi.Port()
+	port := u.Port()
 	if port == "" {
 		port = defaultSSHPort
 	}
 
-	sshClient, err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", curi.Hostname(), port), &cfg)
+	sshClient, err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", u.Hostname(), port), &cfg)
 	if err != nil {
 		return nil, err
 	}
