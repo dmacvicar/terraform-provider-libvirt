@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/user"
 	"strings"
-	"time"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
@@ -120,7 +119,7 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 		User:            username,
 		HostKeyCallback: hostKeyCallback,
 		Auth:            authMethods,
-		Timeout:         2 * time.Second,
+		Timeout:         dialTimeout,
 	}
 
 	port := u.Port()
