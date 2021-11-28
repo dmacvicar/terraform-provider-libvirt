@@ -33,8 +33,7 @@ func Parse(uriStr string) (*ConnectionURI, error) {
 // unless the name option is specified.
 func (u *ConnectionURI) RemoteName() string {
 	q := u.Query()
-	name := q.Get("name")
-	if name != "" {
+	if name := q.Get("name"); name != "" {
 		return name
 	}
 

@@ -650,16 +650,10 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 	if err != nil {
 		return fmt.Errorf("Couldn't determine if network is active: %s", err)
 	}
+
 	// network can be in 2 states, handles this case by case
-	active := activeInt == 1
-	// in case network is inactive just undefine it
-	if !active {
-		if err := virConn.NetworkUndefine(network); err != nil {
-			return fmt.Errorf("Couldn't undefine libvirt network: %s", err)
-		}
-	}
-	// network is active, so we need to destroy it and undefine it
-	if active {
+	if active := int2bool(int(activeInt)); active {
+		// network is active, so we need to destroy it and undefine it
 		if err := virConn.NetworkDestroy(network); err != nil {
 			return fmt.Errorf("When destroying libvirt network: %s", err)
 		}
@@ -667,7 +661,13 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 		if err := virConn.NetworkUndefine(network); err != nil {
 			return fmt.Errorf("Couldn't undefine libvirt network: %s", err)
 		}
+	} else {
+		// in case network is inactive just undefine it
+		if err := virConn.NetworkUndefine(network); err != nil {
+			return fmt.Errorf("Couldn't undefine libvirt network: %s", err)
+		}
 	}
+
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{"ACTIVE"},
 		Target:     []string{"NOT-EXISTS"},

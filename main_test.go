@@ -8,8 +8,7 @@ import (
 
 func TestPrintVersion(t *testing.T) {
 	buf := &bytes.Buffer{}
-	err := printVersion(buf)
-	if err != nil {
+	if err := printVersion(buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.Bytes()

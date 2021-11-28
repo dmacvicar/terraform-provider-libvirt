@@ -219,8 +219,7 @@ func resourceLibvirtPoolRead(d *schema.ResourceData, meta interface{}) error {
 		d.Set("path", poolPath)
 	}
 
-	poolType := poolDef.Type
-	if poolType == "" {
+	if poolType := poolDef.Type; poolType == "" {
 		log.Printf("Pool %s has no type specified", pool.Name)
 	} else {
 		log.Printf("[DEBUG] Pool %s type: %s", pool.Name, poolType)

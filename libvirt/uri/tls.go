@@ -67,9 +67,8 @@ func (u *ConnectionURI) tlsConfig() (*tls.Config, error) {
 	clientKeySearchPath := []string{defaultGlobalClientKeyPath}
 
 	q := u.Query()
-	pkipath := q.Get("pkipath")
 	// if pkipath is provided, certs should all exist there
-	if pkipath != "" {
+	if pkipath := q.Get("pkipath"); pkipath != "" {
 		caCertSearchPath = []string{pkipath}
 		clientCertSearchPath = []string{pkipath}
 		clientKeySearchPath = []string{pkipath}
