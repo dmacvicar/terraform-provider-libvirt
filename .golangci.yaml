@@ -23,5 +23,6 @@ linters:
     - lll
     - errorlint
     - errcheck
+    - gomnd
 issues:
   new-from-rev: HEAD~
