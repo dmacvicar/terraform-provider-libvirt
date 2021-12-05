@@ -43,8 +43,7 @@ func (l *networkUpdateWorkaroundLibvirt) NetworkUpdate(Net libvirt.Network, Comm
 func randomMACAddress() (string, error) {
 	buf := make([]byte, 3)
 	rand.Seed(time.Now().UnixNano())
-	_, err := rand.Read(buf)
-	if err != nil {
+	if _, err := rand.Read(buf); err != nil {
 		return "", err
 	}
 

@@ -15,8 +15,7 @@ func TestParseUUID(t *testing.T) {
 		t.Errorf("expected UUID %q, got %q", wantUUID, uuid)
 	}
 
-	uuidToStr := uuidString(uuid)
-	if uuidToStr != uuidStr {
+	if uuidToStr := uuidString(uuid); uuidToStr != uuidStr {
 		t.Errorf("expected UUID %q, got %q", uuidStr, uuidToStr)
 	}
 }

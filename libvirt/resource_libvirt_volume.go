@@ -157,14 +157,14 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		// figure out the format of the image
 		isQCOW2, err := img.IsQCOW2()
 		if err != nil {
-			return fmt.Errorf("Error while determining image type for %s: %s", img.String(), err)
+			return fmt.Errorf("error while determining image type for %s: %s", img.String(), err)
 		}
 		if isQCOW2 {
 			volumeDef.Target.Format.Type = "qcow2"
 		}
 
 		if isFormatGiven && isQCOW2 && givenFormat != "qcow2" {
-			return fmt.Errorf("Format other than QCOW2 explicitly specified for image detected as QCOW2 image: %s", img.String())
+			return fmt.Errorf("format other than QCOW2 explicitly specified for image detected as QCOW2 image: %s", img.String())
 		}
 
 		// update the image in the description, even if the file has not changed
@@ -193,7 +193,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			}
 			baseVolume, err = virConn.StorageVolLookupByKey(baseVolumeID.(string))
 			if err != nil {
-				return fmt.Errorf("Can't retrieve volume ID '%s': %v", baseVolumeID.(string), err)
+				return fmt.Errorf("can't retrieve volume ID '%s': %v", baseVolumeID.(string), err)
 			}
 		} else if baseVolumeName, ok := d.GetOk("base_volume_name"); ok {
 			baseVolumePool := pool
@@ -206,7 +206,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			}
 			baseVolume, err = virConn.StorageVolLookupByName(baseVolumePool, baseVolumeName.(string))
 			if err != nil {
-				return fmt.Errorf("Can't retrieve base volume with name '%s': %v", baseVolumeName.(string), err)
+				return fmt.Errorf("can't retrieve base volume with name '%s': %v", baseVolumeName.(string), err)
 			}
 		}
 
@@ -215,7 +215,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		if baseVolume.Name != "" {
 			backingStoreFragmentDef, err := newDefBackingStoreFromLibvirt(virConn, baseVolume)
 			if err != nil {
-				return fmt.Errorf("Could not retrieve backing store definition: %s", err.Error())
+				return fmt.Errorf("could not retrieve backing store definition: %s", err.Error())
 			}
 
 			backingStoreVolumeDef, err := newDefVolumeFromLibvirt(virConn, baseVolume)
@@ -231,7 +231,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			// Always check that the size, specified or taken from the backing store
 			// is at least the size of the backing store itself
 			if backingStoreVolumeDef.Capacity != nil && volumeDef.Capacity.Value < backingStoreVolumeDef.Capacity.Value {
-				return fmt.Errorf("When 'size' is specified, it shouldn't be smaller than the backing store specified with 'base_volume_id' or 'base_volume_name/base_volume_pool'")
+				return fmt.Errorf("when 'size' is specified, it shouldn't be smaller than the backing store specified with 'base_volume_id' or 'base_volume_name/base_volume_pool'")
 			}
 			volumeDef.BackingStore = &backingStoreFragmentDef
 		}
@@ -239,13 +239,13 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	data, err := xmlMarshallIndented(volumeDef)
 	if err != nil {
-		return fmt.Errorf("Error serializing libvirt volume: %s", err)
+		return fmt.Errorf("error serializing libvirt volume: %s", err)
 	}
 	log.Printf("[DEBUG] Generated XML for libvirt volume:\n%s", data)
 
 	data, err = transformResourceXML(data, d)
 	if err != nil {
-		return fmt.Errorf("Error applying XSLT stylesheet: %s", err)
+		return fmt.Errorf("error applying XSLT stylesheet: %s", err)
 	}
 
 	// create the volume
@@ -253,12 +253,12 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		virErr := err.(libvirt.Error)
 		if virErr.Code != uint32(libvirt.ErrStorageVolExist) {
-			return fmt.Errorf("Error creating libvirt volume: %s", err)
+			return fmt.Errorf("error creating libvirt volume: %s", err)
 		}
 		// oops, volume exists already, read it and move on
 		volume, err = virConn.StorageVolLookupByName(pool, volumeDef.Name)
 		if err != nil {
-			return fmt.Errorf("Error looking up libvirt volume: %s", err)
+			return fmt.Errorf("error looking up libvirt volume: %s", err)
 		}
 		log.Printf("[INFO] Volume about to be created was found and left as-is: %s", volumeDef.Name)
 	}
@@ -282,7 +282,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			// If we don't throw away the id, we will keep instead a broken volume.
 			// see for reference: https://github.com/dmacvicar/terraform-provider-libvirt/issues/494
 			d.Set("id", "")
-			return fmt.Errorf("Error while uploading source %s: %s", img.String(), err)
+			return fmt.Errorf("error while uploading source %s: %s", img.String(), err)
 		}
 	}
 

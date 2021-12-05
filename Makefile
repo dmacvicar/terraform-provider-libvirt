@@ -20,6 +20,10 @@ install:
 test:
 	go test -v $(TEST_ARGS_DEF) $(TEST_ARGS) ./libvirt
 
+lint:
+	golangci-lint run
+	terraform fmt -write=false -check=true -diff=true examples/
+
 # acceptance tests
 # usage:
 #

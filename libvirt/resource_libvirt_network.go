@@ -340,28 +340,28 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 
 	network, err := virConn.NetworkLookupByUUID(parseUUID(d.Id()))
 	if err != nil {
-		return fmt.Errorf("Can't retrieve network with ID '%s' during update: %s", d.Id(), err)
+		return fmt.Errorf("can't retrieve network with ID '%s' during update: %s", d.Id(), err)
 	}
 
 	d.Partial(true)
 
 	activeInt, err := virConn.NetworkIsActive(network)
 	if err != nil {
-		return fmt.Errorf("Error when getting network %s status during update: %s", network.Name, err)
+		return fmt.Errorf("error when getting network %s status during update: %s", network.Name, err)
 	}
 
 	active := activeInt == 1
 	if !active {
 		log.Printf("[DEBUG] Activating network %s", network.Name)
 		if err := virConn.NetworkCreate(network); err != nil {
-			return fmt.Errorf("Error when activating network %s during update: %s", network.Name, err)
+			return fmt.Errorf("error when activating network %s during update: %s", network.Name, err)
 		}
 	}
 
 	if d.HasChange("autostart") {
 		err = virConn.NetworkSetAutostart(network, bool2int(d.Get("autostart").(bool)))
 		if err != nil {
-			return fmt.Errorf("Error updating autostart for network %s: %s", network.Name, err)
+			return fmt.Errorf("error updating autostart for network %s: %s", network.Name, err)
 		}
 		d.SetPartial("autostart")
 	}
@@ -369,7 +369,7 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 	// detect changes in the DNS entries in this network
 	err = updateDNSHosts(d, client, network)
 	if err != nil {
-		return fmt.Errorf("Error updating DNS hosts for network %s: %s", network.Name, err)
+		return fmt.Errorf("error updating DNS hosts for network %s: %s", network.Name, err)
 	}
 
 	d.Partial(false)
@@ -414,7 +414,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		// if addresses are given set dhcp for these
 		ips, err := getIPsFromResource(d)
 		if err != nil {
-			return fmt.Errorf("Could not set DHCP from adresses '%s'", err)
+			return fmt.Errorf("could not set DHCP from adresses '%s'", err)
 		}
 		networkDef.IPs = ips
 
@@ -476,13 +476,13 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 
 	data, err := xmlMarshallIndented(networkDef)
 	if err != nil {
-		return fmt.Errorf("Error serializing libvirt network: %s", err)
+		return fmt.Errorf("error serializing libvirt network: %s", err)
 	}
 	log.Printf("[DEBUG] Generated XML for libvirt network:\n%s", data)
 
 	data, err = transformResourceXML(data, d)
 	if err != nil {
-		return fmt.Errorf("Error applying XSLT stylesheet: %s", err)
+		return fmt.Errorf("error applying XSLT stylesheet: %s", err)
 	}
 
 	network, err := func() (libvirt.Network, error) {
@@ -491,12 +491,12 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		client.networkMutex.Lock()
 		defer client.networkMutex.Unlock()
 
-		log.Printf("[DEBUG] Creating libvirt network: %s", data)
+		log.Printf("[DEBUG] creating libvirt network: %s", data)
 		return virConn.NetworkDefineXML(data)
 	}()
 
 	if err != nil {
-		return fmt.Errorf("Error defining libvirt network: %s - %s", err, data)
+		return fmt.Errorf("error defining libvirt network: %s - %s", err, data)
 	}
 
 	err = virConn.NetworkCreate(network)
@@ -513,7 +513,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 			log.Printf("[WARNING] %v", err)
 		}
 
-		return fmt.Errorf("Error creating libvirt network: %s", err)
+		return fmt.Errorf("error creating libvirt network: %s", err)
 	}
 	id := uuidString(network.UUID)
 	d.SetId(id)
@@ -536,13 +536,13 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	}
 	_, err = stateConf.WaitForState()
 	if err != nil {
-		return fmt.Errorf("Error waiting for network to reach ACTIVE state: %s", err)
+		return fmt.Errorf("error waiting for network to reach ACTIVE state: %s", err)
 	}
 
 	if autostart, ok := d.GetOk("autostart"); ok {
 		err = virConn.NetworkSetAutostart(network, bool2int(autostart.(bool)))
 		if err != nil {
-			return fmt.Errorf("Error setting autostart for network: %s", err)
+			return fmt.Errorf("error setting autostart for network: %s", err)
 		}
 	}
 
@@ -567,12 +567,12 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 
 	network, err := virConn.NetworkLookupByUUID(uuid)
 	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt network: %s", err)
+		return fmt.Errorf("error retrieving libvirt network: %s", err)
 	}
 
 	networkDef, err := getXMLNetworkDefFromLibvirt(virConn, network)
 	if err != nil {
-		return fmt.Errorf("Error reading libvirt network XML description: %s", err)
+		return fmt.Errorf("error reading libvirt network XML description: %s", err)
 	}
 
 	d.Set("name", networkDef.Name)
@@ -594,7 +594,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 
 	autostart, err := virConn.NetworkGetAutostart(network)
 	if err != nil {
-		return fmt.Errorf("Error reading network autostart setting: %s", err)
+		return fmt.Errorf("error reading network autostart setting: %s", err)
 	}
 	d.Set("autostart", autostart)
 
@@ -605,7 +605,7 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 		// so we need some transformations...
 		addr := net.ParseIP(address.Address)
 		if addr == nil {
-			return fmt.Errorf("Error parsing IP '%s': %s", address.Address, err)
+			return fmt.Errorf("error parsing IP '%s': %s", address.Address, err)
 		}
 		bits := net.IPv6len * 8
 		if addr.To4() != nil {
@@ -675,31 +675,31 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 
 	network, err := virConn.NetworkLookupByUUID(uuid)
 	if err != nil {
-		return fmt.Errorf("When destroying libvirt network: error retrieving %s", err)
+		return fmt.Errorf("ehen destroying libvirt network: error retrieving %s", err)
 	}
 
 	activeInt, err := virConn.NetworkIsActive(network)
 	if err != nil {
-		return fmt.Errorf("Couldn't determine if network is active: %s", err)
+		return fmt.Errorf("couldn't determine if network is active: %s", err)
 	}
+
 	// network can be in 2 states, handles this case by case
-	active := activeInt == 1
-	// in case network is inactive just undefine it
-	if !active {
-		if err := virConn.NetworkUndefine(network); err != nil {
-			return fmt.Errorf("Couldn't undefine libvirt network: %s", err)
-		}
-	}
-	// network is active, so we need to destroy it and undefine it
-	if active {
+	if active := int2bool(int(activeInt)); active {
+		// network is active, so we need to destroy it and undefine it
 		if err := virConn.NetworkDestroy(network); err != nil {
-			return fmt.Errorf("When destroying libvirt network: %s", err)
+			return fmt.Errorf("when destroying libvirt network: %s", err)
 		}
 
 		if err := virConn.NetworkUndefine(network); err != nil {
-			return fmt.Errorf("Couldn't undefine libvirt network: %s", err)
+			return fmt.Errorf("couldn't undefine libvirt network: %s", err)
+		}
+	} else {
+		// in case network is inactive just undefine it
+		if err := virConn.NetworkUndefine(network); err != nil {
+			return fmt.Errorf("couldn't undefine libvirt network: %s", err)
 		}
 	}
+
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{"ACTIVE"},
 		Target:     []string{"NOT-EXISTS"},
@@ -710,7 +710,7 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 	}
 	_, err = stateConf.WaitForState()
 	if err != nil {
-		return fmt.Errorf("Error waiting for network to reach NOT-EXISTS state: %s", err)
+		return fmt.Errorf("error waiting for network to reach NOT-EXISTS state: %s", err)
 	}
 	return nil
 }

@@ -8,6 +8,11 @@ import (
 	"net"
 	"net/url"
 	"strings"
+	"time"
+)
+
+const (
+	dialTimeout = 2*time.Second
 )
 
 type ConnectionURI struct {
@@ -28,8 +33,7 @@ func Parse(uriStr string) (*ConnectionURI, error) {
 // unless the name option is specified.
 func (u *ConnectionURI) RemoteName() string {
 	q := u.Query()
-	name := q.Get("name")
-	if name != "" {
+	if name := q.Get("name"); name != "" {
 		return name
 	}
 
@@ -45,13 +49,12 @@ func (u *ConnectionURI) transport() string {
 	parts := strings.Split(u.Scheme, "+")
 	if len(parts) > 1 {
 		return parts[1]
-	} else {
-		if u.Host != "" {
-			return "tls"
-		} else {
-			return "unix"
-		}
 	}
+
+	if u.Host != "" {
+		return "tls"
+	}
+	return "unix"
 }
 
 func (u *ConnectionURI) driver() string {
@@ -79,5 +82,5 @@ func (u *ConnectionURI) DialTransport() (net.Conn, error) {
 	case "ssh":
 		return u.dialSSH()
 	}
-	return nil, fmt.Errorf("Transport '%s' not implemented", t)
+	return nil, fmt.Errorf("transport '%s' not implemented", t)
 }

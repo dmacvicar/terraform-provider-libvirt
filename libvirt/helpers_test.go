@@ -231,7 +231,6 @@ func testAccCheckLibvirtNetworkDhcpStatus(name string, expectedDhcpStatus string
 			for _, ips := range networkDef.IPs {
 				// &libvirtxml.NetworkDHCP{..} should be nil when dhcp is disabled
 				if ips.DHCP != nil {
-					fmt.Printf("%#v", ips.DHCP)
 					return fmt.Errorf("the network should have DHCP disabled")
 				}
 			}
@@ -261,7 +260,6 @@ func testAccCheckLibvirtNetworkBridge(resourceName string, bridgeName string) re
 		}
 
 		if networkDef.Bridge.Name != bridgeName {
-			fmt.Printf("%#v", networkDef)
 			return fmt.Errorf("fail: network brigde property were not set correctly")
 		}
 

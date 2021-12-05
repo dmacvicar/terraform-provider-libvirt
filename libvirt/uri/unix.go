@@ -9,9 +9,9 @@ const (
 	defaultUnixSock = "/var/run/libvirt/libvirt-sock"
 )
 
-func (c *ConnectionURI) dialUNIX() (net.Conn, error) {
+func (u *ConnectionURI) dialUNIX() (net.Conn, error) {
 
-	q := c.Query()
+	q := u.Query()
 	address := q.Get("socket")
 	if address == "" {
 		address = defaultUnixSock
