@@ -1,4 +1,4 @@
-name: Tests
+name: Build and Test
 on:
   pull_request:
     paths-ignore:
@@ -14,13 +14,16 @@ permissions:
   contents: read
   pull-requests: read
 jobs:
-  golangci:
-    name: lint
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 2
+      - name: terraform fmt
+        run: |
+          make tflint
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
@@ -46,9 +49,6 @@ jobs:
         uses: actions/checkout@v2
       - name: Setup terraform
         uses: hashicorp/setup-terraform@v1
-      - name: Terraform fmt
-        run: |
-          make tf-check
       - name: Build
         run: |
           make

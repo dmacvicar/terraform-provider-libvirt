@@ -8,7 +8,7 @@ default: build
 terraform-provider-libvirt:
 	go build -ldflags "${LDFLAGS}"
 
-build: fmt-check lint-check vet-check terraform-provider-libvirt
+build: terraform-provider-libvirt
 
 install:
 	go install -ldflags "${LDFLAGS}"
@@ -19,10 +19,6 @@ install:
 # - run some particular test: make test TEST_ARGS="-run TestAccLibvirtDomain_Cpu"
 test:
 	go test -v $(TEST_ARGS_DEF) $(TEST_ARGS) ./libvirt
-
-lint:
-	golangci-lint run
-	terraform fmt -write=false -check=true -diff=true examples/
 
 # acceptance tests
 # usage:
@@ -39,17 +35,13 @@ lint:
 testacc:
 	./travis/run-tests-acceptance $(TEST_ARGS)
 
-vet-check:
-	go vet ./libvirt
+golangcilint:
+	golangci-lint run
 
-lint-check:
-	go run golang.org/x/lint/golint -set_exit_status ./libvirt .
-
-fmt-check:
-	go fmt ./libvirt .
-
-tf-check:
+tflint:
 	terraform fmt -write=false -check=true -diff=true examples/
+
+lint: golangcilint tflint
 
 clean:
 	rm -f terraform-provider-libvirt
@@ -57,4 +49,4 @@ clean:
 cleanup:
 	./travis/cleanup.sh
 
-.PHONY: build install test testacc vet-check fmt-check lint-check
+.PHONY: build install test testacc tflint golangcilint lint
