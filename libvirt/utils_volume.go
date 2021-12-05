@@ -17,7 +17,8 @@ func newCopier(virConn *libvirt.Libvirt, volume *libvirt.StorageVol, size uint64
 		defer w.Close()
 
 		go func() error {
-			bytesCopied, err := io.Copy(w, src)
+			buffer := make([]byte, 4*1024*1024)
+			bytesCopied, err := io.CopyBuffer(w, src, buffer)
 
 			// if we get unexpected EOF this mean that connection was closed suddently from server side
 			// the problem is not on the plugin but on server hosting currupted images
