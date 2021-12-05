@@ -114,7 +114,7 @@ func TestHasDHCPForwardSet(t *testing.T) {
 		}
 	}
 
-	for _, mode := range []string{"nat", "route", ""} {
+	for _, mode := range []string{"nat", "route", "open", ""} {
 		net := createNet(mode)
 		if !HasDHCP(net) {
 			t.Errorf(
