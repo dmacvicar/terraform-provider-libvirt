@@ -598,7 +598,7 @@ Currently the following attributes are supported:
   This is used to support features the provider does not allow to set from the schema.
   It is not recommended to alter properties and settings that are exposed to the schema, as terraform will insist in changing them back to the known state.
 
-See https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/examples/xslt/main.tf and https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/examples/xslt/nicmodel.xsl for a working example that changes the NIC model.
+See https://github.com/dmacvicar/terraform-provider-libvirt/blob/main/examples/v0.13/xslt/main.tf and https://github.com/dmacvicar/terraform-provider-libvirt/blob/main/examples/v0.13/xslt/nicmodel.xsl for a working example that changes the NIC model.
 
 ## Attributes Reference
 
