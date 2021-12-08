@@ -49,4 +49,4 @@ clean:
 cleanup:
 	./travis/cleanup.sh
 
-.PHONY: build install test testacc tflint golangcilint lint
+.PHONY: build install test testacc tflint golangcilint lint terraform-provider-libvirt
