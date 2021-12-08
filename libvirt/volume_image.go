@@ -50,7 +50,7 @@ func (i *localImage) IsQCOW2() (bool, error) {
 	file, err := os.Open(i.path)
 	defer file.Close()
 	if err != nil {
-		return false, fmt.Errorf("Error while opening %s: %s", i.path, err)
+		return false, fmt.Errorf("error while opening %s: %s", i.path, err)
 	}
 	buf := make([]byte, 8)
 	_, err = io.ReadAtLeast(file, buf, 8)
@@ -64,7 +64,7 @@ func (i *localImage) Import(copier func(io.Reader) error, vol libvirtxml.Storage
 	file, err := os.Open(i.path)
 	defer file.Close()
 	if err != nil {
-		return fmt.Errorf("Error while opening %s: %s", i.path, err)
+		return fmt.Errorf("error while opening %s: %s", i.path, err)
 	}
 
 	fi, err := file.Stat()
@@ -107,7 +107,7 @@ func (i *httpImage) Size() (uint64, error) {
 	if response.StatusCode != 200 {
 		return 0,
 			fmt.Errorf(
-				"Error accessing remote resource: %s - %s",
+				"error accessing remote resource: %s - %s",
 				i.url.String(),
 				response.Status)
 	}
@@ -115,7 +115,7 @@ func (i *httpImage) Size() (uint64, error) {
 	length, err := strconv.Atoi(response.Header.Get("Content-Length"))
 	if err != nil {
 		err = fmt.Errorf(
-			"Error while getting Content-Length of \"%s\": %s - got %s",
+			"error while getting Content-Length of \"%s\": %s - got %s",
 			i.url.String(),
 			err,
 			response.Header.Get("Content-Length"))
@@ -137,7 +137,7 @@ func (i *httpImage) IsQCOW2() (bool, error) {
 
 	if response.StatusCode != 206 {
 		return false, fmt.Errorf(
-			"Can't retrieve partial header of resource to determine file type: %s - %s",
+			"can't retrieve partial header of resource to determine file type: %s - %s",
 			i.url.String(),
 			response.Status)
 	}
@@ -149,7 +149,7 @@ func (i *httpImage) IsQCOW2() (bool, error) {
 
 	if len(header) < 8 {
 		return false, fmt.Errorf(
-			"Can't retrieve read header of resource to determine file type: %s - %d bytes read",
+			"can't retrieve read header of resource to determine file type: %s - %d bytes read",
 			i.url.String(),
 			len(header))
 	}
@@ -168,7 +168,7 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 
 	if err != nil {
 		log.Printf("[DEBUG:] Error creating new request for source url %s: %s", i.url.String(), err)
-		return fmt.Errorf("Error while downloading %s: %s", i.url.String(), err)
+		return fmt.Errorf("error while downloading %s: %s", i.url.String(), err)
 	}
 
 	if vol.Target.Timestamps != nil && vol.Target.Timestamps.Mtime != "" {
@@ -179,7 +179,7 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 	for retryCount := 0; retryCount < maxHTTPRetries; retryCount++ {
 		response, err = client.Do(req)
 		if err != nil {
-			return fmt.Errorf("Error while downloading %s: %v", i.url.String(), err)
+			return fmt.Errorf("error while downloading %s: %v", i.url.String(), err)
 		}
 		defer response.Body.Close()
 
@@ -198,13 +198,13 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 			}
 		}
 	}
-	return fmt.Errorf("Error while downloading %s: %v", i.url.String(), response)
+	return fmt.Errorf("error while downloading %s: %v", i.url.String(), response)
 }
 
 func newImage(source string) (image, error) {
 	url, err := url.Parse(source)
 	if err != nil {
-		return nil, fmt.Errorf("Can't parse source '%s' as url: %s", source, err)
+		return nil, fmt.Errorf("can't parse source '%s' as url: %s", source, err)
 	}
 
 	if strings.HasPrefix(url.Scheme, "http") {
@@ -223,14 +223,14 @@ func newImage(source string) (image, error) {
 				return &localImage{path: filepath.Clean(source)}, nil
 			}
 		}
-		return nil, fmt.Errorf("Don't know how to handle image URI from '%v' (scheme: %s)", url, url.Scheme)
+		return nil, fmt.Errorf("don't know how to handle image URI from '%v' (scheme: %s)", url, url.Scheme)
 	}
 }
 
 // isQCOW2Header returns True when the buffer starts with the qcow2 header
 func isQCOW2Header(buf []byte) (bool, error) {
 	if len(buf) < 8 {
-		return false, fmt.Errorf("Expected header of 8 bytes. Got %d", len(buf))
+		return false, fmt.Errorf("expected header of 8 bytes. Got %d", len(buf))
 	}
 	if buf[0] == 'Q' && buf[1] == 'F' && buf[2] == 'I' && buf[3] == 0xfb && buf[4] == 0x00 && buf[5] == 0x00 && buf[6] == 0x00 && buf[7] == 0x03 {
 		return true, nil

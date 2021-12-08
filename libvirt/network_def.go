@@ -13,7 +13,7 @@ import (
 // HasDHCP checks if the network has a DHCP server managed by libvirt
 func HasDHCP(net libvirtxml.Network) bool {
 	if net.Forward != nil {
-		if net.Forward.Mode == "nat" || net.Forward.Mode == "route" || net.Forward.Mode == "" {
+		if net.Forward.Mode == "nat" || net.Forward.Mode == "route" || net.Forward.Mode == "open" || net.Forward.Mode == "" {
 			return true
 		}
 	} else {
@@ -36,12 +36,12 @@ func newDefNetworkFromXML(s string) (libvirtxml.Network, error) {
 func getXMLNetworkDefFromLibvirt(virConn *libvirt.Libvirt, network libvirt.Network) (libvirtxml.Network, error) {
 	networkXMLDesc, err := virConn.NetworkGetXMLDesc(network, 0)
 	if err != nil {
-		return libvirtxml.Network{}, fmt.Errorf("Error retrieving libvirt network XML description: %s", err)
+		return libvirtxml.Network{}, fmt.Errorf("error retrieving libvirt network XML description: %s", err)
 	}
 	networkDef := libvirtxml.Network{}
 	err = xml.Unmarshal([]byte(networkXMLDesc), &networkDef)
 	if err != nil {
-		return libvirtxml.Network{}, fmt.Errorf("Error reading libvirt network XML description: %s", err)
+		return libvirtxml.Network{}, fmt.Errorf("error reading libvirt network XML description: %s", err)
 	}
 	return networkDef, nil
 }

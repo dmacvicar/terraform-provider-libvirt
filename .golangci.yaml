@@ -1,0 +1,28 @@
+linters-settings:
+  lll:
+    line-length: 140
+  gosec:
+    # complains that we allow to bypass checking certificates/keys
+    excludes:
+      - G402
+      - G106
+
+linters:
+  enable-all: false
+  enable:
+    - ifshort
+    - unparam
+    - exhaustive
+    - godot
+    - nilerr
+    - gosec
+    - revive
+    - gocritic
+    - misspell
+    - depguard
+    - lll
+    - errorlint
+    - errcheck
+    - gomnd
+issues:
+  new-from-rev: HEAD~

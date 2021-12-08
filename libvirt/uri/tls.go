@@ -39,7 +39,7 @@ func findResource(name string, dirs ...string) (string, error) {
 			return "", err
 		}
 	}
-	return "", fmt.Errorf("Can't locate resource '%s' in %v: %w", name, dirs, fs.ErrNotExist)
+	return "", fmt.Errorf("can't locate resource '%s' in %v: %w", name, dirs, fs.ErrNotExist)
 }
 
 func amIRoot() (bool, error) {
@@ -67,9 +67,8 @@ func (u *ConnectionURI) tlsConfig() (*tls.Config, error) {
 	clientKeySearchPath := []string{defaultGlobalClientKeyPath}
 
 	q := u.Query()
-	pkipath := q.Get("pkipath")
 	// if pkipath is provided, certs should all exist there
-	if pkipath != "" {
+	if pkipath := q.Get("pkipath"); pkipath != "" {
 		caCertSearchPath = []string{pkipath}
 		clientCertSearchPath = []string{pkipath}
 		clientKeySearchPath = []string{pkipath}
@@ -99,13 +98,13 @@ func (u *ConnectionURI) tlsConfig() (*tls.Config, error) {
 
 	caCert, err := ioutil.ReadFile(caCertPath)
 	if err != nil {
-		return nil, fmt.Errorf("Can't read certificate '%s': %w", caCert, err)
+		return nil, fmt.Errorf("can't read certificate '%s': %w", caCert, err)
 	}
 
 	roots := x509.NewCertPool()
 	ok := roots.AppendCertsFromPEM([]byte(caCert))
 	if !ok {
-		return nil, fmt.Errorf("Failed to parse CA certificate '%s'", caCertPath)
+		return nil, fmt.Errorf("failed to parse CA certificate '%s'", caCertPath)
 	}
 
 	clientCert, err := tls.LoadX509KeyPair(clientCertPath, clientKeyPath)

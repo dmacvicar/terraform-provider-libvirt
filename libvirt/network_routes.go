@@ -26,7 +26,7 @@ func getRoutesFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkRoute, e
 		if cidr, ok := d.GetOk(routePrefix + ".cidr"); ok {
 			addr, net, err := net.ParseCIDR(cidr.(string))
 			if err != nil {
-				return nil, fmt.Errorf("Error parsing static route in network: %s", err)
+				return nil, fmt.Errorf("error parsing static route in network: %s", err)
 			}
 
 			if addr.To4() == nil {
@@ -44,7 +44,7 @@ func getRoutesFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkRoute, e
 		if gw, ok := d.GetOk(routePrefix + ".gateway"); ok {
 			ip := net.ParseIP(gw.(string))
 			if ip == nil {
-				return nil, fmt.Errorf("Error parsing IP '%s' in static route in network", gw)
+				return nil, fmt.Errorf("error parsing IP '%s' in static route in network", gw)
 			}
 			route.Gateway = ip.String()
 		} else {

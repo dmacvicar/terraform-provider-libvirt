@@ -523,7 +523,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	arch, err := getHostArchitecture(virConn)
 	if err != nil {
-		return fmt.Errorf("Error retrieving host architecture: %s", err)
+		return fmt.Errorf("error retrieving host architecture: %s", err)
 	}
 
 	if err := setGraphics(d, &domainDef, arch); err != nil {
@@ -562,24 +562,24 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	connectURI, err := virConn.ConnectGetUri()
 	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt connection URI: %s", err)
+		return fmt.Errorf("error retrieving libvirt connection URI: %s", err)
 	}
 	log.Printf("[INFO] Creating libvirt domain at %s", connectURI)
 
 	data, err := xmlMarshallIndented(domainDef)
 	if err != nil {
-		return fmt.Errorf("Error serializing libvirt domain: %s", err)
+		return fmt.Errorf("error serializing libvirt domain: %s", err)
 	}
 	log.Printf("[DEBUG] Generated XML for libvirt domain:\n%s", data)
 
 	data, err = transformResourceXML(data, d)
 	if err != nil {
-		return fmt.Errorf("Error applying XSLT stylesheet: %s", err)
+		return fmt.Errorf("error applying XSLT stylesheet: %s", err)
 	}
 
 	domain, err := virConn.DomainDefineXML(data)
 	if err != nil {
-		return fmt.Errorf("Error defining libvirt domain: %s", err)
+		return fmt.Errorf("error defining libvirt domain: %s", err)
 	}
 
 	if autostart, ok := d.GetOk("autostart"); ok {
@@ -589,13 +589,13 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 		err = virConn.DomainSetAutostart(domain, autostartInt)
 		if err != nil {
-			return fmt.Errorf("Error setting autostart for domain: %s", err)
+			return fmt.Errorf("error setting autostart for domain: %s", err)
 		}
 	}
 
 	err = virConn.DomainCreate(domain)
 	if err != nil {
-		return fmt.Errorf("Error creating libvirt domain: %s", err)
+		return fmt.Errorf("error creating libvirt domain: %s", err)
 	}
 	id := uuidString(domain.UUID)
 	d.SetId(id)
@@ -619,7 +619,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				"4) is DHCP enabled on this Domain's network? \n" +
 				"5) if you use bridge network, the domain should have the pkg qemu-agent installed \n" +
 				"IMPORTANT: This error is not a terraform libvirt-provider error, but an error caused by your KVM/libvirt infrastructure configuration/setup"
-			return fmt.Errorf("Error: couldn't retrieve IP address of domain id: %s. %s \n %s", d.Id(), ipNotFoundMsg, err)
+			return fmt.Errorf("couldn't retrieve IP address of domain id: %s. %s \n %s", d.Id(), ipNotFoundMsg, err)
 		}
 	}
 
@@ -682,7 +682,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt domain by update: %s", err)
+		return fmt.Errorf("error retrieving libvirt domain by update: %s", err)
 	}
 
 	domainRunningNow, err := domainIsRunning(virConn, domain)
@@ -693,7 +693,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 	if !domainRunningNow {
 		err = virConn.DomainCreate(domain)
 		if err != nil {
-			return fmt.Errorf("Error creating libvirt domain: %s", err)
+			return fmt.Errorf("error creating libvirt domain: %s", err)
 		}
 	}
 
@@ -712,14 +712,14 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 		data, err := xml.Marshal(disk)
 		if err != nil {
-			return fmt.Errorf("Error serializing cloudinit disk: %s", err)
+			return fmt.Errorf("error serializing cloudinit disk: %s", err)
 		}
 
 		err = virConn.DomainUpdateDeviceFlags(domain,
 			string(data),
 			libvirt.DomainDeviceModifyConfig|libvirt.DomainDeviceModifyCurrent|libvirt.DomainDeviceModifyLive)
 		if err != nil {
-			return fmt.Errorf("Error while changing the cloudinit volume: %s", err)
+			return fmt.Errorf("error while changing the cloudinit volume: %s", err)
 		}
 
 		d.SetPartial("cloudinit")
@@ -733,7 +733,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 		err = virConn.DomainSetAutostart(domain, autoStart)
 		if err != nil {
-			return fmt.Errorf("Error setting autostart for domain: %s", err)
+			return fmt.Errorf("error setting autostart for domain: %s", err)
 		}
 
 		d.SetPartial("autostart")
@@ -754,7 +754,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 			network, err := virConn.NetworkLookupByUUID(uuid)
 			if err != nil {
-				return fmt.Errorf("Can't retrieve network ID %s", networkUUID)
+				return fmt.Errorf("can't retrieve network ID %s", networkUUID)
 			}
 
 			hostname := d.Get(prefix + ".hostname").(string)
@@ -765,7 +765,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 				ip := net.ParseIP(address)
 				if ip == nil {
-					return fmt.Errorf("Could not parse addresses '%s'", address)
+					return fmt.Errorf("could not parse addresses '%s'", address)
 				}
 
 				log.Printf("[INFO] Updating IP/MAC/host=%s/%s/%s in '%s' network", ip.String(), mac, hostname, network.Name)
@@ -793,12 +793,12 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt domain by read: %s", err)
+		return fmt.Errorf("error retrieving libvirt domain by read: %s", err)
 	}
 
 	xmlDesc, err := virConn.DomainGetXMLDesc(domain, 0)
 	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+		return fmt.Errorf("error retrieving libvirt domain XML description: %s", err)
 	}
 
 	log.Printf("[DEBUG] read: obtained XML desc for domain:\n%s", xmlDesc)
@@ -810,17 +810,17 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
 	if err != nil {
-		return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+		return fmt.Errorf("error reading libvirt domain XML description: %s", err)
 	}
 
 	autostart, err := virConn.DomainGetAutostart(domain)
 	if err != nil {
-		return fmt.Errorf("Error reading domain autostart setting: %s", err)
+		return fmt.Errorf("error reading domain autostart setting: %s", err)
 	}
 
 	domainRunningNow, err := domainIsRunning(virConn, domain)
 	if err != nil {
-		return fmt.Errorf("Error reading domain running state : %s", err)
+		return fmt.Errorf("error reading domain running state : %s", err)
 	}
 
 	d.Set("name", domainDef.Name)
@@ -864,7 +864,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		// network drives do not have a volume associated
 		if diskDef.Source.Network != nil {
 			if len(diskDef.Source.Network.Hosts) < 1 {
-				return fmt.Errorf("Network disk does not contain any hosts")
+				return fmt.Errorf("network disk does not contain any hosts")
 			}
 			url, err := url.Parse(fmt.Sprintf("%s://%s:%s%s",
 				diskDef.Source.Network.Protocol,
@@ -891,7 +891,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			// This code will be removed in future versions of the provider.
 			virVol, err := virConn.StorageVolLookupByPath(diskDef.Source.File.File)
 			if err != nil {
-				return fmt.Errorf("Error retrieving volume for disk: %s", err)
+				return fmt.Errorf("error retrieving volume for disk: %s", err)
 			}
 
 			disk = map[string]interface{}{
@@ -900,12 +900,12 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		} else {
 			pool, err := virConn.StoragePoolLookupByName(diskDef.Source.Volume.Pool)
 			if err != nil {
-				return fmt.Errorf("Error retrieving pool for disk: %s", err)
+				return fmt.Errorf("error retrieving pool for disk: %s", err)
 			}
 
 			virVol, err := virConn.StorageVolLookupByName(pool, diskDef.Source.Volume.Volume)
 			if err != nil {
-				return fmt.Errorf("Error retrieving volume for disk: %s", err)
+				return fmt.Errorf("error retrieving volume for disk: %s", err)
 			}
 
 			disk = map[string]interface{}{
@@ -931,7 +931,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	// lookup interfaces with addresses
 	ifacesWithAddr, err := domainGetIfacesInfo(virConn, domain, d)
 	if err != nil {
-		return fmt.Errorf("Error retrieving interface addresses: %s", err)
+		return fmt.Errorf("error retrieving interface addresses: %s", err)
 	}
 
 	addressesForMac := func(mac string) []string {
@@ -974,12 +974,12 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		if networkInterfaceDef.Source.Network != nil {
 			network, err := virConn.NetworkLookupByName(networkInterfaceDef.Source.Network.Network)
 			if err != nil {
-				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
+				return fmt.Errorf("can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
 			}
 
 			netIface["network_id"] = uuidString(network.UUID)
 			if err != nil {
-				return fmt.Errorf("Can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
+				return fmt.Errorf("can't retrieve network ID for '%s'", networkInterfaceDef.Source.Network.Network)
 			}
 
 			networkDef, err := getXMLNetworkDefFromLibvirt(virConn, network)
@@ -1044,12 +1044,12 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 
 	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt domain by delete: %s", err)
+		return fmt.Errorf("error retrieving libvirt domain by delete: %s", err)
 	}
 
 	xmlDesc, err := virConn.DomainGetXMLDesc(domain, 0)
 	if err != nil {
-		return fmt.Errorf("Error retrieving libvirt domain XML description: %s", err)
+		return fmt.Errorf("error retrieving libvirt domain XML description: %s", err)
 	}
 
 	domainDef, err := newDomainDefForConnection(virConn, d)
@@ -1059,28 +1059,28 @@ func resourceLibvirtDomainDelete(d *schema.ResourceData, meta interface{}) error
 
 	err = xml.Unmarshal([]byte(xmlDesc), &domainDef)
 	if err != nil {
-		return fmt.Errorf("Error reading libvirt domain XML description: %s", err)
+		return fmt.Errorf("error reading libvirt domain XML description: %s", err)
 	}
 
 	state, _, err := virConn.DomainGetState(domain, 0)
 	if err != nil {
-		return fmt.Errorf("Couldn't get info about domain: %s", err)
+		return fmt.Errorf("couldn't get info about domain: %s", err)
 	}
 
 	if state == int32(libvirt.DomainRunning) || state == int32(libvirt.DomainPaused) {
 		if err := virConn.DomainDestroy(domain); err != nil {
-			return fmt.Errorf("Couldn't destroy libvirt domain: %s", err)
+			return fmt.Errorf("couldn't destroy libvirt domain: %s", err)
 		}
 	}
 
-	if err := virConn.DomainUndefineFlags(domain, libvirt.DomainUndefineNvram); err != nil {
+	if err := virConn.DomainUndefineFlags(domain, libvirt.DomainUndefineNvram|libvirt.DomainUndefineSnapshotsMetadata|libvirt.DomainUndefineManagedSave|libvirt.DomainUndefineCheckpointsMetadata); err != nil {
 		if e := err.(libvirt.Error); e.Code == uint32(libvirt.ErrNoSupport) || e.Code == uint32(libvirt.ErrInvalidArg) {
 			log.Printf("libvirt does not support undefine flags: will try again without flags")
 			if err := virConn.DomainUndefine(domain); err != nil {
-				return fmt.Errorf("Couldn't undefine libvirt domain: %s", err)
+				return fmt.Errorf("couldn't undefine libvirt domain: %s", err)
 			}
 		} else {
-			return fmt.Errorf("Couldn't undefine libvirt domain with flags: %s", err)
+			return fmt.Errorf("couldn't undefine libvirt domain with flags: %s", err)
 		}
 	}
 
