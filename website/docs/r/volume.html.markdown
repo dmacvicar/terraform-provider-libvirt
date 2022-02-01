@@ -58,12 +58,17 @@ The following arguments are supported:
   `size` can be omitted if `source` is specified. `size` will then be set to the source image file size.
   `size` can be omitted if `base_volume_id` or `base_volume_name` is specified. `size` will then be set to the base volume size.
   If `size` is specified to be bigger than `base_volume_id` or `base_volume_name` size, you can use [cloudinit](https://cloudinit.readthedocs.io) if your OS supports it, with `libvirt_cloudinit_disk` and the [growpart](https://cloudinit.readthedocs.io/en/latest/topics/modules.html#growpart) module to resize the partition.
+* `allocation´ - (Optional) Storage allocated for the volume.
+  If `allocation` is less than `size` the volume may be sparsely allocated.
+  By default `allocation` equals `size`.
 * `base_volume_id` - (Optional) The backing volume (CoW) to use for this volume.
 * `base_volume_name` - (Optional) The name of the backing volume (CoW) to use
   for this volume. Note well: when `base_volume_pool` is not specified the
   volume is going to be searched inside of `pool`.
 * `base_volume_pool` - (Optional) The name of the storage pool containing the
   volume defined by `base_volume_name`.
+* `preallocate_metadata` - (Optional) Preallocate qcow2 metadata.
+  If `allocation` equals `size` the volume is preallocated with `fallocate`.
 
 ### Altering libvirt's generated volume XML definition
 

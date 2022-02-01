@@ -6,6 +6,7 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
 func resourceLibvirtVolume() *schema.Resource {
@@ -37,6 +38,12 @@ func resourceLibvirtVolume() *schema.Resource {
 				Computed: true,
 				ForceNew: true,
 			},
+			"allocation": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
+			},
 			"format": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -56,6 +63,12 @@ func resourceLibvirtVolume() *schema.Resource {
 			"base_volume_name": {
 				Type:     schema.TypeString,
 				Optional: true,
+				ForceNew: true,
+			},
+			"preallocate_metadata": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
 				ForceNew: true,
 			},
 			"xml": {
@@ -167,6 +180,12 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		if _, ok := d.GetOk("size"); ok {
 			volumeDef.Capacity.Value = uint64(d.Get("size").(int))
 		}
+		if _, ok := d.GetOkExists("allocation"); ok { //nolint:golint,staticcheck
+			volumeDef.Allocation = &libvirtxml.StorageVolumeSize{
+				Unit:  "bytes",
+				Value: uint64(d.Get("allocation").(int)),
+			}
+		}
 
 		// first handle whether it has a backing image
 		// backing images can be specified by either (id), or by (name, pool)
@@ -233,8 +252,13 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("error applying XSLT stylesheet: %s", err)
 	}
 
+	var flags libvirt.StorageVolCreateFlags
+	if d.Get("preallocate_metadata").(bool) {
+		flags = libvirt.StorageVolCreatePreallocMetadata
+	}
+
 	// create the volume
-	volume, err := virConn.StorageVolCreateXML(pool, data, 0)
+	volume, err := virConn.StorageVolCreateXML(pool, data, flags)
 	if err != nil {
 		virErr := err.(libvirt.Error)
 		if virErr.Code != uint32(libvirt.ErrStorageVolExist) {
