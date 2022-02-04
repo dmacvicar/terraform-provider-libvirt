@@ -6,7 +6,7 @@ terraform {
       version = "0.6.12"
     }
     ignition = {
-      source = "terraform-providers/ignition"
+      source = "community-terraform-providers/ignition"
     }
   }
 }

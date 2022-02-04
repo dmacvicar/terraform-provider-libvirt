@@ -21,7 +21,6 @@ data "ignition_config" "startup" {
 
 # Replace the default hostname with our generated one
 data "ignition_file" "hostname" {
-  filesystem = "root" # default `ROOT` filesystem
   path       = "/etc/hostname"
   mode       = 420 # decimal 0644
 
