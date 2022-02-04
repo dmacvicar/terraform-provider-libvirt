@@ -44,7 +44,7 @@ data "ignition_user" "core" {
 
 ## Relevant for the QEMU Guest Agent example
 #data "ignition_systemd_unit" "mount-images" {
-#  name = "mnt-images.mount"
+#  name = "var-mnt-images.mount"
 #  enabled = true
 #  content = "${file("${path.module}/qemu-agent/docker-images.mount")}"
 #}
