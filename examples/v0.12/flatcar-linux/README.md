@@ -12,7 +12,7 @@ Terraform v0.12.6
 
 ### Flatcar Linux
 
-Ths example is strongly inspired by the CoreOS [example](https://github.com/dmacvicar/terraform-provider-libvirt/tree/master/examples/v0.12/coreos).
+This example is strongly inspired by the CoreOS [example](https://github.com/dmacvicar/terraform-provider-libvirt/tree/master/examples/v0.12/coreos).
 
 QEMU-agent is not used, network is configured with static IP to keep things simple.
 
@@ -32,7 +32,7 @@ $ virsh net-dumpxml --network cluster-net
 
 Do not forget to download Flatcar Linux image and to add it the pool of your [choice](https://docs.flatcar-linux.org/os/booting-with-libvirt/#choosing-a-channel).
 
-You can specify the number of hosts by updating: 
+You can specify the number of hosts by updating:
 ```hcl
 variable "hosts" {
   default = 2
@@ -52,4 +52,3 @@ resource "libvirt_domain" "node" {
   ...
 }
 ```
-

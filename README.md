@@ -115,7 +115,7 @@ Until terraform-provider-libvirt 0.4.2, qemu-agent was used by default to get ne
 
 In current versions, we default to not to attempt connecting to it, and attempting to retrieve network interface information from the agent needs to be enabled explicitly with `qemu_agent = true`, further details [here](https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/website/docs/r/domain.html.markdown). Note that you still need to make sure the agent is running in the OS, and that is unrelated to this option.
 
-Note: when using bridge network configurations you need to enable the `qemu_agent = true`. otherwise you will not retrieve the ip adresses of domains. 
+Note: when using bridge network configurations you need to enable the `qemu_agent = true`. otherwise you will not retrieve the ip addresses of domains.
 
 Be aware that this variables may be subject to change again in future versions.
 
@@ -139,8 +139,8 @@ Be aware that this variables may be subject to change again in future versions.
 * [Openshift 4 Installer](https://github.com/openshift/installer)
   The Openshift 4 Installer uses Terraform for cluster orchestration and relies on terraform-provider-libvirt for
   libvirt platform.
-  
-* [terraform-libvirt-kubespray](https://github.com/MusicDin/terraform-kvm-kubespray) Terraform script for setting up HA kubernetes cluster using KVM/libvirt and Kubespray. 
+
+* [terraform-libvirt-kubespray](https://github.com/MusicDin/terraform-kvm-kubespray) Terraform script for setting up HA kubernetes cluster using KVM/libvirt and Kubespray.
 
 ## Authors
 

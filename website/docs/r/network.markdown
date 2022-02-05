@@ -41,7 +41,7 @@ resource "libvirt_network" "kube_network" {
   # (Optional) DNS configuration
   dns {
     # (Optional, default false)
-    # Set to true, if no other option is specified and you still want to 
+    # Set to true, if no other option is specified and you still want to
     # enable dns.
     enabled = true
     # (Optional, default false)
@@ -57,8 +57,8 @@ resource "libvirt_network" "kube_network" {
     # forwarders {
     #     address = "my address"
     #     domain = "my domain"
-    #  } 
-    # 
+    #  }
+    #
 
     # (Optional) one or more DNS host entries.  Both of
     # "ip" and "hostname" must be specified.  The format is:
@@ -70,7 +70,7 @@ resource "libvirt_network" "kube_network" {
     #     hostname = "my_hostname"
     #     ip = "my.ip.address.2"
     #   }
-    # 
+    #
 
     # (Optional) one or more static routes.
     # "cidr" and "gateway" must be specified. The format is:
@@ -187,8 +187,8 @@ resource "libvirt_network" "k8snet" {
 }
 ```
 
-* `dhcp` - (Optional) DHCP configuration. 
-   You need to use it in conjuction with the adresses variable.
+* `dhcp` - (Optional) DHCP configuration.
+   You need to use it in conjunction with the addresses variable.
   * `enabled` - (Optional) when false, disable the DHCP server
 ```hcl
 				resource "libvirt_network" "test_net" {

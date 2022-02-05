@@ -116,12 +116,12 @@ func TestGetHostCapabilties(t *testing.T) {
 
 	caps, err := getHostCapabilities(conn)
 	if err != nil {
-		t.Errorf("Can't get host capabilties")
+		t.Errorf("Can't get host capabilities")
 	}
 	if caps.Host.UUID == "" {
 		t.Errorf("Host has no UUID!")
 	}
 
 	elapsed := time.Since(start)
-	t.Logf("[DEBUG] Get host capabilites took %s", elapsed)
+	t.Logf("[DEBUG] Get host capabilities took %s", elapsed)
 }

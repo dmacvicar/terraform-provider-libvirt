@@ -391,7 +391,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		// if addresses are given set dhcp for these
 		ips, err := getIPsFromResource(d)
 		if err != nil {
-			return fmt.Errorf("could not set DHCP from adresses '%s'", err)
+			return fmt.Errorf("could not set DHCP from addresses '%s'", err)
 		}
 		networkDef.IPs = ips
 
@@ -644,7 +644,7 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 
 	network, err := virConn.NetworkLookupByUUID(uuid)
 	if err != nil {
-		return fmt.Errorf("ehen destroying libvirt network: error retrieving %s", err)
+		return fmt.Errorf("when destroying libvirt network: error retrieving %s", err)
 	}
 
 	activeInt, err := virConn.NetworkIsActive(network)
