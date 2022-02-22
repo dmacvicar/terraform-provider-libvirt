@@ -5,7 +5,9 @@ require (
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/digitalocean/go-libvirt v0.0.0-20210723161134-761cfeeb5968
+	github.com/diskfs/go-diskfs v1.2.0
 	github.com/fatih/color v1.10.0 // indirect
+	github.com/frankban/quicktest v1.14.2 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/terraform-plugin-sdk v1.9.0
 	github.com/hooklift/assert v0.0.0-20170704181755-9d1defd6d214 // indirect

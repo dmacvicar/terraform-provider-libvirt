@@ -32,10 +32,10 @@ COPY --from=terraform /bin/terraform /bin/
 COPY --from=libvirt /go/bin/terraform-provider-libvirt /root/.terraform.d/plugins/${GO_OS}_${GO_ARCH}/
 
 # Install Dependencies
-# libvirt-client is needed to run the provider. libxslt-tools needed to use XML/XSLT. mkisofs needed to use cloud init images
+# libvirt-client is needed to run the provider. libxslt-tools needed to use XML/XSLT.
 RUN zypper update \
     && zypper dist-upgrade \
-    && zypper --non-interactive install --no-recommends libvirt-client libxslt-tools mkisofs openssh
+    && zypper --non-interactive install --no-recommends libvirt-client libxslt-tools openssh
 
 # Copy Terraform Files
 # COPY libvirt.tf /root/
