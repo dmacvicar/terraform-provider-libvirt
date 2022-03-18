@@ -658,7 +658,13 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				address := addressI.(string)
 				log.Printf("[INFO] Finally adding IP/MAC/host=%s/%s/%s", address, mac, pending.hostname)
 
-				err = updateOrAddHost(virConn, network, address, mac, pending.hostname)
+				var err error
+				ip := net.ParseIP(address)
+				if ip == nil {
+					err = fmt.Errorf("not an IP address: %s", address)
+				} else {
+					err = updateOrAddHost(virConn, network, ip, mac, pending.hostname)
+				}
 				if err != nil {
 					log.Printf("Could not add IP/MAC/host=%s/%s/%s: %s", address, mac, pending.hostname, err)
 				}
@@ -770,7 +776,7 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 
 				log.Printf("[INFO] Updating IP/MAC/host=%s/%s/%s in '%s' network", ip.String(), mac, hostname, network.Name)
 
-				if err := updateOrAddHost(virConn, network, ip.String(), mac, hostname); err != nil {
+				if err := updateOrAddHost(virConn, network, ip, mac, hostname); err != nil {
 					return err
 				}
 			}

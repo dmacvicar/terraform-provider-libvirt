@@ -758,7 +758,7 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 						}
 
 						log.Printf("[INFO] Adding IP/MAC/host=%s/%s/%s to %s", ip.String(), mac, hostname, network.Name)
-						if err := updateOrAddHost(virConn, network, ip.String(), mac, hostname); err != nil {
+						if err := updateOrAddHost(virConn, network, ip, mac, hostname); err != nil {
 							return err
 						}
 					}
