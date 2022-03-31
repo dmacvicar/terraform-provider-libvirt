@@ -51,7 +51,7 @@ func resourceLibvirtDomain() *schema.Resource {
 				ForceNew: true,
 			},
 			"metadata": {
-				Type:     schema.TypeString,
+				Type:     schema.TypeMap,
 				Optional: true,
 				ForceNew: false,
 			},
