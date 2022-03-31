@@ -35,7 +35,7 @@ In your `main.tf` file, specify the version you want to use:
 terraform {
   required_providers {
     libvirt = {
-      source = "dmacvicar/libvirt"
+      source = "dorgeln/libvirt"
     }
   }
 }
