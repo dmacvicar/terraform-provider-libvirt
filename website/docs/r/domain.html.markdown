@@ -281,43 +281,6 @@ resource "libvirt_domain" "domain1" {
 }
 ```
 
-Also note that the `disk` block is actually a list of maps, so it is possible to
-declare several of them by using either the literal list and map syntax as in
-the following examples:
-
-```hcl
-resource "libvirt_domain" "my_machine" {
-  ...
-  disk {
-    volume_id = libvirt_volume.volume1.id
-  }
-  disk {
-    volume_id = libvirt_volume.volume2.id
-  }
-}
-```
-
-```hcl
-resource "libvirt_domain" "my_machine" {
-  ...
-  disk = [
-    {
-      volume_id = libvirt_volume.volume1.id
-    },
-    {
-      volume_id = libvirt_volume.volume2.id
-    }
-  ]
-}
-```
-
-```hcl
-resource "libvirt_domain" "my_machine" {
-  ...
-  disk = [var.disk_map_list]
-}
-```
-
 ### Handling network interfaces
 
 The `network_interface` specifies a network interface that can be connected
