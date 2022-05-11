@@ -10,7 +10,7 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirtxml "github.com/libvirt/libvirt-go-xml"
+	"libvirt.org/go/libvirtxml"
 )
 
 // updateDNSHosts detects changes in the DNS hosts entries

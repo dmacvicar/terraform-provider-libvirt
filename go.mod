@@ -10,7 +10,6 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk v1.9.0
 	github.com/hooklift/assert v0.0.0-20170704181755-9d1defd6d214 // indirect
 	github.com/hooklift/iso9660 v1.0.0
-	github.com/libvirt/libvirt-go-xml v7.4.0+incompatible
 	github.com/mattn/goveralls v0.0.2
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/stretchr/testify v1.7.0
@@ -19,6 +18,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	libvirt.org/go/libvirtxml v1.8003.0
 )
 
 replace git.apache.org/thrift.git => github.com/apache/thrift v0.0.0-20180902110319-2566ecd5d999

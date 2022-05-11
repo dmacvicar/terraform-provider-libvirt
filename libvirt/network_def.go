@@ -7,7 +7,7 @@ import (
 	"net"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	libvirtxml "github.com/libvirt/libvirt-go-xml"
+	"libvirt.org/go/libvirtxml"
 )
 
 // HasDHCP checks if the network has a DHCP server managed by libvirt

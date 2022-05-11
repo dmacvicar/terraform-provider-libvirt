@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/libvirt/libvirt-go-xml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"libvirt.org/go/libvirtxml"
 )
 
 func TestNewImage(t *testing.T) {
