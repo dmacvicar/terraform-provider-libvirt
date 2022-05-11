@@ -50,8 +50,8 @@ func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Ne
 				return fmt.Errorf("serialize update: %s", err)
 			}
 
-			// See networkUpdateWorkAroundLibvirt for more information about why this wrapper method exists
-			err = (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(network, uint32(libvirt.NetworkUpdateCommandDelete), uint32(libvirt.NetworkSectionDNSHost), -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
+			err = virConn.NetworkUpdateCompat(network, libvirt.NetworkUpdateCommandDelete,
+				libvirt.NetworkSectionDNSHost, -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
 			if err != nil {
 				return fmt.Errorf("delete %s: %s", oldEntry.IP, err)
 			}
@@ -75,8 +75,8 @@ func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Ne
 				return fmt.Errorf("serialize update: %s", err)
 			}
 
-			// See networkUpdateWorkAroundLibvirt for more information about why this wrapper method exists
-			err = (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(network, uint32(libvirt.NetworkUpdateCommandAddLast), uint32(libvirt.NetworkSectionDNSHost), -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
+			err = virConn.NetworkUpdateCompat(network, libvirt.NetworkUpdateCommandAddLast,
+				libvirt.NetworkSectionDNSHost, -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
 			if err != nil {
 				return fmt.Errorf("add %v: %s", newEntry, err)
 			}

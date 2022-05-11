@@ -63,6 +63,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/digitalocean/go-libvirt v0.0.0-20210723161134-761cfeeb5968 h1:ZdYBqLPrXioo+1Z97PWaTK4+jRcS45BI6JlepKtkPKI=
 github.com/digitalocean/go-libvirt v0.0.0-20210723161134-761cfeeb5968/go.mod h1:o129ljs6alsIQTc8d6eweihqpmmrbxZ2g1jhgjhPykI=
+github.com/digitalocean/go-libvirt v0.0.0-20220616141158-7ed4ed4decd9 h1:sORhX0pmJTbieCx5NMHcpTESQTQIJry+OGlSDZO7yKQ=
+github.com/digitalocean/go-libvirt v0.0.0-20220616141158-7ed4ed4decd9/go.mod h1:o129ljs6alsIQTc8d6eweihqpmmrbxZ2g1jhgjhPykI=
 github.com/dmacvicar/golang-x-crypto v0.0.0-20220126233154-a96af8f07497 h1:LBVsZYaxAt1v07hCDdhjL7F13238aw7ZLUOypcj/Uh8=
 github.com/dmacvicar/golang-x-crypto v0.0.0-20220126233154-a96af8f07497/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
