@@ -1,8 +1,11 @@
 package libvirt
 
 import (
+	"encoding/binary"
 	"fmt"
 	"log"
+	"math"
+	"math/big"
 	"net"
 	"strings"
 
@@ -61,8 +64,14 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 
 	ipsPtrsLst := []libvirtxml.NetworkIP{}
 	for num, addressI := range addresses.([]interface{}) {
+		dhcpOffsetKey := fmt.Sprintf("dhcp.%d.range_start_offset", num)
+		dhcpRangeStartOffsetVal, ok := d.GetOkExists(dhcpOffsetKey)
+		dhcpRangeStartOffset := 0
+		if ok {
+			dhcpRangeStartOffset = dhcpRangeStartOffsetVal.(int)
+		}
 		// get the IP address entry for this subnet (with a guessed DHCP range)
-		dni, dhcp, err := getNetworkIPConfig(addressI.(string))
+		dni, dhcp, err := getNetworkIPConfig(addressI.(string), dhcpRangeStartOffset)
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +96,7 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 	return ipsPtrsLst, nil
 }
 
-func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHCP, error) {
+func getNetworkIPConfig(address string, rangeStartOffset int) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHCP, error) {
 	_, ipNet, err := net.ParseCIDR(address)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing addresses definition '%s': %s", address, err)
@@ -118,6 +127,44 @@ func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.Netw
 
 	start[len(start)-1]++ // then skip the .1
 	end[len(end)-1]--     // and skip the .255 (for broadcast)
+
+	rangeStartOffset -= 2 // we already skipped the first two addresses
+	if rangeStartOffset > 0 {
+		if len(start) == 4 {
+			startInt := binary.BigEndian.Uint32(start)
+			endInt := binary.BigEndian.Uint32(end)
+
+			if startInt > math.MaxUint32-uint32(rangeStartOffset) {
+				return nil, nil, fmt.Errorf(
+					"specified DHCP range start offset is too large for the specified netmask")
+			}
+
+			startInt += uint32(rangeStartOffset)
+			if startInt > endInt {
+				return nil, nil, fmt.Errorf(
+					"specified DHCP range start offset is too large for the specified netmask")
+			}
+
+			binary.BigEndian.PutUint32(start, startInt)
+		} else if len(start) == 16 {
+			startInt := big.NewInt(0)
+			startInt.SetBytes(start)
+			endInt := big.NewInt(0)
+			endInt.SetBytes(end)
+
+			startOffset := big.NewInt(int64(rangeStartOffset))
+
+			startInt = startInt.Add(startInt, startOffset)
+			if startInt.Cmp(endInt) > 0 {
+				return nil, nil, fmt.Errorf(
+					"specified DHCP range start offset is too large for the specified netmask")
+			}
+
+			startInt.FillBytes(start)
+		} else {
+			return nil, nil, fmt.Errorf("unexpected IP address length: %d", len(start))
+		}
+	}
 
 	dhcp := &libvirtxml.NetworkDHCP{
 		Ranges: []libvirtxml.NetworkDHCPRange{
