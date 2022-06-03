@@ -9,6 +9,45 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
+// network UUID data source
+//
+// Datasource example
+//
+// data "libvirt_network_uuid" "cio_dev" {
+//    name = "cio-dev"
+// }
+//
+// data.libvirt_network_uuid.cio_dev
+func datasourceLibvirtNetworkUUIDTemplate() *schema.Resource {
+	return &schema.Resource{
+		Read: datasourceLibvirtNetworkUUIDTemplateRead,
+		Schema: map[string]*schema.Schema{
+			"name": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			},
+			"rendered": {
+				Type: schema.TypeMap,
+				Computed: true,
+			},
+		},
+	}
+}
+
+func datasourceLibvirtNetworkUUIDTemplateRead(d *schema.ResourceData, meta interface{}) error {
+	networkUUID := map[string]interface{}{}
+	if network_name, ok := d.GetOk("name"); ok {
+		networkUUID["name"] = network_name.(string)
+	}
+
+	d.Set("rendered", networkUUID)
+	d.SetId(strconv.Itoa(hashcode.String(fmt.Sprintf("%v", networkUUID))))
+
+	return nil
+}
+
+
 // a libvirt network DNS host template datasource
 //
 // Datasource example:
