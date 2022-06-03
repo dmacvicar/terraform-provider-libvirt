@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -26,7 +27,6 @@ func datasourceLibvirtNetworkUUIDTemplate() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			},
 			"rendered": {
 				Type: schema.TypeMap,
 				Computed: true,
@@ -36,13 +36,19 @@ func datasourceLibvirtNetworkUUIDTemplate() *schema.Resource {
 }
 
 func datasourceLibvirtNetworkUUIDTemplateRead(d *schema.ResourceData, meta interface{}) error {
-	networkUUID := map[string]interface{}{}
-	if network_name, ok := d.GetOk("name"); ok {
-		networkUUID["name"] = network_name.(string)
+	log.Printf("[DEBUG] Read resource libvirt_network")
+
+	virConn := meta.(*Client).libvirt
+	if virConn == nil {
+		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	d.Set("rendered", networkUUID)
-	d.SetId(strconv.Itoa(hashcode.String(fmt.Sprintf("%v", networkUUID))))
+	network, err := virConn.NetworkLookupByName(d.Get("name").(string))
+	if err != nil {
+		return nil
+	}
+	d.Set("rendered", network)
+	d.SetId(uuidString(network.UUID))
 
 	return nil
 }
