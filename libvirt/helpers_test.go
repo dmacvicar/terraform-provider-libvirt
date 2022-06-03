@@ -260,7 +260,7 @@ func testAccCheckLibvirtNetworkBridge(resourceName string, bridgeName string) re
 		}
 
 		if networkDef.Bridge.Name != bridgeName {
-			return fmt.Errorf("fail: network brigde property were not set correctly")
+			return fmt.Errorf("fail: network bridge property were not set correctly")
 		}
 
 		return nil

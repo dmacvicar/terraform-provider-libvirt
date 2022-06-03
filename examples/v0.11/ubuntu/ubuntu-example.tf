@@ -25,7 +25,7 @@ data "template_file" "network_config" {
   template = "${file("${path.module}/network_config.cfg")}"
 }
 
-# for more info about paramater check this out
+# for more info about parameter check this out
 # https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/website/docs/r/cloudinit.html.markdown
 # Use CloudInit to add our ssh-key to the instance
 # you can add also meta_data field
@@ -75,4 +75,3 @@ resource "libvirt_domain" "domain-ubuntu" {
 }
 
 # IPs: use wait_for_lease true or after creation use terraform refresh and terraform show for the ips of domain
-

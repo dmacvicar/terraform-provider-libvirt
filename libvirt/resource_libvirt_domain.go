@@ -623,7 +623,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	// We save runnig state to not mix what we have and what we want
+	// We save running state to not mix what we have and what we want
 	requiredStatus := d.Get("running")
 
 	err = resourceLibvirtDomainRead(d, meta)

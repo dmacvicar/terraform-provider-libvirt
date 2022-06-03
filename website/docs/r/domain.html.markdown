@@ -239,7 +239,7 @@ The `disk` block supports:
 * `volume_id` - (Optional) The volume id to use for this disk.
 * `url` - (Optional) The http url to use as the block device for this disk (read-only)
 * `file` - (Optional) The filename to use as the block device for this disk (read-only)
-* `block_device` - (Optional) The path to the host device to use as the block device for this disk. 
+* `block_device` - (Optional) The path to the host device to use as the block device for this disk.
 
 While `volume_id`, `url`, `file` and `block_device` are optional, it is intended that you use one of them.
 
@@ -506,7 +506,7 @@ resource "libvirt_domain" "my_machine" {
 
 ### Sharing filesystem between libvirt host and guest
 
-The optional `filesystem` block allows to define one or more [filesytem](https://libvirt.org/formatdomain.html#elementsFilesystems)
+The optional `filesystem` block allows to define one or more [filesystem](https://libvirt.org/formatdomain.html#elementsFilesystems)
 entries to be added to the domain. This allows to share a directory of the libvirtd
 host with the guest.
 
