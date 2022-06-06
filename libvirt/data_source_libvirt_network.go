@@ -4,40 +4,50 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-// network UUID data source
-//
-// Datasource example
-//
-// data "libvirt_network_uuid" "cio_dev" {
-//    name = "cio-dev"
-// }
-//
-// data.libvirt_network_uuid.cio_dev
-func datasourceLibvirtNetworkUUIDTemplate() *schema.Resource {
+/*
+ Provide a Terraform data source for the libvirt_network resource.
+
+ Given the name of the network return information about this network.
+
+ Usage:
+ // Get the information of network object with name "default"
+ data "libvirt_network" "default" {
+   name = "default"
+ }
+
+ // Use this information in other place like libvirt_domain to attach
+ // a domain network interface to an existing network.
+ resource "libvirt_domain" "domain" {
+
+   dynamic "network_interface" {
+
+     content {
+       network_id = data.libvirt_network_uuid.dev_network.id
+     }
+   }
+*/
+func datasourceLibvirtNetworkTemplate() *schema.Resource {
 	return &schema.Resource{
-		Read: datasourceLibvirtNetworkUUIDTemplateRead,
+		Read: datasourceLibvirtNetworkTemplateRead,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 			"rendered": {
-				Type: schema.TypeMap,
+				Type:     schema.TypeMap,
 				Computed: true,
 			},
 		},
 	}
 }
 
-func datasourceLibvirtNetworkUUIDTemplateRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("[DEBUG] Read resource libvirt_network")
-
+func datasourceLibvirtNetworkTemplateRead(d *schema.ResourceData, meta interface{}) error {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
@@ -52,7 +62,6 @@ func datasourceLibvirtNetworkUUIDTemplateRead(d *schema.ResourceData, meta inter
 
 	return nil
 }
-
 
 // a libvirt network DNS host template datasource
 //

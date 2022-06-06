@@ -32,7 +32,7 @@ func Provider() terraform.ResourceProvider {
 			"libvirt_network_dns_host_template":        datasourceLibvirtNetworkDNSHostTemplate(),
 			"libvirt_network_dns_srv_template":         datasourceLibvirtNetworkDNSSRVTemplate(),
 			"libvirt_network_dnsmasq_options_template": datasourceLibvirtNetworkDnsmasqOptionsTemplate(),
-			"libvirt_network_uuid": datasourceLibvirtNetworkUUIDTemplate(),
+			"libvirt_network":                          datasourceLibvirtNetworkTemplate(),
 		},
 
 		ConfigureFunc: providerConfigure,

@@ -12,29 +12,53 @@ const (
 	UUIDBuflen = 16
 )
 
-func TestAccLibvirtNetworkDataSource_UUID(t *testing.T) {
+func TestAccLibvirtNetworkDataSource(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck: func() {testAccPreCheck(t) },
+		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: `data "libvirt_network_uuid" "default_network" {
+				Config: `data "libvirt_network" "default" {
 name = "default"
 }`,
 				Check: resource.ComposeTestCheckFunc(
-					checkTemplate("data.libvirt_network_uuid.default_network", "name", "default"),
+					checkTemplate("data.libvirt_network.default", "name", "default"),
 					func(state *terraform.State) error {
-						rs, err := getResourceFromTerraformState("data.libvirt_network_uuid.default_network", state)
+						rs, err := getResourceValue("data.libvirt_network.default", "id", state)
 						if err != nil {
 							return err
 						}
-
-						value := parseUUID(rs.Primary.Attributes["id"])
+						value := parseUUID(rs)
 						if len(value) != UUIDBuflen {
 							return fmt.Errorf(
 								"Network UUID format not expected %v", uuidString(value))
 						}
 						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtNetworkDataSourceNonExistingNetwork(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: `data "libvirt_network" "NonExistingNetwork" {
+name = "NonExistingNetworkName"
+}`,
+				Check: resource.ComposeTestCheckFunc(
+					func(state *terraform.State) error {
+						_, err := getResourceValue("data.libvirt_network.NonExistingNetwork", "id", state)
+						if err != nil {
+							return nil
+						}
+
+						return fmt.Errorf(
+							"No libvirt network is expected with this name")
 					},
 				),
 			},
@@ -65,15 +89,22 @@ func TestAccLibvirtNetworkDataSource_DNSHostTemplate(t *testing.T) {
 	})
 }
 
+func getResourceValue(id string, name string, state *terraform.State) (string, error) {
+	rs, err := getResourceFromTerraformState(id, state)
+	if err != nil {
+		return "", err
+	}
+
+	return rs.Primary.Attributes[name], nil
+}
+
 func checkTemplate(id, name, value string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-
-		rs, err := getResourceFromTerraformState(id, state)
+		v, err := getResourceValue(id, name, state)
 		if err != nil {
 			return err
 		}
 
-		v := rs.Primary.Attributes[name]
 		if v != value {
 			return fmt.Errorf(
 				"Value for %s is %s, not %s", name, v, value)
