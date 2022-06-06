@@ -8,6 +8,40 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
+const (
+	UUIDBuflen = 16
+)
+
+func TestAccLibvirtNetworkDataSource_UUID(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: `data "libvirt_network_uuid" "default_network" {
+name = "default"
+}`,
+				Check: resource.ComposeTestCheckFunc(
+					checkTemplate("data.libvirt_network_uuid.default_network", "name", "default"),
+					func(state *terraform.State) error {
+						rs, err := getResourceFromTerraformState("data.libvirt_network_uuid.default_network", state)
+						if err != nil {
+							return err
+						}
+
+						value := parseUUID(rs.Primary.Attributes["id"])
+						if len(value) != UUIDBuflen {
+							return fmt.Errorf(
+								"Network UUID format not expected %v", uuidString(value))
+						}
+						return nil
+					},
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtNetworkDataSource_DNSHostTemplate(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
