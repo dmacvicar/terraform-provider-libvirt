@@ -461,19 +461,25 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt) error {
 	var scsiDisk = false
 	var numOfISOs = 0
+	var numOfSCSIs = 0
 
 	for i := 0; i < d.Get("disk.#").(int); i++ {
 		disk := newDefDisk(i)
 
 		prefix := fmt.Sprintf("disk.%d", i)
 		if d.Get(prefix + ".scsi").(bool) {
-			disk.Target.Bus = "scsi"
+			disk.Target = &libvirtxml.DomainDiskTarget{
+				Dev: fmt.Sprintf("sd%s", diskLetterForIndex(numOfSCSIs)),
+				Bus: "scsi",
+			}
 			scsiDisk = true
 			if wwn, ok := d.GetOk(prefix + ".wwn"); ok {
 				disk.WWN = wwn.(string)
 			} else {
 				disk.WWN = randomWWN(10)
 			}
+
+			numOfSCSIs++
 		}
 
 		if volumeKey, ok := d.GetOk(prefix + ".volume_id"); ok {
