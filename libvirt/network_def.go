@@ -87,7 +87,9 @@ func addHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, 
 	log.Printf("Adding host with XML:\n%s", xmlDesc)
 	// From https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
 	// Update live and config for hosts to make update permanent across reboots
-	return virConn.NetworkUpdateCompat(n, libvirt.NetworkUpdateCommandAddLast, libvirt.NetworkSectionIPDhcpHost, int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
+	return virConn.NetworkUpdateCompat(n, libvirt.NetworkUpdateCommandAddLast,
+		libvirt.NetworkSectionIPDhcpHost, int32(xmlIdx), xmlDesc,
+		libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
 }
 
 // Update a static host from the network
@@ -96,7 +98,9 @@ func updateHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name strin
 	log.Printf("Updating host with XML:\n%s", xmlDesc)
 	// From https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
 	// Update live and config for hosts to make update permanent across reboots
-	return virConn.NetworkUpdateCompat(n, libvirt.NetworkUpdateCommandModify, libvirt.NetworkSectionIPDhcpHost, int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
+	return virConn.NetworkUpdateCompat(n, libvirt.NetworkUpdateCommandModify,
+		libvirt.NetworkSectionIPDhcpHost, int32(xmlIdx), xmlDesc,
+		libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
 }
 
 // Get the network index of the target network

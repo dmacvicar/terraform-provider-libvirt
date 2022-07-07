@@ -50,7 +50,8 @@ func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Ne
 				return fmt.Errorf("serialize update: %s", err)
 			}
 
-			err = virConn.NetworkUpdateCompat(network, libvirt.NetworkUpdateCommandDelete, libvirt.NetworkSectionDNSHost, -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
+			err = virConn.NetworkUpdateCompat(network, libvirt.NetworkUpdateCommandDelete,
+				libvirt.NetworkSectionDNSHost, -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
 			if err != nil {
 				return fmt.Errorf("delete %s: %s", oldEntry.IP, err)
 			}
@@ -74,7 +75,8 @@ func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Ne
 				return fmt.Errorf("serialize update: %s", err)
 			}
 
-			err = virConn.NetworkUpdateCompat(network, libvirt.NetworkUpdateCommandAddLast, libvirt.NetworkSectionDNSHost, -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
+			err = virConn.NetworkUpdateCompat(network, libvirt.NetworkUpdateCommandAddLast,
+				libvirt.NetworkSectionDNSHost, -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
 			if err != nil {
 				return fmt.Errorf("add %v: %s", newEntry, err)
 			}
