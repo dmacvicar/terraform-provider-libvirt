@@ -97,7 +97,7 @@ func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.Netw
 	if bits == (net.IPv6len * 8) {
 		family = "ipv6"
 	}
-	ipsRange := 2 ^ bits - 2 ^ ones
+	ipsRange := (1 << bits) - (1 << ones)
 	if ipsRange < 4 {
 		return nil, nil, fmt.Errorf("netmask seems to be too strict: only %d IPs available (%s)", ipsRange-3, family)
 	}
