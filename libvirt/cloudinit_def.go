@@ -8,13 +8,16 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	libvirt "github.com/digitalocean/go-libvirt"
+	diskfs "github.com/diskfs/go-diskfs"
+	"github.com/diskfs/go-diskfs/disk"
+	"github.com/diskfs/go-diskfs/filesystem"
+	"github.com/diskfs/go-diskfs/filesystem/iso9660"
 	"github.com/google/uuid"
-	"github.com/hooklift/iso9660"
+	oldIso9660 "github.com/hooklift/iso9660"
 )
 
 const userDataFileName string = "user-data"
@@ -145,22 +148,64 @@ func (ci *defCloudInit) createISO() (string, error) {
 	}
 
 	isoDestination := filepath.Join(tmpDir, ci.Name)
-	cmd := exec.Command(
-		"mkisofs",
-		"-output",
-		isoDestination,
-		"-volid",
-		"cidata",
-		"-joliet",
-		"-rock",
-		filepath.Join(tmpDir, userDataFileName),
-		filepath.Join(tmpDir, metaDataFileName),
-		filepath.Join(tmpDir, networkConfigFileName))
-
-	log.Printf("About to execute cmd: %+v", cmd)
-	if err = cmd.Run(); err != nil {
-		return "", fmt.Errorf("error while starting the creation of CloudInit's ISO image: %s", err)
+	isoDisk, err := diskfs.Create(isoDestination, 10*1024*1024, diskfs.Raw)
+	if err != nil {
+		return "", err
 	}
+	isoDisk.LogicalBlocksize = 2048
+	fspec := disk.FilesystemSpec{Partition: 0, FSType: filesystem.TypeISO9660, VolumeLabel: "cidata"}
+	fs, err := isoDisk.CreateFilesystem(fspec)
+	if err != nil {
+		return "", err
+	}
+	for _, s := range []struct {
+		name string
+		path string
+	}{
+		{name: "user-data", path: userDataFileName},
+		{name: "meta-data", path: metaDataFileName},
+		{name: "network-config", path: networkConfigFileName},
+	} {
+		fi, err := os.Open(s.path)
+		if err != nil {
+			return "", err
+		}
+		rw, err := fs.OpenFile(s.name, os.O_CREATE|os.O_RDWR)
+		if err != nil && err != io.EOF {
+			return "", err
+		}
+		buf := make([]byte, 1024)
+		for {
+			n, err := fi.Read(buf)
+			if err != nil && err != io.EOF {
+				return "", err
+			}
+			if n == 0 {
+				break
+			}
+
+			_, err = rw.Write(buf[:n])
+			if err != nil {
+				return "", err
+			}
+		}
+		err = fi.Close()
+		if err != nil {
+			return "", err
+		}
+	}
+	iso, ok := fs.(*iso9660.FileSystem)
+	if !ok {
+		return "", fmt.Errorf("not an iso9660 filesystem")
+	}
+	err = iso.Finalize(iso9660.FinalizeOptions{
+		RockRidge:        true,
+		VolumeIdentifier: "cidata",
+	})
+	if err != nil {
+		return "", err
+	}
+
 	log.Printf("ISO created at %s", isoDestination)
 
 	return isoDestination, nil
@@ -237,7 +282,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Libvirt, id string) (defCloud
 
 // setCloudInitDataFromExistingCloudInitDisk read and set UserData, MetaData, and NetworkConfig from existing CloudInitDisk
 func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvirt.Libvirt, isoFile *os.File) error {
-	isoReader, err := iso9660.NewReader(isoFile)
+	isoReader, err := oldIso9660.NewReader(isoFile)
 	if err != nil {
 		return fmt.Errorf("error initializing ISO reader: %s", err)
 	}
