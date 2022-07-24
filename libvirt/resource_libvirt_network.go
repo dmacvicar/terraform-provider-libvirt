@@ -644,7 +644,7 @@ func resourceLibvirtNetworkDelete(d *schema.ResourceData, meta interface{}) erro
 
 	network, err := virConn.NetworkLookupByUUID(uuid)
 	if err != nil {
-		return fmt.Errorf("ehen destroying libvirt network: error retrieving %s", err)
+		return fmt.Errorf("when destroying libvirt network: error retrieving %s", err)
 	}
 
 	activeInt, err := virConn.NetworkIsActive(network)
