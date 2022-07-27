@@ -6,6 +6,9 @@ linters-settings:
     excludes:
       - G402
       - G106
+  errcheck:
+    exclude-functions:
+      - (*github.com/hashicorp/terraform-plugin-sdk/helper/schema.ResourceData).Set
 
 linters:
   enable-all: false
