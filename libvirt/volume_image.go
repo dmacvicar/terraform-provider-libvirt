@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/libvirt/libvirt-go-xml"
+	"libvirt.org/go/libvirtxml"
 )
 
 // network transparent image

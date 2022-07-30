@@ -5,38 +5,11 @@ import (
 	"math/rand"
 	"net"
 	"time"
-
-	libvirt "github.com/digitalocean/go-libvirt"
 )
 
 const (
 	maxIfaceNum = 100
 )
-
-// Wrapper to work-around the NetworkUpdate swapper parameters bug.
-// Unfortunately, as we don't know if the remote dispatcher is fixed,
-// we need to check the version.
-// the official libvirt client does some introspection and swaps internally as well.
-//
-// See https://listman.redhat.com/archives/libvir-list/2021-March/msg00054.html
-// and https://listman.redhat.com/archives/libvir-list/2021-March/msg00760.html
-type networkUpdateWorkaroundLibvirt struct {
-	*libvirt.Libvirt
-}
-
-func (l *networkUpdateWorkaroundLibvirt) NetworkUpdate(Net libvirt.Network, Command uint32, Section uint32, ParentIndex int32, XML string, Flags libvirt.NetworkUpdateFlags) (err error) {
-	version, err := l.ConnectGetLibVersion()
-	if err != nil {
-		return fmt.Errorf("failed to retrieve libvirt version: %w", err)
-	}
-
-	// https://gitlab.com/libvirt/libvirt/-/commit/b0f78d626a18bcecae3a4d165540ab88bfbfc9ee
-	// order is fixed since 7.2.0
-	if version < 7002000 {
-		return l.Libvirt.NetworkUpdate(Net, Section, Command, ParentIndex, XML, Flags)
-	}
-	return l.Libvirt.NetworkUpdate(Net, Command, Section, ParentIndex, XML, Flags)
-}
 
 // randomMACAddress returns a randomized MAC address
 // with libvirt prefix

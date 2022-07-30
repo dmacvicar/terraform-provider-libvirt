@@ -13,8 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	libvirtxml "github.com/libvirt/libvirt-go-xml"
 	"github.com/terraform-providers/terraform-provider-ignition/ignition"
+	"libvirt.org/go/libvirtxml"
 )
 
 // This file contain function helpers used for testsuite/testacc

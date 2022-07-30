@@ -7,7 +7,7 @@ import (
 	"net"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	libvirtxml "github.com/libvirt/libvirt-go-xml"
+	"libvirt.org/go/libvirtxml"
 )
 
 // HasDHCP checks if the network has a DHCP server managed by libvirt
@@ -87,9 +87,9 @@ func addHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, 
 	log.Printf("Adding host with XML:\n%s", xmlDesc)
 	// From https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
 	// Update live and config for hosts to make update permanent across reboots
-	//
-	// See networkUpdateWorkAroundLibvirt for more information about why this wrapper method exists
-	return (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(n, uint32(libvirt.NetworkUpdateCommandAddLast), uint32(libvirt.NetworkSectionIPDhcpHost), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
+	return virConn.NetworkUpdateCompat(n, libvirt.NetworkUpdateCommandAddLast,
+		libvirt.NetworkSectionIPDhcpHost, int32(xmlIdx), xmlDesc,
+		libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
 }
 
 // Update a static host from the network
@@ -98,9 +98,9 @@ func updateHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name strin
 	log.Printf("Updating host with XML:\n%s", xmlDesc)
 	// From https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
 	// Update live and config for hosts to make update permanent across reboots
-	//
-	// See networkUpdateWorkAroundLibvirt for more information about why this wrapper method exists
-	return (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(n, uint32(libvirt.NetworkUpdateCommandModify), uint32(libvirt.NetworkSectionIPDhcpHost), int32(xmlIdx), xmlDesc, libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
+	return virConn.NetworkUpdateCompat(n, libvirt.NetworkUpdateCommandModify,
+		libvirt.NetworkSectionIPDhcpHost, int32(xmlIdx), xmlDesc,
+		libvirt.NetworkUpdateAffectConfig|libvirt.NetworkUpdateAffectLive)
 }
 
 // Get the network index of the target network

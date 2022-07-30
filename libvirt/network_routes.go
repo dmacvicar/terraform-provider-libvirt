@@ -6,7 +6,7 @@ import (
 	"net"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/libvirt/libvirt-go-xml"
+	"libvirt.org/go/libvirtxml"
 )
 
 // getRoutesFromResource gets the libvirt network routes from a network definition
