@@ -3,7 +3,7 @@ provider "libvirt" {
   uri = "qemu:///system"
 }
 
-# adapt the build number 
+# adapt the build number
 resource "libvirt_volume" "tubleweed" {
   name   = "tubleweed"
   pool   = "default"
@@ -19,7 +19,7 @@ data "template_file" "network_config" {
   template = file("${path.module}/network_config.cfg")
 }
 
-# for more info about paramater check this out
+# for more info about parameter check this out
 # https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/website/docs/r/cloudinit.html.markdown
 # Use CloudInit to add our ssh-key to the instance
 # you can add also meta_data field

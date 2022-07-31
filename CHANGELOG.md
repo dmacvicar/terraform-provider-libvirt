@@ -8,7 +8,7 @@
 - network: add support for updating _dns.hosts_ (https://github.com/dmacvicar/terraform-provider-libvirt/pull/469)
 - network: add support for setting _SRV_ entries (https://github.com/dmacvicar/terraform-provider-libvirt/pull/460)
 - qemu-agent: do not contact the qemu agent if the domain is shutdown (https://github.com/dmacvicar/terraform-provider-libvirt/pull/474)
-- cli:  add `-version` flag (https://github.com/dmacvicar/terraform-provider-libvirt/pull/444)  
+- cli:  add `-version` flag (https://github.com/dmacvicar/terraform-provider-libvirt/pull/444)
 
 ## 0.5 (October 10, 2018)
 
@@ -39,7 +39,7 @@
 
 #### Networking
 
-* `dhcp` paramater is an optional parameter now, disabled by default. (https://github.com/dmacvicar/terraform-provider-libvirt/pull/385)
+* `dhcp` parameter is an optional parameter now, disabled by default. (https://github.com/dmacvicar/terraform-provider-libvirt/pull/385)
 * DNS forwarders were reworked. `localonly` option was added to libvirt-network (https://github.com/dmacvicar/terraform-provider-libvirt/commit/7651ee5824f77f0c7485736315d5a24762f85e60)
 * A datasource called `libvirt_network_dns_hosts_template` can be used to populate the `dns_host` attribute in `libvirt_network` resources. (https://github.com/dmacvicar/terraform-provider-libvirt/commit/a4d0ba6a319d8728cb5d6c10aae593bdd27da516)
 ___
@@ -51,7 +51,7 @@ ___
 ___
 #### Bugs
 
-* `netIface["bridge"]` now uses the correct value (https://github.com/dmacvicar/terraform-provider-libvirt/commit/2e93c78b2aea17b48639b3d613f12bfad851fd52) 
+* `netIface["bridge"]` now uses the correct value (https://github.com/dmacvicar/terraform-provider-libvirt/commit/2e93c78b2aea17b48639b3d613f12bfad851fd52)
 
 ## 0.4.3 (August 14, 2018)
 
@@ -91,5 +91,3 @@ HIGHLIGHTS:
 * The project now provides builds
 * The project now has a gitter.im channel
 * Integration tests are fixed and working again
-
-

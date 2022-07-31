@@ -21,7 +21,7 @@ func newCopier(virConn *libvirt.Libvirt, volume *libvirt.StorageVol, size uint64
 			bytesCopied, err := io.CopyBuffer(w, src, buffer)
 
 			// if we get unexpected EOF this mean that connection was closed suddently from server side
-			// the problem is not on the plugin but on server hosting currupted images
+			// the problem is not on the plugin but on server hosting corrupted images
 			if err == io.ErrUnexpectedEOF {
 				return fmt.Errorf("error: transfer was unexpectedly closed from the server while downloading. Please try again later or check the server hosting sources")
 			}

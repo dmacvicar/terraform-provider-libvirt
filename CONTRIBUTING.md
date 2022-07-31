@@ -24,7 +24,7 @@
 
 - Creation and update resource. Consider to implement the `update` CRUD of terraform-libvirt  of an existing resource and also testing it in acceptance tests.
 For example if an user rerun 2 times a terraform apply with a different parameter, this call will update the existing resource with the new parameter.
-This step is not trivial and need some special care on the implementation. 
+This step is not trivial and need some special care on the implementation.
 An example of updating a resource in acceptance tests is here: https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/libvirt/resource_libvirt_cloud_init_test.go#L73
 
 ## Conventions
@@ -92,7 +92,7 @@ Then you can visualize the profile in html format:
 go tool cover -html=profile.cov
 ```
 
-The codecoverage can give you more usefull infos about were you could write a new tests for improving our acceptance tests.
+The codecoverage can give you more useful infos about were you could write a new tests for improving our acceptance tests.
 
 Feel free to read more about this on : https://blog.golang.org/cover.
 
@@ -116,4 +116,4 @@ https://godoc.org/github.com/libvirt/libvirt-go
 
 We try to keep easy issues for new contributors with label : https://github.com/dmacvicar/terraform-provider-libvirt/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22.
 
-Feel free to pick also other issues 
+Feel free to pick also other issues

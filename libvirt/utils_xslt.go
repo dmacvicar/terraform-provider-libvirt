@@ -25,7 +25,7 @@ const (
 
 // This is the function we use to detect if the XSLT attribute itself changed
 // As we don't want to recreate resources when the XSLT is changed with whitespace,
-// we specify the diff supress function as the result of applying the identity
+// we specify the diff suppress function as the result of applying the identity
 // transform to the xslt, stripping whitespace
 // See https://www.terraform.io/docs/extend/schemas/schema-behaviors.html#diffsuppressfunc
 func xsltDiffSupressFunc(k, old, new string, d *schema.ResourceData) bool {

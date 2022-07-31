@@ -391,7 +391,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 		// if addresses are given set dhcp for these
 		ips, err := getIPsFromResource(d)
 		if err != nil {
-			return fmt.Errorf("could not set DHCP from adresses '%s'", err)
+			return fmt.Errorf("could not set DHCP from addresses '%s'", err)
 		}
 		networkDef.IPs = ips
 
