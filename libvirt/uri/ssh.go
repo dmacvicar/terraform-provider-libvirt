@@ -62,7 +62,31 @@ func (u *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 			if err != nil {
 				log.Printf("[ERROR] Failed to parse ssh key: %v", err)
 			}
-			result = append(result, ssh.PublicKeys(signer))
+
+			// Use SSH certificate if any
+			sshCertPath := sshKeyPath + "-cert.pub"
+			sshCert, err := ioutil.ReadFile(os.ExpandEnv(sshCertPath))
+			if err != nil {
+				// Log and ignore error if no certificate is found: we just continue using private key only
+				log.Printf("[ERROR] Failed to read ssh certificate: %v", err)
+				result = append(result, ssh.PublicKeys(signer))
+				continue
+			} else {
+				publiKeyCert, _, _, _, err := ssh.ParseAuthorizedKey(sshCert)
+				if err != nil {
+					// Log and ignore error, if not a parseable certificate: we just continue using private key only
+					log.Printf("[ERROR] Failed to parse ssh certificate: %v", err)
+					result = append(result, ssh.PublicKeys(signer))
+					continue
+				} else {
+					certSigner, err := ssh.NewCertSigner(publiKeyCert.(*ssh.Certificate), signer)
+					if err != nil {
+						log.Printf("[ERROR] Failed to use ssh certificate: %v", err)
+					} else {
+						result = append(result, ssh.PublicKeys(certSigner))
+					}
+				}
+			}
 		case "ssh-password":
 			if sshPassword, ok := u.User.Password(); ok {
 				result = append(result, ssh.Password(sshPassword))
