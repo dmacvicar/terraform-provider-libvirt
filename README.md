@@ -140,7 +140,7 @@ Be aware that this variables may be subject to change again in future versions.
   The Openshift 4 Installer uses Terraform for cluster orchestration and relies on terraform-provider-libvirt for
   libvirt platform.
   
-* [terraform-libvirt-kubespray](https://github.com/MusicDin/terraform-kvm-kubespray) Terraform script for setting up HA kubernetes cluster using KVM/libvirt and Kubespray. 
+* [Kubitect](https://github.com/MusicDin/kubitect) - a CLI tool for deploying and managing Kubernetes clusters on libvirt platform.
 
 ## Authors
 
