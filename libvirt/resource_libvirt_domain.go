@@ -12,7 +12,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/suppress"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -147,7 +147,6 @@ func resourceLibvirtDomain() *schema.Resource {
 				Type:       schema.TypeList,
 				Optional:   true,
 				ForceNew:   true,
-				ConfigMode: schema.SchemaConfigModeAttr,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"volume_id": {
@@ -165,6 +164,8 @@ func resourceLibvirtDomain() *schema.Resource {
 						"scsi": {
 							Type:     schema.TypeBool,
 							Optional: true,
+							ForceNew: true,
+							Default:  false,
 						},
 						"wwn": {
 							Type:     schema.TypeString,
@@ -330,12 +331,14 @@ func resourceLibvirtDomain() *schema.Resource {
 				Type:     schema.TypeList,
 				MaxItems: 1,
 				Optional: true,
+				Computed: true,
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"mode": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
+							Computed: true,
 						},
 					},
 				},
@@ -343,6 +346,7 @@ func resourceLibvirtDomain() *schema.Resource {
 			"autostart": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Computed: true,
 			},
 			"machine": {
 				Type:     schema.TypeString,
@@ -597,16 +601,9 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return fmt.Errorf("error creating libvirt domain: %s", err)
 	}
+
 	id := uuidString(domain.UUID)
 	d.SetId(id)
-
-	// the domain ID must always be saved, otherwise it won't be possible to cleanup a domain
-	// if something bad happens at provisioning time
-	d.Partial(true)
-	d.Set("id", id)
-	d.SetPartial("id")
-	d.Partial(false)
-
 	log.Printf("[INFO] Domain ID: %s", d.Id())
 
 	if len(waitForLeases) > 0 {
@@ -721,8 +718,6 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		if err != nil {
 			return fmt.Errorf("error while changing the cloudinit volume: %s", err)
 		}
-
-		d.SetPartial("cloudinit")
 	}
 
 	if d.HasChange("autostart") {
@@ -735,8 +730,6 @@ func resourceLibvirtDomainUpdate(d *schema.ResourceData, meta interface{}) error
 		if err != nil {
 			return fmt.Errorf("error setting autostart for domain: %s", err)
 		}
-
-		d.SetPartial("autostart")
 	}
 
 	netIfacesCount := d.Get("network_interface.#").(int)
@@ -817,6 +810,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf("error reading domain autostart setting: %s", err)
 	}
+	_ = d.Set("autostart", autostart > 0)
 
 	domainRunningNow, err := domainIsRunning(virConn, domain)
 	if err != nil {
@@ -825,13 +819,46 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("name", domainDef.Name)
 	d.Set("description", domainDef.Description)
-	d.Set("vcpu", domainDef.VCPU)
-	d.Set("memory", domainDef.Memory)
-	d.Set("firmware", domainDef.OS.Loader)
-	d.Set("nvram", domainDef.OS.NVRam)
-	d.Set("cpu", domainDef.CPU)
+	d.Set("vcpu", domainDef.VCPU.Value)
+
+	switch domainDef.Memory.Unit {
+	case "KiB": d.Set("memory", domainDef.Memory.Value / 1024)
+	case "MiB": d.Set("memory", domainDef.Memory.Value)
+	default:
+		return fmt.Errorf("invalid memory unit : %s", domainDef.Memory.Unit)
+	}
+
+	if domainDef.OS.Loader != nil {
+		d.Set("firmware", domainDef.OS.Loader.Path)
+	}
+
+	if domainDef.OS.NVRam != nil {
+		nvram := map[string]interface{}{}
+		if domainDef.OS.NVRam.NVRam != "" {
+			nvram["file"] = domainDef.OS.NVRam.NVRam
+		}
+
+		if domainDef.OS.NVRam.Template != "" {
+			nvram["template"] = domainDef.OS.NVRam.Template
+		}
+
+		d.Set("nvram", []map[string]interface{}{nvram})
+	}
+
+
+	if domainDef.CPU != nil {
+		cpu := make(map[string]interface{})
+		var cpus []map[string]interface{}
+		if domainDef.CPU.Mode != "" {
+			cpu["mode"] = domainDef.CPU.Mode
+		}
+		if len(cpu) > 0 {
+			cpus = append(cpus, cpu)
+			d.Set("cpu", cpus)
+		}
+	}
+
 	d.Set("arch", domainDef.OS.Type.Arch)
-	d.Set("autostart", autostart)
 	d.Set("running", domainRunningNow)
 
 	cmdLines, err := splitKernelCmdLine(domainDef.OS.Cmdline)
@@ -878,12 +905,18 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 				"url": url.String(),
 			}
 		} else if diskDef.Device == "cdrom" {
+			// HACK we marked the disk as belonging to the cloudinit
+			// resource so we can ignore it
+			if diskDef.Serial == "cloudinit" {
+				continue
+			}
+
 			disk = map[string]interface{}{
-				"file": diskDef.Source.File,
+				"file": diskDef.Source.File.File,
 			}
 		} else if diskDef.Source.Block != nil {
 			disk = map[string]interface{}{
-				"block_device": diskDef.Source.Block,
+				"block_device": diskDef.Source.Block.Dev,
 			}
 		} else if diskDef.Source.File != nil {
 			// LEGACY way of handling volumes using "file", which we replaced
@@ -913,9 +946,20 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			}
 		}
 
+		if diskDef.Target != nil && diskDef.Target.Bus == "scsi" {
+			disk["scsi"] = true
+			disk["wwn"] = diskDef.WWN
+		} else {
+			disk["scsi"] = false
+		}
+
 		disks = append(disks, disk)
 	}
-	d.Set("disks", disks)
+
+	if len(disks) > 0 {
+		d.Set("disk", disks)
+	}
+
 	var filesystems []map[string]interface{}
 	for _, fsDef := range domainDef.Devices.Filesystems {
 		fs := map[string]interface{}{
@@ -926,7 +970,10 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		}
 		filesystems = append(filesystems, fs)
 	}
-	d.Set("filesystems", filesystems)
+
+	if len(filesystems) > 0 {
+		d.Set("filesystem", filesystems)
+	}
 
 	// lookup interfaces with addresses
 	ifacesWithAddr, err := domainGetIfacesInfo(virConn, domain, d)
@@ -1019,7 +1066,10 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 		netIfaces = append(netIfaces, netIface)
 	}
 	log.Printf("[DEBUG] read: ifaces for '%s':\n%s", domainDef.Name, spew.Sdump(netIfaces))
-	d.Set("network_interface", netIfaces)
+
+	if len(netIfaces) > 0 {
+		d.Set("network_interface", netIfaces)
+	}
 
 	if len(ifacesWithAddr) > 0 {
 		d.SetConnInfo(map[string]string{

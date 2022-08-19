@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceIgnition() *schema.Resource {
@@ -53,13 +53,6 @@ func resourceIgnitionCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	d.SetId(key)
-
-	// make sure we record the id even if the rest of this gets interrupted
-	d.Partial(true) // make sure we record the id even if the rest of this gets interrupted
-	d.Set("id", key)
-	d.SetPartial("id")
-	// TODO: at this point we have collected more things than the ID, so let's save as many things as we can
-	d.Partial(false)
 
 	return resourceIgnitionRead(d, meta)
 }

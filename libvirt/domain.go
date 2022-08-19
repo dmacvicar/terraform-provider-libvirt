@@ -13,8 +13,8 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -187,6 +187,9 @@ func domainGetIfacesInfo(virConn *libvirt.Libvirt, domain libvirt.Domain, rd *sc
 
 func newDiskForCloudInit(virConn *libvirt.Libvirt, volumeKey string) (libvirtxml.DomainDisk, error) {
 	disk := libvirtxml.DomainDisk{
+		// HACK mark the disk as belonging to the cloudinit
+		// resource so we can ignore it
+		Serial: "cloudinit",
 		Device: "cdrom",
 		Target: &libvirtxml.DomainDiskTarget{
 			// Last device letter possible with a single IDE controller on i440FX

@@ -5,8 +5,8 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/hashcode"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // a libvirt network DNS host template datasource

@@ -5,7 +5,7 @@ import (
 	"log"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceLibvirtVolume() *schema.Resource {
@@ -250,13 +250,6 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	// we use the key as the id
 	d.SetId(volume.Key)
-
-	// make sure we record the id even if the rest of this gets interrupted
-	d.Partial(true)
-	d.Set("id", volume.Key)
-	d.SetPartial("id")
-	d.Partial(false)
-
 	log.Printf("[INFO] Volume ID: %s", d.Id())
 
 	// upload source if present
