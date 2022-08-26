@@ -219,8 +219,13 @@ func testAccCheckDNSHosts(name string, expected []libvirtxml.NetworkDNSHost) res
 	}
 }
 
+type DHCPRange struct {
+	Start string
+	End   string
+}
+
 // testAccCheckLibvirtNetworkDhcpStatus checks the expected DHCP status
-func testAccCheckLibvirtNetworkDhcpStatus(name string, expectedDhcpStatus string) resource.TestCheckFunc {
+func testAccCheckLibvirtNetworkDhcpStatus(name string, expectedDhcpStatus string, expectedRanges []DHCPRange) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 		networkDef, err := getNetworkDef(s, name, virConn)
@@ -236,10 +241,24 @@ func testAccCheckLibvirtNetworkDhcpStatus(name string, expectedDhcpStatus string
 			}
 		}
 		if expectedDhcpStatus == "enabled" {
+			var ranges []DHCPRange
+
 			for _, ips := range networkDef.IPs {
 				if ips.DHCP == nil {
-					return fmt.Errorf("the network should have DHCP enabled")
+					continue
 				}
+
+				for _, addrRange := range ips.DHCP.Ranges {
+					ranges = append(ranges, DHCPRange{addrRange.Start, addrRange.End})
+				}
+			}
+
+			if len(ranges) == 0 {
+				return fmt.Errorf("the network should have DHCP enabled")
+			}
+
+			if !reflect.DeepEqual(ranges, expectedRanges) {
+				return fmt.Errorf("expected DHCP ranges: %v != actual DHCP ranges: %v", expectedRanges, ranges)
 			}
 		}
 		return nil

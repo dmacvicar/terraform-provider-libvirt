@@ -412,11 +412,31 @@ func TestAccLibvirtNetwork_DhcpEnabled(t *testing.T) {
 					addresses = ["10.17.3.0/24"]
 					dhcp {
 						enabled = true
+						range_start_offset = 16
 					}
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.enabled", "true"),
-					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network."+randomNetworkResource, "enabled"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.range_start_offset", "16"),
+					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network."+randomNetworkResource, "enabled", []DHCPRange{{"10.17.3.16", "10.17.3.254"}}),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_network" "%s" {
+					name      = "%s"
+					mode      = "nat"
+					domain    = "k8s.local"
+					addresses = ["2001:db8:ca2:2::/64"]
+					dhcp {
+						enabled = true
+						range_start_offset = 65530
+					}
+				}`, randomNetworkResource, randomNetworkName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.enabled", "true"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.range_start_offset", "65530"),
+					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network."+randomNetworkResource, "enabled", []DHCPRange{{"2001:db8:ca2:2::fffa", "2001:db8:ca2:2::fffe"}}),
 				),
 			},
 		},
@@ -446,7 +466,7 @@ func TestAccLibvirtNetwork_DhcpDisabled(t *testing.T) {
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dhcp.0.enabled", "false"),
-					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network."+randomNetworkResource, "disabled"),
+					testAccCheckLibvirtNetworkDhcpStatus("libvirt_network."+randomNetworkResource, "disabled", nil),
 				),
 			},
 		},

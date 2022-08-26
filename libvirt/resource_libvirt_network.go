@@ -220,6 +220,22 @@ func resourceLibvirtNetwork() *schema.Resource {
 							Optional: true,
 							Required: false,
 						},
+						"range_start_offset": {
+							Type:     schema.TypeInt,
+							Default:  0,
+							Optional: true,
+							Required: false,
+							ValidateFunc: func(v interface{}, k string) ([]string, []error) {
+								i := v.(int)
+								if i < 2 || i > 65535 {
+									return nil, []error{
+										fmt.Errorf("%s: must be between 2 and 65535, inclusive, got %v", k, v),
+									}
+								} else {
+									return nil, nil
+								}
+							},
+						},
 					},
 				},
 			},

@@ -187,18 +187,27 @@ resource "libvirt_network" "k8snet" {
 }
 ```
 
-* `dhcp` - (Optional) DHCP configuration. 
+* `dhcp` - (Optional) DHCP configuration.
    You need to use it in conjuction with the adresses variable.
   * `enabled` - (Optional) when false, disable the DHCP server
+  * `range_start_offset` - (Optional) a non-negative integer offset from the
+    start of subnet(s) defined by `addresses` to use as the DHCP range.
+    Defaults to `2` and cannot be less than `2` (first address is the network
+    address and the second is the gateway address) or greater than `65535`
+    (maximum number of addresses supported by libvirt in a subnet).
+
 ```hcl
-				resource "libvirt_network" "test_net" {
-					name      = "networktest"
-					mode      = "nat"
-					domain    = "k8s.local"
-					addresses = ["10.17.3.0/24"]
-					dhcp {
-						enabled = true
-					}
+  resource "libvirt_network" "test_net" {
+    name      = "networktest"
+    mode      = "nat"
+    domain    = "k8s.local"
+    addresses = ["10.17.3.0/24"]
+    dhcp {
+      enabled = true
+      # Omit the first /28 from the DHCP range, i.e. use
+      # 10.17.3.16 - 10.17.3.254
+      range_start_offset = 16
+    }
 ```
 
 * `dnsmasq_options` - (Optional) configuration of Dnsmasq options for the network
