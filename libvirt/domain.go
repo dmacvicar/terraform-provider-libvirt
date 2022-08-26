@@ -185,14 +185,23 @@ func domainGetIfacesInfo(virConn *libvirt.Libvirt, domain libvirt.Domain, rd *sc
 	return interfaces, nil
 }
 
-func newDiskForCloudInit(virConn *libvirt.Libvirt, volumeKey string) (libvirtxml.DomainDisk, error) {
-	disk := libvirtxml.DomainDisk{
-		Device: "cdrom",
-		Target: &libvirtxml.DomainDiskTarget{
+func newDiskForCloudInit(virConn *libvirt.Libvirt, volumeKey string, arch string) (libvirtxml.DomainDisk, error) {
+	var target libvirtxml.DomainDiskTarget
+	if arch != "aarch64" {
+		target = libvirtxml.DomainDiskTarget{
 			// Last device letter possible with a single IDE controller on i440FX
 			Dev: "hdd",
 			Bus: "ide",
-		},
+		}
+	} else {
+		target = libvirtxml.DomainDiskTarget{
+			Dev: "sdd",
+			Bus: "scsi",
+		}
+	}
+	disk := libvirtxml.DomainDisk{
+		Device: "cdrom",
+		Target: &target,
 		Driver: &libvirtxml.DomainDiskDriver{
 			Name: "qemu",
 			Type: "raw",
@@ -458,7 +467,7 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	}
 }
 
-func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt) error {
+func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt, arch string) error {
 	var scsiDisk = false
 	var numOfISOs = 0
 	var numOfSCSIs = 0
@@ -599,7 +608,9 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 	}
 
 	log.Printf("[DEBUG] scsiDisk: %t", scsiDisk)
-	if scsiDisk {
+	// always add an scsi controller on aarch64, otherwise
+	// the machine cannot access cdrom
+	if scsiDisk || arch == "aarch64" {
 		domainDef.Devices.Controllers = append(domainDef.Devices.Controllers,
 			libvirtxml.DomainController{
 				Type:  "scsi",
@@ -646,13 +657,13 @@ func setFilesystems(d *schema.ResourceData, domainDef *libvirtxml.Domain) error 
 	return nil
 }
 
-func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt) error {
+func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt, arch string) error {
 	if cloudinit, ok := d.GetOk("cloudinit"); ok {
 		cloudinitID, err := getCloudInitVolumeKeyFromTerraformID(cloudinit.(string))
 		if err != nil {
 			return err
 		}
-		disk, err := newDiskForCloudInit(virConn, cloudinitID)
+		disk, err := newDiskForCloudInit(virConn, cloudinitID, arch)
 		if err != nil {
 			return err
 		}
