@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -64,4 +65,39 @@ func timeFromEpoch(str string) time.Time {
 	s, _ = strconv.Atoi(ts[0])
 
 	return time.Unix(int64(s), int64(ns))
+}
+
+func sizeFromString(str string) uint64 {
+	r := regexp.MustCompile(`^(?i)(\d+)([bkmgt]i?)?b?$`)
+	parts := r.FindStringSubmatch(str)
+	if len(parts) != 3 {
+		return 0
+	}
+	size, err := strconv.ParseUint(parts[1], 10, 64)
+	if err != nil {
+		return 0
+	}
+	switch strings.ToLower(parts[2]) {
+	case "", "b", "bi":
+		size = size * 1
+	case "k":
+		size = size * 1000
+	case "m":
+		size = size * 1000 * 1000
+	case "g":
+		size = size * 1000 * 1000 * 1000
+	case "t":
+		size = size * 1000 * 1000 * 1000 * 1000
+	case "ki":
+		size = size * 1024
+	case "mi":
+		size = size * 1024 * 1024
+	case "gi":
+		size = size * 1024 * 1024 * 1024
+	case "ti":
+		size = size * 1024 * 1024 * 1024 * 1024
+	default:
+		return 0
+	}
+	return size
 }

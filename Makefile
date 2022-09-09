@@ -1,4 +1,11 @@
-LDFLAGS += -X main.version=$$(git describe --always --abbrev=40 --dirty)
+HOSTNAME=registry.terraform.io
+NAMESPACE=dmacvicar
+NAME=libvirt
+BINARY=terraform-provider-${NAME}
+VERSION?=$(shell git describe --tags | sed -E 's,^v,,g')
+OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
+
+LDFLAGS += -X main.version=${VERSION}
 
 # default  args for tests
 TEST_ARGS_DEF := -covermode=count -coverprofile=profile.cov
@@ -10,8 +17,12 @@ terraform-provider-libvirt:
 
 build: terraform-provider-libvirt
 
-install:
-	go install -ldflags "${LDFLAGS}"
+install: build
+	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
+	mv ${BINARY} ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
+
+uninstall:
+	rm -rf ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}
 
 # unit tests
 # usage:

@@ -32,7 +32,7 @@ func resourceLibvirtVolume() *schema.Resource {
 				ForceNew: true,
 			},
 			"size": {
-				Type:     schema.TypeInt,
+				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
@@ -165,7 +165,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 		// if size is given, set it to the specified value
 		if _, ok := d.GetOk("size"); ok {
-			volumeDef.Capacity.Value = uint64(d.Get("size").(int))
+			volumeDef.Capacity.Value = sizeFromString(d.Get("size").(string))
 		}
 
 		// first handle whether it has a backing image
