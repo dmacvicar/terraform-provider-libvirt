@@ -72,6 +72,11 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"firmware_type": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"nvram": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -858,6 +863,7 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("vcpu", domainDef.VCPU)
 	d.Set("memory", domainDef.Memory)
 	d.Set("firmware", domainDef.OS.Loader)
+	d.Set("firmware_type", domainDef.OS.Firmware)
 	d.Set("nvram", domainDef.OS.NVRam)
 	d.Set("cpu", domainDef.CPU)
 	d.Set("arch", domainDef.OS.Type.Arch)
