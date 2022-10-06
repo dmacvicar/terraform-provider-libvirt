@@ -396,6 +396,10 @@ func setFirmware(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 			}
 		}
 	}
+
+	if firmware, ok := d.GetOk("firmware_type"); ok {
+		domainDef.OS.Firmware = firmware.(string)
+	}
 }
 
 func setBootDevices(d *schema.ResourceData, domainDef *libvirtxml.Domain) {

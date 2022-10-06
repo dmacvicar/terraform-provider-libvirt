@@ -81,6 +81,11 @@ func resourceLibvirtDomain() *schema.Resource {
 				ForceNew: true,
 				Default:  "kvm",
 			},
+			"firmware_type": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"nvram": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -894,6 +899,7 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 		}
 	}
 
+	d.Set("firmware_type", domainDef.OS.Firmware)
 	d.Set("arch", domainDef.OS.Type.Arch)
 	d.Set("running", domainRunningNow)
 
