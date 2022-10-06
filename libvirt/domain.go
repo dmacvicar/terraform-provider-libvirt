@@ -850,6 +850,30 @@ func setTPMs(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 			if backendPersistentState, ok := d.GetOk(prefix + ".backend_persistent_state"); ok {
 				tpm.Backend.Emulator.PersistentState = formatBoolYesNo(backendPersistentState.(bool))
 			}
+
+			if _, ok := d.GetOk(prefix + ".backend_active_pcr_banks"); ok {
+				tpm.Backend.Emulator.ActivePCRBanks = &libvirtxml.DomainTPMBackendPCRBanks{}
+				if sha1Active, ok := d.GetOk(prefix + ".backend_active_pcr_banks.0.sha1"); ok {
+					if sha1Active.(bool) {
+						tpm.Backend.Emulator.ActivePCRBanks.SHA1 = &libvirtxml.DomainTPMBackendPCRBank{}
+					}
+				}
+				if sha256Active, ok := d.GetOk(prefix + ".backend_active_pcr_banks.0.sha256"); ok {
+					if sha256Active.(bool) {
+						tpm.Backend.Emulator.ActivePCRBanks.SHA256 = &libvirtxml.DomainTPMBackendPCRBank{}
+					}
+				}
+				if sha384Active, ok := d.GetOk(prefix + ".backend_active_pcr_banks.0.sha384"); ok {
+					if sha384Active.(bool) {
+						tpm.Backend.Emulator.ActivePCRBanks.SHA384 = &libvirtxml.DomainTPMBackendPCRBank{}
+					}
+				}
+				if sha512Active, ok := d.GetOk(prefix + ".backend_active_pcr_banks.0.sha512"); ok {
+					if sha512Active.(bool) {
+						tpm.Backend.Emulator.ActivePCRBanks.SHA512 = &libvirtxml.DomainTPMBackendPCRBank{}
+					}
+				}
+			}
 		}
 		domainDef.Devices.TPMs = append(domainDef.Devices.TPMs, tpm)
 	}
