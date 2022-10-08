@@ -23,6 +23,6 @@ replace git.apache.org/thrift.git => github.com/apache/thrift v0.0.0-20180902110
 
 replace golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce => github.com/dmacvicar/golang-x-crypto v0.0.0-20220126233154-a96af8f07497
 
-go 1.13
+go 1.18
 
 replace github.com/community-terraform-providers/terraform-provider-ignition/v2 => github.com/dmacvicar/terraform-provider-ignition/v2 v2.1.3-0.20210701165004-13acf61ca184
