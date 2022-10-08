@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceCloudInitDisk() *schema.Resource {
@@ -70,12 +70,6 @@ func resourceCloudInitDiskCreate(d *schema.ResourceData, meta interface{}) error
 		return err
 	}
 	d.SetId(key)
-
-	d.Partial(true) // make sure we record the id even if the rest of this gets interrupted
-	d.Set("id", key)
-	d.SetPartial("id")
-
-	d.Partial(false)
 
 	return resourceCloudInitDiskRead(d, meta)
 }

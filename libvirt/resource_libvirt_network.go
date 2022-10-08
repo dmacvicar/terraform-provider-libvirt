@@ -8,8 +8,8 @@ import (
 	"time"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -90,22 +90,22 @@ func resourceLibvirtNetwork() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Required: false,
+				Computed: true,
 			},
 			"dns": {
 				Type:     schema.TypeList,
 				Optional: true,
 				MaxItems: 1,
+				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"enabled": {
 							Type:     schema.TypeBool,
-							Default:  true,
 							Optional: true,
 							Required: false,
 						},
 						"local_only": {
 							Type:     schema.TypeBool,
-							Default:  false,
 							Optional: true,
 							Required: false,
 						},
@@ -182,7 +182,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 							},
 						},
 						"hosts": {
-							Type:     schema.TypeList,
+							Type:     schema.TypeSet,
 							ForceNew: false,
 							Optional: true,
 							Elem: &schema.Resource{
@@ -212,13 +212,14 @@ func resourceLibvirtNetwork() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 				MaxItems: 1,
+				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"enabled": {
 							Type:     schema.TypeBool,
-							Default:  true,
 							Optional: true,
 							Required: false,
+							Computed: true,
 						},
 					},
 				},
@@ -344,7 +345,6 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 		if err != nil {
 			return fmt.Errorf("error updating autostart for network %s: %s", network.Name, err)
 		}
-		d.SetPartial("autostart")
 	}
 
 	// detect changes in the DNS entries in this network
@@ -495,12 +495,6 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 	id := uuidString(network.UUID)
 	d.SetId(id)
 
-	// make sure we record the id even if the rest of this gets interrupted
-	d.Partial(true)
-	d.Set("id", id)
-	d.SetPartial("id")
-	d.Partial(false)
-
 	log.Printf("[INFO] Created network %s [%s]", networkDef.Name, d.Id())
 
 	stateConf := &resource.StateChangeConf{
@@ -562,14 +556,17 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	// Domain as won't be present for bridged networks
 	if networkDef.Domain != nil {
 		d.Set("domain", networkDef.Domain.Name)
-		d.Set(dnsPrefix+".local_only", strings.ToLower(networkDef.Domain.LocalOnly) == "yes")
+
+		dnsBlock := map[string]interface{}{}
+		dnsBlock["local_only"] = strings.ToLower(networkDef.Domain.LocalOnly) == "yes"
+		d.Set("dns", []map[string]interface{}{dnsBlock})
 	}
 
 	autostart, err := virConn.NetworkGetAutostart(network)
 	if err != nil {
 		return fmt.Errorf("error reading network autostart setting: %s", err)
 	}
-	d.Set("autostart", autostart)
+	d.Set("autostart", autostart > 0)
 
 	// read add the IP addresses
 	addresses := []string{}
@@ -594,37 +591,82 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 	}
 
 	// set as DHCP=enabled if at least one of the IPs has a DHCP configuration
-	dhcpEnabled := false
 	for _, address := range networkDef.IPs {
 		if address.DHCP != nil {
-			dhcpEnabled = true
+			dhcpBlock := map[string]interface{}{}
+			dhcpBlock["enabled"] = true
+			d.Set("dhcp", []map[string]interface{}{dhcpBlock})
 			break
 		}
 	}
-	d.Set("dhcp.0.enabled", dhcpEnabled)
 
 	// read the DNS configuration
 	if networkDef.DNS != nil {
-		for i, forwarder := range networkDef.DNS.Forwarders {
-			key := fmt.Sprintf(dnsPrefix+".forwarders.%d", i)
-			if len(forwarder.Addr) > 0 {
-				d.Set(key+".address", forwarder.Addr)
+		// domain settings may already had set some dns stuff
+		dnsBlock := d.Get("dns.0").(map[string]interface{})
+
+		if dnsBlock == nil {
+			dnsBlock = map[string]interface{}{}
+		}
+
+		if networkDef.DNS.Enable != "" {
+			dnsBlock["enabled"] = networkDef.DNS.Enable == "yes"
+		}
+
+		var forwardersBlock []map[string]interface{}
+		for _, forwarder := range networkDef.DNS.Forwarders {
+			forwarderBlock := map[string]interface{}{}
+
+			if forwarder.Addr != "" {
+				forwarderBlock["address"] = forwarder.Addr
 			}
-			if len(forwarder.Domain) > 0 {
-				d.Set(key+".domain", forwarder.Domain)
+			if forwarder.Domain != "" {
+				forwarderBlock["domain"] = forwarder.Domain
 			}
+
+			if len(forwarderBlock) > 0 {
+				forwardersBlock = append(forwardersBlock, forwarderBlock)
+			}
+		}
+
+		if len(forwardersBlock) > 0 {
+			dnsBlock["forwarders"] = forwardersBlock
+		}
+
+		var hostsBlock []map[string]interface{}
+		for _, host := range networkDef.DNS.Host {
+			for _, hostName := range host.Hostnames {
+				hostBlock := map[string]interface{}{}
+				hostBlock["hostname"] = hostName.Hostname
+				hostBlock["ip"] = host.IP
+				hostsBlock = append(hostsBlock, hostBlock)
+			}
+		}
+
+		if len(hostsBlock) > 0 {
+			dnsBlock["hosts"] = hostsBlock
+		}
+
+		if len(dnsBlock) > 0 {
+			d.Set("dns", []map[string]interface{}{dnsBlock})
 		}
 	}
 
 	// and the static routes
-	if len(networkDef.Routes) > 0 {
-		for i, route := range networkDef.Routes {
-			routePrefix := fmt.Sprintf("routes.%d", i)
-			d.Set(routePrefix+".gateway", route.Gateway)
+	var routesBlock []map[string]interface{}
+	for _, route := range networkDef.Routes {
+		routeBlock := map[string]interface{}{}
 
-			cidr := fmt.Sprintf("%s/%d", route.Address, route.Prefix)
-			d.Set(routePrefix+".cidr", cidr)
-		}
+		routeBlock["gateway"] = route.Gateway
+
+		cidr := fmt.Sprintf("%s/%d", route.Address, route.Prefix)
+		routeBlock["cidr"] = cidr
+
+		routesBlock = append(routesBlock, routeBlock)
+	}
+
+	if len(routesBlock) > 0 {
+		d.Set("routes", routesBlock)
 	}
 
 	// TODO: get any other parameters from the network and save them

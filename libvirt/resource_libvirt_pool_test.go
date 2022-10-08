@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func testAccCheckLibvirtPoolExists(name string, pool *libvirt.StoragePool) resource.TestCheckFunc {
@@ -101,7 +101,7 @@ func TestAccLibvirtPool_Import(t *testing.T) {
 }
 
 // ImportStateCheckFunc one import instance state check function
-// differ from github.com/hashicorp/terraform-plugin-sdk/helper/resource.ImportStateCheckFunc
+// differ from github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource.ImportStateCheckFunc
 // which is multiple import Instance State check function
 type ImportStateCheckFunc func(is *terraform.InstanceState) error
 

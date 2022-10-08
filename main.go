@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/plugin"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 )
 
 var version = "was not built correctly" // set via the Makefile

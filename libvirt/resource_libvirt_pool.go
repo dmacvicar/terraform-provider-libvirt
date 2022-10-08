@@ -6,7 +6,7 @@ import (
 	"log"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -40,7 +40,7 @@ func resourceLibvirtPool() *schema.Resource {
 				ForceNew: true,
 			},
 			"available": {
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 				Computed: true,
 				Optional: true,
 				ForceNew: true,
@@ -152,12 +152,6 @@ func resourceLibvirtPoolCreate(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("error retrieving libvirt pool id: %s", pool.Name)
 	}
 	d.SetId(id)
-
-	// make sure we record the id even if the rest of this gets interrupted
-	d.Partial(true)
-	d.Set("id", id)
-	d.SetPartial("id")
-	d.Partial(false)
 
 	log.Printf("[INFO] Pool ID: %s", d.Id())
 

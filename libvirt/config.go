@@ -7,7 +7,7 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	uri "github.com/dmacvicar/terraform-provider-libvirt/libvirt/uri"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/mutexkv"
+	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/mutexkv"
 )
 
 // Config struct for the libvirt-provider

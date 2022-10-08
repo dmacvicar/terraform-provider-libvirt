@@ -24,5 +24,14 @@ linters:
     - errorlint
     - errcheck
     - gomnd
+
 issues:
   new-from-rev: HEAD~
+  exclude-rules:
+    - text: "Error return value of `d.Set` is not checked"
+      linters:
+        - errcheck
+    - text: "Magic number: 1024, in <argument> detected"
+      linters:
+        - gomnd
+

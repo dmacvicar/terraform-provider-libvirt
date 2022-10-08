@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -60,17 +60,35 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 	}
 
 	ipsPtrsLst := []libvirtxml.NetworkIP{}
-	for num, addressI := range addresses.([]interface{}) {
+	for _, addressI := range addresses.([]interface{}) {
 		// get the IP address entry for this subnet (with a guessed DHCP range)
 		dni, dhcp, err := getNetworkIPConfig(addressI.(string))
 		if err != nil {
 			return nil, err
 		}
 
-		dhcpKey := fmt.Sprintf("dhcp.%d.enabled", num)
-		dhcpEnabledByUser, ok := d.GetOkExists(dhcpKey)
-		if ok {
+		// HACK traditionally the provider simulated an easy cloud, so
+		// DHCP was enabled by default.
+		//
+		// However, there was some weird code added later that couples
+		// network device and networks.
+		//
+		// This requires us to have the "enabled" property to be
+		// computed, which prevents us from having it as Default: true.
+		//
+		// This code enables DHCP by default if the setting is not
+		// explicitly given, to still allow for it to be Computed.
+		//
+		// The same reason we have to use deprecated GetOkExists
+		// because it is computed but we need to know if the user has
+		// explicitly set it to false
+		//
+		//nolint:staticcheck
+		if dhcpEnabledByUser, dhcpSetByUser := d.GetOkExists("dhcp.0.enabled"); dhcpSetByUser {
 			dhcpEnabled = dhcpEnabledByUser.(bool)
+		} else {
+			// if not specified, default to enable it
+			dhcpEnabled = true
 		}
 
 		if dhcpEnabled {
