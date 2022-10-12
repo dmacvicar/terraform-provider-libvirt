@@ -64,12 +64,21 @@ func newNetworkDef() libvirtxml.Network {
 	}
 }
 
-func getHostXMLDesc(ip, mac, name string) string {
+func getHostXMLDesc(ip net.IP, mac, name string) string {
 	dd := libvirtxml.NetworkDHCPHost{
-		IP:   ip,
+		IP:   ip.String(),
 		MAC:  mac,
 		Name: name,
 	}
+
+	// https://gitlab.com/libvirt/libvirt/-/blob/v8.1.0/src/conf/network_conf.c#L516-L522
+	// https://libvirt.org/formatnetwork.html#elementsAddress: The IPv6 host
+	// element differs slightly from that for IPv4: there is no mac attribute
+	// since a MAC address has no defined meaning in IPv6.
+	if len(ip) == net.IPv6len {
+		dd.MAC = ""
+	}
+
 	tmp := struct {
 		XMLName xml.Name `xml:"host"`
 		libvirtxml.NetworkDHCPHost
@@ -82,7 +91,7 @@ func getHostXMLDesc(ip, mac, name string) string {
 }
 
 // Adds a new static host to the network
-func addHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, xmlIdx int) error {
+func addHost(virConn *libvirt.Libvirt, n libvirt.Network, ip net.IP, mac, name string, xmlIdx int) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)
 	log.Printf("Adding host with XML:\n%s", xmlDesc)
 	// From https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
@@ -93,7 +102,7 @@ func addHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, 
 }
 
 // Update a static host from the network
-func updateHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string, xmlIdx int) error {
+func updateHost(virConn *libvirt.Libvirt, n libvirt.Network, ip net.IP, mac, name string, xmlIdx int) error {
 	xmlDesc := getHostXMLDesc(ip, mac, name)
 	log.Printf("Updating host with XML:\n%s", xmlDesc)
 	// From https://libvirt.org/html/libvirt-libvirt-network.html#virNetworkUpdateFlags
@@ -104,7 +113,7 @@ func updateHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name strin
 }
 
 // Get the network index of the target network
-func getNetworkIdx(n *libvirtxml.Network, ip string) (int, error) {
+func getNetworkIdx(n *libvirtxml.Network, ip net.IP) (int, error) {
 	xmlIdx := -1
 
 	if n == nil {
@@ -117,7 +126,7 @@ func getNetworkIdx(n *libvirtxml.Network, ip string) (int, error) {
 			return xmlIdx, err
 		}
 
-		if netw.Contains(net.ParseIP(ip)) {
+		if netw.Contains(ip) {
 			xmlIdx = idx
 			break
 		}
@@ -127,7 +136,7 @@ func getNetworkIdx(n *libvirtxml.Network, ip string) (int, error) {
 }
 
 // Tries to update first, if that fails, it will add it
-func updateOrAddHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name string) error {
+func updateOrAddHost(virConn *libvirt.Libvirt, n libvirt.Network, ip net.IP, mac, name string) error {
 	xmlNet, _ := getXMLNetworkDefFromLibvirt(virConn, n)
 	// We don't check the error above
 	// if we can't parse the network to xml for some reason

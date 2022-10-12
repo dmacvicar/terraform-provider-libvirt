@@ -3,6 +3,7 @@ package libvirt
 import (
 	"bytes"
 	"encoding/xml"
+	"net"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
@@ -129,7 +130,7 @@ func TestGetHostXMLDesc(t *testing.T) {
 	mac := "XX:YY:ZZ"
 	name := "localhost"
 
-	data := getHostXMLDesc(ip, mac, name)
+	data := getHostXMLDesc(net.ParseIP(ip), mac, name)
 
 	dd := libvirtxml.NetworkDHCPHost{}
 	err := xml.Unmarshal([]byte(data), &dd)
@@ -211,9 +212,9 @@ func TestGetNetworkIdx(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			net, _ := newDefNetworkFromXML(tc.networkXML)
+			network, _ := newDefNetworkFromXML(tc.networkXML)
 
-			idx, _ := getNetworkIdx(&net, tc.ipAddress)
+			idx, _ := getNetworkIdx(&network, net.ParseIP(tc.ipAddress))
 			if idx != tc.expectedIdx {
 				t.Logf("expected network idx: %d, got %d\n", tc.expectedIdx, idx)
 				t.Fail()
