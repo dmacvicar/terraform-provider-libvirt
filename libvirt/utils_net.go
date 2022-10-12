@@ -12,22 +12,12 @@ const (
 )
 
 // randomMACAddress returns a randomized MAC address
-// with libvirt prefix
+// with QEMU prefix
 func randomMACAddress() (string, error) {
 	buf := make([]byte, 3)
 	rand.Seed(time.Now().UnixNano())
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
-	}
-
-	// set local bit and unicast
-	buf[0] = (buf[0] | 2) & 0xfe
-	// Set the local bit
-	buf[0] |= 2
-
-	// avoid libvirt-reserved addresses
-	if buf[0] == 0xfe {
-		buf[0] = 0xee
 	}
 
 	return fmt.Sprintf("52:54:00:%02x:%02x:%02x",
