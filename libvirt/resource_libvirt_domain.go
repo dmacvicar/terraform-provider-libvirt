@@ -167,6 +167,28 @@ func resourceLibvirtDomain() *schema.Resource {
 							ForceNew: true,
 							Default:  false,
 						},
+						"rbd": {
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
+						},
+						"rbd_host": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"rbd_port": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Default:  "3300",
+						},
+						"rbd_pool": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+						"rbd_image": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
 						"wwn": {
 							Type:     schema.TypeString,
 							Optional: true,
@@ -893,16 +915,26 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 			if len(diskDef.Source.Network.Hosts) < 1 {
 				return fmt.Errorf("network disk does not contain any hosts")
 			}
-			url, err := url.Parse(fmt.Sprintf("%s://%s:%s%s",
-				diskDef.Source.Network.Protocol,
-				diskDef.Source.Network.Hosts[0].Name,
-				diskDef.Source.Network.Hosts[0].Port,
-				diskDef.Source.Network.Name))
-			if err != nil {
-				return err
-			}
-			disk = map[string]interface{}{
-				"url": url.String(),
+			if diskDef.Source.Network.Protocol == "rbd" {
+				res := strings.Split(diskDef.Source.Network.Name, "/")
+				disk = map[string]interface{}{
+					"rbd_host":  diskDef.Source.Network.Hosts[0].Name,
+					"rbd_port":  diskDef.Source.Network.Hosts[0].Port,
+					"rbd_pool":  res[0],
+					"rbd_image": res[1],
+				}
+			} else {
+				url, err := url.Parse(fmt.Sprintf("%s://%s:%s%s",
+					diskDef.Source.Network.Protocol,
+					diskDef.Source.Network.Hosts[0].Name,
+					diskDef.Source.Network.Hosts[0].Port,
+					diskDef.Source.Network.Name))
+				if err != nil {
+					return err
+				}
+				disk = map[string]interface{}{
+					"url": url.String(),
+				}
 			}
 		} else if diskDef.Device == "cdrom" {
 			// HACK we marked the disk as belonging to the cloudinit

@@ -33,6 +33,17 @@ resource "libvirt_volume" "worker" {
   base_volume_id = libvirt_volume.opensuse_leap.id
   count          = var.workers_count
 }
+
+# base RBD cloudimg template to create a new RBD volume
+resource "libvirt_volume" "os-disk" {
+  name             = "os-disk"
+  type             = "rbd"
+  pool             = "rbd_pool"
+  format           = "raw"
+  base_volume_pool = "rbd_pool"
+  base_volume_name = "ubuntu-cloudimg-20.04"
+  size             = "53687091200" # 50 GB
+}
 ```
 
 ~> **Tip:** when provisioning multiple domains using the same base image, create
@@ -46,6 +57,9 @@ The following arguments are supported:
 
 * `name` - (Required) A unique name for the resource, required by libvirt.
   Changing this forces a new resource to be created.
+* `type` - (Optional) The storage volume to be created.
+  If not given, the `file` storage volume type will be used.
+  Currently supported types are `file` and `rbd`.
 * `pool` - (Optional) The storage pool where the resource will be created.
   If not given, the `default` storage pool will be used.
 * `source` - (Optional) If specified, the image will be uploaded into libvirt
