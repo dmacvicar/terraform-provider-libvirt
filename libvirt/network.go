@@ -115,9 +115,15 @@ func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.Netw
 	if bits == (net.IPv6len * 8) {
 		family = "ipv6"
 	}
-	ipsRange := (1 << bits) - (1 << ones)
-	if ipsRange < 4 {
-		return nil, nil, fmt.Errorf("netmask seems to be too strict: only %d IPs available (%s)", ipsRange-3, family)
+
+	const minimumSubnetBits = 3
+	if subnetBits := bits - ones; subnetBits < minimumSubnetBits {
+		// Reserved IPs are 0, broadcast, and 1 for the host
+		const reservedIPs = 3
+		subnetIPCount := 1 << subnetBits
+		availableSubnetIPCount := subnetIPCount - reservedIPs
+
+		return nil, nil, fmt.Errorf("netmask seems to be too strict: only %d IPs available (%s)", availableSubnetIPCount, family)
 	}
 
 	// we should calculate the range served by DHCP. For example, for
