@@ -58,7 +58,8 @@ func datasourceLibvirtVolume() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"xslt": {
-							Type: schema.TypeString,
+							Type:     schema.TypeString,
+							Optional: true,
 						},
 					},
 				},
