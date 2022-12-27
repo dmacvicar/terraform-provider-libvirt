@@ -81,7 +81,7 @@ func (u *ConnectionURI) tlsConfig() (*tls.Config, error) {
 		// non-root also looks in $HOME/.pki first
 		if !root {
 			caCertSearchPath = append([]string{os.ExpandEnv(defaultUserPKIPath)}, caCertSearchPath...)
-			clientCertSearchPath = append([]string{os.ExpandEnv(defaultUserPKIPath)}, clientKeySearchPath...)
+			clientCertSearchPath = append([]string{os.ExpandEnv(defaultUserPKIPath)}, clientCertSearchPath...)
 			clientKeySearchPath = append([]string{os.ExpandEnv(defaultUserPKIPath)}, clientKeySearchPath...)
 		}
 	}
