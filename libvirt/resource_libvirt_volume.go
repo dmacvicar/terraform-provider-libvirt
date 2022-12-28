@@ -271,7 +271,7 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 	return resourceLibvirtVolumeRead(d, meta)
 }
 
-// resourceLibvirtVolumeRead returns the current state for a volume resource
+// resourceLibvirtVolumeRead returns the current state for a volume resource.
 func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
 	if client.libvirt == nil {
@@ -336,7 +336,7 @@ func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-// resourceLibvirtVolumeDelete removed a volume resource
+// resourceLibvirtVolumeDelete removed a volume resource.
 func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*Client)
 	if client.libvirt == nil {
@@ -346,7 +346,7 @@ func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error
 	return volumeDelete(client, d.Id())
 }
 
-// resourceLibvirtVolumeExists returns True if the volume resource exists
+// resourceLibvirtVolumeExists returns True if the volume resource exists.
 func resourceLibvirtVolumeExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	log.Printf("[DEBUG] Check if resource libvirt_volume exists")
 	client := meta.(*Client)

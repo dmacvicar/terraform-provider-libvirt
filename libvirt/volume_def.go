@@ -25,7 +25,7 @@ func newDefVolume() libvirtxml.StorageVolume {
 	}
 }
 
-// Creates a volume definition from a XML
+// Creates a volume definition from a XML.
 func newDefVolumeFromXML(s string) (libvirtxml.StorageVolume, error) {
 	var volumeDef libvirtxml.StorageVolume
 	err := xml.Unmarshal([]byte(s), &volumeDef)

@@ -68,7 +68,7 @@ func (u *ConnectionURI) driver() string {
 //
 // For example, a qemu+ssh:/// uri would return a SSH connection
 // to localhost, and a new URI to qemu+unix:///system
-// dials the transport for this connection URI
+// dials the transport for this connection URI.
 //
 func (u *ConnectionURI) DialTransport() (net.Conn, error) {
 	t := u.transport()

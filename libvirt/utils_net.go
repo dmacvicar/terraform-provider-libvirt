@@ -12,7 +12,7 @@ const (
 )
 
 // randomMACAddress returns a randomized MAC address
-// with libvirt prefix
+// with libvirt prefix.
 func randomMACAddress() (string, error) {
 	buf := make([]byte, 3)
 	rand.Seed(time.Now().UnixNano())
@@ -34,7 +34,7 @@ func randomMACAddress() (string, error) {
 		buf[0], buf[1], buf[2]), nil
 }
 
-// randomPort returns a random port
+// randomPort returns a random port.
 func randomPort() int {
 	const minPort = 1024
 	const maxPort = 65535
@@ -73,7 +73,7 @@ func getLastIP(network *net.IPNet, netIP net.IP) net.IP {
 	return lastIP
 }
 
-// networkRange calculates the first and last IP addresses in an IPNet
+// networkRange calculates the first and last IP addresses in an IPNet.
 func networkRange(network *net.IPNet) (firstIP net.IP, lastIP net.IP) {
 	netIP := network.IP.To4()
 	if netIP == nil {

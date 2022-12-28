@@ -9,7 +9,7 @@ import (
 
 const oui = "05abcd"
 
-// note, source is not initialized
+// note, source is not initialized.
 func newDefDisk(i int) libvirtxml.DomainDisk {
 	return libvirtxml.DomainDisk{
 		Device: "disk",

@@ -27,7 +27,7 @@ const (
 	defaultGlobalClientKeyPath  = "/etc/pki/libvirt/private"
 )
 
-// find the first resource that exists in the given list of paths
+// find the first resource that exists in the given list of paths.
 func findResource(name string, dirs ...string) (string, error) {
 	for _, dir := range dirs {
 		path := filepath.Join(os.ExpandEnv(dir), name)
@@ -119,7 +119,7 @@ func (u *ConnectionURI) tlsConfig() (*tls.Config, error) {
 	}, nil
 }
 
-// TODO handle no_verify and pkipath URI options
+// TODO handle no_verify and pkipath URI options.
 func (u *ConnectionURI) dialTLS() (net.Conn, error) {
 	port := u.Port()
 	if port == "" {

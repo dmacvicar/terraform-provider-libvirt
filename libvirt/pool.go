@@ -14,7 +14,7 @@ const (
 	poolNotExistsID = "NOT-EXISTS"
 )
 
-// poolExists returns "EXISTS" or "NOT-EXISTS" depending on the current pool existence
+// poolExists returns "EXISTS" or "NOT-EXISTS" depending on the current pool existence.
 func poolExists(virConn *libvirt.Libvirt, uuid string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		_, err := virConn.StoragePoolLookupByUUID(parseUUID(uuid))
@@ -48,7 +48,7 @@ func poolWaitForExists(virConn *libvirt.Libvirt, uuid string) error {
 	return nil
 }
 
-// poolWaitDeleted waits for a storage pool to be removed
+// poolWaitDeleted waits for a storage pool to be removed.
 func poolWaitDeleted(virConn *libvirt.Libvirt, uuid string) error {
 	log.Printf("Waiting for pool %s to be deleted...", uuid)
 	stateConf := &resource.StateChangeConf{
@@ -67,7 +67,7 @@ func poolWaitDeleted(virConn *libvirt.Libvirt, uuid string) error {
 	return nil
 }
 
-// deletePool deletes the pool identified by `uuid` from libvirt
+// deletePool deletes the pool identified by `uuid` from libvirt.
 func deletePool(client *Client, uuid string) error {
 	virConn := client.libvirt
 	if virConn == nil {

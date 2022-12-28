@@ -13,7 +13,7 @@ import (
 )
 
 // updateDNSHosts detects changes in the DNS hosts entries
-// updating the network definition accordingly
+// updating the network definition accordingly.
 func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Network) error {
 	virConn := meta.(*Client).libvirt
 
@@ -145,7 +145,7 @@ func parseNetworkDNSHostsChange(change interface{}) (entries []libvirtxml.Networ
 }
 
 // getDNSHostsFromResource returns a list of libvirt's DNS hosts
-// from the network definition
+// from the network definition.
 func getDNSHostsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDNSHost, error) {
 	dnsHostsMap := map[string][]string{}
 	if dnsHosts, ok := d.GetOk(dnsPrefix + ".hosts"); ok {
@@ -176,7 +176,7 @@ func getDNSHostsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDNSHos
 }
 
 // getDNSForwardersFromResource returns the list of libvirt's DNS forwarders
-// in the network definition
+// in the network definition.
 func getDNSForwardersFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDNSForwarder, error) {
 	var dnsForwarders []libvirtxml.NetworkDNSForwarder
 	if dnsForwardCount, ok := d.GetOk(dnsPrefix + ".forwarders.#"); ok {
@@ -201,7 +201,7 @@ func getDNSForwardersFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkD
 }
 
 // getDNSEnableFromResource returns string to enable ("yes") or disable ("no") dns
-// in the network definition
+// in the network definition.
 func getDNSEnableFromResource(d *schema.ResourceData) (string, error) {
 	if dnsEnabled, ok := d.GetOk(dnsPrefix + ".enabled"); ok {
 		if dnsEnabled.(bool) {
@@ -213,7 +213,7 @@ func getDNSEnableFromResource(d *schema.ResourceData) (string, error) {
 }
 
 // getDNSSRVFromResource returns a list of libvirt's DNS SRVs
-// in the network definition
+// in the network definition.
 func getDNSSRVFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDNSSRV, error) {
 	var dnsSRVs []libvirtxml.NetworkDNSSRV
 

@@ -25,7 +25,7 @@ const (
 
 // This is the function we use to detect if the XSLT attribute itself changed
 // As we don't want to recreate resources when the XSLT is changed with whitespace,
-// we specify the diff supress function as the result of applying the identity
+// we specify the diff suppress function as the result of applying the identity
 // transform to the xslt, stripping whitespace
 // See https://www.terraform.io/docs/extend/schemas/schema-behaviors.html#diffsuppressfunc
 func xsltDiffSupressFunc(k, old, new string, d *schema.ResourceData) bool {
@@ -44,7 +44,7 @@ func xsltDiffSupressFunc(k, old, new string, d *schema.ResourceData) bool {
 	return oldStrip == newStrip
 }
 
-// this function applies a XSLT transform to the xml data
+// this function applies a XSLT transform to the xml data.
 func transformXML(xmlS string, xsltS string) (string, error) {
 	// empty xslt is a no-op
 	if strings.TrimSpace(xsltS) == "" {
@@ -93,14 +93,14 @@ func transformXML(xmlS string, xsltS string) (string, error) {
 		return xmlS, err
 	}
 	log.Printf("[DEBUG] Transformed XML with user specified XSLT:\n%s", transformedXML)
-	//return strings.Trim(string(transformedXML), " \r\n"), nil
+	// return strings.Trim(string(transformedXML), " \r\n"), nil
 
 	return string(transformedXML), err
 }
 
 // this function applies a XSLT transform to the xml data
 // and is to be reused in all resource types
-// your resource need to have a xml.xslt element in the schema
+// your resource need to have a xml.xslt element in the schema.
 func transformResourceXML(xml string, d *schema.ResourceData) (string, error) {
 	xslt, ok := d.GetOk("xml.0.xslt")
 	if !ok {

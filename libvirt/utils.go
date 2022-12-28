@@ -12,10 +12,10 @@ import (
 
 var diskLetters = []rune("abcdefghijklmnopqrstuvwxyz")
 
-// LibVirtConIsNil is a global string error msg
+// LibVirtConIsNil is a global string error msg.
 const LibVirtConIsNil string = "the libvirt connection was nil"
 
-// diskLetterForIndex return diskLetters for index
+// diskLetterForIndex return diskLetters for index.
 func diskLetterForIndex(i int) string {
 
 	q := i / len(diskLetters)
@@ -29,10 +29,10 @@ func diskLetterForIndex(i int) string {
 	return fmt.Sprintf("%s%c", diskLetterForIndex(q-1), letter)
 }
 
-// WaitSleepInterval time
+// WaitSleepInterval time.
 var WaitSleepInterval = 1 * time.Second
 
-// WaitTimeout time
+// WaitTimeout time.
 var WaitTimeout = 5 * time.Minute
 
 // waitForSuccess wait for success and timeout after 5 minutes.
@@ -52,7 +52,7 @@ func waitForSuccess(errorMessage string, f func() error) error {
 	}
 }
 
-// return an indented XML
+// return an indented XML.
 func xmlMarshallIndented(b interface{}) (string, error) {
 	buf := new(bytes.Buffer)
 	enc := xml.NewEncoder(buf)
@@ -63,7 +63,7 @@ func xmlMarshallIndented(b interface{}) (string, error) {
 	return buf.String(), nil
 }
 
-// formatBoolYesNo is similar to strconv.FormatBool with yes/no instead of true/false
+// formatBoolYesNo is similar to strconv.FormatBool with yes/no instead of true/false.
 func formatBoolYesNo(b bool) string {
 	if b {
 		return "yes"

@@ -10,7 +10,7 @@ import (
 	"libvirt.org/go/libvirtxml"
 )
 
-// from existing domain return its  XMLdefintion
+// from existing domain return its  XMLdefintion.
 func getXMLDomainDefFromLibvirt(virConn *libvirt.Libvirt, domain libvirt.Domain) (libvirtxml.Domain, error) {
 
 	domainXMLDesc, err := virConn.DomainGetXMLDesc(domain, 0)
@@ -27,7 +27,7 @@ func getXMLDomainDefFromLibvirt(virConn *libvirt.Libvirt, domain libvirt.Domain)
 	return domainDef, nil
 }
 
-// note source and target are not initialized
+// note source and target are not initialized.
 func newFilesystemDef() libvirtxml.DomainFilesystem {
 	return libvirtxml.DomainFilesystem{
 		AccessMode: "mapped", // A safe default value
@@ -36,7 +36,7 @@ func newFilesystemDef() libvirtxml.DomainFilesystem {
 }
 
 // Creates a domain definition with the defaults
-// the provider uses
+// the provider uses.
 func newDomainDef() libvirtxml.Domain {
 	domainDef := libvirtxml.Domain{
 		OS: &libvirtxml.DomainOS{

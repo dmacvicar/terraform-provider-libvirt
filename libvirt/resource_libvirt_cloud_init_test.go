@@ -121,7 +121,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 // The destroy function should always handle the case where the resource might already be destroyed
 // (manually, for example). If the resource is already destroyed, this should not return an error.
 // This allows Terraform users to manually delete resources without breaking Terraform.
-// This test should fail without a proper "Exists" implementation
+// This test should fail without a proper "Exists" implementation.
 func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -204,7 +204,7 @@ func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirt.Storag
 	}
 }
 
-// this is helper method for test expected values
+// this is helper method for test expected values.
 type Expected struct {
 	UserData, NetworkConfig, MetaData string
 }

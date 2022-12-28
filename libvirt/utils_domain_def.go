@@ -18,7 +18,7 @@ func getGuestForArchType(caps libvirtxml.Caps, arch string, virttype string) (li
 			return guest, nil
 		}
 	}
-	return libvirtxml.CapsGuest{}, fmt.Errorf("[DEBUG] Could not find any guests for architecure type %s/%s", virttype, arch)
+	return libvirtxml.CapsGuest{}, fmt.Errorf("[DEBUG] Could not find any guests for architecture type %s/%s", virttype, arch)
 }
 
 func lookupMachine(machines []libvirtxml.CapsGuestMachine, targetmachine string) string {
@@ -73,7 +73,7 @@ func getOriginalMachineName(caps libvirtxml.Caps, arch string, virttype string, 
 
 // as kernal args allow duplicate keys, we use a list of maps
 // we jump to a next map as soon as we find a duplicate
-// key
+// key.
 func splitKernelCmdLine(cmdLine string) ([]map[string]string, error) {
 	var cmdLines []map[string]string
 	if len(cmdLine) == 0 {

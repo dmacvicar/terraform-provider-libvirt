@@ -10,12 +10,12 @@ import (
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/mutexkv"
 )
 
-// Config struct for the libvirt-provider
+// Config struct for the libvirt-provider.
 type Config struct {
 	URI string
 }
 
-// Client libvirt
+// Client libvirt.
 type Client struct {
 	libvirt     *libvirt.Libvirt
 	poolMutexKV *mutexkv.MutexKV
@@ -24,7 +24,7 @@ type Client struct {
 	networkMutex sync.Mutex
 }
 
-// Client libvirt, generate libvirt client given URI
+// Client libvirt, generate libvirt client given URI.
 func (c *Config) Client() (*Client, error) {
 
 	u, err := uri.Parse(c.URI)

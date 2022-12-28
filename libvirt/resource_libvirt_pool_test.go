@@ -102,10 +102,10 @@ func TestAccLibvirtPool_Import(t *testing.T) {
 
 // ImportStateCheckFunc one import instance state check function
 // differ from github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource.ImportStateCheckFunc
-// which is multiple import Instance State check function
+// which is multiple import Instance State check function.
 type ImportStateCheckFunc func(is *terraform.InstanceState) error
 
-// composeTestImportStateCheckFunc compose multiple InstanceState check
+// composeTestImportStateCheckFunc compose multiple InstanceState check.
 func composeTestImportStateCheckFunc(fs ...ImportStateCheckFunc) ImportStateCheckFunc {
 	return func(is *terraform.InstanceState) error {
 		for i, f := range fs {
@@ -118,7 +118,7 @@ func composeTestImportStateCheckFunc(fs ...ImportStateCheckFunc) ImportStateChec
 	}
 }
 
-// testImportStateCheckResourceAttr assert if a terraform.InstanceState as attribute name[key] with value
+// testImportStateCheckResourceAttr assert if a terraform.InstanceState as attribute name[key] with value.
 func testImportStateCheckResourceAttr(name string, key string, value string) ImportStateCheckFunc {
 	return func(instanceState *terraform.InstanceState) error {
 		if v, ok := instanceState.Attributes[key]; !ok || v != value {
@@ -169,7 +169,7 @@ func TestAccLibvirtPool_Basic(t *testing.T) {
 // The destroy function should always handle the case where the resource might already be destroyed
 // (manually, for example). If the resource is already destroyed, this should not return an error.
 // This allows Terraform users to manually delete resources without breaking Terraform.
-// This test should fail without a proper "Exists" implementation
+// This test should fail without a proper "Exists" implementation.
 func TestAccLibvirtPool_ManuallyDestroyed(t *testing.T) {
 	var pool libvirt.StoragePool
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)

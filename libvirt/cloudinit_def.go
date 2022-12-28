@@ -35,7 +35,7 @@ func newCloudInitDef() defCloudInit {
 
 // Create a ISO file based on the contents of the CloudInit instance and
 // uploads it to the libVirt pool
-// Returns a string holding terraform's internal ID of this resource
+// Returns a string holding terraform's internal ID of this resource.
 func (ci *defCloudInit) CreateIso() (string, error) {
 	iso, err := ci.createISO()
 	if err != nil {
@@ -122,7 +122,7 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 
 // create a unique ID for terraform use
 // The ID is made by the volume ID (the internal one used by libvirt)
-// joined by the ";" with a UUID
+// joined by the ";" with a UUID.
 func (ci *defCloudInit) buildTerraformKey(volumeKey string) string {
 	return fmt.Sprintf("%s;%s", volumeKey, uuid.New())
 }
@@ -136,7 +136,7 @@ func getCloudInitVolumeKeyFromTerraformID(id string) (string, error) {
 }
 
 // Create the ISO holding all the cloud-init data
-// Returns a string with the full path to the ISO file
+// Returns a string with the full path to the ISO file.
 func (ci *defCloudInit) createISO() (string, error) {
 	log.Print("Creating new ISO")
 	tmpDir, err := ci.createFiles()
@@ -168,7 +168,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 
 // write user-data,  meta-data network-config in tmp files and dedicated directory
 // Returns a string containing the name of the temporary directory and an error
-// object
+// object.
 func (ci *defCloudInit) createFiles() (string, error) {
 	log.Print("Creating ISO contents")
 	tmpDir, err := ioutil.TempDir("", "cloudinit")
@@ -195,7 +195,7 @@ func (ci *defCloudInit) createFiles() (string, error) {
 }
 
 // Creates a new defCloudInit object starting from a ISO volume handled by
-// libvirt
+// libvirt.
 func newCloudInitDefFromRemoteISO(virConn *libvirt.Libvirt, id string) (defCloudInit, error) {
 	ci := defCloudInit{}
 
@@ -235,7 +235,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Libvirt, id string) (defCloud
 	return ci, nil
 }
 
-// setCloudInitDataFromExistingCloudInitDisk read and set UserData, MetaData, and NetworkConfig from existing CloudInitDisk
+// setCloudInitDataFromExistingCloudInitDisk read and set UserData, MetaData, and NetworkConfig from existing CloudInitDisk.
 func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvirt.Libvirt, isoFile *os.File) error {
 	isoReader, err := iso9660.NewReader(isoFile)
 	if err != nil {
@@ -272,7 +272,7 @@ func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvi
 }
 
 // FIXME Consider doing this inline.
-// setCloudInitPoolNameFromExistingVol retrieve poolname from an existing CloudInitDisk
+// setCloudInitPoolNameFromExistingVol retrieve poolname from an existing CloudInitDisk.
 func (ci *defCloudInit) setCloudInitPoolNameFromExistingVol(virConn *libvirt.Libvirt, volume libvirt.StorageVol) error {
 	volPool, err := virConn.StoragePoolLookupByVolume(volume)
 	if err != nil {
@@ -287,7 +287,7 @@ func (ci *defCloudInit) setCloudInitPoolNameFromExistingVol(virConn *libvirt.Lib
 }
 
 // FIXME Consider doing this inline.
-// setCloudInitDisklNameFromVol retrieve CloudInitname from an existing CloudInitDisk
+// setCloudInitDisklNameFromVol retrieve CloudInitname from an existing CloudInitDisk.
 func (ci *defCloudInit) setCloudInitDiskNameFromExistingVol(virConn *libvirt.Libvirt, volume libvirt.StorageVol) error {
 	if volume.Name == "" {
 		return fmt.Errorf("error retrieving cloudinit volume name for volume key: %s", volume.Key)

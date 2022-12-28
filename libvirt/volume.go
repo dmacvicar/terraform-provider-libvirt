@@ -14,7 +14,7 @@ const (
 	volNotExistsID = "NOT-EXISTS"
 )
 
-// volumeExists returns "EXISTS" or "NOT-EXISTS" depending on the current volume existence
+// volumeExists returns "EXISTS" or "NOT-EXISTS" depending on the current volume existence.
 func volumeExists(virConn *libvirt.Libvirt, key string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		_, err := virConn.StorageVolLookupByKey(key)
@@ -46,7 +46,7 @@ func volumeWaitForExists(virConn *libvirt.Libvirt, key string) error {
 	return nil
 }
 
-// volumeWaitDeleted waits for a storage volume to be removed
+// volumeWaitDeleted waits for a storage volume to be removed.
 func volumeWaitDeleted(virConn *libvirt.Libvirt, key string) error {
 	log.Printf("Waiting for volume %s to be deleted...", key)
 	stateConf := &resource.StateChangeConf{
@@ -63,7 +63,7 @@ func volumeWaitDeleted(virConn *libvirt.Libvirt, key string) error {
 	return nil
 }
 
-// volumeDelete removes the volume identified by `key` from libvirt
+// volumeDelete removes the volume identified by `key` from libvirt.
 func volumeDelete(client *Client, key string) error {
 	virConn := client.libvirt
 	if virConn == nil {
@@ -125,7 +125,7 @@ func volumeDelete(client *Client, key string) error {
 // tries really hard to find volume with `key`
 // it will try to start the pool if it does not find it
 //
-// You have to call volume.Free() on the returned volume
+// You have to call volume.Free() on the returned volume.
 func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*libvirt.StorageVol, error) {
 	virConn := client.libvirt
 	if virConn == nil {

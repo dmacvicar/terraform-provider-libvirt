@@ -69,7 +69,7 @@ func skipIfPrivilegedDisabled(t *testing.T) {
 
 // getResourceFromTerraformState get a resource by name
 // from terraform states produced during testacc
-// and return the resource
+// and return the resource.
 func getResourceFromTerraformState(resourceName string, state *terraform.State) (*terraform.ResourceState, error) {
 	rs, ok := state.RootModule().Resources[resourceName]
 	if !ok {
@@ -84,7 +84,7 @@ func getResourceFromTerraformState(resourceName string, state *terraform.State) 
 
 // ** resource specifics helpers **
 
-// getPoolFromTerraformState lookup pool by name and return the libvirt pool from a terraform state
+// getPoolFromTerraformState lookup pool by name and return the libvirt pool from a terraform state.
 func getPoolFromTerraformState(name string, state *terraform.State, virConn *libvirt.Libvirt) (*libvirt.StoragePool, error) {
 	rs, err := getResourceFromTerraformState(name, state)
 	if err != nil {
@@ -99,7 +99,7 @@ func getPoolFromTerraformState(name string, state *terraform.State, virConn *lib
 	return &pool, nil
 }
 
-// getVolumeFromTerraformState lookup volume by name and return the libvirt volume from a terraform state
+// getVolumeFromTerraformState lookup volume by name and return the libvirt volume from a terraform state.
 func getVolumeFromTerraformState(name string, state *terraform.State, virConn *libvirt.Libvirt) (*libvirt.StorageVol, error) {
 	rs, err := getResourceFromTerraformState(name, state)
 	if err != nil {
@@ -141,7 +141,7 @@ func getNetworkDef(state *terraform.State, name string, virConn *libvirt.Libvirt
 // network
 // //////////////////////////////////////////////////////////////////
 
-// testAccCheckNetworkExists checks that the network exists
+// testAccCheckNetworkExists checks that the network exists.
 func testAccCheckNetworkExists(name string, network *libvirt.Network) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
@@ -170,7 +170,7 @@ func testAccCheckNetworkExists(name string, network *libvirt.Network) resource.T
 	}
 }
 
-// testAccCheckLibvirtNetworkDestroy checks that the network has been destroyed
+// testAccCheckLibvirtNetworkDestroy checks that the network has been destroyed.
 func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
 	virtConn := testAccProvider.Meta().(*Client).libvirt
 	for _, rs := range s.RootModule().Resources {
@@ -187,7 +187,7 @@ func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
 	return nil
 }
 
-// testAccCheckDNSHosts checks the expected DNS hosts in a network
+// testAccCheckDNSHosts checks the expected DNS hosts in a network.
 func testAccCheckDNSHosts(name string, expected []libvirtxml.NetworkDNSHost) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
@@ -219,7 +219,7 @@ func testAccCheckDNSHosts(name string, expected []libvirtxml.NetworkDNSHost) res
 	}
 }
 
-// testAccCheckLibvirtNetworkDhcpStatus checks the expected DHCP status
+// testAccCheckLibvirtNetworkDhcpStatus checks the expected DHCP status.
 func testAccCheckLibvirtNetworkDhcpStatus(name string, expectedDhcpStatus string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
@@ -246,7 +246,7 @@ func testAccCheckLibvirtNetworkDhcpStatus(name string, expectedDhcpStatus string
 	}
 }
 
-// testAccCheckLibvirtNetworkBridge checks the bridge exists and has the expected properties
+// testAccCheckLibvirtNetworkBridge checks the bridge exists and has the expected properties.
 func testAccCheckLibvirtNetworkBridge(resourceName string, bridgeName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
@@ -267,7 +267,7 @@ func testAccCheckLibvirtNetworkBridge(resourceName string, bridgeName string) re
 	}
 }
 
-// testAccCheckLibvirtNetworkDNSForwarders checks the DNS forwarders in the libvirt network
+// testAccCheckLibvirtNetworkDNSForwarders checks the DNS forwarders in the libvirt network.
 func testAccCheckLibvirtNetworkDNSForwarders(name string, expected []libvirtxml.NetworkDNSForwarder) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
@@ -300,7 +300,7 @@ func testAccCheckLibvirtNetworkDNSForwarders(name string, expected []libvirtxml.
 	}
 }
 
-// testAccCheckLibvirtNetworkLocalOnly checks the local-only property of the Domain
+// testAccCheckLibvirtNetworkLocalOnly checks the local-only property of the Domain.
 func testAccCheckLibvirtNetworkLocalOnly(name string, expectLocalOnly bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
@@ -323,7 +323,7 @@ func testAccCheckLibvirtNetworkLocalOnly(name string, expectLocalOnly bool) reso
 	}
 }
 
-// testAccCheckLibvirtNetworkDNSEnable checks the dns-enable property of the Domain
+// testAccCheckLibvirtNetworkDNSEnable checks the dns-enable property of the Domain.
 func testAccCheckLibvirtNetworkDNSEnableOrDisable(name string, expectDNS bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
@@ -347,7 +347,7 @@ func testAccCheckLibvirtNetworkDNSEnableOrDisable(name string, expectDNS bool) r
 	}
 }
 
-// testAccCheckDnsmasqOptions checks the expected Dnsmasq options in a network
+// testAccCheckDnsmasqOptions checks the expected Dnsmasq options in a network.
 func testAccCheckDnsmasqOptions(name string, expected []libvirtxml.NetworkDnsmasqOption) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 

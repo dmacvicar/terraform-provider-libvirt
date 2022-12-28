@@ -17,7 +17,7 @@ import (
 	"libvirt.org/go/libvirtxml"
 )
 
-// network transparent image
+// network transparent image.
 type image interface {
 	Size() (uint64, error)
 	Import(func(io.Reader) error, libvirtxml.StorageVolume) error
@@ -227,7 +227,7 @@ func newImage(source string) (image, error) {
 	}
 }
 
-// isQCOW2Header returns True when the buffer starts with the qcow2 header
+// isQCOW2Header returns True when the buffer starts with the qcow2 header.
 func isQCOW2Header(buf []byte) (bool, error) {
 	if len(buf) < 8 {
 		return false, fmt.Errorf("expected header of 8 bytes. Got %d", len(buf))

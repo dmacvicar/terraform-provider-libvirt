@@ -225,7 +225,7 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 	})
 }
 
-// tests that disk driver is set correctly for the volume format
+// tests that disk driver is set correctly for the volume format.
 func TestAccLibvirtDomain_VolumeDriver(t *testing.T) {
 	var domain libvirt.Domain
 	var volumeRaw libvirt.StorageVol
@@ -1098,7 +1098,7 @@ func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.Tes
 		virConn := testAccProvider.Meta().(*Client).libvirt
 		domainDef, err := getXMLDomainDefFromLibvirt(virConn, *domain)
 		if err != nil {
-			return fmt.Errorf("Error getting libvirt XML defintion from existing libvirt domain: %s", err)
+			return fmt.Errorf("Error getting libvirt XML definition from existing libvirt domain: %s", err)
 		}
 
 		disks := domainDef.Devices.Disks
@@ -1129,7 +1129,7 @@ func testAccCheckLibvirtMultiISODisks(domain *libvirt.Domain) resource.TestCheck
 		virConn := testAccProvider.Meta().(*Client).libvirt
 		domainDef, err := getXMLDomainDefFromLibvirt(virConn, *domain)
 		if err != nil {
-			return fmt.Errorf("Error getting libvirt XML defintion from existing libvirt domain: %s", err)
+			return fmt.Errorf("Error getting libvirt XML definition from existing libvirt domain: %s", err)
 		}
 
 		disks := domainDef.Devices.Disks
@@ -1196,7 +1196,7 @@ func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel
 }
 
 // Creates a temporary file and attaches it to an available loop device
-// Returns a the full path to the temporary file and the associated loop device
+// Returns a the full path to the temporary file and the associated loop device.
 func createTempBlockDev(devname string) (string, string, error) {
 	fmt.Printf("Creating a temporary file for loop device\n")
 
@@ -1450,7 +1450,7 @@ func testAccCheckLibvirtNetworkExists(name string, network *libvirt.Network) res
 	}
 }
 
-// we want to destroy (shutdown volume after creation)
+// we want to destroy (shutdown volume after creation).
 func TestAccLibvirtDomain_ShutoffDomain(t *testing.T) {
 	var domain libvirt.Domain
 	var volume libvirt.StorageVol
@@ -1671,7 +1671,7 @@ EOF
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
 					testAccCheckLibvirtDomainDescription(&domain, func(domainDef libvirtxml.Domain) error {
 						if domainDef.Devices.Interfaces[0].Model.Type != "e1000" {
-							return fmt.Errorf("Expecting XSLT to tranform network model to e1000")
+							return fmt.Errorf("Expecting XSLT to transform network model to e1000")
 						}
 						return nil
 					}),
@@ -1685,7 +1685,7 @@ EOF
 // provider schema, the provider will try to change it back to the
 // known state.
 // Therefore we explicitly advise against using it with existing
-// schema attributes
+// schema attributes.
 func TestAccLibvirtDomain_XSLT_SupportedAttribute(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 
@@ -1745,7 +1745,7 @@ EOF
 }
 
 // changed whitespace in the xslt should create an empty plan
-// as the supress diff function should take care of seeing they are equivalent
+// as the suppress diff function should take care of seeing they are equivalent.
 func TestAccLibvirtDomain_XSLT_Whitespace(t *testing.T) {
 	skipIfPrivilegedDisabled(t)
 
@@ -1824,7 +1824,7 @@ EOF
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
 					testAccCheckLibvirtDomainDescription(&domain, func(domainDef libvirtxml.Domain) error {
 						if domainDef.Devices.Interfaces[0].Model.Type != "e1000" {
-							return fmt.Errorf("Expecting XSLT to tranform network model to e1000")
+							return fmt.Errorf("Expecting XSLT to transform network model to e1000")
 						}
 						return nil
 					}),
@@ -1837,7 +1837,7 @@ EOF
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
 					testAccCheckLibvirtDomainDescription(&domain, func(domainDef libvirtxml.Domain) error {
 						if domainDef.Devices.Interfaces[0].Model.Type != "e1000" {
-							return fmt.Errorf("Expecting XSLT to tranform network model to e1000")
+							return fmt.Errorf("Expecting XSLT to transform network model to e1000")
 						}
 						return nil
 					}),

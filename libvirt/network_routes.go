@@ -9,7 +9,7 @@ import (
 	"libvirt.org/go/libvirtxml"
 )
 
-// getRoutesFromResource gets the libvirt network routes from a network definition
+// getRoutesFromResource gets the libvirt network routes from a network definition.
 func getRoutesFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkRoute, error) {
 	routesCount, ok := d.GetOk("routes.#")
 	if !ok {

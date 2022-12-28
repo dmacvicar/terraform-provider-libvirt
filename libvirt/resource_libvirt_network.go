@@ -311,7 +311,7 @@ func resourceLibvirtNetworkExists(d *schema.ResourceData, meta interface{}) (boo
 	return true, nil
 }
 
-// resourceLibvirtNetworkUpdate updates dynamically some attributes in the network
+// resourceLibvirtNetworkUpdate updates dynamically some attributes in the network.
 func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 	// check the list of things that can be changed dynamically
 	// in https://wiki.libvirt.org/page/Networking#virsh_net-update
@@ -357,7 +357,7 @@ func resourceLibvirtNetworkUpdate(d *schema.ResourceData, meta interface{}) erro
 	return nil
 }
 
-// resourceLibvirtNetworkCreate creates a libvirt network from the resource definition
+// resourceLibvirtNetworkCreate creates a libvirt network from the resource definition.
 func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) error {
 	// see https://libvirt.org/formatnetwork.html
 	virConn := meta.(*Client).libvirt
@@ -521,7 +521,7 @@ func resourceLibvirtNetworkCreate(d *schema.ResourceData, meta interface{}) erro
 }
 
 // resourceLibvirtNetworkRead gets the current resource from libvirt and creates
-// the corresponding `schema.ResourceData`
+// the corresponding `schema.ResourceData`.
 func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read resource libvirt_network")
 

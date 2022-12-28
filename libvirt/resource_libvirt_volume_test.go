@@ -206,7 +206,7 @@ func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 // The destroy function should always handle the case where the resource might already be destroyed
 // (manually, for example). If the resource is already destroyed, this should not return an error.
 // This allows Terraform users to manually delete resources without breaking Terraform.
-// This test should fail without a proper "Exists" implementation
+// This test should fail without a proper "Exists" implementation.
 func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)

@@ -25,7 +25,7 @@ import (
 //     hosts = [ "${flatten(data.libvirt_network_dns_host_template.k8smasters.*.rendered)}" ]
 //   }]
 //   ...
-// }
+// }.
 //
 func datasourceLibvirtNetworkDNSHostTemplate() *schema.Resource {
 	return &schema.Resource{
@@ -86,7 +86,7 @@ func resourceLibvirtNetworkDNSHostRead(d *schema.ResourceData, meta interface{})
 //     srvs = [ "${flatten(data.libvirt_network_dns_srv_template.etcd_cluster.*.rendered)}" ]
 //   }]
 //   ...
-// }
+// }.
 //
 func datasourceLibvirtNetworkDNSSRVTemplate() *schema.Resource {
 	return &schema.Resource{
@@ -173,7 +173,7 @@ func resourceLibvirtNetworkDNSSRVRead(d *schema.ResourceData, meta interface{}) 
 //     options = [ "${flatten(data.libvirt_network_dnsmasq_options_template.options.*.rendered)}" ]
 //   }]
 //   ...
-// }
+// }.
 //
 func datasourceLibvirtNetworkDnsmasqOptionsTemplate() *schema.Resource {
 	return &schema.Resource{

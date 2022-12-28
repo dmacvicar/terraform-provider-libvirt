@@ -123,5 +123,5 @@ func TestGetHostCapabilties(t *testing.T) {
 	}
 
 	elapsed := time.Since(start)
-	t.Logf("[DEBUG] Get host capabilites took %s", elapsed)
+	t.Logf("[DEBUG] Get host capabilities took %s", elapsed)
 }

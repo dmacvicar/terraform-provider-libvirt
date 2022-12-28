@@ -25,7 +25,7 @@ func waitForNetworkActive(virConn *libvirt.Libvirt, network libvirt.Network) res
 	}
 }
 
-// waitForNetworkDestroyed waits for a network to destroyed
+// waitForNetworkDestroyed waits for a network to destroyed.
 func waitForNetworkDestroyed(virConn *libvirt.Libvirt, uuidStr string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		log.Printf("Waiting for network %s to be destroyed", uuidStr)
@@ -40,12 +40,12 @@ func waitForNetworkDestroyed(virConn *libvirt.Libvirt, uuidStr string) resource.
 	}
 }
 
-// getNetModeFromResource returns the network mode fromm a network definition
+// getNetModeFromResource returns the network mode fromm a network definition.
 func getNetModeFromResource(d *schema.ResourceData) string {
 	return strings.ToLower(d.Get("mode").(string))
 }
 
-// getIPsFromResource gets the IPs configurations from the resource definition
+// getIPsFromResource gets the IPs configurations from the resource definition.
 func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) {
 	addresses, ok := d.GetOk("addresses")
 	if !ok {
@@ -202,7 +202,7 @@ func getMTUFromResource(d *schema.ResourceData) *libvirtxml.NetworkMTU {
 }
 
 // getDNSMasqOptionFromResource returns a list of dnsmasq options
-// from the network definition
+// from the network definition.
 func getDNSMasqOptionFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDnsmasqOption, error) {
 	var dnsmasqOption []libvirtxml.NetworkDnsmasqOption
 	dnsmasqOptionPrefix := "dnsmasq_options.0"
