@@ -120,7 +120,6 @@ func createCACerts(pkipath string) error {
 		return err
 	}
 
-
 	if err := pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)}); err != nil {
 		return err
 	}

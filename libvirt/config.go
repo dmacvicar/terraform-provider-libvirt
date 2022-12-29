@@ -6,8 +6,8 @@ import (
 	"sync"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	uri "github.com/dmacvicar/terraform-provider-libvirt/libvirt/uri"
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/mutexkv"
+	uri "github.com/dmacvicar/terraform-provider-libvirt/libvirt/uri"
 )
 
 // Config struct for the libvirt-provider.

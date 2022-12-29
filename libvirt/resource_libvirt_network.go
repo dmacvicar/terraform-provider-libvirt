@@ -26,19 +26,18 @@ const (
 //
 // Resource example:
 //
-// resource "libvirt_network" "k8snet" {
-//    name = "k8snet"
-//    domain = "k8s.local"
-//    mode = "nat"
-//    addresses = ["10.17.3.0/24"]
-// }
+//	resource "libvirt_network" "k8snet" {
+//	   name = "k8snet"
+//	   domain = "k8s.local"
+//	   mode = "nat"
+//	   addresses = ["10.17.3.0/24"]
+//	}
 //
 // "addresses" can contain (0 or 1) ipv4 and (0 or 1) ipv6 subnets
 // "mode" can be one of: "nat" (default), "isolated"
 //
 // Not all resources support update, for those that require ForceNew
 // check here: https://gitlab.com/search?utf8=%E2%9C%93&search=virNetworkDefUpdateNoSupport&group_id=130330&project_id=192693&search_code=true&repository_ref=master
-//
 func resourceLibvirtNetwork() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceLibvirtNetworkCreate,

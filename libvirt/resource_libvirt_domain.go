@@ -144,9 +144,9 @@ func resourceLibvirtDomain() *schema.Resource {
 				},
 			},
 			"disk": {
-				Type:       schema.TypeList,
-				Optional:   true,
-				ForceNew:   true,
+				Type:     schema.TypeList,
+				Optional: true,
+				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"volume_id": {
@@ -822,8 +822,10 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("vcpu", domainDef.VCPU.Value)
 
 	switch domainDef.Memory.Unit {
-	case "KiB": d.Set("memory", domainDef.Memory.Value / 1024)
-	case "MiB": d.Set("memory", domainDef.Memory.Value)
+	case "KiB":
+		d.Set("memory", domainDef.Memory.Value/1024)
+	case "MiB":
+		d.Set("memory", domainDef.Memory.Value)
 	default:
 		return fmt.Errorf("invalid memory unit : %s", domainDef.Memory.Unit)
 	}
@@ -844,7 +846,6 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 		d.Set("nvram", []map[string]interface{}{nvram})
 	}
-
 
 	if domainDef.CPU != nil {
 		cpu := make(map[string]interface{})

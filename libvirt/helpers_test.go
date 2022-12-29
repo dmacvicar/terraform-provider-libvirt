@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/community-terraform-providers/terraform-provider-ignition/v2/ignition"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"libvirt.org/go/libvirtxml"
 )
 
