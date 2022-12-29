@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/user"
@@ -96,7 +95,7 @@ func (u *ConnectionURI) tlsConfig() (*tls.Config, error) {
 		return nil, err
 	}
 
-	caCert, err := ioutil.ReadFile(caCertPath)
+	caCert, err := os.ReadFile(caCertPath)
 	if err != nil {
 		return nil, fmt.Errorf("can't read certificate '%s': %w", caCert, err)
 	}
