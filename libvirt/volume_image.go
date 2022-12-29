@@ -3,7 +3,6 @@ package libvirt
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -142,7 +141,7 @@ func (i *httpImage) IsQCOW2() (bool, error) {
 			response.Status)
 	}
 
-	header, err := ioutil.ReadAll(response.Body)
+	header, err := io.ReadAll(response.Body)
 	if err != nil {
 		return false, err
 	}

@@ -46,7 +46,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 		Exists: resourceLibvirtNetworkExists,
 		Update: resourceLibvirtNetworkUpdate,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
