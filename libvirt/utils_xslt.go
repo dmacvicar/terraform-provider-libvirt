@@ -73,13 +73,14 @@ func transformXML(xmlS string, xsltS string) (string, error) {
 	defer os.Remove(xmlFile.Name()) // clean up
 
 	if _, err := xmlFile.Write([]byte(xmlS)); err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	if err := xmlFile.Close(); err != nil {
 		return "", err
 	}
 
+	//lint:ignore G204 not sure why gosec complains
 	cmd := exec.Command("xsltproc",
 		"--nomkdir",
 		"--nonet",

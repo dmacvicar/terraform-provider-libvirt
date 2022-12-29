@@ -95,7 +95,7 @@ func (i *httpImage) Size() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if response.StatusCode == 403 {
+	if response.StatusCode == http.StatusForbidden {
 		// possibly only the HEAD method is forbidden, try a Body-less GET instead
 		response, err = http.Get(i.url.String())
 		if err != nil {
@@ -104,7 +104,7 @@ func (i *httpImage) Size() (uint64, error) {
 
 		response.Body.Close()
 	}
-	if response.StatusCode != 200 {
+	if response.StatusCode != http.StatusOK {
 		return 0,
 			fmt.Errorf(
 				"error accessing remote resource: %s - %s",
@@ -135,7 +135,7 @@ func (i *httpImage) IsQCOW2() (bool, error) {
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != 206 {
+	if response.StatusCode != http.StatusPartialContent {
 		return false, fmt.Errorf(
 			"can't retrieve partial header of resource to determine file type: %s - %s",
 			i.url.String(),
@@ -188,16 +188,15 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 			return nil
 		} else if response.StatusCode == http.StatusOK {
 			return copier(response.Body)
-		} else if response.StatusCode < 500 {
+		} else if response.StatusCode < http.StatusInternalServerError {
 			break
-		} else {
+		} else if retryCount < maxHTTPRetries {
 			// The problem is not client but server side
 			// retry a few times after a small wait
-			if retryCount < maxHTTPRetries {
-				time.Sleep(retryWait)
-			}
+			time.Sleep(retryWait)
 		}
 	}
+
 	return fmt.Errorf("error while downloading %s: %v", i.url.String(), response)
 }
 

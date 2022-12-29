@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
-	"time"
 )
 
 const (
@@ -15,7 +14,7 @@ const (
 // with libvirt prefix.
 func randomMACAddress() (string, error) {
 	buf := make([]byte, 3)
-	rand.Seed(time.Now().UnixNano())
+	//lint:ignore G404 math.rand is enough for this usecase
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
 	}
@@ -39,7 +38,7 @@ func randomPort() int {
 	const minPort = 1024
 	const maxPort = 65535
 
-	rand.Seed(time.Now().UnixNano())
+	//lint:ignore G404 math.rand is enough for this usecase
 	return rand.Intn(maxPort-minPort) + minPort
 }
 

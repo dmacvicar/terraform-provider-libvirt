@@ -1245,7 +1245,7 @@ func createTempBlockDev(devname string) (string, string, error) {
 
 func createNvramFile(t *testing.T) (string, error) {
 	// size of an accepted, valid, nvram backing store
-	NVRAMDummyBuffer := make([]byte, 131072)
+	nvramDummyBuffer := make([]byte, 131072)
 	file, err := ioutil.TempFile("", "nvram")
 	if err != nil {
 		return "", err
@@ -1256,7 +1256,7 @@ func createNvramFile(t *testing.T) (string, error) {
 		return "", err
 	}
 
-	_, err = file.Write(NVRAMDummyBuffer)
+	_, err = file.Write(nvramDummyBuffer)
 	if err != nil {
 		return "", err
 	}
@@ -1267,11 +1267,11 @@ func createNvramFile(t *testing.T) (string, error) {
 }
 
 func TestAccLibvirtDomainFirmware(t *testing.T) {
-	NVRAMPath, err := createNvramFile(t)
+	nvramPath, err := createNvramFile(t)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(NVRAMPath)
+	defer os.Remove(nvramPath)
 
 	firmware := "/usr/share/qemu/ovmf-x86_64-code.bin"
 	if _, err := os.Stat(firmware); os.IsNotExist(err) {
@@ -1290,10 +1290,10 @@ func TestAccLibvirtDomainFirmware(t *testing.T) {
 	}
 
 	t.Run("No Template", func(t *testing.T) {
-		subtestAccLibvirtDomainFirmwareNoTemplate(t, NVRAMPath, firmware)
+		subtestAccLibvirtDomainFirmwareNoTemplate(t, nvramPath, firmware)
 	})
 	t.Run("With Template", func(t *testing.T) {
-		subtestAccLibvirtDomainFirmwareTemplate(t, NVRAMPath, firmware, template)
+		subtestAccLibvirtDomainFirmwareTemplate(t, nvramPath, firmware, template)
 	})
 }
 
