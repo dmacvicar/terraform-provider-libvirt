@@ -47,9 +47,11 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	waitForSuccess("Error refreshing pool for volume", func() error {
+	if err := waitForSuccess("Error refreshing pool for volume", func() error {
 		return virConn.StoragePoolRefresh(pool, 0)
-	})
+	}); err != nil {
+		return "", err
+	}
 
 	volumeDef := newDefVolume()
 	volumeDef.Name = ign.Name

@@ -663,7 +663,10 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	destroyDomainByUserRequest(virConn, d, domain)
+	if err := destroyDomainByUserRequest(virConn, d, domain); err != nil {
+		return err
+	}
+
 	return nil
 }
 
