@@ -1,4 +1,4 @@
-LDFLAGS += -X main.version=$$(git describe --always --abbrev=40 --dirty)
+LDFLAGS += -X version.ProviderVersion=$$(git describe --always --abbrev=40 --dirty)
 
 # default  args for tests
 TEST_ARGS_DEF := -covermode=count -coverprofile=profile.cov
