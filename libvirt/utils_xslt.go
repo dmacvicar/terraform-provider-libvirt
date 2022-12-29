@@ -1,7 +1,6 @@
 package libvirt
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -51,25 +50,25 @@ func transformXML(xmlS string, xsltS string) (string, error) {
 		return xmlS, nil
 	}
 
-	xsltFile, err := ioutil.TempFile("", "terraform-provider-libvirt-xslt")
+	xsltFile, err := os.CreateTemp("", "terraform-provider-libvirt-xslt")
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	defer os.Remove(xsltFile.Name()) // clean up
 
 	// we trim the xslt as it may contain space before the xml declaration
 	// because of HCL heredoc
 	if _, err := xsltFile.Write([]byte(strings.TrimSpace(xsltS))); err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	if err := xsltFile.Close(); err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
-	xmlFile, err := ioutil.TempFile("", "terraform-provider-libvirt-xml")
+	xmlFile, err := os.CreateTemp("", "terraform-provider-libvirt-xml")
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	defer os.Remove(xmlFile.Name()) // clean up
 
@@ -78,7 +77,7 @@ func transformXML(xmlS string, xsltS string) (string, error) {
 	}
 
 	if err := xmlFile.Close(); err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	cmd := exec.Command("xsltproc",
@@ -93,7 +92,6 @@ func transformXML(xmlS string, xsltS string) (string, error) {
 		return xmlS, err
 	}
 	log.Printf("[DEBUG] Transformed XML with user specified XSLT:\n%s", transformedXML)
-	// return strings.Trim(string(transformedXML), " \r\n"), nil
 
 	return string(transformedXML), err
 }
