@@ -86,9 +86,6 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 		//nolint:staticcheck
 		if dhcpEnabledByUser, dhcpSetByUser := d.GetOkExists("dhcp.0.enabled"); dhcpSetByUser {
 			dhcpEnabled = dhcpEnabledByUser.(bool)
-		} else {
-			// if not specified, default to enable it
-			dhcpEnabled = true
 		}
 
 		if dhcpEnabled {
