@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"os"
@@ -45,16 +46,15 @@ func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.StorageVol
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		if volume.Key == "" {
-			return fmt.Errorf("Can't retrieve volume key")
-		}
-
 		_, err := virConn.StorageVolLookupByKey(volume.Key)
-		if err == nil {
-			return fmt.Errorf("Volume '%s' still exists", volume.Key)
+		if err != nil {
+			if isError(err, libvirt.ErrNoStorageVol) {
+				return nil
+			}
+			return err
 		}
 
-		return nil
+		return fmt.Errorf("Volume '%s' still exists", volume.Key)
 	}
 }
 
@@ -244,7 +244,9 @@ func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 					if volume.Key == "" {
 						panic(fmt.Errorf("UUID is blank"))
 					}
-					volumeDelete(client, volume.Key)
+					if err := volumeDelete(context.Background(), client, volume.Key); err != nil {
+						t.Error(err)
+					}
 				},
 			},
 		},

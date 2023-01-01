@@ -32,7 +32,6 @@ func resourceLibvirtDomain() *schema.Resource {
 		Read:   resourceLibvirtDomainRead,
 		Delete: resourceLibvirtDomainDelete,
 		Update: resourceLibvirtDomainUpdate,
-		Exists: resourceLibvirtDomainExists,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -467,25 +466,6 @@ func resourceLibvirtDomain() *schema.Resource {
 	}
 }
 
-func resourceLibvirtDomainExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	log.Printf("[DEBUG] Check if resource libvirt_domain exists")
-
-	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return false, fmt.Errorf(LibVirtConIsNil)
-	}
-
-	uuid := parseUUID(d.Id())
-
-	if _, err := virConn.DomainLookupByUUID(uuid); err != nil {
-		if libvirt.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
-}
-
 func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Create resource libvirt_domain")
 
@@ -789,7 +769,11 @@ func resourceLibvirtDomainRead(d *schema.ResourceData, meta interface{}) error {
 
 	domain, err := virConn.DomainLookupByUUID(uuid)
 	if err != nil {
-		return fmt.Errorf("error retrieving libvirt domain by read: %s", err)
+		if isError(err, libvirt.ErrNoDomain) {
+			d.SetId("")
+			return nil
+		}
+		return fmt.Errorf("error retrieving libvirt domain: %w", err)
 	}
 
 	xmlDesc, err := virConn.DomainGetXMLDesc(domain, 0)

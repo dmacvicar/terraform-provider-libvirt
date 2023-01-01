@@ -3,11 +3,13 @@ package libvirt
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	libvirt "github.com/digitalocean/go-libvirt"
 )
 
 var diskLetters = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -69,4 +71,15 @@ func formatBoolYesNo(b bool) string {
 		return "yes"
 	}
 	return "no"
+}
+
+// analog to internal libvirt.checkError
+// IsNotFound in libvirt-go should be enhanced to detect the other types
+// (pool, network).
+func isError(err error, errorCode libvirt.ErrorNumber) bool {
+	var perr libvirt.Error
+	if errors.As(err, &perr) {
+		return  perr.Code == uint32(errorCode)
+	}
+	return false
 }

@@ -110,6 +110,7 @@ func getVolumeFromTerraformState(name string, state *terraform.State, virConn *l
 	if err != nil {
 		return nil, err
 	}
+
 	log.Printf("[DEBUG]:The ID is %s", rs.Primary.ID)
 	return &vol, nil
 }

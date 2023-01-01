@@ -174,7 +174,7 @@ func TestAccLibvirtPool_ManuallyDestroyed(t *testing.T) {
 	var pool libvirt.StoragePool
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
+	poolPath := t.TempDir()
 	testAccCheckLibvirtPoolConfigBasic := fmt.Sprintf(`
 	resource "libvirt_pool" "%s" {
 					name = "%s"
@@ -196,12 +196,20 @@ func TestAccLibvirtPool_ManuallyDestroyed(t *testing.T) {
 				Config:  testAccCheckLibvirtPoolConfigBasic,
 				Destroy: true,
 				PreConfig: func() {
+					// delete the pool out of band (from terraform)
 					client := testAccProvider.Meta().(*Client)
-					id := pool.UUID
-					if uuidString(id) == "" {
-						panic(fmt.Errorf("UUID is blank"))
+
+					if err := client.libvirt.StoragePoolDestroy(pool); err != nil {
+						t.Errorf(err.Error())
 					}
-					deletePool(client, uuidString(id))
+					
+					if err := client.libvirt.StoragePoolDelete(pool, libvirt.StoragePoolDeleteNormal); err != nil {
+						t.Errorf(err.Error())
+					}
+
+					if err := client.libvirt.StoragePoolUndefine(pool); err != nil {
+						t.Errorf(err.Error())
+					}
 				},
 			},
 		},
@@ -212,8 +220,8 @@ func TestAccLibvirtPool_UniqueName(t *testing.T) {
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolResource2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
-	poolPath2 := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName + "-2"
+	poolPath := t.TempDir()
+	poolPath2 := t.TempDir()
 	config := fmt.Sprintf(`
 	resource "libvirt_pool" "%s" {
 		name = "%s"
@@ -276,3 +284,4 @@ func testAccCheckLibvirtPoolDestroy(state *terraform.State) error {
 	}
 	return nil
 }
+

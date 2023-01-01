@@ -2,7 +2,9 @@ package libvirt
 
 import (
 	"bufio"
+	"context"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -195,7 +197,7 @@ func (ci *defCloudInit) createFiles() (string, error) {
 
 // Creates a new defCloudInit object starting from a ISO volume handled by
 // libvirt.
-func newCloudInitDefFromRemoteISO(virConn *libvirt.Libvirt, id string) (defCloudInit, error) {
+func newCloudInitDefFromRemoteISO(_ context.Context, virConn *libvirt.Libvirt, id string) (defCloudInit, error) {
 	ci := defCloudInit{}
 
 	key, err := getCloudInitVolumeKeyFromTerraformID(id)
@@ -205,7 +207,7 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Libvirt, id string) (defCloud
 
 	volume, err := virConn.StorageVolLookupByKey(key)
 	if err != nil {
-		return ci, fmt.Errorf("can't retrieve volume %s: %v", key, err)
+		return ci, fmt.Errorf("can't retrieve volume %s: %w", key, err)
 	}
 
 	err = ci.setCloudInitDiskNameFromExistingVol(virConn, volume)
@@ -243,13 +245,13 @@ func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvi
 
 	for {
 		file, err := isoReader.Next()
-		if err == io.EOF {
-			break
-		}
-
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
 			return err
 		}
+
 		dataBytes, err := readIso9660File(file)
 		if err != nil {
 			return err
@@ -298,7 +300,7 @@ func (ci *defCloudInit) setCloudInitDiskNameFromExistingVol(virConn *libvirt.Lib
 func readIso9660File(file os.FileInfo) ([]byte, error) {
 	log.Printf("ISO reader: processing file %s", file.Name())
 
-	dataBytes, err := ioutil.ReadAll(file.Sys().(io.Reader))
+	dataBytes, err := io.ReadAll(file.Sys().(io.Reader))
 	if err != nil {
 		return nil, fmt.Errorf("error while reading %s: %s", file.Name(), err)
 	}
@@ -316,7 +318,7 @@ func downloadISO(virConn *libvirt.Libvirt, volume libvirt.StorageVol) (*os.File,
 	}
 
 	// create tmp file for the ISO
-	tmpFile, err := ioutil.TempFile("", "cloudinit")
+	tmpFile, err := os.CreateTemp("", "cloudinit")
 	if err != nil {
 		return nil, fmt.Errorf("cannot create tmp file: %s", err)
 	}

@@ -43,7 +43,6 @@ func resourceLibvirtNetwork() *schema.Resource {
 		Create: resourceLibvirtNetworkCreate,
 		Read:   resourceLibvirtNetworkRead,
 		Delete: resourceLibvirtNetworkDelete,
-		Exists: resourceLibvirtNetworkExists,
 		Update: resourceLibvirtNetworkUpdate,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
@@ -533,7 +532,11 @@ func resourceLibvirtNetworkRead(d *schema.ResourceData, meta interface{}) error 
 
 	network, err := virConn.NetworkLookupByUUID(uuid)
 	if err != nil {
-		return fmt.Errorf("error retrieving libvirt network: %s", err)
+		if isError(err, libvirt.ErrNoNetwork) {
+			d.SetId("")
+			return nil
+		}
+		return fmt.Errorf("error retrieving libvirt network %w", err)
 	}
 
 	networkDef, err := getXMLNetworkDefFromLibvirt(virConn, network)

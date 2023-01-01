@@ -3,12 +3,12 @@ module github.com/dmacvicar/terraform-provider-libvirt
 require (
 	github.com/community-terraform-providers/terraform-provider-ignition/v2 v2.1.2
 	github.com/davecgh/go-spew v1.1.1
-	github.com/digitalocean/go-libvirt v0.0.0-20220616141158-7ed4ed4decd9
+	github.com/digitalocean/go-libvirt v0.0.0-20221205150000-2939327a8519
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.21.0
 	github.com/hooklift/iso9660 v1.0.0
 	github.com/mattn/goveralls v0.0.2
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.1
 	golang.org/x/crypto v0.0.0-20220517005047-85d78b3ac167
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b
 	libvirt.org/go/libvirtxml v1.8003.0
@@ -63,10 +63,10 @@ require (
 	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect
 	github.com/vmihailenco/tagparser v0.1.1 // indirect
 	github.com/zclconf/go-cty v1.10.0 // indirect
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
-	golang.org/x/sys v0.0.0-20220517195934-5e4e11fc645e // indirect
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/tools v0.1.1 // indirect
+	golang.org/x/tools v0.1.12 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/genproto v0.0.0-20200711021454-869866162049 // indirect
 	google.golang.org/grpc v1.48.0 // indirect

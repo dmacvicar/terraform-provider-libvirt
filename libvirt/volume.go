@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -14,76 +15,74 @@ const (
 	volNotExistsID = "NOT-EXISTS"
 )
 
-// volumeExists returns "EXISTS" or "NOT-EXISTS" depending on the current volume existence.
-func volumeExists(virConn *libvirt.Libvirt, key string) resource.StateRefreshFunc {
+// volumeExistsStateRefreshFunc returns "EXISTS" or "NOT-EXISTS" depending on the current volume existence.
+func volumeExistsStateRefreshFunc(virConn *libvirt.Libvirt, key string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		_, err := virConn.StorageVolLookupByKey(key)
 		if err != nil {
-			if err.(libvirt.Error).Code == uint32(libvirt.ErrNoStorageVol) {
+			if isError(err, libvirt.ErrNoStorageVol) {
 				log.Printf("Volume %s does not exist", key)
-				return virConn, "NOT-EXISTS", nil
+				return virConn, volNotExistsID, nil
 			}
-			log.Printf("Volume %s: error: %s", key, err.(libvirt.Error).Message)
 		}
 		return virConn, volExistsID, err
 	}
 }
 
-// volumeWaitForExists waits for a storage volume to be up and timeout after 5 minutes.
-func volumeWaitForExists(virConn *libvirt.Libvirt, key string) error {
+// waitForStateVolumeExists waits for a storage volume to be up and timeout after 5 minutes.
+func waitForStateVolumeExists(ctx context.Context, virConn *libvirt.Libvirt, key string) error {
 	log.Printf("Waiting for volume %s to be active...", key)
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{volNotExistsID},
 		Target:     []string{volExistsID},
-		Refresh:    volumeExists(virConn, key),
+		Refresh:    volumeExistsStateRefreshFunc(virConn, key),
 		Timeout:    1 * time.Minute,
 		MinTimeout: 3 * time.Second,
 	}
 
-	if _, err := stateConf.WaitForState(); err != nil {
-		return fmt.Errorf("error waiting for volume to reach EXISTS state: %s", err)
+	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
+		return err
 	}
 	return nil
 }
 
 // volumeWaitDeleted waits for a storage volume to be removed.
-func volumeWaitDeleted(virConn *libvirt.Libvirt, key string) error {
+func volumeWaitDeleted(ctx context.Context, virConn *libvirt.Libvirt, key string) error {
 	log.Printf("Waiting for volume %s to be deleted...", key)
 	stateConf := &resource.StateChangeConf{
 		Pending:    []string{volExistsID},
 		Target:     []string{volNotExistsID},
-		Refresh:    volumeExists(virConn, key),
+		Refresh:    volumeExistsStateRefreshFunc(virConn, key),
 		Timeout:    1 * time.Minute,
 		MinTimeout: 3 * time.Second,
 	}
 
-	if _, err := stateConf.WaitForState(); err != nil {
-		return fmt.Errorf("error waiting for volume to reach NOT-EXISTS state: %s", err)
+	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
+		return err
 	}
 	return nil
 }
 
 // volumeDelete removes the volume identified by `key` from libvirt.
-func volumeDelete(client *Client, key string) error {
+func volumeDelete(ctx context.Context, client *Client, key string) error {
 	virConn := client.libvirt
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 	volume, err := virConn.StorageVolLookupByKey(key)
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != uint32(libvirt.ErrNoStorageVol) {
-			return fmt.Errorf("volumeDelete: Can't retrieve volume %s: %v", key, err)
+		if isError(err, libvirt.ErrNoStorageVol) {
+			// Volume already deleted.
+			return nil
 		}
-		// Volume already deleted.
-		return nil
+		return fmt.Errorf("volumeDelete: Can't retrieve volume %s: %w", key, err)
 	}
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// no longer in use.
 	volPool, err := virConn.StoragePoolLookupByVolume(volume)
 	if err != nil {
-		return fmt.Errorf("error retrieving pool for volume: %s", err)
+		return fmt.Errorf("error retrieving pool for volume: %w", err)
 	}
 
 	if volPool.Name == "" {
@@ -102,30 +101,30 @@ func volumeDelete(client *Client, key string) error {
 	// Does not solve the problem but it makes it happen less often.
 	_, err = virConn.StorageVolGetXMLDesc(volume, 0)
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != uint32(libvirt.ErrNoStorageVol) {
-			return fmt.Errorf("can't retrieve volume %s XML desc: %s", key, err)
+		if !isError(err, libvirt.ErrNoStorageVol) {
+			return fmt.Errorf("can't retrieve volume %s XML desc: %w", key, err)
 		}
 		// Volume is probably gone already, getting its XML description is pointless
 	}
 
 	err = virConn.StorageVolDelete(volume, 0)
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != uint32(libvirt.ErrNoStorageVol) {
-			return fmt.Errorf("can't delete volume %s: %s", key, err)
+		if !isError(err, libvirt.ErrNoStorageVol) {
+			return fmt.Errorf("can't delete volume %s: %w", key, err)
 		}
 		// Volume is gone already
 		return nil
 	}
 
-	return volumeWaitDeleted(client.libvirt, key)
+	return volumeWaitDeleted(ctx, client.libvirt, key)
 }
 
 // tries really hard to find volume with `key`
 // it will try to start the pool if it does not find it
 //
-// You have to call volume.Free() on the returned volume.
+// Deprecated: only cloud init is using it right now, but the
+// volume resource is using resource.RetryContext with the appropriate
+// logic.
 func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*libvirt.StorageVol, error) {
 	virConn := client.libvirt
 	if virConn == nil {
@@ -142,12 +141,12 @@ func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*li
 
 		volPool, err := virConn.StoragePoolLookupByName(volPoolName)
 		if err != nil {
-			return nil, fmt.Errorf("error retrieving pool %s for volume %s: %s", volPoolName, key, err)
+			return nil, fmt.Errorf("error retrieving pool %s for volume %s: %w", volPoolName, key, err)
 		}
 
 		active, err := virConn.StoragePoolIsActive(volPool)
 		if err != nil {
-			return nil, fmt.Errorf("error retrieving status of pool %s for volume %s: %s", volPoolName, key, err)
+			return nil, fmt.Errorf("error retrieving status of pool %s for volume %s: %w", volPoolName, key, err)
 		}
 		if active == 1 {
 			log.Printf("can't retrieve volume %s (and pool is active)", key)
@@ -156,7 +155,7 @@ func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*li
 
 		err = virConn.StoragePoolCreate(volPool, 0)
 		if err != nil {
-			return nil, fmt.Errorf("error starting pool %s: %s", volPoolName, err)
+			return nil, fmt.Errorf("error starting pool %s: %w", volPoolName, err)
 		}
 
 		// attempt a new lookup

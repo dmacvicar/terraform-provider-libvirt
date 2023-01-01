@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"testing"
@@ -161,7 +162,7 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 					if volume.Key == "" {
 						t.Fatalf("Key is blank")
 					}
-					if err := volumeDelete(client, volume.Key); err != nil {
+					if err := volumeDelete(context.Background(), client, volume.Key); err != nil {
 						t.Fatal(err)
 					}
 				},
@@ -218,7 +219,7 @@ func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName strin
 			return err
 		}
 
-		cloudInitDiskDef, err := newCloudInitDefFromRemoteISO(virConn, rs.Primary.ID)
+		cloudInitDiskDef, err := newCloudInitDefFromRemoteISO(context.Background(), virConn, rs.Primary.ID)
 		if err != nil {
 			return err
 		}
