@@ -10,6 +10,10 @@ import (
 	"libvirt.org/go/libvirtxml"
 )
 
+const (
+	defaultDomainMemoryMiB = 512
+)
+
 // from existing domain return its  XMLdefintion.
 func getXMLDomainDefFromLibvirt(virConn *libvirt.Libvirt, domain libvirt.Domain) (libvirtxml.Domain, error) {
 
@@ -46,8 +50,7 @@ func newDomainDef() libvirtxml.Domain {
 		},
 		Memory: &libvirtxml.DomainMemory{
 			Unit:  "MiB",
-			//nolint:mnd
-			Value: 512,
+			Value: defaultDomainMemoryMiB,
 		},
 		VCPU: &libvirtxml.DomainVCPU{
 			Placement: "static",

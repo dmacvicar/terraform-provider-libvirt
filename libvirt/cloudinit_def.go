@@ -128,6 +128,7 @@ func (ci *defCloudInit) buildTerraformKey(volumeKey string) string {
 	return fmt.Sprintf("%s;%s", volumeKey, uuid.New())
 }
 
+//nolint:gomnd
 func getCloudInitVolumeKeyFromTerraformID(id string) (string, error) {
 	s := strings.SplitN(id, ";", 2)
 	if len(s) != 2 {

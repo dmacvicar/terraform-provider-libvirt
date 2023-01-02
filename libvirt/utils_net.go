@@ -8,7 +8,7 @@ import (
 
 // randomMACAddress returns a randomized MAC address
 // with libvirt prefix.
-//nolint:mnd
+//nolint:gomnd
 func randomMACAddress() (string, error) {
 	buf := make([]byte, 3)
 	//nolint:gosec // math.rand is enough for this
@@ -30,7 +30,7 @@ func randomMACAddress() (string, error) {
 		buf[0], buf[1], buf[2]), nil
 }
 
-//nolint:mnd
+//nolint:gomnd
 func getNetMaskWithMax16Bits(m net.IPMask) net.IPMask {
 	ones, bits := m.Size()
 

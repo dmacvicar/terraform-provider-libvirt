@@ -109,9 +109,10 @@ func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.Netw
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing addresses definition '%s': %w", address, err)
 	}
+
 	ones, bits := ipNet.Mask.Size()
 	family := "ipv4"
-	if bits == (net.IPv6len * 8) {
+	if bits == (net.IPv6len * 8) { //nolint:gomnd
 		family = "ipv6"
 	}
 

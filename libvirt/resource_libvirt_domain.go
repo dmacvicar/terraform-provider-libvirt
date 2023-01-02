@@ -38,6 +38,7 @@ func resourceLibvirtDomain() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
+			//nolint:gomnd
 			Create: schema.DefaultTimeout(5 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
@@ -65,8 +66,7 @@ func resourceLibvirtDomain() *schema.Resource {
 			"memory": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				//nolint:mnd
-				Default:  512,
+				Default:  defaultDomainMemoryMiB,
 				ForceNew: true,
 			},
 			"firmware": {
