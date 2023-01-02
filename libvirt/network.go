@@ -103,7 +103,6 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 	return ipsPtrsLst, nil
 }
 
-//nolint:mnd
 func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHCP, error) {
 	_, ipNet, err := net.ParseCIDR(address)
 	if err != nil {

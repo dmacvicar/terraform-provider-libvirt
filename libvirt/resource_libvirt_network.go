@@ -38,7 +38,7 @@ const (
 // "mode" can be one of: "nat" (default), "isolated"
 //
 // Not all resources support update, for those that require ForceNew
-// check here: https://gitlab.com/search?utf8=%E2%9C%93&search=virNetworkDefUpdateNoSupport&group_id=130330&project_id=192693&search_code=true&repository_ref=master
+// check virNetworkDefUpdateNoSupport in libvirt src/conf/network_conf.c.
 func resourceLibvirtNetwork() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceLibvirtNetworkCreate,
@@ -359,7 +359,10 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 	networkDef.Forward = &libvirtxml.NetworkForward{
 		Mode: getNetModeFromResource(d),
 	}
-	if networkDef.Forward.Mode == netModeIsolated || networkDef.Forward.Mode == netModeNat || networkDef.Forward.Mode == netModeRoute || networkDef.Forward.Mode == netModeOpen {
+	if networkDef.Forward.Mode == netModeIsolated ||
+		networkDef.Forward.Mode == netModeNat ||
+		networkDef.Forward.Mode == netModeRoute ||
+		networkDef.Forward.Mode == netModeOpen {
 
 		if networkDef.Forward.Mode == netModeIsolated {
 			// there is no forwarding when using an isolated network

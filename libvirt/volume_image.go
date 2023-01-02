@@ -233,7 +233,11 @@ func isQCOW2Header(buf []byte) (bool, error) {
 	if len(buf) < 8 {
 		return false, fmt.Errorf("expected header of 8 bytes. Got %d", len(buf))
 	}
-	if buf[0] == 'Q' && buf[1] == 'F' && buf[2] == 'I' && buf[3] == 0xfb && buf[4] == 0x00 && buf[5] == 0x00 && buf[6] == 0x00 && buf[7] == 0x03 {
+	if buf[0] == 'Q' && buf[1] == 'F' &&
+		buf[2] == 'I' && buf[3] == 0xfb &&
+		buf[4] == 0x00 && buf[5] == 0x00 &&
+		buf[6] == 0x00 && buf[7] == 0x03 {
+
 		return true, nil
 	}
 	return false, nil

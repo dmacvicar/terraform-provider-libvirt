@@ -77,7 +77,9 @@ func domainWaitForLeases(ctx context.Context, virConn *libvirt.Libvirt, domain l
 	return err
 }
 
-func domainIfaceHasAddress(virConn *libvirt.Libvirt, domain libvirt.Domain, iface libvirtxml.DomainInterface, rd *schema.ResourceData) (found bool, ignore bool, err error) {
+func domainIfaceHasAddress(virConn *libvirt.Libvirt, domain libvirt.Domain,
+	iface libvirtxml.DomainInterface,
+	rd *schema.ResourceData) (found bool, ignore bool, err error) {
 
 	mac := strings.ToUpper(iface.MAC.Address)
 	if mac == "" {
