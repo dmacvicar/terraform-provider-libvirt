@@ -229,5 +229,6 @@ func TestRemoteImageDownload(t *testing.T) {
 		t.Fatalf("Could not copy image from %s: %v", url, err)
 	}
 	t.Log("File not copied because modification time was the same")
-
 }
+
+
