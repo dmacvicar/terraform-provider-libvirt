@@ -61,15 +61,13 @@ func (u *ConnectionURI) driver() string {
 	return strings.Split(u.Scheme, "+")[0]
 }
 
-// go-libvirt needs a connection to talk RPC to libvirtd.
-//
-// Returns the connection for the URI transport, and a new
-// URI to be used in ConnectToURI (passed to libvirtd).
+// Dial implements go-libvirt Dialer interface, which is used
+// to retrieve connections to talk via RPC to libvirtd.
 //
 // For example, a qemu+ssh:/// uri would return a SSH connection
 // to localhost, and a new URI to qemu+unix:///system
 // dials the transport for this connection URI.
-func (u *ConnectionURI) DialTransport() (net.Conn, error) {
+func (u *ConnectionURI) Dial() (net.Conn, error) {
 	t := u.transport()
 	switch t {
 	case "tcp":

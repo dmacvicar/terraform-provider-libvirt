@@ -24,21 +24,15 @@ type Client struct {
 	networkMutex sync.Mutex
 }
 
-// Client libvirt, generate libvirt client given URI.
+// Client libvirt, returns a libvirt client for a config.
 func (c *Config) Client() (*Client, error) {
-
 	u, err := uri.Parse(c.URI)
 	if err != nil {
 		return nil, err
 	}
 
-	conn, err := u.DialTransport()
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial libvirt: %w", err)
-	}
-	log.Printf("[INFO] Set up libvirt transport: %v\n", conn)
+	l := libvirt.NewWithDialer(u)
 
-	l := libvirt.New(conn)
 	if err := l.ConnectToURI(libvirt.ConnectURI(u.RemoteName())); err != nil {
 		return nil, fmt.Errorf("failed to connect: %w", err)
 	}
