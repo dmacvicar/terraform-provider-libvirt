@@ -2,7 +2,6 @@ package libvirt
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -151,7 +150,7 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 				Config: configVolDettached,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
-					testAccCheckLibvirtVolumeDoesNotExists("libvirt_volume."+randomVolumeName, &volume),
+					testAccCheckLibvirtVolumeDoesNotExists(&volume),
 				),
 			},
 		},
@@ -161,6 +160,8 @@ func TestAccLibvirtDomain_Volume(t *testing.T) {
 func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 	var domain libvirt.Domain
 	var volume libvirt.StorageVol
+	var volume2 libvirt.StorageVol
+
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -210,15 +211,15 @@ func TestAccLibvirtDomain_VolumeTwoDisks(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
 					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeName, &volume),
-					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeName2, &volume),
+					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeName2, &volume2),
 				),
 			},
 			{
 				Config: configVolDettached,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
-					testAccCheckLibvirtVolumeDoesNotExists("libvirt_volume."+randomVolumeName, &volume),
-					testAccCheckLibvirtVolumeDoesNotExists("libvirt_volume."+randomVolumeName2, &volume),
+					testAccCheckLibvirtVolumeDoesNotExists(&volume),
+					testAccCheckLibvirtVolumeDoesNotExists(&volume2),
 				),
 			},
 		},
@@ -388,18 +389,12 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 	})
 }
 
-/* FIXME: Disable for now. It fails with:
-
-   unsupported configuration: disk type 'virtio' of 'vda' does not support ejectable media
-
 func TestAccLibvirtDomain_URLDisk(t *testing.T) {
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	fws := fileWebServer{}
-	if err := fws.Start(); err != nil {
-		t.Fatal(err)
-	}
-	defer fws.Stop()
+	fws := newFileWebServer(t)
+	fws.Start()
+	defer fws.Close()
 
 	isoPath, err := filepath.Abs("testdata/tcl.iso")
 	if err != nil {
@@ -439,7 +434,7 @@ func TestAccLibvirtDomain_URLDisk(t *testing.T) {
 		},
 	})
 
-}*/
+}
 
 func TestAccLibvirtDomain_MultiISODisks(t *testing.T) {
 	var domain libvirt.Domain
@@ -700,7 +695,7 @@ func TestAccLibvirtDomain_CheckDHCPEntries(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDestroyLeavesIPs(
 						"libvirt_network."+randomNetworkName,
-						"192.0.0.2", &network,
+						"192.0.0.2",
 					),
 				),
 			},
@@ -1030,7 +1025,7 @@ func testAccCheckIgnitionXML(domain *libvirt.Domain, volume *libvirt.StorageVol,
 		virConn := testAccProvider.Meta().(*Client).libvirt
 		domainDef, err := getXMLDomainDefFromLibvirt(virConn, *domain)
 		if err != nil {
-			return fmt.Errorf("Error retrieving libvirt domain XML description from existing domain: %s", err)
+			return fmt.Errorf("Error retrieving libvirt domain XML description from existing domain: %w", err)
 		}
 
 		if volume.Key == "" {
@@ -1086,7 +1081,7 @@ func testAccCheckLibvirtDomainDescription(domain *libvirt.Domain, checkFunc func
 		virConn := testAccProvider.Meta().(*Client).libvirt
 		domainDef, err := getXMLDomainDefFromLibvirt(virConn, *domain)
 		if err != nil {
-			return fmt.Errorf("Error retrieving libvirt domain XML description from existing domain: %s", err)
+			return fmt.Errorf("Error retrieving libvirt domain XML description from existing domain: %w", err)
 		}
 		return checkFunc(domainDef)
 	}
@@ -1098,7 +1093,7 @@ func testAccCheckLibvirtURLDisk(u *url.URL, domain *libvirt.Domain) resource.Tes
 		virConn := testAccProvider.Meta().(*Client).libvirt
 		domainDef, err := getXMLDomainDefFromLibvirt(virConn, *domain)
 		if err != nil {
-			return fmt.Errorf("Error getting libvirt XML definition from existing libvirt domain: %s", err)
+			return fmt.Errorf("Error getting libvirt XML definition from existing libvirt domain: %w", err)
 		}
 
 		disks := domainDef.Devices.Disks
@@ -1129,7 +1124,7 @@ func testAccCheckLibvirtMultiISODisks(domain *libvirt.Domain) resource.TestCheck
 		virConn := testAccProvider.Meta().(*Client).libvirt
 		domainDef, err := getXMLDomainDefFromLibvirt(virConn, *domain)
 		if err != nil {
-			return fmt.Errorf("Error getting libvirt XML definition from existing libvirt domain: %s", err)
+			return fmt.Errorf("Error getting libvirt XML definition from existing libvirt domain: %w", err)
 		}
 
 		disks := domainDef.Devices.Disks
@@ -1147,7 +1142,7 @@ func testAccCheckLibvirtMultiISODisks(domain *libvirt.Domain) resource.TestCheck
 	}
 }
 
-func testAccCheckLibvirtDestroyLeavesIPs(name string, ip string, network *libvirt.Network) resource.TestCheckFunc {
+func testAccCheckLibvirtDestroyLeavesIPs(name string, ip string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 
 		virConn := testAccProvider.Meta().(*Client).libvirt
@@ -1172,7 +1167,7 @@ func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel
 		virConn := testAccProvider.Meta().(*Client).libvirt
 		domainDef, err := getXMLDomainDefFromLibvirt(virConn, *domain)
 		if err != nil {
-			return fmt.Errorf("Error retrieving libvirt domain XML description from existing domain: %s", err)
+			return fmt.Errorf("Error retrieving libvirt domain XML description from existing domain: %w", err)
 		}
 
 		if kernel.Key == "" {
@@ -1202,17 +1197,19 @@ func createTempBlockDev(devname string) (string, string, error) {
 
 	// Create a 1MB temp file
 	filename := filepath.Join(os.TempDir(), devname)
+
+	//nolint:gosec // G204 not sure why gosec complains but we should replace dd call
 	cmd := exec.Command("dd", "if=/dev/zero", "of="+filename, "bs=1024", "count=1024")
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
-		return "", "", fmt.Errorf("Error creating file %s: %s", filename, err)
+		return "", "", fmt.Errorf("Error creating file %s: %w", filename, err)
 	}
 
 	// Format the file
 	cmd = exec.Command("/sbin/mkfs.ext4", "-F", "-q", filename)
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
-		return "", "", fmt.Errorf("Error formatting file system: %s", err)
+		return "", "", fmt.Errorf("Error formatting file system: %w", err)
 	}
 
 	// Find an available loop device
@@ -1220,7 +1217,7 @@ func createTempBlockDev(devname string) (string, string, error) {
 	loopdevStr, err := cmd.Output()
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err != nil {
-		return "", "", fmt.Errorf("Error searching for available loop device: %s", err)
+		return "", "", fmt.Errorf("Error searching for available loop device: %w", err)
 	}
 	loopdev := strings.TrimRight(string(loopdevStr), "\n")
 
@@ -1228,14 +1225,14 @@ func createTempBlockDev(devname string) (string, string, error) {
 	cmd = exec.Command("sudo", "chown", "--reference", filename, loopdev)
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
-		return "", "", fmt.Errorf("Error copying permissions from %s: %s", filename, err)
+		return "", "", fmt.Errorf("Error copying permissions from %s: %w", filename, err)
 	}
 
 	// Mount the file to a loop device
 	cmd = exec.Command("sudo", "/sbin/losetup", loopdev, filename)
 	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
-		return "", "", fmt.Errorf("Error setting up loop device: %s", err)
+		return "", "", fmt.Errorf("Error setting up loop device: %w", err)
 	}
 
 	log.Printf("Temporary file %s attached to loop device %s", filename, loopdev)
@@ -1243,10 +1240,10 @@ func createTempBlockDev(devname string) (string, string, error) {
 	return filename, strings.TrimRight(string(loopdev), "\n"), nil
 }
 
-func createNvramFile(t *testing.T) (string, error) {
+func createNvramFile(_ *testing.T) (string, error) {
 	// size of an accepted, valid, nvram backing store
 	nvramDummyBuffer := make([]byte, 131072)
-	file, err := ioutil.TempFile("", "nvram")
+	file, err := os.CreateTemp("", "nvram")
 	if err != nil {
 		return "", err
 	}
@@ -1297,7 +1294,7 @@ func TestAccLibvirtDomainFirmware(t *testing.T) {
 	})
 }
 
-func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, firmware string) {
+func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, nvramPath string, firmware string) {
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	var config = fmt.Sprintf(`
@@ -1307,7 +1304,7 @@ func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, f
 		nvram {
 			file = "%s"
 		}
-	}`, randomDomainName, firmware, NVRAMPath)
+	}`, randomDomainName, firmware, nvramPath)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -1321,7 +1318,7 @@ func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, f
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomDomainName, "name", "terraform-test-firmware-no-template"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomDomainName, "nvram.0.file", NVRAMPath),
+						"libvirt_domain."+randomDomainName, "nvram.0.file", nvramPath),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomDomainName, "firmware", firmware),
 				),
@@ -1330,7 +1327,7 @@ func subtestAccLibvirtDomainFirmwareNoTemplate(t *testing.T, NVRAMPath string, f
 	})
 }
 
-func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, firmware string, template string) {
+func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, nvramPath string, firmware string, template string) {
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	var domain libvirt.Domain
 	var config = fmt.Sprintf(`
@@ -1341,7 +1338,7 @@ func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, fir
 			file     = "%s"
 			template = "%s"
 		}
-	}`, randomDomainName, firmware, NVRAMPath, template)
+	}`, randomDomainName, firmware, nvramPath, template)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -1355,7 +1352,7 @@ func subtestAccLibvirtDomainFirmwareTemplate(t *testing.T, NVRAMPath string, fir
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomDomainName, "name", "terraform-test-firmware-with-template"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomDomainName, "nvram.0.file", NVRAMPath),
+						"libvirt_domain."+randomDomainName, "nvram.0.file", nvramPath),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomDomainName, "nvram.0.template", template),
 					resource.TestCheckResourceAttr(
@@ -1575,7 +1572,7 @@ func testAccCheckLibvirtDomainStateEqual(name string, domain *libvirt.Domain, ex
 		*domain = retrievedDomain
 		state, err := domainGetState(virConn, *domain)
 		if err != nil {
-			return fmt.Errorf("could not get domain state: %s", err)
+			return fmt.Errorf("could not get domain state: %w", err)
 		}
 
 		if state != exptectedState {
@@ -1857,7 +1854,7 @@ func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 		_, err := virConn.DomainLookupByUUID(parseUUID(rs.Primary.ID))
 		if err == nil {
 			return fmt.Errorf(
-				"Error waiting for domain (%s) to be destroyed: %s",
+				"Error waiting for domain (%s) to be destroyed: %w",
 				rs.Primary.ID, err)
 		}
 	}

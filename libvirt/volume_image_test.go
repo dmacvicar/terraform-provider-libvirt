@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -96,7 +95,7 @@ func TestNewImage(t *testing.T) {
 
 func TestLocalImageDownload(t *testing.T) {
 	content := []byte("this is a qcow image... well, it is not")
-	tmpfile, err := ioutil.TempFile(t.TempDir(), "test-image-")
+	tmpfile, err := os.CreateTemp(t.TempDir(), "test-image-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +158,7 @@ func TestRemoteImageDownloadRetry(t *testing.T) {
 	}
 
 	copier := func(r io.Reader) error {
-		_, err := ioutil.ReadAll(r)
+		_, err := io.ReadAll(r)
 		return err
 	}
 

@@ -128,12 +128,12 @@ func getNetworkDef(state *terraform.State, name string, virConn *libvirt.Libvirt
 	}
 	networkXMLDesc, err := virConn.NetworkGetXMLDesc(network, 0)
 	if err != nil {
-		return &libvirtxml.Network{}, fmt.Errorf("Error retrieving libvirt network XML description: %s", err)
+		return &libvirtxml.Network{}, fmt.Errorf("Error retrieving libvirt network XML description: %w", err)
 	}
 	networkDef := libvirtxml.Network{}
 	err = xml.Unmarshal([]byte(networkXMLDesc), &networkDef)
 	if err != nil {
-		return &libvirtxml.Network{}, fmt.Errorf("Error reading libvirt network XML description: %s", err)
+		return &libvirtxml.Network{}, fmt.Errorf("Error reading libvirt network XML description: %w", err)
 	}
 	return &networkDef, nil
 }
@@ -181,7 +181,7 @@ func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
 		_, err := virtConn.NetworkLookupByUUID(parseUUID(rs.Primary.ID))
 		if err == nil {
 			return fmt.Errorf(
-				"Error waiting for network (%s) to be destroyed: %s",
+				"Error waiting for network (%s) to be destroyed: %w",
 				rs.Primary.ID, err)
 		}
 	}

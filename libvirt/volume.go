@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -36,8 +35,8 @@ func waitForStateVolumeExists(ctx context.Context, virConn *libvirt.Libvirt, key
 		Pending:    []string{volNotExistsID},
 		Target:     []string{volExistsID},
 		Refresh:    volumeExistsStateRefreshFunc(virConn, key),
-		Timeout:    1 * time.Minute,
-		MinTimeout: 3 * time.Second,
+		Timeout:    resourceStateTimeout,
+		MinTimeout: resourceStateMinTimeout,
 	}
 
 	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
@@ -53,8 +52,8 @@ func volumeWaitDeleted(ctx context.Context, virConn *libvirt.Libvirt, key string
 		Pending:    []string{volExistsID},
 		Target:     []string{volNotExistsID},
 		Refresh:    volumeExistsStateRefreshFunc(virConn, key),
-		Timeout:    1 * time.Minute,
-		MinTimeout: 3 * time.Second,
+		Timeout:    resourceStateTimeout,
+		MinTimeout: resourceStateMinTimeout,
 	}
 
 	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
@@ -92,9 +91,11 @@ func volumeDelete(ctx context.Context, client *Client, key string) error {
 	client.poolMutexKV.Lock(volPool.Name)
 	defer client.poolMutexKV.Unlock(volPool.Name)
 
-	waitForSuccess("error refreshing pool for volume", func() error {
+	if err := waitForSuccess("error refreshing pool for volume", func() error {
 		return virConn.StoragePoolRefresh(volPool, 0)
-	})
+	}); err != nil {
+		return err
+	}
 
 	// Workaround for redhat#1293804
 	// https://bugzilla.redhat.com/show_bug.cgi?id=1293804#c12
@@ -117,57 +118,4 @@ func volumeDelete(ctx context.Context, client *Client, key string) error {
 	}
 
 	return volumeWaitDeleted(ctx, client.libvirt, key)
-}
-
-// tries really hard to find volume with `key`
-// it will try to start the pool if it does not find it
-//
-// Deprecated: only cloud init is using it right now, but the
-// volume resource is using resource.RetryContext with the appropriate
-// logic.
-func volumeLookupReallyHard(client *Client, volPoolName string, key string) (*libvirt.StorageVol, error) {
-	virConn := client.libvirt
-	if virConn == nil {
-		return nil, fmt.Errorf(LibVirtConIsNil)
-	}
-
-	volume, err := virConn.StorageVolLookupByKey(key)
-	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != uint32(libvirt.ErrNoStorageVol) {
-			return nil, fmt.Errorf("can't retrieve volume %s", key)
-		}
-		log.Printf("[INFO] Volume %s not found, attempting to start its pool", key)
-
-		volPool, err := virConn.StoragePoolLookupByName(volPoolName)
-		if err != nil {
-			return nil, fmt.Errorf("error retrieving pool %s for volume %s: %w", volPoolName, key, err)
-		}
-
-		active, err := virConn.StoragePoolIsActive(volPool)
-		if err != nil {
-			return nil, fmt.Errorf("error retrieving status of pool %s for volume %s: %w", volPoolName, key, err)
-		}
-		if active == 1 {
-			log.Printf("can't retrieve volume %s (and pool is active)", key)
-			return nil, nil
-		}
-
-		err = virConn.StoragePoolCreate(volPool, 0)
-		if err != nil {
-			return nil, fmt.Errorf("error starting pool %s: %w", volPoolName, err)
-		}
-
-		// attempt a new lookup
-		volume, err = virConn.StorageVolLookupByKey(key)
-		if err != nil {
-			virErr := err.(libvirt.Error)
-			if virErr.Code != uint32(libvirt.ErrNoStorageVol) {
-				return nil, fmt.Errorf("can't retrieve volume %s", key)
-			}
-			// does not exist, but no error
-			return nil, nil
-		}
-	}
-	return &volume, nil
 }

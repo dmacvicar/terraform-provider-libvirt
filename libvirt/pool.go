@@ -3,15 +3,14 @@ package libvirt
 import (
 	"context"
 	"log"
-	"time"
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 const (
-	poolExistsID    = "EXISTS"
-	poolNotExistsID = "NOT-EXISTS"
+	poolStateExists    = "EXISTS"
+	poolStateNotExists = "NOT-EXISTS"
 )
 
 // poolExists returns "EXISTS" or "NOT-EXISTS" depending on the current pool existence.
@@ -21,11 +20,11 @@ func poolStateRefreshFunc(virConn *libvirt.Libvirt, uuid libvirt.UUID) resource.
 		if err != nil {
 			if isError(err, libvirt.ErrNoStoragePool) {
 				log.Printf("pool %s does not exist", uuid)
-				return virConn, poolNotExistsID, nil
+				return virConn, poolStateNotExists, nil
 			}
-			return virConn, poolNotExistsID, err
+			return virConn, poolStateNotExists, err
 		}
-		return virConn, poolExistsID, err
+		return virConn, poolStateExists, err
 	}
 }
 
@@ -33,12 +32,12 @@ func poolStateRefreshFunc(virConn *libvirt.Libvirt, uuid libvirt.UUID) resource.
 func waitForStatePoolExists(ctx context.Context, virConn *libvirt.Libvirt, uuid libvirt.UUID) error {
 	log.Printf("Waiting for pool %s to appear...", uuid)
 	stateConf := &resource.StateChangeConf{
-		Pending:    []string{poolNotExistsID},
-		Target:     []string{poolExistsID},
+		Pending:    []string{poolStateNotExists},
+		Target:     []string{poolStateExists},
 		Refresh:    poolStateRefreshFunc(virConn, uuid),
-		Timeout:    1 * time.Minute,
-		Delay:      5 * time.Second,
-		MinTimeout: 3 * time.Second,
+		Timeout:    resourceStateTimeout,
+		Delay:      resourceStateDelay,
+		MinTimeout: resourceStateMinTimeout,
 	}
 
 	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
@@ -51,12 +50,12 @@ func waitForStatePoolExists(ctx context.Context, virConn *libvirt.Libvirt, uuid 
 func waitForStatePoolDeleted(ctx context.Context, virConn *libvirt.Libvirt, uuid libvirt.UUID) error {
 	log.Printf("waiting for pool %s to be deleted...", uuid)
 	stateConf := &resource.StateChangeConf{
-		Pending:    []string{poolExistsID},
-		Target:     []string{poolNotExistsID},
+		Pending:    []string{poolStateExists},
+		Target:     []string{poolStateNotExists},
 		Refresh:    poolStateRefreshFunc(virConn, uuid),
-		Timeout:    1 * time.Minute,
-		Delay:      5 * time.Second,
-		MinTimeout: 3 * time.Second,
+		Timeout:    resourceStateTimeout,
+		Delay:      resourceStateDelay,
+		MinTimeout: resourceStateMinTimeout,
 	}
 
 	if _, err := stateConf.WaitForStateContext(ctx); err != nil {

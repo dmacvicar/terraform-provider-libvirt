@@ -23,12 +23,12 @@ func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Ne
 
 		oldEntries, err := parseNetworkDNSHostsChange(oldInterface)
 		if err != nil {
-			return fmt.Errorf("parse old %s: %s", hostsKey, err)
+			return fmt.Errorf("parse old %s: %w", hostsKey, err)
 		}
 
 		newEntries, err := parseNetworkDNSHostsChange(newInterface)
 		if err != nil {
-			return fmt.Errorf("parse new %s: %s", hostsKey, err)
+			return fmt.Errorf("parse new %s: %w", hostsKey, err)
 		}
 
 		// process all the old DNS entries that must be removed
@@ -46,13 +46,13 @@ func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Ne
 
 			data, err := xmlMarshallIndented(libvirtxml.NetworkDNSHost{IP: oldEntry.IP})
 			if err != nil {
-				return fmt.Errorf("serialize update: %s", err)
+				return fmt.Errorf("serialize update: %w", err)
 			}
 
 			err = virConn.NetworkUpdateCompat(network, libvirt.NetworkUpdateCommandDelete,
 				libvirt.NetworkSectionDNSHost, -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
 			if err != nil {
-				return fmt.Errorf("delete %s: %s", oldEntry.IP, err)
+				return fmt.Errorf("delete %s: %w", oldEntry.IP, err)
 			}
 		}
 
@@ -71,13 +71,13 @@ func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Ne
 
 			data, err := xmlMarshallIndented(newEntry)
 			if err != nil {
-				return fmt.Errorf("serialize update: %s", err)
+				return fmt.Errorf("serialize update: %w", err)
 			}
 
 			err = virConn.NetworkUpdateCompat(network, libvirt.NetworkUpdateCommandAddLast,
 				libvirt.NetworkSectionDNSHost, -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
 			if err != nil {
-				return fmt.Errorf("add %v: %s", newEntry, err)
+				return fmt.Errorf("add %v: %w", newEntry, err)
 			}
 		}
 	}
@@ -202,14 +202,14 @@ func getDNSForwardersFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkD
 
 // getDNSEnableFromResource returns string to enable ("yes") or disable ("no") dns
 // in the network definition.
-func getDNSEnableFromResource(d *schema.ResourceData) (string, error) {
+func getDNSEnableFromResource(d *schema.ResourceData) string {
 	if dnsEnabled, ok := d.GetOk(dnsPrefix + ".enabled"); ok {
 		if dnsEnabled.(bool) {
-			return "yes", nil // this "boolean" must be "yes"|"no"
+			return "yes" // this "boolean" must be "yes"|"no"
 		}
-		return "no", nil
+		return "no"
 	}
-	return "", nil
+	return ""
 }
 
 // getDNSSRVFromResource returns a list of libvirt's DNS SRVs

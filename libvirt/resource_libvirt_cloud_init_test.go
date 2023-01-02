@@ -48,7 +48,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
-					expectedContents.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContents.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName),
 				),
 			},
 			{
@@ -70,7 +70,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
-					expectedContents2.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContents2.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName),
 				),
 			},
 			{
@@ -89,7 +89,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
-					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName),
 				),
 			},
 			// when we apply 2 times with same conf, we should not have a diff. See bug:
@@ -112,7 +112,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
-					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName),
 				),
 			},
 		},
@@ -210,7 +210,7 @@ type Expected struct {
 	UserData, NetworkConfig, MetaData string
 }
 
-func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 

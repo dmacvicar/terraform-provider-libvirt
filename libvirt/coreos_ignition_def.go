@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -82,19 +81,19 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 
 	volumeDefXML, err := xml.Marshal(volumeDef)
 	if err != nil {
-		return "", fmt.Errorf("error serializing libvirt volume: %s", err)
+		return "", fmt.Errorf("error serializing libvirt volume: %w", err)
 	}
 
 	// create the volume
 	volume, err := virConn.StorageVolCreateXML(pool, string(volumeDefXML), 0)
 	if err != nil {
-		return "", fmt.Errorf("error creating libvirt volume for Ignition %s: %s", ign.Name, err)
+		return "", fmt.Errorf("error creating libvirt volume for Ignition %s: %w", ign.Name, err)
 	}
 
 	// upload ignition file
 	err = img.Import(newCopier(virConn, &volume, volumeDef.Capacity.Value), volumeDef)
 	if err != nil {
-		return "", fmt.Errorf("error while uploading ignition file %s: %s", img.String(), err)
+		return "", fmt.Errorf("error while uploading ignition file %s: %w", img.String(), err)
 	}
 
 	if volume.Key == "" {
@@ -123,9 +122,9 @@ func getIgnitionVolumeKeyFromTerraformID(id string) (string, error) {
 // to a temporary ignition file.
 func (ign *defIgnition) createFile() (string, error) {
 	log.Print("Creating Ignition temporary file")
-	tempFile, err := ioutil.TempFile("", ign.Name)
+	tempFile, err := os.CreateTemp("", ign.Name)
 	if err != nil {
-		return "", fmt.Errorf("error creating tmp file: %v", err)
+		return "", fmt.Errorf("error creating tmp file: %w", err)
 	}
 	defer tempFile.Close()
 
@@ -170,7 +169,7 @@ func newIgnitionDefFromRemoteVol(virConn *libvirt.Libvirt, id string) (defIgniti
 
 	volume, err := virConn.StorageVolLookupByKey(key)
 	if err != nil {
-		return ign, fmt.Errorf("can't retrieve volume %s: %v", key, err)
+		return ign, fmt.Errorf("can't retrieve volume %s: %w", key, err)
 	}
 
 	ign.Name = volume.Name

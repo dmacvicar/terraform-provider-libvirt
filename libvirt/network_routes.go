@@ -26,7 +26,7 @@ func getRoutesFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkRoute, e
 		if cidr, ok := d.GetOk(routePrefix + ".cidr"); ok {
 			addr, net, err := net.ParseCIDR(cidr.(string))
 			if err != nil {
-				return nil, fmt.Errorf("error parsing static route in network: %s", err)
+				return nil, fmt.Errorf("error parsing static route in network: %w", err)
 			}
 
 			if addr.To4() == nil {

@@ -107,7 +107,7 @@ func testAccCheckLibvirtIgnitionDestroy(s *terraform.State) error {
 		_, err := virtConn.StorageVolLookupByKey(ignKey)
 		if err == nil {
 			return fmt.Errorf(
-				"Error waiting for IgnitionVolume (%s) to be destroyed: %s",
+				"Error waitiEng for IgnitionVolume (%s) to be destroyed: %w",
 				ignKey, err)
 		}
 	}

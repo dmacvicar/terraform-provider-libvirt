@@ -17,12 +17,12 @@ func testAccCheckLibvirtPoolExists(name string, pool *libvirt.StoragePool) resou
 
 		rs, err := getResourceFromTerraformState(name, state)
 		if err != nil {
-			return fmt.Errorf("Failed to get resource: %s", err)
+			return fmt.Errorf("Failed to get resource: %w", err)
 		}
 
 		retrievedPool, err := getPoolFromTerraformState(name, state, virConn)
 		if err != nil {
-			return fmt.Errorf("Failed to get pool: %s", err)
+			return fmt.Errorf("Failed to get pool: %w", err)
 		}
 
 		if uuidString(retrievedPool.UUID) == "" {
@@ -34,25 +34,6 @@ func testAccCheckLibvirtPoolExists(name string, pool *libvirt.StoragePool) resou
 		}
 
 		*pool = *retrievedPool
-
-		return nil
-	}
-}
-
-func testAccCheckLibvirtPoolDoesNotExists(n string, pool *libvirt.StoragePool) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirt
-
-		id := pool.UUID
-
-		if uuidString(id) == "" {
-			return fmt.Errorf("UUID is blank")
-		}
-
-		_, err := virConn.StoragePoolLookupByUUID(id)
-		if err == nil {
-			return fmt.Errorf("Pool '%s' still exists", id)
-		}
 
 		return nil
 	}
@@ -89,7 +70,7 @@ func TestAccLibvirtPool_Import(t *testing.T) {
 							testImportStateCheckResourceAttr("libvirt_pool."+randomPoolResource, "type", "dir"),
 							testImportStateCheckResourceAttr("libvirt_pool."+randomPoolResource, "path", poolPath),
 						)(f); err != nil {
-							return fmt.Errorf("Check InstanceState n°%d / %d error: %s", i+1, len(instanceState), err)
+							return fmt.Errorf("Check InstanceState n°%d / %d error: %w", i+1, len(instanceState), err)
 						}
 					}
 
@@ -110,7 +91,7 @@ func composeTestImportStateCheckFunc(fs ...ImportStateCheckFunc) ImportStateChec
 	return func(is *terraform.InstanceState) error {
 		for i, f := range fs {
 			if err := f(is); err != nil {
-				return fmt.Errorf("Check %d/%d error: %s", i+1, len(fs), err)
+				return fmt.Errorf("Check %d/%d error: %w", i+1, len(fs), err)
 			}
 		}
 
@@ -202,7 +183,7 @@ func TestAccLibvirtPool_ManuallyDestroyed(t *testing.T) {
 					if err := client.libvirt.StoragePoolDestroy(pool); err != nil {
 						t.Errorf(err.Error())
 					}
-					
+
 					if err := client.libvirt.StoragePoolDelete(pool, libvirt.StoragePoolDeleteNormal); err != nil {
 						t.Errorf(err.Error())
 					}
@@ -278,7 +259,7 @@ func testAccCheckLibvirtPoolDestroy(state *terraform.State) error {
 		_, err := virConn.StoragePoolLookupByUUID(parseUUID(rs.Primary.ID))
 		if err == nil {
 			return fmt.Errorf(
-				"Error waiting for pool (%s) to be destroyed: %s",
+				"Error waiting for pool (%s) to be destroyed: %w",
 				rs.Primary.ID, err)
 		}
 	}

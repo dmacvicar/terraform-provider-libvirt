@@ -2,7 +2,6 @@ package libvirt
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -48,7 +47,7 @@ func (fws *fileWebServer) Start() {
 
 // Adds a file (with some content) in the directory served by the fileWebServer.
 func (fws *fileWebServer) AddContent(content []byte) (string, *os.File, error) {
-	tmpfile, err := ioutil.TempFile(fws.Dir, "file-")
+	tmpfile, err := os.CreateTemp(fws.Dir, "file-")
 	if err != nil {
 		return "", nil, err
 	}

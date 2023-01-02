@@ -27,7 +27,7 @@ const (
 // we specify the diff suppress function as the result of applying the identity
 // transform to the xslt, stripping whitespace
 // See https://www.terraform.io/docs/extend/schemas/schema-behaviors.html#diffsuppressfunc
-func xsltDiffSupressFunc(k, old, new string, d *schema.ResourceData) bool {
+func xsltDiffSupressFunc(_, old, new string, _ *schema.ResourceData) bool {
 	oldStrip, err := transformXML(old, identitySpaceStripXSLT)
 	if err != nil {
 		// fail, just use normal equality
@@ -80,7 +80,7 @@ func transformXML(xmlS string, xsltS string) (string, error) {
 		return "", err
 	}
 
-	//lint:ignore G204 not sure why gosec complains
+	//nolint:gosec // G204 not sure why gosec complains
 	cmd := exec.Command("xsltproc",
 		"--nomkdir",
 		"--nonet",

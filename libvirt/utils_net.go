@@ -6,15 +6,12 @@ import (
 	"net"
 )
 
-const (
-	maxIfaceNum = 100
-)
-
 // randomMACAddress returns a randomized MAC address
 // with libvirt prefix.
+//nolint:mnd
 func randomMACAddress() (string, error) {
 	buf := make([]byte, 3)
-	//lint:ignore G404 math.rand is enough for this usecase
+	//nolint:gosec // math.rand is enough for this
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
 	}
@@ -33,15 +30,7 @@ func randomMACAddress() (string, error) {
 		buf[0], buf[1], buf[2]), nil
 }
 
-// randomPort returns a random port.
-func randomPort() int {
-	const minPort = 1024
-	const maxPort = 65535
-
-	//lint:ignore G404 math.rand is enough for this usecase
-	return rand.Intn(maxPort-minPort) + minPort
-}
-
+//nolint:mnd
 func getNetMaskWithMax16Bits(m net.IPMask) net.IPMask {
 	ones, bits := m.Size()
 

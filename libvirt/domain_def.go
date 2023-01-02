@@ -15,13 +15,13 @@ func getXMLDomainDefFromLibvirt(virConn *libvirt.Libvirt, domain libvirt.Domain)
 
 	domainXMLDesc, err := virConn.DomainGetXMLDesc(domain, 0)
 	if err != nil {
-		return libvirtxml.Domain{}, fmt.Errorf("error retrieving libvirt domain XML description: %s", err)
+		return libvirtxml.Domain{}, fmt.Errorf("error retrieving libvirt domain XML description: %w", err)
 	}
 
 	domainDef := newDomainDef()
 	err = xml.Unmarshal([]byte(domainXMLDesc), &domainDef)
 	if err != nil {
-		return libvirtxml.Domain{}, fmt.Errorf("error reading libvirt domain XML description: %s", err)
+		return libvirtxml.Domain{}, fmt.Errorf("error reading libvirt domain XML description: %w", err)
 	}
 
 	return domainDef, nil
@@ -46,6 +46,7 @@ func newDomainDef() libvirtxml.Domain {
 		},
 		Memory: &libvirtxml.DomainMemory{
 			Unit:  "MiB",
+			//nolint:mnd
 			Value: 512,
 		},
 		VCPU: &libvirtxml.DomainVCPU{

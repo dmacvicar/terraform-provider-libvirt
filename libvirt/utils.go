@@ -49,7 +49,7 @@ func waitForSuccess(errorMessage string, f func() error) error {
 
 		time.Sleep(WaitSleepInterval)
 		if time.Since(start) > WaitTimeout {
-			return fmt.Errorf("%s: %s", errorMessage, err)
+			return fmt.Errorf("%s: %w", errorMessage, err)
 		}
 	}
 }

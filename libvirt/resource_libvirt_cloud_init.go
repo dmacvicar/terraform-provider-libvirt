@@ -2,7 +2,6 @@ package libvirt
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	libvirt "github.com/digitalocean/go-libvirt"
@@ -110,29 +109,4 @@ func resourceCloudInitDiskDelete(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	return diag.FromErr(volumeDelete(ctx, client, key))
-}
-
-func resourceCloudInitDiskExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	log.Printf("[DEBUG] Check if resource libvirt_cloudinit_disk exists")
-	client := meta.(*Client)
-	if client.libvirt == nil {
-		return false, fmt.Errorf(LibVirtConIsNil)
-	}
-
-	key, err := getCloudInitVolumeKeyFromTerraformID(d.Id())
-	if err != nil {
-		return false, err
-	}
-
-	volPoolName := d.Get("pool").(string)
-	volume, err := volumeLookupReallyHard(client, volPoolName, key)
-	if err != nil {
-		return false, err
-	}
-
-	if volume == nil {
-		return false, nil
-	}
-
-	return true, nil
 }

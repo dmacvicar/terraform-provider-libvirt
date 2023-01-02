@@ -36,12 +36,12 @@ func newDefNetworkFromXML(s string) (libvirtxml.Network, error) {
 func getXMLNetworkDefFromLibvirt(virConn *libvirt.Libvirt, network libvirt.Network) (libvirtxml.Network, error) {
 	networkXMLDesc, err := virConn.NetworkGetXMLDesc(network, 0)
 	if err != nil {
-		return libvirtxml.Network{}, fmt.Errorf("error retrieving libvirt network XML description: %s", err)
+		return libvirtxml.Network{}, fmt.Errorf("error retrieving libvirt network XML description: %w", err)
 	}
 	networkDef := libvirtxml.Network{}
 	err = xml.Unmarshal([]byte(networkXMLDesc), &networkDef)
 	if err != nil {
-		return libvirtxml.Network{}, fmt.Errorf("error reading libvirt network XML description: %s", err)
+		return libvirtxml.Network{}, fmt.Errorf("error reading libvirt network XML description: %w", err)
 	}
 	return networkDef, nil
 }
@@ -140,7 +140,7 @@ func updateOrAddHost(virConn *libvirt.Libvirt, n libvirt.Network, ip, mac, name 
 	err = updateHost(virConn, n, ip, mac, name, xmlIdx)
 	// FIXME: libvirt.Error.DomainID is not available from library. Is it still required here?
 	//  && virErr.Error.DomainID == uint32(.....FromNetwork) {
-	if virErr, ok := err.(libvirt.Error); ok && virErr.Code == uint32(libvirt.ErrOperationInvalid) {
+	if isError(err, libvirt.ErrOperationInvalid) {
 		log.Printf("[DEBUG]: karl: updateOrAddHost before addHost()\n")
 		return addHost(virConn, n, ip, mac, name, xmlIdx)
 	}

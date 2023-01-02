@@ -31,12 +31,13 @@ func waitForNetworkDestroyed(virConn *libvirt.Libvirt, uuidStr string) resource.
 		log.Printf("Waiting for network %s to be destroyed", uuidStr)
 
 		uuid := parseUUID(uuidStr)
-
-		_, err := virConn.NetworkLookupByUUID(uuid)
-		if err.(libvirt.Error).Code == uint32(libvirt.ErrNoNetwork) {
-			return virConn, "NOT-EXISTS", nil
+		if _, err := virConn.NetworkLookupByUUID(uuid); err != nil {
+			if isError(err, libvirt.ErrNoNetwork) {
+				return virConn, "NOT-EXISTS", nil
+			}
+			return virConn, "NOT-EXISTS", err
 		}
-		return virConn, "ACTIVE", err
+		return virConn, "ACTIVE", nil
 	}
 }
 
@@ -102,10 +103,11 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 	return ipsPtrsLst, nil
 }
 
+//nolint:mnd
 func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHCP, error) {
 	_, ipNet, err := net.ParseCIDR(address)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing addresses definition '%s': %s", address, err)
+		return nil, nil, fmt.Errorf("error parsing addresses definition '%s': %w", address, err)
 	}
 	ones, bits := ipNet.Mask.Size()
 	family := "ipv4"
@@ -200,7 +202,7 @@ func getMTUFromResource(d *schema.ResourceData) *libvirtxml.NetworkMTU {
 
 // getDNSMasqOptionFromResource returns a list of dnsmasq options
 // from the network definition.
-func getDNSMasqOptionFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDnsmasqOption, error) {
+func getDNSMasqOptionFromResource(d *schema.ResourceData) []libvirtxml.NetworkDnsmasqOption {
 	var dnsmasqOption []libvirtxml.NetworkDnsmasqOption
 	dnsmasqOptionPrefix := "dnsmasq_options.0"
 	if dnsmasqOptionCount, ok := d.GetOk(dnsmasqOptionPrefix + ".options.#"); ok {
@@ -215,5 +217,5 @@ func getDNSMasqOptionFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkD
 		}
 	}
 
-	return dnsmasqOption, nil
+	return dnsmasqOption
 }
