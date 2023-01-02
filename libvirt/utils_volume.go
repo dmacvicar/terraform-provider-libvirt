@@ -12,10 +12,14 @@ import (
 	libvirt "github.com/digitalocean/go-libvirt"
 )
 
+const (
+	copierBufferSize = 4 * 1024 * 1024
+)
+
 func newCopier(virConn *libvirt.Libvirt, volume *libvirt.StorageVol, size uint64) func(src io.Reader) error {
 	copier := func(src io.Reader) error {
 		start := time.Now()
-		if err := virConn.StorageVolUpload(*volume, bufio.NewReader(src), 0, size, 0); err != nil {
+		if err := virConn.StorageVolUpload(*volume, bufio.NewReaderSize(src, copierBufferSize), 0, size, 0); err != nil {
 			return fmt.Errorf("error while uploading volume %w", err)
 		}
 		log.Printf("[DEBUG] upload took %d ms", time.Since(start).Milliseconds())
