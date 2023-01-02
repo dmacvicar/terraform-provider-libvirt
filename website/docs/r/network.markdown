@@ -82,11 +82,15 @@ resource "libvirt_network" "kube_network" {
 
   # (Optional) Dnsmasq options configuration
   dnsmasq_options {
-    # (Optional) one or more option entries.  Both of
-    # "option_name" and "option_value" must be specified.  The format is:
+    # (Optional) one or more option entries.
+    # "option_name" muast be specified while "option_value" is
+	# optional to also support value-less options.  The format is:
     # options  {
     #     option_name = "server"
     #     option_value = "/base.domain/my.ip.address.1"
+    #   }
+    # options  {
+    #     option_name = "no-hosts"
     #   }
     # options {
     #     option_name = "address"
@@ -205,7 +209,8 @@ resource "libvirt_network" "k8snet" {
   You need to provide a list of option name and value pairs.
 
   * `options` - (Optional) a Dnsmasq option entry block. You can have one or more of these
-   blocks in your definition. You must specify both `option_name` and `option_value`.
+   blocks in your definition. You must specify `option_name` while `option_value` is
+   optional to support value-less options.
 
   An example of setting Dnsmasq options (using Dnsmasq option templates) follows:
 

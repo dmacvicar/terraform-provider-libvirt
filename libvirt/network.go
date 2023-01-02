@@ -207,12 +207,18 @@ func getDNSMasqOptionFromResource(d *schema.ResourceData) []libvirtxml.NetworkDn
 	dnsmasqOptionPrefix := "dnsmasq_options.0"
 	if dnsmasqOptionCount, ok := d.GetOk(dnsmasqOptionPrefix + ".options.#"); ok {
 		for i := 0; i < dnsmasqOptionCount.(int); i++ {
+			var optionString string
 			dnsmasqOptionsPrefix := fmt.Sprintf(dnsmasqOptionPrefix+".options.%d", i)
 
 			optionName := d.Get(dnsmasqOptionsPrefix + ".option_name").(string)
-			optionValue := d.Get(dnsmasqOptionsPrefix + ".option_value").(string)
+			optionValue, ok := d.GetOk(dnsmasqOptionsPrefix + ".option_value")
+			if ok {
+			   optionString = optionName + "=" + optionValue.(string)
+			} else {
+			   optionString = optionName
+			}
 			dnsmasqOption = append(dnsmasqOption, libvirtxml.NetworkDnsmasqOption{
-				Value: optionName + "=" + optionValue,
+				Value: optionString,
 			})
 		}
 	}

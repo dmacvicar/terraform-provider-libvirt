@@ -182,7 +182,7 @@ func datasourceLibvirtNetworkDnsmasqOptionsTemplate() *schema.Resource {
 			},
 			"option_value": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 			"rendered": {
 				Type: schema.TypeMap,
