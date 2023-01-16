@@ -209,7 +209,7 @@ func getDNSEnableFromResource(d *schema.ResourceData) string {
 		}
 		return "no"
 	}
-	return ""
+	return "no"
 }
 
 // getDNSSRVFromResource returns a list of libvirt's DNS SRVs
