@@ -3,7 +3,7 @@ terraform {
   required_providers {
     libvirt = {
       source  = "dmacvicar/libvirt"
-      version = "0.6.2"
+      version = "0.7.1"
     }
   }
 }
@@ -12,19 +12,18 @@ terraform {
 provider "libvirt" {
   uri = "qemu:///system"
 }
-
-resource "libvirt_pool" "ubuntu" {
-  name = "ubuntu"
+# create pull
+resource "libvirt_pool" "test" {
+  name = "test"
   type = "dir"
-  path = "/tmp/terraform-provider-libvirt-pool-ubuntu"
+  path = "/tmp/test"
 }
-
-# We fetch the latest ubuntu release image from their mirrors
-resource "libvirt_volume" "ubuntu-qcow2" {
-  name   = "ubuntu-qcow2"
-  pool   = libvirt_pool.ubuntu.name
-  source = "https://cloud-images.ubuntu.com/releases/xenial/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
-  format = "qcow2"
+# cloud init
+resource "libvirt_cloudinit_disk" "commoninit" {
+  name           = "commoninit.iso"
+  user_data      = data.template_file.user_data.rendered
+  network_config = data.template_file.network_config.rendered
+  pool           = libvirt_pool.test.name
 }
 
 data "template_file" "user_data" {
@@ -35,22 +34,19 @@ data "template_file" "network_config" {
   template = file("${path.module}/network_config.cfg")
 }
 
-# for more info about paramater check this out
-# https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/website/docs/r/cloudinit.html.markdown
-# Use CloudInit to add our ssh-key to the instance
-# you can add also meta_data field
-resource "libvirt_cloudinit_disk" "commoninit" {
-  name           = "commoninit.iso"
-  user_data      = data.template_file.user_data.rendered
-  network_config = data.template_file.network_config.rendered
-  pool           = libvirt_pool.ubuntu.name
+# We fetch the latest ubuntu release image from their mirrors
+resource "libvirt_volume" "ubuntu-vda" {
+  name   = "ubuntu-vda.qcow2"
+  pool   = libvirt_pool.test.name
+  source = "https://cloud-images.ubuntu.com/releases/xenial/release/ubuntu-16.04-server-cloudimg-amd64-disk1.img"
+  format = "qcow2"
 }
 
 # Create the machine
-resource "libvirt_domain" "domain-ubuntu" {
-  name   = "ubuntu-terraform"
-  memory = "512"
-  vcpu   = 1
+resource "libvirt_domain" "ubun" {
+  name   = "ubun"
+  memory = "1024"
+  vcpu   = "2"
 
   cloudinit = libvirt_cloudinit_disk.commoninit.id
 
@@ -58,9 +54,6 @@ resource "libvirt_domain" "domain-ubuntu" {
     network_name = "default"
   }
 
-  # IMPORTANT: this is a known bug on cloud images, since they expect a console
-  # we need to pass it
-  # https://bugs.launchpad.net/cloud-images/+bug/1573095
   console {
     type        = "pty"
     target_port = "0"
@@ -74,11 +67,11 @@ resource "libvirt_domain" "domain-ubuntu" {
   }
 
   disk {
-    volume_id = libvirt_volume.ubuntu-qcow2.id
+    volume_id = libvirt_volume.ubuntu-vda.id
   }
 
   graphics {
-    type        = "spice"
+    type        = "vnc"
     listen_type = "address"
     autoport    = true
   }
