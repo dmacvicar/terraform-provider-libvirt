@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"bytes"
 	"log"
 	"os"
 	"os/exec"
@@ -87,11 +88,16 @@ func transformXML(xmlS string, xsltS string) (string, error) {
 		"--nowrite",
 		xsltFile.Name(),
 		xmlFile.Name())
-	transformedXML, err := cmd.Output()
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
 	if err != nil {
 		log.Printf("[ERROR] Failed to run xsltproc (is it installed?)")
+		log.Printf("[ERROR] Error: %s", stderr)
 		return xmlS, err
 	}
+	transformedXML := string(stdout.Bytes())
 	log.Printf("[DEBUG] Transformed XML with user specified XSLT:\n%s", transformedXML)
 
 	return string(transformedXML), err
