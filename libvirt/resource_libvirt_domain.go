@@ -516,7 +516,6 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	domainDef.OS.Initrd = d.Get("initrd").(string)
 	domainDef.OS.Type.Arch = d.Get("arch").(string)
 
-	domainDef.OS.Type.Machine = d.Get("machine").(string)
 	domainDef.Devices.Emulator = d.Get("emulator").(string)
 
 	if v := os.Getenv("TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE"); v != "" {
