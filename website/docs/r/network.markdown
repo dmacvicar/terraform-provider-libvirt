@@ -71,14 +71,14 @@ resource "libvirt_network" "kube_network" {
     #     ip = "my.ip.address.2"
     #   }
     # 
-
-    # (Optional) one or more static routes.
-    # "cidr" and "gateway" must be specified. The format is:
-    # routes {
-    #     cidr = "10.17.0.0/16"
-    #     gateway = "10.18.0.2"
-    #   }
   }
+
+  # (Optional) one or more static routes.
+  # "cidr" and "gateway" must be specified. The format is:
+  # routes {
+  #     cidr = "10.17.0.0/16"
+  #     gateway = "10.18.0.2"
+  #   }
 
   # (Optional) Dnsmasq options configuration
   dnsmasq_options {
