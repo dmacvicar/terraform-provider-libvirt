@@ -118,6 +118,14 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 		return "", fmt.Errorf("error retrieving volume key")
 	}
 
+	// refresh the pool again, make sure later steps can see the uploaded volume
+	err = waitForSuccess("error refreshing pool for volume", func() error {
+		return virConn.StoragePoolRefresh(pool, 0)
+	})
+	if err != nil {
+		return "", err
+	}
+
 	return ci.buildTerraformKey(volume.Key), nil
 }
 
