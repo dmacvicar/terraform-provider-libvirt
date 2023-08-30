@@ -45,6 +45,8 @@ The following arguments are supported:
   the domain. This is going to be attached as a CDROM ISO. Changing the
   cloud-init won't cause the domain to be recreated, however the change will
   have effect on the next reboot.
+* `cloudinit_bus` - (Optional, default: `ide`) The bus type which will be used for
+  the cloud-init disk. This is mainly to allow the use of cloud-init with Q35 machines.
 * `autostart` - (Optional) Set to `true` to start the domain on host boot up.
   If not specified `false` is assumed.
 * `filesystem` - (Optional) An array of one or more host filesystems to attach to
