@@ -864,3 +864,48 @@ func destroyDomainByUserRequest(virConn *libvirt.Libvirt, d *schema.ResourceData
 
 	return nil
 }
+
+func updateRunningStatus(virConn *libvirt.Libvirt, d *schema.ResourceData, domain libvirt.Domain) error {
+	if d.HasChange("running") {
+		runRequested := d.Get("running").(bool)
+		state, _, err := virConn.DomainGetState(domain, 0)
+
+		if err != nil {
+			return fmt.Errorf("couldn't get info about domain: %w", err)
+		}
+
+		isRunning := stateIsRunning(state)
+
+		if runRequested {
+			if !isRunning {
+				log.Printf("Starting libvirt domain: %s", uuidString(domain.UUID))
+
+				err := virConn.DomainCreate(domain)
+
+				if err != nil {
+					return fmt.Errorf("couldn't start libvirt domain: %w", err)
+				}
+			}
+		} else {
+			if isRunning {
+				log.Printf("Destroying (forcing shutdown) libvirt domain: %s", uuidString(domain.UUID))
+
+				err := virConn.DomainDestroy(domain)
+
+				if err != nil {
+					return fmt.Errorf("couldn't destroy (force shutdown) libvirt domain: %w", err)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func stateIsRunning(state int32) bool {
+	return (state == int32(libvirt.DomainRunning) ||
+		state == int32(libvirt.DomainBlocked) ||
+		state == int32(libvirt.DomainPaused) ||
+		state == int32(libvirt.DomainCrashed) ||
+		state == int32(libvirt.DomainPmsuspended))
+}

@@ -682,6 +682,12 @@ func resourceLibvirtDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
+	err = updateRunningStatus(virConn, d, domain)
+
+	if err != nil {
+		return diag.Errorf("error while updating running status: %s", err)
+	}
+
 	if d.HasChange("cloudinit") {
 		cloudinitID, err := getCloudInitVolumeKeyFromTerraformID(d.Get("cloudinit").(string))
 		if err != nil {
