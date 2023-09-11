@@ -903,9 +903,11 @@ func updateRunningStatus(virConn *libvirt.Libvirt, d *schema.ResourceData, domai
 }
 
 func stateIsRunning(state int32) bool {
-	return (state == int32(libvirt.DomainRunning) ||
-		state == int32(libvirt.DomainBlocked) ||
-		state == int32(libvirt.DomainPaused) ||
-		state == int32(libvirt.DomainCrashed) ||
-		state == int32(libvirt.DomainPmsuspended))
+	domainState := libvirt.DomainState(state)
+
+	return (domainState == libvirt.DomainRunning ||
+		domainState == libvirt.DomainBlocked ||
+		domainState == libvirt.DomainPaused ||
+		domainState == libvirt.DomainCrashed ||
+		domainState == libvirt.DomainPmsuspended)
 }
