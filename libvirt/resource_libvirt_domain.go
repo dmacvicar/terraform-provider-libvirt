@@ -670,18 +670,6 @@ func resourceLibvirtDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.Errorf("error retrieving libvirt domain by update: %s", err)
 	}
 
-	domainRunningNow, err := domainIsRunning(virConn, domain)
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	if !domainRunningNow {
-		err = virConn.DomainCreate(domain)
-		if err != nil {
-			return diag.Errorf("error creating libvirt domain: %s", err)
-		}
-	}
-
 	err = updateRunningStatus(virConn, d, domain)
 
 	if err != nil {
