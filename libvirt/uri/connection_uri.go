@@ -39,6 +39,7 @@ func (u *ConnectionURI) RemoteName() string {
 
 	newURI := *u
 	newURI.Scheme = u.driver()
+	newURI.User = nil
 	newURI.Host = ""
 	newURI.RawQuery = ""
 
