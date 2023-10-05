@@ -868,13 +868,11 @@ func destroyDomainByUserRequest(virConn *libvirt.Libvirt, d *schema.ResourceData
 func updateRunningStatus(virConn *libvirt.Libvirt, d *schema.ResourceData, domain libvirt.Domain) error {
 	if d.HasChange("running") {
 		runRequested := d.Get("running").(bool)
-		state, _, err := virConn.DomainGetState(domain, 0)
+		isRunning, err := domainIsRunning(virConn, domain)
 
 		if err != nil {
-			return fmt.Errorf("couldn't get info about domain: %w", err)
+			return fmt.Errorf("couldn't check if domain is running: %w", err)
 		}
-
-		isRunning := stateIsRunning(state)
 
 		if runRequested {
 			if !isRunning {
@@ -900,14 +898,4 @@ func updateRunningStatus(virConn *libvirt.Libvirt, d *schema.ResourceData, domai
 	}
 
 	return nil
-}
-
-func stateIsRunning(state int32) bool {
-	domainState := libvirt.DomainState(state)
-
-	return (domainState == libvirt.DomainRunning ||
-		domainState == libvirt.DomainBlocked ||
-		domainState == libvirt.DomainPaused ||
-		domainState == libvirt.DomainCrashed ||
-		domainState == libvirt.DomainPmsuspended)
 }
