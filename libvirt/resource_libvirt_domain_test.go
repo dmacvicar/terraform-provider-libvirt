@@ -1534,6 +1534,8 @@ func TestAccLibvirtDomain_UpdateDomainRunning(t *testing.T) {
 					name = "%s"
 					vcpu = 1
 					running = true
+					shutdown_timeout = 5
+					shutdown_force = true
 				}`, randomResourceName, randomDomainName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainStateEqual("libvirt_domain."+randomResourceName, &domain, "running"),
@@ -1545,6 +1547,8 @@ func TestAccLibvirtDomain_UpdateDomainRunning(t *testing.T) {
 					name = "%s"
 					vcpu = 1
 					running = false
+					shutdown_timeout = 5
+					shutdown_force = true
 			 	}`, randomResourceName, randomDomainName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainStateEqual("libvirt_domain."+randomResourceName, &domain, "shutoff"),

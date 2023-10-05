@@ -865,7 +865,7 @@ func destroyDomainByUserRequest(virConn *libvirt.Libvirt, d *schema.ResourceData
 	return nil
 }
 
-func updateRunningStatus(virConn *libvirt.Libvirt, d *schema.ResourceData, domain libvirt.Domain) error {
+func updateRunningStatus(ctx context.Context, virConn *libvirt.Libvirt, d *schema.ResourceData, domain libvirt.Domain) error {
 	if d.HasChange("running") {
 		runRequested := d.Get("running").(bool)
 		isRunning, err := domainIsRunning(virConn, domain)
@@ -886,16 +886,88 @@ func updateRunningStatus(virConn *libvirt.Libvirt, d *schema.ResourceData, domai
 			}
 		} else {
 			if isRunning {
-				log.Printf("Destroying (forcing shutdown) libvirt domain: %s", uuidString(domain.UUID))
+				log.Printf("Shutting down libvirt domain: %s", uuidString(domain.UUID))
 
-				err := virConn.DomainDestroy(domain)
+				err := virConn.DomainShutdown(domain)
 
 				if err != nil {
-					return fmt.Errorf("couldn't destroy (force shutdown) libvirt domain: %w", err)
+					return fmt.Errorf("couldn't shutdown libvirt domain: %w", err)
+				}
+
+				timeout := d.Get("shutdown_timeout").(int)
+				isTimeout, err := waitDomainShutOff(domain, virConn, ctx, timeout)
+
+				if err != nil {
+					return err
+				}
+
+				if isTimeout {
+					if d.Get("shutdown_force").(bool) {
+						log.Printf("Destroying (forcing shutdown) libvirt domain: %s", uuidString(domain.UUID))
+
+						err := virConn.DomainDestroy(domain)
+
+						if err != nil {
+							return fmt.Errorf("couldn't destroy (force shutdown) libvirt domain: %w", err)
+						}
+
+						isTimeout, err := waitDomainShutOff(domain, virConn, ctx, timeout)
+
+						if err != nil {
+							return err
+						}
+
+						if isTimeout {
+							return fmt.Errorf("(force) shutdown failed for libvirt domain: %s", uuidString(domain.UUID))
+						}
+					} else {
+						return fmt.Errorf("shutdown failed for libvirt domain: %s", uuidString(domain.UUID))
+					}
 				}
 			}
 		}
 	}
 
 	return nil
+}
+
+func waitDomainShutOff(domain libvirt.Domain, virConn *libvirt.Libvirt, ctx context.Context, timeout int) (bool, error) {
+	refreshDomainRunningFunc := func() (interface{}, string, error) {
+		log.Println("[DEBUG] Checking domain running state...")
+
+		isRunning, err := domainIsRunning(virConn, domain)
+
+		if err != nil {
+			return nil, "", err
+		}
+
+		if isRunning {
+			return true, "running", nil
+		} else {
+			return false, "shut-off", nil
+		}
+	}
+
+	stateConf := &resource.StateChangeConf{
+		Pending:      []string{"running"},
+		Target:       []string{"shut-off"},
+		Refresh:      refreshDomainRunningFunc,
+		Timeout:      time.Duration(timeout) * time.Second,
+		PollInterval: time.Second,
+	}
+
+	_, err := stateConf.WaitForStateContext(ctx)
+
+	if err != nil {
+		_, isTimeout := err.(*resource.TimeoutError)
+
+		if isTimeout {
+			log.Println("[DEBUG] Timeout while waiting for domain shutdown")
+			return true, nil
+		} else {
+			return false, fmt.Errorf("error waiting for domain shutdown: %w", err)
+		}
+	}
+
+	return false, nil
 }
