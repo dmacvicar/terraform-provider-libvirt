@@ -22,14 +22,13 @@ What is *NOT* in scope:
 
 * To support every advanced feature [libvirt](https://libvirt.org/) supports
 
-  This would make the mapping from terraform complicated and not maintanable. See the [How to contribute](CONTRIBUTING.md) section to understand how to approach new features.
+  This would make the mapping from terraform complicated and not maintainable. See the [How to contribute](CONTRIBUTING.md) section to understand how to approach new features.
 
 ## Getting started
 
 The provider is available for auto-installation from the [Terraform Registry](https://registry.terraform.io/providers/dmacvicar/libvirt/latest).
 
 In your `main.tf` file, specify the version you want to use:
-
 
 ```hcl
 terraform {
@@ -47,7 +46,7 @@ provider "libvirt" {
 
 And now run terraform init:
 
-```
+```console
 $ terraform init
 ```
 
@@ -60,7 +59,7 @@ Here is an example that will setup the following:
 (create this as main.tf and run terraform commands from this directory):
 ```hcl
 provider "libvirt" {
-    uri = "qemu:///system"
+  uri = "qemu:///system"
 }
 ```
 
@@ -93,7 +92,7 @@ You can also manually download the provider from the [releases section](https://
 
 -	[Go](https://golang.org/doc/install) is required for building.
 
-```
+```bash
 git clone https://github.com/dmacvicar/terraform-provider-libvirt.git
 cd terraform-provider-libvirt
 make
@@ -115,7 +114,7 @@ Until terraform-provider-libvirt 0.4.2, qemu-agent was used by default to get ne
 
 In current versions, we default to not to attempt connecting to it, and attempting to retrieve network interface information from the agent needs to be enabled explicitly with `qemu_agent = true`, further details [here](https://github.com/dmacvicar/terraform-provider-libvirt/blob/master/website/docs/r/domain.html.markdown). Note that you still need to make sure the agent is running in the OS, and that is unrelated to this option.
 
-Note: when using bridge network configurations you need to enable the `qemu_agent = true`. otherwise you will not retrieve the ip adresses of domains. 
+Note: when using bridge network configurations you need to enable the `qemu_agent = true`. otherwise you will not retrieve the ip addresses of domains. 
 
 Be aware that this variables may be subject to change again in future versions.
 
