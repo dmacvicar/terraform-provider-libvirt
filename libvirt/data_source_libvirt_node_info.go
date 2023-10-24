@@ -69,7 +69,7 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 		return fmt.Errorf("failed to retrieve domains: %v", err)
 	}
 
-	d.Set("cpu_model", Int8ToString(model))
+	d.Set("cpu_model", int8ToString(model))
 	d.Set("cpu_cores_total", cpus)
 	d.Set("cpu_cores_per_socket", cores)
 	d.Set("numa_nodes", nodes)
@@ -82,7 +82,7 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 	return nil
 }
 
-func Int8ToString(bs [32]int8) string {
+func int8ToString(bs [32]int8) string {
 	ba := []uint8{}
 	for _, b := range bs {
 		ba = append(ba, uint8(b))
