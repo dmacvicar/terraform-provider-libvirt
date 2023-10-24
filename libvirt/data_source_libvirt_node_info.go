@@ -24,31 +24,31 @@ func datasourceLibvirtNodeInfo() *schema.Resource {
 		Read: resourceLibvirtNodeInfoRead,
 		Schema: map[string]*schema.Schema{
 			"cpu_model": {
-				Type: schema.TypeString,
+				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"memory_total": {
-				Type: schema.TypeInt,
+			"memory_total_kb": {
+				Type:     schema.TypeInt,
 				Computed: true,
 			},
 			"cpu_cores_total": {
-				Type: schema.TypeInt,
+				Type:     schema.TypeInt,
 				Computed: true,
 			},
 			"numa_nodes": {
-				Type: schema.TypeInt,
+				Type:     schema.TypeInt,
 				Computed: true,
 			},
 			"cpu_sockets": {
-				Type: schema.TypeInt,
+				Type:     schema.TypeInt,
 				Computed: true,
 			},
 			"cpu_cores_per_socket": {
-				Type: schema.TypeInt,
+				Type:     schema.TypeInt,
 				Computed: true,
 			},
 			"cpu_threads_per_core": {
-				Type: schema.TypeInt,
+				Type:     schema.TypeInt,
 				Computed: true,
 			},
 		},
@@ -76,7 +76,7 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("cpu_sockets", sockets)
 	d.Set("cpu_threads_per_core", threads)
 	d.Set("numa_nodes", nodes)
-	d.Set("memory_total", memory)
+	d.Set("memory_total_kb", memory)
 	d.SetId(strconv.Itoa(hashcode.String(fmt.Sprintf("%v%v%v%v%v%v%v", model, memory, cpus, nodes, sockets, cores, threads))))
 
 	return nil
@@ -85,7 +85,7 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 func Int8ToString(bs [32]int8) string {
 	ba := []uint8{}
 	for _, b := range bs {
-			ba = append(ba, uint8(b))
+		ba = append(ba, uint8(b))
 	}
 	return string(ba)
 }

@@ -14,24 +14,24 @@ import (
 //
 // Datasource example:
 //
-//	data "libvirt_nodeinfo" "info" {
+//	data "libvirt_node_devices" "list" {
 //	}
 //
 //	output "cpus" {
-//	  value = data.libvirt_nodeinfo.info.cpus
+//	  value = data.libvirt_node_devices.list.devices
 //	}
 func datasourceLibvirtNodeDevices() *schema.Resource {
 	return &schema.Resource{
 		Read: resourceLibvirtNodeDevicesRead,
 		Schema: map[string]*schema.Schema{
-			// "name": {
-			// 	Type:     schema.TypeString,
-			// 	Required: true,
-			// },
+			"capability": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"devices": {
 				Type:     schema.TypeList,
 				Computed: true,
-				Elem:     &schema.Schema{
+				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 			},
@@ -47,14 +47,19 @@ func resourceLibvirtNodeDevicesRead(d *schema.ResourceData, meta interface{}) er
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	opts := libvirt.OptString{"pci"}
+	var cap libvirt.OptString
 
-	rnum, err := virConn.NodeNumOfDevices(opts, 0)
+	if capability, ok := d.GetOk("capability"); ok {
+		cap = append(cap, capability.(string))
+		log.Printf("[DEBUG] Got capability: %v", cap)
+	}
+
+	rnum, err := virConn.NodeNumOfDevices(libvirt.OptString(cap), 0)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve number of devices: %v", err)
 	}
 
-	devices, err := virConn.NodeListDevices(opts, rnum, 0)
+	devices, err := virConn.NodeListDevices(cap, rnum, 0)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve list of node devices: %v", err)
 	}
