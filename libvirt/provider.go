@@ -32,6 +32,8 @@ func Provider() *schema.Provider {
 			"libvirt_network_dns_srv_template":         datasourceLibvirtNetworkDNSSRVTemplate(),
 			"libvirt_network_dnsmasq_options_template": datasourceLibvirtNetworkDnsmasqOptionsTemplate(),
 			"libvirt_nodeinfo":                         datasourceLibvirtNodeInfo(),
+			"libvirt_nodedeviceinfo":                   datasourceLibvirtNodeDeviceInfo(),
+			"libvirt_nodedevices":                      datasourceLibvirtNodeDevices(),
 		},
 
 		ConfigureFunc: providerConfigure,
