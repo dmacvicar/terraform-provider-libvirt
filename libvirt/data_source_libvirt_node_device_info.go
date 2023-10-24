@@ -76,7 +76,7 @@ type Address struct {
 //	data "libvirt_node_device_info" "info" {
 //	}
 //
-//	output "cpus" {
+//	output "xml" {
 //	  value = data.libvirt_node_device_info.info.xml
 //	}
 func datasourceLibvirtNodeDeviceInfo() *schema.Resource {
