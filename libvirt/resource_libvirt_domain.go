@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -73,6 +74,12 @@ func resourceLibvirtDomain() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
+			},
+			"type": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				Default:  "kvm",
 			},
 			"nvram": {
 				Type:     schema.TypeList,
@@ -507,6 +514,12 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 
 	domainDef.OS.Type.Machine = d.Get("machine").(string)
 	domainDef.Devices.Emulator = d.Get("emulator").(string)
+
+	if v := os.Getenv("TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE"); v != "" {
+		domainDef.Type = v
+	} else {
+		domainDef.Type = d.Get("type").(string)
+	}
 
 	arch, err := getHostArchitecture(virConn)
 	if err != nil {
