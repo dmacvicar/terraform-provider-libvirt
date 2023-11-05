@@ -64,6 +64,7 @@ The following arguments are supported:
 * `emulator` - (Optional) The path of the emulator to use
 * `qemu_agent` (Optional) By default is disabled, set to true for enabling it. More info [qemu-agent](https://wiki.libvirt.org/page/Qemu_guest_agent).
 * `tpm` (Optional) TPM device to attach to the domain. The `tpm` object structure is documented [below](#tpm-device).
+* `type` (Optional) The type of hypervisor to use for the domain.  Defaults to `kvm`, other values can be found [here](https://libvirt.org/formatdomain.html#id1)
 ### Kernel and boot arguments
 
 * `kernel` - (Optional) The path of the kernel to boot
