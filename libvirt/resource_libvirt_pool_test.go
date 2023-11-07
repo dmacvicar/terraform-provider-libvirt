@@ -17,12 +17,12 @@ func testAccCheckLibvirtPoolExists(name string, pool *libvirt.StoragePool) resou
 
 		rs, err := getResourceFromTerraformState(name, state)
 		if err != nil {
-			return fmt.Errorf("Failed to get resource: %s", err)
+			return fmt.Errorf("Failed to get resource: %w", err)
 		}
 
 		retrievedPool, err := getPoolFromTerraformState(name, state, virConn)
 		if err != nil {
-			return fmt.Errorf("Failed to get pool: %s", err)
+			return fmt.Errorf("Failed to get pool: %w", err)
 		}
 
 		if uuidString(retrievedPool.UUID) == "" {
@@ -34,25 +34,6 @@ func testAccCheckLibvirtPoolExists(name string, pool *libvirt.StoragePool) resou
 		}
 
 		*pool = *retrievedPool
-
-		return nil
-	}
-}
-
-func testAccCheckLibvirtPoolDoesNotExists(n string, pool *libvirt.StoragePool) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		virConn := testAccProvider.Meta().(*Client).libvirt
-
-		id := pool.UUID
-
-		if uuidString(id) == "" {
-			return fmt.Errorf("UUID is blank")
-		}
-
-		_, err := virConn.StoragePoolLookupByUUID(id)
-		if err == nil {
-			return fmt.Errorf("Pool '%s' still exists", id)
-		}
 
 		return nil
 	}
@@ -89,7 +70,7 @@ func TestAccLibvirtPool_Import(t *testing.T) {
 							testImportStateCheckResourceAttr("libvirt_pool."+randomPoolResource, "type", "dir"),
 							testImportStateCheckResourceAttr("libvirt_pool."+randomPoolResource, "path", poolPath),
 						)(f); err != nil {
-							return fmt.Errorf("Check InstanceState n°%d / %d error: %s", i+1, len(instanceState), err)
+							return fmt.Errorf("Check InstanceState n°%d / %d error: %w", i+1, len(instanceState), err)
 						}
 					}
 
@@ -102,15 +83,15 @@ func TestAccLibvirtPool_Import(t *testing.T) {
 
 // ImportStateCheckFunc one import instance state check function
 // differ from github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource.ImportStateCheckFunc
-// which is multiple import Instance State check function
+// which is multiple import Instance State check function.
 type ImportStateCheckFunc func(is *terraform.InstanceState) error
 
-// composeTestImportStateCheckFunc compose multiple InstanceState check
+// composeTestImportStateCheckFunc compose multiple InstanceState check.
 func composeTestImportStateCheckFunc(fs ...ImportStateCheckFunc) ImportStateCheckFunc {
 	return func(is *terraform.InstanceState) error {
 		for i, f := range fs {
 			if err := f(is); err != nil {
-				return fmt.Errorf("Check %d/%d error: %s", i+1, len(fs), err)
+				return fmt.Errorf("Check %d/%d error: %w", i+1, len(fs), err)
 			}
 		}
 
@@ -118,7 +99,7 @@ func composeTestImportStateCheckFunc(fs ...ImportStateCheckFunc) ImportStateChec
 	}
 }
 
-// testImportStateCheckResourceAttr assert if a terraform.InstanceState as attribute name[key] with value
+// testImportStateCheckResourceAttr assert if a terraform.InstanceState as attribute name[key] with value.
 func testImportStateCheckResourceAttr(name string, key string, value string) ImportStateCheckFunc {
 	return func(instanceState *terraform.InstanceState) error {
 		if v, ok := instanceState.Attributes[key]; !ok || v != value {
@@ -169,12 +150,12 @@ func TestAccLibvirtPool_Basic(t *testing.T) {
 // The destroy function should always handle the case where the resource might already be destroyed
 // (manually, for example). If the resource is already destroyed, this should not return an error.
 // This allows Terraform users to manually delete resources without breaking Terraform.
-// This test should fail without a proper "Exists" implementation
+// This test should fail without a proper "Exists" implementation.
 func TestAccLibvirtPool_ManuallyDestroyed(t *testing.T) {
 	var pool libvirt.StoragePool
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
+	poolPath := t.TempDir()
 	testAccCheckLibvirtPoolConfigBasic := fmt.Sprintf(`
 	resource "libvirt_pool" "%s" {
 					name = "%s"
@@ -196,12 +177,20 @@ func TestAccLibvirtPool_ManuallyDestroyed(t *testing.T) {
 				Config:  testAccCheckLibvirtPoolConfigBasic,
 				Destroy: true,
 				PreConfig: func() {
+					// delete the pool out of band (from terraform)
 					client := testAccProvider.Meta().(*Client)
-					id := pool.UUID
-					if uuidString(id) == "" {
-						panic(fmt.Errorf("UUID is blank"))
+
+					if err := client.libvirt.StoragePoolDestroy(pool); err != nil {
+						t.Errorf(err.Error())
 					}
-					deletePool(client, uuidString(id))
+
+					if err := client.libvirt.StoragePoolDelete(pool, libvirt.StoragePoolDeleteNormal); err != nil {
+						t.Errorf(err.Error())
+					}
+
+					if err := client.libvirt.StoragePoolUndefine(pool); err != nil {
+						t.Errorf(err.Error())
+					}
 				},
 			},
 		},
@@ -212,8 +201,8 @@ func TestAccLibvirtPool_UniqueName(t *testing.T) {
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolResource2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
-	poolPath2 := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName + "-2"
+	poolPath := t.TempDir()
+	poolPath2 := t.TempDir()
 	config := fmt.Sprintf(`
 	resource "libvirt_pool" "%s" {
 		name = "%s"
@@ -270,9 +259,10 @@ func testAccCheckLibvirtPoolDestroy(state *terraform.State) error {
 		_, err := virConn.StoragePoolLookupByUUID(parseUUID(rs.Primary.ID))
 		if err == nil {
 			return fmt.Errorf(
-				"Error waiting for pool (%s) to be destroyed: %s",
+				"Error waiting for pool (%s) to be destroyed: %w",
 				rs.Primary.ID, err)
 		}
 	}
 	return nil
 }
+

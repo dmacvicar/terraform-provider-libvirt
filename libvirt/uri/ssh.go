@@ -2,7 +2,6 @@ package uri
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -52,7 +51,7 @@ func (u *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 			agentClient := agent.NewClient(conn)
 			result = append(result, ssh.PublicKeysCallback(agentClient.Signers))
 		case "privkey":
-			sshKey, err := ioutil.ReadFile(os.ExpandEnv(sshKeyPath))
+			sshKey, err := os.ReadFile(os.ExpandEnv(sshKeyPath))
 			if err != nil {
 				log.Printf("[ERROR] Failed to read ssh key: %v", err)
 				continue

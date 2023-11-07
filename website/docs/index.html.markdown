@@ -24,7 +24,7 @@ The provider understands [connection URIs](https://libvirt.org/uri.html). The su
 
 * `tcp` (non-encrypted connection)
 * `unix` (UNIX domain socket)
-* `tls` (See [here](https://www.libvirt.org/tlscerts.html) for information how to setup certificates)
+* `tls` (See [here](https://libvirt.org/kbase/tlscerts.html) for information how to setup certificates)
 * `ssh` (Secure shell)
 
 Unlike the original libvirt, the `ssh` transport is not implemented using the ssh command and therefore does not require `nc` (netcat) on the server side.

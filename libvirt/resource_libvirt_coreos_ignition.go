@@ -1,17 +1,18 @@
 package libvirt
 
 import (
-	"fmt"
+	"context"
 	"log"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceIgnition() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceIgnitionCreate,
-		Read:   resourceIgnitionRead,
-		Delete: resourceIgnitionDelete,
+		CreateContext: resourceIgnitionCreate,
+		ReadContext:   resourceIgnitionRead,
+		DeleteContext: resourceIgnitionDelete,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -33,11 +34,11 @@ func resourceIgnition() *schema.Resource {
 	}
 }
 
-func resourceIgnitionCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceIgnitionCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] creating ignition file")
 	client := meta.(*Client)
 	if client.libvirt == nil {
-		return fmt.Errorf(LibVirtConIsNil)
+		return diag.Errorf(LibVirtConIsNil)
 	}
 
 	ignition := newIgnitionDef()
@@ -50,17 +51,17 @@ func resourceIgnitionCreate(d *schema.ResourceData, meta interface{}) error {
 
 	key, err := ignition.CreateAndUpload(client)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	d.SetId(key)
 
-	return resourceIgnitionRead(d, meta)
+	return resourceIgnitionRead(ctx, d, meta)
 }
 
-func resourceIgnitionRead(d *schema.ResourceData, meta interface{}) error {
+func resourceIgnitionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
+		return diag.Errorf(LibVirtConIsNil)
 	}
 
 	ign, err := newIgnitionDefFromRemoteVol(virConn, d.Id())
@@ -68,22 +69,22 @@ func resourceIgnitionRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", ign.Name)
 
 	if err != nil {
-		return fmt.Errorf("error while retrieving remote volume: %s", err)
+		return diag.Errorf("error while retrieving remote volume: %s", err)
 	}
 
 	return nil
 }
 
-func resourceIgnitionDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceIgnitionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 	if client.libvirt == nil {
-		return fmt.Errorf(LibVirtConIsNil)
+		return diag.Errorf(LibVirtConIsNil)
 	}
 
 	key, err := getIgnitionVolumeKeyFromTerraformID(d.Id())
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return volumeDelete(client, key)
+	return diag.FromErr(volumeDelete(ctx, client, key))
 }

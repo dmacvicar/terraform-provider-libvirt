@@ -1,112 +1,65 @@
 package libvirt
 
 import (
-	"fmt"
+	"context"
 	"log"
-	"time"
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 const (
-	poolExistsID    = "EXISTS"
-	poolNotExistsID = "NOT-EXISTS"
+	poolStateExists    = "EXISTS"
+	poolStateNotExists = "NOT-EXISTS"
 )
 
-// poolExists returns "EXISTS" or "NOT-EXISTS" depending on the current pool existence
-func poolExists(virConn *libvirt.Libvirt, uuid string) resource.StateRefreshFunc {
+// poolExists returns "EXISTS" or "NOT-EXISTS" depending on the current pool existence.
+func poolStateRefreshFunc(virConn *libvirt.Libvirt, uuid libvirt.UUID) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
-		_, err := virConn.StoragePoolLookupByUUID(parseUUID(uuid))
+		_, err := virConn.StoragePoolLookupByUUID(uuid)
 		if err != nil {
-			if err.(libvirt.Error).Code == uint32(libvirt.ErrNoStoragePool) {
-				log.Printf("Pool %s does not exist", uuid)
-				return virConn, "NOT-EXISTS", nil
+			if isError(err, libvirt.ErrNoStoragePool) {
+				log.Printf("pool %s does not exist", uuid)
+				return virConn, poolStateNotExists, nil
 			}
-			log.Printf("Pool %s: error: %s", uuid, err.(libvirt.Error).Message)
+			return virConn, poolStateNotExists, err
 		}
-		return virConn, poolExistsID, err
+		return virConn, poolStateExists, err
 	}
 }
 
-// poolWaitForExists waits for a storage pool to be up and timeout after 5 minutes.
-func poolWaitForExists(virConn *libvirt.Libvirt, uuid string) error {
-	log.Printf("Waiting for pool %s to be active...", uuid)
+// waitForStatePoolExists waits for a storage pool to be up and timeout after 5 minutes.
+func waitForStatePoolExists(ctx context.Context, virConn *libvirt.Libvirt, uuid libvirt.UUID) error {
+	log.Printf("Waiting for pool %s to appear...", uuid)
 	stateConf := &resource.StateChangeConf{
-		Pending:    []string{poolNotExistsID},
-		Target:     []string{poolExistsID},
-		Refresh:    poolExists(virConn, uuid),
-		Timeout:    1 * time.Minute,
-		Delay:      5 * time.Second,
-		MinTimeout: 3 * time.Second,
+		Pending:    []string{poolStateNotExists},
+		Target:     []string{poolStateExists},
+		Refresh:    poolStateRefreshFunc(virConn, uuid),
+		Timeout:    resourceStateTimeout,
+		Delay:      resourceStateDelay,
+		MinTimeout: resourceStateMinTimeout,
 	}
 
-	if _, err := stateConf.WaitForState(); err != nil {
-		log.Printf("%s", err)
-		return fmt.Errorf("unexpected error during pool creation operation. The operation did not complete successfully")
+	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
+		return err
 	}
 	return nil
 }
 
-// poolWaitDeleted waits for a storage pool to be removed
-func poolWaitDeleted(virConn *libvirt.Libvirt, uuid string) error {
-	log.Printf("Waiting for pool %s to be deleted...", uuid)
+// waitForStatePoolDeleted waits for a storage pool to be removed.
+func waitForStatePoolDeleted(ctx context.Context, virConn *libvirt.Libvirt, uuid libvirt.UUID) error {
+	log.Printf("waiting for pool %s to be deleted...", uuid)
 	stateConf := &resource.StateChangeConf{
-		Pending:    []string{poolExistsID},
-		Target:     []string{poolNotExistsID},
-		Refresh:    poolExists(virConn, uuid),
-		Timeout:    1 * time.Minute,
-		Delay:      5 * time.Second,
-		MinTimeout: 3 * time.Second,
+		Pending:    []string{poolStateExists},
+		Target:     []string{poolStateNotExists},
+		Refresh:    poolStateRefreshFunc(virConn, uuid),
+		Timeout:    resourceStateTimeout,
+		Delay:      resourceStateDelay,
+		MinTimeout: resourceStateMinTimeout,
 	}
 
-	if _, err := stateConf.WaitForState(); err != nil {
-		log.Printf("%s", err)
-		return fmt.Errorf("unexpected error during pool destroy operation. The pool was not deleted")
+	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
+		return err
 	}
 	return nil
-}
-
-// deletePool deletes the pool identified by `uuid` from libvirt
-func deletePool(client *Client, uuid string) error {
-	virConn := client.libvirt
-	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
-	}
-
-	pool, err := virConn.StoragePoolLookupByUUID(parseUUID(uuid))
-	if err != nil {
-		return fmt.Errorf("error retrieving storage pool info: %s", err)
-	}
-
-	if pool.Name == "" {
-		return fmt.Errorf("error retrieving storage pool name for uuid: %s", uuid)
-	}
-
-	client.poolMutexKV.Lock(pool.Name)
-	defer client.poolMutexKV.Unlock(pool.Name)
-
-	state, _, _, _, err := virConn.StoragePoolGetInfo(pool)
-	if err != nil {
-		return fmt.Errorf("error retrieving storage pool info: %s", err)
-	}
-
-	if state != uint8(libvirt.StoragePoolInactive) {
-		err := virConn.StoragePoolDestroy(pool)
-		if err != nil {
-			return fmt.Errorf("error deleting storage pool: %s", err)
-		}
-	}
-
-	err = virConn.StoragePoolDelete(pool, 0)
-	if err != nil {
-		return fmt.Errorf("error deleting storage pool: %s", err)
-	}
-
-	err = virConn.StoragePoolUndefine(pool)
-	if err != nil {
-		return fmt.Errorf("error deleting storage pool: %s", err)
-	}
-
-	return poolWaitDeleted(client.libvirt, uuid)
 }

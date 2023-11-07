@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	dialTimeout = 2*time.Second
+	dialTimeout = 2 * time.Second
 )
 
 type ConnectionURI struct {
@@ -31,14 +31,15 @@ func Parse(uriStr string) (*ConnectionURI, error) {
 // The name passed to the remote virConnectOpen function is formed by removing
 // transport, hostname, port number, username and extra parameters from the remote URI
 // unless the name option is specified.
-func (u *ConnectionURI) RemoteName() string {
+func (u ConnectionURI) RemoteName() string {
 	q := u.Query()
 	if name := q.Get("name"); name != "" {
 		return name
 	}
 
-	newURI := *u
+	newURI := *u.URL
 	newURI.Scheme = u.driver()
+	newURI.User = nil
 	newURI.Host = ""
 	newURI.RawQuery = ""
 
@@ -61,16 +62,13 @@ func (u *ConnectionURI) driver() string {
 	return strings.Split(u.Scheme, "+")[0]
 }
 
-// go-libvirt needs a connection to talk RPC to libvirtd.
-//
-// Returns the connection for the URI transport, and a new
-// URI to be used in ConnectToURI (passed to libvirtd).
+// Dial implements go-libvirt Dialer interface, which is used
+// to retrieve connections to talk via RPC to libvirtd.
 //
 // For example, a qemu+ssh:/// uri would return a SSH connection
 // to localhost, and a new URI to qemu+unix:///system
-// dials the transport for this connection URI
-//
-func (u *ConnectionURI) DialTransport() (net.Conn, error) {
+// dials the transport for this connection URI.
+func (u *ConnectionURI) Dial() (net.Conn, error) {
 	t := u.transport()
 	switch t {
 	case "tcp":

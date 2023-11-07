@@ -1,19 +1,21 @@
 package libvirt
 
 import (
+	"context"
 	"fmt"
 	"log"
 
 	libvirt "github.com/digitalocean/go-libvirt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceLibvirtVolume() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceLibvirtVolumeCreate,
-		Read:   resourceLibvirtVolumeRead,
-		Delete: resourceLibvirtVolumeDelete,
-		Exists: resourceLibvirtVolumeExists,
+		CreateContext: resourceLibvirtVolumeCreate,
+		ReadContext:   resourceLibvirtVolumeRead,
+		DeleteContext: resourceLibvirtVolumeDelete,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -75,19 +77,16 @@ func resourceLibvirtVolume() *schema.Resource {
 			},
 		},
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 	}
 }
 
-func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	if client.libvirt == nil {
-		return fmt.Errorf(LibVirtConIsNil)
-	}
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
+		return diag.Errorf(LibVirtConIsNil)
 	}
 
 	poolName := "default"
@@ -100,63 +99,68 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	pool, err := virConn.StoragePoolLookupByName(poolName)
 	if err != nil {
-		return fmt.Errorf("can't find storage pool '%s'", poolName)
+		return diag.Errorf("can't find storage pool '%s'", poolName)
 	}
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	waitForSuccess("error refreshing pool for volume", func() error {
-		return virConn.StoragePoolRefresh(pool, 0)
-	})
+	if err := resource.RetryContext(ctx, d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+		if err := virConn.StoragePoolRefresh(pool, 0); err != nil {
+			return resource.RetryableError(err)
+		}
+		return nil
+	}); err != nil {
+		return diag.FromErr(err)
+	}
 
 	volumeDef := newDefVolume()
 	if name, ok := d.GetOk("name"); ok {
 		volumeDef.Name = name.(string)
 	}
 
-	var img image
-
 	givenFormat, isFormatGiven := d.GetOk("format")
 	if isFormatGiven {
 		volumeDef.Target.Format.Type = givenFormat.(string)
 	}
 
+	var img image
 	// an source image was given, this mean we can't choose size
 	if source, ok := d.GetOk("source"); ok {
 		// source and size conflict
 		if _, ok := d.GetOk("size"); ok {
-			return fmt.Errorf("'size' can't be specified when also 'source' is given (the size will be set to the size of the source image")
+			return diag.Errorf("'size' can't be specified when also 'source' is given (the size will be set to the size of the source image")
 		}
 		if _, ok := d.GetOk("base_volume_id"); ok {
-			return fmt.Errorf("'base_volume_id' can't be specified when also 'source' is given")
+			return diag.Errorf("'base_volume_id' can't be specified when also 'source' is given")
 		}
 
 		if _, ok := d.GetOk("base_volume_name"); ok {
-			return fmt.Errorf("'base_volume_name' can't be specified when also 'source' is given")
+			return diag.Errorf("'base_volume_name' can't be specified when also 'source' is given")
 		}
 
 		if img, err = newImage(source.(string)); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 
 		// figure out the format of the image
 		isQCOW2, err := img.IsQCOW2()
 		if err != nil {
-			return fmt.Errorf("error while determining image type for %s: %s", img.String(), err)
+			return diag.Errorf("error while determining image type for %s: %s", img.String(), err)
 		}
 		if isQCOW2 {
 			volumeDef.Target.Format.Type = "qcow2"
 		}
 
 		if isFormatGiven && isQCOW2 && givenFormat != "qcow2" {
-			return fmt.Errorf("format other than QCOW2 explicitly specified for image detected as QCOW2 image: %s", img.String())
+			return diag.Errorf("format other than QCOW2 explicitly specified for image detected as QCOW2 image: %s", img.String())
 		}
 
 		// update the image in the description, even if the file has not changed
 		size, err := img.Size()
 		if err != nil {
-			return err
+			return diag.FromErr(err)
 		}
+
 		log.Printf("Image %s image is: %d bytes", img, size)
 		volumeDef.Capacity.Unit = "B"
 		volumeDef.Capacity.Value = size
@@ -174,11 +178,12 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		var baseVolume libvirt.StorageVol
 		if baseVolumeID, ok := d.GetOk("base_volume_id"); ok {
 			if _, ok := d.GetOk("base_volume_name"); ok {
-				return fmt.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given")
+				return diag.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given")
 			}
+
 			baseVolume, err = virConn.StorageVolLookupByKey(baseVolumeID.(string))
 			if err != nil {
-				return fmt.Errorf("can't retrieve volume ID '%s': %v", baseVolumeID.(string), err)
+				return diag.Errorf("can't retrieve volume ID '%s': %v", baseVolumeID.(string), err)
 			}
 		} else if baseVolumeName, ok := d.GetOk("base_volume_name"); ok {
 			baseVolumePool := pool
@@ -186,12 +191,12 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 				baseVolumePoolName := d.Get("base_volume_pool").(string)
 				baseVolumePool, err = virConn.StoragePoolLookupByName(baseVolumePoolName)
 				if err != nil {
-					return fmt.Errorf("can't find storage pool '%s'", baseVolumePoolName)
+					return diag.Errorf("can't find storage pool '%s'", baseVolumePoolName)
 				}
 			}
 			baseVolume, err = virConn.StorageVolLookupByName(baseVolumePool, baseVolumeName.(string))
 			if err != nil {
-				return fmt.Errorf("can't retrieve base volume with name '%s': %v", baseVolumeName.(string), err)
+				return diag.Errorf("can't retrieve base volume with name '%s': %s", baseVolumeName.(string), err)
 			}
 		}
 
@@ -200,12 +205,12 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 		if baseVolume.Name != "" {
 			backingStoreFragmentDef, err := newDefBackingStoreFromLibvirt(virConn, baseVolume)
 			if err != nil {
-				return fmt.Errorf("could not retrieve backing store definition: %s", err.Error())
+				return diag.Errorf("could not retrieve backing store definition: %s", err.Error())
 			}
 
 			backingStoreVolumeDef, err := newDefVolumeFromLibvirt(virConn, baseVolume)
 			if err != nil {
-				return err
+				return diag.FromErr(err)
 			}
 
 			// if the volume does not specify size, set it to the size of the backing store
@@ -216,7 +221,9 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			// Always check that the size, specified or taken from the backing store
 			// is at least the size of the backing store itself
 			if backingStoreVolumeDef.Capacity != nil && volumeDef.Capacity.Value < backingStoreVolumeDef.Capacity.Value {
-				return fmt.Errorf("when 'size' is specified, it shouldn't be smaller than the backing store specified with 'base_volume_id' or 'base_volume_name/base_volume_pool'")
+				return diag.Errorf(`when 'size' is specified, it shouldn't
+be smaller than the backing store specified with
+'base_volume_id' or 'base_volume_name/base_volume_pool'`)
 			}
 			volumeDef.BackingStore = &backingStoreFragmentDef
 		}
@@ -224,26 +231,24 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 
 	data, err := xmlMarshallIndented(volumeDef)
 	if err != nil {
-		return fmt.Errorf("error serializing libvirt volume: %s", err)
+		return diag.Errorf("error serializing libvirt volume: %s", err)
 	}
 	log.Printf("[DEBUG] Generated XML for libvirt volume:\n%s", data)
 
 	data, err = transformResourceXML(data, d)
 	if err != nil {
-		return fmt.Errorf("error applying XSLT stylesheet: %s", err)
+		return diag.Errorf("error applying XSLT stylesheet: %s", err)
 	}
 
-	// create the volume
 	volume, err := virConn.StorageVolCreateXML(pool, data, 0)
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != uint32(libvirt.ErrStorageVolExist) {
-			return fmt.Errorf("error creating libvirt volume: %s", err)
+		if !isError(err, libvirt.ErrStorageVolExist) {
+			return diag.Errorf("error creating libvirt volume: %s", err)
 		}
 		// oops, volume exists already, read it and move on
 		volume, err = virConn.StorageVolLookupByName(pool, volumeDef.Name)
 		if err != nil {
-			return fmt.Errorf("error looking up libvirt volume: %s", err)
+			return diag.Errorf("error looking up libvirt volume: %s", err)
 		}
 		log.Printf("[INFO] Volume about to be created was found and left as-is: %s", volumeDef.Name)
 	}
@@ -260,106 +265,112 @@ func resourceLibvirtVolumeCreate(d *schema.ResourceData, meta interface{}) error
 			// If we don't throw away the id, we will keep instead a broken volume.
 			// see for reference: https://github.com/dmacvicar/terraform-provider-libvirt/issues/494
 			d.Set("id", "")
-			return fmt.Errorf("error while uploading source %s: %s", img.String(), err)
+			return diag.Errorf("error while uploading source %s: %s", img.String(), err)
 		}
 	}
 
-	if err := volumeWaitForExists(client.libvirt, volume.Key); err != nil {
-		return err
+	if err := waitForStateVolumeExists(ctx, client.libvirt, volume.Key); err != nil {
+		return diag.FromErr(err)
 	}
 
-	return resourceLibvirtVolumeRead(d, meta)
+	return resourceLibvirtVolumeRead(ctx, d, meta)
 }
 
-// resourceLibvirtVolumeRead returns the current state for a volume resource
-func resourceLibvirtVolumeRead(d *schema.ResourceData, meta interface{}) error {
+// resourceLibvirtVolumeRead returns the current state for a volume resource.
+func resourceLibvirtVolumeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	if client.libvirt == nil {
-		return fmt.Errorf(LibVirtConIsNil)
-	}
-	virConn := meta.(*Client).libvirt
+	virConn := client.libvirt
 	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
+		return diag.Errorf(LibVirtConIsNil)
 	}
 
-	volume, err := volumeLookupReallyHard(client, d.Get("pool").(string), d.Id())
-	if err != nil {
-		return err
-	}
+	poolName := d.Get("pool").(string)
 
-	if volume == nil {
-		log.Printf("Volume '%s' may have been deleted outside Terraform", d.Id())
+	var volume libvirt.StorageVol
+	err := resource.RetryContext(ctx, d.Timeout(schema.TimeoutRead), func() *resource.RetryError {
+		var lookupErr error
+		volume, lookupErr = virConn.StorageVolLookupByKey(d.Id())
+		if lookupErr == nil {
+			return nil
+		}
+
+		if !isError(lookupErr, libvirt.ErrNoStorageVol) {
+			return resource.NonRetryableError(lookupErr)
+		}
+
+		// volume not found, try to start the pool before retry
+		volPool, err := virConn.StoragePoolLookupByName(poolName)
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("error retrieving pool %s for volume %s: %w", poolName, d.Id(), err))
+		}
+
+		active, err := virConn.StoragePoolIsActive(volPool)
+		if err != nil {
+			return resource.NonRetryableError(fmt.Errorf("error retrieving status of pool %s for volume %s: %w", poolName, d.Id(), err))
+		}
+
+		// pool was already started, nothing else to do
+		if active == 1 {
+			return resource.NonRetryableError(lookupErr)
+		}
+
+		if err := virConn.StoragePoolCreate(volPool, 0); err != nil {
+			return resource.NonRetryableError(fmt.Errorf("error starting pool %s: %w", poolName, err))
+		}
+
+		// pool started successfully, retry
+		return resource.RetryableError(lookupErr)
+	})
+
+	if isError(err, libvirt.ErrNoStorageVol) {
+		log.Printf("volume '%s' may have been deleted outside terraform", d.Id())
 		d.SetId("")
 		return nil
 	}
 
-	if volume.Name == "" {
-		return fmt.Errorf("error retrieving volume name for volume: %s", d.Id())
-	}
-
-	volPool, err := virConn.StoragePoolLookupByVolume(*volume)
 	if err != nil {
-		return fmt.Errorf("error retrieving pool for volume: %s", err)
+		return diag.FromErr(err)
 	}
 
-	if volPool.Name == "" {
-		return fmt.Errorf("error retrieving pool name for volume: %s", volume.Name)
+	volPool, err := virConn.StoragePoolLookupByVolume(volume)
+	if err != nil {
+		return diag.Errorf("error retrieving pool for volume: %s", err)
 	}
 
 	d.Set("pool", volPool.Name)
 	d.Set("name", volume.Name)
 
-	_, size, _, err := virConn.StorageVolGetInfo(*volume)
+	_, size, _, err := virConn.StorageVolGetInfo(volume)
 	if err != nil {
-		virErr := err.(libvirt.Error)
-		if virErr.Code != uint32(libvirt.ErrNoStorageVol) {
-			return fmt.Errorf("error retrieving volume info: %s", err)
+		if isError(err, libvirt.ErrNoStorageVol) {
+			d.SetId("")
+			return nil
 		}
-		log.Printf("Volume '%s' may have been deleted outside Terraform", d.Id())
-		d.SetId("")
-		return nil
+		return diag.Errorf("error retrieving volume info: %s", err)
 	}
 	d.Set("size", size)
 
-	volumeDef, err := newDefVolumeFromLibvirt(virConn, *volume)
+	volumeDef, err := newDefVolumeFromLibvirt(virConn, volume)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
 	if volumeDef.Target == nil || volumeDef.Target.Format == nil || volumeDef.Target.Format.Type == "" {
 		log.Printf("Volume has no format specified: %s", volume.Name)
 	} else {
-		log.Printf("[DEBUG] Volume %s format: %s", volume.Name, volumeDef.Target.Format.Type)
+		log.Printf("[DEBUG] volume %s format: %s", volume.Name, volumeDef.Target.Format.Type)
 		d.Set("format", volumeDef.Target.Format.Type)
 	}
 
 	return nil
 }
 
-// resourceLibvirtVolumeDelete removed a volume resource
-func resourceLibvirtVolumeDelete(d *schema.ResourceData, meta interface{}) error {
+// resourceLibvirtVolumeDelete removed a volume resource.
+func resourceLibvirtVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 	if client.libvirt == nil {
-		return fmt.Errorf(LibVirtConIsNil)
+		return diag.Errorf(LibVirtConIsNil)
 	}
 
-	return volumeDelete(client, d.Id())
-}
-
-// resourceLibvirtVolumeExists returns True if the volume resource exists
-func resourceLibvirtVolumeExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	log.Printf("[DEBUG] Check if resource libvirt_volume exists")
-	client := meta.(*Client)
-
-	volPoolName := d.Get("pool").(string)
-	volume, err := volumeLookupReallyHard(client, volPoolName, d.Id())
-	if err != nil {
-		return false, err
-	}
-
-	if volume == nil {
-		return false, nil
-	}
-
-	return true, nil
+	return diag.FromErr(volumeDelete(ctx, client, d.Id()))
 }

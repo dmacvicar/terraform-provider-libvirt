@@ -25,27 +25,28 @@ func waitForNetworkActive(virConn *libvirt.Libvirt, network libvirt.Network) res
 	}
 }
 
-// waitForNetworkDestroyed waits for a network to destroyed
+// waitForNetworkDestroyed waits for a network to destroyed.
 func waitForNetworkDestroyed(virConn *libvirt.Libvirt, uuidStr string) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		log.Printf("Waiting for network %s to be destroyed", uuidStr)
 
 		uuid := parseUUID(uuidStr)
-
-		_, err := virConn.NetworkLookupByUUID(uuid)
-		if err.(libvirt.Error).Code == uint32(libvirt.ErrNoNetwork) {
-			return virConn, "NOT-EXISTS", nil
+		if _, err := virConn.NetworkLookupByUUID(uuid); err != nil {
+			if isError(err, libvirt.ErrNoNetwork) {
+				return virConn, "NOT-EXISTS", nil
+			}
+			return virConn, "NOT-EXISTS", err
 		}
-		return virConn, "ACTIVE", err
+		return virConn, "ACTIVE", nil
 	}
 }
 
-// getNetModeFromResource returns the network mode fromm a network definition
+// getNetModeFromResource returns the network mode fromm a network definition.
 func getNetModeFromResource(d *schema.ResourceData) string {
 	return strings.ToLower(d.Get("mode").(string))
 }
 
-// getIPsFromResource gets the IPs configurations from the resource definition
+// getIPsFromResource gets the IPs configurations from the resource definition.
 func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) {
 	addresses, ok := d.GetOk("addresses")
 	if !ok {
@@ -86,9 +87,6 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 		//nolint:staticcheck
 		if dhcpEnabledByUser, dhcpSetByUser := d.GetOkExists("dhcp.0.enabled"); dhcpSetByUser {
 			dhcpEnabled = dhcpEnabledByUser.(bool)
-		} else {
-			// if not specified, default to enable it
-			dhcpEnabled = true
 		}
 
 		if dhcpEnabled {
@@ -108,16 +106,23 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHCP, error) {
 	_, ipNet, err := net.ParseCIDR(address)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing addresses definition '%s': %s", address, err)
+		return nil, nil, fmt.Errorf("error parsing addresses definition '%s': %w", address, err)
 	}
+
 	ones, bits := ipNet.Mask.Size()
 	family := "ipv4"
-	if bits == (net.IPv6len * 8) {
+	if bits == (net.IPv6len * 8) { //nolint:gomnd
 		family = "ipv6"
 	}
-	ipsRange := (1 << bits) - (1 << ones)
-	if ipsRange < 4 {
-		return nil, nil, fmt.Errorf("netmask seems to be too strict: only %d IPs available (%s)", ipsRange-3, family)
+
+	const minimumSubnetBits = 3
+	if subnetBits := bits - ones; subnetBits < minimumSubnetBits {
+		// Reserved IPs are 0, broadcast, and 1 for the host
+		const reservedIPs = 3
+		subnetIPCount := 1 << subnetBits
+		availableSubnetIPCount := subnetIPCount - reservedIPs
+
+		return nil, nil, fmt.Errorf("netmask seems to be too strict: only %d IPs available (%s)", availableSubnetIPCount, family)
 	}
 
 	// we should calculate the range served by DHCP. For example, for
@@ -196,21 +201,27 @@ func getMTUFromResource(d *schema.ResourceData) *libvirtxml.NetworkMTU {
 }
 
 // getDNSMasqOptionFromResource returns a list of dnsmasq options
-// from the network definition
-func getDNSMasqOptionFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDnsmasqOption, error) {
+// from the network definition.
+func getDNSMasqOptionFromResource(d *schema.ResourceData) []libvirtxml.NetworkDnsmasqOption {
 	var dnsmasqOption []libvirtxml.NetworkDnsmasqOption
 	dnsmasqOptionPrefix := "dnsmasq_options.0"
 	if dnsmasqOptionCount, ok := d.GetOk(dnsmasqOptionPrefix + ".options.#"); ok {
 		for i := 0; i < dnsmasqOptionCount.(int); i++ {
+			var optionString string
 			dnsmasqOptionsPrefix := fmt.Sprintf(dnsmasqOptionPrefix+".options.%d", i)
 
 			optionName := d.Get(dnsmasqOptionsPrefix + ".option_name").(string)
-			optionValue := d.Get(dnsmasqOptionsPrefix + ".option_value").(string)
+			optionValue, ok := d.GetOk(dnsmasqOptionsPrefix + ".option_value")
+			if ok {
+			   optionString = optionName + "=" + optionValue.(string)
+			} else {
+			   optionString = optionName
+			}
 			dnsmasqOption = append(dnsmasqOption, libvirtxml.NetworkDnsmasqOption{
-				Value: optionName + "=" + optionValue,
+				Value: optionString,
 			})
 		}
 	}
 
-	return dnsmasqOption, nil
+	return dnsmasqOption
 }

@@ -13,20 +13,19 @@ import (
 //
 // Datasource example:
 //
-// data "libvirt_network_dns_host_template" "k8smasters" {
-//   count = "${var.master_count}"
-//   ip = "${var.master_ips[count.index]}"
-//   hostname = "master-${count.index}"
-// }
+//	data "libvirt_network_dns_host_template" "k8smasters" {
+//	  count = "${var.master_count}"
+//	  ip = "${var.master_ips[count.index]}"
+//	  hostname = "master-${count.index}"
+//	}
 //
-// resource "libvirt_network" "k8snet" {
-//   ...
-//   dns = [{
-//     hosts = [ "${flatten(data.libvirt_network_dns_host_template.k8smasters.*.rendered)}" ]
-//   }]
-//   ...
-// }
-//
+//	resource "libvirt_network" "k8snet" {
+//	  ...
+//	  dns = [{
+//	    hosts = [ "${flatten(data.libvirt_network_dns_host_template.k8smasters.*.rendered)}" ]
+//	  }]
+//	  ...
+//	}.
 func datasourceLibvirtNetworkDNSHostTemplate() *schema.Resource {
 	return &schema.Resource{
 		Read: resourceLibvirtNetworkDNSHostRead,
@@ -72,22 +71,21 @@ func resourceLibvirtNetworkDNSHostRead(d *schema.ResourceData, meta interface{})
 //
 // Datasource example:
 //
-// data "libvirt_network_dns_srv_template" "etcd_cluster" {
-//   count = "${var.etcd_count}"
-//   service = "etcd-server"
-//   protocol = "tcp"
-//   domain = "${discovery_domain}"
-//   target = "${var.cluster_name}-etcd-${count.index}.${discovery_domain}"
-// }
+//	data "libvirt_network_dns_srv_template" "etcd_cluster" {
+//	  count = "${var.etcd_count}"
+//	  service = "etcd-server"
+//	  protocol = "tcp"
+//	  domain = "${discovery_domain}"
+//	  target = "${var.cluster_name}-etcd-${count.index}.${discovery_domain}"
+//	}
 //
-// resource "libvirt_network" "k8snet" {
-//   ...
-//   dns = [{
-//     srvs = [ "${flatten(data.libvirt_network_dns_srv_template.etcd_cluster.*.rendered)}" ]
-//   }]
-//   ...
-// }
-//
+//	resource "libvirt_network" "k8snet" {
+//	  ...
+//	  dns = [{
+//	    srvs = [ "${flatten(data.libvirt_network_dns_srv_template.etcd_cluster.*.rendered)}" ]
+//	  }]
+//	  ...
+//	}.
 func datasourceLibvirtNetworkDNSSRVTemplate() *schema.Resource {
 	return &schema.Resource{
 		Read: resourceLibvirtNetworkDNSSRVRead,
@@ -161,20 +159,19 @@ func resourceLibvirtNetworkDNSSRVRead(d *schema.ResourceData, meta interface{}) 
 //
 // Datasource example:
 //
-// data "libvirt_network_dnsmasq_options_template" "options" {
-//   count = length(var.libvirt_dnsmasq_options)
-//   option_name = keys(var.libvirt_dnsmasq_options)[count.index]
-//   option_value = values(var.libvirt_dnsmasq_options)[count.index]
-// }
+//	data "libvirt_network_dnsmasq_options_template" "options" {
+//	  count = length(var.libvirt_dnsmasq_options)
+//	  option_name = keys(var.libvirt_dnsmasq_options)[count.index]
+//	  option_value = values(var.libvirt_dnsmasq_options)[count.index]
+//	}
 //
-// resource "libvirt_network" "k8snet" {
-//   ...
-//   dnsmasq_options = [{
-//     options = [ "${flatten(data.libvirt_network_dnsmasq_options_template.options.*.rendered)}" ]
-//   }]
-//   ...
-// }
-//
+//	resource "libvirt_network" "k8snet" {
+//	  ...
+//	  dnsmasq_options = [{
+//	    options = [ "${flatten(data.libvirt_network_dnsmasq_options_template.options.*.rendered)}" ]
+//	  }]
+//	  ...
+//	}.
 func datasourceLibvirtNetworkDnsmasqOptionsTemplate() *schema.Resource {
 	return &schema.Resource{
 		Read: resourceLibvirtNetworkDnsmasqOptionsRead,
@@ -185,7 +182,7 @@ func datasourceLibvirtNetworkDnsmasqOptionsTemplate() *schema.Resource {
 			},
 			"option_value": {
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 			},
 			"rendered": {
 				Type: schema.TypeMap,

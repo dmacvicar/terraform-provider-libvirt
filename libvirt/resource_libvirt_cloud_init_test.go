@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"testing"
@@ -47,7 +48,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
-					expectedContents.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContents.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName),
 				),
 			},
 			{
@@ -69,7 +70,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
-					expectedContents2.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContents2.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName),
 				),
 			},
 			{
@@ -88,7 +89,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
-					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName),
 				),
 			},
 			// when we apply 2 times with same conf, we should not have a diff. See bug:
@@ -111,7 +112,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_cloudinit_disk."+randomResourceName, "name", randomIsoName),
 					testAccCheckCloudInitVolumeExists("libvirt_cloudinit_disk."+randomResourceName, &volume),
-					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName, &volume),
+					expectedContentsEmpty.testAccCheckCloudInitDiskFilesContent("libvirt_cloudinit_disk."+randomResourceName),
 				),
 			},
 		},
@@ -121,7 +122,7 @@ func TestAccLibvirtCloudInit_CreateCloudInitDiskAndUpdate(t *testing.T) {
 // The destroy function should always handle the case where the resource might already be destroyed
 // (manually, for example). If the resource is already destroyed, this should not return an error.
 // This allows Terraform users to manually delete resources without breaking Terraform.
-// This test should fail without a proper "Exists" implementation
+// This test should fail without a proper "Exists" implementation.
 func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -161,7 +162,7 @@ func TestAccLibvirtCloudInit_ManuallyDestroyed(t *testing.T) {
 					if volume.Key == "" {
 						t.Fatalf("Key is blank")
 					}
-					if err := volumeDelete(client, volume.Key); err != nil {
+					if err := volumeDelete(context.Background(), client, volume.Key); err != nil {
 						t.Fatal(err)
 					}
 				},
@@ -204,12 +205,12 @@ func testAccCheckCloudInitVolumeExists(volumeName string, volume *libvirt.Storag
 	}
 }
 
-// this is helper method for test expected values
+// this is helper method for test expected values.
 type Expected struct {
 	UserData, NetworkConfig, MetaData string
 }
 
-func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
@@ -218,7 +219,7 @@ func (expected *Expected) testAccCheckCloudInitDiskFilesContent(volumeName strin
 			return err
 		}
 
-		cloudInitDiskDef, err := newCloudInitDefFromRemoteISO(virConn, rs.Primary.ID)
+		cloudInitDiskDef, err := newCloudInitDefFromRemoteISO(context.Background(), virConn, rs.Primary.ID)
 		if err != nil {
 			return err
 		}

@@ -3,7 +3,6 @@ package libvirt
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -17,7 +16,7 @@ import (
 	"libvirt.org/go/libvirtxml"
 )
 
-// network transparent image
+// network transparent image.
 type image interface {
 	Size() (uint64, error)
 	Import(func(io.Reader) error, libvirtxml.StorageVolume) error
@@ -46,11 +45,12 @@ func (i *localImage) Size() (uint64, error) {
 	return uint64(fi.Size()), nil
 }
 
+//nolint:gomnd
 func (i *localImage) IsQCOW2() (bool, error) {
 	file, err := os.Open(i.path)
 	defer file.Close()
 	if err != nil {
-		return false, fmt.Errorf("error while opening %s: %s", i.path, err)
+		return false, fmt.Errorf("error while opening %s: %w", i.path, err)
 	}
 	buf := make([]byte, 8)
 	_, err = io.ReadAtLeast(file, buf, 8)
@@ -64,7 +64,7 @@ func (i *localImage) Import(copier func(io.Reader) error, vol libvirtxml.Storage
 	file, err := os.Open(i.path)
 	defer file.Close()
 	if err != nil {
-		return fmt.Errorf("error while opening %s: %s", i.path, err)
+		return fmt.Errorf("error while opening %s: %w", i.path, err)
 	}
 
 	fi, err := file.Stat()
@@ -95,7 +95,7 @@ func (i *httpImage) Size() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if response.StatusCode == 403 {
+	if response.StatusCode == http.StatusForbidden {
 		// possibly only the HEAD method is forbidden, try a Body-less GET instead
 		response, err = http.Get(i.url.String())
 		if err != nil {
@@ -104,7 +104,7 @@ func (i *httpImage) Size() (uint64, error) {
 
 		response.Body.Close()
 	}
-	if response.StatusCode != 200 {
+	if response.StatusCode != http.StatusOK {
 		return 0,
 			fmt.Errorf(
 				"error accessing remote resource: %s - %s",
@@ -115,7 +115,7 @@ func (i *httpImage) Size() (uint64, error) {
 	length, err := strconv.Atoi(response.Header.Get("Content-Length"))
 	if err != nil {
 		err = fmt.Errorf(
-			"error while getting Content-Length of \"%s\": %s - got %s",
+			"error while getting Content-Length of \"%s\": %w - got %s",
 			i.url.String(),
 			err,
 			response.Header.Get("Content-Length"))
@@ -124,6 +124,7 @@ func (i *httpImage) Size() (uint64, error) {
 	return uint64(length), nil
 }
 
+//nolint:gomnd
 func (i *httpImage) IsQCOW2() (bool, error) {
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", i.url.String(), nil)
@@ -135,14 +136,14 @@ func (i *httpImage) IsQCOW2() (bool, error) {
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != 206 {
+	if response.StatusCode != http.StatusPartialContent {
 		return false, fmt.Errorf(
 			"can't retrieve partial header of resource to determine file type: %s - %s",
 			i.url.String(),
 			response.Status)
 	}
 
-	header, err := ioutil.ReadAll(response.Body)
+	header, err := io.ReadAll(response.Body)
 	if err != nil {
 		return false, err
 	}
@@ -168,7 +169,7 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 
 	if err != nil {
 		log.Printf("[DEBUG:] Error creating new request for source url %s: %s", i.url.String(), err)
-		return fmt.Errorf("error while downloading %s: %s", i.url.String(), err)
+		return fmt.Errorf("error while downloading %s: %w", i.url.String(), err)
 	}
 
 	if vol.Target.Timestamps != nil && vol.Target.Timestamps.Mtime != "" {
@@ -179,7 +180,7 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 	for retryCount := 0; retryCount < maxHTTPRetries; retryCount++ {
 		response, err = client.Do(req)
 		if err != nil {
-			return fmt.Errorf("error while downloading %s: %v", i.url.String(), err)
+			return fmt.Errorf("error while downloading %s: %w", i.url.String(), err)
 		}
 		defer response.Body.Close()
 
@@ -188,23 +189,22 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 			return nil
 		} else if response.StatusCode == http.StatusOK {
 			return copier(response.Body)
-		} else if response.StatusCode < 500 {
+		} else if response.StatusCode < http.StatusInternalServerError {
 			break
-		} else {
+		} else if retryCount < maxHTTPRetries {
 			// The problem is not client but server side
 			// retry a few times after a small wait
-			if retryCount < maxHTTPRetries {
-				time.Sleep(retryWait)
-			}
+			time.Sleep(retryWait)
 		}
 	}
+
 	return fmt.Errorf("error while downloading %s: %v", i.url.String(), response)
 }
 
 func newImage(source string) (image, error) {
 	url, err := url.Parse(source)
 	if err != nil {
-		return nil, fmt.Errorf("can't parse source '%s' as url: %s", source, err)
+		return nil, fmt.Errorf("can't parse source '%s' as url: %w", source, err)
 	}
 
 	if strings.HasPrefix(url.Scheme, "http") {
@@ -227,12 +227,17 @@ func newImage(source string) (image, error) {
 	}
 }
 
-// isQCOW2Header returns True when the buffer starts with the qcow2 header
+// isQCOW2Header returns True when the buffer starts with the qcow2 header.
+//nolint:gomnd
 func isQCOW2Header(buf []byte) (bool, error) {
 	if len(buf) < 8 {
 		return false, fmt.Errorf("expected header of 8 bytes. Got %d", len(buf))
 	}
-	if buf[0] == 'Q' && buf[1] == 'F' && buf[2] == 'I' && buf[3] == 0xfb && buf[4] == 0x00 && buf[5] == 0x00 && buf[6] == 0x00 && buf[7] == 0x03 {
+	if buf[0] == 'Q' && buf[1] == 'F' &&
+		buf[2] == 'I' && buf[3] == 0xfb &&
+		buf[4] == 0x00 && buf[5] == 0x00 &&
+		buf[6] == 0x00 && buf[7] == 0x03 {
+
 		return true, nil
 	}
 	return false, nil

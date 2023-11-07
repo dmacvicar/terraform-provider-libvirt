@@ -6,6 +6,9 @@ linters-settings:
     excludes:
       - G402
       - G106
+  gomnd:
+    ignored-functions:
+      - strings.SplitN
 
 linters:
   enable-all: false
@@ -24,9 +27,9 @@ linters:
     - errorlint
     - errcheck
     - gomnd
+    - nolintlint
 
 issues:
-  new-from-rev: HEAD~
   exclude-rules:
     - text: "Error return value of `d.Set` is not checked"
       linters:
@@ -34,4 +37,12 @@ issues:
     - text: "Magic number: 1024, in <argument> detected"
       linters:
         - gomnd
-
+    - text: "ifElseChain: rewrite if-else to switch statement"
+      linters:
+        - gocritic
+    - text: "should check returned error before deferring file.Close()"
+      linters:
+        - staticcheck
+    - path: '(.+)_test\.go'
+      linters:
+        - lll

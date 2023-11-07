@@ -10,24 +10,28 @@ import (
 	"libvirt.org/go/libvirtxml"
 )
 
-// from existing domain return its  XMLdefintion
+const (
+	defaultDomainMemoryMiB = 512
+)
+
+// from existing domain return its  XMLdefintion.
 func getXMLDomainDefFromLibvirt(virConn *libvirt.Libvirt, domain libvirt.Domain) (libvirtxml.Domain, error) {
 
 	domainXMLDesc, err := virConn.DomainGetXMLDesc(domain, 0)
 	if err != nil {
-		return libvirtxml.Domain{}, fmt.Errorf("error retrieving libvirt domain XML description: %s", err)
+		return libvirtxml.Domain{}, fmt.Errorf("error retrieving libvirt domain XML description: %w", err)
 	}
 
 	domainDef := newDomainDef()
 	err = xml.Unmarshal([]byte(domainXMLDesc), &domainDef)
 	if err != nil {
-		return libvirtxml.Domain{}, fmt.Errorf("error reading libvirt domain XML description: %s", err)
+		return libvirtxml.Domain{}, fmt.Errorf("error reading libvirt domain XML description: %w", err)
 	}
 
 	return domainDef, nil
 }
 
-// note source and target are not initialized
+// note source and target are not initialized.
 func newFilesystemDef() libvirtxml.DomainFilesystem {
 	return libvirtxml.DomainFilesystem{
 		AccessMode: "mapped", // A safe default value
@@ -36,7 +40,7 @@ func newFilesystemDef() libvirtxml.DomainFilesystem {
 }
 
 // Creates a domain definition with the defaults
-// the provider uses
+// the provider uses.
 func newDomainDef() libvirtxml.Domain {
 	domainDef := libvirtxml.Domain{
 		OS: &libvirtxml.DomainOS{
@@ -46,7 +50,7 @@ func newDomainDef() libvirtxml.Domain {
 		},
 		Memory: &libvirtxml.DomainMemory{
 			Unit:  "MiB",
-			Value: 512,
+			Value: defaultDomainMemoryMiB,
 		},
 		VCPU: &libvirtxml.DomainVCPU{
 			Placement: "static",
@@ -79,12 +83,6 @@ func newDomainDef() libvirtxml.Domain {
 			ACPI: &libvirtxml.DomainFeature{},
 			APIC: &libvirtxml.DomainFeatureAPIC{},
 		},
-	}
-
-	if v := os.Getenv("TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE"); v != "" {
-		domainDef.Type = v
-	} else {
-		domainDef.Type = "kvm"
 	}
 
 	// FIXME: We should allow setting this from configuration as well.

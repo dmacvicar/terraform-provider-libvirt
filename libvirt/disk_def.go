@@ -9,7 +9,7 @@ import (
 
 const oui = "05abcd"
 
-// note, source is not initialized
+// note, source is not initialized.
 func newDefDisk(i int) libvirtxml.DomainDisk {
 	return libvirtxml.DomainDisk{
 		Device: "disk",
@@ -28,6 +28,7 @@ func randomWWN(strlen int) string {
 	const chars = "abcdef0123456789"
 	result := make([]byte, strlen)
 	for i := 0; i < strlen; i++ {
+		//nolint:gosec // math.rand is enough for this
 		result[i] = chars[rand.Intn(len(chars))]
 	}
 	return oui + string(result)

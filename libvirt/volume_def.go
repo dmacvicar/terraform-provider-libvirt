@@ -25,7 +25,7 @@ func newDefVolume() libvirtxml.StorageVolume {
 	}
 }
 
-// Creates a volume definition from a XML
+// Creates a volume definition from a XML.
 func newDefVolumeFromXML(s string) (libvirtxml.StorageVolume, error) {
 	var volumeDef libvirtxml.StorageVolume
 	err := xml.Unmarshal([]byte(s), &volumeDef)
@@ -38,11 +38,11 @@ func newDefVolumeFromXML(s string) (libvirtxml.StorageVolume, error) {
 func newDefVolumeFromLibvirt(virConn *libvirt.Libvirt, volume libvirt.StorageVol) (libvirtxml.StorageVolume, error) {
 	volumeDefXML, err := virConn.StorageVolGetXMLDesc(volume, 0)
 	if err != nil {
-		return libvirtxml.StorageVolume{}, fmt.Errorf("could not get XML description for volume %s: %s", volume.Name, err)
+		return libvirtxml.StorageVolume{}, fmt.Errorf("could not get XML description for volume %s: %w", volume.Name, err)
 	}
 	volumeDef, err := newDefVolumeFromXML(volumeDefXML)
 	if err != nil {
-		return libvirtxml.StorageVolume{}, fmt.Errorf("could not get a volume definition from XML for %s: %s", volumeDef.Name, err)
+		return libvirtxml.StorageVolume{}, fmt.Errorf("could not get a volume definition from XML for %s: %w", volumeDef.Name, err)
 	}
 	return volumeDef, nil
 }
@@ -50,11 +50,11 @@ func newDefVolumeFromLibvirt(virConn *libvirt.Libvirt, volume libvirt.StorageVol
 func newDefBackingStoreFromLibvirt(virConn *libvirt.Libvirt, baseVolume libvirt.StorageVol) (libvirtxml.StorageVolumeBackingStore, error) {
 	baseVolumeDef, err := newDefVolumeFromLibvirt(virConn, baseVolume)
 	if err != nil {
-		return libvirtxml.StorageVolumeBackingStore{}, fmt.Errorf("could not get volume: %s", err)
+		return libvirtxml.StorageVolumeBackingStore{}, fmt.Errorf("could not get volume: %w", err)
 	}
 	baseVolPath, err := virConn.StorageVolGetPath(baseVolume)
 	if err != nil {
-		return libvirtxml.StorageVolumeBackingStore{}, fmt.Errorf("could not get base image path: %s", err)
+		return libvirtxml.StorageVolumeBackingStore{}, fmt.Errorf("could not get base image path: %w", err)
 	}
 	var backingStoreVolFormat *libvirtxml.StorageVolumeTargetFormat
 	if baseVolumeDef.Target.Format != nil {

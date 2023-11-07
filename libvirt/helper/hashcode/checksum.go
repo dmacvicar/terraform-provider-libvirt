@@ -5,13 +5,13 @@ import (
 )
 
 func String(s string) int {
-    v := int(crc32.ChecksumIEEE([]byte(s)))
-    if v >= 0 {
-        return v
-    }
-    if -v >= 0 {
-        return -v
-    }
-    // v == MinInt
-    return 0
+	v := int(crc32.ChecksumIEEE([]byte(s)))
+	if v >= 0 {
+		return v
+	}
+	if -v >= 0 {
+		return -v
+	}
+	// v == MinInt
+	return 0
 }

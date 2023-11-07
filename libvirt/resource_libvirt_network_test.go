@@ -613,6 +613,9 @@ func TestAccLibvirtNetwork_DnsmasqOptions(t *testing.T) {
 							option_name = "address"
 							option_value = "/.apps.tt.testing/1.1.1.2"
 						}
+						options {
+							option_name = "no-hosts"
+						}
 					}
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
@@ -620,9 +623,11 @@ func TestAccLibvirtNetwork_DnsmasqOptions(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dnsmasq_options.0.options.0.option_value", "/tt.testing/1.1.1.1"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dnsmasq_options.0.options.1.option_name", "address"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dnsmasq_options.0.options.1.option_value", "/.apps.tt.testing/1.1.1.2"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dnsmasq_options.0.options.2.option_name", "no-hosts"),
 					testAccCheckDnsmasqOptions("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDnsmasqOption{
 						{Value: "server=/tt.testing/1.1.1.1"},
 						{Value: "address=/.apps.tt.testing/1.1.1.2"},
+						{Value: "no-hosts"},
 					}),
 				),
 			},

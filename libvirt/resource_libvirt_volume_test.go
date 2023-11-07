@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"os"
@@ -41,24 +42,23 @@ func testAccCheckLibvirtVolumeExists(name string, volume *libvirt.StorageVol) re
 	}
 }
 
-func testAccCheckLibvirtVolumeDoesNotExists(n string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+func testAccCheckLibvirtVolumeDoesNotExists(volume *libvirt.StorageVol) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
-		if volume.Key == "" {
-			return fmt.Errorf("Can't retrieve volume key")
-		}
-
 		_, err := virConn.StorageVolLookupByKey(volume.Key)
-		if err == nil {
-			return fmt.Errorf("Volume '%s' still exists", volume.Key)
+		if err != nil {
+			if isError(err, libvirt.ErrNoStorageVol) {
+				return nil
+			}
+			return err
 		}
 
-		return nil
+		return fmt.Errorf("Volume '%s' still exists", volume.Key)
 	}
 }
 
-func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirt.StorageVol) resource.TestCheckFunc {
+func testAccCheckLibvirtVolumeIsBackingStore(name string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
@@ -69,13 +69,13 @@ func testAccCheckLibvirtVolumeIsBackingStore(name string, volume *libvirt.Storag
 
 		volXMLDesc, err := virConn.StorageVolGetXMLDesc(*vol, 0)
 		if err != nil {
-			return fmt.Errorf("Error retrieving libvirt volume XML description: %s", err)
+			return fmt.Errorf("Error retrieving libvirt volume XML description: %w", err)
 		}
 
 		volumeDef := newDefVolume()
 		err = xml.Unmarshal([]byte(volXMLDesc), &volumeDef)
 		if err != nil {
-			return fmt.Errorf("Error reading libvirt volume XML description: %s", err)
+			return fmt.Errorf("Error reading libvirt volume XML description: %w", err)
 		}
 		if volumeDef.BackingStore == nil {
 			return fmt.Errorf("FAIL: the volume was supposed to be a backingstore, but it is not")
@@ -127,9 +127,8 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 
 func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
 	var volume libvirt.StorageVol
-	var volume2 libvirt.StorageVol
 	random := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + random
+	randomPoolPath := t.TempDir()
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -155,7 +154,7 @@ func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
 				`, random, random, randomPoolPath, random, random, random, random, random, random, random),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtVolumeExists("libvirt_volume.backing-"+random, &volume),
-					testAccCheckLibvirtVolumeIsBackingStore("libvirt_volume."+random, &volume2),
+					testAccCheckLibvirtVolumeIsBackingStore("libvirt_volume."+random),
 					resource.TestCheckResourceAttr(
 						"libvirt_volume."+random, "size", "1073741824"),
 				),
@@ -166,7 +165,6 @@ func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
 
 func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 	var volume libvirt.StorageVol
-	var volume2 libvirt.StorageVol
 	random := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + random
 	resource.Test(t, resource.TestCase{
@@ -194,7 +192,7 @@ func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 				`, random, random, randomPoolPath, random, random, random, random, random, random, random),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtVolumeExists("libvirt_volume.backing-"+random, &volume),
-					testAccCheckLibvirtVolumeIsBackingStore("libvirt_volume."+random, &volume2),
+					testAccCheckLibvirtVolumeIsBackingStore("libvirt_volume."+random),
 					resource.TestCheckResourceAttr(
 						"libvirt_volume."+random, "size", "1073741824"),
 				),
@@ -206,7 +204,7 @@ func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 // The destroy function should always handle the case where the resource might already be destroyed
 // (manually, for example). If the resource is already destroyed, this should not return an error.
 // This allows Terraform users to manually delete resources without breaking Terraform.
-// This test should fail without a proper "Exists" implementation
+// This test should fail without a proper "Exists" implementation.
 func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -244,7 +242,9 @@ func TestAccLibvirtVolume_ManuallyDestroyed(t *testing.T) {
 					if volume.Key == "" {
 						panic(fmt.Errorf("UUID is blank"))
 					}
-					volumeDelete(client, volume.Key)
+					if err := volumeDelete(context.Background(), client, volume.Key); err != nil {
+						t.Error(err)
+					}
 				},
 			},
 		},
@@ -498,7 +498,7 @@ func testAccCheckLibvirtVolumeDestroy(state *terraform.State) error {
 		_, err := virConn.StorageVolLookupByKey(rs.Primary.ID)
 		if err == nil {
 			return fmt.Errorf(
-				"Error waiting for volume (%s) to be destroyed: %s",
+				"Error waiting for volume (%s) to be destroyed: %w",
 				rs.Primary.ID, err)
 		}
 	}

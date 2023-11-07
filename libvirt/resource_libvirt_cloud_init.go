@@ -1,18 +1,19 @@
 package libvirt
 
 import (
-	"fmt"
+	"context"
 	"log"
 
+	libvirt "github.com/digitalocean/go-libvirt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func resourceCloudInitDisk() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceCloudInitDiskCreate,
-		Read:   resourceCloudInitDiskRead,
-		Delete: resourceCloudInitDiskDelete,
-		Exists: resourceCloudInitDiskExists,
+		CreateContext: resourceCloudInitDiskCreate,
+		ReadContext:   resourceCloudInitDiskRead,
+		DeleteContext: resourceCloudInitDiskDelete,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -44,12 +45,12 @@ func resourceCloudInitDisk() *schema.Resource {
 	}
 }
 
-func resourceCloudInitDiskCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceCloudInitDiskCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] creating cloudinit")
 
 	client := meta.(*Client)
 	if virConn := client.libvirt; virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
+		return diag.Errorf(LibVirtConIsNil)
 	}
 
 	cloudInit := newCloudInitDef()
@@ -63,26 +64,30 @@ func resourceCloudInitDiskCreate(d *schema.ResourceData, meta interface{}) error
 
 	iso, err := cloudInit.CreateIso()
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	key, err := cloudInit.UploadIso(client, iso)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	d.SetId(key)
 
-	return resourceCloudInitDiskRead(d, meta)
+	return resourceCloudInitDiskRead(ctx, d, meta)
 }
 
-func resourceCloudInitDiskRead(d *schema.ResourceData, meta interface{}) error {
+func resourceCloudInitDiskRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	virConn := meta.(*Client).libvirt
 	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
+		return diag.Errorf(LibVirtConIsNil)
 	}
 
-	ci, err := newCloudInitDefFromRemoteISO(virConn, d.Id())
+	ci, err := newCloudInitDefFromRemoteISO(ctx, virConn, d.Id())
 	if err != nil {
-		return fmt.Errorf("error while retrieving remote ISO: %s", err)
+		if isError(err, libvirt.ErrNoStorageVol) {
+			d.SetId("")
+			return nil
+		}
+		return diag.Errorf("error while retrieving remote ISO: %s", err)
 	}
 	d.Set("pool", ci.PoolName)
 	d.Set("name", ci.Name)
@@ -92,41 +97,16 @@ func resourceCloudInitDiskRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceCloudInitDiskDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceCloudInitDiskDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 	if client.libvirt == nil {
-		return fmt.Errorf(LibVirtConIsNil)
+		return diag.Errorf(LibVirtConIsNil)
 	}
 
 	key, err := getCloudInitVolumeKeyFromTerraformID(d.Id())
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 
-	return volumeDelete(client, key)
-}
-
-func resourceCloudInitDiskExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	log.Printf("[DEBUG] Check if resource libvirt_cloudinit_disk exists")
-	client := meta.(*Client)
-	if client.libvirt == nil {
-		return false, fmt.Errorf(LibVirtConIsNil)
-	}
-
-	key, err := getCloudInitVolumeKeyFromTerraformID(d.Id())
-	if err != nil {
-		return false, err
-	}
-
-	volPoolName := d.Get("pool").(string)
-	volume, err := volumeLookupReallyHard(client, volPoolName, key)
-	if err != nil {
-		return false, err
-	}
-
-	if volume == nil {
-		return false, nil
-	}
-
-	return true, nil
+	return diag.FromErr(volumeDelete(ctx, client, key))
 }
