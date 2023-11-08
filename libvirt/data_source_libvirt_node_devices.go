@@ -56,12 +56,12 @@ func resourceLibvirtNodeDevicesRead(d *schema.ResourceData, meta interface{}) er
 
 	rnum, err := virConn.NodeNumOfDevices(libvirt.OptString(cap), 0)
 	if err != nil {
-		return fmt.Errorf("failed to retrieve number of devices: %v", err)
+		return fmt.Errorf("failed to retrieve number of devices: %w", err)
 	}
 
 	devices, err := virConn.NodeListDevices(cap, rnum, 0)
 	if err != nil {
-		return fmt.Errorf("failed to retrieve list of node devices: %v", err)
+		return fmt.Errorf("failed to retrieve list of node devices: %w", err)
 	}
 
 	d.Set("devices", devices)

@@ -58,11 +58,11 @@ type DevicePCI struct {
 		Function int    `xml:"function"`
 		Product  struct {
 			Name string `xml:",chardata"`
-			Id   string `xml:"id,attr"`
+			ID   string `xml:"id,attr"`
 		} `xml:"product"`
 		Vendor struct {
 			Name string `xml:",chardata"`
-			Id   string `xml:"id,attr"`
+			ID   string `xml:"id,attr"`
 		} `xml:"vendor"`
 		IommuGroup struct {
 			IommuGroup xml.Name `xml:"iommuGroup"`
@@ -89,11 +89,11 @@ type DeviceUSBDevice struct {
 		Device  string `xml:"device"`
 		Product struct {
 			Name string `xml:",chardata"`
-			Id   string `xml:"id,attr"`
+			ID   string `xml:"id,attr"`
 		} `xml:"product"`
 		Vendor struct {
 			Name string `xml:",chardata"`
-			Id   string `xml:"id,attr"`
+			ID   string `xml:"id,attr"`
 		} `xml:"vendor"`
 	} `xml:"capability"`
 }
@@ -340,14 +340,7 @@ func datasourceLibvirtNodeDeviceInfo() *schema.Resource {
 								Type: schema.TypeString,
 							},
 						},
-						// "iommu_group": { // pci
-						// 	Type:     schema.TypeMap,
-						// 	Optional: true,
-						// 	Elem: &schema.Schema{
-						// 		Type: schema.TypeString,
-						// 	},
-						// },
-						"iommu_group": {
+						"iommu_group": { // pci
 							Type:     schema.TypeList,
 							MaxItems: 1,
 							Optional: true,
@@ -468,8 +461,6 @@ func datasourceLibvirtNodeDeviceInfo() *schema.Resource {
 	}
 }
 
-// https://github.com/hashicorp/terraform-plugin-sdk/issues/726
-
 func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read data source libvirt_nodedevices")
 
@@ -478,57 +469,57 @@ func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{})
 		return fmt.Errorf(LibVirtConIsNil)
 	}
 
-	var device_name string
+	var deviceName string
 
 	if name, ok := d.GetOk("name"); ok {
-		device_name = name.(string)
-		log.Printf("[DEBUG] Got name: %s", device_name)
+		deviceName = name.(string)
+		log.Printf("[DEBUG] Got name: %s", deviceName)
 	}
 
-	device, err := virConn.NodeDeviceLookupByName(device_name)
+	device, err := virConn.NodeDeviceLookupByName(deviceName)
 	if err != nil {
-		return fmt.Errorf("failed to lookup node device: %v", err)
+		return fmt.Errorf("failed to lookup node device: %w", err)
 	}
 
-	xml_desc, err := virConn.NodeDeviceGetXMLDesc(device.Name, 0)
+	xmlDesc, err := virConn.NodeDeviceGetXMLDesc(device.Name, 0)
 	if err != nil {
-		return fmt.Errorf("failed to get XML for node device: %v", err)
+		return fmt.Errorf("failed to get XML for node device: %w", err)
 	}
 
-	device_xml := DeviceGeneric{}
+	deviceXML := DeviceGeneric{}
 	capability := []map[string]interface{}{}
 
-	err = xml.Unmarshal([]byte(xml_desc), &device_xml)
+	err = xml.Unmarshal([]byte(xmlDesc), &deviceXML)
 	if err != nil {
-		log.Fatalf("failed to unmarshal XML into device_xml: %v", err)
+		log.Fatalf("failed to unmarshal XML into deviceXML: %v", err)
 	}
-	log.Printf("[DEBUG] Parsed device generic into device_xml: %v", device_xml)
+	log.Printf("[DEBUG] Parsed device generic into deviceXML: %v", deviceXML)
 
-	switch device_xml.Capability.Type {
+	switch deviceXML.Capability.Type {
 	////////////////// SYSTEM //////////////////
 	case "system":
-		device_xml := DeviceSystem{}
-		err = xml.Unmarshal([]byte(xml_desc), &device_xml)
+		deviceXML := DeviceSystem{}
+		err = xml.Unmarshal([]byte(xmlDesc), &deviceXML)
 		if err != nil {
-			log.Fatalf("failed to unmarshal device system XML into device_xml: %v", err)
+			log.Fatalf("failed to unmarshal device system XML into deviceXML: %v", err)
 		}
-		log.Printf("[DEBUG] Parsed device system into device_xml: %v", device_xml)
+		log.Printf("[DEBUG] Parsed device system into deviceXML: %v", deviceXML)
 
 		c := map[string]interface{}{
-			// clash with pci.product which is a map, converted to map.
+			// clash with pci.product which is a map, converted to map
 			"product": map[string]interface{}{
-				"name": device_xml.Capability.Product,
+				"name": deviceXML.Capability.Product,
 			},
 			"hardware": map[string]interface{}{
-				"vendor":  device_xml.Capability.Hardware.Vendor,
-				"version": device_xml.Capability.Hardware.Version,
-				"serial":  device_xml.Capability.Hardware.Serial,
-				"uuid":    device_xml.Capability.Hardware.UUID,
+				"vendor":  deviceXML.Capability.Hardware.Vendor,
+				"version": deviceXML.Capability.Hardware.Version,
+				"serial":  deviceXML.Capability.Hardware.Serial,
+				"uuid":    deviceXML.Capability.Hardware.UUID,
 			},
 			"firmware": map[string]interface{}{
-				"vendor":       device_xml.Capability.Firmware.Vendor,
-				"version":      device_xml.Capability.Firmware.Version,
-				"release_date": device_xml.Capability.Firmware.ReleaseDate,
+				"vendor":       deviceXML.Capability.Firmware.Vendor,
+				"version":      deviceXML.Capability.Firmware.Version,
+				"release_date": deviceXML.Capability.Firmware.ReleaseDate,
 			},
 		}
 
@@ -537,17 +528,17 @@ func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{})
 
 	///////////////// PCI //////////////////
 	case "pci":
-		device_xml := DevicePCI{}
-		err = xml.Unmarshal([]byte(xml_desc), &device_xml)
+		deviceXML := DevicePCI{}
+		err = xml.Unmarshal([]byte(xmlDesc), &deviceXML)
 		if err != nil {
-			log.Fatalf("failed to unmarshal device pci XML into device_xml: %v", err)
+			log.Fatalf("failed to unmarshal device pci XML into deviceXML: %v", err)
 		}
-		log.Printf("[DEBUG] Parsed device pci into device_xml: %v", device_xml)
+		log.Printf("[DEBUG] Parsed device pci into deviceXML: %v", deviceXML)
 
-		iommu_group := []map[string]interface{}{}
+		iommuGroup := []map[string]interface{}{}
 		addresses := []map[string]interface{}{}
 
-		for _, v := range device_xml.Capability.IommuGroup.Addresses {
+		for _, v := range deviceXML.Capability.IommuGroup.Addresses {
 			m := map[string]interface{}{
 				"domain":   v.Domain,
 				"bus":      v.Bus,
@@ -558,50 +549,50 @@ func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{})
 		}
 
 		ig := map[string]interface{}{
-			"number":    fmt.Sprintf("%d", device_xml.Capability.IommuGroup.Number),
+			"number":    fmt.Sprintf("%d", deviceXML.Capability.IommuGroup.Number),
 			"addresses": addresses,
 		}
 		c := map[string]interface{}{
-			"type":     device_xml.Capability.Type,
-			"class":    device_xml.Capability.Class,
-			"domain":   fmt.Sprintf("%d", device_xml.Capability.Domain),
-			"bus":      fmt.Sprintf("%d", device_xml.Capability.Bus),
-			"slot":     fmt.Sprintf("%d", device_xml.Capability.Slot),
-			"function": fmt.Sprintf("%d", device_xml.Capability.Function),
+			"type":     deviceXML.Capability.Type,
+			"class":    deviceXML.Capability.Class,
+			"domain":   fmt.Sprintf("%d", deviceXML.Capability.Domain),
+			"bus":      fmt.Sprintf("%d", deviceXML.Capability.Bus),
+			"slot":     fmt.Sprintf("%d", deviceXML.Capability.Slot),
+			"function": fmt.Sprintf("%d", deviceXML.Capability.Function),
 			"product": map[string]interface{}{
-				"id":   device_xml.Capability.Product.Id,
-				"name": device_xml.Capability.Product.Name,
+				"id":   deviceXML.Capability.Product.ID,
+				"name": deviceXML.Capability.Product.Name,
 			},
 			"vendor": map[string]interface{}{
-				"id":   device_xml.Capability.Vendor.Id,
-				"name": device_xml.Capability.Vendor.Name,
+				"id":   deviceXML.Capability.Vendor.ID,
+				"name": deviceXML.Capability.Vendor.Name,
 			},
-			"iommu_group": append(iommu_group, ig),
+			"iommu_group": append(iommuGroup, ig),
 		}
-		log.Printf("[DEBUG] iommu_group device type pci to : %v", device_xml.Capability.IommuGroup.Addresses)
+		log.Printf("[DEBUG] iommuGroup device type pci to : %v", deviceXML.Capability.IommuGroup.Addresses)
 		capability = append(capability, c)
 		log.Printf("[DEBUG] Set capability type pci to : %v", capability)
 
 	////////////////// USB Device //////////////////
 	case "usb_device":
-		device_xml := DeviceUSBDevice{}
-		err = xml.Unmarshal([]byte(xml_desc), &device_xml)
+		deviceXML := DeviceUSBDevice{}
+		err = xml.Unmarshal([]byte(xmlDesc), &deviceXML)
 		if err != nil {
-			log.Fatalf("failed to unmarshal device usb_device XML into device_xml: %v", err)
+			log.Fatalf("failed to unmarshal device usb_device XML into deviceXML: %v", err)
 		}
-		log.Printf("[DEBUG] Parsed device usb_device into device_xml: %v", device_xml)
+		log.Printf("[DEBUG] Parsed device usb_device into deviceXML: %v", deviceXML)
 
 		c := map[string]interface{}{
-			"type":   device_xml.Capability.Type,
-			"bus":    device_xml.Capability.Bus,
-			"device": device_xml.Capability.Device,
+			"type":   deviceXML.Capability.Type,
+			"bus":    deviceXML.Capability.Bus,
+			"device": deviceXML.Capability.Device,
 			"product": map[string]interface{}{
-				"id":   device_xml.Capability.Product.Id,
-				"name": device_xml.Capability.Product.Name,
+				"id":   deviceXML.Capability.Product.ID,
+				"name": deviceXML.Capability.Product.Name,
 			},
 			"vendor": map[string]interface{}{
-				"id":   device_xml.Capability.Vendor.Id,
-				"name": device_xml.Capability.Vendor.Name,
+				"id":   deviceXML.Capability.Vendor.ID,
+				"name": deviceXML.Capability.Vendor.Name,
 			},
 		}
 		capability = append(capability, c)
@@ -609,42 +600,42 @@ func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{})
 
 	////////////////// USB Host //////////////////
 	case "usb":
-		device_xml := DeviceUSB{}
-		err = xml.Unmarshal([]byte(xml_desc), &device_xml)
+		deviceXML := DeviceUSB{}
+		err = xml.Unmarshal([]byte(xmlDesc), &deviceXML)
 		if err != nil {
-			log.Fatalf("failed to unmarshal device usb XML into device_xml: %v", err)
+			log.Fatalf("failed to unmarshal device usb XML into deviceXML: %v", err)
 		}
-		log.Printf("[DEBUG] Parsed device usb into device_xml: %v", device_xml)
+		log.Printf("[DEBUG] Parsed device usb into deviceXML: %v", deviceXML)
 
 		c := map[string]interface{}{
-			"type":        device_xml.Capability.Type,
-			"number":      fmt.Sprintf("%d", device_xml.Capability.Number),
-			"class":       fmt.Sprintf("%d", device_xml.Capability.Class),
-			"subclass":    fmt.Sprintf("%d", device_xml.Capability.Subclass),
-			"protocol":    fmt.Sprintf("%d", device_xml.Capability.Protocol),
-			"description": device_xml.Capability.Description,
+			"type":        deviceXML.Capability.Type,
+			"number":      fmt.Sprintf("%d", deviceXML.Capability.Number),
+			"class":       fmt.Sprintf("%d", deviceXML.Capability.Class),
+			"subclass":    fmt.Sprintf("%d", deviceXML.Capability.Subclass),
+			"protocol":    fmt.Sprintf("%d", deviceXML.Capability.Protocol),
+			"description": deviceXML.Capability.Description,
 		}
 		capability = append(capability, c)
 		log.Printf("[DEBUG] Set capability type usb to : %v", capability)
 
 	////////////////// STORAGE //////////////////
 	case "storage":
-		device_xml := DeviceStorage{}
-		err = xml.Unmarshal([]byte(xml_desc), &device_xml)
+		deviceXML := DeviceStorage{}
+		err = xml.Unmarshal([]byte(xmlDesc), &deviceXML)
 		if err != nil {
-			log.Fatalf("failed to unmarshal device storage XML into device_xml: %v", err)
+			log.Fatalf("failed to unmarshal device storage XML into deviceXML: %v", err)
 		}
-		log.Printf("[DEBUG] Parsed device storage into device_xml: %v", device_xml)
+		log.Printf("[DEBUG] Parsed device storage into deviceXML: %v", deviceXML)
 
 		c := map[string]interface{}{
-			"type":               device_xml.Capability.Type,
-			"block":              device_xml.Capability.Block,
-			"drive_type":         device_xml.Capability.DriveType,
-			"model":              device_xml.Capability.Model,
-			"serial":             device_xml.Capability.Serial,
-			"size":               fmt.Sprintf("%d", device_xml.Capability.Size),
-			"logical_block_size": fmt.Sprintf("%d", device_xml.Capability.LogicalBlockSize),
-			"num_blocks":         fmt.Sprintf("%d", device_xml.Capability.NumBlocks),
+			"type":               deviceXML.Capability.Type,
+			"block":              deviceXML.Capability.Block,
+			"drive_type":         deviceXML.Capability.DriveType,
+			"model":              deviceXML.Capability.Model,
+			"serial":             deviceXML.Capability.Serial,
+			"size":               fmt.Sprintf("%d", deviceXML.Capability.Size),
+			"logical_block_size": fmt.Sprintf("%d", deviceXML.Capability.LogicalBlockSize),
+			"num_blocks":         fmt.Sprintf("%d", deviceXML.Capability.NumBlocks),
 		}
 
 		capability = append(capability, c)
@@ -652,24 +643,24 @@ func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{})
 
 	////////////////// NET //////////////////
 	case "net":
-		device_xml := DeviceNet{}
-		err = xml.Unmarshal([]byte(xml_desc), &device_xml)
+		deviceXML := DeviceNet{}
+		err = xml.Unmarshal([]byte(xmlDesc), &deviceXML)
 		if err != nil {
-			log.Fatalf("failed to unmarshal device net XML into device_xml: %v", err)
+			log.Fatalf("failed to unmarshal device net XML into deviceXML: %v", err)
 		}
-		log.Printf("[DEBUG] Parsed device net into device_xml: %v", device_xml)
+		log.Printf("[DEBUG] Parsed device net into deviceXML: %v", deviceXML)
 
 		c := map[string]interface{}{
-			"type":      device_xml.Capability.Type,
-			"interface": device_xml.Capability.Interface,
-			"address":   device_xml.Capability.Address,
+			"type":      deviceXML.Capability.Type,
+			"interface": deviceXML.Capability.Interface,
+			"address":   deviceXML.Capability.Address,
 			"link": map[string]interface{}{
-				"speed": device_xml.Capability.Link.Speed,
-				"state": device_xml.Capability.Link.State,
+				"speed": deviceXML.Capability.Link.Speed,
+				"state": deviceXML.Capability.Link.State,
 			},
-			"features": device_xml.Capability.Feature.Name,
+			"features": deviceXML.Capability.Feature.Name,
 			"capability": map[string]interface{}{
-				"type": device_xml.Capability.Cappability.Type,
+				"type": deviceXML.Capability.Cappability.Type,
 			},
 		}
 
@@ -678,20 +669,20 @@ func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{})
 
 	////////////////// SCSI //////////////////
 	case "scsi":
-		device_xml := DeviceSCSI{}
-		err = xml.Unmarshal([]byte(xml_desc), &device_xml)
+		deviceXML := DeviceSCSI{}
+		err = xml.Unmarshal([]byte(xmlDesc), &deviceXML)
 		if err != nil {
-			log.Fatalf("failed to unmarshal device scsi XML into device_xml: %v", err)
+			log.Fatalf("failed to unmarshal device scsi XML into deviceXML: %v", err)
 		}
-		log.Printf("[DEBUG] Parsed device scsi into device_xml: %v", device_xml)
+		log.Printf("[DEBUG] Parsed device scsi into deviceXML: %v", deviceXML)
 
 		c := map[string]interface{}{
-			"type":      device_xml.Capability.Type,
-			"host":      fmt.Sprintf("%d", device_xml.Capability.Host),
-			"bus":       fmt.Sprintf("%d", device_xml.Capability.Bus),
-			"target":    fmt.Sprintf("%d", device_xml.Capability.Target),
-			"lun":       fmt.Sprintf("%d", device_xml.Capability.Lun),
-			"scsi_type": device_xml.Capability.ScsiType,
+			"type":      deviceXML.Capability.Type,
+			"host":      fmt.Sprintf("%d", deviceXML.Capability.Host),
+			"bus":       fmt.Sprintf("%d", deviceXML.Capability.Bus),
+			"target":    fmt.Sprintf("%d", deviceXML.Capability.Target),
+			"lun":       fmt.Sprintf("%d", deviceXML.Capability.Lun),
+			"scsi_type": deviceXML.Capability.ScsiType,
 		}
 
 		capability = append(capability, c)
@@ -699,17 +690,17 @@ func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{})
 
 	////////////////// SCSI Host //////////////////
 	case "scsi_host":
-		device_xml := DeviceSCSIHost{}
-		err = xml.Unmarshal([]byte(xml_desc), &device_xml)
+		deviceXML := DeviceSCSIHost{}
+		err = xml.Unmarshal([]byte(xmlDesc), &deviceXML)
 		if err != nil {
-			log.Fatalf("failed to unmarshal device scsi_host XML into device_xml: %v", err)
+			log.Fatalf("failed to unmarshal device scsi_host XML into deviceXML: %v", err)
 		}
-		log.Printf("[DEBUG] Parsed device scsi_host into device_xml: %v", device_xml)
+		log.Printf("[DEBUG] Parsed device scsi_host into deviceXML: %v", deviceXML)
 
 		c := map[string]interface{}{
-			"type":      device_xml.Capability.Type,
-			"host":      fmt.Sprintf("%d", device_xml.Capability.Host),
-			"unique_id": fmt.Sprintf("%d", device_xml.Capability.UniqueID),
+			"type":      deviceXML.Capability.Type,
+			"host":      fmt.Sprintf("%d", deviceXML.Capability.Host),
+			"unique_id": fmt.Sprintf("%d", deviceXML.Capability.UniqueID),
 		}
 
 		capability = append(capability, c)
@@ -717,22 +708,22 @@ func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{})
 
 	////////////////// SCSI Host //////////////////
 	case "drm":
-		device_xml := DeviceDRM{}
-		err = xml.Unmarshal([]byte(xml_desc), &device_xml)
+		deviceXML := DeviceDRM{}
+		err = xml.Unmarshal([]byte(xmlDesc), &deviceXML)
 		if err != nil {
-			log.Fatalf("failed to unmarshal device drm XML into device_xml: %v", err)
+			log.Fatalf("failed to unmarshal device drm XML into deviceXML: %v", err)
 		}
-		log.Printf("[DEBUG] Parsed device drm into device_xml: %v", device_xml)
+		log.Printf("[DEBUG] Parsed device drm into deviceXML: %v", deviceXML)
 
 		c := map[string]interface{}{
-			"type":     device_xml.Capability.Type,
-			"drm_type": device_xml.Capability.DRMType,
+			"type":     deviceXML.Capability.Type,
+			"drm_type": deviceXML.Capability.DRMType,
 		}
 
 		capability = append(capability, c)
 
 		devnode := []map[string]interface{}{}
-		for _, v := range device_xml.Devnode {
+		for _, v := range deviceXML.Devnode {
 			m := map[string]interface{}{
 				"type": v.Type,
 				"path": v.Path,
@@ -742,18 +733,18 @@ func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{})
 
 		log.Printf("[DEBUG] Set capability type drm to : %v", capability)
 		d.Set("devnode", devnode)
-		log.Printf("[DEBUG] Set devnode type drm to : %v", device_xml.Devnode)
+		log.Printf("[DEBUG] Set devnode type drm to : %v", deviceXML.Devnode)
 
 	default:
-		log.Fatalf("Unknown device capability type: %v", device_xml.Capability.Type)
+		return fmt.Errorf("unknown device capability type: %v", deviceXML.Capability.Type)
 	}
 
-	d.Set("xml", xml_desc)
-	d.Set("path", device_xml.Path)
-	d.Set("parent", device_xml.Parent)
+	d.Set("xml", xmlDesc)
+	d.Set("path", deviceXML.Path)
+	d.Set("parent", deviceXML.Parent)
 	log.Printf("[DEBUG] d.Set capability type %s : %s", capability[0]["type"], capability)
 	d.Set("capability", capability)
-	d.SetId(strconv.Itoa(hashcode.String(fmt.Sprintf("%v", xml_desc))))
+	d.SetId(strconv.Itoa(hashcode.String(fmt.Sprintf("%v", xmlDesc))))
 
 	return nil
 }
