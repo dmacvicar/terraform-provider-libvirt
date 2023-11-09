@@ -85,12 +85,6 @@ func newDomainDef() libvirtxml.Domain {
 		},
 	}
 
-	if v := os.Getenv("TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE"); v != "" {
-		domainDef.Type = v
-	} else {
-		domainDef.Type = "kvm"
-	}
-
 	// FIXME: We should allow setting this from configuration as well.
 	rngDev := os.Getenv("TF_LIBVIRT_RNG_DEV")
 	if rngDev == "" {
