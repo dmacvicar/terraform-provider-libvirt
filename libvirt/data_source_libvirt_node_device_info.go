@@ -493,7 +493,7 @@ func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{})
 	if err != nil {
 		log.Fatalf("failed to unmarshal XML into deviceXML: %v", err)
 	}
-	log.Printf("[DEBUG] Parsed device generic into deviceXML: %v", deviceXML)
+	log.Printf("[DEBUG] Parsed device generic into deviceXML: %#v", deviceXML)
 
 	switch deviceXML.Capability.Type {
 	////////////////// SYSTEM //////////////////

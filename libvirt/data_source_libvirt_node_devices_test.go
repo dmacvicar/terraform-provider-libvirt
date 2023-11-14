@@ -13,14 +13,14 @@ func TestAccLibvirtNodeDevicesDataSource(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceNodeDevices_pci,
+				Config: testAccDataSourceNodeDevicesPci,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
 						"data.libvirt_node_devices.node", "devices[0]", regexp.MustCompile(`^pci_\d{4}_\d{2}_\d{2}_\d{1}`)),
 				),
 			},
 			{
-				Config: testAccDataSourceNodeDevices_system,
+				Config: testAccDataSourceNodeDevicesSystem,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
 						"data.libvirt_node_devices.node", "devices[0]", regexp.MustCompile(`^computer$`)),
@@ -30,12 +30,12 @@ func TestAccLibvirtNodeDevicesDataSource(t *testing.T) {
 	})
 }
 
-const testAccDataSourceNodeDevices_pci = `
+const testAccDataSourceNodeDevicesPci = `
 data "libvirt_node_devices" "node" {
 	capability = "pci"
 }`
 
-const testAccDataSourceNodeDevices_system = `
+const testAccDataSourceNodeDevicesSystem = `
 data "libvirt_node_devices" "node" {
 	capability = "system"
 }`
