@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// strutures to parse device XML just enough to get Capability.Type
+// strutures to parse device XML just enough to get Capability.Type.
 type DeviceGeneric struct {
 	Device     xml.Name `xml:"device"`
 	Name       string   `xml:"name"`
