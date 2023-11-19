@@ -72,8 +72,7 @@ func domainWaitForLeases(ctx context.Context, virConn *libvirt.Libvirt, domain l
 		Delay:      resourceStateDelay,
 	}
 
-	_, err := stateConf.WaitForStateContext(ctx)
-	if err != nil {
+	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
 		return err
 	}
 
