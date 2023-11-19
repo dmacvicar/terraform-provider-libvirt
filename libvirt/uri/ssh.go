@@ -126,7 +126,7 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 			log.Printf("[DEBUG] ssh user: system username")
 			u, err := user.Current()
 			if err != nil {
-				return nil, fmt.Errorf("unable to get username: %v", err)
+				return nil, fmt.Errorf("unable to get username: %w", err)
 			}
 			sshu = u.Username
 		}
