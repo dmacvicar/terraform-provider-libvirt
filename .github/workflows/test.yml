@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - staging
     paths-ignore:
       - '*.md'
       - 'website/*'
@@ -19,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ["1.18.x"]
+        go-version: ["1.21.x"]
     steps:
       - uses: actions/setup-go@v3
         with:
@@ -33,7 +34,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.50.0
+          version: v1.52.2
           only-new-issues: true
   build:
     name: Build
@@ -41,9 +42,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - {os: ubuntu-latest, go: 1.18}
-          - {os: windows-latest, go: 1.18}
-          - {os: macos-latest, go: 1.18}
+          - {os: ubuntu-latest, go: 1.21}
+          - {os: windows-latest, go: 1.21}
+          - {os: macos-latest, go: 1.21}
     timeout-minutes: 10
     steps:
       - name: Set up Go

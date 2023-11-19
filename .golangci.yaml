@@ -9,11 +9,33 @@ linters-settings:
   gomnd:
     ignored-functions:
       - strings.SplitN
+  depguard:
+    rules:
+      main:
+        files:
+          - $all
+        allow:
+          - $gostd
+          - "github.com/dmacvicar/terraform-provider-libvirt"
+          - "github.com/community-terraform-providers/terraform-provider-ignition/v2"
+          - "github.com/digitalocean/go-libvirt"
+          - "libvirt.org/go/libvirtxml"
+          - "github.com/davecgh/go-spew"
+          - "github.com/google/uuid"
+          - "github.com/hashicorp/terraform-plugin-sdk/v2"
+          - "github.com/hooklift/iso9660"
+          - "github.com/mattn/goveralls"
+          - "github.com/stretchr/testify"
+          - "golang.org/x/crypto"
+          - "golang.org/x/lint"
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true
 
 linters:
   enable-all: false
   enable:
-    - ifshort
     - unparam
     - exhaustive
     - godot
@@ -22,7 +44,6 @@ linters:
     - revive
     - gocritic
     - misspell
-    - depguard
     - lll
     - errorlint
     - errcheck
