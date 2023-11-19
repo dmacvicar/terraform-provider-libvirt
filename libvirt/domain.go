@@ -96,7 +96,7 @@ func domainIfaceHasAddress(virConn *libvirt.Libvirt, domain libvirt.Domain,
 	log.Printf("[DEBUG] ifaces with addresses: %+v\n", ifacesWithAddr)
 
 	for _, ifaceWithAddr := range ifacesWithAddr {
-		if len(ifaceWithAddr.Hwaddr) > 0 && (mac == strings.ToUpper(ifaceWithAddr.Hwaddr[0])) {
+		if len(ifaceWithAddr.Hwaddr) > 0 && (mac == strings.ToUpper(ifaceWithAddr.Hwaddr[0])) && len(ifaceWithAddr.Addrs) > 0 {
 			log.Printf("[DEBUG] found IPs for MAC=%+v: %+v\n", mac, ifaceWithAddr.Addrs)
 			return true, false, nil
 		}
