@@ -3,6 +3,7 @@ package libvirt
 import (
 	"fmt"
 	"log"
+	"sort"
 	"strconv"
 
 	libvirt "github.com/digitalocean/go-libvirt"
@@ -64,6 +65,7 @@ func resourceLibvirtNodeDevicesRead(d *schema.ResourceData, meta interface{}) er
 		return fmt.Errorf("failed to retrieve list of node devices: %w", err)
 	}
 
+	sort.Strings(devices)
 	d.Set("devices", devices)
 	d.SetId(strconv.Itoa(hashcode.String(fmt.Sprintf("%v", devices))))
 
