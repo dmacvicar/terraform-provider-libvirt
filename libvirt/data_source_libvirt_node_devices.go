@@ -30,7 +30,7 @@ func datasourceLibvirtNodeDevices() *schema.Resource {
 				Optional: true,
 			},
 			"devices": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Computed: true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
