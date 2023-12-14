@@ -154,6 +154,47 @@ func domainIsRunning(virConn *libvirt.Libvirt, domain libvirt.Domain) (bool, err
 	return libvirt.DomainState(state) == libvirt.DomainRunning, nil
 }
 
+func agentIsRunning(virConn *libvirt.Libvirt, domain libvirt.Domain) (bool, error) {
+	optString, err := virConn.QEMUDomainAgentCommand(domain, "{\"execute\":\"guest-ping\"}", -1, 0)
+	if err != nil {
+		log.Printf("[DEBUG] Error while executing qemu-agent ping: %v", err)
+		return false, err
+	}
+	log.Printf("[DEBUG] qemu-agent ping returned %s", optString)
+	return true, nil
+}
+
+func waitingForAgentRunning(ctx context.Context, virConn *libvirt.Libvirt, domain libvirt.Domain,
+	timeout time.Duration, d *schema.ResourceData) error {
+	if !d.Get("qemu_agent").(bool) {
+		return nil
+	}
+
+	waitFunc := func() (interface{}, string, error) {
+		isRunning, err := agentIsRunning(virConn, domain)
+		agentState := "agent-not-running"
+		if err == nil {
+			agentState = "agent-running"
+		}
+		return isRunning, agentState, nil
+	}
+
+	stateConf := &resource.StateChangeConf{
+		Pending:    []string{"agent-not-running"},
+		Target:     []string{"agent-running"},
+		Refresh:    waitFunc,
+		Timeout:    timeout,
+		MinTimeout: resourceStateMinTimeout,
+		Delay:      resourceStateDelay,
+	}
+
+	_, err := stateConf.WaitForStateContext(ctx)
+	if err != nil {
+		return fmt.Errorf("timeout waiting for agent to become available : %w", err)
+	}
+	return nil
+}
+
 func domainGetIfacesInfo(virConn *libvirt.Libvirt, domain libvirt.Domain, rd *schema.ResourceData) ([]libvirt.DomainInterface, error) {
 	domainRunningNow, err := domainIsRunning(virConn, domain)
 	if err != nil {
