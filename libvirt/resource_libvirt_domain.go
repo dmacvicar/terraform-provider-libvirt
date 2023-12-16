@@ -617,7 +617,7 @@ func resourceLibvirtDomainCreate(d *schema.ResourceData, meta interface{}) error
 				"2) has the network interface an IP address? \n" +
 				"3) Networking issues on your libvirt setup? \n " +
 				"4) is DHCP enabled on this Domain's network? \n" +
-				"5) if you use bridge network, the domain should have the pkg qemu-agent installed and `qemu_agent = true` set\n" +
+				"5) if you use bridge network, the domain should have the pkg qemu-agent installed and `qemu_agent = true` set \n" +
 				"IMPORTANT: This error is not a terraform libvirt-provider error, but an error caused by your KVM/libvirt infrastructure configuration/setup"
 			return fmt.Errorf("couldn't retrieve IP address of domain id: %s. %s \n %s", d.Id(), ipNotFoundMsg, err)
 		}
