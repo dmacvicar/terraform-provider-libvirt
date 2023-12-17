@@ -145,7 +145,7 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 		port = defaultSSHPort
 	}
 
-	sshClient, err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", u.Hostname(), port), &cfg)
+	sshClient, err := ssh.Dial("tcp", net.JoinHostPort(hostname, port), &cfg)
 	if err != nil {
 		return nil, err
 	}
