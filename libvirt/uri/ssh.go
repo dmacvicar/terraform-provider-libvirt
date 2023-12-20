@@ -22,7 +22,7 @@ const (
 	defaultSSHAuthMethods    = "agent,privkey"
 )
 
-func (u *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
+func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Config) []ssh.AuthMethod {
 	q := u.Query()
 
 	authMethods := q.Get("sshauth")
@@ -91,10 +91,6 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 		log.Printf("[WARN] Failed to parse ssh config file: %v", err)
 	}
 
-	authMethods := u.parseAuthMethods()
-	if len(authMethods) < 1 {
-		return nil, fmt.Errorf("could not configure SSH authentication methods")
-	}
 	q := u.Query()
 
 	knownHostsPath := q.Get("knownhosts")
@@ -121,7 +117,6 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 	cfg := ssh.ClientConfig{
 		User:            u.User.Username(),
 		HostKeyCallback: hostKeyCallback,
-		Auth:            authMethods,
 		Timeout:         dialTimeout,
 	}
 
@@ -188,6 +183,11 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg s
 		log.Printf("[DEBUG] HostName is overriden to: %s", hostName);
 	}
 
+	authMethods := u.parseAuthMethods(target, sshcfg)
+	if len(authMethods) < 1 {
+		return nil, fmt.Errorf("could not configure SSH authentication methods")
+	}
+	cfg.Auth = authMethods
 
 	if (bastion != nil) {
 		// if this is a proxied connection, we want to dial through the bastion host
