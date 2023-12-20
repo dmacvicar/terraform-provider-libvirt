@@ -65,7 +65,14 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 			agentClient := agent.NewClient(conn)
 			result = append(result, ssh.PublicKeysCallback(agentClient.Signers))
 		case "privkey":
-			sshKey, err := os.ReadFile(os.ExpandEnv(sshKeyPath))
+			path := os.ExpandEnv(sshKeyPath)
+			if strings.HasPrefix(path, "~/") {
+				home, err := os.UserHomeDir()
+				if err == nil {
+					path = strings.Replace(path, "~", home, 1)
+				}
+			}
+			sshKey, err := os.ReadFile(path)
 			if err != nil {
 				log.Printf("[ERROR] Failed to read ssh key: %v", err)
 				continue
