@@ -118,34 +118,14 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 		hostKeyCallback = cb
 	}
 
-	username := u.User.Username()
-	if username == "" {
-		sshu, err := sshcfg.Get(u.Host, "User")
-		log.Printf("[DEBUG] SSH User: %v", sshu)
-		if err != nil {
-			log.Printf("[DEBUG] ssh user: system username")
-			u, err := user.Current()
-			if err != nil {
-				return nil, fmt.Errorf("unable to get username: %w", err)
-			}
-			sshu = u.Username
-		}
-		username = sshu
-	}
-
 	cfg := ssh.ClientConfig{
-		User:            username,
+		User:            u.User.Username(),
 		HostKeyCallback: hostKeyCallback,
 		Auth:            authMethods,
 		Timeout:         dialTimeout,
 	}
 
-	port := u.Port()
-	if port == "" {
-		port = defaultSSHPort
-	}
-
-	sshClient, err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", u.Hostname(), port), &cfg)
+	sshClient, err := u.dialHost(u.Host, sshcfg, cfg, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -161,4 +141,81 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 	}
 
 	return c, nil
+}
+
+func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg ssh.ClientConfig, depth int) (*ssh.Client, error) {
+	if depth > 10 {
+		return nil, fmt.Errorf("[ERROR] dialHost failed: max tunnel depth of 10 reached")
+	}
+
+	log.Printf("[DEBUG] Connecting to target: %s", target);
+
+	proxy, err := sshcfg.Get(target, "ProxyCommand")
+	if err == nil && proxy != "" {
+		log.Printf("[WARNING] unsupported ssh ProxyCommand '%v'", proxy)
+	}
+
+	proxy, err = sshcfg.Get(target, "ProxyJump")
+	var bastion *ssh.Client
+	if err == nil && proxy != "" {
+		log.Printf("[DEBUG] SSH ProxyJump '%v'", proxy)
+
+		// if this is a proxy jump, we recurse into that proxy
+		bastion, err = u.dialHost(proxy, sshcfg, cfg, depth + 1)
+	}
+
+	if cfg.User == "" {
+		sshu, err := sshcfg.Get(target, "User")
+		log.Printf("[DEBUG] SSH User for target '%v': %v", target, sshu)
+		if err != nil {
+			log.Printf("[DEBUG] ssh user: using current login")
+			u, err := user.Current()
+			if err != nil {
+				return nil, fmt.Errorf("unable to get username: %w", err)
+			}
+			sshu = u.Username
+		}
+		cfg.User = sshu
+	}
+
+	port := u.Port()
+	if port == "" {
+		port = defaultSSHPort
+	}
+
+	hostName, err := sshcfg.Get(target, "HostName")
+	if err == nil {
+		log.Printf("[DEBUG] HostName is overriden to: %s", hostName);
+	}
+
+
+	if (bastion != nil) {
+		// if this is a proxied connection, we want to dial through the bastion host
+		log.Printf("[INFO] SSH connecting to target '%v' through bastion host '%v'", target, proxy)
+		// Dial a connection to the service host, from the bastion
+		conn, err := bastion.Dial("tcp", hostName)
+		if err != nil {
+			log.Fatal(err)
+			return nil, fmt.Errorf("failed to connect to remote host %v: %w", target, err)
+		}
+
+		ncc, chans, reqs, err := ssh.NewClientConn(conn, target, &cfg)
+		if err != nil {
+			log.Fatal(err)
+			return nil, fmt.Errorf("failed to connect to remote host %v: %w", target, err)
+		}
+
+		sClient := ssh.NewClient(ncc, chans, reqs)
+		return sClient, nil
+
+	} else {
+		// this is a direct connection to the target host
+		log.Printf("[INFO] SSH connecting to target '%v'", hostName)
+		conn,err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", hostName, port), &cfg)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to remote host %v: %w", target, err)
+		}
+		return conn, nil
+	}
 }
