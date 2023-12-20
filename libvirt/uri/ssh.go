@@ -30,10 +30,22 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 		authMethods = defaultSSHAuthMethods
 	}
 
+	// keyfile order of precedence:
+	//  1. load uri encoded keyfile
+	//  2. load override as specified in ssh config
+	//  3. load default ssh keyfile path
 	sshKeyPath := q.Get("keyfile")
 	if sshKeyPath == "" {
-		sshKeyPath = defaultSSHKeyPath
+
+		keyPaths, err := sshcfg.GetAll(target, "IdentityFile")
+		log.Printf("[WARNING] identity file count: %d", len(keyPaths));
+		if err == nil && len(keyPaths) != 0 {
+			sshKeyPath = keyPaths[len(keyPaths) - 1]
+		} else {
+			sshKeyPath = defaultSSHKeyPath
+		}
 	}
+	log.Printf("[INFO] ssh identity file for host '%s': %s", target, sshKeyPath);
 
 	auths := strings.Split(authMethods, ",")
 	result := make([]ssh.AuthMethod, 0)
