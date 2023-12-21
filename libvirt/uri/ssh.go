@@ -201,11 +201,10 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg s
 		log.Printf("[DEBUG] HostName is overriden to: %s", hostName);
 	}
 
-	authMethods := u.parseAuthMethods(target, sshcfg)
-	if len(authMethods) < 1 {
+	cfg.Auth = u.parseAuthMethods(target, sshcfg)
+	if len(cfg.Auth) < 1 {
 		return nil, fmt.Errorf("could not configure SSH authentication methods")
 	}
-	cfg.Auth = authMethods
 
 	if (bastion != nil) {
 		// if this is a proxied connection, we want to dial through the bastion host
