@@ -38,14 +38,13 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 	if sshKeyPath == "" {
 
 		keyPaths, err := sshcfg.GetAll(target, "IdentityFile")
-		log.Printf("[WARNING] identity file count: %d", len(keyPaths));
 		if err == nil && len(keyPaths) != 0 {
 			sshKeyPath = keyPaths[len(keyPaths) - 1]
 		} else {
 			sshKeyPath = defaultSSHKeyPath
 		}
 	}
-	log.Printf("[INFO] ssh identity file for host '%s': %s", target, sshKeyPath);
+	log.Printf("[DEBUG] ssh identity file for host '%s': %s", target, sshKeyPath);
 
 	auths := strings.Split(authMethods, ",")
 	result := make([]ssh.AuthMethod, 0)
@@ -210,7 +209,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg s
 
 	if (bastion != nil) {
 		// if this is a proxied connection, we want to dial through the bastion host
-		log.Printf("[INFO] SSH connecting to target '%v' through bastion host '%v'", target, proxy)
+		log.Printf("[INFO] SSH connecting to '%v' (%v) through bastion host '%v'", target, hostName, proxy)
 		// Dial a connection to the service host, from the bastion
 		conn, err := bastion.Dial("tcp", hostName)
 		if err != nil {
@@ -229,7 +228,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg s
 
 	} else {
 		// this is a direct connection to the target host
-		log.Printf("[INFO] SSH connecting to target '%v'", hostName)
+		log.Printf("[INFO] SSH connecting to '%v' (%v)", target, hostName)
 		conn,err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", hostName, port), &cfg)
 
 		if err != nil {
