@@ -116,7 +116,7 @@ func newDomainDefForConnection(virConn *libvirt.Libvirt, rd *schema.ResourceData
 		d.OS.Type.Arch = arch
 	}
 
-	if d.OS.Type.Arch == "aarch64" {
+	if d.OS.Type.Arch == "aarch64" || d.OS.Type.Arch == "armv7l" {
 		// for aarch64 speciffying this will automatically select the firmware and NVRAM file
 		// reference: https://libvirt.org/formatdomain.html#bios-bootloader
 		d.OS.Firmware = "efi"
