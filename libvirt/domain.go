@@ -382,7 +382,10 @@ func setFirmware(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 		}
 
 		if _, ok := d.GetOk("nvram.0"); ok {
-			nvramFile := d.Get("nvram.0.file").(string)
+			nvramFile := ""
+			if file, ok := d.GetOk("nvram.0.file"); ok {
+				nvramFile = file.(string)
+			}
 			nvramTemplateFile := ""
 			if nvramTemplate, ok := d.GetOk("nvram.0.template"); ok {
 				nvramTemplateFile = nvramTemplate.(string)

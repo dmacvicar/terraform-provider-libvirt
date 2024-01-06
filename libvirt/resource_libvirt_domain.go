@@ -85,18 +85,21 @@ func resourceLibvirtDomain() *schema.Resource {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"file": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
 							ForceNew: true,
+							Computed: true,
 						},
 						"template": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Computed: true,
 						},
 					},
 				},
@@ -179,6 +182,7 @@ func resourceLibvirtDomain() *schema.Resource {
 						"wwn": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Computed: true,
 						},
 						"block_device": {
 							Type:     schema.TypeString,
