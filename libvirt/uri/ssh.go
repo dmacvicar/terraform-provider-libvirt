@@ -228,7 +228,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg s
 	} else {
 		// this is a direct connection to the target host
 		log.Printf("[INFO] SSH connecting to '%v' (%v)", target, hostName)
-		conn,err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", hostName, port), &cfg)
+		conn,err := ssh.Dial("tcp", net.JoinHostPort(hostName, port), &cfg)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to remote host %v: %w", target, err)
