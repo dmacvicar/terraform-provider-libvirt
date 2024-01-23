@@ -15,6 +15,7 @@ import (
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/suppress"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
 )
@@ -41,6 +42,7 @@ func resourceLibvirtDomain() *schema.Resource {
 		Timeouts: &schema.ResourceTimeout{
 			//nolint:gomnd
 			Create: schema.DefaultTimeout(5 * time.Minute),
+			Delete: schema.DefaultTimeout(5 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -100,6 +102,13 @@ func resourceLibvirtDomain() *schema.Resource {
 						},
 					},
 				},
+			},
+			"wait_for_shutoff": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+				ForceNew: false,
+				Required: false,
 			},
 			"running": {
 				Type:     schema.TypeBool,
@@ -1116,6 +1125,26 @@ func resourceLibvirtDomainDelete(ctx context.Context, d *schema.ResourceData, me
 	state, _, err := virConn.DomainGetState(domain, 0)
 	if err != nil {
 		return diag.Errorf("couldn't get info about domain: %s", err)
+	}
+
+	if d.Get("wait_for_shutoff").(bool) && libvirt.DomainState(state) == libvirt.DomainRunning {
+		log.Printf("[DEBUG] Shutting down libvirt_domain")
+		if err := virConn.DomainShutdown(domain); err != nil {
+			return diag.Errorf("couldn't shutdown libvirt domain: %s", err)
+		}
+
+		stateConf := &resource.StateChangeConf{
+			Pending: []string{"NOT-SHUTOFF"},
+			Target:  []string{"SHUTOFF"},
+			Refresh: waitForDomainShutoff(virConn, domain),
+			Timeout: d.Timeout(schema.TimeoutDelete),
+			Delay:   resourceStateDelay,
+		}
+		_, err = stateConf.WaitForStateContext(ctx)
+		if err != nil {
+			return diag.Errorf("error waiting for domain to reach SHUTOFF state: %s", err)
+		}
+		state = int32(libvirt.DomainShutoff)
 	}
 
 	if state == int32(libvirt.DomainRunning) || state == int32(libvirt.DomainPaused) {

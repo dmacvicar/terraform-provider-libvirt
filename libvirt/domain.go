@@ -871,3 +871,16 @@ func destroyDomainByUserRequest(virConn *libvirt.Libvirt, d *schema.ResourceData
 
 	return nil
 }
+
+func waitForDomainShutoff(virConn *libvirt.Libvirt, domain libvirt.Domain) resource.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		state, _, err := virConn.DomainGetState(domain, 0)
+		if err != nil {
+			return nil, "", err
+		}
+		if libvirt.DomainState(state) == libvirt.DomainShutoff {
+			return domain, "SHUTOFF", nil
+		}
+		return domain, "NOT-SHUTOFF", err
+	}
+}
