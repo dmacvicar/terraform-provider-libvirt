@@ -210,7 +210,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg s
 		// if this is a proxied connection, we want to dial through the bastion host
 		log.Printf("[INFO] SSH connecting to '%v' (%v) through bastion host '%v'", target, hostName, proxy)
 		// Dial a connection to the service host, from the bastion
-		conn, err := bastion.Dial("tcp", hostName)
+		conn, err := bastion.Dial("tcp", net.JoinHostPort(hostName, port))
 		if err != nil {
 			log.Fatal(err)
 			return nil, fmt.Errorf("failed to connect to remote host %v: %w", target, err)
