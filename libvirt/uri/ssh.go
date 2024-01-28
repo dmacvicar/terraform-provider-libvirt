@@ -213,13 +213,13 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg s
 		conn, err := bastion.Dial("tcp", net.JoinHostPort(hostName, port))
 		if err != nil {
 			log.Fatal(err)
-			return nil, fmt.Errorf("failed to connect to remote host %v: %w", target, err)
+			return nil, fmt.Errorf("failed to connect to remote host '%v': %w", target, err)
 		}
 
 		ncc, chans, reqs, err := ssh.NewClientConn(conn, target, &cfg)
 		if err != nil {
 			log.Fatal(err)
-			return nil, fmt.Errorf("failed to connect to remote host %v: %w", target, err)
+			return nil, fmt.Errorf("failed to connect to remote host '%v': %w", target, err)
 		}
 
 		sClient := ssh.NewClient(ncc, chans, reqs)
@@ -231,7 +231,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg s
 		conn,err := ssh.Dial("tcp", net.JoinHostPort(hostName, port), &cfg)
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to connect to remote host %v: %w", target, err)
+			return nil, fmt.Errorf("failed to connect to remote host '%v': %w", target, err)
 		}
 		return conn, nil
 	}
