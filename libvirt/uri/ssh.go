@@ -198,7 +198,11 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg s
 
 	hostName, err := sshcfg.Get(target, "HostName")
 	if err == nil {
-		log.Printf("[DEBUG] HostName is overriden to: %s", hostName);
+		if hostName == "" {
+			hostName = target;
+		} else {
+			log.Printf("[DEBUG] HostName is overriden to: '%s'", hostName);
+		}
 	}
 
 	cfg.Auth = u.parseAuthMethods(target, sshcfg)
