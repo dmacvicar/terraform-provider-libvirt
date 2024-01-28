@@ -194,6 +194,8 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg s
 	port := u.Port()
 	if port == "" {
 		port = defaultSSHPort
+	} else {
+		log.Printf("[DEBUG] SSH Port is overriden to: '%s'", port);
 	}
 
 	hostName, err := sshcfg.Get(target, "HostName")
