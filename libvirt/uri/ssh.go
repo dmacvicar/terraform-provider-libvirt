@@ -2,13 +2,13 @@ package uri
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
 	"os/user"
 	"strings"
 
+	"github.com/kevinburke/ssh_config"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/knownhosts"
@@ -18,6 +18,7 @@ const (
 	defaultSSHPort           = "22"
 	defaultSSHKeyPath        = "${HOME}/.ssh/id_rsa"
 	defaultSSHKnownHostsPath = "${HOME}/.ssh/known_hosts"
+	defaultSSHConfigFile     = "${HOME}/.ssh/config"
 	defaultSSHAuthMethods    = "agent,privkey"
 )
 
@@ -52,7 +53,7 @@ func (u *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 			agentClient := agent.NewClient(conn)
 			result = append(result, ssh.PublicKeysCallback(agentClient.Signers))
 		case "privkey":
-			sshKey, err := ioutil.ReadFile(os.ExpandEnv(sshKeyPath))
+			sshKey, err := os.ReadFile(os.ExpandEnv(sshKeyPath))
 			if err != nil {
 				log.Printf("[ERROR] Failed to read ssh key: %v", err)
 				continue
@@ -79,6 +80,17 @@ func (u *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 }
 
 func (u *ConnectionURI) dialSSH() (net.Conn, error) {
+
+	sshConfigFile, err := os.Open(os.ExpandEnv(defaultSSHConfigFile))
+	if err != nil {
+		log.Printf("[WARN] Failed to open ssh config file: %v", err)
+	}
+
+	sshcfg, err := ssh_config.Decode(sshConfigFile)
+	if err != nil {
+		log.Printf("[WARN] Failed to parse ssh config file: %v", err)
+	}
+
 	authMethods := u.parseAuthMethods()
 	if len(authMethods) < 1 {
 		return nil, fmt.Errorf("could not configure SSH authentication methods")
@@ -108,11 +120,17 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 
 	username := u.User.Username()
 	if username == "" {
-		u, err := user.Current()
+		sshu, err := sshcfg.Get(u.Host, "User")
+		log.Printf("[DEBUG] SSH User: %v", sshu)
 		if err != nil {
-			return nil, err
+			log.Printf("[DEBUG] ssh user: system username")
+			u, err := user.Current()
+			if err != nil {
+				return nil, fmt.Errorf("unable to get username: %w", err)
+			}
+			sshu = u.Username
 		}
-		username = u.Username
+		username = sshu
 	}
 
 	cfg := ssh.ClientConfig{

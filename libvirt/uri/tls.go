@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/user"
@@ -27,7 +26,7 @@ const (
 	defaultGlobalClientKeyPath  = "/etc/pki/libvirt/private"
 )
 
-// find the first resource that exists in the given list of paths
+// find the first resource that exists in the given list of paths.
 func findResource(name string, dirs ...string) (string, error) {
 	for _, dir := range dirs {
 		path := filepath.Join(os.ExpandEnv(dir), name)
@@ -81,7 +80,7 @@ func (u *ConnectionURI) tlsConfig() (*tls.Config, error) {
 		// non-root also looks in $HOME/.pki first
 		if !root {
 			caCertSearchPath = append([]string{os.ExpandEnv(defaultUserPKIPath)}, caCertSearchPath...)
-			clientCertSearchPath = append([]string{os.ExpandEnv(defaultUserPKIPath)}, clientKeySearchPath...)
+			clientCertSearchPath = append([]string{os.ExpandEnv(defaultUserPKIPath)}, clientCertSearchPath...)
 			clientKeySearchPath = append([]string{os.ExpandEnv(defaultUserPKIPath)}, clientKeySearchPath...)
 		}
 	}
@@ -96,7 +95,7 @@ func (u *ConnectionURI) tlsConfig() (*tls.Config, error) {
 		return nil, err
 	}
 
-	caCert, err := ioutil.ReadFile(caCertPath)
+	caCert, err := os.ReadFile(caCertPath)
 	if err != nil {
 		return nil, fmt.Errorf("can't read certificate '%s': %w", caCert, err)
 	}
@@ -119,7 +118,7 @@ func (u *ConnectionURI) tlsConfig() (*tls.Config, error) {
 	}, nil
 }
 
-// TODO handle no_verify and pkipath URI options
+// TODO handle no_verify and pkipath URI options.
 func (u *ConnectionURI) dialTLS() (net.Conn, error) {
 	port := u.Port()
 	if port == "" {

@@ -1,7 +1,6 @@
 package libvirt
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"reflect"
@@ -9,12 +8,12 @@ import (
 	"strconv"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	libvirtxml "github.com/libvirt/libvirt-go-xml"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"libvirt.org/go/libvirtxml"
 )
 
 // updateDNSHosts detects changes in the DNS hosts entries
-// updating the network definition accordingly
+// updating the network definition accordingly.
 func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Network) error {
 	virConn := meta.(*Client).libvirt
 
@@ -24,12 +23,12 @@ func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Ne
 
 		oldEntries, err := parseNetworkDNSHostsChange(oldInterface)
 		if err != nil {
-			return fmt.Errorf("parse old %s: %s", hostsKey, err)
+			return fmt.Errorf("parse old %s: %w", hostsKey, err)
 		}
 
 		newEntries, err := parseNetworkDNSHostsChange(newInterface)
 		if err != nil {
-			return fmt.Errorf("parse new %s: %s", hostsKey, err)
+			return fmt.Errorf("parse new %s: %w", hostsKey, err)
 		}
 
 		// process all the old DNS entries that must be removed
@@ -47,13 +46,13 @@ func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Ne
 
 			data, err := xmlMarshallIndented(libvirtxml.NetworkDNSHost{IP: oldEntry.IP})
 			if err != nil {
-				return fmt.Errorf("serialize update: %s", err)
+				return fmt.Errorf("serialize update: %w", err)
 			}
 
-			// See networkUpdateWorkAroundLibvirt for more information about why this wrapper method exists
-			err = (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(network, uint32(libvirt.NetworkUpdateCommandDelete), uint32(libvirt.NetworkSectionDNSHost), -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
+			err = virConn.NetworkUpdateCompat(network, libvirt.NetworkUpdateCommandDelete,
+				libvirt.NetworkSectionDNSHost, -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
 			if err != nil {
-				return fmt.Errorf("delete %s: %s", oldEntry.IP, err)
+				return fmt.Errorf("delete %s: %w", oldEntry.IP, err)
 			}
 		}
 
@@ -72,30 +71,28 @@ func updateDNSHosts(d *schema.ResourceData, meta interface{}, network libvirt.Ne
 
 			data, err := xmlMarshallIndented(newEntry)
 			if err != nil {
-				return fmt.Errorf("serialize update: %s", err)
+				return fmt.Errorf("serialize update: %w", err)
 			}
 
-			// See networkUpdateWorkAroundLibvirt for more information about why this wrapper method exists
-			err = (&networkUpdateWorkaroundLibvirt{virConn}).NetworkUpdate(network, uint32(libvirt.NetworkUpdateCommandAddLast), uint32(libvirt.NetworkSectionDNSHost), -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
+			err = virConn.NetworkUpdateCompat(network, libvirt.NetworkUpdateCommandAddLast,
+				libvirt.NetworkSectionDNSHost, -1, data, libvirt.NetworkUpdateAffectLive|libvirt.NetworkUpdateAffectConfig)
 			if err != nil {
-				return fmt.Errorf("add %v: %s", newEntry, err)
+				return fmt.Errorf("add %v: %w", newEntry, err)
 			}
 		}
-
-		d.SetPartial(hostsKey)
 	}
 
 	return nil
 }
 
 func parseNetworkDNSHostsChange(change interface{}) (entries []libvirtxml.NetworkDNSHost, err error) {
-	slice, ok := change.([]interface{})
+	slice, ok := change.(*schema.Set)
 	if !ok {
-		return entries, errors.New("not slice")
+		return entries, fmt.Errorf("not set %v", change)
 	}
 
 	mapEntries := map[string][]string{}
-	for i, entryInterface := range slice {
+	for i, entryInterface := range slice.List() {
 		entryMap, ok := entryInterface.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("entry %d is not a map", i)
@@ -148,19 +145,17 @@ func parseNetworkDNSHostsChange(change interface{}) (entries []libvirtxml.Networ
 }
 
 // getDNSHostsFromResource returns a list of libvirt's DNS hosts
-// from the network definition
+// from the network definition.
 func getDNSHostsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDNSHost, error) {
 	dnsHostsMap := map[string][]string{}
-	if dnsHostCount, ok := d.GetOk(dnsPrefix + ".hosts.#"); ok {
-		for i := 0; i < dnsHostCount.(int); i++ {
-			hostPrefix := fmt.Sprintf(dnsPrefix+".hosts.%d", i)
-
-			address := d.Get(hostPrefix + ".ip").(string)
+	if dnsHosts, ok := d.GetOk(dnsPrefix + ".hosts"); ok {
+		for _, hostEntry := range dnsHosts.(*schema.Set).List() {
+			hostEntryMap := hostEntry.(map[string]interface{})
+			address := hostEntryMap["ip"].(string)
 			if net.ParseIP(address) == nil {
 				return nil, fmt.Errorf("could not parse address '%s'", address)
 			}
-
-			dnsHostsMap[address] = append(dnsHostsMap[address], d.Get(hostPrefix+".hostname").(string))
+			dnsHostsMap[address] = append(dnsHostsMap[address], hostEntryMap["hostname"].(string))
 		}
 	}
 
@@ -181,7 +176,7 @@ func getDNSHostsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDNSHos
 }
 
 // getDNSForwardersFromResource returns the list of libvirt's DNS forwarders
-// in the network definition
+// in the network definition.
 func getDNSForwardersFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDNSForwarder, error) {
 	var dnsForwarders []libvirtxml.NetworkDNSForwarder
 	if dnsForwardCount, ok := d.GetOk(dnsPrefix + ".forwarders.#"); ok {
@@ -206,18 +201,19 @@ func getDNSForwardersFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkD
 }
 
 // getDNSEnableFromResource returns string to enable ("yes") or disable ("no") dns
-// in the network definition
-func getDNSEnableFromResource(d *schema.ResourceData) (string, error) {
-	if dnsLocalOnly, ok := d.GetOk(dnsPrefix + ".enabled"); ok {
-		if dnsLocalOnly.(bool) {
-			return "yes", nil // this "boolean" must be "yes"|"no"
+// in the network definition.
+func getDNSEnableFromResource(d *schema.ResourceData) string {
+	if dnsEnabled, ok := d.GetOk(dnsPrefix + ".enabled"); ok {
+		if dnsEnabled.(bool) {
+			return "yes" // this "boolean" must be "yes"|"no"
 		}
+		return "no"
 	}
-	return "no", nil
+	return "no"
 }
 
 // getDNSSRVFromResource returns a list of libvirt's DNS SRVs
-// in the network definition
+// in the network definition.
 func getDNSSRVFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkDNSSRV, error) {
 	var dnsSRVs []libvirtxml.NetworkDNSSRV
 

@@ -2,10 +2,11 @@ package libvirt
 
 import (
 	"bufio"
+	"context"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -35,7 +36,7 @@ func newCloudInitDef() defCloudInit {
 
 // Create a ISO file based on the contents of the CloudInit instance and
 // uploads it to the libVirt pool
-// Returns a string holding terraform's internal ID of this resource
+// Returns a string holding terraform's internal ID of this resource.
 func (ci *defCloudInit) CreateIso() (string, error) {
 	iso, err := ci.createISO()
 	if err != nil {
@@ -98,19 +99,19 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 
 	volumeDefXML, err := xml.Marshal(volumeDef)
 	if err != nil {
-		return "", fmt.Errorf("error serializing libvirt volume: %s", err)
+		return "", fmt.Errorf("error serializing libvirt volume: %w", err)
 	}
 
 	// create the volume
 	volume, err := virConn.StorageVolCreateXML(pool, string(volumeDefXML), 0)
 	if err != nil {
-		return "", fmt.Errorf("error creating libvirt volume for cloudinit device %s: %s", ci.Name, err)
+		return "", fmt.Errorf("error creating libvirt volume for cloudinit device %s: %w", ci.Name, err)
 	}
 
 	// upload ISO file
 	err = img.Import(newCopier(virConn, &volume, uint64(size)), volumeDef)
 	if err != nil {
-		return "", fmt.Errorf("error while uploading cloudinit %s: %s", img.String(), err)
+		return "", fmt.Errorf("error while uploading cloudinit %s: %w", img.String(), err)
 	}
 
 	if volume.Key == "" {
@@ -122,11 +123,12 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 
 // create a unique ID for terraform use
 // The ID is made by the volume ID (the internal one used by libvirt)
-// joined by the ";" with a UUID
+// joined by the ";" with a UUID.
 func (ci *defCloudInit) buildTerraformKey(volumeKey string) string {
 	return fmt.Sprintf("%s;%s", volumeKey, uuid.New())
 }
 
+//nolint:gomnd
 func getCloudInitVolumeKeyFromTerraformID(id string) (string, error) {
 	s := strings.SplitN(id, ";", 2)
 	if len(s) != 2 {
@@ -136,7 +138,7 @@ func getCloudInitVolumeKeyFromTerraformID(id string) (string, error) {
 }
 
 // Create the ISO holding all the cloud-init data
-// Returns a string with the full path to the ISO file
+// Returns a string with the full path to the ISO file.
 func (ci *defCloudInit) createISO() (string, error) {
 	log.Print("Creating new ISO")
 	tmpDir, err := ci.createFiles()
@@ -159,7 +161,7 @@ func (ci *defCloudInit) createISO() (string, error) {
 
 	log.Printf("About to execute cmd: %+v", cmd)
 	if err = cmd.Run(); err != nil {
-		return "", fmt.Errorf("error while starting the creation of CloudInit's ISO image: %s", err)
+		return "", fmt.Errorf("error while starting the creation of CloudInit's ISO image: %w", err)
 	}
 	log.Printf("ISO created at %s", isoDestination)
 
@@ -168,25 +170,24 @@ func (ci *defCloudInit) createISO() (string, error) {
 
 // write user-data,  meta-data network-config in tmp files and dedicated directory
 // Returns a string containing the name of the temporary directory and an error
-// object
+// object.
 func (ci *defCloudInit) createFiles() (string, error) {
 	log.Print("Creating ISO contents")
-	tmpDir, err := ioutil.TempDir("", "cloudinit")
+	tmpDir, err := os.MkdirTemp("", "cloudinit")
 	if err != nil {
-		return "", fmt.Errorf("cannot create tmp directory for cloudinit ISO generation: %s",
-			err)
+		return "", fmt.Errorf("cannot create tmp directory for cloudinit ISO generation: %w", err)
 	}
 	// user-data
-	if err = ioutil.WriteFile(filepath.Join(tmpDir, userDataFileName), []byte(ci.UserData), os.ModePerm); err != nil {
-		return "", fmt.Errorf("error while writing user-data to file: %s", err)
+	if err = os.WriteFile(filepath.Join(tmpDir, userDataFileName), []byte(ci.UserData), os.ModePerm); err != nil {
+		return "", fmt.Errorf("error while writing user-data to file: %w", err)
 	}
 	// meta-data
-	if err = ioutil.WriteFile(filepath.Join(tmpDir, metaDataFileName), []byte(ci.MetaData), os.ModePerm); err != nil {
-		return "", fmt.Errorf("error while writing meta-data to file: %s", err)
+	if err = os.WriteFile(filepath.Join(tmpDir, metaDataFileName), []byte(ci.MetaData), os.ModePerm); err != nil {
+		return "", fmt.Errorf("error while writing meta-data to file: %w", err)
 	}
 	// network-config
-	if err = ioutil.WriteFile(filepath.Join(tmpDir, networkConfigFileName), []byte(ci.NetworkConfig), os.ModePerm); err != nil {
-		return "", fmt.Errorf("error while writing network-config to file: %s", err)
+	if err = os.WriteFile(filepath.Join(tmpDir, networkConfigFileName), []byte(ci.NetworkConfig), os.ModePerm); err != nil {
+		return "", fmt.Errorf("error while writing network-config to file: %w", err)
 	}
 
 	log.Print("ISO contents created")
@@ -195,8 +196,8 @@ func (ci *defCloudInit) createFiles() (string, error) {
 }
 
 // Creates a new defCloudInit object starting from a ISO volume handled by
-// libvirt
-func newCloudInitDefFromRemoteISO(virConn *libvirt.Libvirt, id string) (defCloudInit, error) {
+// libvirt.
+func newCloudInitDefFromRemoteISO(_ context.Context, virConn *libvirt.Libvirt, id string) (defCloudInit, error) {
 	ci := defCloudInit{}
 
 	key, err := getCloudInitVolumeKeyFromTerraformID(id)
@@ -206,13 +207,13 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Libvirt, id string) (defCloud
 
 	volume, err := virConn.StorageVolLookupByKey(key)
 	if err != nil {
-		return ci, fmt.Errorf("can't retrieve volume %s: %v", key, err)
+		return ci, fmt.Errorf("can't retrieve volume %s: %w", key, err)
 	}
 
-	err = ci.setCloudInitDiskNameFromExistingVol(virConn, volume)
-	if err != nil {
-		return ci, err
+	if volume.Name == "" {
+		return ci, fmt.Errorf("error retrieving cloudinit volume name for volume key: %s", volume.Key)
 	}
+	ci.Name = volume.Name
 
 	err = ci.setCloudInitPoolNameFromExistingVol(virConn, volume)
 	if err != nil {
@@ -228,29 +229,29 @@ func newCloudInitDefFromRemoteISO(virConn *libvirt.Libvirt, id string) (defCloud
 		return ci, err
 	}
 
-	err = ci.setCloudInitDataFromExistingCloudInitDisk(virConn, isoFile)
+	err = ci.setCloudInitDataFromExistingCloudInitDisk(isoFile)
 	if err != nil {
 		return ci, err
 	}
 	return ci, nil
 }
 
-// setCloudInitDataFromExistingCloudInitDisk read and set UserData, MetaData, and NetworkConfig from existing CloudInitDisk
-func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvirt.Libvirt, isoFile *os.File) error {
+// setCloudInitDataFromExistingCloudInitDisk read and set UserData, MetaData, and NetworkConfig from existing CloudInitDisk.
+func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(isoFile *os.File) error {
 	isoReader, err := iso9660.NewReader(isoFile)
 	if err != nil {
-		return fmt.Errorf("error initializing ISO reader: %s", err)
+		return fmt.Errorf("error initializing ISO reader: %w", err)
 	}
 
 	for {
 		file, err := isoReader.Next()
-		if err == io.EOF {
-			break
-		}
-
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
 			return err
 		}
+
 		dataBytes, err := readIso9660File(file)
 		if err != nil {
 			return err
@@ -272,11 +273,11 @@ func (ci *defCloudInit) setCloudInitDataFromExistingCloudInitDisk(virConn *libvi
 }
 
 // FIXME Consider doing this inline.
-// setCloudInitPoolNameFromExistingVol retrieve poolname from an existing CloudInitDisk
+// setCloudInitPoolNameFromExistingVol retrieve poolname from an existing CloudInitDisk.
 func (ci *defCloudInit) setCloudInitPoolNameFromExistingVol(virConn *libvirt.Libvirt, volume libvirt.StorageVol) error {
 	volPool, err := virConn.StoragePoolLookupByVolume(volume)
 	if err != nil {
-		return fmt.Errorf("error retrieving pool for cloudinit volume: %s", err)
+		return fmt.Errorf("error retrieving pool for cloudinit volume: %w", err)
 	}
 
 	if volPool.Name == "" {
@@ -286,22 +287,12 @@ func (ci *defCloudInit) setCloudInitPoolNameFromExistingVol(virConn *libvirt.Lib
 	return nil
 }
 
-// FIXME Consider doing this inline.
-// setCloudInitDisklNameFromVol retrieve CloudInitname from an existing CloudInitDisk
-func (ci *defCloudInit) setCloudInitDiskNameFromExistingVol(virConn *libvirt.Libvirt, volume libvirt.StorageVol) error {
-	if volume.Name == "" {
-		return fmt.Errorf("error retrieving cloudinit volume name for volume key: %s", volume.Key)
-	}
-	ci.Name = volume.Name
-	return nil
-}
-
 func readIso9660File(file os.FileInfo) ([]byte, error) {
 	log.Printf("ISO reader: processing file %s", file.Name())
 
-	dataBytes, err := ioutil.ReadAll(file.Sys().(io.Reader))
+	dataBytes, err := io.ReadAll(file.Sys().(io.Reader))
 	if err != nil {
-		return nil, fmt.Errorf("error while reading %s: %s", file.Name(), err)
+		return nil, fmt.Errorf("error while reading %s: %w", file.Name(), err)
 	}
 	return dataBytes, nil
 }
@@ -313,26 +304,26 @@ func downloadISO(virConn *libvirt.Libvirt, volume libvirt.StorageVol) (*os.File,
 	// get Volume info (required to get size later)
 	_, size, _, err := virConn.StorageVolGetInfo(volume)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving info for volume: %s", err)
+		return nil, fmt.Errorf("error retrieving info for volume: %w", err)
 	}
 
 	// create tmp file for the ISO
-	tmpFile, err := ioutil.TempFile("", "cloudinit")
+	tmpFile, err := os.CreateTemp("", "cloudinit")
 	if err != nil {
-		return nil, fmt.Errorf("cannot create tmp file: %s", err)
+		return nil, fmt.Errorf("cannot create tmp file: %w", err)
 	}
 
 	w := bufio.NewWriterSize(tmpFile, int(size))
 
 	// download ISO file
 	if err := virConn.StorageVolDownload(volume, w, 0, size, 0); err != nil {
-		return tmpFile, fmt.Errorf("error while downloading volume: %s", err)
+		return tmpFile, fmt.Errorf("error while downloading volume: %w", err)
 	}
 
 	bytesCopied := w.Buffered()
 	err = w.Flush()
 	if err != nil {
-		return tmpFile, fmt.Errorf("error while copying remote volume to local disk: %s", err)
+		return tmpFile, fmt.Errorf("error while copying remote volume to local disk: %w", err)
 	}
 
 	log.Printf("%d bytes downloaded", bytesCopied)
@@ -340,7 +331,9 @@ func downloadISO(virConn *libvirt.Libvirt, volume libvirt.StorageVol) (*os.File,
 		return tmpFile, fmt.Errorf("error while copying remote volume to local disk, bytesCopied %d !=  %d volume.size", bytesCopied, size)
 	}
 
-	tmpFile.Seek(0, 0)
+	if _, err := tmpFile.Seek(0, 0); err != nil {
+		return nil, err
+	}
 
 	return tmpFile, nil
 }

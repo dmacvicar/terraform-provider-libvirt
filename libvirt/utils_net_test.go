@@ -2,7 +2,6 @@ package libvirt
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -46,9 +45,9 @@ func (fws *fileWebServer) Start() {
 	fws.server.Start()
 }
 
-// Adds a file (with some content) in the directory served by the fileWebServer
+// Adds a file (with some content) in the directory served by the fileWebServer.
 func (fws *fileWebServer) AddContent(content []byte) (string, *os.File, error) {
-	tmpfile, err := ioutil.TempFile(fws.Dir, "file-")
+	tmpfile, err := os.CreateTemp(fws.Dir, "file-")
 	if err != nil {
 		return "", nil, err
 	}
@@ -62,7 +61,7 @@ func (fws *fileWebServer) AddContent(content []byte) (string, *os.File, error) {
 	return fmt.Sprintf("%s/%s", fws.server.URL, filepath.ToSlash(filepath.Base(tmpfile.Name()))), tmpfile, nil
 }
 
-// Symlinks a file into the directory server by the webserver
+// Symlinks a file into the directory server by the webserver.
 func (fws *fileWebServer) AddFile(filePath string) (string, error) {
 	err := os.Symlink(filePath, filepath.Join(fws.Dir, filepath.Base(filePath)))
 	if err != nil {

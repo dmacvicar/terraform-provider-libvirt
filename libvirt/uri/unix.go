@@ -2,7 +2,6 @@ package uri
 
 import (
 	"net"
-	"time"
 )
 
 const (
@@ -17,5 +16,5 @@ func (u *ConnectionURI) dialUNIX() (net.Conn, error) {
 		address = defaultUnixSock
 	}
 
-	return net.DialTimeout("unix", address, 2*time.Second)
+	return net.DialTimeout("unix", address, dialTimeout)
 }

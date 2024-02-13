@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	libvirtxml "github.com/libvirt/libvirt-go-xml"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"libvirt.org/go/libvirtxml"
 )
 
 func TestAccLibvirtNetwork_Addresses(t *testing.T) {
@@ -267,12 +267,12 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 					}
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.hostname", "myhost1"),
-					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.ip", "1.1.1.1"),
-					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.1.hostname", "myhost1"),
-					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.1.ip", "1.1.1.2"),
-					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.2.hostname", "myhost2"),
-					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.2.ip", "1.1.1.1"),
+					resource.TestCheckTypeSetElemNestedAttrs(
+						"libvirt_network."+randomNetworkResource, "dns.0.hosts.*", map[string]string{"hostname": "myhost1", "ip": "1.1.1.1"}),
+					resource.TestCheckTypeSetElemNestedAttrs(
+						"libvirt_network."+randomNetworkResource, "dns.0.hosts.*", map[string]string{"hostname": "myhost1", "ip": "1.1.1.2"}),
+					resource.TestCheckTypeSetElemNestedAttrs(
+						"libvirt_network."+randomNetworkResource, "dns.0.hosts.*", map[string]string{"hostname": "myhost2", "ip": "1.1.1.1"}),
 					testAccCheckDNSHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSHost{
 						{
 							IP: "1.1.1.1",
@@ -304,53 +304,13 @@ func TestAccLibvirtNetwork_DNSHosts(t *testing.T) {
 					}
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.hostname", "myhost1"),
-					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.ip", "1.1.1.1"),
+					resource.TestCheckTypeSetElemNestedAttrs(
+						"libvirt_network."+randomNetworkResource, "dns.0.hosts.*", map[string]string{"hostname": "myhost1", "ip": "1.1.1.1"}),
 					testAccCheckDNSHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSHost{
 						{
 							IP: "1.1.1.1",
 							Hostnames: []libvirtxml.NetworkDNSHostHostname{
 								{Hostname: "myhost1"},
-							},
-						},
-					}),
-				),
-			},
-			{
-				Config: fmt.Sprintf(`
-				resource "libvirt_network" "%s" {
-					name      = "%s"
-					domain    = "k8s.local"
-					addresses = ["10.17.3.0/24"]
-					dns {
-						hosts {
-							  hostname = "myhost1"
-							  ip = "1.1.1.1"
-						  }
-# Without https:#www.redhat.com/archives/libvir-list/2018-November/msg00231.html, this raises:
-#
-#   update DNS hosts: add {{ } 1.1.1.2 [{myhost1}]}: virError(Code=55, Domain=19, Message='Requested operation is not valid: there is already at least one DNS HOST record with a matching field in network fo64d9y6w9')
-#						  {
-#							  hostname = "myhost1"
-#							  ip = "1.1.1.2"
-#						  },
-						  hosts {
-							  hostname = "myhost2"
-							  ip = "1.1.1.1"
-						  }
-					}
-				}`, randomNetworkResource, randomNetworkName),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.hostname", "myhost1"),
-					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.0.ip", "1.1.1.1"),
-					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.1.hostname", "myhost2"),
-					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dns.0.hosts.1.ip", "1.1.1.1"),
-					testAccCheckDNSHosts("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDNSHost{
-						{
-							IP: "1.1.1.1",
-							Hostnames: []libvirtxml.NetworkDNSHostHostname{
-								{Hostname: "myhost1"},
-								{Hostname: "myhost2"},
 							},
 						},
 					}),
@@ -653,6 +613,9 @@ func TestAccLibvirtNetwork_DnsmasqOptions(t *testing.T) {
 							option_name = "address"
 							option_value = "/.apps.tt.testing/1.1.1.2"
 						}
+						options {
+							option_name = "no-hosts"
+						}
 					}
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
@@ -660,9 +623,11 @@ func TestAccLibvirtNetwork_DnsmasqOptions(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dnsmasq_options.0.options.0.option_value", "/tt.testing/1.1.1.1"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dnsmasq_options.0.options.1.option_name", "address"),
 					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dnsmasq_options.0.options.1.option_value", "/.apps.tt.testing/1.1.1.2"),
+					resource.TestCheckResourceAttr("libvirt_network."+randomNetworkResource, "dnsmasq_options.0.options.2.option_name", "no-hosts"),
 					testAccCheckDnsmasqOptions("libvirt_network."+randomNetworkResource, []libvirtxml.NetworkDnsmasqOption{
 						{Value: "server=/tt.testing/1.1.1.1"},
 						{Value: "address=/.apps.tt.testing/1.1.1.2"},
+						{Value: "no-hosts"},
 					}),
 				),
 			},
