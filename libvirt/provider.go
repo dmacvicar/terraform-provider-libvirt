@@ -28,6 +28,7 @@ func Provider() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
+			"libvirt_nodeinfo":                         datasourceLibvirtNodeInfo(),
 			"libvirt_network_dns_host_template":        datasourceLibvirtNetworkDNSHostTemplate(),
 			"libvirt_network_dns_srv_template":         datasourceLibvirtNetworkDNSSRVTemplate(),
 			"libvirt_network_dnsmasq_options_template": datasourceLibvirtNetworkDnsmasqOptionsTemplate(),
