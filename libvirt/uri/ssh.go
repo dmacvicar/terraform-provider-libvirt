@@ -188,15 +188,18 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg s
 	proxy, err = sshcfg.Get(target, "ProxyJump")
 	var bastion *ssh.Client
 	if err == nil && proxy != "" {
-		log.Printf("[DEBUG] SSH ProxyJump '%v'", proxy)
+		log.Printf("[DEBUG] found ProxyJump '%v'", proxy)
 
-		// if this is a proxy jump, we recurse into that proxy
-		bastion, err = u.dialHost(proxy, sshcfg, cfg, depth + 1)
+		// this is a proxy jump: we recurse into that proxy
+		bastion, err = u.dialHost(proxy, sshcfg, depth + 1)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to bastion host '%v': %w", proxy, err)
+		}
 	}
 
 	if cfg.User == "" {
 		sshu, err := sshcfg.Get(target, "User")
-		log.Printf("[DEBUG] SSH User for target '%v': %v", target, sshu)
+		log.Printf("[DEBUG] SSH User for target '%v' is '%v'", target, sshu)
 		if err != nil {
 			log.Printf("[DEBUG] ssh user: using current login")
 			u, err := user.Current()
