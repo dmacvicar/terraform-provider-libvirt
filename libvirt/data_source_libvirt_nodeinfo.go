@@ -253,6 +253,3 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 
 	return nil
 }
-
-
-
