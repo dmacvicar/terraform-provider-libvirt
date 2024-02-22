@@ -20,6 +20,7 @@ const (
 	defaultSSHKnownHostsPath = "${HOME}/.ssh/known_hosts"
 	defaultSSHConfigFile     = "${HOME}/.ssh/config"
 	defaultSSHAuthMethods    = "agent,privkey"
+	defaultHostKeyAlgorithm  = ssh.KeyAlgoRSA
 )
 
 func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Config) []ssh.AuthMethod {
