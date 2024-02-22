@@ -104,6 +104,8 @@ The binary will be called `terraform-provider-libvirt`.
 
 You can target different libvirt hosts instantiating the [provider multiple times](https://www.terraform.io/docs/configuration/providers.html#multiple-provider-instances). [Example](examples/v0.12/multiple).
 
+Alternatively, you can specify the `host` argument on any of the data or resources. This can be useful if a module implements internal resource management that is distributed within a hosting environment (e.g. multiple servers in close proximity to each other)
+
 ### Using qemu-agent
 
 From its documentation, [qemu-agent](https://wiki.libvirt.org/page/Qemu_guest_agent):
