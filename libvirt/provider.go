@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"log"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -48,8 +49,10 @@ func CleanupLibvirtConnections() {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	// don't do much of anything since we connect on demand and to potentially multiple targets
+	uri := d.Get("uri").(string)
+	log.Printf("[DEBUG] configuring provider - default URI is '%v'", uri)
 	client := &Client{
-		defaultURI: d.Get("uri").(string),
+		defaultURI: uri,
 		connections: make(map[string]*Connection),
 	}
 
