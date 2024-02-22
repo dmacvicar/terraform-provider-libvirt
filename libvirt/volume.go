@@ -63,11 +63,7 @@ func volumeWaitDeleted(ctx context.Context, virConn *libvirt.Libvirt, key string
 }
 
 // volumeDelete removes the volume identified by `key` from libvirt.
-func volumeDelete(ctx context.Context, client *Client, key string) error {
-	virConn := client.libvirt
-	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
-	}
+func volumeDelete(ctx context.Context, virConn *libvirt.Libvirt, key string) error {
 	volume, err := virConn.StorageVolLookupByKey(key)
 	if err != nil {
 		if isError(err, libvirt.ErrNoStorageVol) {
@@ -88,8 +84,6 @@ func volumeDelete(ctx context.Context, client *Client, key string) error {
 		return fmt.Errorf("error retrieving name of pool for volume key: %s", volume.Key)
 	}
 
-	client.poolMutexKV.Lock(volPool.Name)
-	defer client.poolMutexKV.Unlock(volPool.Name)
 
 	if err := waitForSuccess("error refreshing pool for volume", func() error {
 		return virConn.StoragePoolRefresh(volPool, 0)
@@ -117,5 +111,5 @@ func volumeDelete(ctx context.Context, client *Client, key string) error {
 		return nil
 	}
 
-	return volumeWaitDeleted(ctx, client.libvirt, key)
+	return volumeWaitDeleted(ctx, virConn, key)
 }
