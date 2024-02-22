@@ -153,17 +153,34 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 	}
 
 	hostKeyCallback := ssh.InsecureIgnoreHostKey()
+	hostKeyAlgorithms := []string{defaultHostKeyAlgorithm}
 	if !skip_verify {
 		cb, err := knownhosts.New(os.ExpandEnv(knownHostsPath))
 		if err != nil {
 			return nil, fmt.Errorf("failed to read ssh known hosts: %w", err)
 		}
-		hostKeyCallback = cb
+		log.Printf("[DEBUG] Using known hosts file '%s' for target '%s'", os.ExpandEnv(knownHostsPath), target)
+
+		hostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			err := cb(net.JoinHostPort(hostName, port), remote, key)
+			if err != nil {
+				log.Printf("Host key verification failed for host '%s' (%s) %v: %v", hostName, remote, key, err)
+			}
+			return err
+		}
+
+		keyAlgs, err := sshcfg.Get(target, "HostKeyAlgorithms")
+		if err == nil && keyAlgs != "" {
+			log.Printf("Got host key algorithms '%s'", keyAlgs)
+			hostKeyAlgorithms = strings.Split(keyAlgs, ",")
+		}
+
 	}
 
 	cfg := ssh.ClientConfig{
 		User:            u.User.Username(),
 		HostKeyCallback: hostKeyCallback,
+		HostKeyAlgorithms: hostKeyAlgorithms,
 		Timeout:         dialTimeout,
 	}
 
