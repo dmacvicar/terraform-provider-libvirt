@@ -73,11 +73,14 @@ func (c *Client) Connection(target *string) (*libvirt.Libvirt , error) {
 func (c *Client) GetLock(target *string) (*mutexkv.MutexKV) {
 
 	URI := c.defaultURI
-	if target != nil {
+	if target != nil && *target != "" {
 		URI = *target
 	}
 
 	if URI == "" {
+		// if we get here, somehow the calling code was able top get a live connection but the
+		// connection string doesn't exist. This breaks a code invariant and is indicative of a bug.
+		log.Printf("[WARN] unable to find mutex for '%v' - this is not expected behaviour", target)
 		return nil
 	}
 
@@ -92,11 +95,14 @@ func (c *Client) GetLock(target *string) (*mutexkv.MutexKV) {
 func (c *Client) GetMutex(target *string) (*sync.Mutex) {
 
 	URI := c.defaultURI
-	if target != nil {
+	if target != nil && *target != "" {
 		URI = *target
 	}
 
 	if URI == "" {
+		// if we get here, somehow the calling code was able top get a live connection but the
+		// connection string doesn't exist. This breaks a code invariant and is indicative of a bug.
+		log.Printf("[WARN] unable to find mutex for '%v' - this is not expected behaviour", target)
 		return nil
 	}
 
