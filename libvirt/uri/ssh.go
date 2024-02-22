@@ -128,20 +128,32 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 		}
 	}
 
+	// we must check for knownhosts and verification for each host we connect to.
+	// the query string values have higher precedence to local configs
 	knownHostsPath := q.Get("knownhosts")
 	knownHostsVerify := q.Get("known_hosts_verify")
-	doVerify := q.Get("no_verify") == ""
+	skip_verify := q.Has("no_verify")
 
 	if knownHostsVerify == "ignore" {
-		doVerify = false
+		skip_verify = true
+	} else {
+		strictCheck, err := sshcfg.Get(target, "StrictHostKeyChecking")
+		if err != nil && strictCheck == "yes" {
+			skip_verify = false
+		}
 	}
 
 	if knownHostsPath == "" {
-		knownHostsPath = defaultSSHKnownHostsPath
+		knownHosts, err := sshcfg.Get(target, "UserKnownHostsFile")
+		if err == nil && knownHosts != "" {
+			knownHostsPath = knownHosts
+		} else {
+			knownHostsPath = defaultSSHKnownHostsPath
+		}
 	}
 
 	hostKeyCallback := ssh.InsecureIgnoreHostKey()
-	if doVerify {
+	if !skip_verify {
 		cb, err := knownhosts.New(os.ExpandEnv(knownHostsPath))
 		if err != nil {
 			return nil, fmt.Errorf("failed to read ssh known hosts: %w", err)
