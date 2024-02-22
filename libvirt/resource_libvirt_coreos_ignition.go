@@ -96,9 +96,9 @@ func resourceIgnitionDelete(ctx context.Context, d *schema.ResourceData, meta in
 
 	poolName := d.Get("pool").(string)
 
-	client.poolMutexKV.Lock(poolName)
-	res := volumeDelete(ctx, virConn, key)
-	client.poolMutexKV.Unlock(poolName)
+	poolMutex := client.GetLock(&uri)
+	poolMutex.Lock(poolName)
+	defer poolMutex.Unlock(poolName)
 
-	return diag.FromErr(res)
+	return diag.FromErr(volumeDelete(ctx, virConn, key))
 }

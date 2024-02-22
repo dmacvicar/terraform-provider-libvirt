@@ -74,12 +74,13 @@ func resourceCloudInitDiskCreate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	client.poolMutexKV.Lock(cloudInit.PoolName)
+	poolMutex := client.GetLock(&uri)
+	poolMutex.Lock(cloudInit.PoolName)
 	key, err := cloudInit.UploadIso(virConn, iso)
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	client.poolMutexKV.Unlock(cloudInit.PoolName)
+	poolMutex.Unlock(cloudInit.PoolName)
 	d.SetId(key)
 
 	return resourceCloudInitDiskRead(ctx, d, meta)
@@ -123,9 +124,9 @@ func resourceCloudInitDiskDelete(ctx context.Context, d *schema.ResourceData, me
 
 	poolName := d.Get("pool").(string)
 
-	client.poolMutexKV.Lock(poolName)
-	res := volumeDelete(ctx, virConn, key)
-	client.poolMutexKV.Unlock(poolName)
+	poolMutex := client.GetLock(&uri)
+	poolMutex.Lock(poolName)
+	defer poolMutex.Unlock(poolName)
 
-	return diag.FromErr(res)
+	return diag.FromErr(volumeDelete(ctx, virConn, key))
 }
