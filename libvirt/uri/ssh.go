@@ -112,6 +112,22 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 
 	q := u.Query()
 
+	port := u.Port()
+	if port == "" {
+		port = defaultSSHPort
+	} else {
+		log.Printf("[DEBUG] ssh Port is overriden to: '%s'", port);
+	}
+
+	hostName, err := sshcfg.Get(target, "HostName")
+	if err == nil {
+		if hostName == "" {
+			hostName = target;
+		} else {
+			log.Printf("[DEBUG] HostName is overriden to: '%s'", hostName);
+		}
+	}
+
 	knownHostsPath := q.Get("knownhosts")
 	knownHostsVerify := q.Get("known_hosts_verify")
 	doVerify := q.Get("no_verify") == ""
@@ -190,22 +206,6 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg s
 			sshu = u.Username
 		}
 		cfg.User = sshu
-	}
-
-	port := u.Port()
-	if port == "" {
-		port = defaultSSHPort
-	} else {
-		log.Printf("[DEBUG] SSH Port is overriden to: '%s'", port);
-	}
-
-	hostName, err := sshcfg.Get(target, "HostName")
-	if err == nil {
-		if hostName == "" {
-			hostName = target;
-		} else {
-			log.Printf("[DEBUG] HostName is overriden to: '%s'", hostName);
-		}
 	}
 
 	cfg.Auth = u.parseAuthMethods(target, sshcfg)
