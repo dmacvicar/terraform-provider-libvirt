@@ -20,7 +20,6 @@ const (
 	defaultSSHKnownHostsPath = "${HOME}/.ssh/known_hosts"
 	defaultSSHConfigFile     = "${HOME}/.ssh/config"
 	defaultSSHAuthMethods    = "agent,privkey"
-	defaultHostKeyAlgorithm  = ssh.KeyAlgoRSASHA256 // this is an educated guess based on a modern debian openssh build
 )
 
 func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Config) []ssh.AuthMethod {
@@ -198,18 +197,30 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 	}
 
 	hostKeyCallback := ssh.InsecureIgnoreHostKey()
-	hostKeyAlgorithms := []string{defaultHostKeyAlgorithm}
+	hostKeyAlgorithms := []string{ // https://github.com/golang/go/issues/29286
+		// this can be solved using https://github.com/skeema/knownhosts/tree/main
+		// there is an open issue requiring attention
+		ssh.KeyAlgoED25519,
+		ssh.KeyAlgoRSA,
+		ssh.KeyAlgoRSASHA256,
+		ssh.KeyAlgoRSASHA512,
+		ssh.KeyAlgoSKECDSA256,
+		ssh.KeyAlgoSKED25519,
+		ssh.KeyAlgoECDSA256,
+		ssh.KeyAlgoECDSA384,
+		ssh.KeyAlgoECDSA521,
+	}
 	if !skip_verify {
-		cb, err := knownhosts.New(os.ExpandEnv(knownHostsPath))
+		kh, err := knownhosts.New(os.ExpandEnv(knownHostsPath))
 		if err != nil {
 			return nil, fmt.Errorf("failed to read ssh known hosts: %w", err)
 		}
 		log.Printf("[DEBUG] Using known hosts file '%s' for target '%s'", os.ExpandEnv(knownHostsPath), target)
 
 		hostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			err := cb(net.JoinHostPort(hostName, port), remote, key)
+			err := kh(net.JoinHostPort(hostName, port), remote, key)
 			if err != nil {
-				log.Printf("Host key verification failed for host '%s' (%s) %v: %v", hostName, remote, key, err)
+				log.Printf("Host key verification failed for host '%s' (%s) %v: %v %v", hostName, remote, key, err)
 			}
 			return err
 		}
