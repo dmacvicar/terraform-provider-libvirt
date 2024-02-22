@@ -37,17 +37,25 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 	//  1. load uri encoded keyfile
 	//  2. load override as specified in ssh config
 	//  3. load default ssh keyfile path
+	sshKeyPaths := []string {}
 	sshKeyPath := q.Get("keyfile")
-	if sshKeyPath == "" {
-
-		keyPaths, err := sshcfg.GetAll(target, "IdentityFile")
-		if err == nil && len(keyPaths) != 0 {
-			sshKeyPath = keyPaths[len(keyPaths) - 1]
-		} else {
-			sshKeyPath = defaultSSHKeyPath
-		}
+	if sshKeyPath != "" {
+		sshKeyPaths = append(sshKeyPaths, sshKeyPath)
 	}
-	log.Printf("[DEBUG] ssh identity file for host '%s': %s", target, sshKeyPath);
+
+	keyPaths, err := sshcfg.GetAll(target, "IdentityFile")
+	if err != nil {
+		log.Printf("[WARN] unable to get IdentityFile values - ignoring")
+	} else {
+		sshKeyPaths = append(sshKeyPaths, keyPaths[:]...)
+	}
+
+	if len(keyPaths) == 0 {
+		log.Printf("[DEBUG] found no ssh keys, using default keypath")
+		sshKeyPaths = []string{defaultSSHKeyPath}
+	}
+
+	log.Printf("[DEBUG] ssh identity files for host '%s': %s", target, sshKeyPaths);
 
 	auths := strings.Split(authMethods, ",")
 	result := make([]ssh.AuthMethod, 0)
@@ -67,24 +75,27 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 			agentClient := agent.NewClient(conn)
 			result = append(result, ssh.PublicKeysCallback(agentClient.Signers))
 		case "privkey":
-			path := os.ExpandEnv(sshKeyPath)
-			if strings.HasPrefix(path, "~/") {
-				home, err := os.UserHomeDir()
-				if err == nil {
-					path = strings.Replace(path, "~", home, 1)
+			for _,keypath := range sshKeyPaths {
+				log.Printf("[DEBUG] Reading ssh key '%s'", keypath)
+				path := os.ExpandEnv(keypath)
+				if strings.HasPrefix(path, "~/") {
+					home, err := os.UserHomeDir()
+					if err == nil {
+						path = strings.Replace(path, "~", home, 1)
+					}
 				}
-			}
-			sshKey, err := os.ReadFile(path)
-			if err != nil {
-				log.Printf("[ERROR] Failed to read ssh key: %v", err)
-				continue
-			}
+				sshKey, err := os.ReadFile(path)
+				if err != nil {
+					log.Printf("[ERROR] Failed to read ssh key '%s': %v", keypath, err)
+					continue
+				}
 
-			signer, err := ssh.ParsePrivateKey(sshKey)
-			if err != nil {
-				log.Printf("[ERROR] Failed to parse ssh key: %v", err)
+				signer, err := ssh.ParsePrivateKey(sshKey)
+				if err != nil {
+					log.Printf("[ERROR] Failed to parse ssh key: %v", err)
+				}
+				result = append(result, ssh.PublicKeys(signer))
 			}
-			result = append(result, ssh.PublicKeys(signer))
 		case "ssh-password":
 			if sshPassword, ok := u.User.Password(); ok {
 				result = append(result, ssh.Password(sshPassword))
