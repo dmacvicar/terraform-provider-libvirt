@@ -26,7 +26,7 @@ type Client struct {
 func (c *Client) Connection(target *string) (*libvirt.Libvirt , error) {
 
 	URI := c.defaultURI
-	if target != nil {
+	if target != nil && *target != "" {
 		URI = *target
 	}
 
