@@ -2,6 +2,7 @@ package libvirt
 
 import (
 	libvirt "github.com/digitalocean/go-libvirt"
+	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/mutexkv"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 

@@ -2,6 +2,7 @@ package libvirt
 
 import (
 	"log"
+	"fmt"
 	"encoding/xml"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -27,6 +28,11 @@ func datasourceLibvirtNodeInfo() *schema.Resource {
 	return &schema.Resource{
 		Read: resourceLibvirtNodeInfoRead,
 		Schema: map[string]*schema.Schema{
+			"host" : {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"live_migration_support" : {
 				Type:     schema.TypeBool,
 				Computed: true,
@@ -176,18 +182,21 @@ func convertUnit( unit string ) (int){
 }
 
 func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error {
-	virtConn := meta.(*Client).libvirt
-	caps, err := virtConn.ConnectGetCapabilities()
-	if err != nil {
-		log.Fatalf("Failed to get node capabilities: %v", err)
-		return nil
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
+	if virConn == nil {
+		return fmt.Errorf("unable to connect for nodeinfo read: %v", err)
 	}
 
-	log.Printf("full caps: %v", caps)
+	caps, err := virConn.ConnectGetCapabilities()
+	if err != nil {
+		return err
+	}
+
 	var capabilities Capabilities
 	err = xml.Unmarshal([]byte(caps), &capabilities)
 	if err != nil {
-		log.Fatalf("Error unmarshalling XML: %v", err)
+		return fmt.Errorf("Error unmarshalling XML: %v", err)
 	}
 
 	d.SetId(capabilities.Host.UUID)
@@ -202,8 +211,7 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 
 	d.Set("live_migration_support", capabilities.Host.Migration.Live != nil)
 	if err := d.Set("live_migration_transports", capabilities.Host.Migration.Transports); err != nil {
-		log.Fatalf("error setting features: %s", err)
-		return nil
+		return fmt.Errorf("error setting features: %s", err)
 	}
 
 	features := []string{}
@@ -214,8 +222,7 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if err := d.Set("features", features); err != nil {
-		log.Fatalf("error setting features: %s", err)
-		return nil
+		return fmt.Errorf("error setting features: %s", err)
 	}
 
 	// topology := make([]map[string]interface{}, 0)
@@ -245,7 +252,6 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Host topology not yet implemented")
 
 	return nil
-
 }
 
 
