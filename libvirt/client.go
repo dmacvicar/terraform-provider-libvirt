@@ -10,16 +10,19 @@ import (
 	uri "github.com/dmacvicar/terraform-provider-libvirt/libvirt/uri"
 )
 
-// Client libvirt.
-type Client struct {
-	defaultURI  string
-	connections map[string]*libvirt.Libvirt //libvirt     *libvirt.Libvirt
+type Connection struct {
+	connection *libvirt.Libvirt
 	poolMutexKV *mutexkv.MutexKV
-
 	// define only one network at a time
 	// https://gitlab.com/libvirt/libvirt/-/issues/78
 	// note: this issue has been resolved in 2021 https://gitlab.com/libvirt/libvirt/-/commit/ea0cfa11
 	networkMutex sync.Mutex
+}
+
+// Client libvirt.
+type Client struct {
+	defaultURI  string
+	connections map[string]*Connection
 }
 
 // obtain a connection for this provider, if target is empty, use the default provider connection
@@ -38,7 +41,7 @@ func (c *Client) Connection(target *string) (*libvirt.Libvirt , error) {
 
 	if conn, ok := c.connections[URI] ; ok {
 		log.Printf("[DEBUG] Found existing connection for target host: '%s'", URI)
-		return conn, nil
+		return conn.connection, nil
 	}
 
 	u, err := uri.Parse(URI)
@@ -58,17 +61,59 @@ func (c *Client) Connection(target *string) (*libvirt.Libvirt , error) {
 	}
 	log.Printf("[INFO] libvirt client libvirt version: %v\n", v)
 
-	c.connections[URI] = l
-	return l, nil
+	conn := &Connection {
+		connection: l,
+			poolMutexKV: mutexkv.NewMutexKV(),
+		}
+	c.connections[URI] = conn
+	return conn.connection, nil
+}
+
+// obtain a Lock for this client, don't create if not found since the network connection must exist anyways to get this far
+func (c *Client) GetLock(target *string) (*mutexkv.MutexKV) {
+
+	URI := c.defaultURI
+	if target != nil {
+		URI = *target
+	}
+
+	if URI == "" {
+		return nil
+	}
+
+	if conn, ok := c.connections[URI] ; ok {
+		return conn.poolMutexKV
+	}
+
+	return nil
+}
+
+// obtain a Lock for this client, don't create if not found since the network connection must exist anyways to get this far
+func (c *Client) GetMutex(target *string) (*sync.Mutex) {
+
+	URI := c.defaultURI
+	if target != nil {
+		URI = *target
+	}
+
+	if URI == "" {
+		return nil
+	}
+
+	if conn, ok := c.connections[URI] ; ok {
+		return &conn.networkMutex
+	}
+
+	return nil
 }
 
 // Close all connections associated with this provider instance
 func (c *Client) Close() {
 
-	for uri, connection := range c.connections {
+	for uri, c := range c.connections {
 		log.Printf("[DEBUG] cleaning up connection for URI: %s", uri)
 		// TODO: Confirm appropriate IsAlive() validation
-		err := connection.ConnectClose()
+		err := c.connection.ConnectClose()
 		if err != nil {
 			log.Printf("[ERROR] cannot close libvirt connection: %v", err)
 		}
