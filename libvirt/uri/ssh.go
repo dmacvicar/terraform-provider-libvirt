@@ -31,6 +31,8 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 		authMethods = defaultSSHAuthMethods
 	}
 
+	log.Printf("[DEBUG] auth methods for %v: %v", target, authMethods)
+
 	// keyfile order of precedence:
 	//  1. load uri encoded keyfile
 	//  2. load override as specified in ssh config
@@ -99,6 +101,9 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 }
 
 func (u *ConnectionURI) dialSSH() (net.Conn, error) {
+
+	// construct the whole ssh connection, which can consist of multiple hops if using proxy jumps,
+	// the ssh configuration file is loaded once and passed along to each host connection
 
 	sshConfigFile, err := os.Open(os.ExpandEnv(defaultSSHConfigFile))
 	if err != nil {
