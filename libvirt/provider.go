@@ -1,8 +1,6 @@
 package libvirt
 
 import (
-	"log"
-
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -12,7 +10,7 @@ func Provider() *schema.Provider {
 		Schema: map[string]*schema.Schema{
 			"uri": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("LIBVIRT_DEFAULT_URI", nil),
 				Description: "libvirt connection URI for operations. See https://libvirt.org/uri.html",
 			},
@@ -28,6 +26,7 @@ func Provider() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
+			"libvirt_nodeinfo":                         datasourceLibvirtNodeInfo(),
 			"libvirt_network_dns_host_template":        datasourceLibvirtNetworkDNSHostTemplate(),
 			"libvirt_network_dns_srv_template":         datasourceLibvirtNetworkDNSSRVTemplate(),
 			"libvirt_network_dnsmasq_options_template": datasourceLibvirtNetworkDnsmasqOptionsTemplate(),
@@ -37,38 +36,22 @@ func Provider() *schema.Provider {
 	}
 }
 
-// uri -> client for multi instance support
-// (we share the same client for the same uri).
-var globalClientMap = make(map[string]*Client)
+// maintain a list of all providers so that we can clean their resources up on exit
+var globalProviderList = []*Client {}
 
 // CleanupLibvirtConnections closes libvirt clients for all URIs.
 func CleanupLibvirtConnections() {
-	for uri, client := range globalClientMap {
-		log.Printf("[DEBUG] cleaning up connection for URI: %s", uri)
-		// TODO: Confirm appropriate IsAlive() validation
-		err := client.libvirt.ConnectClose()
-		if err != nil {
-			log.Printf("[ERROR] cannot close libvirt connection: %v", err)
-		}
+	for _, provider := range globalProviderList {
+		provider.Close()
 	}
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	config := Config{
-		URI: d.Get("uri").(string),
+	// don't do much of anything since we connect on demand and to potentially multiple targets
+	client := &Client{
+		defaultURI: d.Get("uri").(string),
+		connections: make(map[string]*Connection),
 	}
-	log.Printf("[DEBUG] Configuring provider for '%s': %v", config.URI, d)
-
-	if client, ok := globalClientMap[config.URI]; ok {
-		log.Printf("[DEBUG] Reusing client for uri: '%s'", config.URI)
-		return client, nil
-	}
-
-	client, err := config.Client()
-	if err != nil {
-		return nil, err
-	}
-	globalClientMap[config.URI] = client
 
 	return client, nil
 }

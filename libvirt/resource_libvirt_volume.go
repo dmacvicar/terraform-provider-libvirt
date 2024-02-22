@@ -17,6 +17,11 @@ func resourceLibvirtVolume() *schema.Resource {
 		ReadContext:   resourceLibvirtVolumeRead,
 		DeleteContext: resourceLibvirtVolumeDelete,
 		Schema: map[string]*schema.Schema{
+			"host" : {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -84,9 +89,10 @@ func resourceLibvirtVolume() *schema.Resource {
 
 func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	virConn := meta.(*Client).libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for volume creation: %v", err)
 	}
 
 	poolName := "default"
@@ -94,8 +100,9 @@ func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 		poolName = d.Get("pool").(string)
 	}
 
-	client.poolMutexKV.Lock(poolName)
-	defer client.poolMutexKV.Unlock(poolName)
+	poolMutex := client.GetLock(&uri)
+	poolMutex.Lock(poolName)
+	defer poolMutex.Unlock(poolName)
 
 	pool, err := virConn.StoragePoolLookupByName(poolName)
 	if err != nil {
@@ -269,7 +276,7 @@ be smaller than the backing store specified with
 		}
 	}
 
-	if err := waitForStateVolumeExists(ctx, client.libvirt, volume.Key); err != nil {
+	if err := waitForStateVolumeExists(ctx, virConn, volume.Key); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -278,16 +285,16 @@ be smaller than the backing store specified with
 
 // resourceLibvirtVolumeRead returns the current state for a volume resource.
 func resourceLibvirtVolumeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*Client)
-	virConn := client.libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for volume read: %v", err)
 	}
 
 	poolName := d.Get("pool").(string)
 
 	var volume libvirt.StorageVol
-	err := resource.RetryContext(ctx, d.Timeout(schema.TimeoutRead), func() *resource.RetryError {
+	err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutRead), func() *resource.RetryError {
 		var lookupErr error
 		volume, lookupErr = virConn.StorageVolLookupByKey(d.Id())
 		if lookupErr == nil {
@@ -368,9 +375,17 @@ func resourceLibvirtVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 // resourceLibvirtVolumeDelete removed a volume resource.
 func resourceLibvirtVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	if client.libvirt == nil {
-		return diag.Errorf(LibVirtConIsNil)
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
+	if virConn == nil {
+		return diag.Errorf("unable to connect for volume deletion: %v", err)
 	}
 
-	return diag.FromErr(volumeDelete(ctx, client, d.Id()))
+	poolName := d.Get("pool").(string)
+
+	poolMutex := client.GetLock(&uri)
+	poolMutex.Lock(poolName)
+	defer poolMutex.Unlock(poolName)
+
+	return diag.FromErr(volumeDelete(ctx, virConn, d.Id()))
 }
