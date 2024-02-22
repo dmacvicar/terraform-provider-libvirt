@@ -110,6 +110,35 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 		log.Printf("[WARN] Failed to parse ssh config file: %v", err)
 	}
 
+	// configuration loaded, build tunnel
+	sshClient, err := u.dialHost(u.Host, sshcfg, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// tunnel established, connect to the libvirt unix socket to communicate
+	// e.g. /var/run/libvirt/libvirt-sock
+	address := u.Query().Get("socket")
+	if address == "" {
+		address = defaultUnixSock
+	}
+
+	c, err := sshClient.Dial("unix", address)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to libvirt on the remote host: %w", err)
+	}
+
+	return c, nil
+}
+
+func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth int) (*ssh.Client, error) {
+
+	if depth > 10 {
+		return nil, fmt.Errorf("[ERROR] dialHost failed: max tunnel depth of 10 reached")
+	}
+
+	log.Printf("[INFO] establishing ssh connection to '%s'", target);
+
 	q := u.Query()
 
 	port := u.Port()
@@ -183,31 +212,6 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 		HostKeyAlgorithms: hostKeyAlgorithms,
 		Timeout:         dialTimeout,
 	}
-
-	sshClient, err := u.dialHost(u.Host, sshcfg, cfg, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	address := q.Get("socket")
-	if address == "" {
-		address = defaultUnixSock
-	}
-
-	c, err := sshClient.Dial("unix", address)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to libvirt on the remote host: %w", err)
-	}
-
-	return c, nil
-}
-
-func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, cfg ssh.ClientConfig, depth int) (*ssh.Client, error) {
-	if depth > 10 {
-		return nil, fmt.Errorf("[ERROR] dialHost failed: max tunnel depth of 10 reached")
-	}
-
-	log.Printf("[DEBUG] Connecting to target: %s", target);
 
 	proxy, err := sshcfg.Get(target, "ProxyCommand")
 	if err == nil && proxy != "" {
