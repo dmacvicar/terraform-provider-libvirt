@@ -17,6 +17,11 @@ func resourceLibvirtPool() *schema.Resource {
 		ReadContext:   resourceLibvirtPoolRead,
 		DeleteContext: resourceLibvirtPoolDelete,
 		Schema: map[string]*schema.Schema{
+			"host" : {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -76,9 +81,10 @@ func resourceLibvirtPool() *schema.Resource {
 
 func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	virConn := client.libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for pool creation: %v", err)
 	}
 
 	poolType := d.Get("type").(string)
@@ -155,7 +161,7 @@ func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	log.Printf("[INFO] Pool ID: %s", d.Id())
 
-	if err := waitForStatePoolExists(ctx, client.libvirt, pool.UUID); err != nil {
+	if err := waitForStatePoolExists(ctx, virConn, pool.UUID); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -163,10 +169,10 @@ func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 }
 
 func resourceLibvirtPoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	client := meta.(*Client)
-	virConn := client.libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for pool read: %v", err)
 	}
 
 	uuid := parseUUID(d.Id())
@@ -226,13 +232,10 @@ func resourceLibvirtPoolRead(ctx context.Context, d *schema.ResourceData, meta i
 
 func resourceLibvirtPoolDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	if client.libvirt == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
-
-	virConn := client.libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for network deletion: %v", err)
 	}
 
 	uuid := parseUUID(d.Id())
@@ -271,5 +274,5 @@ func resourceLibvirtPoolDelete(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("error deleting storage pool: %s", err)
 	}
 
-	return diag.FromErr(waitForStatePoolDeleted(ctx, client.libvirt, uuid))
+	return diag.FromErr(waitForStatePoolDeleted(ctx, virConn, uuid))
 }
