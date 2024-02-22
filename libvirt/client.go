@@ -31,7 +31,7 @@ func (c *Client) Connection(target *string) (*libvirt.Libvirt , error) {
 	}
 
 	if URI == "" {
-		return nil, errors.New("either the provider-wide default `uri` or the resource block `uri` must be specified")
+		return nil, errors.New("either the provider-wide default `uri` or the resource block `host` must be specified")
 	}
 
 	log.Printf("[DEBUG] Configuring connection for target host '%s'", URI)
