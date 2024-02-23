@@ -94,8 +94,9 @@ func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	poolName := d.Get("name").(string)
 
-	client.poolMutexKV.Lock(poolName)
-	defer client.poolMutexKV.Unlock(poolName)
+	poolMutex := client.GetLock(&uri)
+	poolMutex.Lock(poolName)
+	defer poolMutex.Unlock(poolName)
 
 	// Check whether the storage pool already exists. Its name needs to be
 	// unique.
@@ -249,8 +250,9 @@ func resourceLibvirtPoolDelete(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("error retrieving storage pool info: %s", err)
 	}
 
-	client.poolMutexKV.Lock(pool.Name)
-	defer client.poolMutexKV.Unlock(pool.Name)
+	poolMutex := client.GetLock(&uri)
+	poolMutex.Lock(pool.Name)
+	defer poolMutex.Unlock(pool.Name)
 
 	state, _, _, _, err := virConn.StoragePoolGetInfo(pool)
 	if err != nil {

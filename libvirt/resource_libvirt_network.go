@@ -450,8 +450,9 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 	network, err := func() (libvirt.Network, error) {
 		// define only one network at a time
 		// see https://gitlab.com/libvirt/libvirt/-/issues/78
-		meta.(*Client).networkMutex.Lock()
-		defer meta.(*Client).networkMutex.Unlock()
+		networkMutex := meta.(*Client).GetMutex(&uri)
+		networkMutex.Lock()
+		defer networkMutex.Unlock()
 
 		log.Printf("[DEBUG] creating libvirt network: %s", data)
 		return virConn.NetworkDefineXML(data)

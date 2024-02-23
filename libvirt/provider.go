@@ -1,8 +1,7 @@
 package libvirt
 
 import (
-	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/mutexkv"
+	"log"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -28,6 +27,7 @@ func Provider() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
+			"libvirt_nodeinfo":                         datasourceLibvirtNodeInfo(),
 			"libvirt_network_dns_host_template":        datasourceLibvirtNetworkDNSHostTemplate(),
 			"libvirt_network_dns_srv_template":         datasourceLibvirtNetworkDNSSRVTemplate(),
 			"libvirt_network_dnsmasq_options_template": datasourceLibvirtNetworkDnsmasqOptionsTemplate(),
@@ -52,10 +52,11 @@ func CleanupLibvirtConnections() {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	// don't do much of anything since we connect on demand and to potentially multiple targets
+	uri := d.Get("uri").(string)
+	log.Printf("[DEBUG] configuring provider - default URI is '%v'", uri)
 	client := &Client{
-		defaultURI: d.Get("uri").(string),
-		poolMutexKV: mutexkv.NewMutexKV(),
-		connections: make(map[string]*libvirt.Libvirt),
+		defaultURI: uri,
+		connections: make(map[string]*Connection),
 	}
 
 	return client, nil

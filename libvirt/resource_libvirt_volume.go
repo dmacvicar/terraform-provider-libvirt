@@ -100,8 +100,9 @@ func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 		poolName = d.Get("pool").(string)
 	}
 
-	client.poolMutexKV.Lock(poolName)
-	defer client.poolMutexKV.Unlock(poolName)
+	poolMutex := client.GetLock(&uri)
+	poolMutex.Lock(poolName)
+	defer poolMutex.Unlock(poolName)
 
 	pool, err := virConn.StoragePoolLookupByName(poolName)
 	if err != nil {
@@ -381,10 +382,9 @@ func resourceLibvirtVolumeDelete(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	poolName := d.Get("pool").(string)
+	poolMutex := client.GetLock(&uri)
+	poolMutex.Lock(poolName)
+	defer poolMutex.Unlock(poolName)
 
-	client.poolMutexKV.Lock(poolName)
-	res := volumeDelete(ctx, virConn, d.Id())
-	client.poolMutexKV.Unlock(poolName)
-
-	return diag.FromErr(res)
+	return diag.FromErr(volumeDelete(ctx, virConn, d.Id()))
 }
