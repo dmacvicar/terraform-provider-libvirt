@@ -472,7 +472,7 @@ func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{})
 	uri := d.Get("host").(string)
 	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return fmt.Errorf("unable to connect for nodeinfo read: %v", err)
+		return fmt.Errorf("unable to connect for node deviceinfo read: %v", err)
 	}
 
 	var deviceName string
