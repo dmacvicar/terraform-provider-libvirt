@@ -11,4 +11,5 @@
    :maxdepth: 2
 
    resources
+   data_sources
 ```
