@@ -23,6 +23,11 @@ func datasourceLibvirtNodeInfo() *schema.Resource {
 	return &schema.Resource{
 		Read: resourceLibvirtNodeInfoRead,
 		Schema: map[string]*schema.Schema{
+			"host" : {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"cpu_model": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -58,9 +63,10 @@ func datasourceLibvirtNodeInfo() *schema.Resource {
 func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read data source libvirt_nodeinfo")
 
-	virConn := meta.(*Client).libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
+		return fmt.Errorf("unable to connect for nodeinfo read: %v", err)
 	}
 
 	model, memory, cpus, _, nodes, sockets, cores, threads, err := virConn.NodeGetInfo()
