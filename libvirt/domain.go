@@ -308,12 +308,6 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 			return fmt.Errorf("missing graphics type for domain")
 		}
 
-		// If graphics is explicitly disabled exit early.
-		if graphicsType == "none" {
-			domainDef.Devices.Graphics = nil
-			return nil
-		}
-
 		autoport := d.Get(prefix + ".autoport").(bool)
 		listener := libvirtxml.DomainGraphicListener{}
 
@@ -353,7 +347,7 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 				domainDef.Devices.Graphics[0].VNC.WebSocket = websocket.(int)
 			}
 		default:
-			return fmt.Errorf("this provider only supports vnc/spice/none as graphics type. Provided: '%s'", graphicsType)
+			return fmt.Errorf("this provider only supports vnc/spice as graphics type. Provided: '%s'", graphicsType)
 		}
 	}
 	return nil
