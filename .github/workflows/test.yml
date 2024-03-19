@@ -56,9 +56,22 @@ jobs:
         uses: actions/checkout@v2
       - name: Setup terraform
         uses: hashicorp/setup-terraform@v1
+      - name: Enable KVM group perms
+        run: |
+             echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+             sudo udevadm control --reload-rules
+             sudo udevadm trigger --name-match=kvm
+        if: runner.os == 'Linux'
       - name: Build
         run: |
           make
+      - name: Setup libvirt (Linux)
+        run: |
+             sudo apt-get -y install qemu-kvm libvirt-daemon-system
+             sudo adduser $USER libvirt
+             sudo systemctl start libvirtd
+             sudo virsh -c qemu:///system list --all
+        if: runner.os == 'Linux'
       - name: Test pre-requisites (Linux)
         run: sudo apt-get -y install xsltproc
         if: runner.os == 'Linux'
@@ -71,6 +84,11 @@ jobs:
       - name: Test
         run: |
           make test
+        if: runner.os == 'Windows' || runner.os == 'MacOS'
+      - name: Test
+        run: |
+          make testacc
+        if: runner.os == 'Linux'
       - uses: actions/upload-artifact@v2
         with:
           name: terraform-provider-libvirt-${{ matrix.os }}
