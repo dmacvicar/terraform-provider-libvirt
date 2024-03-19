@@ -54,6 +54,10 @@ jobs:
         id: go
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
       - name: Enable KVM group perms
         run: |
              echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
