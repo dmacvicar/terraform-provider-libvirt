@@ -83,6 +83,11 @@ jobs:
       - name: Test
         run: |
           make test
+        if: runner.os == 'Windows' || runner.os == 'MacOS'
+      - name: Test
+        run: |
+          make testacc
+        if: runner.os == 'Linux'
       - uses: actions/upload-artifact@v2
         with:
           name: terraform-provider-libvirt-${{ matrix.os }}
