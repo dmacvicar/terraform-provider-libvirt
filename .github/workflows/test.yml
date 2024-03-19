@@ -70,6 +70,7 @@ jobs:
              sudo apt-get -y install qemu-kvm libvirt-daemon-system
              sudo adduser $USER libvirt
              sudo systemctl start libvirtd
+             sudo virsh -c qemu:///system list --all
         if: runner.os == 'Linux'
       - name: Test pre-requisites (Linux)
         run: sudo apt-get -y install xsltproc
