@@ -19,19 +19,19 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ["1.18.x"]
+        go-version: ["1.22.x"]
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
       - name: terraform fmt
         run: |
           make tflint
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v4
         with:
           version: v1.48.0
           go-version: ${{ matrix.go-version }}
@@ -42,9 +42,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - {os: ubuntu-latest, go: 1.18}
-          - {os: windows-latest, go: 1.18}
-          - {os: macos-latest, go: 1.18}
+          - {os: ubuntu-latest, go: 1.22}
+          - {os: windows-latest, go: 1.22}
+          - {os: macos-latest, go: 1.22}
     timeout-minutes: 10
     steps:
       - name: Set up Go
