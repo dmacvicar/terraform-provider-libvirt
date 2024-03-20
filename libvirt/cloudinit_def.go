@@ -54,19 +54,12 @@ func removeTmpIsoDirectory(iso string) {
 
 }
 
-func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
-	virConn := client.libvirt
-	if virConn == nil {
-		return "", fmt.Errorf(LibVirtConIsNil)
-	}
-
+func (ci *defCloudInit) UploadIso(virConn *libvirt.Libvirt, iso string) (string, error) {
 	pool, err := virConn.StoragePoolLookupByName(ci.PoolName)
 	if err != nil {
 		return "", fmt.Errorf("can't find storage pool '%s'", ci.PoolName)
 	}
 
-	client.poolMutexKV.Lock(ci.PoolName)
-	defer client.poolMutexKV.Unlock(ci.PoolName)
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.

@@ -208,6 +208,11 @@ func datasourceLibvirtNodeDeviceInfo() *schema.Resource {
 	return &schema.Resource{
 		Read: resourceLibvirtNodeDeviceInfoRead,
 		Schema: map[string]*schema.Schema{
+			"host" : {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -464,9 +469,10 @@ func datasourceLibvirtNodeDeviceInfo() *schema.Resource {
 func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[DEBUG] Read data source libvirt_nodedevices")
 
-	virConn := meta.(*Client).libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
+		return fmt.Errorf("unable to connect for node deviceinfo read: %v", err)
 	}
 
 	var deviceName string

@@ -15,6 +15,11 @@ func resourceCloudInitDisk() *schema.Resource {
 		ReadContext:   resourceCloudInitDiskRead,
 		DeleteContext: resourceCloudInitDiskDelete,
 		Schema: map[string]*schema.Schema{
+			"host" : {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -48,9 +53,11 @@ func resourceCloudInitDisk() *schema.Resource {
 func resourceCloudInitDiskCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] creating cloudinit")
 
+	uri := d.Get("host").(string)
 	client := meta.(*Client)
-	if virConn := client.libvirt; virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+	virConn, err := meta.(*Client).Connection(&uri)
+	if virConn == nil {
+		return diag.Errorf("unable to connect for cloud-init creation: %v", err)
 	}
 
 	cloudInit := newCloudInitDef()
@@ -66,19 +73,24 @@ func resourceCloudInitDiskCreate(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	key, err := cloudInit.UploadIso(client, iso)
+
+	poolMutex := client.GetLock(&uri)
+	poolMutex.Lock(cloudInit.PoolName)
+	key, err := cloudInit.UploadIso(virConn, iso)
 	if err != nil {
 		return diag.FromErr(err)
 	}
+	poolMutex.Unlock(cloudInit.PoolName)
 	d.SetId(key)
 
 	return resourceCloudInitDiskRead(ctx, d, meta)
 }
 
 func resourceCloudInitDiskRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	virConn := meta.(*Client).libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for cloud-init read: %v", err)
 	}
 
 	ci, err := newCloudInitDefFromRemoteISO(ctx, virConn, d.Id())
@@ -99,8 +111,10 @@ func resourceCloudInitDiskRead(ctx context.Context, d *schema.ResourceData, meta
 
 func resourceCloudInitDiskDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	if client.libvirt == nil {
-		return diag.Errorf(LibVirtConIsNil)
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
+	if virConn == nil {
+		return diag.Errorf("unable to connect for cloud-init deletion: %v", err)
 	}
 
 	key, err := getCloudInitVolumeKeyFromTerraformID(d.Id())
@@ -108,5 +122,11 @@ func resourceCloudInitDiskDelete(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	return diag.FromErr(volumeDelete(ctx, client, key))
+	poolName := d.Get("pool").(string)
+
+	poolMutex := client.GetLock(&uri)
+	poolMutex.Lock(poolName)
+	defer poolMutex.Unlock(poolName)
+
+	return diag.FromErr(volumeDelete(ctx, virConn, key))
 }
