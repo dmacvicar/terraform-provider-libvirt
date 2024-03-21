@@ -21,7 +21,6 @@ data "ignition_config" "startup" {
 
 # Replace the default hostname with our generated one
 data "ignition_file" "hostname" {
-  filesystem = "root" # default `ROOT` filesystem
   path       = "/etc/hostname"
   mode       = 420 # decimal 0644
 
@@ -44,7 +43,7 @@ data "ignition_user" "core" {
 
 ## Relevant for the QEMU Guest Agent example
 #data "ignition_systemd_unit" "mount-images" {
-#  name = "mnt-images.mount"
+#  name = "var-mnt-images.mount"
 #  enabled = true
 #  content = "${file("${path.module}/qemu-agent/docker-images.mount")}"
 #}
