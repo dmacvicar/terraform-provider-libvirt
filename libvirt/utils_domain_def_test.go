@@ -102,6 +102,29 @@ func TestGetOriginalMachineName(t *testing.T) {
 	t.Logf("Reverse canonical lookup for %s is %s which matches %s", canonname, reversename, machine)
 }
 
+func TestGetMachineTypeForArch(t *testing.T) {
+	skipIfAccDisabled(t)
+	conn := testAccProvider.Meta().(*Client).libvirt
+	caps, err := getHostCapabilities(conn)
+	if err != nil {
+	       t.Error(err)
+	}
+
+	arch := "x86_64"
+	targettype := "hvm"
+	machine := "pc"
+
+	m, err := getMachineTypeForArch(caps, arch, targettype)
+	if err != nil {
+		t.Error(err)
+	}
+	if m != machine {
+		t.Errorf("Machine found for arch %s, targettype %s is %s expected %s", arch, targettype, m, machine)
+	}
+
+	t.Logf("Machine for arch %s, targettype %s is %s which matches %s", arch, targettype, m, machine)
+}
+
 func TestGetHostCapabilties(t *testing.T) {
 	skipIfAccDisabled(t)
 	conn := testAccProvider.Meta().(*Client).libvirt
