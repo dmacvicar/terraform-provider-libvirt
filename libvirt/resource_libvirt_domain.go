@@ -605,6 +605,18 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	d.SetId(id)
 	log.Printf("[INFO] Domain ID: %s", d.Id())
 
+	if d.Get("qemu_agent").(bool) && d.Get("running").(bool) {
+		// waiting for qemu agent to be available
+		err := waitingForAgentRunning(ctx, virConn, domain, d.Timeout(schema.TimeoutCreate), d)
+		if err != nil {
+			agentNotFound := "Please make sure that qemu-agent is installed \n" +
+				"IMPORTANT: This error is not a terraform libvirt-provider" +
+				" error, but an error caused by your KVM/libvirt" +
+				" infrastructure configuration/setup"
+			return diag.Errorf("couldn't connect to the qemu agent of the domain id: %s. %s \n %s", d.Id(), agentNotFound, err)
+		}
+	}
+
 	if len(waitForLeases) > 0 {
 		err = domainWaitForLeases(ctx, virConn, domain, waitForLeases, d.Timeout(schema.TimeoutCreate), d)
 		if err != nil {
@@ -769,6 +781,18 @@ func resourceLibvirtDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 					return diag.FromErr(err)
 				}
 			}
+		}
+	}
+
+	if d.Get("qemu_agent").(bool) && d.Get("running").(bool) {
+		// waiting for qemu agent to be available
+		err := waitingForAgentRunning(ctx, virConn, domain, d.Timeout(schema.TimeoutUpdate), d)
+		if err != nil {
+			agentNotFound := "Please make sure that qemu-agent is installed \n" +
+				"IMPORTANT: This error is not a terraform libvirt-provider" +
+				" error, but an error caused by your KVM/libvirt" +
+				" infrastructure configuration/setup"
+			return diag.Errorf("couldn't connect to the qemu agent of the domain id: %s. %s \n %s", d.Id(), agentNotFound, err)
 		}
 	}
 
