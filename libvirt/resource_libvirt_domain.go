@@ -43,6 +43,11 @@ func resourceLibvirtDomain() *schema.Resource {
 			Create: schema.DefaultTimeout(5 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
+			"host" : {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -482,10 +487,10 @@ func resourceLibvirtDomain() *schema.Resource {
 
 func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] Create resource libvirt_domain")
-
-	virConn := meta.(*Client).libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for domain creation: %v", err)
 	}
 
 	domainDef, err := newDomainDefForConnection(virConn, d)
@@ -673,10 +678,10 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 
 func resourceLibvirtDomainUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] Update resource libvirt_domain")
-
-	virConn := meta.(*Client).libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for network update: %v", err)
 	}
 
 	uuid := parseUUID(d.Id())
@@ -777,10 +782,10 @@ func resourceLibvirtDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 
 func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] Read resource libvirt_domain")
-
-	virConn := meta.(*Client).libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for network read: %v", err)
 	}
 
 	uuid := parseUUID(d.Id())
@@ -1086,10 +1091,10 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 
 func resourceLibvirtDomainDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] Delete resource libvirt_domain")
-
-	virConn := meta.(*Client).libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for network deletion: %v", err)
 	}
 
 	log.Printf("[DEBUG] Deleting domain %s", d.Id())

@@ -49,6 +49,11 @@ func resourceLibvirtNetwork() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
+			"host" : {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -295,9 +300,10 @@ func resourceLibvirtNetwork() *schema.Resource {
 func resourceLibvirtNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// check the list of things that can be changed dynamically
 	// in https://wiki.libvirt.org/page/Networking#virsh_net-update
-	virConn := meta.(*Client).libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for network update: %v", err)
 	}
 
 	uuid := parseUUID(d.Id())
@@ -330,7 +336,7 @@ func resourceLibvirtNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 	}
 
 	// detect changes in the DNS entries in this network
-	err = updateDNSHosts(d, meta, network)
+	err = updateDNSHosts(d, virConn, network)
 	if err != nil {
 		return diag.Errorf("error updating DNS hosts for network %s: %s", network.Name, err)
 	}
@@ -341,9 +347,10 @@ func resourceLibvirtNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 // resourceLibvirtNetworkCreate creates a libvirt network from the resource definition.
 func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// see https://libvirt.org/formatnetwork.html
-	virConn := meta.(*Client).libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for network creation: %v", err)
 	}
 
 	networkDef := newNetworkDef()
@@ -443,8 +450,9 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 	network, err := func() (libvirt.Network, error) {
 		// define only one network at a time
 		// see https://gitlab.com/libvirt/libvirt/-/issues/78
-		meta.(*Client).networkMutex.Lock()
-		defer meta.(*Client).networkMutex.Unlock()
+		networkMutex := meta.(*Client).GetMutex(&uri)
+		networkMutex.Lock()
+		defer networkMutex.Unlock()
 
 		log.Printf("[DEBUG] creating libvirt network: %s", data)
 		return virConn.NetworkDefineXML(data)
@@ -502,10 +510,10 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 // the corresponding `schema.ResourceData`.
 func resourceLibvirtNetworkRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] Read resource libvirt_network")
-
-	virConn := meta.(*Client).libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for network read: %v", err)
 	}
 
 	uuid := parseUUID(d.Id())
@@ -659,9 +667,10 @@ func resourceLibvirtNetworkRead(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceLibvirtNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	virConn := meta.(*Client).libvirt
+	uri := d.Get("host").(string)
+	virConn, err := meta.(*Client).Connection(&uri)
 	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+		return diag.Errorf("unable to connect for network deletion: %v", err)
 	}
 	log.Printf("[DEBUG] Deleting network ID %s", d.Id())
 
