@@ -25,6 +25,7 @@ func Provider() *schema.Provider {
 			"libvirt_pool":           resourceLibvirtPool(),
 			"libvirt_cloudinit_disk": resourceCloudInitDisk(),
 			"libvirt_ignition":       resourceIgnition(),
+			"libvirt_combustion":     resourceCombustion(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
