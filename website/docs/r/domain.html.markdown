@@ -441,6 +441,9 @@ resource "libvirt_domain" "my_machine" {
 ~> **Note well:** the `graphics` block is ignored for the architectures
   `s390x` and `ppc64`.
 
+To remove the graphics entirely set `type` to `none`. 
+Consider adding a serial console for output if you enable this option.
+This can be useful for minimal server images printing only to the serial console.
 
 ### Console devices
 
