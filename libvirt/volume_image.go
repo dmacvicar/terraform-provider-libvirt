@@ -37,6 +37,7 @@ func (i *localImage) Size() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer file.Close()
 
 	fi, err := file.Stat()
 	if err != nil {
