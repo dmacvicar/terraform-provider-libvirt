@@ -19,7 +19,6 @@ const LibVirtConIsNil string = "the libvirt connection was nil"
 
 // diskLetterForIndex return diskLetters for index.
 func diskLetterForIndex(i int) string {
-
 	q := i / len(diskLetters)
 	r := i % len(diskLetters)
 	letter := diskLetters[r]
@@ -79,7 +78,7 @@ func formatBoolYesNo(b bool) string {
 func isError(err error, errorCode libvirt.ErrorNumber) bool {
 	var perr libvirt.Error
 	if errors.As(err, &perr) {
-		return  perr.Code == uint32(errorCode)
+		return perr.Code == uint32(errorCode)
 	}
 	return false
 }

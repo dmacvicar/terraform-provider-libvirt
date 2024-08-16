@@ -15,7 +15,7 @@ func TestAccLibvirtCombustion_Basic(t *testing.T) {
 	randomCombustionName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
-	var config = fmt.Sprintf(`
+	config := fmt.Sprintf(`
     resource "libvirt_pool" "%s" {
         name = "%s"
         type = "dir"

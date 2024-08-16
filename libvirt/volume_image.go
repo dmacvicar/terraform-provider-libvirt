@@ -130,7 +130,6 @@ func (i *httpImage) IsQCOW2() (bool, error) {
 	req, _ := http.NewRequest("GET", i.url.String(), nil)
 	req.Header.Set("Range", "bytes=0-7")
 	response, err := client.Do(req)
-
 	if err != nil {
 		return false, err
 	}
@@ -166,7 +165,6 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", i.url.String(), nil)
-
 	if err != nil {
 		log.Printf("[DEBUG:] Error creating new request for source url %s: %s", i.url.String(), err)
 		return fmt.Errorf("error while downloading %s: %w", i.url.String(), err)
@@ -228,6 +226,7 @@ func newImage(source string) (image, error) {
 }
 
 // isQCOW2Header returns True when the buffer starts with the qcow2 header.
+//
 //nolint:gomnd
 func isQCOW2Header(buf []byte) (bool, error) {
 	if len(buf) < 8 {
@@ -237,7 +236,6 @@ func isQCOW2Header(buf []byte) (bool, error) {
 		buf[2] == 'I' && buf[3] == 0xfb &&
 		buf[4] == 0x00 && buf[5] == 0x00 &&
 		buf[6] == 0x00 && buf[7] == 0x03 {
-
 		return true, nil
 	}
 	return false, nil

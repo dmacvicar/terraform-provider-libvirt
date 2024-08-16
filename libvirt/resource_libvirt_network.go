@@ -363,7 +363,6 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 		networkDef.Forward.Mode == netModeNat ||
 		networkDef.Forward.Mode == netModeRoute ||
 		networkDef.Forward.Mode == netModeOpen {
-
 		if networkDef.Forward.Mode == netModeIsolated {
 			// there is no forwarding when using an isolated network
 			networkDef.Forward = nil
@@ -403,7 +402,6 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 			SRVs:       dnsSRVs,
 		}
 		networkDef.DNS = &dns
-
 	} else if networkDef.Forward.Mode == netModeBridge {
 		if networkDef.Bridge.Name == "" {
 			return diag.Errorf("'bridge' must be provided when using the bridged network mode")
@@ -449,7 +447,6 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 		log.Printf("[DEBUG] creating libvirt network: %s", data)
 		return virConn.NetworkDefineXML(data)
 	}()
-
 	if err != nil {
 		return diag.Errorf("error defining libvirt network: %s - %s", err, data)
 	}

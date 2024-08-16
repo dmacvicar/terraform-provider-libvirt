@@ -58,7 +58,7 @@ func transformXML(xmlS string, xsltS string) (string, error) {
 
 	// we trim the xslt as it may contain space before the xml declaration
 	// because of HCL heredoc
-	if _, err := xsltFile.Write([]byte(strings.TrimSpace(xsltS))); err != nil {
+	if _, err := xsltFile.WriteString(strings.TrimSpace(xsltS)); err != nil {
 		return "", err
 	}
 
@@ -72,7 +72,7 @@ func transformXML(xmlS string, xsltS string) (string, error) {
 	}
 	defer os.Remove(xmlFile.Name()) // clean up
 
-	if _, err := xmlFile.Write([]byte(xmlS)); err != nil {
+	if _, err := xmlFile.WriteString(xmlS); err != nil {
 		return "", err
 	}
 

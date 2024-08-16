@@ -80,7 +80,6 @@ func (u *ConnectionURI) parseAuthMethods() []ssh.AuthMethod {
 }
 
 func (u *ConnectionURI) dialSSH() (net.Conn, error) {
-
 	sshConfigFile, err := os.Open(os.ExpandEnv(defaultSSHConfigFile))
 	if err != nil {
 		log.Printf("[WARN] Failed to open ssh config file: %v", err)

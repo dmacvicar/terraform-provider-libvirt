@@ -1130,7 +1130,6 @@ func resourceLibvirtDomainDelete(ctx context.Context, d *schema.ResourceData, me
 	if err := virConn.DomainUndefineFlags(domain, libvirt.DomainUndefineNvram|
 		libvirt.DomainUndefineSnapshotsMetadata|libvirt.DomainUndefineManagedSave|
 		libvirt.DomainUndefineCheckpointsMetadata); err != nil {
-
 		if isError(err, libvirt.ErrNoSupport) || isError(err, libvirt.ErrInvalidArg) {
 			log.Printf("libvirt does not support undefine flags: will try again without flags")
 			if err := virConn.DomainUndefine(domain); err != nil {

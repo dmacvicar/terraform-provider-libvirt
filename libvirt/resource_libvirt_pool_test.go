@@ -265,4 +265,3 @@ func testAccCheckLibvirtPoolDestroy(state *terraform.State) error {
 	}
 	return nil
 }
-

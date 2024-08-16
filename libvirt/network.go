@@ -84,7 +84,7 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 		// because it is computed but we need to know if the user has
 		// explicitly set it to false
 		//
-		//nolint:staticcheck
+		
 		if dhcpEnabledByUser, dhcpSetByUser := d.GetOkExists("dhcp.0.enabled"); dhcpSetByUser {
 			dhcpEnabled = dhcpEnabledByUser.(bool)
 		}
@@ -213,9 +213,9 @@ func getDNSMasqOptionFromResource(d *schema.ResourceData) []libvirtxml.NetworkDn
 			optionName := d.Get(dnsmasqOptionsPrefix + ".option_name").(string)
 			optionValue, ok := d.GetOk(dnsmasqOptionsPrefix + ".option_value")
 			if ok {
-			   optionString = optionName + "=" + optionValue.(string)
+				optionString = optionName + "=" + optionValue.(string)
 			} else {
-			   optionString = optionName
+				optionString = optionName
 			}
 			dnsmasqOption = append(dnsmasqOption, libvirtxml.NetworkDnsmasqOption{
 				Value: optionString,
