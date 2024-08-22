@@ -132,6 +132,11 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 		username = sshu
 	}
 
+	hostname, err := sshcfg.Get(u.Hostname(), "HostName")
+	if err != nil {
+		hostname = u.Hostname()
+	}
+
 	cfg := ssh.ClientConfig{
 		User:            username,
 		HostKeyCallback: hostKeyCallback,
@@ -141,10 +146,13 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 
 	port := u.Port()
 	if port == "" {
-		port = defaultSSHPort
+		port, err = sshcfg.Get(u.Host, "Port")
+		if err != nil {
+			port = defaultSSHPort
+		}
 	}
 
-	sshClient, err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", u.Hostname(), port), &cfg)
+	sshClient, err := ssh.Dial("tcp", net.JoinHostPort(hostname, port), &cfg)
 	if err != nil {
 		return nil, err
 	}
