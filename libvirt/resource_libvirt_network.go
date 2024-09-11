@@ -91,6 +91,13 @@ func resourceLibvirtNetwork() *schema.Resource {
 				Required: false,
 				Computed: true,
 			},
+			"active": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+				ForceNew: false,
+				Required: false,
+			},
 			"dns": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -515,6 +522,13 @@ func resourceLibvirtNetworkRead(ctx context.Context, d *schema.ResourceData, met
 		}
 		return diag.Errorf("error retrieving libvirt network %s", err)
 	}
+
+	activeInt, err := virConn.NetworkIsActive(network)
+	if err != nil {
+		return diag.Errorf("error when getting network %s status during update: %s", network.Name, err)
+	}
+
+	d.Set("active", int2bool(int(activeInt)))
 
 	networkDef, err := getXMLNetworkDefFromLibvirt(virConn, network)
 	if err != nil {
