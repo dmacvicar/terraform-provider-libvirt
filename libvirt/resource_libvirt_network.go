@@ -525,7 +525,7 @@ func resourceLibvirtNetworkRead(ctx context.Context, d *schema.ResourceData, met
 
 	activeInt, err := virConn.NetworkIsActive(network)
 	if err != nil {
-		return diag.Errorf("error when getting network %s status during update: %s", network.Name, err)
+		return diag.Errorf("error when getting network %s status during read: %s", network.Name, err)
 	}
 
 	d.Set("active", int2bool(int(activeInt)))
