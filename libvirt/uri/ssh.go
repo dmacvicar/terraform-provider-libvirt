@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	maxHostHops              = 10
 	defaultSSHPort           = "22"
 	defaultSSHKeyPath        = "${HOME}/.ssh/id_rsa"
 	defaultSSHKnownHostsPath = "${HOME}/.ssh/known_hosts"
@@ -148,7 +149,7 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 
 func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth int) (*ssh.Client, error) {
 
-	if depth > 10 {
+	if depth > maxHostHops {
 		return nil, fmt.Errorf("[ERROR] dialHost failed: max tunnel depth of 10 reached")
 	}
 
