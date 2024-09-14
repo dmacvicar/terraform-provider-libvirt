@@ -282,13 +282,11 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		// Dial a connection to the service host, from the bastion
 		conn, err := bastion.Dial("tcp", net.JoinHostPort(hostName, port))
 		if err != nil {
-			log.Fatal(err)
 			return nil, fmt.Errorf("failed to connect to remote host '%v': %w", target, err)
 		}
 
 		ncc, chans, reqs, err := ssh.NewClientConn(conn, target, &cfg)
 		if err != nil {
-			log.Fatal(err)
 			return nil, fmt.Errorf("failed to connect to remote host '%v': %w", target, err)
 		}
 
