@@ -24,10 +24,11 @@ func TestAccLibvirtCombustion_Basic(t *testing.T) {
 
 	resource "libvirt_combustion" "combustion" {
 		name    = "%s"
-		content = "#!/bin/bash
-# combustion: network
-echo 'root:$6$3aQC9rrDLHiTf1yR$NoKe9tko0kFIpu0rQ2y/FOO' | chpasswd -e
-"
+		content = <<-EOT
+		#!/bin/bash
+		# combustion: network
+		echo 'root:$6$3aQC9rrDLHiTf1yR$NoKe9tko0kFIpu0rQ2y/FOO' | chpasswd -e
+		EOT
         pool    = "${libvirt_pool.%s.name}"
 	}
 	`, randomPoolName, randomPoolName, randomPoolPath, randomCombustionName, randomPoolName)
