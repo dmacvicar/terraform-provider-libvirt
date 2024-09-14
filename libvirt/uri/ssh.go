@@ -176,14 +176,14 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 	// the query string values have higher precedence to local configs
 	knownHostsPath := q.Get("knownhosts")
 	knownHostsVerify := q.Get("known_hosts_verify")
-	skip_verify := q.Has("no_verify")
+	skipVerify := q.Has("no_verify")
 
 	if knownHostsVerify == "ignore" {
-		skip_verify = true
+		skipVerify = true
 	} else {
 		strictCheck, err := sshcfg.Get(target, "StrictHostKeyChecking")
 		if err != nil && strictCheck == "yes" {
-			skip_verify = false
+			skipVerify = false
 		}
 	}
 
@@ -210,7 +210,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		ssh.KeyAlgoECDSA384,
 		ssh.KeyAlgoECDSA521,
 	}
-	if !skip_verify {
+	if !skipVerify {
 		kh, err := knownhosts.New(os.ExpandEnv(knownHostsPath))
 		if err != nil {
 			return nil, fmt.Errorf("failed to read ssh known hosts: %w", err)
