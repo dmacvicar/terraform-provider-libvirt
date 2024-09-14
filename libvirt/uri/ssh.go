@@ -80,7 +80,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 				if strings.HasPrefix(path, "~/") {
 					home, err := os.UserHomeDir()
 					if err == nil {
-						path = strings.Replace(path, "~", home, 1)
+						path = filepath.Join(home, path[2:])
 					}
 				}
 				sshKey, err := os.ReadFile(path)
