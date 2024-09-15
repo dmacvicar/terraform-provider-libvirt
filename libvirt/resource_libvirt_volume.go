@@ -9,6 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
+	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/suppress"
 )
 
 func resourceLibvirtVolume() *schema.Resource {
@@ -38,6 +40,7 @@ func resourceLibvirtVolume() *schema.Resource {
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
+				DiffSuppressFunc: suppress.Qcow2SizeDiffSuppressFunc,
 			},
 			"format": {
 				Type:     schema.TypeString,
