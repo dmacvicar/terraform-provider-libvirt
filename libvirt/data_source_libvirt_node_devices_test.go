@@ -16,14 +16,14 @@ func TestAccLibvirtNodeDevicesDataSource(t *testing.T) {
 				Config: testAccDataSourceNodeDevicesPci,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
-						"data.libvirt_node_devices.node", "devices[0]", regexp.MustCompile(`^pci_\d{4}_\d{2}_\d{2}_\d{1}`)),
+						"data.libvirt_node_devices.node", "devices.0", regexp.MustCompile(`^pci_\d{4}_\d{2}_\d{2}_\d{1}`)),
 				),
 			},
 			{
 				Config: testAccDataSourceNodeDevicesSystem,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
-						"data.libvirt_node_devices.node", "devices[0]", regexp.MustCompile(`^computer$`)),
+						"data.libvirt_node_devices.node", "devices.0", regexp.MustCompile(`^computer$`)),
 				),
 			},
 		},
