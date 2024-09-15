@@ -50,7 +50,7 @@ resource "libvirt_network" "kube_network" {
     # false: Unresolved requests will be forwarded to the host's
     # upstream DNS server if the virtual network's DNS server does not
     # have an answer.
-￼   local_only = true
+    local_only = true
 
     # (Optional) one or more DNS forwarder entries.  One or both of
     # "address" and "domain" must be specified.  The format is:

@@ -9,7 +9,6 @@ const (
 )
 
 func (u *ConnectionURI) dialUNIX() (net.Conn, error) {
-
 	q := u.Query()
 	address := q.Get("socket")
 	if address == "" {

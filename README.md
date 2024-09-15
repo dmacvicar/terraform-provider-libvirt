@@ -1,3 +1,17 @@
+> [!NOTE]
+> This project is maintained on a best effort basis. I am not actively working on it.
+>
+> From time to time I go over interesting PRs and do minor improvements.
+>
+> New features are, by default not welcomed or accepted unless discussed and agreed upon.
+>
+> If you are willing to contribute, this is what the project accepts as contributions:
+>
+> - maintainers, who take over an area and actively keep the code in good shape
+> - improvements to testing, including enabling the acceptance testsuite in CI
+> - modernizing the codebase and removing exceptions from the linters
+> - writing v2, simplified versions of the resources
+
 # Terraform provider for libvirt
 
 - [![Gitter chat](https://badges.gitter.im/terraform-provider-libvirt/Lobby.png)](https://gitter.im/terraform-provider-libvirt/Lobby) ([IRC gateway](https://irc.gitter.im/))

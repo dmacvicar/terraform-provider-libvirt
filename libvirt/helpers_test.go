@@ -19,8 +19,10 @@ import (
 
 // This file contain function helpers used for testsuite/testacc
 
-var testAccProviders map[string]*schema.Provider
-var testAccProvider *schema.Provider
+var (
+	testAccProviders map[string]*schema.Provider
+	testAccProvider  *schema.Provider
+)
 
 func init() {
 	testAccProvider = Provider()
@@ -145,7 +147,6 @@ func getNetworkDef(state *terraform.State, name string, virConn *libvirt.Libvirt
 // testAccCheckNetworkExists checks that the network exists.
 func testAccCheckNetworkExists(name string, network *libvirt.Network) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-
 		rs, err := getResourceFromTerraformState(name, state)
 		if err != nil {
 			return err
@@ -191,7 +192,6 @@ func testAccCheckLibvirtNetworkDestroy(s *terraform.State) error {
 // testAccCheckDNSHosts checks the expected DNS hosts in a network.
 func testAccCheckDNSHosts(name string, expected []libvirtxml.NetworkDNSHost) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		virConn := testAccProvider.Meta().(*Client).libvirt
 		networkDef, err := getNetworkDef(s, name, virConn)
 		if err != nil {
@@ -271,7 +271,6 @@ func testAccCheckLibvirtNetworkBridge(resourceName string, bridgeName string) re
 // testAccCheckLibvirtNetworkDNSForwarders checks the DNS forwarders in the libvirt network.
 func testAccCheckLibvirtNetworkDNSForwarders(name string, expected []libvirtxml.NetworkDNSForwarder) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
 		networkDef, err := getNetworkDef(s, name, virConn)
@@ -304,7 +303,6 @@ func testAccCheckLibvirtNetworkDNSForwarders(name string, expected []libvirtxml.
 // testAccCheckLibvirtNetworkLocalOnly checks the local-only property of the Domain.
 func testAccCheckLibvirtNetworkLocalOnly(name string, expectLocalOnly bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
 		networkDef, err := getNetworkDef(s, name, virConn)
@@ -327,7 +325,6 @@ func testAccCheckLibvirtNetworkLocalOnly(name string, expectLocalOnly bool) reso
 // testAccCheckLibvirtNetworkDNSEnable checks the dns-enable property of the Domain.
 func testAccCheckLibvirtNetworkDNSEnableOrDisable(name string, expectDNS bool) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		virConn := testAccProvider.Meta().(*Client).libvirt
 
 		networkDef, err := getNetworkDef(s, name, virConn)
@@ -351,7 +348,6 @@ func testAccCheckLibvirtNetworkDNSEnableOrDisable(name string, expectDNS bool) r
 // testAccCheckDnsmasqOptions checks the expected Dnsmasq options in a network.
 func testAccCheckDnsmasqOptions(name string, expected []libvirtxml.NetworkDnsmasqOption) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-
 		virConn := testAccProvider.Meta().(*Client).libvirt
 		networkDef, err := getNetworkDef(s, name, virConn)
 		if err != nil {

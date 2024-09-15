@@ -30,7 +30,6 @@ func TestTimeFromEpoch(t *testing.T) {
 }
 
 func TestAccUtilsVolume_UploadVolumeCopier(t *testing.T) {
-
 	var volume libvirt.StorageVol
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -43,7 +42,7 @@ func TestAccUtilsVolume_UploadVolumeCopier(t *testing.T) {
 	}
 
 	// simulate uploading a 1G file usig a sparse file
-	if err:= tmpfile.Truncate(1024*1024*1024); err != nil {
+	if err := tmpfile.Truncate(1024 * 1024 * 1024); err != nil {
 		t.Fatal(err)
 	}
 

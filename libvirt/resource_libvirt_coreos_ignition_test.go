@@ -16,7 +16,7 @@ func TestAccLibvirtIgnition_Basic(t *testing.T) {
 	randomIgnitionName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
-	var config = fmt.Sprintf(`
+	config := fmt.Sprintf(`
 	data "ignition_systemd_unit" "acceptance-test-systemd" {
 		name    = "%s"
 		content = "[Service]\nType=oneshot\nExecStart=/usr/bin/echo Hello World\n\n[Install]\nWantedBy=multi-user.target"

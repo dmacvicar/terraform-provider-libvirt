@@ -85,18 +85,21 @@ func resourceLibvirtDomain() *schema.Resource {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"file": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
 							ForceNew: true,
+							Computed: true,
 						},
 						"template": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Computed: true,
 						},
 					},
 				},
@@ -179,6 +182,7 @@ func resourceLibvirtDomain() *schema.Resource {
 						"wwn": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Computed: true,
 						},
 						"block_device": {
 							Type:     schema.TypeString,
@@ -512,7 +516,6 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	domainDef.OS.Initrd = d.Get("initrd").(string)
 	domainDef.OS.Type.Arch = d.Get("arch").(string)
 
-	domainDef.OS.Type.Machine = d.Get("machine").(string)
 	domainDef.Devices.Emulator = d.Get("emulator").(string)
 
 	if v := os.Getenv("TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE"); v != "" {
@@ -1127,7 +1130,6 @@ func resourceLibvirtDomainDelete(ctx context.Context, d *schema.ResourceData, me
 	if err := virConn.DomainUndefineFlags(domain, libvirt.DomainUndefineNvram|
 		libvirt.DomainUndefineSnapshotsMetadata|libvirt.DomainUndefineManagedSave|
 		libvirt.DomainUndefineCheckpointsMetadata); err != nil {
-
 		if isError(err, libvirt.ErrNoSupport) || isError(err, libvirt.ErrInvalidArg) {
 			log.Printf("libvirt does not support undefine flags: will try again without flags")
 			if err := virConn.DomainUndefine(domain); err != nil {

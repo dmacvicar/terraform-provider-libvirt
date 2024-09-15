@@ -18,9 +18,11 @@ import (
 	"github.com/hooklift/iso9660"
 )
 
-const userDataFileName string = "user-data"
-const metaDataFileName string = "meta-data"
-const networkConfigFileName string = "network-config"
+const (
+	userDataFileName      string = "user-data"
+	metaDataFileName      string = "meta-data"
+	networkConfigFileName string = "network-config"
+)
 
 type defCloudInit struct {
 	Name          string
@@ -46,12 +48,10 @@ func (ci *defCloudInit) CreateIso() (string, error) {
 }
 
 func removeTmpIsoDirectory(iso string) {
-
 	err := os.RemoveAll(filepath.Dir(iso))
 	if err != nil {
 		log.Printf("error while removing tmp directory holding the ISO file: %s", err)
 	}
-
 }
 
 func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {

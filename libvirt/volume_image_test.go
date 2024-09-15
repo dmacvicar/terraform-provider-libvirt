@@ -19,7 +19,6 @@ import (
 )
 
 func TestNewImage(t *testing.T) {
-
 	fixtures := []struct {
 		Name    string
 		Size    uint64
@@ -191,7 +190,6 @@ func TestRemoteImageDownloadRetry(t *testing.T) {
 	if time.Since(start).Seconds() < 2 {
 		t.Fatalf("Expected to retry at least 1 times x 2 seconds")
 	}
-
 }
 
 func TestRemoteImageDownload(t *testing.T) {
@@ -230,5 +228,3 @@ func TestRemoteImageDownload(t *testing.T) {
 	}
 	t.Log("File not copied because modification time was the same")
 }
-
-

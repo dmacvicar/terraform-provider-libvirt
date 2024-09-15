@@ -64,7 +64,6 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 	}
 
 	model, memory, cpus, _, nodes, sockets, cores, threads, err := virConn.NodeGetInfo()
-
 	if err != nil {
 		return fmt.Errorf("failed to retrieve domains: %w", err)
 	}

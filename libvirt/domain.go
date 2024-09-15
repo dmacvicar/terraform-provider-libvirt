@@ -19,15 +19,17 @@ import (
 	"libvirt.org/go/libvirtxml"
 )
 
-const domWaitLeaseStillWaiting = "waiting-addresses"
-const domWaitLeaseDone = "all-addresses-obtained"
+const (
+	domWaitLeaseStillWaiting = "waiting-addresses"
+	domWaitLeaseDone         = "all-addresses-obtained"
+)
 
 var errDomainInvalidState = errors.New("invalid state for domain")
 
 func domainWaitForLeases(ctx context.Context, virConn *libvirt.Libvirt, domain libvirt.Domain, waitForLeases []*libvirtxml.DomainInterface,
-	timeout time.Duration, rd *schema.ResourceData) error {
+	timeout time.Duration, rd *schema.ResourceData,
+) error {
 	waitFunc := func() (interface{}, string, error) {
-
 		state, err := domainGetState(virConn, domain)
 		if err != nil {
 			return false, "", err
@@ -82,8 +84,8 @@ func domainWaitForLeases(ctx context.Context, virConn *libvirt.Libvirt, domain l
 
 func domainIfaceHasAddress(virConn *libvirt.Libvirt, domain libvirt.Domain,
 	iface libvirtxml.DomainInterface,
-	rd *schema.ResourceData) (found bool, ignore bool, err error) {
-
+	rd *schema.ResourceData,
+) (found bool, ignore bool, err error) {
 	mac := strings.ToUpper(iface.MAC.Address)
 	if mac == "" {
 		log.Printf("[DEBUG] Can't wait without a MAC address: ignoring interface %+v.\n", iface)
@@ -382,7 +384,10 @@ func setFirmware(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 		}
 
 		if _, ok := d.GetOk("nvram.0"); ok {
-			nvramFile := d.Get("nvram.0.file").(string)
+			nvramFile := ""
+			if file, ok := d.GetOk("nvram.0.file"); ok {
+				nvramFile = file.(string)
+			}
 			nvramTemplateFile := ""
 			if nvramTemplate, ok := d.GetOk("nvram.0.template"); ok {
 				nvramTemplateFile = nvramTemplate.(string)
@@ -461,9 +466,9 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 }
 
 func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt) error {
-	var scsiDisk = false
-	var numOfISOs = 0
-	var numOfSCSIs = 0
+	scsiDisk := false
+	numOfISOs := 0
+	numOfSCSIs := 0
 
 	for i := 0; i < d.Get("disk.#").(int); i++ {
 		disk := newDefDisk(i)
@@ -667,7 +672,8 @@ func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn 
 
 func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 	virConn *libvirt.Libvirt, partialNetIfaces map[string]*pendingMapping,
-	waitForLeases *[]*libvirtxml.DomainInterface) error {
+	waitForLeases *[]*libvirtxml.DomainInterface,
+) error {
 	for i := 0; i < d.Get("network_interface.#").(int); i++ {
 		prefix := fmt.Sprintf("network_interface.%d", i)
 
@@ -716,7 +722,6 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 			if err != nil {
 				return fmt.Errorf("can't retrieve network ID %s", networkUUID)
 			}
-
 		} else if bridgeNameI, ok := d.GetOk(prefix + ".bridge"); ok {
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
 				Bridge: &libvirtxml.DomainInterfaceSourceBridge{
