@@ -48,7 +48,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 	if err != nil {
 		log.Printf("[WARN] unable to get IdentityFile values - ignoring")
 	} else {
-		sshKeyPaths = append(sshKeyPaths, keyPaths[:]...)
+		sshKeyPaths = append(sshKeyPaths, keyPaths...)
 	}
 
 	if len(keyPaths) == 0 {
@@ -113,7 +113,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 }
 
 // construct the whole ssh connection, which can consist of multiple hops if using proxy jumps,
-// the ssh configuration file is loaded once and passed along to each host connection
+// the ssh configuration file is loaded once and passed along to each host connection.
 func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 	sshConfigFile, err := os.Open(os.ExpandEnv(defaultSSHConfigFile))
 	if err != nil {
@@ -160,7 +160,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 	if port == "" {
 		port = defaultSSHPort
 	} else {
-		log.Printf("[DEBUG] ssh Port is overriden to: '%s'", port);
+		log.Printf("[DEBUG] ssh Port is overridden to: '%s'", port);
 	}
 
 	hostName, err := sshcfg.Get(target, "HostName")
@@ -168,7 +168,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		if hostName == "" {
 			hostName = target;
 		} else {
-			log.Printf("[DEBUG] HostName is overriden to: '%s'", hostName);
+			log.Printf("[DEBUG] HostName is overridden to: '%s'", hostName);
 		}
 	}
 
