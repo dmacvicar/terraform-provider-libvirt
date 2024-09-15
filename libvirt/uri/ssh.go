@@ -75,7 +75,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 			agentClient := agent.NewClient(conn)
 			result = append(result, ssh.PublicKeysCallback(agentClient.Signers))
 		case "privkey":
-			for _,keypath := range sshKeyPaths {
+			for _, keypath := range sshKeyPaths {
 				log.Printf("[DEBUG] Reading ssh key '%s'", keypath)
 				path := os.ExpandEnv(keypath)
 				if strings.HasPrefix(path, "~/") {
