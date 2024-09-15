@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/user"
+	"path/filepath"
 	"strings"
 
 	"github.com/kevinburke/ssh_config"
