@@ -12,6 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
+
+	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/util"
 )
 
 const (
@@ -102,6 +104,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Required: false,
+							Default: true,
 						},
 						"local_only": {
 							Type:     schema.TypeBool,
@@ -378,30 +381,31 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 		}
 		networkDef.IPs = ips
 
-		dnsEnabled := getDNSEnableFromResource(d)
+		if dnsEnabled, ok := d.GetOk(dnsPrefix + ".enabled"); ok && dnsEnabled.(bool) {
+			dnsForwarders, err := getDNSForwardersFromResource(d)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 
-		dnsForwarders, err := getDNSForwardersFromResource(d)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+			dnsSRVs, err := getDNSSRVFromResource(d)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 
-		dnsSRVs, err := getDNSSRVFromResource(d)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+			dnsHosts, err := getDNSHostsFromResource(d)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 
-		dnsHosts, err := getDNSHostsFromResource(d)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+			dns := libvirtxml.NetworkDNS{
+				Enable:     util.FormatBoolYesNo(dnsEnabled.(bool)),
+				Forwarders: dnsForwarders,
+				Host:       dnsHosts,
+				SRVs:       dnsSRVs,
+			}
 
-		dns := libvirtxml.NetworkDNS{
-			Enable:     dnsEnabled,
-			Forwarders: dnsForwarders,
-			Host:       dnsHosts,
-			SRVs:       dnsSRVs,
+			networkDef.DNS = &dns
 		}
-		networkDef.DNS = &dns
 	} else if networkDef.Forward.Mode == netModeBridge {
 		if networkDef.Bridge.Name == "" {
 			return diag.Errorf("'bridge' must be provided when using the bridged network mode")
