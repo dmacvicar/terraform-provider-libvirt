@@ -179,7 +179,7 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 	virtConn := meta.(*Client).libvirt
 	caps, err := virtConn.ConnectGetCapabilities()
 	if err != nil {
-		log.Fatalf("Failed to get node capabilities: %v", err)
+		log.Printf("[ERROR] Failed to get node capabilities: %v", err)
 		return nil
 	}
 
@@ -187,7 +187,7 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 	var capabilities Capabilities
 	err = xml.Unmarshal([]byte(caps), &capabilities)
 	if err != nil {
-		log.Fatalf("Error unmarshalling XML: %v", err)
+		log.Printf("[ERROR] Error unmarshalling XML: %v", err)
 	}
 
 	d.SetId(capabilities.Host.UUID)
@@ -202,7 +202,7 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 
 	d.Set("live_migration_support", capabilities.Host.Migration.Live != nil)
 	if err := d.Set("live_migration_transports", capabilities.Host.Migration.Transports); err != nil {
-		log.Fatalf("error setting features: %s", err)
+		log.Printf("[ERROR] error setting features: %s", err)
 		return nil
 	}
 
@@ -214,7 +214,7 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 	}
 
 	if err := d.Set("features", features); err != nil {
-		log.Fatalf("error setting features: %s", err)
+		log.Printf("[ERROR] error setting features: %s", err)
 		return nil
 	}
 
