@@ -8,6 +8,7 @@ import (
 
 // randomMACAddress returns a randomized MAC address
 // with libvirt prefix.
+//
 //nolint:gomnd
 func randomMACAddress() (string, error) {
 	buf := make([]byte, 3)

@@ -12,7 +12,6 @@ import (
 )
 
 func createPts() (string, error) {
-
 	var ptsNumber int
 
 	fd, err := syscall.Open("/dev/ptmx", int(syscall.O_RDWR), 0)
@@ -27,7 +26,6 @@ func createPts() (string, error) {
 	}
 
 	return fmt.Sprintf("/dev/pts/%d", ptsNumber), nil
-
 }
 
 func TestAccLibvirtDomainConsoles(t *testing.T) {
@@ -46,7 +44,7 @@ func TestAccLibvirtDomainConsoles(t *testing.T) {
 		t.Errorf("error creating pts %v", err)
 	}
 
-	var config = fmt.Sprintf(`
+	config := fmt.Sprintf(`
 	resource "libvirt_domain" "%s" {
 		name = "%s"
 		console {

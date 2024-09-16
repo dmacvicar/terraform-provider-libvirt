@@ -63,7 +63,7 @@ func createClientCerts(pkipath string, caCertLoc string, caKeyLoc string) error 
 		return err
 	}
 
-	keyOut, err := os.OpenFile(clientKeyLoc, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	keyOut, err := os.OpenFile(clientKeyLoc, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func createCACerts(pkipath string) error {
 		return err
 	}
 
-	keyOut, err := os.OpenFile(caKeyLoc, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	keyOut, err := os.OpenFile(caKeyLoc, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
 	}
@@ -163,5 +163,4 @@ func TestTLSConfig(t *testing.T) {
 
 	assert.NotNil(t, tlsConfig)
 	assert.False(t, tlsConfig.InsecureSkipVerify)
-
 }

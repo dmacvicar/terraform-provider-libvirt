@@ -1,8 +1,9 @@
 package uri
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestURI(t *testing.T) {
