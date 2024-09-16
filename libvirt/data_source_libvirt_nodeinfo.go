@@ -17,8 +17,8 @@ import (
 //      locals {
 //      	arch = data.external.native_machine_details.result["arch"]
 //      	images = {
-//      		"debian-x86_64" = "/srv/images/debian-12-backports-generic-amd64.qcow2",
-//    			"debian-aarch64"  = "/srv/images/debian-12-backports-generic-arm64.qcow2",
+//      		"x86_64" = "/srv/images/debian-12-backports-generic-amd64.qcow2",
+//    			"aarch64"  = "/srv/images/debian-12-backports-generic-arm64.qcow2",
 //      	}
 //      image_path = local.images["debian-${local.arch}"]
 //      }
