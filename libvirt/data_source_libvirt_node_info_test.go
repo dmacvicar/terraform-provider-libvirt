@@ -16,7 +16,7 @@ func TestAccLibvirtNodeInfoDataSource(t *testing.T) {
 				Config: testAccDataSourceNodeInfo,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
-						"data.libvirt_node_info.info", "cpus", regexp.MustCompile(`^\d+`)),
+						"data.libvirt_node_info.info", "cpu_cores_total", regexp.MustCompile(`^\d+`)),
 				),
 			}, {
 				Config: testAccDataSourceNodeInfo,
