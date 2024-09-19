@@ -15,6 +15,7 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hooklift/iso9660"
 )
 
@@ -54,7 +55,7 @@ func removeTmpIsoDirectory(iso string) {
 	}
 }
 
-func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
+func (ci *defCloudInit) UploadIso(ctx context.Context, client *Client, iso string) (string, error) {
 	virConn := client.libvirt
 	if virConn == nil {
 		return "", fmt.Errorf(LibVirtConIsNil)
@@ -70,10 +71,12 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	err = waitForSuccess("error refreshing pool for volume", func() error {
-		return virConn.StoragePoolRefresh(pool, 0)
-	})
-	if err != nil {
+	if err := retry.RetryContext(ctx, resourceStateTimeout, func() *retry.RetryError {
+		if err := virConn.StoragePoolRefresh(pool, 0); err != nil {
+			return retry.RetryableError(fmt.Errorf("error refreshing pool for volume: %w", err))
+		}
+		return nil
+	}); err != nil {
 		return "", err
 	}
 

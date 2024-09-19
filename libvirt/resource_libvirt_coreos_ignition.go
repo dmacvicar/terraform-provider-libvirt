@@ -49,7 +49,7 @@ func resourceIgnitionCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 	log.Printf("[INFO] ignition: %+v", ignition)
 
-	key, err := ignition.CreateAndUpload(client)
+	key, err := ignition.CreateAndUpload(ctx, client)
 	if err != nil {
 		return diag.FromErr(err)
 	}

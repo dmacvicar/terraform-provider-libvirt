@@ -72,8 +72,11 @@ func volumeDelete(ctx context.Context, client *Client, key string) error {
 	client.poolMutexKV.Lock(volPool.Name)
 	defer client.poolMutexKV.Unlock(volPool.Name)
 
-	if err := waitForSuccess("error refreshing pool for volume", func() error {
-		return virConn.StoragePoolRefresh(volPool, 0)
+	if err := retry.RetryContext(ctx, resourceStateTimeout, func() *retry.RetryError {
+		if err := virConn.StoragePoolRefresh(volPool, 0); err != nil {
+			return retry.RetryableError(fmt.Errorf("error refreshing pool for volume: %w", err))
+		}
+		return nil
 	}); err != nil {
 		return err
 	}

@@ -1,13 +1,8 @@
 package libvirt
 
 import (
-	"bytes"
-	"errors"
-	"log"
 	"net"
-	"os"
 	"testing"
-	"time"
 )
 
 func TestDiskLetterForIndex(t *testing.T) {
@@ -68,51 +63,5 @@ func TestIPsRange(t *testing.T) {
 				t.Errorf("unexpected range end for '%s': %s, expected: %s", net, end, tc.expectedEnd)
 			}
 		})
-	}
-}
-
-func TestWaitForSuccessEverythingFine(t *testing.T) {
-	waitSleep := WaitSleepInterval
-	waitTimeout := WaitTimeout
-	defer func() {
-		WaitSleepInterval = waitSleep
-		WaitTimeout = waitTimeout
-	}()
-
-	WaitTimeout = 1 * time.Second
-	WaitSleepInterval = 1 * time.Nanosecond
-
-	err := waitForSuccess(
-		"boom",
-		func() error {
-			return nil
-		})
-	if err != nil {
-		t.Errorf("unexpected error %v", err)
-	}
-}
-
-func TestWaitForSuccessBrokenFunction(t *testing.T) {
-	waitSleep := WaitSleepInterval
-	waitTimeout := WaitTimeout
-	var b bytes.Buffer
-	log.SetOutput(&b)
-	defer func() {
-		WaitSleepInterval = waitSleep
-		WaitTimeout = waitTimeout
-		log.SetOutput(os.Stderr)
-	}()
-
-	WaitTimeout = 1 * time.Second
-	WaitSleepInterval = 1 * time.Nanosecond
-
-	err := waitForSuccess(
-		"boom",
-		func() error {
-			return errors.New("something went wrong")
-		})
-
-	if err == nil {
-		t.Error("expected error")
 	}
 }

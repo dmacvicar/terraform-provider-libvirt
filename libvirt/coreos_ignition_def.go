@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 )
 
 type defIgnition struct {
@@ -35,7 +37,7 @@ func newIgnitionDef() defIgnition {
 // Create a ISO file based on the contents of the CloudInit instance and
 // uploads it to the libVirt pool
 // Returns a string holding terraform's internal ID of this resource.
-func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
+func (ign *defIgnition) CreateAndUpload(ctx context.Context, client *Client) (string, error) {
 	virConn := client.libvirt
 	if virConn == nil {
 		return "", fmt.Errorf(LibVirtConIsNil)
@@ -51,8 +53,11 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	if err := waitForSuccess("Error refreshing pool for volume", func() error {
-		return virConn.StoragePoolRefresh(pool, 0)
+	if err := retry.RetryContext(ctx, resourceStateTimeout, func() *retry.RetryError {
+		if err := virConn.StoragePoolRefresh(pool, 0); err != nil {
+			return retry.RetryableError(fmt.Errorf("error refreshing pool for volume: %w", err))
+		}
+		return nil
 	}); err != nil {
 		return "", err
 	}

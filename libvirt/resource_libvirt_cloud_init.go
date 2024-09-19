@@ -66,7 +66,7 @@ func resourceCloudInitDiskCreate(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	key, err := cloudInit.UploadIso(client, iso)
+	key, err := cloudInit.UploadIso(ctx, client, iso)
 	if err != nil {
 		return diag.FromErr(err)
 	}

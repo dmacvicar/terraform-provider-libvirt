@@ -50,7 +50,7 @@ func resourceCombustionCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	log.Printf("[INFO] combustion: %+v", combustion)
 
-	key, err := combustion.CreateAndUpload(client)
+	key, err := combustion.CreateAndUpload(ctx, client)
 	if err != nil {
 		return diag.FromErr(err)
 	}

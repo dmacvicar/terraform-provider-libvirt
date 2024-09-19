@@ -1,8 +1,8 @@
 package libvirt
 
 import (
-//libvirt "github.com/digitalocean/go-libvirt"
-//"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
+// libvirt "github.com/digitalocean/go-libvirt"
+// "github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 )
 
 const (
