@@ -10,26 +10,23 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
 )
 
-const (
-	domWaitLeaseStillWaiting = "waiting-addresses"
-	domWaitLeaseDone         = "all-addresses-obtained"
-)
-
 var errDomainInvalidState = errors.New("invalid state for domain")
 
-func domainWaitForLeases(ctx context.Context, virConn *libvirt.Libvirt, domain libvirt.Domain, waitForLeases []*libvirtxml.DomainInterface,
-	timeout time.Duration, rd *schema.ResourceData,
-) error {
-	waitFunc := func() (interface{}, string, error) {
+const (
+	domainStateConfLeaseWaiting = resourceStateConfPending
+	domainStateConfLeaseDone    = resourceStateConfDone
+)
+
+func domainLeaseStateRefreshFunc(ctx context.Context, virConn *libvirt.Libvirt, domain libvirt.Domain, waitForLeases []*libvirtxml.DomainInterface, rd *schema.ResourceData) retry.StateRefreshFunc {
+	return func() (interface{}, string, error) {
 		state, err := domainGetState(virConn, domain)
 		if err != nil {
 			return false, "", err
@@ -42,7 +39,7 @@ func domainWaitForLeases(ctx context.Context, virConn *libvirt.Libvirt, domain l
 		}
 
 		if state != "running" {
-			return false, domWaitLeaseStillWaiting, nil
+			return false, domainStateConfLeaseWaiting, nil
 		}
 
 		// check we have IPs for all the interfaces we are waiting for
@@ -57,28 +54,40 @@ func domainWaitForLeases(ctx context.Context, virConn *libvirt.Libvirt, domain l
 			}
 			if !found {
 				log.Printf("[DEBUG] IP address not found for iface=%+v: will try in a while", strings.ToUpper(iface.MAC.Address))
-				return false, domWaitLeaseStillWaiting, nil
+				return false, domainStateConfLeaseWaiting, nil
 			}
 		}
 
 		log.Printf("[DEBUG] all the %d IP addresses obtained for the domain", len(waitForLeases))
-		return true, domWaitLeaseDone, nil
+		return true, domainStateConfLeaseDone, nil
 	}
+}
 
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{domWaitLeaseStillWaiting},
-		Target:     []string{domWaitLeaseDone},
-		Refresh:    waitFunc,
-		Timeout:    timeout,
+func waitForStateDomainLeaseDone(ctx context.Context, virConn *libvirt.Libvirt, domain libvirt.Domain, waitForLeases []*libvirtxml.DomainInterface, rd *schema.ResourceData,
+) error {
+	stateConf := &retry.StateChangeConf{
+		Pending:    []string{domainStateConfLeaseWaiting},
+		Target:     []string{domainStateConfLeaseDone},
+		Refresh:    domainLeaseStateRefreshFunc(ctx, virConn, domain, waitForLeases, rd),
+		Timeout:    rd.Timeout(schema.TimeoutCreate),
 		MinTimeout: resourceStateMinTimeout,
 		Delay:      resourceStateDelay,
 	}
 
 	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
-		return err
+		ipNotFoundMsg := "Please check following: \n" +
+			"1) is the domain running properly? \n" +
+			"2) has the network interface an IP address? \n" +
+			"3) Networking issues on your libvirt setup? \n " +
+			"4) is DHCP enabled on this Domain's network? \n" +
+			"5) if you use bridge network, the domain should have the pkg" +
+			" qemu-agent installed \n" +
+			"IMPORTANT: This error is not a terraform libvirt-provider" +
+			" error, but an error caused by your KVM/libvirt" +
+			" infrastructure configuration/setup"
+		return fmt.Errorf("couldn't retrieve IP address of domain id: %s. %s \n %s", rd.Id(), ipNotFoundMsg, err)
 	}
-
-	log.Print("[DEBUG] wait-for-leases was successful")
+	log.Print("[DEBUG] got lease")
 	return nil
 }
 

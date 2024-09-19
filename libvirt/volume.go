@@ -6,51 +6,31 @@ import (
 	"log"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 )
 
 const (
-	volExistsID    = "EXISTS"
-	volNotExistsID = "NOT-EXISTS"
+	volumeStateConfNotExists = resourceStateConfNotExists
+	volumeStateConfExists    = resourceStateConfExists
 )
 
-// volumeExistsStateRefreshFunc returns "EXISTS" or "NOT-EXISTS" depending on the current volume existence.
-func volumeExistsStateRefreshFunc(virConn *libvirt.Libvirt, key string) resource.StateRefreshFunc {
+func volumeExistsStateRefreshFunc(virConn *libvirt.Libvirt, key string) retry.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		_, err := virConn.StorageVolLookupByKey(key)
 		if err != nil {
 			if isError(err, libvirt.ErrNoStorageVol) {
 				log.Printf("Volume %s does not exist", key)
-				return virConn, volNotExistsID, nil
+				return virConn, resourceStateConfNotExists, nil
 			}
 		}
-		return virConn, volExistsID, err
+		return virConn, resourceStateConfExists, err
 	}
 }
 
-// waitForStateVolumeExists waits for a storage volume to be up and timeout after 5 minutes.
 func waitForStateVolumeExists(ctx context.Context, virConn *libvirt.Libvirt, key string) error {
-	log.Printf("Waiting for volume %s to be active...", key)
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{volNotExistsID},
-		Target:     []string{volExistsID},
-		Refresh:    volumeExistsStateRefreshFunc(virConn, key),
-		Timeout:    resourceStateTimeout,
-		MinTimeout: resourceStateMinTimeout,
-	}
-
-	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
-		return err
-	}
-	return nil
-}
-
-// volumeWaitDeleted waits for a storage volume to be removed.
-func volumeWaitDeleted(ctx context.Context, virConn *libvirt.Libvirt, key string) error {
-	log.Printf("Waiting for volume %s to be deleted...", key)
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{volExistsID},
-		Target:     []string{volNotExistsID},
+	stateConf := &retry.StateChangeConf{
+		Pending:    []string{volumeStateConfNotExists},
+		Target:     []string{volumeStateConfExists},
 		Refresh:    volumeExistsStateRefreshFunc(virConn, key),
 		Timeout:    resourceStateTimeout,
 		MinTimeout: resourceStateMinTimeout,
@@ -68,6 +48,7 @@ func volumeDelete(ctx context.Context, client *Client, key string) error {
 	if virConn == nil {
 		return fmt.Errorf(LibVirtConIsNil)
 	}
+
 	volume, err := virConn.StorageVolLookupByKey(key)
 	if err != nil {
 		if isError(err, libvirt.ErrNoStorageVol) {
@@ -117,5 +98,16 @@ func volumeDelete(ctx context.Context, client *Client, key string) error {
 		return nil
 	}
 
-	return volumeWaitDeleted(ctx, client.libvirt, key)
+	stateConf := &retry.StateChangeConf{
+		Pending:    []string{resourceStateConfExists},
+		Target:     []string{resourceStateConfNotExists},
+		Refresh:    volumeExistsStateRefreshFunc(virConn, key),
+		Timeout:    resourceStateTimeout,
+		MinTimeout: resourceStateMinTimeout,
+	}
+
+	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
+		return err
+	}
+	return nil
 }

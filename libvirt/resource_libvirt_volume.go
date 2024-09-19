@@ -269,7 +269,7 @@ be smaller than the backing store specified with
 		}
 	}
 
-	if err := waitForStateVolumeExists(ctx, client.libvirt, volume.Key); err != nil {
+	if err := waitForStateVolumeExists(ctx, virConn, volume.Key); err != nil {
 		return diag.FromErr(err)
 	}
 

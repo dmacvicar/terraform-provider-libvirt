@@ -9,7 +9,6 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
 
@@ -104,7 +103,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Required: false,
-							Default: true,
+							Default:  true,
 						},
 						"local_only": {
 							Type:     schema.TypeBool,
@@ -476,17 +475,8 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 
 	log.Printf("[INFO] Created network %s [%s]", networkDef.Name, d.Id())
 
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"BUILD"},
-		Target:     []string{"ACTIVE"},
-		Refresh:    waitForNetworkActive(virConn, network),
-		Timeout:    resourceStateTimeout,
-		Delay:      resourceStateDelay,
-		MinTimeout: resourceStateMinTimeout,
-	}
-	_, err = stateConf.WaitForStateContext(ctx)
-	if err != nil {
-		return diag.Errorf("error waiting for network to reach ACTIVE state: %s", err)
+	if err := waitForStateNetworkActive(ctx, virConn, network); err != nil {
+		return diag.Errorf("error waiting for network to reach active state: %s", err)
 	}
 
 	if autostart, ok := d.GetOk("autostart"); ok {
@@ -695,17 +685,8 @@ func resourceLibvirtNetworkDelete(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"ACTIVE"},
-		Target:     []string{"NOT-EXISTS"},
-		Refresh:    waitForNetworkDestroyed(virConn, d.Id()),
-		Timeout:    resourceStateTimeout,
-		Delay:      resourceStateDelay,
-		MinTimeout: resourceStateMinTimeout,
-	}
-	_, err = stateConf.WaitForStateContext(ctx)
-	if err != nil {
-		return diag.Errorf("error waiting for network to reach NOT-EXISTS state: %s", err)
+	if err := waitForStateNetworkDestroyed(ctx, virConn, d.Id()); err != nil {
+		return diag.Errorf("error waiting for network to reach destroyed state: %s", err)
 	}
 	return nil
 }
