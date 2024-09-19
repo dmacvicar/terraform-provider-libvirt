@@ -38,7 +38,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 	//  1. load uri encoded keyfile
 	//  2. load override as specified in ssh config
 	//  3. load default ssh keyfile path
-	sshKeyPaths := []string {}
+	sshKeyPaths := []string{}
 	sshKeyPath := q.Get("keyfile")
 	if sshKeyPath != "" {
 		sshKeyPaths = append(sshKeyPaths, sshKeyPath)
@@ -56,7 +56,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 		sshKeyPaths = []string{defaultSSHKeyPath}
 	}
 
-	log.Printf("[DEBUG] ssh identity files for host '%s': %s", target, sshKeyPaths);
+	log.Printf("[DEBUG] ssh identity files for host '%s': %s", target, sshKeyPaths)
 
 	auths := strings.Split(authMethods, ",")
 	result := make([]ssh.AuthMethod, 0)
@@ -152,7 +152,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		return nil, fmt.Errorf("[ERROR] dialHost failed: max tunnel depth of 10 reached")
 	}
 
-	log.Printf("[INFO] establishing ssh connection to '%s'", target);
+	log.Printf("[INFO] establishing ssh connection to '%s'", target)
 
 	q := u.Query()
 
@@ -160,15 +160,15 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 	if port == "" {
 		port = defaultSSHPort
 	} else {
-		log.Printf("[DEBUG] ssh Port is overridden to: '%s'", port);
+		log.Printf("[DEBUG] ssh Port is overridden to: '%s'", port)
 	}
 
 	hostName, err := sshcfg.Get(target, "HostName")
 	if err == nil {
 		if hostName == "" {
-			hostName = target;
+			hostName = target
 		} else {
-			log.Printf("[DEBUG] HostName is overridden to: '%s'", hostName);
+			log.Printf("[DEBUG] HostName is overridden to: '%s'", hostName)
 		}
 	}
 
@@ -234,10 +234,10 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 	}
 
 	cfg := ssh.ClientConfig{
-		User:            u.User.Username(),
-		HostKeyCallback: hostKeyCallback,
+		User:              u.User.Username(),
+		HostKeyCallback:   hostKeyCallback,
 		HostKeyAlgorithms: hostKeyAlgorithms,
-		Timeout:         dialTimeout,
+		Timeout:           dialTimeout,
 	}
 
 	proxy, err := sshcfg.Get(target, "ProxyCommand")
@@ -251,7 +251,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		log.Printf("[DEBUG] found ProxyJump '%v'", proxy)
 
 		// this is a proxy jump: we recurse into that proxy
-		bastion, err = u.dialHost(proxy, sshcfg, depth + 1)
+		bastion, err = u.dialHost(proxy, sshcfg, depth+1)
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to bastion host '%v': %w", proxy, err)
 		}
@@ -276,7 +276,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		return nil, fmt.Errorf("could not configure SSH authentication methods")
 	}
 
-	if (bastion != nil) {
+	if bastion != nil {
 		// if this is a proxied connection, we want to dial through the bastion host
 		log.Printf("[INFO] SSH connecting to '%v' (%v) through bastion host '%v'", target, hostName, proxy)
 		// Dial a connection to the service host, from the bastion
@@ -296,7 +296,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 	} else {
 		// this is a direct connection to the target host
 		log.Printf("[INFO] SSH connecting to '%v' (%v)", target, hostName)
-		conn,err := ssh.Dial("tcp", net.JoinHostPort(hostName, port), &cfg)
+		conn, err := ssh.Dial("tcp", net.JoinHostPort(hostName, port), &cfg)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to connect to remote host '%v': %w", target, err)

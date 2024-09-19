@@ -121,10 +121,10 @@ func newDomainDefForConnection(virConn *libvirt.Libvirt, rd *schema.ResourceData
 		d.OS.Firmware = "efi"
 	}
 
-        if d.OS.Type.Arch == "s390x" {
-                // for s390x remove the Features definition, because they are not available on this arch
-                d.Features = nil
-        }
+	if d.OS.Type.Arch == "s390x" {
+		// for s390x remove the Features definition, because they are not available on this arch
+		d.Features = nil
+	}
 
 	caps, err := getHostCapabilities(virConn)
 	if err != nil {
