@@ -40,9 +40,9 @@ resource "libvirt_network" "kube_network" {
 
   # (Optional) DNS configuration
   dns {
-    # (Optional, default false)
-    # Set to true, if no other option is specified and you still want to 
-    # enable dns.
+    # (Optional, default true)
+    # If disabled, no dns will be setup for this network and dns configuration
+	# will be ignored.
     enabled = true
     # (Optional, default false)
     # true: DNS requests under this domain will only be resolved by the
