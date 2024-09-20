@@ -44,9 +44,6 @@ func resourceLibvirtNodeDevicesRead(d *schema.ResourceData, meta interface{}) er
 	log.Printf("[DEBUG] Read data source libvirt_nodedevices")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
-	}
 
 	var cap libvirt.OptString
 

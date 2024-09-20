@@ -39,9 +39,6 @@ func newIgnitionDef() defIgnition {
 // Returns a string holding terraform's internal ID of this resource.
 func (ign *defIgnition) CreateAndUpload(ctx context.Context, client *Client) (string, error) {
 	virConn := client.libvirt
-	if virConn == nil {
-		return "", fmt.Errorf(LibVirtConIsNil)
-	}
 
 	pool, err := virConn.StoragePoolLookupByName(ign.PoolName)
 	if err != nil {

@@ -85,9 +85,6 @@ func resourceLibvirtVolume() *schema.Resource {
 func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	poolName := "default"
 	if _, ok := d.GetOk("pool"); ok {
@@ -280,9 +277,6 @@ be smaller than the backing store specified with
 func resourceLibvirtVolumeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 	virConn := client.libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	poolName := d.Get("pool").(string)
 
@@ -368,9 +362,6 @@ func resourceLibvirtVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 // resourceLibvirtVolumeDelete removed a volume resource.
 func resourceLibvirtVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	if client.libvirt == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	return diag.FromErr(volumeDelete(ctx, client, d.Id()))
 }

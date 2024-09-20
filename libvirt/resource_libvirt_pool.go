@@ -77,9 +77,6 @@ func resourceLibvirtPool() *schema.Resource {
 func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 	virConn := client.libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	poolType := d.Get("type").(string)
 	if poolType != "dir" {
@@ -165,9 +162,6 @@ func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 func resourceLibvirtPoolRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 	virConn := client.libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	uuid := parseUUID(d.Id())
 
@@ -226,14 +220,7 @@ func resourceLibvirtPoolRead(ctx context.Context, d *schema.ResourceData, meta i
 
 func resourceLibvirtPoolDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	if client.libvirt == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
-
 	virConn := client.libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	uuid := parseUUID(d.Id())
 

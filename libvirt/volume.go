@@ -45,9 +45,6 @@ func waitForStateVolumeExists(ctx context.Context, virConn *libvirt.Libvirt, key
 // volumeDelete removes the volume identified by `key` from libvirt.
 func volumeDelete(ctx context.Context, client *Client, key string) error {
 	virConn := client.libvirt
-	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
-	}
 
 	volume, err := virConn.StorageVolLookupByKey(key)
 	if err != nil {

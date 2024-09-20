@@ -59,9 +59,6 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 	log.Printf("[DEBUG] Read data source libvirt_nodeinfo")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
-	}
 
 	model, memory, cpus, _, nodes, sockets, cores, threads, err := virConn.NodeGetInfo()
 	if err != nil {

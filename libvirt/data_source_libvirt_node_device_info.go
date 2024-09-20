@@ -465,9 +465,6 @@ func resourceLibvirtNodeDeviceInfoRead(d *schema.ResourceData, meta interface{})
 	log.Printf("[DEBUG] Read data source libvirt_nodedevices")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return fmt.Errorf(LibVirtConIsNil)
-	}
 
 	var deviceName string
 

@@ -484,9 +484,6 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("[DEBUG] Create resource libvirt_domain")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	domainDef, err := newDomainDefForConnection(virConn, d)
 	if err != nil {
@@ -664,9 +661,6 @@ func resourceLibvirtDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("[DEBUG] Update resource libvirt_domain")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	uuid := parseUUID(d.Id())
 
@@ -768,9 +762,6 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 	log.Printf("[DEBUG] Read resource libvirt_domain")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	uuid := parseUUID(d.Id())
 
@@ -1077,9 +1068,6 @@ func resourceLibvirtDomainDelete(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("[DEBUG] Delete resource libvirt_domain")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	log.Printf("[DEBUG] Deleting domain %s", d.Id())
 

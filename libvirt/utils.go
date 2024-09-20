@@ -12,9 +12,6 @@ import (
 
 var diskLetters = []rune("abcdefghijklmnopqrstuvwxyz")
 
-// LibVirtConIsNil is a global string error msg.
-const LibVirtConIsNil string = "the libvirt connection was nil"
-
 // diskLetterForIndex return diskLetters for index.
 func diskLetterForIndex(i int) string {
 	q := i / len(diskLetters)

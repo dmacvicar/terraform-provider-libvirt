@@ -57,9 +57,6 @@ func removeTmpIsoDirectory(iso string) {
 
 func (ci *defCloudInit) UploadIso(ctx context.Context, client *Client, iso string) (string, error) {
 	virConn := client.libvirt
-	if virConn == nil {
-		return "", fmt.Errorf(LibVirtConIsNil)
-	}
 
 	pool, err := virConn.StoragePoolLookupByName(ci.PoolName)
 	if err != nil {

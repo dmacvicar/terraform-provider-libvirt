@@ -37,9 +37,6 @@ func resourceIgnition() *schema.Resource {
 func resourceIgnitionCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	log.Printf("[DEBUG] creating ignition file")
 	client := meta.(*Client)
-	if client.libvirt == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	ignition := newIgnitionDef()
 
@@ -60,9 +57,6 @@ func resourceIgnitionCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 func resourceIgnitionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	ign, err := newIgnitionDefFromRemoteVol(virConn, d.Id())
 	d.Set("pool", ign.PoolName)
@@ -77,9 +71,6 @@ func resourceIgnitionRead(ctx context.Context, d *schema.ResourceData, meta inte
 
 func resourceIgnitionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	if client.libvirt == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	key, err := getIgnitionVolumeKeyFromTerraformID(d.Id())
 	if err != nil {

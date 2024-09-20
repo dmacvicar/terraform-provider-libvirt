@@ -298,9 +298,6 @@ func resourceLibvirtNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 	// check the list of things that can be changed dynamically
 	// in https://wiki.libvirt.org/page/Networking#virsh_net-update
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	uuid := parseUUID(d.Id())
 	network, err := virConn.NetworkLookupByUUID(uuid)
@@ -344,9 +341,6 @@ func resourceLibvirtNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// see https://libvirt.org/formatnetwork.html
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	networkDef := newNetworkDef()
 	networkDef.Name = d.Get("name").(string)
@@ -495,9 +489,6 @@ func resourceLibvirtNetworkRead(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("[DEBUG] Read resource libvirt_network")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	uuid := parseUUID(d.Id())
 
@@ -651,9 +642,7 @@ func resourceLibvirtNetworkRead(ctx context.Context, d *schema.ResourceData, met
 
 func resourceLibvirtNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
+
 	log.Printf("[DEBUG] Deleting network ID %s", d.Id())
 
 	uuid := parseUUID(d.Id())
