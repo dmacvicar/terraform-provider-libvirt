@@ -178,15 +178,15 @@ func (ci *defCloudInit) createFiles() (string, error) {
 		return "", fmt.Errorf("cannot create tmp directory for cloudinit ISO generation: %w", err)
 	}
 	// user-data
-	if err = os.WriteFile(filepath.Join(tmpDir, userDataFileName), []byte(ci.UserData), os.ModePerm); err != nil {
+	if err = os.WriteFile(filepath.Join(tmpDir, userDataFileName), []byte(ci.UserData), 0600); err != nil {
 		return "", fmt.Errorf("error while writing user-data to file: %w", err)
 	}
 	// meta-data
-	if err = os.WriteFile(filepath.Join(tmpDir, metaDataFileName), []byte(ci.MetaData), os.ModePerm); err != nil {
+	if err = os.WriteFile(filepath.Join(tmpDir, metaDataFileName), []byte(ci.MetaData), 0600); err != nil {
 		return "", fmt.Errorf("error while writing meta-data to file: %w", err)
 	}
 	// network-config
-	if err = os.WriteFile(filepath.Join(tmpDir, networkConfigFileName), []byte(ci.NetworkConfig), os.ModePerm); err != nil {
+	if err = os.WriteFile(filepath.Join(tmpDir, networkConfigFileName), []byte(ci.NetworkConfig), 0600); err != nil {
 		return "", fmt.Errorf("error while writing network-config to file: %w", err)
 	}
 
