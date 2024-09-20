@@ -342,7 +342,11 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 	// see https://libvirt.org/formatnetwork.html
 	virConn := meta.(*Client).libvirt
 
-	networkDef := newNetworkDef()
+	networkDef, err := newNetworkDef()
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
 	networkDef.Name = d.Get("name").(string)
 	networkDef.Domain = getDomainFromResource(d)
 

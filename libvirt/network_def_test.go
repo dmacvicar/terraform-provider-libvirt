@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/stretchr/testify/require"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -14,7 +15,9 @@ func init() {
 }
 
 func TestDefaultNetworkMarshall(t *testing.T) {
-	b := newNetworkDef()
+	b, err := newNetworkDef()
+	require.NoError(t, err)
+
 	buf := new(bytes.Buffer)
 	enc := xml.NewEncoder(buf)
 	enc.Indent("  ", "    ")
