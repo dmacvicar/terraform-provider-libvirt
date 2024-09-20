@@ -125,6 +125,43 @@ func TestAccLibvirtVolume_Basic(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtVolume_SizeRound(t *testing.T) {
+	var volume libvirt.StorageVol
+	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+                resource "libvirt_pool" "%s" {
+                    name = "%s"
+                    type = "dir"
+                    path = "%s"
+                }
+
+		resource "libvirt_volume" "%s" {
+		    name = "%s"
+		    size =  1073741823
+                    pool = "${libvirt_pool.%s.name}"
+				}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeResource, randomVolumeName, randomPoolName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeResource, &volume),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume."+randomVolumeResource, "name", randomVolumeName),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume."+randomVolumeResource, "size", "1073741824"),
+				),
+			},
+		},
+	})
+}
+
+
 func TestAccLibvirtVolume_BackingStoreTestByID(t *testing.T) {
 	var volume libvirt.StorageVol
 	random := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
