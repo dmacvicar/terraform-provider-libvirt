@@ -139,6 +139,16 @@ func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 
 	err = virConn.StoragePoolCreate(pool, 0)
 	if err != nil {
+		// In some cases the pool creation fails but artifacts are crated.
+		// Remove any artifacts when creation fails.
+		if e := virConn.StoragePoolDestroy(pool); e != nil {
+			log.Printf("[WARNING] %v", err)
+		}
+
+		if e := virConn.StoragePoolUndefine(pool); e != nil {
+			log.Printf("[WARNING] %v", err)
+		}
+
 		return diag.Errorf("error starting libvirt storage pool: %s", err)
 	}
 
