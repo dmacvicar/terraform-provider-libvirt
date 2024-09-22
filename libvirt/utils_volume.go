@@ -29,7 +29,7 @@ func newVolumeUploader(virConn *libvirt.Libvirt, volume *libvirt.StorageVol, siz
 }
 
 // returns a function you can give a writer to download the volume content
-// the function will return the downloaded size
+// the function will return the downloaded size.
 func newVolumeDownloader(virConn *libvirt.Libvirt, volume *libvirt.StorageVol) func(src io.Writer) error {
 	return func(dst io.Writer) error {
 		start := time.Now()
