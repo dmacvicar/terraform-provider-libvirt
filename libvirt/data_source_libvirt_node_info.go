@@ -79,12 +79,12 @@ func resourceLibvirtNodeInfoRead(d *schema.ResourceData, meta interface{}) error
 }
 
 func int8ToString(bs [32]int8) string {
-	ba := []uint8{}
+	ba := []byte{}
 	for _, b := range bs {
 		if b == 0 {
 			break
 		}
-		ba = append(ba, uint8(b))
+		ba = append(ba, byte(b))
 	}
 	return string(ba)
 }
