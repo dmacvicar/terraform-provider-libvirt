@@ -10,6 +10,7 @@ linters-settings:
   mnd:
     ignored-functions:
       - strings.SplitN
+      - os.WriteFile # perms is ok as numbers
   depguard:
     rules:
       main:
@@ -62,9 +63,12 @@ issues:
     - text: "ifElseChain: rewrite if-else to switch statement"
       linters:
         - gocritic
-    - text: "should check returned error before deferring file.Close()"
+    - text: "should check error returned from os.Open() before deferring file.Close()"
       linters:
         - staticcheck
     - path: '(.+)_test\.go'
       linters:
         - lll
+    - text: "d.GetOkExists is deprecated"
+      linters:
+        - staticcheck

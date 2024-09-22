@@ -25,7 +25,9 @@ const (
 	domainStateConfLeaseDone    = resourceStateConfDone
 )
 
-func domainLeaseStateRefreshFunc(ctx context.Context, virConn *libvirt.Libvirt, domain libvirt.Domain, waitForLeases []*libvirtxml.DomainInterface, rd *schema.ResourceData) retry.StateRefreshFunc {
+func domainLeaseStateRefreshFunc(_ context.Context,
+	virConn *libvirt.Libvirt, domain libvirt.Domain,
+	waitForLeases []*libvirtxml.DomainInterface, rd *schema.ResourceData) retry.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		state, err := domainGetState(virConn, domain)
 		if err != nil {
@@ -63,7 +65,9 @@ func domainLeaseStateRefreshFunc(ctx context.Context, virConn *libvirt.Libvirt, 
 	}
 }
 
-func waitForStateDomainLeaseDone(ctx context.Context, virConn *libvirt.Libvirt, domain libvirt.Domain, waitForLeases []*libvirtxml.DomainInterface, rd *schema.ResourceData,
+func waitForStateDomainLeaseDone(ctx context.Context,
+	virConn *libvirt.Libvirt, domain libvirt.Domain,
+	waitForLeases []*libvirtxml.DomainInterface, rd *schema.ResourceData,
 ) error {
 	stateConf := &retry.StateChangeConf{
 		Pending:    []string{domainStateConfLeaseWaiting},
@@ -85,7 +89,7 @@ func waitForStateDomainLeaseDone(ctx context.Context, virConn *libvirt.Libvirt, 
 			"IMPORTANT: This error is not a terraform libvirt-provider" +
 			" error, but an error caused by your KVM/libvirt" +
 			" infrastructure configuration/setup"
-		return fmt.Errorf("couldn't retrieve IP address of domain id: %s. %s \n %s", rd.Id(), ipNotFoundMsg, err)
+		return fmt.Errorf("couldn't retrieve IP address of domain id: %s. %s \n %w", rd.Id(), ipNotFoundMsg, err)
 	}
 	log.Print("[DEBUG] got lease")
 	return nil

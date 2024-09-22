@@ -49,10 +49,11 @@ func (i *localImage) Size() (uint64, error) {
 //nolint:mnd
 func (i *localImage) IsQCOW2() (bool, error) {
 	file, err := os.Open(i.path)
-	defer file.Close()
 	if err != nil {
 		return false, fmt.Errorf("error while opening %s: %w", i.path, err)
 	}
+	defer file.Close()
+
 	buf := make([]byte, 8)
 	_, err = io.ReadAtLeast(file, buf, 8)
 	if err != nil {
@@ -63,10 +64,11 @@ func (i *localImage) IsQCOW2() (bool, error) {
 
 func (i *localImage) Import(uploader func(io.Reader) error, vol libvirtxml.StorageVolume) error {
 	file, err := os.Open(i.path)
-	defer file.Close()
 	if err != nil {
 		return fmt.Errorf("error while opening %s: %w", i.path, err)
 	}
+	defer file.Close()
+
 
 	fi, err := file.Stat()
 	if err != nil {

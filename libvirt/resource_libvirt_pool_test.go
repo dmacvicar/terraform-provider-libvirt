@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/stretchr/testify/require"
 )
 
 func testAccCheckLibvirtPoolExists(name string, pool *libvirt.StoragePool) resource.TestCheckFunc {
@@ -180,17 +181,14 @@ func TestAccLibvirtPool_ManuallyDestroyed(t *testing.T) {
 					// delete the pool out of band (from terraform)
 					client := testAccProvider.Meta().(*Client)
 
-					if err := client.libvirt.StoragePoolDestroy(pool); err != nil {
-						t.Errorf(err.Error())
-					}
+					err := client.libvirt.StoragePoolDestroy(pool)
+					require.NoError(t, err)
 
-					if err := client.libvirt.StoragePoolDelete(pool, libvirt.StoragePoolDeleteNormal); err != nil {
-						t.Errorf(err.Error())
-					}
+					err = client.libvirt.StoragePoolDelete(pool, libvirt.StoragePoolDeleteNormal)
+					require.NoError(t, err)
 
-					if err := client.libvirt.StoragePoolUndefine(pool); err != nil {
-						t.Errorf(err.Error())
-					}
+					err = client.libvirt.StoragePoolUndefine(pool)
+					require.NoError(t, err)
 				},
 			},
 		},
