@@ -1,8 +1,8 @@
 package libvirt
 
 import (
-	"fmt"
 	"crypto/rand"
+	"fmt"
 	"net"
 )
 

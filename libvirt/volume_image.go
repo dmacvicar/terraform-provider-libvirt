@@ -69,7 +69,6 @@ func (i *localImage) Import(uploader func(io.Reader) error, vol libvirtxml.Stora
 	}
 	defer file.Close()
 
-
 	fi, err := file.Stat()
 	if err != nil {
 		return err
