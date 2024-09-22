@@ -46,7 +46,7 @@ func (i *localImage) Size() (uint64, error) {
 	return uint64(fi.Size()), nil
 }
 
-//nolint:gomnd
+//nolint:mnd
 func (i *localImage) IsQCOW2() (bool, error) {
 	file, err := os.Open(i.path)
 	defer file.Close()
@@ -125,7 +125,7 @@ func (i *httpImage) Size() (uint64, error) {
 	return uint64(length), nil
 }
 
-//nolint:gomnd
+//nolint:mnd
 func (i *httpImage) IsQCOW2() (bool, error) {
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", i.url.String(), nil)
@@ -228,7 +228,7 @@ func newImage(source string) (image, error) {
 
 // isQCOW2Header returns True when the buffer starts with the qcow2 header.
 //
-//nolint:gomnd
+//nolint:mnd
 func isQCOW2Header(buf []byte) (bool, error) {
 	if len(buf) < 8 {
 		return false, fmt.Errorf("expected header of 8 bytes. Got %d", len(buf))

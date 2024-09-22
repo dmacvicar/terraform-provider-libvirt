@@ -117,7 +117,7 @@ func (ign *defIgnition) buildTerraformKey(volumeKey string) string {
 	return fmt.Sprintf("%s;%s", volumeKey, uuid.New())
 }
 
-//nolint:gomnd
+//nolint:mnd
 func getIgnitionVolumeKeyFromTerraformID(id string) (string, error) {
 	s := strings.SplitN(id, ";", 2)
 	if len(s) != 2 {

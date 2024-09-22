@@ -29,7 +29,7 @@ func newCopier(virConn *libvirt.Libvirt, volume *libvirt.StorageVol, size uint64
 	return copier
 }
 
-//nolint:gomnd
+//nolint:mnd
 func timeFromEpoch(str string) time.Time {
 	var s, ns int
 

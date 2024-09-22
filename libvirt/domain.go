@@ -492,7 +492,7 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 			if wwn, ok := d.GetOk(prefix + ".wwn"); ok {
 				disk.WWN = wwn.(string)
 			} else {
-				//nolint:gomnd
+				//nolint:mnd
 				disk.WWN = randomWWN(10)
 			}
 

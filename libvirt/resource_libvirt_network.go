@@ -538,7 +538,7 @@ func resourceLibvirtNetworkRead(ctx context.Context, d *schema.ResourceData, met
 
 	// read add the IP addresses
 	addresses := []string{}
-	//nolint:gomnd
+	//nolint:mnd
 	for _, address := range networkDef.IPs {
 		// we get the host interface IP (ie, 10.10.8.1) but we want the network CIDR (ie, 10.10.8.0/24)
 		// so we need some transformations...

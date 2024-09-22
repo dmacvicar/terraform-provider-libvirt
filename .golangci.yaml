@@ -6,7 +6,7 @@ linters-settings:
     excludes:
       - G402
       - G106
-  gomnd:
+  mnd:
     ignored-functions:
       - strings.SplitN
   depguard:
@@ -47,7 +47,7 @@ linters:
     - lll
     - errorlint
     - errcheck
-    - gomnd
+    - mnd
     - nolintlint
 
 issues:
@@ -57,7 +57,7 @@ issues:
         - errcheck
     - text: "Magic number: 1024, in <argument> detected"
       linters:
-        - gomnd
+        - mnd
     - text: "ifElseChain: rewrite if-else to switch statement"
       linters:
         - gocritic

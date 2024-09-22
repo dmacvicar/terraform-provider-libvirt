@@ -149,7 +149,7 @@ func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.Netw
 
 	ones, bits := ipNet.Mask.Size()
 	family := "ipv4"
-	if bits == (net.IPv6len * 8) { //nolint:gomnd
+	if bits == (net.IPv6len * 8) { //nolint:mnd
 		family = "ipv6"
 	}
 
