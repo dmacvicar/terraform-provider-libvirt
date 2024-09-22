@@ -13,13 +13,13 @@ import (
 )
 
 const (
-	uploaderBufferSize = 4 * 1024 * 1024
+	copierBufferSize = 4 * 1024 * 1024
 )
 
 func newVolumeUploader(virConn *libvirt.Libvirt, volume *libvirt.StorageVol, size uint64) func(src io.Reader) error {
 	return func(src io.Reader) error {
 		start := time.Now()
-		if err := virConn.StorageVolUpload(*volume, bufio.NewReaderSize(src, uploaderBufferSize), 0, size, 0); err != nil {
+		if err := virConn.StorageVolUpload(*volume, bufio.NewReaderSize(src, copierBufferSize), 0, size, 0); err != nil {
 			return fmt.Errorf("error while uploading volume %w", err)
 		}
 		log.Printf("[DEBUG] upload took %d ms", time.Since(start).Milliseconds())
