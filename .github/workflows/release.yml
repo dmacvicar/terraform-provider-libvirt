@@ -3,6 +3,8 @@ on:
   push:
     tags:
       - 'v*'
+permissions:
+  contents: write
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
@@ -28,6 +30,7 @@ jobs:
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
+          distribution: goreleaser
           version: latest
           args: release --clean
         env:
