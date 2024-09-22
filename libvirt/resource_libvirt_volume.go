@@ -7,7 +7,7 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -101,9 +101,9 @@ func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	if err := resource.RetryContext(ctx, d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+	if err := retry.RetryContext(ctx, d.Timeout(schema.TimeoutCreate), func() *retry.RetryError {
 		if err := virConn.StoragePoolRefresh(pool, 0); err != nil {
-			return resource.RetryableError(err)
+			return retry.RetryableError(err)
 		}
 		return nil
 	}); err != nil {
@@ -281,7 +281,7 @@ func resourceLibvirtVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 	poolName := d.Get("pool").(string)
 
 	var volume libvirt.StorageVol
-	err := resource.RetryContext(ctx, d.Timeout(schema.TimeoutRead), func() *resource.RetryError {
+	err := retry.RetryContext(ctx, d.Timeout(schema.TimeoutRead), func() *retry.RetryError {
 		var lookupErr error
 		volume, lookupErr = virConn.StorageVolLookupByKey(d.Id())
 		if lookupErr == nil {
@@ -289,31 +289,31 @@ func resourceLibvirtVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 		}
 
 		if !isError(lookupErr, libvirt.ErrNoStorageVol) {
-			return resource.NonRetryableError(lookupErr)
+			return retry.NonRetryableError(lookupErr)
 		}
 
 		// volume not found, try to start the pool before retry
 		volPool, err := virConn.StoragePoolLookupByName(poolName)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("error retrieving pool %s for volume %s: %w", poolName, d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error retrieving pool %s for volume %s: %w", poolName, d.Id(), err))
 		}
 
 		active, err := virConn.StoragePoolIsActive(volPool)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("error retrieving status of pool %s for volume %s: %w", poolName, d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error retrieving status of pool %s for volume %s: %w", poolName, d.Id(), err))
 		}
 
 		// pool was already started, nothing else to do
 		if active == 1 {
-			return resource.NonRetryableError(lookupErr)
+			return retry.NonRetryableError(lookupErr)
 		}
 
 		if err := virConn.StoragePoolCreate(volPool, 0); err != nil {
-			return resource.NonRetryableError(fmt.Errorf("error starting pool %s: %w", poolName, err))
+			return retry.NonRetryableError(fmt.Errorf("error starting pool %s: %w", poolName, err))
 		}
 
 		// pool started successfully, retry
-		return resource.RetryableError(lookupErr)
+		return retry.RetryableError(lookupErr)
 	})
 
 	if isError(err, libvirt.ErrNoStorageVol) {
