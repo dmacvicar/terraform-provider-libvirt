@@ -2,7 +2,7 @@ package libvirt
 
 import (
 	"fmt"
-	"math/rand"
+	"crypto/rand"
 	"net"
 )
 
@@ -12,7 +12,6 @@ import (
 //nolint:mnd
 func randomMACAddress() (string, error) {
 	buf := make([]byte, 3)
-	//nolint:gosec // math.rand is enough for this
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
 	}
