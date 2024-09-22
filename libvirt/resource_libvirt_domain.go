@@ -531,7 +531,11 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	setVideo(d, &domainDef)
-	setConsoles(d, &domainDef)
+
+	if err := setConsoles(d, &domainDef); err != nil {
+		return diag.FromErr(err)
+	}
+
 	setCmdlineArgs(d, &domainDef)
 	setFirmware(d, &domainDef)
 	setBootDevices(d, &domainDef)

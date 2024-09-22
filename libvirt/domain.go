@@ -422,23 +422,29 @@ func setBootDevices(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	}
 }
 
-func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
+func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
 	for i := 0; i < d.Get("console.#").(int); i++ {
 		console := libvirtxml.DomainConsole{}
 		prefix := fmt.Sprintf("console.%d", i)
-		consoleTargetPortInt, err := strconv.Atoi(d.Get(prefix + ".target_port").(string))
-		if err == nil {
-			consoleTargetPort := uint(consoleTargetPortInt)
+
+		portStr := d.Get(prefix + ".target_port").(string)
+		consoleTargetPortUint16, err := strconv.ParseUint(portStr, 10, 16)
+		if err != nil {
+			return fmt.Errorf("invalid port when parsing %s: %w", strconv.Quote(portStr), err)
+		} else {
+			consoleTargetPort := uint(consoleTargetPortUint16)
 			console.Target = &libvirtxml.DomainConsoleTarget{
 				Port: &consoleTargetPort,
 			}
 		}
+
 		if targetType, ok := d.GetOk(prefix + ".target_type"); ok {
 			if console.Target == nil {
 				console.Target = &libvirtxml.DomainConsoleTarget{}
 			}
 			console.Target.Type = targetType.(string)
 		}
+
 		switch d.Get(prefix + ".type").(string) {
 		case "tcp":
 			sourceHost := d.Get(prefix + ".source_host")
@@ -472,6 +478,7 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 		}
 		domainDef.Devices.Consoles = append(domainDef.Devices.Consoles, console)
 	}
+	return nil
 }
 
 func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt) error {
