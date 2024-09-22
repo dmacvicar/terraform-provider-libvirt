@@ -6,6 +6,7 @@ linters-settings:
     excludes:
       - G402
       - G106
+      - G115 # Potential integer overflow when converting between integer types
   mnd:
     ignored-functions:
       - strings.SplitN
