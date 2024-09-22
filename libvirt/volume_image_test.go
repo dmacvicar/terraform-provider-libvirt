@@ -123,12 +123,12 @@ func TestLocalImageDownload(t *testing.T) {
 		Mtime: fmt.Sprintf("%d.%d", tmpfileStat.ModTime().Unix(), tmpfileStat.ModTime().Nanosecond()),
 	}
 
-	copier := func(r io.Reader) error {
+	uploader := func(r io.Reader) error {
 		require.FailNow(t, fmt.Sprintf("This should not be run, as image has not changed. url: %s", url))
 		return nil
 	}
 
-	if err = image.Import(copier, vol); err != nil {
+	if err = image.Import(uploader, vol); err != nil {
 		require.NoError(t, err, "As the image was not modified and not copied, no error was expected. url: %s", tmpfile.Name())
 	}
 
@@ -156,7 +156,7 @@ func TestRemoteImageDownloadRetry(t *testing.T) {
 				}))
 	}
 
-	copier := func(r io.Reader) error {
+	uploader := func(r io.Reader) error {
 		_, err := io.ReadAll(r)
 		return err
 	}
@@ -169,7 +169,7 @@ func TestRemoteImageDownloadRetry(t *testing.T) {
 		t.Errorf("Could not create image object: %v", err)
 	}
 	start := time.Now()
-	if err = image.Import(copier, vol); err != nil {
+	if err = image.Import(uploader, vol); err != nil {
 		t.Fatalf("Expected to retry: %v", err)
 	}
 	if time.Since(start).Seconds() < 4 {
@@ -184,7 +184,7 @@ func TestRemoteImageDownloadRetry(t *testing.T) {
 	if err != nil {
 		t.Errorf("Could not create image object: %v", err)
 	}
-	if err = image.Import(copier, vol); err == nil {
+	if err = image.Import(uploader, vol); err == nil {
 		t.Fatalf("Expected %s to fail with status 4xx", server.URL)
 	}
 	if time.Since(start).Seconds() < 2 {
@@ -219,11 +219,11 @@ func TestRemoteImageDownload(t *testing.T) {
 	vol.Target.Timestamps = &libvirtxml.StorageVolumeTargetTimestamps{
 		Mtime: fmt.Sprintf("%d.%d", tmpfileStat.ModTime().Unix(), tmpfileStat.ModTime().Nanosecond()),
 	}
-	copier := func(r io.Reader) error {
+	uploader := func(r io.Reader) error {
 		t.Fatalf("ERROR: starting copy of %s... but the file is the same!", url)
 		return nil
 	}
-	if err = image.Import(copier, vol); err != nil {
+	if err = image.Import(uploader, vol); err != nil {
 		t.Fatalf("Could not copy image from %s: %v", url, err)
 	}
 	t.Log("File not copied because modification time was the same")

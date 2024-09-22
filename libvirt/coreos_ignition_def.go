@@ -98,7 +98,7 @@ func (ign *defIgnition) CreateAndUpload(ctx context.Context, client *Client) (st
 	}
 
 	// upload ignition file
-	err = img.Import(newCopier(virConn, &volume, volumeDef.Capacity.Value), volumeDef)
+	err = img.Import(newVolumeUploader(virConn, &volume, volumeDef.Capacity.Value), volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("error while uploading ignition file %s: %w", img.String(), err)
 	}

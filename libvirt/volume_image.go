@@ -61,7 +61,7 @@ func (i *localImage) IsQCOW2() (bool, error) {
 	return isQCOW2Header(buf)
 }
 
-func (i *localImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageVolume) error {
+func (i *localImage) Import(uploader func(io.Reader) error, vol libvirtxml.StorageVolume) error {
 	file, err := os.Open(i.path)
 	defer file.Close()
 	if err != nil {
@@ -80,7 +80,7 @@ func (i *localImage) Import(copier func(io.Reader) error, vol libvirtxml.Storage
 		}
 	}
 
-	return copier(file)
+	return uploader(file)
 }
 
 type httpImage struct {
@@ -158,7 +158,7 @@ func (i *httpImage) IsQCOW2() (bool, error) {
 	return isQCOW2Header(header)
 }
 
-func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageVolume) error {
+func (i *httpImage) Import(uploader func(io.Reader) error, vol libvirtxml.StorageVolume) error {
 	// number of download retries on non client errors (eg. 5xx)
 	const maxHTTPRetries int = 3
 	// wait time between retries
@@ -187,7 +187,7 @@ func (i *httpImage) Import(copier func(io.Reader) error, vol libvirtxml.StorageV
 		if response.StatusCode == http.StatusNotModified {
 			return nil
 		} else if response.StatusCode == http.StatusOK {
-			return copier(response.Body)
+			return uploader(response.Body)
 		} else if response.StatusCode < http.StatusInternalServerError {
 			break
 		} else if retryCount < maxHTTPRetries {

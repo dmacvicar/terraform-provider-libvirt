@@ -256,7 +256,7 @@ be smaller than the backing store specified with
 
 	// upload source if present
 	if _, ok := d.GetOk("source"); ok {
-		err = img.Import(newCopier(virConn, &volume, volumeDef.Capacity.Value), volumeDef)
+		err = img.Import(newVolumeUploader(virConn, &volume, volumeDef.Capacity.Value), volumeDef)
 		if err != nil {
 			//  don't save volume ID  in case of error. This will taint the volume after.
 			// If we don't throw away the id, we will keep instead a broken volume.

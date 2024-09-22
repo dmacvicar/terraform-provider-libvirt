@@ -1,7 +1,6 @@
 package libvirt
 
 import (
-	"bufio"
 	"context"
 	"encoding/xml"
 	"errors"
@@ -109,7 +108,7 @@ func (ci *defCloudInit) UploadIso(ctx context.Context, client *Client, iso strin
 	}
 
 	// upload ISO file
-	err = img.Import(newCopier(virConn, &volume, uint64(size)), volumeDef)
+	err = img.Import(newVolumeUploader(virConn, &volume, uint64(size)), volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("error while uploading cloudinit %s: %w", img.String(), err)
 	}
@@ -301,34 +300,14 @@ func readIso9660File(file os.FileInfo) ([]byte, error) {
 // Returns a pointer to the ISO file. Note well: you have to close this file
 // pointer when you are done.
 func downloadISO(virConn *libvirt.Libvirt, volume libvirt.StorageVol) (*os.File, error) {
-	// get Volume info (required to get size later)
-	_, size, _, err := virConn.StorageVolGetInfo(volume)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving info for volume: %w", err)
-	}
-
-	// create tmp file for the ISO
 	tmpFile, err := os.CreateTemp("", "cloudinit")
 	if err != nil {
 		return nil, fmt.Errorf("cannot create tmp file: %w", err)
 	}
 
-	w := bufio.NewWriterSize(tmpFile, int(size))
-
-	// download ISO file
-	if err := virConn.StorageVolDownload(volume, w, 0, size, 0); err != nil {
+	downloader := newVolumeDownloader(virConn, &volume)
+	if err := downloader(tmpFile); err != nil {
 		return tmpFile, fmt.Errorf("error while downloading volume: %w", err)
-	}
-
-	bytesCopied := w.Buffered()
-	err = w.Flush()
-	if err != nil {
-		return tmpFile, fmt.Errorf("error while copying remote volume to local disk: %w", err)
-	}
-
-	log.Printf("%d bytes downloaded", bytesCopied)
-	if uint64(bytesCopied) != size {
-		return tmpFile, fmt.Errorf("error while copying remote volume to local disk, bytesCopied %d !=  %d volume.size", bytesCopied, size)
 	}
 
 	if _, err := tmpFile.Seek(0, 0); err != nil {
