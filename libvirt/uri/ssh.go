@@ -93,7 +93,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 
 				signer, err := ssh.ParsePrivateKey(sshKey)
 				if err != nil {
-					log.Printf("[ERROR] Failed to parse ssh key: %v", err)
+					log.Printf("[ERROR] Failed to parse ssh key %s: %v", keypath, err)
 					continue
 				}
 				result = append(result, ssh.PublicKeys(signer))
