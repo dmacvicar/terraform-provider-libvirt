@@ -164,17 +164,6 @@ type Capabilities struct {
 	Host Host `xml:"host"`
 }
 
-func convertUnit( unit string ) (int){
-	switch unit {
-	case "KiB":
-		return 1024
-	case "MiB":
-		return 1024*1024
-	default:
-		return 1
-	}
-}
-
 type LibvirtClientInterface interface {
 	ConnectGetCapabilities() (string, error)
 }
