@@ -159,7 +159,7 @@ type CPUInfo struct {
 	Siblings  string `xml:"siblings,attr"`
 }
 
-// Data represents the top-level structure of the XML that includes the <host> node
+// Data represents the top-level structure of the XML that includes the <host> node.
 type Capabilities struct {
 	Host Host `xml:"host"`
 }
