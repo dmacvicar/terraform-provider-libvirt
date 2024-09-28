@@ -5,10 +5,10 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
+
+	testhelper "github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/test"
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
@@ -343,23 +343,16 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomDeviceName := acctest.RandStringFromCharSet(33, acctest.CharSetAlpha)
 
-	tmpfile, loopdev, err := createTempBlockDev(randomDeviceName)
-	defer func() {
-		if err := os.Remove(tmpfile); err != nil {
-			log.Printf("Error removing temporary file %s: %s\n", tmpfile, err)
-		}
-	}()
-
-	defer func() {
-		cmd := exec.Command("sudo", "/sbin/losetup", "--detach", loopdev)
-		if err := cmd.Run(); err != nil {
-			log.Printf("Error detaching loop device %s: %s\n", loopdev, err)
-		}
-	}()
-
+	blockDev, err := testhelper.CreateTempFormattedLoopDevice(t, randomDeviceName)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	defer func() {
+		if err := blockDev.Cleanup(); err != nil {
+			t.Errorf("Error cleaning up loop device %s: %s", blockDev, err)
+		}
+	}()
 
 	configBlockDevice := fmt.Sprintf(`
 
@@ -370,7 +363,7 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 			block_device = "%s"
 		}
 
-	}`, randomDomainName, randomDomainName, loopdev)
+	}`, randomDomainName, randomDomainName, blockDev.LoopDevice)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -381,7 +374,7 @@ func TestAccLibvirtDomain_BlockDevice(t *testing.T) {
 				Config: configBlockDevice,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
-					testAccCheckLibvirtBlockDevice(loopdev, &domain),
+					testAccCheckLibvirtBlockDevice(blockDev.LoopDevice, &domain),
 				),
 			},
 		},
@@ -1177,56 +1170,6 @@ func testAccCheckLibvirtDomainKernelInitrdCmdline(domain *libvirt.Domain, kernel
 		}
 		return nil
 	}
-}
-
-// Creates a temporary file and attaches it to an available loop device
-// Returns a the full path to the temporary file and the associated loop device.
-func createTempBlockDev(devname string) (string, string, error) {
-	fmt.Printf("Creating a temporary file for loop device\n")
-
-	// Create a 1MB temp file
-	filename := filepath.Join(os.TempDir(), devname)
-
-	//nolint:gosec // G204 not sure why gosec complains but we should replace dd call
-	cmd := exec.Command("dd", "if=/dev/zero", "of="+filename, "bs=1024", "count=1024")
-	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
-	if err := cmd.Run(); err != nil {
-		return "", "", fmt.Errorf("Error creating file %s: %w", filename, err)
-	}
-
-	// Format the file
-	cmd = exec.Command("/sbin/mkfs.ext4", "-F", "-q", filename)
-	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
-	if err := cmd.Run(); err != nil {
-		return "", "", fmt.Errorf("Error formatting file system: %w", err)
-	}
-
-	// Find an available loop device
-	cmd = exec.Command("sudo", "/sbin/losetup", "--find")
-	loopdevStr, err := cmd.Output()
-	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
-	if err != nil {
-		return "", "", fmt.Errorf("Error searching for available loop device: %w", err)
-	}
-	loopdev := strings.TrimRight(string(loopdevStr), "\n")
-
-	// give the same permissions to the loop device as the backing file
-	cmd = exec.Command("sudo", "chown", "--reference", filename, loopdev)
-	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
-	if err := cmd.Run(); err != nil {
-		return "", "", fmt.Errorf("Error copying permissions from %s: %w", filename, err)
-	}
-
-	// Mount the file to a loop device
-	cmd = exec.Command("sudo", "/sbin/losetup", loopdev, filename)
-	fmt.Printf("Executing command: %s\n", strings.Join(cmd.Args, " "))
-	if err := cmd.Run(); err != nil {
-		return "", "", fmt.Errorf("Error setting up loop device: %w", err)
-	}
-
-	log.Printf("Temporary file %s attached to loop device %s", filename, loopdev)
-
-	return filename, strings.TrimRight(string(loopdev), "\n"), nil
 }
 
 func createNvramFile(_ *testing.T) (string, error) {

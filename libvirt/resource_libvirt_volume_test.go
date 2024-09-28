@@ -431,7 +431,7 @@ func TestAccLibvirtVolume_Format(t *testing.T) {
 				resource "libvirt_volume" "%s" {
 					name   = "%s"
 					format = "raw"
-					size   =  1073741824
+					size   =  10737
                     pool = "${libvirt_pool.%s.name}"
 				}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeResource, randomVolumeName, randomPoolName),
 				Check: resource.ComposeTestCheckFunc(
@@ -439,7 +439,7 @@ func TestAccLibvirtVolume_Format(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_volume."+randomVolumeResource, "name", randomVolumeName),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume."+randomVolumeResource, "size", "1073741824"),
+						"libvirt_volume."+randomVolumeResource, "size", "10737"),
 					resource.TestCheckResourceAttr(
 						"libvirt_volume."+randomVolumeResource, "format", "raw"),
 				),
@@ -470,7 +470,7 @@ func TestAccLibvirtVolume_Import(t *testing.T) {
 					resource "libvirt_volume" "%s" {
 							name   = "%s"
 							format = "raw"
-							size   =  1073741824
+							size   =  10737
                             pool = "${libvirt_pool.%s.name}"
 					}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeResource, randomVolumeName, randomPoolName),
 			},
@@ -482,7 +482,7 @@ func TestAccLibvirtVolume_Import(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_volume."+randomVolumeResource, "name", randomVolumeName),
 					resource.TestCheckResourceAttr(
-						"libvirt_volume."+randomVolumeResource, "size", "1073741824"),
+						"libvirt_volume."+randomVolumeResource, "size", "10737"),
 				),
 			},
 		},
