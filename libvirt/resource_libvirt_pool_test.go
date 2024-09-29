@@ -1,6 +1,8 @@
 package libvirt
 
 import (
+	"context"
+	"encoding/xml"
 	"fmt"
 	"regexp"
 	"testing"
@@ -126,6 +128,7 @@ func TestAccLibvirtPool_DirBasic(t *testing.T) {
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -181,10 +184,48 @@ func TestAccLibvirtPool_DirBasicDeprecated(t *testing.T) {
 	})
 }
 
+func testAccPreCheckSupportsLogicalPool(t *testing.T) {
+	type storagePoolCaps struct {
+		Pools []struct {
+			Type      string `xml:"type,attr"`
+			Supported string `xml:"supported,attr"`
+		} `xml:"pool"`
+		XMLName xml.Name `xml:"storagepoolCapabilities"`
+	}
+
+	client := testAccProvider.Meta().(*Client)
+
+	respStr, err := client.libvirt.ConnectGetStoragePoolCapabilities(0)
+	if err != nil {
+		t.Fatalf("Error getting storage pool capabilities: %s", err)
+	}
+
+	var caps storagePoolCaps
+	err = xml.Unmarshal([]byte(respStr), &caps)
+	if err != nil {
+		t.Fatalf("Error unmarshalling storage pool capabilities: %s", err)
+	}
+
+	for _, pool := range caps.Pools {
+		if pool.Type == "logical" && pool.Supported != "yes" {
+			t.Skip("Storage pool capabilities does not support logical pools")
+		}
+	}
+}
+
 func TestAccLibvirtPool_LVMBasic(t *testing.T) {
+
 	var pool libvirt.StoragePool
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+
+	// we need the plugin configured before we can test for support for lvm pools.
+	diag := testAccProvider.Configure(context.Background(), terraform.NewResourceConfigRaw(nil))
+	if diag.HasError() {
+		t.Fatal("error configuring provider")
+	}
+
+	testAccPreCheckSupportsLogicalPool(t)
 
 	blockDev, err := testhelper.CreateTempLoopDevice(t, randomPoolName)
 	if err != nil {
@@ -212,7 +253,6 @@ func TestAccLibvirtPool_LVMBasic(t *testing.T) {
                                             path = "%s"
                                           }
                                         }
-
 				}`, randomPoolResource, randomPoolName, blockDev.LoopDevice),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtPoolExists("libvirt_pool."+randomPoolResource, &pool),
