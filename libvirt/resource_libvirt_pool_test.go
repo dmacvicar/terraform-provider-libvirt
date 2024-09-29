@@ -214,6 +214,7 @@ func testAccPreCheckSupportsLogicalPool(t *testing.T) {
 }
 
 func TestAccLibvirtPool_LVMBasic(t *testing.T) {
+	skipIfAccDisabled(t)
 
 	var pool libvirt.StoragePool
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
