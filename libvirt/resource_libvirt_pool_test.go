@@ -250,6 +250,7 @@ func TestAccLibvirtPool_LVMBasic(t *testing.T) {
 					name = "%s"
 					type = "logical"
                                         source {
+                                          name = "foo"
                                           device {
                                             path = "%s"
                                           }

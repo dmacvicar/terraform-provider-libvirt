@@ -69,6 +69,11 @@ func resourceLibvirtPool() *schema.Resource {
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
 						"device": {
 							Type:     schema.TypeList,
 							Optional: true,
@@ -76,9 +81,9 @@ func resourceLibvirtPool() *schema.Resource {
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"path": {
-										Type:          schema.TypeString,
-										Optional:      true,
-										ForceNew:      true,
+										Type:     schema.TypeString,
+										Optional: true,
+										ForceNew: true,
 									},
 								},
 							},
@@ -94,9 +99,9 @@ func resourceLibvirtPool() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"path": {
-							Type:     schema.TypeString,
-							Optional: true,
-							Computed: true,
+							Type:          schema.TypeString,
+							Optional:      true,
+							Computed:      true,
 							ConflictsWith: []string{"path"},
 						},
 					},
@@ -153,42 +158,44 @@ func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 	poolCreateFlags := libvirt.StoragePoolBuildNew
 
 	poolType := d.Get("type").(string)
+	if poolType != "dir" && poolType != "logical" {
+		return diag.Errorf("only storage pools of type \"dir\" and \"logical\" are supported")
+	}
 
-	if poolType == "dir" {
-		poolPath := d.Get("path").(string)
-		if poolPath == "" {
-			poolPath = d.Get("target.0.path").(string)
-		}
+	poolDef = &libvirtxml.StoragePool{
+		Type: poolType,
+		Name: poolName,
+	}
 
-		poolDef = &libvirtxml.StoragePool{
-			Type: "dir",
-			Name: poolName,
-			Target: &libvirtxml.StoragePoolTarget{
-				Path: poolPath,
-			},
+	if _, ok := d.GetOk("target.0"); ok {
+		poolDef.Target = &libvirtxml.StoragePoolTarget{
+			Path: d.Get("target.0.path").(string),
 		}
-	} else if poolType == "logical" {
-		poolDef = &libvirtxml.StoragePool{
-			Type: "logical",
-			Name: poolName,
+	} else {
+		// deprecated
+		poolDef.Target = &libvirtxml.StoragePoolTarget{
+			Path: d.Get("path").(string),
+		}
+	}
+
+	if _, ok := d.GetOk("source.0"); ok {
+		poolDef.Source = &libvirtxml.StoragePoolSource{}
+
+		if name, ok := d.GetOk("source.0.name"); ok {
+			poolDef.Source.Name = name.(string)
 		}
 
 		var devices []libvirtxml.StoragePoolSourceDevice
-
 		for i := 0; i < d.Get("source.0.device.#").(int); i++ {
 			devicePath := d.Get(fmt.Sprintf("source.0.device.%d.path", i)).(string)
 			devices = append(devices, libvirtxml.StoragePoolSourceDevice{Path: devicePath})
 		}
 
 		if devices != nil {
-			poolDef.Source = &libvirtxml.StoragePoolSource{
-				Device: devices,
-			}
+			poolDef.Source.Device = devices
 		} else {
 			poolCreateFlags = libvirt.StoragePoolBuildNoOverwrite
 		}
-	} else {
-		return diag.Errorf("only storage pools of type \"dir\" and \"logical\" are supported")
 	}
 
 	data, err := xmlMarshallIndented(poolDef)
@@ -284,6 +291,10 @@ func resourceLibvirtPoolRead(ctx context.Context, d *schema.ResourceData, meta i
 
 	if poolDef.Source != nil {
 		source := map[string]interface{}{}
+
+		if poolDef.Source.Name != "" {
+			source["name"] = poolDef.Source.Name
+		}
 
 		if len(poolDef.Source.Device) > 0 {
 			var devices []interface{}
