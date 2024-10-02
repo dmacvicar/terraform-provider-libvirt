@@ -155,7 +155,7 @@ func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 	log.Printf("[DEBUG] Pool with name '%s' does not exist yet", poolName)
 
 	var poolDef *libvirtxml.StoragePool
-	poolCreateFlags := libvirt.StoragePoolBuildNew
+	var skipBuild bool
 
 	poolType := d.Get("type").(string)
 	if poolType != "dir" && poolType != "logical" {
@@ -191,11 +191,14 @@ func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 			devices = append(devices, libvirtxml.StoragePoolSourceDevice{Path: devicePath})
 		}
 
-		if devices != nil {
-			poolDef.Source.Device = devices
-		} else {
-			poolCreateFlags = libvirt.StoragePoolBuildNoOverwrite
+		poolDef.Source.Device = devices
+		if len(devices) == 0 {
+			skipBuild = true
 		}
+	}
+
+	if poolType == "logical" && poolDef.Source == nil {
+		skipBuild = true
 	}
 
 	data, err := xmlMarshallIndented(poolDef)
@@ -209,29 +212,26 @@ func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("error applying XSLT stylesheet: %s", err)
 	}
 
-	// create the pool
 	pool, err := virConn.StoragePoolDefineXML(data, 0)
 	if err != nil {
 		return diag.Errorf("error creating libvirt storage pool: %s", err)
 	}
 
-	err = virConn.StoragePoolBuild(pool, 0)
-	if err != nil {
-		return diag.Errorf("error building libvirt storage pool: %s", err)
+	if !skipBuild {
+		if err := virConn.StoragePoolBuild(pool, 0); err != nil {
+			return diag.Errorf("error building libvirt storage pool: %s", err)
+		}
 	}
 
-	err = virConn.StoragePoolSetAutostart(pool, 1)
-	if err != nil {
+	if err := virConn.StoragePoolSetAutostart(pool, 1); err != nil {
 		return diag.Errorf("error setting up libvirt storage pool: %s", err)
 	}
 
-	err = virConn.StoragePoolCreate(pool, libvirt.StoragePoolCreateFlags(poolCreateFlags))
-	if err != nil {
+	if err := virConn.StoragePoolCreate(pool, 0); err != nil {
 		return diag.Errorf("error starting libvirt storage pool: %s", err)
 	}
 
-	err = virConn.StoragePoolRefresh(pool, 0)
-	if err != nil {
+	if err := virConn.StoragePoolRefresh(pool, 0); err != nil {
 		return diag.Errorf("error refreshing libvirt storage pool: %s", err)
 	}
 

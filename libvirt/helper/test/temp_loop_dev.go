@@ -41,7 +41,7 @@ func CreateTempFormattedLoopDevice(t *testing.T, name string) (*TempBlockDevice,
 }
 
 // returns the temporary file, the device and the error.
-func CreateTempLVMLoopDevice(t *testing.T, name string) (*TempBlockDevice, error) {
+func CreateTempLVMGroupDevice(t *testing.T, name string) (*TempBlockDevice, error) {
 	blockDev, err := CreateTempLoopDevice(t, name)
 	if err != nil {
 		return nil, err
@@ -49,6 +49,21 @@ func CreateTempLVMLoopDevice(t *testing.T, name string) (*TempBlockDevice, error
 
 	//nolint:gosec
 	cmd := exec.Command("sudo", "pvcreate", blockDev.LoopDevice)
+	log.Printf("[DEBUG] executing command: %s", strings.Join(cmd.Args, " "))
+	if err := cmd.Run(); err != nil {
+		if err := cleanupLoop(blockDev.LoopDevice); err != nil {
+			return nil, err
+		}
+
+		if err := cleanupFile(blockDev.TempFile); err != nil {
+			return nil, err
+		}
+
+		return nil, fmt.Errorf("error creating LVM partition on %s: %w", blockDev.LoopDevice, err)
+	}
+
+	//nolint:gosec
+	cmd = exec.Command("sudo", "vgcreate", name, blockDev.LoopDevice)
 	log.Printf("[DEBUG] executing command: %s", strings.Join(cmd.Args, " "))
 	if err := cmd.Run(); err != nil {
 		if err := cleanupLoop(blockDev.LoopDevice); err != nil {

@@ -268,6 +268,49 @@ func TestAccLibvirtPool_LVMBasic(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtPool_LVMExisting(t *testing.T) {
+	skipIfAccDisabled(t)
+
+	var pool libvirt.StoragePool
+	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+
+	testAccPreCheckSupportsLogicalPool(t)
+
+	blockDev, err := testhelper.CreateTempLVMGroupDevice(t, randomPoolName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := blockDev.Cleanup(); err != nil {
+			t.Errorf("error cleaning up loop device %s: %s", blockDev, err)
+		}
+	}()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtPoolDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_pool" "%s" {
+					name = "%s"
+					type = "logical"
+				}`, randomPoolResource, randomPoolName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtPoolExists("libvirt_pool."+randomPoolResource, &pool),
+					resource.TestCheckResourceAttr(
+						"libvirt_pool."+randomPoolResource, "name", randomPoolName),
+					resource.TestCheckResourceAttr(
+						"libvirt_pool."+randomPoolResource, "target.0.path", fmt.Sprintf("/dev/%s", randomPoolName)),
+				),
+			},
+		},
+	})
+}
+
 // The destroy function should always handle the case where the resource might already be destroyed
 // (manually, for example). If the resource is already destroyed, this should not return an error.
 // This allows Terraform users to manually delete resources without breaking Terraform.
