@@ -3,6 +3,7 @@ package libvirt
 import (
 	"context"
 	"encoding/xml"
+	"fmt"
 	"log"
 
 	libvirt "github.com/digitalocean/go-libvirt"
@@ -10,6 +11,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
 )
+
+func resourceLibvirtPoolCustomizeDiff(ctx context.Context, diff *schema.ResourceDiff, meta interface{}) error {
+	// target path is computed for logical
+	if target := diff.GetRawConfig().GetAttr("target"); target.IsKnown() && len(target.AsValueSlice()) > 0 {
+		if path := target.AsValueSlice()[0].GetAttr("path"); path.IsKnown() {
+			oldTargetPath, newTargetPath := diff.GetChange("target.0.path")
+			if oldTargetPath != newTargetPath {
+				if err := diff.ForceNew("target.0.path"); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
 
 func resourceLibvirtPool() *schema.Resource {
 	return &schema.Resource{
@@ -45,6 +62,51 @@ func resourceLibvirtPool() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"source": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+						"device": {
+							Type:     schema.TypeList,
+							Optional: true,
+							ForceNew: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"path": {
+										Type:     schema.TypeString,
+										Optional: true,
+										ForceNew: true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			"target": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"path": {
+							Type:          schema.TypeString,
+							Optional:      true,
+							Computed:      true,
+							ConflictsWith: []string{"path"},
+						},
+					},
+				},
+			},
 			"xml": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -60,28 +122,25 @@ func resourceLibvirtPool() *schema.Resource {
 					},
 				},
 			},
-
-			// Dir-specific attributes
+			// deprecated dir specific attribute
 			"path": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				Deprecated:    "use target.path instead",
+				ConflictsWith: []string{"target.0.path"},
 			},
 		},
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+		CustomizeDiff: resourceLibvirtPoolCustomizeDiff,
 	}
 }
 
 func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 	virConn := client.libvirt
-
-	poolType := d.Get("type").(string)
-	if poolType != "dir" {
-		return diag.Errorf("only storage pools of type \"dir\" are supported")
-	}
 
 	poolName := d.Get("name").(string)
 
@@ -95,18 +154,53 @@ func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 	}
 	log.Printf("[DEBUG] Pool with name '%s' does not exist yet", poolName)
 
-	poolPath := d.Get("path").(string)
-	if poolPath == "" {
-		return diag.Errorf("\"path\" attribute is requires for storage pools of type \"dir\"")
+	var poolDef *libvirtxml.StoragePool
+	var skipBuild bool
+
+	poolType := d.Get("type").(string)
+	if poolType != "dir" && poolType != "logical" {
+		return diag.Errorf("only storage pools of type \"dir\" and \"logical\" are supported")
 	}
 
-	poolDef := libvirtxml.StoragePool{
-		Type: "dir",
+	poolDef = &libvirtxml.StoragePool{
+		Type: poolType,
 		Name: poolName,
-		Target: &libvirtxml.StoragePoolTarget{
-			Path: poolPath,
-		},
 	}
+
+	if _, ok := d.GetOk("target.0"); ok {
+		poolDef.Target = &libvirtxml.StoragePoolTarget{
+			Path: d.Get("target.0.path").(string),
+		}
+	} else {
+		// deprecated
+		poolDef.Target = &libvirtxml.StoragePoolTarget{
+			Path: d.Get("path").(string),
+		}
+	}
+
+	if _, ok := d.GetOk("source.0"); ok {
+		poolDef.Source = &libvirtxml.StoragePoolSource{}
+
+		if name, ok := d.GetOk("source.0.name"); ok {
+			poolDef.Source.Name = name.(string)
+		}
+
+		var devices []libvirtxml.StoragePoolSourceDevice
+		for i := 0; i < d.Get("source.0.device.#").(int); i++ {
+			devicePath := d.Get(fmt.Sprintf("source.0.device.%d.path", i)).(string)
+			devices = append(devices, libvirtxml.StoragePoolSourceDevice{Path: devicePath})
+		}
+
+		poolDef.Source.Device = devices
+		if len(devices) == 0 {
+			skipBuild = true
+		}
+	}
+
+	if poolType == "logical" && poolDef.Source == nil {
+		skipBuild = true
+	}
+
 	data, err := xmlMarshallIndented(poolDef)
 	if err != nil {
 		return diag.Errorf("error serializing libvirt storage pool: %s", err)
@@ -118,29 +212,26 @@ func resourceLibvirtPoolCreate(ctx context.Context, d *schema.ResourceData, meta
 		return diag.Errorf("error applying XSLT stylesheet: %s", err)
 	}
 
-	// create the pool
 	pool, err := virConn.StoragePoolDefineXML(data, 0)
 	if err != nil {
 		return diag.Errorf("error creating libvirt storage pool: %s", err)
 	}
 
-	err = virConn.StoragePoolBuild(pool, 0)
-	if err != nil {
-		return diag.Errorf("error building libvirt storage pool: %s", err)
+	if !skipBuild {
+		if err := virConn.StoragePoolBuild(pool, 0); err != nil {
+			return diag.Errorf("error building libvirt storage pool: %s", err)
+		}
 	}
 
-	err = virConn.StoragePoolSetAutostart(pool, 1)
-	if err != nil {
+	if err := virConn.StoragePoolSetAutostart(pool, 1); err != nil {
 		return diag.Errorf("error setting up libvirt storage pool: %s", err)
 	}
 
-	err = virConn.StoragePoolCreate(pool, 0)
-	if err != nil {
+	if err := virConn.StoragePoolCreate(pool, 0); err != nil {
 		return diag.Errorf("error starting libvirt storage pool: %s", err)
 	}
 
-	err = virConn.StoragePoolRefresh(pool, 0)
-	if err != nil {
+	if err := virConn.StoragePoolRefresh(pool, 0); err != nil {
 		return diag.Errorf("error refreshing libvirt storage pool: %s", err)
 	}
 
@@ -196,23 +287,42 @@ func resourceLibvirtPoolRead(ctx context.Context, d *schema.ResourceData, meta i
 		return diag.Errorf("could not get a pool definition from XML for %s: %s", poolDef.Name, err)
 	}
 
-	var poolPath string
-	if poolDef.Target != nil && poolDef.Target.Path != "" {
-		poolPath = poolDef.Target.Path
+	d.Set("type", poolDef.Type)
+
+	if poolDef.Source != nil {
+		source := map[string]interface{}{}
+
+		if poolDef.Source.Name != "" {
+			source["name"] = poolDef.Source.Name
+		}
+
+		if len(poolDef.Source.Device) > 0 {
+			var devices []interface{}
+
+			for _, device := range poolDef.Source.Device {
+				deviceMap := make(map[string]interface{})
+				deviceMap["path"] = device.Path
+				devices = append(devices, deviceMap)
+			}
+			source["device"] = devices
+		}
+
+		if len(source) > 0 {
+			if err := d.Set("source", []interface{}{source}); err != nil {
+				return diag.FromErr(err)
+			}
+		}
 	}
 
-	if poolPath == "" {
-		log.Printf("Pool %s has no path specified", pool.Name)
-	} else {
-		log.Printf("[DEBUG] Pool %s path: %s", pool.Name, poolPath)
-		d.Set("path", poolPath)
-	}
-
-	if poolType := poolDef.Type; poolType == "" {
-		log.Printf("Pool %s has no type specified", pool.Name)
-	} else {
-		log.Printf("[DEBUG] Pool %s type: %s", pool.Name, poolType)
-		d.Set("type", poolType)
+	if poolDef.Target != nil {
+		if _, ok := d.GetOk("path"); ok {
+			// old deprecated value is set
+			d.Set("path", poolDef.Target.Path)
+		} else {
+			target := map[string]interface{}{}
+			target["path"] = poolDef.Target.Path
+			d.Set("target", []interface{}{target})
+		}
 	}
 
 	return nil
@@ -248,9 +358,17 @@ func resourceLibvirtPoolDelete(ctx context.Context, d *schema.ResourceData, meta
 		}
 	}
 
-	err = virConn.StoragePoolDelete(pool, 0)
-	if err != nil {
-		return diag.Errorf("error deleting storage pool: %s", err)
+	poolDef, dia := newDefPoolFromLibvirt(virConn, pool)
+	if dia != nil {
+		return dia
+	}
+
+	// if the logical pool has no source device then the volume group existed before we created the pool, so we don't delete it
+	if poolDef.Type == "dir" || (poolDef.Type == "logical" && poolDef.Source != nil && poolDef.Source.Device != nil) {
+		err = virConn.StoragePoolDelete(pool, 0)
+		if err != nil {
+			return diag.Errorf("error deleting storage pool: %s", err)
+		}
 	}
 
 	err = virConn.StoragePoolUndefine(pool)

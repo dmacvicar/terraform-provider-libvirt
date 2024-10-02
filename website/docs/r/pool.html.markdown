@@ -20,7 +20,9 @@ storage pools in libvirt, see [the official documentation](https://libvirt.org/f
 resource "libvirt_pool" "cluster" {
   name = "cluster"
   type = "dir"
-  path = "/home/user/cluster_storage"
+  target {
+	path = "/home/user/cluster_storage"
+  }
 }
 
 resource "libvirt_volume" "opensuse_leap" {
@@ -35,9 +37,8 @@ resource "libvirt_volume" "opensuse_leap" {
 The following arguments are supported:
 
 * `name` - (Required) A unique name for the resource, required by libvirt.
-* `type` - (Required) The type of the pool. Currently, only "dir" supported.
-* `path` - (Optional) The directory where the pool will keep all its volumes. This is only relevant to (and required by)
-                      the "dir" type pools.
+* `type` - (Required) The type of the pool. Currently, "dir" and "logical" are supported.
+* `path` - **Deprecated** (Optional) use `path` in the `target` block.
 
 ### Altering libvirt's generated pool XML definition
 

@@ -18,7 +18,7 @@ func poolExistsStateRefreshFunc(virConn *libvirt.Libvirt, uuid libvirt.UUID) ret
 		_, err := virConn.StoragePoolLookupByUUID(uuid)
 		if err != nil {
 			if isError(err, libvirt.ErrNoStoragePool) {
-				log.Printf("pool %s does not exist", uuid)
+				log.Printf("pool %v does not exist", uuidString(uuid))
 				return virConn, poolStateConfNotExists, nil
 			}
 			return virConn, poolStateConfNotExists, err
@@ -28,7 +28,7 @@ func poolExistsStateRefreshFunc(virConn *libvirt.Libvirt, uuid libvirt.UUID) ret
 }
 
 func waitForStatePoolExists(ctx context.Context, virConn *libvirt.Libvirt, uuid libvirt.UUID) error {
-	log.Printf("Waiting for pool %s to appear...", uuid)
+	log.Printf("Waiting for pool %v to appear...", uuidString(uuid))
 	stateConf := &retry.StateChangeConf{
 		Pending:    []string{poolStateConfNotExists},
 		Target:     []string{poolStateConfExists},
@@ -46,7 +46,7 @@ func waitForStatePoolExists(ctx context.Context, virConn *libvirt.Libvirt, uuid 
 
 // waitForStatePoolDeleted waits for a storage pool to be removed.
 func waitForStatePoolDeleted(ctx context.Context, virConn *libvirt.Libvirt, uuid libvirt.UUID) error {
-	log.Printf("waiting for pool %s to be deleted...", uuid)
+	log.Printf("waiting for pool %v to be deleted...", uuidString(uuid))
 	stateConf := &retry.StateChangeConf{
 		Pending:    []string{poolStateConfExists},
 		Target:     []string{poolStateConfNotExists},

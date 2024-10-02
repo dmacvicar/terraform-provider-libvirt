@@ -1,6 +1,8 @@
 package libvirt
 
 import (
+	"context"
+	"encoding/xml"
 	"fmt"
 	"regexp"
 	"testing"
@@ -10,6 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/require"
+
+	testhelper "github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/test"
 )
 
 func testAccCheckLibvirtPoolExists(name string, pool *libvirt.StoragePool) resource.TestCheckFunc {
@@ -69,7 +73,7 @@ func TestAccLibvirtPool_Import(t *testing.T) {
 						if err := composeTestImportStateCheckFunc(
 							testImportStateCheckResourceAttr("libvirt_pool."+randomPoolResource, "name", randomPoolName),
 							testImportStateCheckResourceAttr("libvirt_pool."+randomPoolResource, "type", "dir"),
-							testImportStateCheckResourceAttr("libvirt_pool."+randomPoolResource, "path", poolPath),
+							testImportStateCheckResourceAttr("libvirt_pool."+randomPoolResource, "target.0.path", poolPath),
 						)(f); err != nil {
 							return fmt.Errorf("Check InstanceState n°%d / %d error: %w", i+1, len(instanceState), err)
 						}
@@ -119,7 +123,39 @@ func testImportStateCheckResourceAttr(name string, key string, value string) Imp
 	}
 }
 
-func TestAccLibvirtPool_Basic(t *testing.T) {
+func TestAccLibvirtPool_DirBasic(t *testing.T) {
+	var pool libvirt.StoragePool
+	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	poolPath := "/tmp/cluster-api-provider-libvirt-pool-" + randomPoolName
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtPoolDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_pool" "%s" {
+					name = "%s"
+					type = "dir"
+                                        target {
+                                          path = "%s"
+                                        }
+				}`, randomPoolResource, randomPoolName, poolPath),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtPoolExists("libvirt_pool."+randomPoolResource, &pool),
+					resource.TestCheckResourceAttr(
+						"libvirt_pool."+randomPoolResource, "name", randomPoolName),
+					resource.TestCheckResourceAttr(
+						"libvirt_pool."+randomPoolResource, "target.0.path", poolPath),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtPool_DirBasicDeprecated(t *testing.T) {
 	var pool libvirt.StoragePool
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -142,6 +178,133 @@ func TestAccLibvirtPool_Basic(t *testing.T) {
 						"libvirt_pool."+randomPoolResource, "name", randomPoolName),
 					resource.TestCheckResourceAttr(
 						"libvirt_pool."+randomPoolResource, "path", poolPath),
+				),
+			},
+		},
+	})
+}
+
+func testAccPreCheckSupportsLogicalPool(t *testing.T) {
+	type storagePoolCaps struct {
+		Pools []struct {
+			Type      string `xml:"type,attr"`
+			Supported string `xml:"supported,attr"`
+		} `xml:"pool"`
+		XMLName xml.Name `xml:"storagepoolCapabilities"`
+	}
+
+	// we need the plugin configured before we can test for support for lvm pools.
+	diag := testAccProvider.Configure(context.Background(), terraform.NewResourceConfigRaw(nil))
+	if diag.HasError() {
+		t.Fatal("error configuring provider")
+	}
+
+	client := testAccProvider.Meta().(*Client)
+
+	respStr, err := client.libvirt.ConnectGetStoragePoolCapabilities(0)
+	if err != nil {
+		t.Fatalf("Error getting storage pool capabilities: %s", err)
+	}
+
+	var caps storagePoolCaps
+	err = xml.Unmarshal([]byte(respStr), &caps)
+	if err != nil {
+		t.Fatalf("Error unmarshalling storage pool capabilities: %s", err)
+	}
+
+	for _, pool := range caps.Pools {
+		if pool.Type == "logical" && pool.Supported != "yes" {
+			t.Skip("Storage pool capabilities does not support logical pools")
+		}
+	}
+}
+
+func TestAccLibvirtPool_LVMBasic(t *testing.T) {
+	skipIfAccDisabled(t)
+
+	var pool libvirt.StoragePool
+	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+
+	testAccPreCheckSupportsLogicalPool(t)
+
+	blockDev, err := testhelper.CreateTempLoopDevice(t, randomPoolName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := blockDev.Cleanup(); err != nil {
+			t.Errorf("error cleaning up loop device %s: %s", blockDev, err)
+		}
+	}()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtPoolDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_pool" "%s" {
+					name = "%s"
+					type = "logical"
+                                        source {
+                                          name = "foo"
+                                          device {
+                                            path = "%s"
+                                          }
+                                        }
+				}`, randomPoolResource, randomPoolName, blockDev.LoopDevice),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtPoolExists("libvirt_pool."+randomPoolResource, &pool),
+					resource.TestCheckResourceAttr(
+						"libvirt_pool."+randomPoolResource, "name", randomPoolName),
+					resource.TestCheckResourceAttr(
+						"libvirt_pool."+randomPoolResource, "source.0.device.0.path", blockDev.LoopDevice),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtPool_LVMExisting(t *testing.T) {
+	skipIfAccDisabled(t)
+
+	var pool libvirt.StoragePool
+	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+
+	testAccPreCheckSupportsLogicalPool(t)
+
+	blockDev, err := testhelper.CreateTempLVMGroupDevice(t, randomPoolName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := blockDev.Cleanup(); err != nil {
+			t.Errorf("error cleaning up loop device %s: %s", blockDev, err)
+		}
+	}()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtPoolDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_pool" "%s" {
+					name = "%s"
+					type = "logical"
+				}`, randomPoolResource, randomPoolName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtPoolExists("libvirt_pool."+randomPoolResource, &pool),
+					resource.TestCheckResourceAttr(
+						"libvirt_pool."+randomPoolResource, "name", randomPoolName),
+					resource.TestCheckResourceAttr(
+						"libvirt_pool."+randomPoolResource, "target.0.path", fmt.Sprintf("/dev/%s", randomPoolName)),
 				),
 			},
 		},
@@ -242,7 +405,7 @@ func TestAccLibvirtPool_NoDirPath(t *testing.T) {
 					name = "%s"
 					type = "dir"
 				}`, randomPoolResource, randomPoolName),
-				ExpectError: regexp.MustCompile(`"path" attribute is requires for storage pools of type "dir"`),
+				ExpectError: regexp.MustCompile(`missing storage pool target path`),
 			},
 		},
 	})
