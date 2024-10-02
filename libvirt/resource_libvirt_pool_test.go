@@ -193,6 +193,12 @@ func testAccPreCheckSupportsLogicalPool(t *testing.T) {
 		XMLName xml.Name `xml:"storagepoolCapabilities"`
 	}
 
+	// we need the plugin configured before we can test for support for lvm pools.
+	diag := testAccProvider.Configure(context.Background(), terraform.NewResourceConfigRaw(nil))
+	if diag.HasError() {
+		t.Fatal("error configuring provider")
+	}
+
 	client := testAccProvider.Meta().(*Client)
 
 	respStr, err := client.libvirt.ConnectGetStoragePoolCapabilities(0)
@@ -219,12 +225,6 @@ func TestAccLibvirtPool_LVMBasic(t *testing.T) {
 	var pool libvirt.StoragePool
 	randomPoolResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
-
-	// we need the plugin configured before we can test for support for lvm pools.
-	diag := testAccProvider.Configure(context.Background(), terraform.NewResourceConfigRaw(nil))
-	if diag.HasError() {
-		t.Fatal("error configuring provider")
-	}
 
 	testAccPreCheckSupportsLogicalPool(t)
 
