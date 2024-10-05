@@ -40,6 +40,8 @@ func TestAccLibvirtDomain_Basic(t *testing.T) {
 						"libvirt_domain."+randomResourceName, "memory", "512"),
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomResourceName, "vcpu", "1"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomResourceName, "cloudinit_bus", "ide"),
 				),
 			},
 		},
@@ -972,6 +974,46 @@ func TestAccLibvirtDomain_Filesystems(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomDomainName, "filesystem.0.readonly", "false"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtDomain_CloudinitBus(t *testing.T) {
+	var domain libvirt.Domain
+	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+
+	var initialConfig = fmt.Sprintf(`
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		
+		cloudinit_bus = "ide"
+	}`, randomDomainName, randomDomainName)
+
+	var updatedConfig = fmt.Sprintf(`
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+
+		cloudinit_bus = "sata"
+	}`, randomDomainName, randomDomainName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: initialConfig,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain." + randomDomainName, "cloudinit_bus", "ide"),
+				),
+			},
+			{
+				Config: updatedConfig,
+				Check: resource.TestCheckResourceAttr(
+					"libvirt_domain." + randomDomainName, "cloudinit_bus", "sata"),
 			},
 		},
 	})
