@@ -253,9 +253,11 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		Timeout:           dialTimeout,
 	}
 
-	proxy, err := sshcfg.Get(target, "ProxyCommand")
-	if err == nil && proxy != "" {
-		log.Printf("[WARNING] unsupported ssh ProxyCommand '%v'", proxy)
+	if sshcfg != nil {
+		command, err := sshcfg.Get(target, "ProxyCommand")
+		if err == nil && command != "" {
+			log.Printf("[WARNING] unsupported ssh ProxyCommand '%v' - ignoring", command)
+		}
 	}
 
 	proxy, err = sshcfg.Get(target, "ProxyJump")
