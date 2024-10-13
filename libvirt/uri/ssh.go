@@ -124,6 +124,8 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 	sshcfg, err := ssh_config.Decode(sshConfigFile)
 	if err != nil {
 		log.Printf("[WARN] Failed to parse ssh config file: '%v' - sshconfig will be ignored.", err)
+
+		sshcfg, err = ssh_config.Decode(strings.NewReader(""))
 	}
 
 	// configuration loaded, build tunnel
