@@ -238,7 +238,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		if sshcfg != nil {
 			keyAlgs, err := sshcfg.Get(target, "HostKeyAlgorithms")
 			if err == nil && keyAlgs != "" {
-				log.Printf("[DEBUG] HostKeyAlgorithms is overriden to '%s'", keyAlgs)
+				log.Printf("[DEBUG] HostKeyAlgorithms is overridden to '%s'", keyAlgs)
 				hostKeyAlgorithms = strings.Split(keyAlgs, ",")
 			}
 		}
