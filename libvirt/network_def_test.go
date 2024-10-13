@@ -100,14 +100,6 @@ func TestBrokenNetworkDefUnmarshall(t *testing.T) {
 	}
 }
 
-func TestHasDHCPNoForwardSet(t *testing.T) {
-	net := libvirtxml.Network{}
-
-	if !HasDHCP(net) {
-		t.Error("Expected to have DHCP")
-	}
-}
-
 func TestHasDHCPForwardSet(t *testing.T) {
 	createNet := func(mode string) libvirtxml.Network {
 		return libvirtxml.Network{
@@ -116,15 +108,32 @@ func TestHasDHCPForwardSet(t *testing.T) {
 			},
 		}
 	}
-
+	mode := "bridge"
+	if HasDHCP(createNet(mode)) {
+		t.Errorf(
+			"Expected not have DHCP running in mode: '%s'",
+			mode)
+	}
 	for _, mode := range []string{"nat", "route", "open", ""} {
-		net := createNet(mode)
-		if !HasDHCP(net) {
+		testNetwork := createNet(mode)
+		if HasDHCP(testNetwork) {
 			t.Errorf(
-				"Expected to have forward enabled with forward set to be '%s'",
-				mode)
+				"Expected network to have not have dhcp: %v",
+				testNetwork.IPs)
 		}
 	}
+
+	testNetwork := createNet("nat")
+	ipv4Range := libvirtxml.NetworkIP{DHCP: &libvirtxml.NetworkDHCP{Ranges: []libvirtxml.NetworkDHCPRange{libvirtxml.NetworkDHCPRange{
+		Start: "192.168.1.1",
+		End:   "192.168.1.3",
+	}}}}
+
+	testNetwork.IPs = append(testNetwork.IPs, ipv4Range)
+	if !HasDHCP(testNetwork) {
+		t.Errorf("Expected to have IPv4 DHCP enable in network %v", testNetwork.IPs[0].DHCP.Ranges)
+	}
+
 }
 
 func TestGetHostXMLDesc(t *testing.T) {
