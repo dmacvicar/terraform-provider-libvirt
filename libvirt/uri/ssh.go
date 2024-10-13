@@ -119,6 +119,7 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 	sshConfigFile, err := os.Open(os.ExpandEnv(defaultSSHConfigFile))
 	if err != nil {
 		log.Printf("[WARN] Failed to open ssh config file: %v", err)
+		sshConfigFile = strings.NewReader("") // use empty file instead
 	}
 
 	sshcfg, err := ssh_config.Decode(sshConfigFile)
