@@ -13,13 +13,20 @@ import (
 // HasDHCP checks if the network has a DHCP server managed by libvirt.
 func HasDHCP(net libvirtxml.Network) bool {
 	if net.Forward != nil {
-		if net.Forward.Mode == "nat" || net.Forward.Mode == "route" || net.Forward.Mode == "open" || net.Forward.Mode == "" {
+		if net.Forward.Mode == "bridge" {
+			return false
+		}
+	}
+
+	for _, family := range net.IPs {
+
+		if family.DHCP == nil {
+			continue
+		} else {
 			return true
 		}
-	} else {
-		// isolated network
-		return true
 	}
+
 	return false
 }
 
