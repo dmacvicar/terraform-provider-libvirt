@@ -170,11 +170,11 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		log.Printf("[DEBUG] ssh Port is overridden to: '%s'", port)
 	}
 
-	hostName, err := sshcfg.Get(target, "HostName")
-	if err == nil {
-		if hostName == "" {
-			hostName = target
-		} else {
+	hostName := target
+	if sshcfg != nil {
+		host, err := sshcfg.Get(target, "HostName")
+		if err == nil && host != "" {
+			hostName = host
 			log.Printf("[DEBUG] HostName is overridden to: '%s'", hostName)
 		}
 	}
