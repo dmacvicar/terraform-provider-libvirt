@@ -126,6 +126,10 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 		log.Printf("[WARN] Failed to parse ssh config file: '%v' - sshconfig will be ignored.", err)
 
 		sshcfg, err = ssh_config.Decode(strings.NewReader(""))
+		if err != nil {
+			log.Printf("[ERROR] unrecoverable error occurred during ssh configuration")
+			return nil, err
+		}
 	}
 
 	// configuration loaded, build tunnel
