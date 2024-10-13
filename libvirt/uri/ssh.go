@@ -123,7 +123,7 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 
 	sshcfg, err := ssh_config.Decode(sshConfigFile)
 	if err != nil {
-		log.Printf("[WARN] Failed to parse ssh config file: %v", err)
+		log.Printf("[WARN] Failed to parse ssh config file: '%v' - sshconfig will be ignored.", err)
 	}
 
 	// configuration loaded, build tunnel
