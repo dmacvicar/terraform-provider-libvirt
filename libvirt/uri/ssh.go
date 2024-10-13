@@ -252,6 +252,8 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		HostKeyAlgorithms: hostKeyAlgorithms,
 		Timeout:           dialTimeout,
 	}
+	var bastion *ssh.Client = nil
+	var bastion_proxy string = ""
 
 	if sshcfg != nil {
 		command, err := sshcfg.Get(target, "ProxyCommand")
@@ -260,15 +262,16 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		}
 	}
 
-	proxy, err = sshcfg.Get(target, "ProxyJump")
-	var bastion *ssh.Client
-	if err == nil && proxy != "" {
-		log.Printf("[DEBUG] found ProxyJump '%v'", proxy)
-
-		// this is a proxy jump: we recurse into that proxy
-		bastion, err = u.dialHost(proxy, sshcfg, depth+1)
-		if err != nil {
-			return nil, fmt.Errorf("failed to connect to bastion host '%v': %w", proxy, err)
+	if sshcfg != nil {
+		proxy, err := sshcfg.Get(target, "ProxyJump")
+		if err == nil && proxy != "" {
+			log.Printf("[DEBUG] found ProxyJump '%v'", proxy)
+			// this is a proxy jump: we recurse into that proxy
+			bastion, err = u.dialHost(proxy, sshcfg, depth+1)
+			bastion_proxy = proxy
+			if err != nil {
+				return nil, fmt.Errorf("failed to connect to bastion host '%v': %w", proxy, err)
+			}
 		}
 	}
 
@@ -293,7 +296,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 
 	if bastion != nil {
 		// if this is a proxied connection, we want to dial through the bastion host
-		log.Printf("[INFO] SSH connecting to '%v' (%v) through bastion host '%v'", target, hostName, proxy)
+		log.Printf("[INFO] SSH connecting to '%v' (%v) through bastion host '%v'", target, hostName, bastion_proxy)
 		// Dial a connection to the service host, from the bastion
 		conn, err := bastion.Dial("tcp", net.JoinHostPort(hostName, port))
 		if err != nil {
