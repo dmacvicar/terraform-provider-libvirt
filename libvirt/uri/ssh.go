@@ -197,11 +197,13 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 	}
 
 	if knownHostsPath == "" {
-		knownHosts, err := sshcfg.Get(target, "UserKnownHostsFile")
-		if err == nil && knownHosts != "" {
-			knownHostsPath = knownHosts
-		} else {
-			knownHostsPath = defaultSSHKnownHostsPath
+		knownHostsPath = defaultSSHKnownHostsPath
+
+		if sshcfg != nil {
+			knownHosts, err := sshcfg.Get(target, "UserKnownHostsFile")
+			if err == nil && knownHosts != "" {
+				knownHostsPath = knownHosts
+			}
 		}
 	}
 
