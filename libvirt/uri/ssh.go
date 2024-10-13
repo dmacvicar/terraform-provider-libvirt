@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -275,19 +274,15 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		}
 	}
 
-	if cfg.User == "" {
+	// cfg.User value defaults to u.User.Username()
+	if sshcfg != nil {
 		sshu, err := sshcfg.Get(target, "User")
-		log.Printf("[DEBUG] SSH User for target '%v' is '%v'", target, sshu)
 		if err != nil {
-			log.Printf("[DEBUG] ssh user: using current login")
-			u, err := user.Current()
-			if err != nil {
-				return nil, fmt.Errorf("unable to get username: %w", err)
-			}
-			sshu = u.Username
+			log.Printf("[DEBUG] ssh user for target '%v' is overriden to '%v'", target, sshu)
+			cfg.User = sshu
 		}
-		cfg.User = sshu
 	}
+
 
 	cfg.Auth = u.parseAuthMethods(target, sshcfg)
 	if len(cfg.Auth) < 1 {
