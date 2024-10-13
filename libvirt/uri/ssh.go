@@ -116,21 +116,17 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 // construct the whole ssh connection, which can consist of multiple hops if using proxy jumps,
 // the ssh configuration file is loaded once and passed along to each host connection.
 func (u *ConnectionURI) dialSSH() (net.Conn, error) {
+	var sshcfg* ssh_config.Config = nil
+
 	sshConfigFile, err := os.Open(os.ExpandEnv(defaultSSHConfigFile))
 	if err != nil {
 		log.Printf("[WARN] Failed to open ssh config file: %v", err)
-		sshConfigFile = strings.NewReader("") // use empty file instead
-	}
-
-	sshcfg, err := ssh_config.Decode(sshConfigFile)
-	if err != nil {
-		log.Printf("[WARN] Failed to parse ssh config file: '%v' - sshconfig will be ignored.", err)
-
-		sshcfg, err = ssh_config.Decode(strings.NewReader(""))
+	} else {
+		sshcfg, err = ssh_config.Decode(sshConfigFile)
 		if err != nil {
-			log.Printf("[ERROR] unrecoverable error occurred during ssh configuration")
-			return nil, err
+			log.Printf("[WARN] Failed to parse ssh config file: '%v' - sshconfig will be ignored.", err)
 		}
+
 	}
 
 	// configuration loaded, build tunnel
