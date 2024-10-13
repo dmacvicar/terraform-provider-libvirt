@@ -278,7 +278,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 	if sshcfg != nil {
 		sshu, err := sshcfg.Get(target, "User")
 		if err != nil {
-			log.Printf("[DEBUG] ssh user for target '%v' is overriden to '%v'", target, sshu)
+			log.Printf("[DEBUG] ssh user for target '%v' is overridden to '%v'", target, sshu)
 			cfg.User = sshu
 		}
 	}
