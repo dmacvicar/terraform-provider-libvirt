@@ -39,19 +39,22 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 	//  2. load override as specified in ssh config
 	//  3. load default ssh keyfile path
 	sshKeyPaths := []string{}
+
 	sshKeyPath := q.Get("keyfile")
 	if sshKeyPath != "" {
 		sshKeyPaths = append(sshKeyPaths, sshKeyPath)
 	}
 
-	keyPaths, err := sshcfg.GetAll(target, "IdentityFile")
-	if err != nil {
-		log.Printf("[WARN] unable to get IdentityFile values - ignoring")
-	} else {
-		sshKeyPaths = append(sshKeyPaths, keyPaths...)
+	if sshcfg != nil {
+		keyPaths, err := sshcfg.GetAll(target, "IdentityFile")
+		if err != nil {
+			log.Printf("[WARN] unable to get IdentityFile values - ignoring")
+		} else {
+			sshKeyPaths = append(sshKeyPaths, keyPaths...)
+		}
 	}
 
-	if len(keyPaths) == 0 {
+	if len(sshKeyPaths) == 0 {
 		log.Printf("[DEBUG] found no ssh keys, using default keypath")
 		sshKeyPaths = []string{defaultSSHKeyPath}
 	}
