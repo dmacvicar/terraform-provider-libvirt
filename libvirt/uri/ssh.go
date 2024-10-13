@@ -18,7 +18,7 @@ import (
 const (
 	maxHostHops              = 10
 	defaultSSHPort           = "22"
-	defaultSSHKeyPaths       = "${HOME}/.ssh/id_rsa,${HOME}/.ssh/id_ed25519"
+	defaultSSHKeyPaths       = "${HOME}/.ssh/id_ed25519,${HOME}/.ssh/id_ecdsa,${HOME}/.ssh/id_rsa"
 	defaultSSHKnownHostsPath = "${HOME}/.ssh/known_hosts"
 	defaultSSHConfigFile     = "${HOME}/.ssh/config"
 	defaultSSHAuthMethods    = "agent,privkey"
