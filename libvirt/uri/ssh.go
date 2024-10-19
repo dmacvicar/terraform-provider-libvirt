@@ -17,7 +17,7 @@ import (
 const (
 	maxHostHops              = 10
 	defaultSSHPort           = "22"
-	defaultSSHKeyPath        = "${HOME}/.ssh/id_rsa"
+	defaultSSHKeyPaths       = "${HOME}/.ssh/id_ed25519,${HOME}/.ssh/id_ecdsa,${HOME}/.ssh/id_rsa"
 	defaultSSHKnownHostsPath = "${HOME}/.ssh/known_hosts"
 	defaultSSHConfigFile     = "${HOME}/.ssh/config"
 	defaultSSHAuthMethods    = "agent,privkey"
@@ -55,7 +55,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 
 	if len(sshKeyPaths) == 0 {
 		log.Printf("[DEBUG] found no ssh keys, using default keypath")
-		sshKeyPaths = []string{defaultSSHKeyPath}
+		sshKeyPaths = strings.Split(defaultSSHKeyPaths, ",")
 	}
 
 	log.Printf("[DEBUG] ssh identity files for host '%s': %s", target, sshKeyPaths)
