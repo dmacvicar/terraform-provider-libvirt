@@ -612,7 +612,7 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
-	// We save runnig state to not mix what we have and what we want
+	// We save running state to not mix what we have and what we want
 	requiredStatus := d.Get("running")
 
 	if diag := resourceLibvirtDomainRead(ctx, d, meta); diag.HasError() {
@@ -678,7 +678,7 @@ func resourceLibvirtDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.FromErr(err)
 	}
 
-	if !domainRunningNow {
+	if !domainRunningNow && d.Get("running").(bool) {
 		err = virConn.DomainCreate(domain)
 		if err != nil {
 			return diag.Errorf("error creating libvirt domain: %s", err)
@@ -757,6 +757,10 @@ func resourceLibvirtDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 				}
 			}
 		}
+	}
+
+	if err := destroyDomainByUserRequest(virConn, d, domain); err != nil {
+		return diag.FromErr(err)
 	}
 
 	return nil
