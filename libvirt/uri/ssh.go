@@ -169,12 +169,14 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 			configuredPort, err := sshcfg.Get(target, "Port")
 			if err == nil && configuredPort != "" {
 				port = configuredPort
+				log.Printf("[DEBUG] using ssh port from ssh_config: '%s'", port)
 			}
 		}
 
 	} else {
-		log.Printf("[DEBUG] ssh Port is overridden to: '%s'", port)
+		log.Printf("[DEBUG] using ssh port from querystring: '%s'", port)
 	}
+	log.Printf("[DEBUG] port for ssh connection is: '%s'", port)
 
 	hostName := target
 	if sshcfg != nil {
