@@ -6,13 +6,14 @@ import (
 	"net"
 	"os"
 	"os/user"
-	"path/filepath"
 	"strings"
 
 	"github.com/kevinburke/ssh_config"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/knownhosts"
+
+	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/util"
 )
 
 const (
@@ -78,13 +79,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 		case "privkey":
 			for _, keypath := range sshKeyPaths {
 				log.Printf("[DEBUG] Reading ssh key '%s'", keypath)
-				path := os.ExpandEnv(keypath)
-				if strings.HasPrefix(path, "~/") {
-					home, err := os.UserHomeDir()
-					if err == nil {
-						path = filepath.Join(home, path[2:])
-					}
-				}
+				path := util.ExpandEnvExt(keypath)
 				sshKey, err := os.ReadFile(path)
 				if err != nil {
 					log.Printf("[ERROR] Failed to read ssh key '%s': %v", keypath, err)
@@ -116,7 +111,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 // construct the whole ssh connection, which can consist of multiple hops if using proxy jumps,
 // the ssh configuration file is loaded once and passed along to each host connection.
 func (u *ConnectionURI) dialSSH() (net.Conn, error) {
-	sshConfigFile, err := os.Open(os.ExpandEnv(defaultSSHConfigFile))
+	sshConfigFile, err := os.Open(util.ExpandEnvExt(defaultSSHConfigFile))
 	if err != nil {
 		log.Printf("[WARN] Failed to open ssh config file: %v", err)
 	}
@@ -212,11 +207,11 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		ssh.KeyAlgoECDSA521,
 	}
 	if !skipVerify {
-		kh, err := knownhosts.New(os.ExpandEnv(knownHostsPath))
+		kh, err := knownhosts.New(util.ExpandEnvExt(knownHostsPath))
 		if err != nil {
 			return nil, fmt.Errorf("failed to read ssh known hosts: %w", err)
 		}
-		log.Printf("[DEBUG] Using known hosts file '%s' for target '%s'", os.ExpandEnv(knownHostsPath), target)
+		log.Printf("[DEBUG] Using known hosts file '%s' for target '%s'", util.ExpandEnvExt(knownHostsPath), target)
 
 		hostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			err := kh(net.JoinHostPort(hostName, port), remote, key)
