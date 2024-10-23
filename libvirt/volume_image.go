@@ -137,7 +137,7 @@ func (i *httpImage) IsQCOW2() (bool, error) {
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusPartialContent {
+	if response.StatusCode != http.StatusPartialContent && response.StatusCode != http.StatusOK {
 		return false, fmt.Errorf(
 			"can't retrieve partial header of resource to determine file type: %s - %s",
 			i.url.String(),
