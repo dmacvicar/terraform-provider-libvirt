@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/user"
 	"strings"
 
 	"github.com/kevinburke/ssh_config"
