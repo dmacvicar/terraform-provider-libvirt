@@ -12,7 +12,7 @@ var (
 )
 
 // ExpandEnvExt expands environment variables and resolves ~ to the home directory
-// this is a drop-in replacement for os.ExpandEnv but is additionall '~' aware
+// this is a drop-in replacement for os.ExpandEnv but is additionally '~' aware
 func ExpandEnvExt(path string) string {
 	path = expandEnv(path)
 	if strings.HasPrefix(path, "~") {
