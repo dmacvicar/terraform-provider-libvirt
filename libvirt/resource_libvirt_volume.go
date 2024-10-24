@@ -15,7 +15,9 @@ func resourceLibvirtVolume() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceLibvirtVolumeCreate,
 		ReadContext:   resourceLibvirtVolumeRead,
+		UpdateContext: resourceLibvirtVolumeUpdate,
 		DeleteContext: resourceLibvirtVolumeDelete,
+		CustomizeDiff: resourceLibvirtVolumeCustomDiff,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
@@ -37,7 +39,6 @@ func resourceLibvirtVolume() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Computed: true,
-				ForceNew: true,
 			},
 			"format": {
 				Type:     schema.TypeString,
@@ -359,9 +360,48 @@ func resourceLibvirtVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 	return nil
 }
 
-// resourceLibvirtVolumeDelete removed a volume resource.
+// resourceLibvirtVolumeUpdate dinamically updates the size of a volume.
+// When the new size is less than the previous one the volume will be destroyed and recreated
+func resourceLibvirtVolumeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*Client)
+
+	if d.HasChange("size") {
+		old, new := d.GetChange("size")
+		oldSize := old.(int)
+		newSize := new.(int)
+
+		if newSize > oldSize {
+			log.Printf("[INFO] Resizing volume from %d to %d", oldSize, newSize)
+
+			err := volumeResize(ctx, client, d.Id(), uint64(oldSize), uint64(newSize))
+			if err != nil {
+				return diag.FromErr(err)
+			}
+			d.Set("size", newSize)
+		}
+	}
+
+	return resourceLibvirtVolumeRead(ctx, d, meta)
+}
+
+// resourceLibvirtVolumeDelete removes a volume resource.
 func resourceLibvirtVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
 	return diag.FromErr(volumeDelete(ctx, client, d.Id()))
+}
+
+// resourceLibvirtVolumeCustomDiff will notify the user that the volume needs to be recreated when the new size is less than the old one.
+// The volume will then be destroyed and recreated
+func resourceLibvirtVolumeCustomDiff(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	if d.HasChange("size") {
+		oldSize, newSize := d.GetChange("size")
+
+		if newSize.(int) < oldSize.(int) {
+			log.Printf("[DEBUG] new size < old size: the volume will be destroyed and recreated")
+			d.ForceNew("size")
+		}
+	}
+
+	return nil
 }
