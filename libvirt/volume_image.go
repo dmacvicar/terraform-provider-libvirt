@@ -144,16 +144,17 @@ func (i *httpImage) IsQCOW2() (bool, error) {
 			response.Status)
 	}
 
-	header, err := io.ReadAll(response.Body)
+	header := make([]byte, 8)
+	n, err := io.ReadFull(response.Body, header)
 	if err != nil {
 		return false, err
 	}
 
-	if len(header) < 8 {
+	if n < 8 {
 		return false, fmt.Errorf(
 			"can't retrieve read header of resource to determine file type: %s - %d bytes read",
 			i.url.String(),
-			len(header))
+			n)
 	}
 
 	return isQCOW2Header(header)
