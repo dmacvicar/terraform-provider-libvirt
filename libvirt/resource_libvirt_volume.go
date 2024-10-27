@@ -121,12 +121,7 @@ func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	var img image
-	// an source image was given, this mean we can't choose size
 	if source, ok := d.GetOk("source"); ok {
-		// source and size conflict
-		if _, ok := d.GetOk("size"); ok {
-			return diag.Errorf("'size' can't be specified when also 'source' is given (the size will be set to the size of the source image")
-		}
 		if _, ok := d.GetOk("base_volume_id"); ok {
 			return diag.Errorf("'base_volume_id' can't be specified when also 'source' is given")
 		}
@@ -156,6 +151,12 @@ func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 		size, err := img.Size()
 		if err != nil {
 			return diag.FromErr(err)
+		}
+
+		if desiredSize, ok := d.GetOk("size"); ok {
+			if uint64(desiredSize.(int)) < size {
+				return diag.Errorf("'size' can't be smaller than the size of the 'source'")
+			}
 		}
 
 		log.Printf("Image %s image is: %d bytes", img, size)
@@ -268,6 +269,18 @@ be smaller than the backing store specified with
 
 	if err := waitForStateVolumeExists(ctx, virConn, volume.Key); err != nil {
 		return diag.FromErr(err)
+	}
+
+	if _, ok := d.GetOk("source"); ok {
+		if desiredSize, ok := d.GetOk("size"); ok {
+			err = virConn.StorageVolResize(volume, uint64(desiredSize.(int)), 0)
+			if err != nil {
+				// don't save volume ID in case of error. This will taint the volume after.
+				// If we don't throw away the id, we will keep instead a broken volume.
+				d.Set("id", "")
+				return diag.Errorf("error while resizing image %s: %s", volume.Name, err)
+			}
+		}
 	}
 
 	return resourceLibvirtVolumeRead(ctx, d, meta)
