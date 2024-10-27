@@ -54,10 +54,9 @@ The following arguments are supported:
   have to be specified using HTTP(S) urls for now.
 * `size` - (Optional) The size of the volume in bytes (if you don't like this,
   help fix [this issue](https://github.com/hashicorp/terraform/issues/3287).
-  If `source` is specified, `size` will be set to the source image file size.
-  `size` can be omitted if `source` is specified. `size` will then be set to the source image file size.
-  `size` can be omitted if `base_volume_id` or `base_volume_name` is specified. `size` will then be set to the base volume size.
-  If `size` is specified to be bigger than `base_volume_id` or `base_volume_name` size, you can use [cloudinit](https://cloudinit.readthedocs.io) if your OS supports it, with `libvirt_cloudinit_disk` and the [growpart](https://cloudinit.readthedocs.io/en/latest/topics/modules.html#growpart) module to resize the partition.
+  If `source` is specified and `size` is omitted, it will be set to the source image file size.
+  `size` can also be omitted if `base_volume_id` or `base_volume_name` is specified. `size` will then be set to the base volume size.
+  If `size` is specified to be bigger than `base_volume_id`, `base_volume_name` or `source` size, you can use [cloudinit](https://cloudinit.readthedocs.io) if your OS supports it, with `libvirt_cloudinit_disk` and the [growpart](https://cloudinit.readthedocs.io/en/latest/topics/modules.html#growpart) module to resize the partition.
 * `base_volume_id` - (Optional) The backing volume (CoW) to use for this volume.
 * `base_volume_name` - (Optional) The name of the backing volume (CoW) to use
   for this volume. Note well: when `base_volume_pool` is not specified the

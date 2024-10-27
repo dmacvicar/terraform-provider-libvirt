@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	libvirt "github.com/digitalocean/go-libvirt"
@@ -403,6 +404,125 @@ func TestAccLibvirtVolume_DownloadFromSourceFormat(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_volume."+randomVolumeResourceQCOW, "format", "qcow2"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtVolume_DownloadFromSourceSize(t *testing.T) {
+	size := 128 * 1024 * 1024
+	var volumeRaw libvirt.StorageVol
+	var volumeQCOW2 libvirt.StorageVol
+	randomVolumeNameRaw := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeNameQCOW := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeResourceRaw := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeResourceQCOW := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
+	qcow2Path, err := filepath.Abs("testdata/test.qcow2")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rawPath, err := filepath.Abs("testdata/initrd.img")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	config := fmt.Sprintf(`
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+	resource "libvirt_volume" "%s" {
+		name   = "%s"
+		source = "%s"
+		size = %d
+        pool = "${libvirt_pool.%s.name}"
+	}
+  resource "libvirt_volume" "%s" {
+		name   = "%s"
+		source = "%s"
+		size = %d
+        pool = "${libvirt_pool.%s.name}"
+	}`, randomPoolName, randomPoolName, randomPoolPath,
+		randomVolumeResourceRaw, randomVolumeNameRaw, fmt.Sprintf("file://%s", rawPath), size, randomPoolName,
+		randomVolumeResourceQCOW, randomVolumeNameQCOW, fmt.Sprintf("file://%s", qcow2Path), size, randomPoolName)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeResourceRaw, &volumeRaw),
+					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeResourceQCOW, &volumeQCOW2),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume."+randomVolumeResourceRaw, "name", randomVolumeNameRaw),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume."+randomVolumeResourceRaw, "format", "raw"),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume."+randomVolumeResourceRaw, "size", fmt.Sprintf("%d", size)),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume."+randomVolumeResourceQCOW, "name", randomVolumeNameQCOW),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume."+randomVolumeResourceQCOW, "format", "qcow2"),
+					resource.TestCheckResourceAttr(
+						"libvirt_volume."+randomVolumeResourceQCOW, "size", fmt.Sprintf("%d", size)),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtVolume_DownloadFromSourceSize_TooSmall(t *testing.T) {
+	size := 16
+	randomVolumeNameRaw := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeNameQCOW := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeResourceRaw := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeResourceQCOW := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
+	qcow2Path, err := filepath.Abs("testdata/test.qcow2")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rawPath, err := filepath.Abs("testdata/initrd.img")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	config := fmt.Sprintf(`
+    resource "libvirt_pool" "%s" {
+        name = "%s"
+        type = "dir"
+        path = "%s"
+    }
+	resource "libvirt_volume" "%s" {
+		name   = "%s"
+		source = "%s"
+		size = %d
+        pool = "${libvirt_pool.%s.name}"
+	}
+  resource "libvirt_volume" "%s" {
+		name   = "%s"
+		source = "%s"
+		size = %d
+        pool = "${libvirt_pool.%s.name}"
+	}`, randomPoolName, randomPoolName, randomPoolPath,
+		randomVolumeResourceRaw, randomVolumeNameRaw, fmt.Sprintf("file://%s", rawPath), size, randomPoolName,
+		randomVolumeResourceQCOW, randomVolumeNameQCOW, fmt.Sprintf("file://%s", qcow2Path), size, randomPoolName)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtVolumeDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				ExpectError: regexp.MustCompile(`'size' can't be smaller than the size of the 'source'`),
 			},
 		},
 	})
