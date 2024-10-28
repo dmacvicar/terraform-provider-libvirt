@@ -5,13 +5,14 @@ import (
 	"log"
 	"net"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/kevinburke/ssh_config"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/knownhosts"
+
+	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/util"
 )
 
 const (
@@ -80,13 +81,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 		case "privkey":
 			for _, keypath := range sshKeyPaths {
 				log.Printf("[DEBUG] Reading ssh key '%s'", keypath)
-				path := os.ExpandEnv(keypath)
-				if strings.HasPrefix(path, "~/") {
-					home, err := os.UserHomeDir()
-					if err == nil {
-						path = filepath.Join(home, path[2:])
-					}
-				}
+				path := util.ExpandPath(keypath)
 				sshKey, err := os.ReadFile(path)
 				if err != nil {
 					log.Printf("[ERROR] Failed to read ssh key '%s': %v", keypath, err)
@@ -119,8 +114,8 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 // the ssh configuration file is loaded once and passed along to each host connection.
 func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 	var sshcfg* ssh_config.Config = nil
+	sshConfigFile, err := os.Open(util.ExpandPath(defaultSSHConfigFile))
 
-	sshConfigFile, err := os.Open(os.ExpandEnv(defaultSSHConfigFile))
 	if err != nil {
 		log.Printf("[WARN] Failed to open ssh config file: %v", err)
 	} else {
@@ -221,11 +216,11 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		ssh.KeyAlgoECDSA521,
 	}
 	if !skipVerify {
-		kh, err := knownhosts.New(os.ExpandEnv(knownHostsPath))
+		kh, err := knownhosts.New(util.ExpandPath(knownHostsPath))
 		if err != nil {
 			return nil, fmt.Errorf("failed to read ssh known hosts: %w", err)
 		}
-		log.Printf("[DEBUG] Using known hosts file '%s' for target '%s'", os.ExpandEnv(knownHostsPath), target)
+		log.Printf("[DEBUG] Using known hosts file '%s' for target '%s'", util.ExpandPath(knownHostsPath), target)
 
 		hostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			err := kh(net.JoinHostPort(hostName, port), remote, key)
