@@ -11,9 +11,9 @@ var (
 	expandEnv   = os.ExpandEnv
 )
 
-// ExpandEnvExt expands environment variables and resolves ~ to the home directory
+// ExpandPath expands environment variables and resolves ~ to the home directory
 // this is a drop-in replacement for os.ExpandEnv but is additionally '~' aware.
-func ExpandEnvExt(path string) string {
+func ExpandPath(path string) string {
 	path = filepath.Clean(expandEnv(path))
 	tilde := filepath.FromSlash("~/")
 
