@@ -162,21 +162,26 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 
 	q := u.Query()
 
-	port := u.Port()
-	if port == "" {
-		port = defaultSSHPort
-		if sshcfg != nil {
-			configuredPort, err := sshcfg.Get(target, "Port")
-			if err == nil && configuredPort != "" {
-				port = configuredPort
-				log.Printf("[DEBUG] using ssh port from ssh_config: '%s'", port)
-			}
-		}
+	// port override order of precedence (starting with highest):
+	//  1. specific stanza entry in ssh_config for this target (this includes default global entries in ssh config)
+	//  2. port specified in connection string
+	//  3. defaultSSHPort
+	port := ""
 
+	if sshcfg != nil && (configuredPort, err := sshcfg.Get(target, "Port")); err == nil && configuredPort != "" {
+
+		port = configuredPort
+		log.Printf("[DEBUG] using ssh port from ssh_config: '%s'", port)
+
+	} else if u.Port() != "" {
+
+		port = u.Port()
+		log.Printf("[DEBUG] using connection string port ('%s')", port)
 	} else {
-		log.Printf("[DEBUG] using ssh port from querystring: '%s'", port)
+
+		port := defaultSSHPort
+		log.Printf("[DEBUG] using default port for ssh connection ('%s')", port)
 	}
-	log.Printf("[DEBUG] port for ssh connection is: '%s'", port)
 
 	hostName := target
 	if sshcfg != nil {
