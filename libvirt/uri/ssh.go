@@ -168,9 +168,21 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 	//  3. defaultSSHPort
 	port := ""
 
-	if sshcfg != nil && (configuredPort, err := sshcfg.Get(target, "Port")); err == nil && configuredPort != "" {
+	if sshcfg != nil {
+		configuredPort, err := sshcfg.Get(target, "Port")
+		if err != nil {
+			log.Printf("[WARN] error reading Port attribute from ssh_config for target '%v'", target)
+		} else {
+			port = configuredPort
 
-		port = configuredPort
+			if port == "" {
+				log.Printf("[DEBUG] port for target '%v' in ssh_config is empty", target)
+			}
+		}
+	}
+
+	if port != "" {
+
 		log.Printf("[DEBUG] using ssh port from ssh_config: '%s'", port)
 
 	} else if u.Port() != "" {
