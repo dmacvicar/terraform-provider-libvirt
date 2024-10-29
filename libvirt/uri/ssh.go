@@ -132,7 +132,7 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 	}
 
 	// configuration loaded, build tunnel
-	sshClient, err := u.dialHost(u.Host, sshcfg, 0)
+	sshClient, err := u.dialHost(u.Hostname(), sshcfg, 0)
 	if err != nil {
 		return nil, err
 	}
