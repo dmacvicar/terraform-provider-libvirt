@@ -361,7 +361,7 @@ func resourceLibvirtVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 }
 
 // resourceLibvirtVolumeUpdate dinamically updates the size of a volume.
-// When the new size is less than the previous one the volume will be destroyed and recreated
+// When the new size is less than the previous one the volume will be destroyed and recreated.
 func resourceLibvirtVolumeUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 
@@ -392,14 +392,14 @@ func resourceLibvirtVolumeDelete(ctx context.Context, d *schema.ResourceData, me
 }
 
 // resourceLibvirtVolumeCustomDiff will notify the user that the volume needs to be recreated when the new size is less than the old one.
-// The volume will then be destroyed and recreated
+// The volume will then be destroyed and recreated.
 func resourceLibvirtVolumeCustomDiff(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
 	if d.HasChange("size") {
 		oldSize, newSize := d.GetChange("size")
 
 		if newSize.(int) < oldSize.(int) {
 			log.Printf("[DEBUG] new size < old size: the volume will be destroyed and recreated")
-			d.ForceNew("size")
+			return d.ForceNew("size")
 		}
 	}
 

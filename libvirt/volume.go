@@ -145,7 +145,7 @@ func volumeDelete(ctx context.Context, client *Client, key string) error {
 	return nil
 }
 
-// volumeResizeCheck checks whether it is possible to increase the size of the provided volume by the given amount
+// volumeResizeCheck checks whether it is possible to increase the size of the provided volume by the given amount.
 func volumeResizeCheck(client *Client, volume libvirt.StorageVol, pool libvirt.StoragePool, sizeIncrease uint64) error {
 	virConn := client.libvirt
 
@@ -153,8 +153,8 @@ func volumeResizeCheck(client *Client, volume libvirt.StorageVol, pool libvirt.S
 	if err != nil {
 		return fmt.Errorf("error retrieving info for storage pool '%s' : %w", pool.Name, err)
 	}
-	// Check if the pool is in the running state (2)
-	if state != 2 {
+
+	if state != poolStateRunning {
 		return fmt.Errorf("the storage pool '%s' is in an invalid state (%d) for resizing", pool.Name, state)
 	}
 
