@@ -73,6 +73,33 @@ func TestAccLibvirtDomain_Description(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_Title(t *testing.T) {
+	var domain libvirt.Domain
+	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+                    title = "unit test title"
+				}`, randomResourceName, randomDomainName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomResourceName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomResourceName, "name", randomDomainName),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomResourceName, "title", "unit test title"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_Detailed(t *testing.T) {
 	var domain libvirt.Domain
 	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
