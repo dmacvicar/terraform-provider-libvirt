@@ -35,6 +35,7 @@ func Provider() *schema.Provider {
 			"libvirt_node_info":                        datasourceLibvirtNodeInfo(),
 			"libvirt_node_device_info":                 datasourceLibvirtNodeDeviceInfo(),
 			"libvirt_node_devices":                     datasourceLibvirtNodeDevices(),
+			"libvirt_capabilities":                     datasourceLibvirtCapabilities(),
 		},
 
 		ConfigureFunc: providerConfigure,
