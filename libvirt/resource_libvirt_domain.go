@@ -48,6 +48,11 @@ func resourceLibvirtDomain() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"title": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -494,6 +499,13 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 		domainDef.Name = name.(string)
 	}
 
+	if title, ok := d.GetOk("title"); ok {
+		if strings.Contains(title.(string), "\n") {
+			return diag.Errorf("title attribute should not contain newline characters")
+		}
+		domainDef.Title = title.(string)
+	}
+
 	if cpuMode, ok := d.GetOk("cpu.0.mode"); ok {
 		domainDef.CPU = &libvirtxml.DomainCPU{
 			Mode: cpuMode.(string),
@@ -807,6 +819,7 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	d.Set("name", domainDef.Name)
+	d.Set("title", domainDef.Title)
 	d.Set("description", domainDef.Description)
 	d.Set("vcpu", domainDef.VCPU.Value)
 
