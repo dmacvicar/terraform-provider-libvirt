@@ -7,7 +7,7 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -85,9 +85,6 @@ func resourceLibvirtVolume() *schema.Resource {
 func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	poolName := "default"
 	if _, ok := d.GetOk("pool"); ok {
@@ -104,9 +101,9 @@ func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	if err := resource.RetryContext(ctx, d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+	if err := retry.RetryContext(ctx, d.Timeout(schema.TimeoutCreate), func() *retry.RetryError {
 		if err := virConn.StoragePoolRefresh(pool, 0); err != nil {
-			return resource.RetryableError(err)
+			return retry.RetryableError(err)
 		}
 		return nil
 	}); err != nil {
@@ -259,7 +256,7 @@ be smaller than the backing store specified with
 
 	// upload source if present
 	if _, ok := d.GetOk("source"); ok {
-		err = img.Import(newCopier(virConn, &volume, volumeDef.Capacity.Value), volumeDef)
+		err = img.Import(newVolumeUploader(virConn, &volume, volumeDef.Capacity.Value), volumeDef)
 		if err != nil {
 			//  don't save volume ID  in case of error. This will taint the volume after.
 			// If we don't throw away the id, we will keep instead a broken volume.
@@ -269,7 +266,7 @@ be smaller than the backing store specified with
 		}
 	}
 
-	if err := waitForStateVolumeExists(ctx, client.libvirt, volume.Key); err != nil {
+	if err := waitForStateVolumeExists(ctx, virConn, volume.Key); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -280,14 +277,11 @@ be smaller than the backing store specified with
 func resourceLibvirtVolumeRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
 	virConn := client.libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	poolName := d.Get("pool").(string)
 
 	var volume libvirt.StorageVol
-	err := resource.RetryContext(ctx, d.Timeout(schema.TimeoutRead), func() *resource.RetryError {
+	err := retry.RetryContext(ctx, d.Timeout(schema.TimeoutRead), func() *retry.RetryError {
 		var lookupErr error
 		volume, lookupErr = virConn.StorageVolLookupByKey(d.Id())
 		if lookupErr == nil {
@@ -295,31 +289,31 @@ func resourceLibvirtVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 		}
 
 		if !isError(lookupErr, libvirt.ErrNoStorageVol) {
-			return resource.NonRetryableError(lookupErr)
+			return retry.NonRetryableError(lookupErr)
 		}
 
 		// volume not found, try to start the pool before retry
 		volPool, err := virConn.StoragePoolLookupByName(poolName)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("error retrieving pool %s for volume %s: %w", poolName, d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error retrieving pool %s for volume %s: %w", poolName, d.Id(), err))
 		}
 
 		active, err := virConn.StoragePoolIsActive(volPool)
 		if err != nil {
-			return resource.NonRetryableError(fmt.Errorf("error retrieving status of pool %s for volume %s: %w", poolName, d.Id(), err))
+			return retry.NonRetryableError(fmt.Errorf("error retrieving status of pool %s for volume %s: %w", poolName, d.Id(), err))
 		}
 
 		// pool was already started, nothing else to do
 		if active == 1 {
-			return resource.NonRetryableError(lookupErr)
+			return retry.NonRetryableError(lookupErr)
 		}
 
 		if err := virConn.StoragePoolCreate(volPool, 0); err != nil {
-			return resource.NonRetryableError(fmt.Errorf("error starting pool %s: %w", poolName, err))
+			return retry.NonRetryableError(fmt.Errorf("error starting pool %s: %w", poolName, err))
 		}
 
 		// pool started successfully, retry
-		return resource.RetryableError(lookupErr)
+		return retry.RetryableError(lookupErr)
 	})
 
 	if isError(err, libvirt.ErrNoStorageVol) {
@@ -368,9 +362,6 @@ func resourceLibvirtVolumeRead(ctx context.Context, d *schema.ResourceData, meta
 // resourceLibvirtVolumeDelete removed a volume resource.
 func resourceLibvirtVolumeDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	if client.libvirt == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	return diag.FromErr(volumeDelete(ctx, client, d.Id()))
 }

@@ -31,14 +31,15 @@ func Parse(uriStr string) (*ConnectionURI, error) {
 // The name passed to the remote virConnectOpen function is formed by removing
 // transport, hostname, port number, username and extra parameters from the remote URI
 // unless the name option is specified.
-func (u *ConnectionURI) RemoteName() string {
+func (u ConnectionURI) RemoteName() string {
 	q := u.Query()
 	if name := q.Get("name"); name != "" {
 		return name
 	}
 
-	newURI := *u
+	newURI := *u.URL
 	newURI.Scheme = u.driver()
+	newURI.User = nil
 	newURI.Host = ""
 	newURI.RawQuery = ""
 

@@ -47,8 +47,8 @@ func getXMLNetworkDefFromLibvirt(virConn *libvirt.Libvirt, network libvirt.Netwo
 }
 
 // Creates a network definition with the defaults the provider uses.
-func newNetworkDef() libvirtxml.Network {
-	const defNetworkXML = `
+func newNetworkDef() (libvirtxml.Network, error) {
+	return newDefNetworkFromXML(`
 		<network>
 		  <name>default</name>
 		  <forward mode='nat'>
@@ -56,12 +56,7 @@ func newNetworkDef() libvirtxml.Network {
 		      <port start='1024' end='65535'/>
 		    </nat>
 		  </forward>
-		</network>`
-	if d, err := newDefNetworkFromXML(defNetworkXML); err != nil {
-		panic(fmt.Sprintf("Unexpected error while parsing default network definition: %s", err))
-	} else {
-		return d
-	}
+		</network>`)
 }
 
 func getHostXMLDesc(ip, mac, name string) string {

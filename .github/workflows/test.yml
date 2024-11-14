@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - staging
     paths-ignore:
       - '*.md'
       - 'website/*'
@@ -19,21 +20,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ["1.18.x"]
+        go-version: ["1.21.x"]
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
       - name: terraform fmt
         run: |
           make tflint
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.50.0
+          version: v1.61.0
           only-new-issues: true
   build:
     name: Build
@@ -41,20 +42,20 @@ jobs:
     strategy:
       matrix:
         include:
-          - {os: ubuntu-latest, go: 1.18}
-          - {os: windows-latest, go: 1.18}
-          - {os: macos-latest, go: 1.18}
+          - {os: ubuntu-latest, go: 1.21}
+          - {os: windows-latest, go: 1.21}
+          - {os: macos-latest, go: 1.21}
     timeout-minutes: 10
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
         id: go
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Setup terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v3
       - name: Build
         run: |
           make
@@ -70,7 +71,7 @@ jobs:
       - name: Test
         run: |
           make test
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: terraform-provider-libvirt-${{ matrix.os }}
           path: ${{ github.workspace }}/terraform-provider-libvirt*

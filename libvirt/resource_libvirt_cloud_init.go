@@ -49,9 +49,6 @@ func resourceCloudInitDiskCreate(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("[DEBUG] creating cloudinit")
 
 	client := meta.(*Client)
-	if virConn := client.libvirt; virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	cloudInit := newCloudInitDef()
 	cloudInit.UserData = d.Get("user_data").(string)
@@ -66,7 +63,7 @@ func resourceCloudInitDiskCreate(ctx context.Context, d *schema.ResourceData, me
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	key, err := cloudInit.UploadIso(client, iso)
+	key, err := cloudInit.UploadIso(ctx, client, iso)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -77,9 +74,6 @@ func resourceCloudInitDiskCreate(ctx context.Context, d *schema.ResourceData, me
 
 func resourceCloudInitDiskRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	ci, err := newCloudInitDefFromRemoteISO(ctx, virConn, d.Id())
 	if err != nil {
@@ -99,9 +93,6 @@ func resourceCloudInitDiskRead(ctx context.Context, d *schema.ResourceData, meta
 
 func resourceCloudInitDiskDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*Client)
-	if client.libvirt == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	key, err := getCloudInitVolumeKeyFromTerraformID(d.Id())
 	if err != nil {

@@ -25,12 +25,16 @@ func Provider() *schema.Provider {
 			"libvirt_pool":           resourceLibvirtPool(),
 			"libvirt_cloudinit_disk": resourceCloudInitDisk(),
 			"libvirt_ignition":       resourceIgnition(),
+			"libvirt_combustion":     resourceCombustion(),
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
 			"libvirt_network_dns_host_template":        datasourceLibvirtNetworkDNSHostTemplate(),
 			"libvirt_network_dns_srv_template":         datasourceLibvirtNetworkDNSSRVTemplate(),
 			"libvirt_network_dnsmasq_options_template": datasourceLibvirtNetworkDnsmasqOptionsTemplate(),
+			"libvirt_node_info":                        datasourceLibvirtNodeInfo(),
+			"libvirt_node_device_info":                 datasourceLibvirtNodeDeviceInfo(),
+			"libvirt_node_devices":                     datasourceLibvirtNodeDevices(),
 		},
 
 		ConfigureFunc: providerConfigure,

@@ -18,9 +18,11 @@ func TestSplitKernelCmdLine(t *testing.T) {
 		{
 			"foo":  "bar",
 			"key":  "val",
-			"root": "UUID=aa52d618-a2c4-4aad-aeb7-68d9e3a2c91d"},
-		{"_": "nosplash rw"}}
-	r:= splitKernelCmdLine("foo=bar foo=bar key=val root=UUID=aa52d618-a2c4-4aad-aeb7-68d9e3a2c91d nosplash rw")
+			"root": "UUID=aa52d618-a2c4-4aad-aeb7-68d9e3a2c91d",
+		},
+		{"_": "nosplash rw"},
+	}
+	r := splitKernelCmdLine("foo=bar foo=bar key=val root=UUID=aa52d618-a2c4-4aad-aeb7-68d9e3a2c91d nosplash rw")
 	if !reflect.DeepEqual(r, e) {
 		t.Fatalf("got='%s' expected='%s'", spew.Sdump(r), spew.Sdump(e))
 	}
@@ -39,7 +41,6 @@ func TestGetHostArchitecture(t *testing.T) {
 	conn := testAccProvider.Meta().(*Client).libvirt
 
 	arch, err := getHostArchitecture(conn)
-
 	if err != nil {
 		t.Errorf("error %v", err)
 	}
@@ -65,7 +66,6 @@ func TestGetCanonicalMachineName(t *testing.T) {
 	}
 
 	name, err := getCanonicalMachineName(caps, arch, virttype, machine)
-
 	if err != nil {
 		t.Errorf("Could not get canonical name for %s/%s", arch, machine)
 		return
@@ -100,6 +100,29 @@ func TestGetOriginalMachineName(t *testing.T) {
 	}
 
 	t.Logf("Reverse canonical lookup for %s is %s which matches %s", canonname, reversename, machine)
+}
+
+func TestGetMachineTypeForArch(t *testing.T) {
+	skipIfAccDisabled(t)
+	conn := testAccProvider.Meta().(*Client).libvirt
+	caps, err := getHostCapabilities(conn)
+	if err != nil {
+		t.Error(err)
+	}
+
+	arch := "x86_64"
+	targettype := "hvm"
+	machine := "pc"
+
+	m, err := getMachineTypeForArch(caps, arch, targettype)
+	if err != nil {
+		t.Error(err)
+	}
+	if m != machine {
+		t.Errorf("Machine found for arch %s, targettype %s is %s expected %s", arch, targettype, m, machine)
+	}
+
+	t.Logf("Machine for arch %s, targettype %s is %s which matches %s", arch, targettype, m, machine)
 }
 
 func TestGetHostCapabilties(t *testing.T) {

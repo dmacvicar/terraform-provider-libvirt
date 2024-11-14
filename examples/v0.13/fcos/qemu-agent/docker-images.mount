@@ -2,7 +2,7 @@
 Before=local-fs.target
 [Mount]
 What=qemu_docker_images
-Where=/mnt/images
+Where=/var/mnt/images
 Options=ro,trans=virtio,version=9p2000.L
 Type=9p
 [Install]

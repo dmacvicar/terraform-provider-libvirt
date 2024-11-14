@@ -18,7 +18,7 @@ install:
 # - run all the unit tests: make test
 # - run some particular test: make test TEST_ARGS="-run TestAccLibvirtDomain_Cpu"
 test:
-	go test -v $(TEST_ARGS_DEF) $(TEST_ARGS) ./libvirt
+	go test -v $(TEST_ARGS_DEF) $(TEST_ARGS) ./libvirt/...
 
 # acceptance tests
 # usage:

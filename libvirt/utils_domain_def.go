@@ -71,6 +71,53 @@ func getOriginalMachineName(caps libvirtxml.Caps, arch string, virttype string, 
 	return targetmachine, nil // There wasn't a canonical mapping to this
 }
 
+func isMachineSupported(guest libvirtxml.CapsGuest, name string) bool {
+	for _, m := range guest.Arch.Machines {
+		if m.Name == name {
+			return true
+		}
+	}
+	for _, domain := range guest.Arch.Domains {
+		for _, m := range domain.Machines {
+			if m.Name == name {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// For backward compatibility Libvirt may pick the machine which has been
+// implemented initially for an architecture as default machine type.
+// This may not provide the hardware features expected and machine creation
+// fails. To work around this, we pick a default type unless the user has
+// specified one.
+func getMachineTypeForArch(caps libvirtxml.Caps, arch string, virttype string) (string, error) {
+	guest, err := getGuestForArchType(caps, arch, virttype)
+	var machines []string
+	if err != nil {
+		return "", err
+	}
+	switch arch {
+	case "i686", "x86_64":
+		machines = []string{"pc"} // "q35"?
+	case "aarch64", "armv7l":
+		machines = []string{"virt", "vexpress-a15"}
+	case "s390x":
+		machines = []string{"s390-ccw-virtio"}
+	case "ppc64le", "ppc64":
+		machines = []string{"pseries"}
+	default:
+		return "", fmt.Errorf("[DEBUG] Could not get machine type for arch %s", arch)
+	}
+	for _, machine := range machines {
+		if isMachineSupported(guest, machine) {
+			return machine, nil
+		}
+	}
+	return "", fmt.Errorf("[DEBUG] Machine type for arch %s not available", arch)
+}
+
 // as kernal args allow duplicate keys, we use a list of maps
 // we jump to a next map as soon as we find a duplicate
 // key.

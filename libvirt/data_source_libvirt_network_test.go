@@ -13,7 +13,6 @@ func TestAccLibvirtNetworkDataSource_DNSHostTemplate(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-
 			{
 				Config: `data "libvirt_network_dns_host_template" "bootstrap" {
   count = 2
@@ -33,7 +32,6 @@ func TestAccLibvirtNetworkDataSource_DNSHostTemplate(t *testing.T) {
 
 func checkTemplate(id, name, value string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
-
 		rs, err := getResourceFromTerraformState(id, state)
 		if err != nil {
 			return err
@@ -54,7 +52,6 @@ func TestAccLibvirtNetworkDataSource_DNSSRVTemplate(t *testing.T) {
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
-
 			{
 				Config: `data "libvirt_network_dns_srv_template" "etcd_cluster" {
   count = 2

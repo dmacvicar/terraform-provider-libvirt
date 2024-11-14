@@ -40,9 +40,9 @@ resource "libvirt_network" "kube_network" {
 
   # (Optional) DNS configuration
   dns {
-    # (Optional, default false)
-    # Set to true, if no other option is specified and you still want to 
-    # enable dns.
+    # (Optional, default true)
+    # If disabled, no dns will be setup for this network and dns configuration
+	# will be ignored.
     enabled = true
     # (Optional, default false)
     # true: DNS requests under this domain will only be resolved by the
@@ -50,7 +50,7 @@ resource "libvirt_network" "kube_network" {
     # false: Unresolved requests will be forwarded to the host's
     # upstream DNS server if the virtual network's DNS server does not
     # have an answer.
-￼   local_only = true
+    local_only = true
 
     # (Optional) one or more DNS forwarder entries.  One or both of
     # "address" and "domain" must be specified.  The format is:
@@ -71,14 +71,14 @@ resource "libvirt_network" "kube_network" {
     #     ip = "my.ip.address.2"
     #   }
     # 
-
-    # (Optional) one or more static routes.
-    # "cidr" and "gateway" must be specified. The format is:
-    # routes {
-    #     cidr = "10.17.0.0/16"
-    #     gateway = "10.18.0.2"
-    #   }
   }
+
+  # (Optional) one or more static routes.
+  # "cidr" and "gateway" must be specified. The format is:
+  # routes {
+  #     cidr = "10.17.0.0/16"
+  #     gateway = "10.18.0.2"
+  #   }
 
   # (Optional) Dnsmasq options configuration
   dnsmasq_options {

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -38,7 +39,7 @@ func resourceLibvirtDomain() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Timeouts: &schema.ResourceTimeout{
-			//nolint:gomnd
+			//nolint:mnd
 			Create: schema.DefaultTimeout(5 * time.Minute),
 		},
 		Schema: map[string]*schema.Schema{
@@ -74,22 +75,31 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"type": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				Default:  "kvm",
+			},
 			"nvram": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"file": {
 							Type:     schema.TypeString,
-							Required: true,
+							Optional: true,
 							ForceNew: true,
+							Computed: true,
 						},
 						"template": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Computed: true,
 						},
 					},
 				},
@@ -172,6 +182,7 @@ func resourceLibvirtDomain() *schema.Resource {
 						"wwn": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Computed: true,
 						},
 						"block_device": {
 							Type:     schema.TypeString,
@@ -473,9 +484,6 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("[DEBUG] Create resource libvirt_domain")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	domainDef, err := newDomainDefForConnection(virConn, d)
 	if err != nil {
@@ -505,8 +513,13 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	domainDef.OS.Initrd = d.Get("initrd").(string)
 	domainDef.OS.Type.Arch = d.Get("arch").(string)
 
-	domainDef.OS.Type.Machine = d.Get("machine").(string)
 	domainDef.Devices.Emulator = d.Get("emulator").(string)
+
+	if v := os.Getenv("TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE"); v != "" {
+		domainDef.Type = v
+	} else {
+		domainDef.Type = d.Get("type").(string)
+	}
 
 	arch, err := getHostArchitecture(virConn)
 	if err != nil {
@@ -518,7 +531,11 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	setVideo(d, &domainDef)
-	setConsoles(d, &domainDef)
+
+	if err := setConsoles(d, &domainDef); err != nil {
+		return diag.FromErr(err)
+	}
+
 	setCmdlineArgs(d, &domainDef)
 	setFirmware(d, &domainDef)
 	setBootDevices(d, &domainDef)
@@ -600,19 +617,8 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("[INFO] Domain ID: %s", d.Id())
 
 	if len(waitForLeases) > 0 {
-		err = domainWaitForLeases(ctx, virConn, domain, waitForLeases, d.Timeout(schema.TimeoutCreate), d)
-		if err != nil {
-			ipNotFoundMsg := "Please check following: \n" +
-				"1) is the domain running proplerly? \n" +
-				"2) has the network interface an IP address? \n" +
-				"3) Networking issues on your libvirt setup? \n " +
-				"4) is DHCP enabled on this Domain's network? \n" +
-				"5) if you use bridge network, the domain should have the pkg" +
-				" qemu-agent installed \n" +
-				"IMPORTANT: This error is not a terraform libvirt-provider" +
-				" error, but an error caused by your KVM/libvirt" +
-				" infrastructure configuration/setup"
-			return diag.Errorf("couldn't retrieve IP address of domain id: %s. %s \n %s", d.Id(), ipNotFoundMsg, err)
+		if err := waitForStateDomainLeaseDone(ctx, virConn, domain, waitForLeases, d); err != nil {
+			return diag.FromErr(err)
 		}
 	}
 
@@ -669,9 +675,6 @@ func resourceLibvirtDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("[DEBUG] Update resource libvirt_domain")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	uuid := parseUUID(d.Id())
 
@@ -773,9 +776,6 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 	log.Printf("[DEBUG] Read resource libvirt_domain")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	uuid := parseUUID(d.Id())
 
@@ -1082,9 +1082,6 @@ func resourceLibvirtDomainDelete(ctx context.Context, d *schema.ResourceData, me
 	log.Printf("[DEBUG] Delete resource libvirt_domain")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	log.Printf("[DEBUG] Deleting domain %s", d.Id())
 
@@ -1124,7 +1121,6 @@ func resourceLibvirtDomainDelete(ctx context.Context, d *schema.ResourceData, me
 	if err := virConn.DomainUndefineFlags(domain, libvirt.DomainUndefineNvram|
 		libvirt.DomainUndefineSnapshotsMetadata|libvirt.DomainUndefineManagedSave|
 		libvirt.DomainUndefineCheckpointsMetadata); err != nil {
-
 		if isError(err, libvirt.ErrNoSupport) || isError(err, libvirt.ErrInvalidArg) {
 			log.Printf("libvirt does not support undefine flags: will try again without flags")
 			if err := virConn.DomainUndefine(domain); err != nil {

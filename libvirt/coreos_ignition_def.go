@@ -1,6 +1,7 @@
 package libvirt
 
 import (
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -11,12 +12,18 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 )
 
 type defIgnition struct {
 	Name     string
 	PoolName string
 	Content  string
+
+	// Toggle the resource to a combustion script.
+	// Combustion and ignition have very similar boot parameters, only the format changes:
+	// combustion is a shell script while ignition is JSON.
+	Combustion bool
 }
 
 // Creates a new cloudinit with the defaults
@@ -30,11 +37,8 @@ func newIgnitionDef() defIgnition {
 // Create a ISO file based on the contents of the CloudInit instance and
 // uploads it to the libVirt pool
 // Returns a string holding terraform's internal ID of this resource.
-func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
+func (ign *defIgnition) CreateAndUpload(ctx context.Context, client *Client) (string, error) {
 	virConn := client.libvirt
-	if virConn == nil {
-		return "", fmt.Errorf(LibVirtConIsNil)
-	}
 
 	pool, err := virConn.StoragePoolLookupByName(ign.PoolName)
 	if err != nil {
@@ -46,8 +50,11 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	if err := waitForSuccess("Error refreshing pool for volume", func() error {
-		return virConn.StoragePoolRefresh(pool, 0)
+	if err := retry.RetryContext(ctx, resourceStateTimeout, func() *retry.RetryError {
+		if err := virConn.StoragePoolRefresh(pool, 0); err != nil {
+			return retry.RetryableError(fmt.Errorf("error refreshing pool for volume: %w", err))
+		}
+		return nil
 	}); err != nil {
 		return "", err
 	}
@@ -91,7 +98,7 @@ func (ign *defIgnition) CreateAndUpload(client *Client) (string, error) {
 	}
 
 	// upload ignition file
-	err = img.Import(newCopier(virConn, &volume, volumeDef.Capacity.Value), volumeDef)
+	err = img.Import(newVolumeUploader(virConn, &volume, volumeDef.Capacity.Value), volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("error while uploading ignition file %s: %w", img.String(), err)
 	}
@@ -110,7 +117,7 @@ func (ign *defIgnition) buildTerraformKey(volumeKey string) string {
 	return fmt.Sprintf("%s;%s", volumeKey, uuid.New())
 }
 
-//nolint:gomnd
+//nolint:mnd
 func getIgnitionVolumeKeyFromTerraformID(id string) (string, error) {
 	s := strings.SplitN(id, ";", 2)
 	if len(s) != 2 {
@@ -133,7 +140,7 @@ func (ign *defIgnition) createFile() (string, error) {
 	file = true
 	if _, err := os.Stat(ign.Content); err != nil {
 		var js map[string]interface{}
-		if errConf := json.Unmarshal([]byte(ign.Content), &js); errConf != nil {
+		if errConf := json.Unmarshal([]byte(ign.Content), &js); !ign.Combustion && errConf != nil {
 			return "", fmt.Errorf("coreos_ignition 'content' is neither a file "+
 				"nor a valid json object %s", ign.Content)
 		}

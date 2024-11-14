@@ -1,17 +1,17 @@
 package libvirt
 
 import (
+	"crypto/rand"
 	"fmt"
-	"math/rand"
 	"net"
 )
 
 // randomMACAddress returns a randomized MAC address
 // with libvirt prefix.
-//nolint:gomnd
+//
+//nolint:mnd
 func randomMACAddress() (string, error) {
 	buf := make([]byte, 3)
-	//nolint:gosec // math.rand is enough for this
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
 	}
@@ -30,7 +30,7 @@ func randomMACAddress() (string, error) {
 		buf[0], buf[1], buf[2]), nil
 }
 
-//nolint:gomnd
+//nolint:mnd
 func getNetMaskWithMax16Bits(m net.IPMask) net.IPMask {
 	ones, bits := m.Size()
 

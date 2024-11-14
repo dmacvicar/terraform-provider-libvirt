@@ -1,44 +1,82 @@
 package libvirt
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 
 	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
 )
 
-func waitForNetworkActive(virConn *libvirt.Libvirt, network libvirt.Network) resource.StateRefreshFunc {
+const (
+	networkStateConfPending   = resourceStateConfPending
+	networkStateConfActive    = resourceStateConfActive
+	networkStateConfExists    = resourceStateConfExists
+	networkStateConfNotExists = resourceStateConfNotExists
+)
+
+func networkActiveStateRefreshFunc(virConn *libvirt.Libvirt, network libvirt.Network) retry.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		active, err := virConn.NetworkIsActive(network)
 		if err != nil {
 			return nil, "", err
 		}
+
 		if active == 1 {
-			return network, "ACTIVE", nil
+			return network, resourceStateConfActive, nil
 		}
-		return network, "BUILD", err
+		return network, resourceStateConfPending, err
 	}
 }
 
-// waitForNetworkDestroyed waits for a network to destroyed.
-func waitForNetworkDestroyed(virConn *libvirt.Libvirt, uuidStr string) resource.StateRefreshFunc {
-	return func() (interface{}, string, error) {
-		log.Printf("Waiting for network %s to be destroyed", uuidStr)
+func waitForStateNetworkActive(ctx context.Context, virConn *libvirt.Libvirt, network libvirt.Network) error {
+	stateConf := &retry.StateChangeConf{
+		Pending:    []string{networkStateConfPending},
+		Target:     []string{networkStateConfActive},
+		Refresh:    networkActiveStateRefreshFunc(virConn, network),
+		Timeout:    resourceStateTimeout,
+		Delay:      resourceStateDelay,
+		MinTimeout: resourceStateMinTimeout,
+	}
 
+	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func networkDestroyedStateRefreshFunc(virConn *libvirt.Libvirt, uuidStr string) retry.StateRefreshFunc {
+	return func() (interface{}, string, error) {
 		uuid := parseUUID(uuidStr)
 		if _, err := virConn.NetworkLookupByUUID(uuid); err != nil {
 			if isError(err, libvirt.ErrNoNetwork) {
-				return virConn, "NOT-EXISTS", nil
+				return virConn, resourceStateConfNotExists, nil
 			}
-			return virConn, "NOT-EXISTS", err
+			return virConn, resourceStateConfNotExists, err
 		}
-		return virConn, "ACTIVE", nil
+
+		return virConn, resourceStateConfExists, nil
 	}
+}
+
+func waitForStateNetworkDestroyed(ctx context.Context, virConn *libvirt.Libvirt, id string) error {
+	stateConf := &retry.StateChangeConf{
+		Pending:    []string{networkStateConfExists},
+		Target:     []string{networkStateConfNotExists},
+		Refresh:    networkDestroyedStateRefreshFunc(virConn, id),
+		Delay:      resourceStateDelay,
+		Timeout:    resourceStateTimeout,
+		MinTimeout: resourceStateMinTimeout,
+	}
+
+	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
+		return err
+	}
+	return nil
 }
 
 // getNetModeFromResource returns the network mode fromm a network definition.
@@ -84,7 +122,7 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 		// because it is computed but we need to know if the user has
 		// explicitly set it to false
 		//
-		//nolint:staticcheck
+
 		if dhcpEnabledByUser, dhcpSetByUser := d.GetOkExists("dhcp.0.enabled"); dhcpSetByUser {
 			dhcpEnabled = dhcpEnabledByUser.(bool)
 		}
@@ -111,7 +149,7 @@ func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.Netw
 
 	ones, bits := ipNet.Mask.Size()
 	family := "ipv4"
-	if bits == (net.IPv6len * 8) { //nolint:gomnd
+	if bits == (net.IPv6len * 8) { //nolint:mnd
 		family = "ipv6"
 	}
 
@@ -213,9 +251,9 @@ func getDNSMasqOptionFromResource(d *schema.ResourceData) []libvirtxml.NetworkDn
 			optionName := d.Get(dnsmasqOptionsPrefix + ".option_name").(string)
 			optionValue, ok := d.GetOk(dnsmasqOptionsPrefix + ".option_value")
 			if ok {
-			   optionString = optionName + "=" + optionValue.(string)
+				optionString = optionName + "=" + optionValue.(string)
 			} else {
-			   optionString = optionName
+				optionString = optionName
 			}
 			dnsmasqOption = append(dnsmasqOption, libvirtxml.NetworkDnsmasqOption{
 				Value: optionString,

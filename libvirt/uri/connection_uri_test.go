@@ -1,8 +1,9 @@
 package uri
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestURI(t *testing.T) {
@@ -19,6 +20,7 @@ func TestURI(t *testing.T) {
 		{"xxx+tcp:///", "xxx", "tcp", "xxx:///"},
 		{"xxx+unix:///", "xxx", "unix", "xxx:///"},
 		{"xxx+tls://servername/?foo=bar&name=dong:///ding", "xxx", "tls", "dong:///ding"},
+		{"xxx+ssh://username@hostname:2222/path?foo=bar&bar=foo", "xxx", "ssh", "xxx:///path"},
 	}
 
 	for _, fixture := range fixtures {

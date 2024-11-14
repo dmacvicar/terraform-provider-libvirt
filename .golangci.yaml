@@ -6,14 +6,38 @@ linters-settings:
     excludes:
       - G402
       - G106
-  gomnd:
+      - G115 # Potential integer overflow when converting between integer types
+  mnd:
     ignored-functions:
       - strings.SplitN
+      - os.WriteFile # perms is ok as numbers
+  depguard:
+    rules:
+      main:
+        files:
+          - $all
+        allow:
+          - $gostd
+          - "github.com/dmacvicar/terraform-provider-libvirt"
+          - "github.com/community-terraform-providers/terraform-provider-ignition/v2"
+          - "github.com/digitalocean/go-libvirt"
+          - "libvirt.org/go/libvirtxml"
+          - "github.com/davecgh/go-spew"
+          - "github.com/google/uuid"
+          - "github.com/hashicorp/terraform-plugin-sdk/v2"
+          - "github.com/hooklift/iso9660"
+          - "github.com/mattn/goveralls"
+          - "github.com/stretchr/testify"
+          - "golang.org/x/crypto"
+          - "golang.org/x/lint"
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true
 
 linters:
   enable-all: false
   enable:
-    - ifshort
     - unparam
     - exhaustive
     - godot
@@ -22,11 +46,10 @@ linters:
     - revive
     - gocritic
     - misspell
-    - depguard
     - lll
     - errorlint
     - errcheck
-    - gomnd
+    - mnd
     - nolintlint
 
 issues:
@@ -36,13 +59,16 @@ issues:
         - errcheck
     - text: "Magic number: 1024, in <argument> detected"
       linters:
-        - gomnd
+        - mnd
     - text: "ifElseChain: rewrite if-else to switch statement"
       linters:
         - gocritic
-    - text: "should check returned error before deferring file.Close()"
+    - text: "should check error returned from os.Open() before deferring file.Close()"
       linters:
         - staticcheck
     - path: '(.+)_test\.go'
       linters:
         - lll
+    - text: "d.GetOkExists is deprecated"
+      linters:
+        - staticcheck

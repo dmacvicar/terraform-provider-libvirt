@@ -9,9 +9,10 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
+
+	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/util"
 )
 
 const (
@@ -102,6 +103,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 							Type:     schema.TypeBool,
 							Optional: true,
 							Required: false,
+							Default:  true,
 						},
 						"local_only": {
 							Type:     schema.TypeBool,
@@ -296,9 +298,6 @@ func resourceLibvirtNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 	// check the list of things that can be changed dynamically
 	// in https://wiki.libvirt.org/page/Networking#virsh_net-update
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	uuid := parseUUID(d.Id())
 	network, err := virConn.NetworkLookupByUUID(uuid)
@@ -342,11 +341,12 @@ func resourceLibvirtNetworkUpdate(ctx context.Context, d *schema.ResourceData, m
 func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// see https://libvirt.org/formatnetwork.html
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
+
+	networkDef, err := newNetworkDef()
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
-	networkDef := newNetworkDef()
 	networkDef.Name = d.Get("name").(string)
 	networkDef.Domain = getDomainFromResource(d)
 
@@ -363,7 +363,6 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 		networkDef.Forward.Mode == netModeNat ||
 		networkDef.Forward.Mode == netModeRoute ||
 		networkDef.Forward.Mode == netModeOpen {
-
 		if networkDef.Forward.Mode == netModeIsolated {
 			// there is no forwarding when using an isolated network
 			networkDef.Forward = nil
@@ -379,31 +378,31 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 		}
 		networkDef.IPs = ips
 
-		dnsEnabled := getDNSEnableFromResource(d)
+		if dnsEnabled, ok := d.GetOk(dnsPrefix + ".enabled"); ok && dnsEnabled.(bool) {
+			dnsForwarders, err := getDNSForwardersFromResource(d)
+			if err != nil {
+				return diag.FromErr(err)
+			}
 
-		dnsForwarders, err := getDNSForwardersFromResource(d)
-		if err != nil {
-			return diag.FromErr(err)
+			dnsSRVs, err := getDNSSRVFromResource(d)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			dnsHosts, err := getDNSHostsFromResource(d)
+			if err != nil {
+				return diag.FromErr(err)
+			}
+
+			dns := libvirtxml.NetworkDNS{
+				Enable:     util.FormatBoolYesNo(dnsEnabled.(bool)),
+				Forwarders: dnsForwarders,
+				Host:       dnsHosts,
+				SRVs:       dnsSRVs,
+			}
+
+			networkDef.DNS = &dns
 		}
-
-		dnsSRVs, err := getDNSSRVFromResource(d)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		dnsHosts, err := getDNSHostsFromResource(d)
-		if err != nil {
-			return diag.FromErr(err)
-		}
-
-		dns := libvirtxml.NetworkDNS{
-			Enable:     dnsEnabled,
-			Forwarders: dnsForwarders,
-			Host:       dnsHosts,
-			SRVs:       dnsSRVs,
-		}
-		networkDef.DNS = &dns
-
 	} else if networkDef.Forward.Mode == netModeBridge {
 		if networkDef.Bridge.Name == "" {
 			return diag.Errorf("'bridge' must be provided when using the bridged network mode")
@@ -449,7 +448,6 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 		log.Printf("[DEBUG] creating libvirt network: %s", data)
 		return virConn.NetworkDefineXML(data)
 	}()
-
 	if err != nil {
 		return diag.Errorf("error defining libvirt network: %s - %s", err, data)
 	}
@@ -475,17 +473,8 @@ func resourceLibvirtNetworkCreate(ctx context.Context, d *schema.ResourceData, m
 
 	log.Printf("[INFO] Created network %s [%s]", networkDef.Name, d.Id())
 
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"BUILD"},
-		Target:     []string{"ACTIVE"},
-		Refresh:    waitForNetworkActive(virConn, network),
-		Timeout:    resourceStateTimeout,
-		Delay:      resourceStateDelay,
-		MinTimeout: resourceStateMinTimeout,
-	}
-	_, err = stateConf.WaitForStateContext(ctx)
-	if err != nil {
-		return diag.Errorf("error waiting for network to reach ACTIVE state: %s", err)
+	if err := waitForStateNetworkActive(ctx, virConn, network); err != nil {
+		return diag.Errorf("error waiting for network to reach active state: %s", err)
 	}
 
 	if autostart, ok := d.GetOk("autostart"); ok {
@@ -504,9 +493,6 @@ func resourceLibvirtNetworkRead(ctx context.Context, d *schema.ResourceData, met
 	log.Printf("[DEBUG] Read resource libvirt_network")
 
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
 
 	uuid := parseUUID(d.Id())
 
@@ -552,7 +538,7 @@ func resourceLibvirtNetworkRead(ctx context.Context, d *schema.ResourceData, met
 
 	// read add the IP addresses
 	addresses := []string{}
-	//nolint:gomnd
+	//nolint:mnd
 	for _, address := range networkDef.IPs {
 		// we get the host interface IP (ie, 10.10.8.1) but we want the network CIDR (ie, 10.10.8.0/24)
 		// so we need some transformations...
@@ -660,9 +646,7 @@ func resourceLibvirtNetworkRead(ctx context.Context, d *schema.ResourceData, met
 
 func resourceLibvirtNetworkDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	virConn := meta.(*Client).libvirt
-	if virConn == nil {
-		return diag.Errorf(LibVirtConIsNil)
-	}
+
 	log.Printf("[DEBUG] Deleting network ID %s", d.Id())
 
 	uuid := parseUUID(d.Id())
@@ -694,17 +678,8 @@ func resourceLibvirtNetworkDelete(ctx context.Context, d *schema.ResourceData, m
 		}
 	}
 
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{"ACTIVE"},
-		Target:     []string{"NOT-EXISTS"},
-		Refresh:    waitForNetworkDestroyed(virConn, d.Id()),
-		Timeout:    resourceStateTimeout,
-		Delay:      resourceStateDelay,
-		MinTimeout: resourceStateMinTimeout,
-	}
-	_, err = stateConf.WaitForStateContext(ctx)
-	if err != nil {
-		return diag.Errorf("error waiting for network to reach NOT-EXISTS state: %s", err)
+	if err := waitForStateNetworkDestroyed(ctx, virConn, d.Id()); err != nil {
+		return diag.Errorf("error waiting for network to reach destroyed state: %s", err)
 	}
 	return nil
 }

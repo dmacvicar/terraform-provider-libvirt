@@ -1,14 +1,20 @@
 package libvirt
 
 import (
+	"crypto/sha256"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTimeFromEpoch(t *testing.T) {
@@ -29,28 +35,17 @@ func TestTimeFromEpoch(t *testing.T) {
 	}
 }
 
-func TestAccUtilsVolume_UploadVolumeCopier(t *testing.T) {
-
+func TestAccUtilsVolume_UploaderDownloader(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 	randomPoolPath := t.TempDir()
 
-	tmpfile, err := os.CreateTemp(t.TempDir(), "test-image-")
-	if err != nil {
-		t.Fatal(err)
-	}
+	imagePath, err := filepath.Abs("testdata/test.qcow2")
+	require.NoError(t, err)
 
-	// simulate uploading a 1G file usig a sparse file
-	if err:= tmpfile.Truncate(1024*1024*1024); err != nil {
-		t.Fatal(err)
-	}
-
-	defer os.Remove(tmpfile.Name())
-	defer tmpfile.Close()
-
-	url := fmt.Sprintf("file://%s", tmpfile.Name())
+	url := fmt.Sprintf("file://%s", imagePath)
 
 	config := fmt.Sprintf(`
     resource "libvirt_pool" "%s" {
@@ -75,8 +70,32 @@ func TestAccUtilsVolume_UploadVolumeCopier(t *testing.T) {
 					testAccCheckLibvirtVolumeExists("libvirt_volume."+randomVolumeResource, &volume),
 					resource.TestCheckResourceAttr(
 						"libvirt_volume."+randomVolumeResource, "name", randomVolumeName),
+					func(state *terraform.State) error {
+						virConn := testAccProvider.Meta().(*Client).libvirt
+
+						file, err := os.CreateTemp("", "downloader-")
+						require.NoError(t, err)
+
+						defer os.Remove(file.Name())
+						defer file.Close()
+
+						downloader := newVolumeDownloader(virConn, &volume)
+						err = downloader(file)
+						require.NoError(t, err)
+
+						_, err = file.Seek(0, 0)
+						require.NoError(t, err)
+
+						h := sha256.New()
+						_, err = io.Copy(h, file)
+						require.NoError(t, err)
+
+						assert.Equal(t, "0f71acdc66da59b04121b939573bec2e5be78a6cdf829b64142cf0a93a7076f5", fmt.Sprintf("%x", h.Sum(nil)))
+						return nil
+					},
 				),
 			},
 		},
 	})
+
 }

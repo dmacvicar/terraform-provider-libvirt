@@ -10,24 +10,25 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/digitalocean/go-libvirt"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
 )
 
-const domWaitLeaseStillWaiting = "waiting-addresses"
-const domWaitLeaseDone = "all-addresses-obtained"
-
 var errDomainInvalidState = errors.New("invalid state for domain")
 
-func domainWaitForLeases(ctx context.Context, virConn *libvirt.Libvirt, domain libvirt.Domain, waitForLeases []*libvirtxml.DomainInterface,
-	timeout time.Duration, rd *schema.ResourceData) error {
-	waitFunc := func() (interface{}, string, error) {
+const (
+	domainStateConfLeaseWaiting = resourceStateConfPending
+	domainStateConfLeaseDone    = resourceStateConfDone
+)
 
+func domainLeaseStateRefreshFunc(_ context.Context,
+	virConn *libvirt.Libvirt, domain libvirt.Domain,
+	waitForLeases []*libvirtxml.DomainInterface, rd *schema.ResourceData) retry.StateRefreshFunc {
+	return func() (interface{}, string, error) {
 		state, err := domainGetState(virConn, domain)
 		if err != nil {
 			return false, "", err
@@ -40,7 +41,7 @@ func domainWaitForLeases(ctx context.Context, virConn *libvirt.Libvirt, domain l
 		}
 
 		if state != "running" {
-			return false, domWaitLeaseStillWaiting, nil
+			return false, domainStateConfLeaseWaiting, nil
 		}
 
 		// check we have IPs for all the interfaces we are waiting for
@@ -55,32 +56,49 @@ func domainWaitForLeases(ctx context.Context, virConn *libvirt.Libvirt, domain l
 			}
 			if !found {
 				log.Printf("[DEBUG] IP address not found for iface=%+v: will try in a while", strings.ToUpper(iface.MAC.Address))
-				return false, domWaitLeaseStillWaiting, nil
+				return false, domainStateConfLeaseWaiting, nil
 			}
 		}
 
 		log.Printf("[DEBUG] all the %d IP addresses obtained for the domain", len(waitForLeases))
-		return true, domWaitLeaseDone, nil
+		return true, domainStateConfLeaseDone, nil
 	}
+}
 
-	stateConf := &resource.StateChangeConf{
-		Pending:    []string{domWaitLeaseStillWaiting},
-		Target:     []string{domWaitLeaseDone},
-		Refresh:    waitFunc,
-		Timeout:    timeout,
+func waitForStateDomainLeaseDone(ctx context.Context,
+	virConn *libvirt.Libvirt, domain libvirt.Domain,
+	waitForLeases []*libvirtxml.DomainInterface, rd *schema.ResourceData,
+) error {
+	stateConf := &retry.StateChangeConf{
+		Pending:    []string{domainStateConfLeaseWaiting},
+		Target:     []string{domainStateConfLeaseDone},
+		Refresh:    domainLeaseStateRefreshFunc(ctx, virConn, domain, waitForLeases, rd),
+		Timeout:    rd.Timeout(schema.TimeoutCreate),
 		MinTimeout: resourceStateMinTimeout,
 		Delay:      resourceStateDelay,
 	}
 
-	_, err := stateConf.WaitForStateContext(ctx)
-	log.Print("[DEBUG] wait-for-leases was successful")
-	return err
+	if _, err := stateConf.WaitForStateContext(ctx); err != nil {
+		ipNotFoundMsg := "Please check following: \n" +
+			"1) is the domain running properly? \n" +
+			"2) has the network interface an IP address? \n" +
+			"3) Networking issues on your libvirt setup? \n " +
+			"4) is DHCP enabled on this Domain's network? \n" +
+			"5) if you use bridge network, the domain should have the pkg" +
+			" qemu-agent installed \n" +
+			"IMPORTANT: This error is not a terraform libvirt-provider" +
+			" error, but an error caused by your KVM/libvirt" +
+			" infrastructure configuration/setup"
+		return fmt.Errorf("couldn't retrieve IP address of domain id: %s. %s \n %w", rd.Id(), ipNotFoundMsg, err)
+	}
+	log.Print("[DEBUG] got lease")
+	return nil
 }
 
 func domainIfaceHasAddress(virConn *libvirt.Libvirt, domain libvirt.Domain,
 	iface libvirtxml.DomainInterface,
-	rd *schema.ResourceData) (found bool, ignore bool, err error) {
-
+	rd *schema.ResourceData,
+) (found bool, ignore bool, err error) {
 	mac := strings.ToUpper(iface.MAC.Address)
 	if mac == "" {
 		log.Printf("[DEBUG] Can't wait without a MAC address: ignoring interface %+v.\n", iface)
@@ -91,12 +109,16 @@ func domainIfaceHasAddress(virConn *libvirt.Libvirt, domain libvirt.Domain,
 	log.Printf("[DEBUG] waiting for network address for iface=%s\n", mac)
 	ifacesWithAddr, err := domainGetIfacesInfo(virConn, domain, rd)
 	if err != nil {
+		if strings.Contains(err.Error(), "Guest agent is not responding: QEMU guest agent is not connected") {
+			log.Print("[DEBUG] could not retrieve interface addresses: domain qemu guest agent is not yet ready")
+			return false, false, nil
+		}
 		return false, false, fmt.Errorf("error retrieving interface addresses: %w", err)
 	}
 	log.Printf("[DEBUG] ifaces with addresses: %+v\n", ifacesWithAddr)
 
 	for _, ifaceWithAddr := range ifacesWithAddr {
-		if len(ifaceWithAddr.Hwaddr) > 0 && (mac == strings.ToUpper(ifaceWithAddr.Hwaddr[0])) {
+		if len(ifaceWithAddr.Hwaddr) > 0 && (mac == strings.ToUpper(ifaceWithAddr.Hwaddr[0])) && len(ifaceWithAddr.Addrs) > 0 {
 			log.Printf("[DEBUG] found IPs for MAC=%+v: %+v\n", mac, ifaceWithAddr.Addrs)
 			return true, false, nil
 		}
@@ -375,7 +397,10 @@ func setFirmware(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 		}
 
 		if _, ok := d.GetOk("nvram.0"); ok {
-			nvramFile := d.Get("nvram.0.file").(string)
+			nvramFile := ""
+			if file, ok := d.GetOk("nvram.0.file"); ok {
+				nvramFile = file.(string)
+			}
 			nvramTemplateFile := ""
 			if nvramTemplate, ok := d.GetOk("nvram.0.template"); ok {
 				nvramTemplateFile = nvramTemplate.(string)
@@ -401,23 +426,29 @@ func setBootDevices(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	}
 }
 
-func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
+func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
 	for i := 0; i < d.Get("console.#").(int); i++ {
 		console := libvirtxml.DomainConsole{}
 		prefix := fmt.Sprintf("console.%d", i)
-		consoleTargetPortInt, err := strconv.Atoi(d.Get(prefix + ".target_port").(string))
-		if err == nil {
-			consoleTargetPort := uint(consoleTargetPortInt)
+
+		portStr := d.Get(prefix + ".target_port").(string)
+		consoleTargetPortUint16, err := strconv.ParseUint(portStr, 10, 16)
+		if err != nil {
+			return fmt.Errorf("invalid port when parsing %s: %w", strconv.Quote(portStr), err)
+		} else {
+			consoleTargetPort := uint(consoleTargetPortUint16)
 			console.Target = &libvirtxml.DomainConsoleTarget{
 				Port: &consoleTargetPort,
 			}
 		}
+
 		if targetType, ok := d.GetOk(prefix + ".target_type"); ok {
 			if console.Target == nil {
 				console.Target = &libvirtxml.DomainConsoleTarget{}
 			}
 			console.Target.Type = targetType.(string)
 		}
+
 		switch d.Get(prefix + ".type").(string) {
 		case "tcp":
 			sourceHost := d.Get(prefix + ".source_host")
@@ -451,12 +482,13 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 		}
 		domainDef.Devices.Consoles = append(domainDef.Devices.Consoles, console)
 	}
+	return nil
 }
 
 func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *libvirt.Libvirt) error {
-	var scsiDisk = false
-	var numOfISOs = 0
-	var numOfSCSIs = 0
+	scsiDisk := false
+	numOfISOs := 0
+	numOfSCSIs := 0
 
 	for i := 0; i < d.Get("disk.#").(int); i++ {
 		disk := newDefDisk(i)
@@ -471,7 +503,7 @@ func setDisks(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn *lib
 			if wwn, ok := d.GetOk(prefix + ".wwn"); ok {
 				disk.WWN = wwn.(string)
 			} else {
-				//nolint:gomnd
+				//nolint:mnd
 				disk.WWN = randomWWN(10)
 			}
 
@@ -660,7 +692,8 @@ func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn 
 
 func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 	virConn *libvirt.Libvirt, partialNetIfaces map[string]*pendingMapping,
-	waitForLeases *[]*libvirtxml.DomainInterface) error {
+	waitForLeases *[]*libvirtxml.DomainInterface,
+) error {
 	for i := 0; i < d.Get("network_interface.#").(int); i++ {
 		prefix := fmt.Sprintf("network_interface.%d", i)
 
@@ -709,7 +742,6 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 			if err != nil {
 				return fmt.Errorf("can't retrieve network ID %s", networkUUID)
 			}
-
 		} else if bridgeNameI, ok := d.GetOk(prefix + ".bridge"); ok {
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
 				Bridge: &libvirtxml.DomainInterfaceSourceBridge{

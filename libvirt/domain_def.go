@@ -16,7 +16,6 @@ const (
 
 // from existing domain return its  XMLdefintion.
 func getXMLDomainDefFromLibvirt(virConn *libvirt.Libvirt, domain libvirt.Domain) (libvirtxml.Domain, error) {
-
 	domainXMLDesc, err := virConn.DomainGetXMLDesc(domain, 0)
 	if err != nil {
 		return libvirtxml.Domain{}, fmt.Errorf("error retrieving libvirt domain XML description: %w", err)
@@ -85,12 +84,6 @@ func newDomainDef() libvirtxml.Domain {
 		},
 	}
 
-	if v := os.Getenv("TERRAFORM_LIBVIRT_TEST_DOMAIN_TYPE"); v != "" {
-		domainDef.Type = v
-	} else {
-		domainDef.Type = "kvm"
-	}
-
 	// FIXME: We should allow setting this from configuration as well.
 	rngDev := os.Getenv("TF_LIBVIRT_RNG_DEV")
 	if rngDev == "" {
@@ -128,6 +121,11 @@ func newDomainDefForConnection(virConn *libvirt.Libvirt, rd *schema.ResourceData
 		d.OS.Firmware = "efi"
 	}
 
+	if d.OS.Type.Arch == "s390x" {
+		// for s390x remove the Features definition, because they are not available on this arch
+		d.Features = nil
+	}
+
 	caps, err := getHostCapabilities(virConn)
 	if err != nil {
 		return d, err
@@ -145,8 +143,11 @@ func newDomainDefForConnection(virConn *libvirt.Libvirt, rd *schema.ResourceData
 
 	if machine, ok := rd.GetOk("machine"); ok {
 		d.OS.Type.Machine = machine.(string)
-	} else if len(guest.Arch.Machines) > 0 {
-		d.OS.Type.Machine = guest.Arch.Machines[0].Name
+	} else {
+		d.OS.Type.Machine, err = getMachineTypeForArch(caps, d.OS.Type.Arch, d.OS.Type.Type)
+		if err != nil {
+			return d, err
+		}
 	}
 
 	canonicalmachine, err := getCanonicalMachineName(caps, d.OS.Type.Arch, d.OS.Type.Type, d.OS.Type.Machine)

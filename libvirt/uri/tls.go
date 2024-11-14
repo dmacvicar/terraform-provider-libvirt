@@ -55,7 +55,6 @@ func nonZero(s string) bool {
 }
 
 func (u *ConnectionURI) tlsConfig() (*tls.Config, error) {
-
 	var caCertPath string
 	var clientCertPath string
 	var clientKeyPath string

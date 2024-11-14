@@ -1,7 +1,6 @@
 package libvirt
 
 import (
-	"bufio"
 	"context"
 	"encoding/xml"
 	"errors"
@@ -15,12 +14,15 @@ import (
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hooklift/iso9660"
 )
 
-const userDataFileName string = "user-data"
-const metaDataFileName string = "meta-data"
-const networkConfigFileName string = "network-config"
+const (
+	userDataFileName      string = "user-data"
+	metaDataFileName      string = "meta-data"
+	networkConfigFileName string = "network-config"
+)
 
 type defCloudInit struct {
 	Name          string
@@ -46,19 +48,14 @@ func (ci *defCloudInit) CreateIso() (string, error) {
 }
 
 func removeTmpIsoDirectory(iso string) {
-
 	err := os.RemoveAll(filepath.Dir(iso))
 	if err != nil {
 		log.Printf("error while removing tmp directory holding the ISO file: %s", err)
 	}
-
 }
 
-func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
+func (ci *defCloudInit) UploadIso(ctx context.Context, client *Client, iso string) (string, error) {
 	virConn := client.libvirt
-	if virConn == nil {
-		return "", fmt.Errorf(LibVirtConIsNil)
-	}
 
 	pool, err := virConn.StoragePoolLookupByName(ci.PoolName)
 	if err != nil {
@@ -70,10 +67,12 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 
 	// Refresh the pool of the volume so that libvirt knows it is
 	// not longer in use.
-	err = waitForSuccess("error refreshing pool for volume", func() error {
-		return virConn.StoragePoolRefresh(pool, 0)
-	})
-	if err != nil {
+	if err := retry.RetryContext(ctx, resourceStateTimeout, func() *retry.RetryError {
+		if err := virConn.StoragePoolRefresh(pool, 0); err != nil {
+			return retry.RetryableError(fmt.Errorf("error refreshing pool for volume: %w", err))
+		}
+		return nil
+	}); err != nil {
 		return "", err
 	}
 
@@ -109,7 +108,7 @@ func (ci *defCloudInit) UploadIso(client *Client, iso string) (string, error) {
 	}
 
 	// upload ISO file
-	err = img.Import(newCopier(virConn, &volume, uint64(size)), volumeDef)
+	err = img.Import(newVolumeUploader(virConn, &volume, uint64(size)), volumeDef)
 	if err != nil {
 		return "", fmt.Errorf("error while uploading cloudinit %s: %w", img.String(), err)
 	}
@@ -128,7 +127,7 @@ func (ci *defCloudInit) buildTerraformKey(volumeKey string) string {
 	return fmt.Sprintf("%s;%s", volumeKey, uuid.New())
 }
 
-//nolint:gomnd
+//nolint:mnd
 func getCloudInitVolumeKeyFromTerraformID(id string) (string, error) {
 	s := strings.SplitN(id, ";", 2)
 	if len(s) != 2 {
@@ -178,15 +177,15 @@ func (ci *defCloudInit) createFiles() (string, error) {
 		return "", fmt.Errorf("cannot create tmp directory for cloudinit ISO generation: %w", err)
 	}
 	// user-data
-	if err = os.WriteFile(filepath.Join(tmpDir, userDataFileName), []byte(ci.UserData), os.ModePerm); err != nil {
+	if err = os.WriteFile(filepath.Join(tmpDir, userDataFileName), []byte(ci.UserData), 0600); err != nil {
 		return "", fmt.Errorf("error while writing user-data to file: %w", err)
 	}
 	// meta-data
-	if err = os.WriteFile(filepath.Join(tmpDir, metaDataFileName), []byte(ci.MetaData), os.ModePerm); err != nil {
+	if err = os.WriteFile(filepath.Join(tmpDir, metaDataFileName), []byte(ci.MetaData), 0600); err != nil {
 		return "", fmt.Errorf("error while writing meta-data to file: %w", err)
 	}
 	// network-config
-	if err = os.WriteFile(filepath.Join(tmpDir, networkConfigFileName), []byte(ci.NetworkConfig), os.ModePerm); err != nil {
+	if err = os.WriteFile(filepath.Join(tmpDir, networkConfigFileName), []byte(ci.NetworkConfig), 0600); err != nil {
 		return "", fmt.Errorf("error while writing network-config to file: %w", err)
 	}
 
@@ -301,34 +300,14 @@ func readIso9660File(file os.FileInfo) ([]byte, error) {
 // Returns a pointer to the ISO file. Note well: you have to close this file
 // pointer when you are done.
 func downloadISO(virConn *libvirt.Libvirt, volume libvirt.StorageVol) (*os.File, error) {
-	// get Volume info (required to get size later)
-	_, size, _, err := virConn.StorageVolGetInfo(volume)
-	if err != nil {
-		return nil, fmt.Errorf("error retrieving info for volume: %w", err)
-	}
-
-	// create tmp file for the ISO
 	tmpFile, err := os.CreateTemp("", "cloudinit")
 	if err != nil {
 		return nil, fmt.Errorf("cannot create tmp file: %w", err)
 	}
 
-	w := bufio.NewWriterSize(tmpFile, int(size))
-
-	// download ISO file
-	if err := virConn.StorageVolDownload(volume, w, 0, size, 0); err != nil {
+	downloader := newVolumeDownloader(virConn, &volume)
+	if err := downloader(tmpFile); err != nil {
 		return tmpFile, fmt.Errorf("error while downloading volume: %w", err)
-	}
-
-	bytesCopied := w.Buffered()
-	err = w.Flush()
-	if err != nil {
-		return tmpFile, fmt.Errorf("error while copying remote volume to local disk: %w", err)
-	}
-
-	log.Printf("%d bytes downloaded", bytesCopied)
-	if uint64(bytesCopied) != size {
-		return tmpFile, fmt.Errorf("error while copying remote volume to local disk, bytesCopied %d !=  %d volume.size", bytesCopied, size)
 	}
 
 	if _, err := tmpFile.Seek(0, 0); err != nil {
