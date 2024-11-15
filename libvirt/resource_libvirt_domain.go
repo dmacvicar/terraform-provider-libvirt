@@ -35,6 +35,7 @@ func resourceLibvirtDomain() *schema.Resource {
 		ReadContext:   resourceLibvirtDomainRead,
 		DeleteContext: resourceLibvirtDomainDelete,
 		UpdateContext: resourceLibvirtDomainUpdate,
+		CustomizeDiff: resourceLibvirtDomainCustomDiff,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -1134,5 +1135,15 @@ func resourceLibvirtDomainDelete(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
+	return nil
+}
+
+func resourceLibvirtDomainCustomDiff(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	if d.HasChange("title") {
+		_, newTitle := d.GetChange("title")
+		if strings.Contains(newTitle.(string), "\n") {
+			return fmt.Errorf("title attribute should not contain newline characters")
+		}
+	}
 	return nil
 }
