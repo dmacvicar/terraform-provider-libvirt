@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	testhelper "github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/test"
@@ -850,26 +851,109 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
 
-	config := fmt.Sprintf(`
-	resource "libvirt_domain" "%s" {
-		name = "%s"
-		cpu  {
-			mode = "custom"
-		}
-	}`, randomDomainName, randomDomainName)
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckLibvirtDomainDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: config,
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+					vcpu = 2
+					cpu  {
+						mode = "host-passthrough"
+					}
+				}`, randomDomainName, randomDomainName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomDomainName, "cpu.0.mode", "custom"),
+						"libvirt_domain."+randomDomainName, "cpu.0.mode", hostPassthroughCPUMode),
 				),
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+					vcpu = 2
+					cpu  {
+						mode = "host-passthrough"
+						topology {
+							sockets = 1
+							cores = 1
+							threads = 2
+						}
+					}
+				}`, randomDomainName, randomDomainName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "cpu.0.mode", hostPassthroughCPUMode),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "cpu.0.topology.0.sockets", "1"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "cpu.0.topology.0.cores", "1"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "cpu.0.topology.0.threads", "2"),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+					vcpu = 2
+					cpu  {
+						mode = "host-passthrough"
+						topology {
+							sockets = 1
+							cores = 2
+							threads = 2
+						}
+					}
+				}`, randomDomainName, randomDomainName),
+				ExpectError: regexp.MustCompile(`\(1 sockets \* 2 cores \* 2 threads\) is more than the vCPU count \(2\)`),
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+					vcpu = 2
+					cpu  {
+						mode = "custom"
+						model {
+							fallback = "forbid"
+							value = "EPYC"
+							vendor_id = "AuthenticAMD"
+						}
+					}
+				}`, randomDomainName, randomDomainName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "cpu.0.mode", customCPUMode),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "cpu.0.model.0.value", "EPYC"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "cpu.0.model.0.vendor_id", "AuthenticAMD"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "cpu.0.model.0.fallback", "forbid"),
+				),
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+					vcpu = 2
+					cpu  {
+						mode = "host-passthrough"
+						model {
+							fallback = "forbid"
+							value = "EPYC"
+							vendor_id = "AuthenticAMD"
+						}
+					}
+				}`, randomDomainName, randomDomainName),
+				ExpectError: regexp.MustCompile("CPU model can only be defined when the CPU mode is set to 'custom'"),
 			},
 		},
 	})
