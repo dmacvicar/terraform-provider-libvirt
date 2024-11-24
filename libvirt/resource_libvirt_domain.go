@@ -337,6 +337,16 @@ func resourceLibvirtDomain() *schema.Resource {
 							Optional: true,
 							ForceNew: true,
 						},
+						"connect_host": {
+							Type:     schema.TypeString,
+							Required: true,
+							ForceNew: true,
+						},
+						"connect_service": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
 					},
 				},
 			},

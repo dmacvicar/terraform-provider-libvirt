@@ -463,11 +463,33 @@ func setConsoles(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
 			console.Protocol = &libvirtxml.DomainChardevProtocol{
 				Type: "telnet",
 			}
+		case "udp":
+			sourceHost := d.Get(prefix + ".source_host")
+			sourceService := d.Get(prefix + ".source_service")
+			connectHost := d.Get(prefix + ".connect_host")
+			connectService := d.Get(prefix + ".connect_service")
+			console.Source = &libvirtxml.DomainChardevSource{
+				UDP: &libvirtxml.DomainChardevSourceUDP{
+					BindHost: sourceHost.(string),
+					BindService: sourceService.(string),
+					ConnectHost: connectHost.(string),
+					ConnectService: connectService.(string),
+				},
+			}
 		case "pty":
 			if sourcePath, ok := d.GetOk(prefix + ".source_path"); ok {
 				console.Source = &libvirtxml.DomainChardevSource{
 					Pty: &libvirtxml.DomainChardevSourcePty{
 						Path: sourcePath.(string),
+					},
+				}
+			}
+		case "file":
+			if sourcePath, ok := d.GetOk(prefix + ".source_path"); ok {
+				console.Source = &libvirtxml.DomainChardevSource{
+					File: &libvirtxml.DomainChardevSourceFile{
+						Path: sourcePath.(string),
+						Append: "on",
 					},
 				}
 			}
