@@ -65,6 +65,7 @@ The following arguments are supported:
 * `qemu_agent` (Optional) By default is disabled, set to true for enabling it. More info [qemu-agent](https://wiki.libvirt.org/page/Qemu_guest_agent).
 * `tpm` (Optional) TPM device to attach to the domain. The `tpm` object structure is documented [below](#tpm-device).
 * `type` (Optional) The type of hypervisor to use for the domain.  Defaults to `kvm`, other values can be found [here](https://libvirt.org/formatdomain.html#id1)
+
 ### Kernel and boot arguments
 
 * `kernel` - (Optional) The path of the kernel to boot
@@ -128,31 +129,32 @@ the following examples:
 ```hcl
 resource "libvirt_domain" "my_machine" {
   //...
-		cmdline = [
-			{
-				foo = "1"
-				bar = "bye"
-			},
-			{
-				foo = "2"
-			}
-		]
+  cmdline = [
+   {
+    foo = "1"
+    bar = "bye"
+   },
+   {
+    foo = "2"
+   }
+  ]
 ```
 
 ```hcl
 resource "libvirt_domain" "my_machine" {
   ...
-		cmdline = [
-			{
-				foo = "1"
-				bar = "bye"
-			},
-			{
-				foo = "2"
-			}
-		]
+  cmdline = [
+   {
+    foo = "1"
+    bar = "bye"
+   },
+   {
+    foo = "2"
+   }
+  ]
 }
 ```
+
 ### UEFI images
 
 Some extra arguments are also provided for using UEFI images:
@@ -240,7 +242,7 @@ The `disk` block supports:
 * `volume_id` - (Optional) The volume id to use for this disk.
 * `url` - (Optional) The http url to use as the block device for this disk (read-only)
 * `file` - (Optional) The filename to use as the block device for this disk (read-only)
-* `block_device` - (Optional) The path to the host device to use as the block device for this disk. 
+* `block_device` - (Optional) The path to the host device to use as the block device for this disk.
 
 While `volume_id`, `url`, `file` and `block_device` are optional, it is intended that you use one of them.
 
@@ -248,7 +250,6 @@ While `volume_id`, `url`, `file` and `block_device` are optional, it is intended
 model is set to `virtio-scsi`
 * `wwn` - (Optional) Specify a WWN to use for the disk if the disk is using
 a scsi controller, if not specified then a random wwn is generated for the disk
-
 
 ```hcl
 resource "libvirt_volume" "leap" {
@@ -346,7 +347,7 @@ When using a virtual network, users can specify:
   provider.
 * `network_id` - (Optional) The ID of a network resource to attach this
   interface to. This is a
-  [network resource](/website/docs/r/network.markdown) managed by the
+  [network resource](./network.html.markdown) managed by the
   Terraform libvirt provider.
 * `mac` - (Optional) The specific MAC address to use for this interface.
 * `addresses` - (Optional) An IP address for this domain in this network.
@@ -441,7 +442,6 @@ resource "libvirt_domain" "my_machine" {
 ~> **Note well:** the `graphics` block is ignored for the architectures
   `s390x` and `ppc64`.
 
-
 ### Console devices
 
 The optional `console` block allows you to define a console for the domain.
@@ -483,7 +483,6 @@ This works the same way as with the `disk` blocks (see [above](#handling-disks))
 See [libvirt Domain XML Console element](https://libvirt.org/formatdomain.html#elementsConsole)
 for more information.
 
-
 ### CPU mode
 
 The optional `cpu` block allows to configure CPU mode. Example:
@@ -498,6 +497,7 @@ resource "libvirt_domain" "my_machine" {
 ```
 
 To start the domain on host boot up set `autostart` to `true` like so:
+
 ```
 resource "libvirt_domain" "my_machine" {
   ...
@@ -513,12 +513,12 @@ host with the guest.
 
 Currently the following attributes are supported:
 
-  * `accessmode`: specifies the security mode for accessing the source. By default
+* `accessmode`: specifies the security mode for accessing the source. By default
     the `mapped` mode is chosen.
-  * `source`: the directory of the host to be shared with the guest.
-  * `target`: an arbitrary string tag that is exported to the guest as a hint for
+* `source`: the directory of the host to be shared with the guest.
+* `target`: an arbitrary string tag that is exported to the guest as a hint for
      where to mount the source.
-  * `readonly`: enables exporting filesystem as a readonly mount for guest, by
+* `readonly`: enables exporting filesystem as a readonly mount for guest, by
     default read-only access is given.
 
 Example:
@@ -544,6 +544,7 @@ sudo mount -t 9p -o trans=virtio,version=9p2000.L,r proc /host/proc
 ```
 
 This can be automated inside of `/etc/fstab`:
+
 ```hcl
 tmp /host/tmp 9p  trans=virtio,version=9p2000.L,rw  0 0
 proc /host/proc  9p  trans=virtio,version=9p2000.L,r  0 0
@@ -564,6 +565,7 @@ boot_device {
 The optional `tpm` block allows you to add a TPM device to the domain.
 
 Example:
+
 ```hcl
 resource "libvirt_domain" "my_machine" {
   ...
@@ -599,7 +601,7 @@ Currently the following attributes are supported:
   This is used to support features the provider does not allow to set from the schema.
   It is not recommended to alter properties and settings that are exposed to the schema, as terraform will insist in changing them back to the known state.
 
-See https://github.com/dmacvicar/terraform-provider-libvirt/blob/main/examples/v0.13/xslt/main.tf and https://github.com/dmacvicar/terraform-provider-libvirt/blob/main/examples/v0.13/xslt/nicmodel.xsl for a working example that changes the NIC model.
+See <https://github.com/dmacvicar/terraform-provider-libvirt/blob/main/examples/v0.13/xslt/main.tf> and <https://github.com/dmacvicar/terraform-provider-libvirt/blob/main/examples/v0.13/xslt/nicmodel.xsl> for a working example that changes the NIC model.
 
 ## Attributes Reference
 
