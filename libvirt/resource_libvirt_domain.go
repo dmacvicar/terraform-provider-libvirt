@@ -525,17 +525,10 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 		Value: uint(d.Get("memory").(int)),
 		Unit:  "MiB",
 	}
-	if cpuSet, ok := d.GetOk("vcpu.0.cpuset"); ok {
-		domainDef.VCPU = &libvirtxml.DomainVCPU{
-			CPUSet: cpuSet.(string),
-			Placement: d.Get("vcpu.0.placement").(string),
-			Value: uint(d.Get("vcpu.0.count").(int)),
-		}
-	} else {
-		domainDef.VCPU = &libvirtxml.DomainVCPU{
-			Placement: d.Get("vcpu.0.placement").(string),
-			Value: uint(d.Get("vcpu.0.count").(int)),
-		}
+	domainDef.VCPU = &libvirtxml.DomainVCPU{
+		CPUSet: d.Get("vcpu.0.cpuset").(string),
+		Placement: d.Get("vcpu.0.placement").(string),
+		Value: uint(d.Get("vcpu.0.count").(int)),
 	}
 	domainDef.Description = d.Get("description").(string)
 
