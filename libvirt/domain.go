@@ -755,6 +755,13 @@ func setNetworkInterfaces(d *schema.ResourceData, domainDef *libvirtxml.Domain,
 					Mode: "vepa",
 				},
 			}
+		} else if devI, ok := d.GetOk(prefix + ".private"); ok {
+			netIface.Source = &libvirtxml.DomainInterfaceSource{
+				Direct: &libvirtxml.DomainInterfaceSourceDirect{
+					Dev:  devI.(string),
+					Mode: "private",
+				},
+			}
 		} else if devI, ok := d.GetOk(prefix + ".macvtap"); ok {
 			netIface.Source = &libvirtxml.DomainInterfaceSource{
 				Direct: &libvirtxml.DomainInterfaceSourceDirect{
