@@ -998,7 +998,7 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 			"network_name":   "",
 			"bridge":         "",
 			"vepa":           "",
-			"private":           "",
+			"private":        "",
 			"macvtap":        "",
 			"passthrough":    "",
 			"mac":            mac,
