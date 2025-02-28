@@ -29,6 +29,7 @@ jobs:
         with:
           fetch-depth: 2
       - name: terraform fmt
+        uses: hashicorp/setup-terraform@v3
         run: |
           make tflint
       - name: golangci-lint
