@@ -38,10 +38,10 @@ testacc:
 golangcilint:
 	golangci-lint run
 
-tflint:
+lint-examples:
 	terraform fmt -write=false -check=true -diff=true examples/
 
-lint: golangcilint tflint
+lint: golangcilint lint-examples
 
 clean:
 	rm -f terraform-provider-libvirt
@@ -49,4 +49,4 @@ clean:
 cleanup:
 	./travis/cleanup.sh
 
-.PHONY: build install test testacc tflint golangcilint lint terraform-provider-libvirt
+.PHONY: build install test testacc golangcilint lint lint-examples terraform-provider-libvirt

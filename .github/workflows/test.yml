@@ -28,10 +28,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - name: terraform fmt
+      - name: Setup terraform for linting examples
         uses: hashicorp/setup-terraform@v3
+      - name: Lint examples
         run: |
-          make tflint
+          make lint-examples
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
