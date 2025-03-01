@@ -132,7 +132,7 @@ func (u *ConnectionURI) dialSSH() (net.Conn, error) {
 	}
 
 	// configuration loaded, build tunnel
-	sshClient, err := u.dialHost(u.Host, sshcfg, 0)
+	sshClient, err := u.dialHost(u.Hostname(), sshcfg, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -162,11 +162,37 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 
 	q := u.Query()
 
-	port := u.Port()
-	if port == "" {
-		port = defaultSSHPort
+	// port override order of precedence (starting with highest):
+	//  1. specific stanza entry in ssh_config for this target (this includes default global entries in ssh config)
+	//  2. port specified in connection string
+	//  3. defaultSSHPort
+	port := ""
+
+	if sshcfg != nil {
+		configuredPort, err := sshcfg.Get(target, "Port")
+		if err != nil {
+			log.Printf("[WARN] error reading Port attribute from ssh_config for target '%v'", target)
+		} else {
+			port = configuredPort
+
+			if port == "" {
+				log.Printf("[DEBUG] port for target '%v' in ssh_config is empty", target)
+			}
+		}
+	}
+
+	if port != "" {
+
+		log.Printf("[DEBUG] using ssh port from ssh_config: '%s'", port)
+
+	} else if u.Port() != "" {
+
+		port = u.Port()
+		log.Printf("[DEBUG] using connection string port ('%s')", port)
 	} else {
-		log.Printf("[DEBUG] ssh Port is overridden to: '%s'", port)
+
+		port := defaultSSHPort
+		log.Printf("[DEBUG] using default port for ssh connection ('%s')", port)
 	}
 
 	hostName := target
@@ -186,12 +212,10 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 
 	if knownHostsVerify == "ignore" {
 		skipVerify = true
-	} else {
-		if sshcfg != nil {
-			strictCheck, err := sshcfg.Get(target, "StrictHostKeyChecking")
-			if err != nil && strictCheck == "yes" {
-				skipVerify = false
-			}
+	} else if sshcfg != nil {
+		strictCheck, err := sshcfg.Get(target, "StrictHostKeyChecking")
+		if err != nil && strictCheck == "yes" {
+			skipVerify = false
 		}
 	}
 
