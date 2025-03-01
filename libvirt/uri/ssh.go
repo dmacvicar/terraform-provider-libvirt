@@ -212,12 +212,10 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 
 	if knownHostsVerify == "ignore" {
 		skipVerify = true
-	} else {
-		if sshcfg != nil {
-			strictCheck, err := sshcfg.Get(target, "StrictHostKeyChecking")
-			if err != nil && strictCheck == "yes" {
-				skipVerify = false
-			}
+	} else if sshcfg != nil {
+		strictCheck, err := sshcfg.Get(target, "StrictHostKeyChecking")
+		if err != nil && strictCheck == "yes" {
+			skipVerify = false
 		}
 	}
 
