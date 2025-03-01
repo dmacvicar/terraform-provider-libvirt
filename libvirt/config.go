@@ -2,7 +2,6 @@ package libvirt
 
 import (
 	"fmt"
-	// "log"
 	"sync"
 	"net/url"
 	"strings"
