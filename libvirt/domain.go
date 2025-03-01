@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/retry"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -194,10 +193,18 @@ func domainGetIfacesInfo(virConn *libvirt.Libvirt, domain libvirt.Domain, rd *sc
 	var interfaces []libvirt.DomainInterface
 	interfaces, err = virConn.DomainInterfaceAddresses(domain, addrsrc, 0)
 	if err != nil {
+		var virErr libvirt.Error
+		if errors.As(err, &virErr) {
+			// Agent can be unresponsive if being installed/setup
+			if addrsrc == uint32(libvirt.DomainInterfaceAddressesSrcLease) && virErr.Code != uint32(libvirt.ErrOperationInvalid) ||
+				addrsrc == uint32(libvirt.DomainInterfaceAddressesSrcAgent) && virErr.Code != uint32(libvirt.ErrAgentUnresponsive) {
+				return interfaces, fmt.Errorf("error retrieving interface addresses: %w", err)
+			}
+			// If it is ErrAgentUnresponsive, continue trying
+			return interfaces, nil
+		}
 		return interfaces, fmt.Errorf("error retrieving interface addresses: %w", err)
 	}
-	log.Printf("[DEBUG] Interfaces info obtained with libvirt API:\n%s\n", spew.Sdump(interfaces))
-
 	return interfaces, nil
 }
 
