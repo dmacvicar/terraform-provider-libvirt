@@ -27,7 +27,7 @@ type Client struct {
 func (c *Config) Client() (*Client, error) {
 	var l *libvirt.Libvirt
 
-	if !strings.Contains(c.URI, "qemu+tls://") {
+	if !strings.HasPrefix(c.URI, "qemu+tls://") && !strings.Contains(c.URI, "+tls://") {
 		u, err := uri.Parse(c.URI)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse URI: %w", err)
