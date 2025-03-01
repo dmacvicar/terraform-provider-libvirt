@@ -193,8 +193,8 @@ func domainGetIfacesInfo(virConn *libvirt.Libvirt, domain libvirt.Domain, rd *sc
 	var interfaces []libvirt.DomainInterface
 	interfaces, err = virConn.DomainInterfaceAddresses(domain, addrsrc, 0)
 	if err != nil {
-		switch virErr := err.(type) {
-		case libvirt.Error:
+		var virErr libvirt.Error
+		if errors.As(err, &virErr) {
 			// Agent can be unresponsive if being installed/setup
 			if addrsrc == uint32(libvirt.DomainInterfaceAddressesSrcLease) && virErr.Code != uint32(libvirt.ErrOperationInvalid) ||
 				addrsrc == uint32(libvirt.DomainInterfaceAddressesSrcAgent) && virErr.Code != uint32(libvirt.ErrAgentUnresponsive) {
@@ -202,9 +202,8 @@ func domainGetIfacesInfo(virConn *libvirt.Libvirt, domain libvirt.Domain, rd *sc
 			}
 			// If it is ErrAgentUnresponsive, continue trying
 			return interfaces, nil
-		default:
-			return interfaces, fmt.Errorf("error retrieving interface addresses: %w", virErr)
 		}
+		return interfaces, fmt.Errorf("error retrieving interface addresses: %w", err)
 	}
 	return interfaces, nil
 }
