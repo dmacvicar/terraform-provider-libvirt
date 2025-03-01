@@ -191,7 +191,7 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		log.Printf("[DEBUG] using connection string port ('%s')", port)
 	} else {
 
-		port := defaultSSHPort
+		port = defaultSSHPort
 		log.Printf("[DEBUG] using default port for ssh connection ('%s')", port)
 	}
 
