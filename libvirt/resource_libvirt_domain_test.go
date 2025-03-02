@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	testhelper "github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/test"
@@ -68,6 +69,52 @@ func TestAccLibvirtDomain_Description(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomResourceName, "description", "unit test description"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtDomain_Title(t *testing.T) {
+	var domain libvirt.Domain
+	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+                    title = "invalid\n unit test title"
+				}`, randomResourceName, randomDomainName),
+				ResourceName: "libvirt_domain." + randomResourceName,
+				ExpectError:  regexp.MustCompile("title attribute should not contain newline characters"),
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+                    title = "unit test title"
+				}`, randomResourceName, randomDomainName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomResourceName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomResourceName, "name", randomDomainName),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomResourceName, "title", "unit test title"),
+				),
+				ResourceName: "libvirt_domain." + randomDomainName,
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+                    title = "unit test title\n update failure"
+				}`, randomResourceName, randomDomainName),
+				ResourceName: "libvirt_domain." + randomDomainName,
+				ExpectError:  regexp.MustCompile("title attribute should not contain newline characters"),
 			},
 		},
 	})

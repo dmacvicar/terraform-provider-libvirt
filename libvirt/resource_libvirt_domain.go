@@ -35,6 +35,7 @@ func resourceLibvirtDomain() *schema.Resource {
 		ReadContext:   resourceLibvirtDomainRead,
 		DeleteContext: resourceLibvirtDomainDelete,
 		UpdateContext: resourceLibvirtDomainUpdate,
+		CustomizeDiff: resourceLibvirtDomainCustomDiff,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -46,6 +47,11 @@ func resourceLibvirtDomain() *schema.Resource {
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
+			},
+			"title": {
+				Type:     schema.TypeString,
+				Optional: true,
 				ForceNew: true,
 			},
 			"description": {
@@ -498,6 +504,13 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 		domainDef.Name = name.(string)
 	}
 
+	if title, ok := d.GetOk("title"); ok {
+		if strings.Contains(title.(string), "\n") {
+			return diag.Errorf("title attribute should not contain newline characters")
+		}
+		domainDef.Title = title.(string)
+	}
+
 	if cpuMode, ok := d.GetOk("cpu.0.mode"); ok {
 		domainDef.CPU = &libvirtxml.DomainCPU{
 			Mode: cpuMode.(string),
@@ -811,6 +824,7 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	d.Set("name", domainDef.Name)
+	d.Set("title", domainDef.Title)
 	d.Set("description", domainDef.Description)
 	d.Set("vcpu", domainDef.VCPU.Value)
 
@@ -1128,5 +1142,15 @@ func resourceLibvirtDomainDelete(ctx context.Context, d *schema.ResourceData, me
 		}
 	}
 
+	return nil
+}
+
+func resourceLibvirtDomainCustomDiff(ctx context.Context, d *schema.ResourceDiff, meta interface{}) error {
+	if d.HasChange("title") {
+		_, newTitle := d.GetChange("title")
+		if strings.Contains(newTitle.(string), "\n") {
+			return fmt.Errorf("title attribute should not contain newline characters")
+		}
+	}
 	return nil
 }
