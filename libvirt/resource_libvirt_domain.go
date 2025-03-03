@@ -59,10 +59,31 @@ func resourceLibvirtDomain() *schema.Resource {
 				ForceNew: false,
 			},
 			"vcpu": {
-				Type:     schema.TypeInt,
+				Type:     schema.TypeList,
+				MaxItems: 1,
 				Optional: true,
-				Default:  1,
+				Computed: true,
 				ForceNew: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"count": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							Default:  1,
+							ForceNew: true,
+						},
+						"cpuset": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+						"placement": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+					},
+				},
 			},
 			"memory": {
 				Type:     schema.TypeInt,
@@ -508,8 +529,18 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 		Value: uint(d.Get("memory").(int)),
 		Unit:  "MiB",
 	}
-	domainDef.VCPU = &libvirtxml.DomainVCPU{
-		Value: uint(d.Get("vcpu").(int)),
+	if vcpuCount, ok := d.GetOk("vcpu.0.count"); ok {
+		domainDef.VCPU = &libvirtxml.DomainVCPU{
+			CPUSet: d.Get("vcpu.0.cpuset").(string),
+			Placement: d.Get("vcpu.0.placement").(string),
+			Value: uint(vcpuCount.(int)),
+		}
+	} else {
+		domainDef.VCPU = &libvirtxml.DomainVCPU{
+			CPUSet: d.Get("vcpu.0.cpuset").(string),
+			Placement: d.Get("vcpu.0.placement").(string),
+			Value: 1,
+		}
 	}
 	domainDef.Description = d.Get("description").(string)
 
@@ -812,7 +843,15 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 
 	d.Set("name", domainDef.Name)
 	d.Set("description", domainDef.Description)
-	d.Set("vcpu", domainDef.VCPU.Value)
+	if domainDef.VCPU != nil {
+		vcpu := make(map[string]interface{})
+		var vcpus []map[string]interface{}
+		vcpu["count"] = domainDef.VCPU.Value
+		vcpu["placement"] = domainDef.VCPU.Placement
+		vcpu["cpuset"] = domainDef.VCPU.CPUSet
+		vcpus = append(vcpus, vcpu)
+		d.Set("vcpu", vcpus)
+	}
 
 	switch domainDef.Memory.Unit {
 	case "KiB":
