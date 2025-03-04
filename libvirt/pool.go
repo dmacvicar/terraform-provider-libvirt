@@ -13,6 +13,15 @@ const (
 	poolStateConfNotExists = resourceStateConfNotExists
 )
 
+// storage pool state as returned from REMOTE_PROC_STORAGE_POOL_GET_INFO
+const (
+	poolStateInactive uint8 = iota
+	poolStateBuilding
+	poolStateRunning
+	poolStateDegraded
+	poolStateInaccessible
+)
+
 func poolExistsStateRefreshFunc(virConn *libvirt.Libvirt, uuid libvirt.UUID) retry.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		_, err := virConn.StoragePoolLookupByUUID(uuid)
