@@ -24,6 +24,12 @@ const (
 	domainStateConfLeaseDone    = resourceStateConfDone
 )
 
+const (
+	hostPassthroughCPUMode = "host-passthrough"
+	customCPUMode          = "custom"
+	noneCPUMode            = "none"
+)
+
 func domainLeaseStateRefreshFunc(_ context.Context,
 	virConn *libvirt.Libvirt, domain libvirt.Domain,
 	waitForLeases []*libvirtxml.DomainInterface, rd *schema.ResourceData) retry.StateRefreshFunc {
@@ -241,6 +247,62 @@ func newDiskForCloudInit(virConn *libvirt.Libvirt, volumeKey string) (libvirtxml
 	}
 
 	return disk, nil
+}
+
+func setCPU(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
+	if cpuMode, ok := d.GetOk("cpu.0.mode"); ok {
+		mode := cpuMode.(string)
+		if mode != hostPassthroughCPUMode && mode != customCPUMode && mode != noneCPUMode {
+			return fmt.Errorf("invalid CPU mode: %s.Must be one of 'host-passthrough', 'custom', 'none'", mode)
+		}
+
+		var model *libvirtxml.DomainCPUModel
+		if modelConfig, ok := d.GetOk("cpu.0.model"); ok {
+			if models, ok := modelConfig.([]interface{}); ok && len(models) > 0 {
+				if mode != customCPUMode {
+					return fmt.Errorf("CPU model can only be defined when the CPU mode is set to 'custom'")
+				}
+				cpuModel := models[0].(map[string]interface{})
+
+				model = &libvirtxml.DomainCPUModel{
+					Fallback: cpuModel["fallback"].(string),
+					Value:    cpuModel["value"].(string),
+					VendorID: cpuModel["vendor_id"].(string),
+				}
+			}
+		}
+
+		var topology *libvirtxml.DomainCPUTopology
+		if topologyConfig, ok := d.GetOk("cpu.0.topology"); ok {
+			if topologies, ok := topologyConfig.([]interface{}); ok && len(topologies) > 0 {
+				cpuTopology := topologies[0].(map[string]interface{})
+
+				sockets := cpuTopology["sockets"].(int)
+				cores := cpuTopology["cores"].(int)
+				threads := cpuTopology["threads"].(int)
+
+				if (sockets * cores * threads) > int(domainDef.VCPU.Value) {
+					return fmt.Errorf(
+						"(%d sockets * %d cores * %d threads) is more than the vCPU count (%d)",
+						sockets, cores, threads, domainDef.VCPU.Value,
+					)
+				}
+
+				topology = &libvirtxml.DomainCPUTopology{
+					Sockets: sockets,
+					Cores:   cores,
+					Threads: threads,
+				}
+			}
+		}
+
+		domainDef.CPU = &libvirtxml.DomainCPU{
+			Mode:     mode,
+			Model:    model,
+			Topology: topology,
+		}
+	}
+	return nil
 }
 
 func setCoreOSIgnition(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch string) error {

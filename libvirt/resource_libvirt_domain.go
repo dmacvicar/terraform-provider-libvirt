@@ -356,6 +356,57 @@ func resourceLibvirtDomain() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 							Computed: true,
+							ForceNew: true,
+						},
+						"model": {
+							Type:     schema.TypeList,
+							MaxItems: 1,
+							Optional: true,
+							ForceNew: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"fallback": {
+										Type:     schema.TypeString,
+										Required: true,
+										ForceNew: true,
+									},
+									"value": {
+										Type:     schema.TypeString,
+										Required: true,
+										ForceNew: true,
+									},
+									"vendor_id": {
+										Type:     schema.TypeString,
+										Optional: true,
+										ForceNew: true,
+									},
+								},
+							},
+						},
+						"topology": {
+							Type:     schema.TypeList,
+							MaxItems: 1,
+							Optional: true,
+							ForceNew: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"sockets": {
+										Type:     schema.TypeInt,
+										Optional: true,
+										ForceNew: true,
+									},
+									"cores": {
+										Type:     schema.TypeInt,
+										Optional: true,
+										ForceNew: true,
+									},
+									"threads": {
+										Type:     schema.TypeInt,
+										Optional: true,
+										ForceNew: true,
+									},
+								},
+							},
 						},
 					},
 				},
@@ -498,24 +549,25 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 		domainDef.Name = name.(string)
 	}
 
-	if cpuMode, ok := d.GetOk("cpu.0.mode"); ok {
-		domainDef.CPU = &libvirtxml.DomainCPU{
-			Mode: cpuMode.(string),
-		}
+	domainDef.VCPU = &libvirtxml.DomainVCPU{
+		Value: uint(d.Get("vcpu").(int)),
+	}
+
+	if err := setCPU(d, &domainDef); err != nil {
+		return diag.FromErr(err)
 	}
 
 	domainDef.Memory = &libvirtxml.DomainMemory{
 		Value: uint(d.Get("memory").(int)),
 		Unit:  "MiB",
 	}
-	domainDef.VCPU = &libvirtxml.DomainVCPU{
-		Value: uint(d.Get("vcpu").(int)),
-	}
+
 	domainDef.Description = d.Get("description").(string)
 
 	domainDef.OS.Kernel = d.Get("kernel").(string)
 	domainDef.OS.Initrd = d.Get("initrd").(string)
 	domainDef.OS.Type.Arch = d.Get("arch").(string)
+	domainDef.OS.Type.Machine = d.Get("machine").(string)
 
 	domainDef.Devices.Emulator = d.Get("emulator").(string)
 
@@ -841,15 +893,30 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 	}
 
 	if domainDef.CPU != nil {
-		cpu := make(map[string]interface{})
-		var cpus []map[string]interface{}
+		cpu := map[string]interface{}{}
+
 		if domainDef.CPU.Mode != "" {
 			cpu["mode"] = domainDef.CPU.Mode
+
+			if domainDef.CPU.Model != nil {
+				model := map[string]interface{}{}
+				model["fallback"] = domainDef.CPU.Model.Fallback
+				model["value"] = domainDef.CPU.Model.Value
+				model["vendor_id"] = domainDef.CPU.Model.VendorID
+
+				cpu["model"] = []map[string]interface{}{model}
+			}
+
+			if domainDef.CPU.Topology != nil {
+				topology := map[string]interface{}{}
+				topology["sockets"] = domainDef.CPU.Topology.Sockets
+				topology["cores"] = domainDef.CPU.Topology.Cores
+				topology["threads"] = domainDef.CPU.Topology.Threads
+
+				cpu["topology"] = []map[string]interface{}{topology}
+			}
 		}
-		if len(cpu) > 0 {
-			cpus = append(cpus, cpu)
-			d.Set("cpu", cpus)
-		}
+		d.Set("cpu", []map[string]interface{}{cpu})
 	}
 
 	d.Set("arch", domainDef.OS.Type.Arch)
