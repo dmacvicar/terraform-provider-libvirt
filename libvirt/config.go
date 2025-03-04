@@ -26,8 +26,8 @@ type Client struct {
 // Client returns a libvirt client for a config.
 func (c *Config) Client() (*Client, error) {
 	var l *libvirt.Libvirt
-
-	if strings.HasPrefix(c.URI, "qemu+ssh://") && strings.Contains(c.URI, "+ssh://") {
+	// Use local dialer for ssh, otherwise use upstream dialer.
+	if strings.HasPrefix(c.URI, "qemu+ssh://") {
 		u, err := uri.Parse(c.URI)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse SSH URI: %w", err)
