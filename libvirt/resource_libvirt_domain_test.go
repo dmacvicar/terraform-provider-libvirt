@@ -39,7 +39,7 @@ func TestAccLibvirtDomain_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomResourceName, "memory", "512"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomResourceName, "vcpu", "1"),
+						"libvirt_domain."+randomResourceName, "vcpu.0.count", "1"),
 				),
 			},
 		},
@@ -87,7 +87,9 @@ func TestAccLibvirtDomain_Detailed(t *testing.T) {
 				resource "libvirt_domain" "%s" {
 					name   = "%s"
 					memory = 384
-					vcpu   = 2
+					vcpu {
+					  count = 2
+					}
 				}`, randomResourceName, randomDomainName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckLibvirtDomainExists("libvirt_domain."+randomResourceName, &domain),
@@ -96,7 +98,7 @@ func TestAccLibvirtDomain_Detailed(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomResourceName, "memory", "384"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain."+randomResourceName, "vcpu", "2"),
+						"libvirt_domain."+randomResourceName, "vcpu.0.count", "2"),
 				),
 			},
 		},
@@ -1431,12 +1433,16 @@ func TestAccLibvirtDomain_ShutoffMultiDomainsRunning(t *testing.T) {
 				Config: `
    				resource "libvirt_domain" "domainoff" {
 					name = "domainfalse"
-					vcpu = 1
+					vcpu {
+					  count = 1
+					}
 					running = false
 				}
 				resource "libvirt_domain" "domainok" {
 					name = "domaintrue"
-					vcpu = 1
+					vcpu {
+					  count = 1
+					}
 					running = true
 				}`,
 				Check: resource.ComposeTestCheckFunc(
@@ -1526,7 +1532,9 @@ func TestAccLibvirtDomain_Import(t *testing.T) {
 				resource "libvirt_domain" "%s" {
 					name   = "%s"
 					memory = 384
-					vcpu   = 2
+					vcpu {
+					  count = 2
+					}
 				}`, randomDomainName, randomDomainName),
 			},
 			{
@@ -1539,7 +1547,7 @@ func TestAccLibvirtDomain_Import(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_domain.%s-2", "memory", "384"),
 					resource.TestCheckResourceAttr(
-						"libvirt_domain.%s-2", "vcpu", "2"),
+						"libvirt_domain.%s-2", "vcpu.0.count", "2"),
 				),
 			},
 		},
