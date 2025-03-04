@@ -27,10 +27,10 @@ type Client struct {
 func (c *Config) Client() (*Client, error) {
 	var l *libvirt.Libvirt
 
-	if !strings.HasPrefix(c.URI, "qemu+tls://") && !strings.Contains(c.URI, "+tls://") {
+	if strings.HasPrefix(c.URI, "qemu+ssh://") && strings.Contains(c.URI, "+ssh://") {
 		u, err := uri.Parse(c.URI)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse URI: %w", err)
+			return nil, fmt.Errorf("failed to parse SSH URI: %w", err)
 		}
 		l = libvirt.NewWithDialer(u)
 		if err := l.ConnectToURI(libvirt.ConnectURI(u.RemoteName())); err != nil {
@@ -39,7 +39,7 @@ func (c *Config) Client() (*Client, error) {
 	} else {
 		parsedURL, err := url.Parse(c.URI)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse TLS URI: %w", err)
+			return nil, fmt.Errorf("failed to parse URI: %w", err)
 		}
 		l, err = libvirt.ConnectToURI(parsedURL)
 		if err != nil {
