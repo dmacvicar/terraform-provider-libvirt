@@ -2,8 +2,9 @@ package libvirt
 
 import (
 	"fmt"
-	"log"
 	"sync"
+	"net/url"
+	"strings"
 
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/mutexkv"
@@ -19,29 +20,32 @@ type Config struct {
 type Client struct {
 	libvirt     *libvirt.Libvirt
 	poolMutexKV *mutexkv.MutexKV
-	// define only one network at a time
-	// https://gitlab.com/libvirt/libvirt/-/issues/78
 	networkMutex sync.Mutex
 }
 
-// Client libvirt, returns a libvirt client for a config.
+// Client returns a libvirt client for a config.
 func (c *Config) Client() (*Client, error) {
-	u, err := uri.Parse(c.URI)
-	if err != nil {
-		return nil, err
+	var l *libvirt.Libvirt
+	// Use local dialer for ssh, otherwise use upstream dialer.
+	if strings.HasPrefix(c.URI, "qemu+ssh://") {
+		u, err := uri.Parse(c.URI)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse SSH URI: %w", err)
+		}
+		l = libvirt.NewWithDialer(u)
+		if err := l.ConnectToURI(libvirt.ConnectURI(u.RemoteName())); err != nil {
+			return nil, fmt.Errorf("failed to connect: %w", err)
+		}
+	} else {
+		parsedURL, err := url.Parse(c.URI)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse URI: %w", err)
+		}
+		l, err = libvirt.ConnectToURI(parsedURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect: %w", err)
+		}
 	}
-
-	l := libvirt.NewWithDialer(u)
-
-	if err := l.ConnectToURI(libvirt.ConnectURI(u.RemoteName())); err != nil {
-		return nil, fmt.Errorf("failed to connect: %w", err)
-	}
-
-	v, err := l.ConnectGetLibVersion()
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve libvirt version: %w", err)
-	}
-	log.Printf("[INFO] libvirt client libvirt version: %v\n", v)
 
 	client := &Client{
 		libvirt:     l,
@@ -50,3 +54,4 @@ func (c *Config) Client() (*Client, error) {
 
 	return client, nil
 }
+
