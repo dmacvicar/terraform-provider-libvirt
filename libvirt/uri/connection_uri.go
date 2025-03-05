@@ -46,18 +46,6 @@ func (u ConnectionURI) RemoteName() string {
 	return newURI.String()
 }
 
-func (u *ConnectionURI) transport() string {
-	parts := strings.Split(u.Scheme, "+")
-	if len(parts) > 1 {
-		return parts[1]
-	}
-
-	if u.Host != "" {
-		return "tls"
-	}
-	return "unix"
-}
-
 func (u *ConnectionURI) driver() string {
 	return strings.Split(u.Scheme, "+")[0]
 }
@@ -69,16 +57,8 @@ func (u *ConnectionURI) driver() string {
 // to localhost, and a new URI to qemu+unix:///system
 // dials the transport for this connection URI.
 func (u *ConnectionURI) Dial() (net.Conn, error) {
-	t := u.transport()
-	switch t {
-	case "tcp":
-		return u.dialTCP()
-	case "tls":
-		return u.dialTLS()
-	case "unix":
-		return u.dialUNIX()
-	case "ssh":
+	if strings.Contains(u.Scheme, "ssh") {
 		return u.dialSSH()
 	}
-	return nil, fmt.Errorf("transport '%s' not implemented", t)
+	return nil, fmt.Errorf("unsupported scheme: %s", u.Scheme)
 }

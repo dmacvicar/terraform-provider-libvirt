@@ -21,6 +21,7 @@ const (
 	defaultSSHKnownHostsPath = "${HOME}/.ssh/known_hosts"
 	defaultSSHConfigFile     = "${HOME}/.ssh/config"
 	defaultSSHAuthMethods    = "agent,privkey"
+	defaultUnixSock          = "/var/run/libvirt/libvirt-sock"
 )
 
 func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Config) []ssh.AuthMethod {
