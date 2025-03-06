@@ -111,6 +111,20 @@ func resourceLibvirtDomain() *schema.Resource {
 				ForceNew: false,
 				Required: false,
 			},
+			"shutdown_timeout": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  10,
+				ForceNew: false,
+				Required: false,
+			},
+			"shutdown_force": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+				ForceNew: false,
+				Required: false,
+			},
 			"cloudinit": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -677,16 +691,10 @@ func resourceLibvirtDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 		return diag.Errorf("error retrieving libvirt domain by update: %s", err)
 	}
 
-	domainRunningNow, err := domainIsRunning(virConn, domain)
-	if err != nil {
-		return diag.FromErr(err)
-	}
+	err = updateRunningStatus(ctx, virConn, d, domain)
 
-	if !domainRunningNow {
-		err = virConn.DomainCreate(domain)
-		if err != nil {
-			return diag.Errorf("error creating libvirt domain: %s", err)
-		}
+	if err != nil {
+		return diag.Errorf("error while updating running status: %s", err)
 	}
 
 	if d.HasChange("cloudinit") {
