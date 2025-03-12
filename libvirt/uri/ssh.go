@@ -118,7 +118,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 // construct the whole ssh connection, which can consist of multiple hops if using proxy jumps,
 // the ssh configuration file is loaded once and passed along to each host connection.
 func (u *ConnectionURI) dialSSH() (net.Conn, error) {
-	var sshcfg* ssh_config.Config = nil
+	var sshcfg *ssh_config.Config = nil
 
 	sshConfigFile, err := os.Open(os.ExpandEnv(defaultSSHConfigFile))
 	if err != nil {
@@ -306,7 +306,6 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 			cfg.User = sshu
 		}
 	}
-
 
 	cfg.Auth = u.parseAuthMethods(target, sshcfg)
 	if len(cfg.Auth) < 1 {
