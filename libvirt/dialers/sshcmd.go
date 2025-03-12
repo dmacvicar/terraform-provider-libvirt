@@ -31,7 +31,7 @@ const (
 
 // SSHCmdDialer implements socket.Dialer interface for go-libvirt
 // It uses the command-line ssh tool for communication, which automatically
-// respects OpenSSH config settings in ~/.ssh/config
+// respects OpenSSH config settings in ~/.ssh/config.
 type SSHCmdDialer struct {
 	// Connection details
 	hostname  string
@@ -183,7 +183,7 @@ func (d *SSHCmdDialer) applyURIOptions(uri *url.URL) {
 	// TODO mode parameter
 }
 
-// Dial implements the socket.Dialer interface to enable using this dialer with go-libvirt
+// Dial implements the socket.Dialer interface to enable using this dialer with go-libvirt.
 func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 	args := d.buildSSHArgs()
 
@@ -192,6 +192,7 @@ func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 	stdinReader, stdinWriter := io.Pipe()
 	stdoutReader, stdoutWriter := io.Pipe()
 
+	//nolint:gosec
 	cmd := exec.Command(d.sshBin, args...)
 	cmd.Stdin = stdinReader
 	cmd.Stdout = stdoutWriter
@@ -227,7 +228,9 @@ func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 		<-ctx.Done()
 		// Process monitoring is done, clean up
 		if cmd.Process != nil {
-			cmd.Process.Kill()
+			if err := cmd.Process.Kill();err != nil {
+				log.Printf("[ERROR] Failed to kill ssh command: %v", err)
+			}
 		}
 	}()
 
@@ -325,7 +328,7 @@ func (d *SSHCmdDialer) buildSSHArgs() []string {
 	return args
 }
 
-// sshCmdConn implements net.Conn to communicate with the ssh process
+// sshCmdConn implements net.Conn to communicate with the ssh process.
 type sshCmdConn struct {
 	cmd          *exec.Cmd
 	stdin        io.WriteCloser
