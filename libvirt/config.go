@@ -10,6 +10,7 @@ import (
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/dialers"
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/mutexkv"
+	luri "github.com/dmacvicar/terraform-provider-libvirt/libvirt/uri"
 )
 
 // Config struct for the libvirt-provider.
@@ -60,6 +61,17 @@ func (c *Config) Client() (*Client, error) {
 		}
 
 		log.Printf("[INFO] Connected to libvirt using SSH command-line tool")
+	} else if strings.Contains(uri.Scheme, "+ssh") {
+		u, err := luri.Parse(c.URI)
+		if err != nil {
+			return nil, err
+		}
+
+		l := libvirt.NewWithDialer(u)
+
+		if err := l.ConnectToURI(libvirt.ConnectURI(u.RemoteName())); err != nil {
+			return nil, fmt.Errorf("failed to connect: %w", err)
+		}
 	} else {
 		// Use the default connection method
 		l, err = libvirt.ConnectToURI(uri)
