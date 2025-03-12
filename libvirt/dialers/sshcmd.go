@@ -123,12 +123,23 @@ func (d *SSHCmdDialer) applyURIOptions(uri *url.URL) {
 	query := uri.Query()
 
 	if keyFile := query.Get("keyfile"); keyFile != "" {
-		expandedPath := os.ExpandEnv(keyFile)
-		d.keyFiles = append(d.keyFiles, expandedPath)
+		keyFile = os.ExpandEnv(keyFile)
+		if strings.HasPrefix(keyFile, "~") {
+			if home, err := os.UserHomeDir(); err == nil {
+				keyFile = strings.Replace(keyFile, "~", home, 1)
+			}
+		}
+		d.keyFiles = append(d.keyFiles, keyFile)
 	}
 
 	if knownHosts := query.Get("knownhosts"); knownHosts != "" {
-		d.knownHostsFile = os.ExpandEnv(knownHosts)
+		knownHosts = os.ExpandEnv(knownHosts)
+		if strings.HasPrefix(knownHosts, "~") {
+			if home, err := os.UserHomeDir(); err == nil {
+				knownHosts = strings.Replace(knownHosts, "~", home, 1)
+			}
+		}
+		d.knownHostsFile = knownHosts
 	}
 
 	knownHostsVerify := query.Get("known_hosts_verify")
