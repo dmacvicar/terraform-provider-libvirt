@@ -10,7 +10,7 @@ require (
 	github.com/kevinburke/ssh_config v1.2.0
 	github.com/mattn/goveralls v0.0.12
 	github.com/stretchr/testify v1.9.0
-	golang.org/x/crypto v0.31.0
+	golang.org/x/crypto v0.35.0
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	libvirt.org/go/libvirtxml v1.10007.0
 )
@@ -67,10 +67,10 @@ require (
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/zclconf/go-cty v1.15.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/tools v0.25.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
@@ -85,7 +85,6 @@ replace git.apache.org/thrift.git => github.com/apache/thrift v0.0.0-20180902110
 replace golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce => github.com/dmacvicar/golang-x-crypto v0.0.0-20220126233154-a96af8f07497
 
 go 1.23
-
 toolchain go1.23.1
 
 replace github.com/community-terraform-providers/terraform-provider-ignition/v2 => github.com/dmacvicar/terraform-provider-ignition/v2 v2.1.3-0.20210701165004-13acf61ca184
