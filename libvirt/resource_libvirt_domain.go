@@ -116,6 +116,13 @@ func resourceLibvirtDomain() *schema.Resource {
 				Optional: true,
 				ForceNew: false,
 			},
+			"cloudinit_bus": {
+				Type: schema.TypeString,
+				Optional: true,
+				Default: "ide",
+				ForceNew: true,
+				Required: false,
+			},
 			"coreos_ignition": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -695,7 +702,9 @@ func resourceLibvirtDomainUpdate(ctx context.Context, d *schema.ResourceData, me
 			return diag.FromErr(err)
 		}
 
-		disk, err := newDiskForCloudInit(virConn, cloudinitID)
+		cloudinitBus := d.Get("cloudinit_bus").(string)
+
+		disk, err := newDiskForCloudInit(virConn, cloudinitID, cloudinitBus)
 		if err != nil {
 			return diag.FromErr(err)
 		}

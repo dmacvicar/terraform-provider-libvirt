@@ -208,7 +208,7 @@ func domainGetIfacesInfo(virConn *libvirt.Libvirt, domain libvirt.Domain, rd *sc
 	return interfaces, nil
 }
 
-func newDiskForCloudInit(virConn *libvirt.Libvirt, volumeKey string) (libvirtxml.DomainDisk, error) {
+func newDiskForCloudInit(virConn *libvirt.Libvirt, volumeKey string, bus string) (libvirtxml.DomainDisk, error) {
 	disk := libvirtxml.DomainDisk{
 		// HACK mark the disk as belonging to the cloudinit
 		// resource so we can ignore it
@@ -217,7 +217,7 @@ func newDiskForCloudInit(virConn *libvirt.Libvirt, volumeKey string) (libvirtxml
 		Target: &libvirtxml.DomainDiskTarget{
 			// Last device letter possible with a single IDE controller on i440FX
 			Dev: "hdd",
-			Bus: "ide",
+			Bus: bus,
 		},
 		Driver: &libvirtxml.DomainDiskDriver{
 			Name: "qemu",
@@ -687,7 +687,10 @@ func setCloudinit(d *schema.ResourceData, domainDef *libvirtxml.Domain, virConn 
 		if err != nil {
 			return err
 		}
-		disk, err := newDiskForCloudInit(virConn, cloudinitID)
+
+		cloudinitBus := d.Get("cloudinit_bus").(string)
+
+		disk, err := newDiskForCloudInit(virConn, cloudinitID, cloudinitBus)
 		if err != nil {
 			return err
 		}
