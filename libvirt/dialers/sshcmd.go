@@ -243,7 +243,7 @@ func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 		<-ctx.Done()
 		// Process monitoring is done, clean up
 		if cmd.Process != nil {
-			if err := cmd.Process.Kill();err != nil {
+			if err := cmd.Process.Kill(); err != nil {
 				log.Printf("[ERROR] Failed to kill ssh command: %v", err)
 			}
 		}
@@ -258,6 +258,7 @@ func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 	}()
 
 	// Wait for initial connection (give ssh some time to establish the connection)
+	//nolint:mnd
 	time.Sleep(100 * time.Millisecond)
 	if cmd.ProcessState != nil && cmd.ProcessState.Exited() {
 		return nil, fmt.Errorf("ssh command terminated prematurely with exit code %d", cmd.ProcessState.ExitCode())
@@ -330,12 +331,14 @@ func (d *SSHCmdDialer) buildSSHArgs() []string {
 
 	case ProxyNetcat:
 		// Netcat mode - detect proper flags for netcat
+		//nolint:lll
 		shellCmd = fmt.Sprintf("sh -c 'if \"%s\" -q 2>&1 | grep \"requires an argument\" >/dev/null 2>&1; then ARG=-q0; else ARG=; fi; \"%s\" $ARG -U %s'",
 			d.netcatBin, d.netcatBin, d.socket)
 		log.Printf("[DEBUG] Using netcat %s for socket connection to %s", d.netcatBin, d.socket)
 
 	case ProxyAuto:
 		// Auto mode - try virt-ssh-helper first, then fall back to netcat
+		//nolint:lll
 		shellCmd = fmt.Sprintf("sh -c 'which virt-ssh-helper 1>/dev/null 2>&1; if test $? = 0; then virt-ssh-helper \"%s\"; else if \"%s\" -q 2>&1 | grep \"requires an argument\" >/dev/null 2>&1; then ARG=-q0; else ARG=; fi; \"%s\" $ARG -U %s; fi'",
 			d.remoteURI, d.netcatBin, d.netcatBin, d.socket)
 		log.Printf("[DEBUG] Using auto proxy mode with URI: %s", d.remoteURI)
