@@ -20,18 +20,24 @@ working and haven't been tested.
 
 ## The connection URI
 
-The provider understands [connection URIs](https://libvirt.org/uri.html). The supported transports are:
+The provider understands [connection URIs](https://libvirt.org/uri.html).
+
+As the provider does not use libvirt on the client side, not all connection URI options are supported or apply.
+
+The supported transports are:
 
 * `tcp` (non-encrypted connection)
 * `unix` (UNIX domain socket)
 * `tls` (See [here](https://libvirt.org/kbase/tlscerts.html) for information how to setup certificates)
 * `ssh` (Secure shell)
 
-Unlike the original libvirt, the `ssh` transport is not implemented using the ssh command and therefore does not require `nc` (netcat) on the server side.
+### SSH
+
+The `ssh` transport is implemented using the `golang.org/x/crypto/ssh` library, and therefore it does not honour the `ssh` command configuration. This `ssh` transport is not implemented using the ssh command and therefore does not require it, nor `nc` (netcat) on the server side.
 
 Additionally, the `ssh` URI supports passwords using the `driver+ssh://[username:PASSWORD@][hostname][:port]/[path]?sshauth=ssh-password` syntax.
 
-As the provider does not use libvirt on the client side, not all connection URI options are supported or apply.
+An experimental `ssh` transport using the `ssh` command can be enabled with the `use_ssh_cmd=1` parameter. Example: `qemu+ssh://user@localhost/system?no_verify=1&use_ssh_cmd=1`. This transport honours the local `ssh` configuration. It requies `nc` (netcat) on the server side and emulates the options of the original libvirt [ssh transport](https://libvirt.org/uri.html#ssh-transport).
 
 ## Example Usage
 
