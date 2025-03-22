@@ -1,6 +1,7 @@
 package dialers
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -189,14 +190,27 @@ func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 
 	log.Printf("[INFO] SSH command dialer connecting to %s with args: %v", d.hostname, args)
 
-	stdinReader, stdinWriter := io.Pipe()
-	stdoutReader, stdoutWriter := io.Pipe()
-
 	//nolint:gosec
 	cmd := exec.Command(d.sshBin, args...)
-	cmd.Stdin = stdinReader
-	cmd.Stdout = stdoutWriter
-	cmd.Stderr = os.Stderr // Log error output to stderr
+
+	var err error
+
+	var stdout io.ReadCloser
+	if stdout, err = cmd.StdoutPipe(); err != nil {
+		return nil, fmt.Errorf("failed to acquire stdout pipe: %w", err)
+	}
+
+	var stdin io.WriteCloser
+	if stdin, err = cmd.StdinPipe(); err != nil {
+		return nil, fmt.Errorf("failed to acquire stdin pipe: %w", err)
+
+	}
+
+	var stderr io.ReadCloser
+	if stderr, err = cmd.StderrPipe(); err != nil {
+		return nil, fmt.Errorf("failed to acquire stdout pipe: %w", err)
+
+	}
 
 	if err := cmd.Start(); err != nil {
 		return nil, fmt.Errorf("failed to start ssh command: %w", err)
@@ -215,8 +229,9 @@ func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 	// custom net.Conn implementation that communicates with the ssh process
 	conn := &sshCmdConn{
 		cmd:          cmd,
-		stdin:        stdinWriter,
-		stdout:       stdoutReader,
+		stdin:        stdin,
+		stdout:       stdout,
+		stderr:       stderr,
 		cancel:       cancel,
 		hostAndPort:  d.hostname,
 		remoteSocket: d.socket,
@@ -231,6 +246,14 @@ func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 			if err := cmd.Process.Kill();err != nil {
 				log.Printf("[ERROR] Failed to kill ssh command: %v", err)
 			}
+		}
+	}()
+
+	go func() {
+		log.Printf("[SSH] Monitoring stderr")
+		scanner := bufio.NewScanner(stderr)
+		for scanner.Scan() {
+			log.Printf("[ERROR] ssh: %s", scanner.Text())
 		}
 	}()
 
@@ -333,6 +356,7 @@ type sshCmdConn struct {
 	cmd          *exec.Cmd
 	stdin        io.WriteCloser
 	stdout       io.ReadCloser
+	stderr       io.ReadCloser
 	cancel       context.CancelFunc
 	hostAndPort  string
 	remoteSocket string
@@ -350,6 +374,7 @@ func (c *sshCmdConn) Close() error {
 	c.cancel()
 	c.stdin.Close()
 	c.stdout.Close()
+	c.stderr.Close()
 	return nil
 }
 
