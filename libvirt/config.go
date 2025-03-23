@@ -67,7 +67,7 @@ func (c *Config) Client() (*Client, error) {
 			return nil, err
 		}
 
-		l := libvirt.NewWithDialer(u)
+		l = libvirt.NewWithDialer(u)
 
 		if err := l.ConnectToURI(libvirt.ConnectURI(u.RemoteName())); err != nil {
 			return nil, fmt.Errorf("failed to connect: %w", err)
