@@ -57,7 +57,7 @@ func (c *Config) Client() (*Client, error) {
 		// Connect to the remote URI
 		remoteName := libvirt.RemoteURI(uri)
 		if err := l.ConnectToURI(remoteName); err != nil {
-			return nil, fmt.Errorf("failed to connect to libvirt with SSH command: %w", err)
+			return nil, fmt.Errorf("failed to connect to libvirt with ssh command: %w", err)
 		}
 
 		log.Printf("[INFO] Connected to libvirt using SSH command-line tool")
