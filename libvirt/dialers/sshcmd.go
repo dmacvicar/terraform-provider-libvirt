@@ -2,8 +2,8 @@ package dialers
 
 import (
 	"bufio"
-	"context"
 	"container/ring"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -222,13 +222,13 @@ func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 
 	// custom net.Conn implementation that communicates with the ssh process
 	conn := &sshCmdConn{
-		cmd:          cmd,
-		stdin:        stdin,
-		stdout:       stdout,
-		stderr:       stderr,
-		cancel:       cancel,
-		hostAndPort:  d.hostname,
-		remoteSocket: d.socket,
+		cmd:             cmd,
+		stdin:           stdin,
+		stdout:          stdout,
+		stderr:          stderr,
+		cancel:          cancel,
+		hostAndPort:     d.hostname,
+		remoteSocket:    d.socket,
 		lastStdErrLines: ring.New(5),
 	}
 
@@ -369,7 +369,7 @@ type sshCmdConn struct {
 	remoteSocket string
 
 	lastStdErrLines *ring.Ring
-	stderrRingMu sync.Mutex
+	stderrRingMu    sync.Mutex
 }
 
 func (c *sshCmdConn) Read(b []byte) (int, error) {
