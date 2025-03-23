@@ -3,6 +3,7 @@ package dialers
 import (
 	"bufio"
 	"context"
+	"container/ring"
 	"fmt"
 	"io"
 	"log"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -218,14 +220,6 @@ func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go func() {
-		err := cmd.Wait()
-		if err != nil {
-			log.Printf("[ERROR] SSH command exited unexpectedly: %v", err)
-		}
-		cancel() // Ensure cleanup is triggered
-	}()
-
 	// custom net.Conn implementation that communicates with the ssh process
 	conn := &sshCmdConn{
 		cmd:          cmd,
@@ -235,13 +229,22 @@ func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 		cancel:       cancel,
 		hostAndPort:  d.hostname,
 		remoteSocket: d.socket,
+		lastStdErrLines: ring.New(5),
 	}
+
+	go func() {
+		err := cmd.Wait()
+		if err != nil {
+			log.Printf("[ERROR] SSH command exited unexpectedly: %v", err)
+		}
+
+		cancel() // Ensure cleanup is triggered
+	}()
 
 	// Monitor the process in a goroutine
 	go func() {
 		defer cancel()
 		<-ctx.Done()
-		// Process monitoring is done, clean up
 		if cmd.Process != nil {
 			if err := cmd.Process.Kill(); err != nil {
 				log.Printf("[ERROR] Failed to kill ssh command: %v", err)
@@ -249,11 +252,12 @@ func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 		}
 	}()
 
+	// collect std err to give context to any errors later
 	go func() {
-		log.Printf("[SSH] Monitoring stderr")
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
-			log.Printf("[ERROR] ssh: %s", scanner.Text())
+			conn.appendStderrLine(scanner.Text())
+			log.Printf("[WARN] ssh: %s", scanner.Text())
 		}
 	}()
 
@@ -261,7 +265,7 @@ func (d *SSHCmdDialer) Dial() (net.Conn, error) {
 	//nolint:mnd
 	time.Sleep(100 * time.Millisecond)
 	if cmd.ProcessState != nil && cmd.ProcessState.Exited() {
-		return nil, fmt.Errorf("ssh command terminated prematurely with exit code %d", cmd.ProcessState.ExitCode())
+		return nil, fmt.Errorf("ssh command terminated prematurely with exit code %d:\n%s", cmd.ProcessState.ExitCode(), strings.Join(conn.lastStderrLines(), "\n"))
 	}
 
 	return conn, nil
@@ -363,14 +367,29 @@ type sshCmdConn struct {
 	cancel       context.CancelFunc
 	hostAndPort  string
 	remoteSocket string
+
+	lastStdErrLines *ring.Ring
+	stderrRingMu sync.Mutex
 }
 
-func (c *sshCmdConn) Read(b []byte) (n int, err error) {
-	return c.stdout.Read(b)
+func (c *sshCmdConn) Read(b []byte) (int, error) {
+	n, err := c.stdout.Read(b)
+	if err != nil {
+		log.Printf("[ERROR] ssh: read error: %s", err)
+		return n, fmt.Errorf("ssh: %s", strings.Join(c.lastStderrLines(), "\n"))
+	}
+
+	return n, nil
 }
 
-func (c *sshCmdConn) Write(b []byte) (n int, err error) {
-	return c.stdin.Write(b)
+func (c *sshCmdConn) Write(b []byte) (int, error) {
+	n, err := c.stdin.Write(b)
+	if err != nil {
+		log.Printf("[ERROR] ssh: write error: %s", err)
+		return n, fmt.Errorf("ssh: %s", strings.Join(c.lastStderrLines(), "\n"))
+	}
+
+	return n, nil
 }
 
 func (c *sshCmdConn) Close() error {
@@ -379,6 +398,29 @@ func (c *sshCmdConn) Close() error {
 	c.stdout.Close()
 	c.stderr.Close()
 	return nil
+}
+
+func (c *sshCmdConn) lastStderrLines() []string {
+	c.stderrRingMu.Lock()
+	defer c.stderrRingMu.Unlock()
+
+	var lines []string
+	c.lastStdErrLines.Do(func(el any) {
+		if el == nil {
+			return
+		}
+		lines = append(lines, el.(string))
+	})
+
+	return lines
+}
+
+func (c *sshCmdConn) appendStderrLine(line string) {
+	c.stderrRingMu.Lock()
+	defer c.stderrRingMu.Unlock()
+
+	c.lastStdErrLines.Value = line
+	c.lastStdErrLines = c.lastStdErrLines.Next()
 }
 
 func (c *sshCmdConn) LocalAddr() net.Addr {
