@@ -16,6 +16,7 @@ import (
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/suppress"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -480,6 +481,72 @@ func resourceLibvirtDomain() *schema.Resource {
 					},
 				},
 			},
+			"memory_backing": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"source_type": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ValidateFunc: validation.StringInSlice([]string{
+								"file", "anonymous", "memfd",
+							}, false),
+							Description: "Memory backing source type (file, anonymous, or memfd)",
+						},
+						"access_mode": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ValidateFunc: validation.StringInSlice([]string{
+								"shared", "private",
+							}, false),
+							Description: "Memory access mode (shared or private)",
+						},
+						"allocation_mode": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ValidateFunc: validation.StringInSlice([]string{
+								"immediate", "ondemand",
+							}, false),
+							Description: "Memory allocation mode (immediate or ondemand)",
+						},
+						"discard": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Enable memory discard",
+						},
+						"nosharepages": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Disable memory sharing between guests",
+						},
+						"locked": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Description: "Lock memory to prevent swapping",
+						},
+						"hugepages": {
+							Type:     schema.TypeList,
+							Optional: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"size": {
+										Type:        schema.TypeInt,
+										Required:    true,
+										Description: "Huge page size in KiB",
+									},
+									"nodeset": {
+										Type:        schema.TypeString,
+										Optional:    true,
+										Description: "NUMA nodes to allocate huge pages from",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -558,6 +625,10 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if err := setCloudinit(d, &domainDef, virConn); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := setMemoryBacking(d, &domainDef); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -660,6 +731,83 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 
 	if err := destroyDomainByUserRequest(virConn, d, domain); err != nil {
 		return diag.FromErr(err)
+	}
+
+	return nil
+}
+
+func setMemoryBacking(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
+	if memBackingList, ok := d.GetOk("memory_backing"); ok {
+		if len(memBackingList.([]interface{})) > 0 {
+			memBacking := memBackingList.([]interface{})[0].(map[string]interface{})
+
+			// Initialize the memory backing element if not present
+			if domainDef.MemoryBacking == nil {
+				domainDef.MemoryBacking = &libvirtxml.DomainMemoryBacking{}
+			}
+
+			// Set source type
+			if sourceType, ok := memBacking["source_type"].(string); ok && sourceType != "" {
+				if domainDef.MemoryBacking.MemorySource == nil {
+					domainDef.MemoryBacking.MemorySource = &libvirtxml.DomainMemorySource{}
+				}
+				domainDef.MemoryBacking.MemorySource.Type = sourceType
+			}
+
+			// Set access mode
+			if accessMode, ok := memBacking["access_mode"].(string); ok && accessMode != "" {
+				if domainDef.MemoryBacking.MemoryAccess == nil {
+					domainDef.MemoryBacking.MemoryAccess = &libvirtxml.DomainMemoryAccess{}
+				}
+				domainDef.MemoryBacking.MemoryAccess.Mode = accessMode
+			}
+
+			// Set allocation mode
+			if allocMode, ok := memBacking["allocation_mode"].(string); ok && allocMode != "" {
+				if domainDef.MemoryBacking.MemoryAllocation == nil {
+					domainDef.MemoryBacking.MemoryAllocation = &libvirtxml.DomainMemoryAllocation{}
+				}
+				domainDef.MemoryBacking.MemoryAllocation.Mode = allocMode
+			}
+
+			// Set discard
+			if discard, ok := memBacking["discard"].(bool); ok && discard {
+				domainDef.MemoryBacking.MemoryDiscard = &libvirtxml.DomainMemoryDiscard{}
+			}
+
+			// Set nosharepages
+			if nosharepages, ok := memBacking["nosharepages"].(bool); ok && nosharepages {
+				domainDef.MemoryBacking.MemoryNosharepages = &libvirtxml.DomainMemoryNosharepages{}
+			}
+
+			// Set locked
+			if locked, ok := memBacking["locked"].(bool); ok && locked {
+				domainDef.MemoryBacking.MemoryLocked = &libvirtxml.DomainMemoryLocked{}
+			}
+
+			// Set hugepages
+			if hugepagesList, ok := memBacking["hugepages"].([]interface{}); ok && len(hugepagesList) > 0 {
+				hugepages := &libvirtxml.DomainMemoryHugepages{
+					Hugepages: []libvirtxml.DomainMemoryHugepage{},
+				}
+
+				for _, hpInterface := range hugepagesList {
+					hp := hpInterface.(map[string]interface{})
+
+					hugepage := libvirtxml.DomainMemoryHugepage{
+						Size: uint(hp["size"].(int)),
+					}
+
+					if nodeset, ok := hp["nodeset"].(string); ok && nodeset != "" {
+						hugepage.Nodeset = nodeset
+					}
+
+					hugepages.Hugepages = append(hugepages.Hugepages, hugepage)
+				}
+
+				domainDef.MemoryBacking.MemoryHugePages = hugepages
+			}
+		}
 	}
 
 	return nil
@@ -965,6 +1113,54 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 
 	if len(filesystems) > 0 {
 		d.Set("filesystem", filesystems)
+	}
+
+	// Read memory backing configuration
+	if domainDef.MemoryBacking != nil {
+		memBacking := make(map[string]interface{})
+
+		if domainDef.MemoryBacking.MemorySource != nil {
+			memBacking["source_type"] = domainDef.MemoryBacking.MemorySource.Type
+		}
+
+		if domainDef.MemoryBacking.MemoryAccess != nil {
+			memBacking["access_mode"] = domainDef.MemoryBacking.MemoryAccess.Mode
+		}
+
+		if domainDef.MemoryBacking.MemoryAllocation != nil {
+			memBacking["allocation_mode"] = domainDef.MemoryBacking.MemoryAllocation.Mode
+		}
+
+		if domainDef.MemoryBacking.MemoryDiscard != nil {
+			memBacking["discard"] = true
+		}
+
+		if domainDef.MemoryBacking.MemoryNosharepages != nil {
+			memBacking["nosharepages"] = true
+		}
+
+		if domainDef.MemoryBacking.MemoryLocked != nil {
+			memBacking["locked"] = true
+		}
+
+		if domainDef.MemoryBacking.MemoryHugePages != nil && len(domainDef.MemoryBacking.MemoryHugePages.Hugepages) > 0 {
+			hugepages := make([]map[string]interface{}, 0, len(domainDef.MemoryBacking.MemoryHugePages.Hugepages))
+
+			for _, hp := range domainDef.MemoryBacking.MemoryHugePages.Hugepages {
+				hugepage := make(map[string]interface{})
+				hugepage["size"] = hp.Size
+
+				if hp.Nodeset != "" {
+					hugepage["nodeset"] = hp.Nodeset
+				}
+
+				hugepages = append(hugepages, hugepage)
+			}
+
+			memBacking["hugepages"] = hugepages
+		}
+
+		d.Set("memory_backing", []map[string]interface{}{memBacking})
 	}
 
 	// lookup interfaces with addresses

@@ -1790,6 +1790,68 @@ func testAccCheckLibvirtDomainDestroy(s *terraform.State) error {
 	return nil
 }
 
+func TestAccLibvirtDomain_MemoryBackingMemfd(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "libvirt_domain" "acceptance-test-memfd" {
+						name = "terraform-test-memfd"
+						memory_backing {
+							source_type = "memfd"
+						}
+					}
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-memfd", &libvirt.Domain{}),
+					resource.TestCheckResourceAttr("libvirt_domain.acceptance-test-memfd", "memory_backing.0.source_type", "memfd"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtDomain_MemoryBackingComplex(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					resource "libvirt_domain" "acceptance-test-memory" {
+						name = "terraform-test-memory"
+						memory_backing {
+							source_type = "memfd"
+							access_mode = "shared"
+							allocation_mode = "immediate"
+							discard = true
+							locked = true
+							hugepages {
+								size = 2048
+								nodeset = "0-1"
+							}
+						}
+					}
+				`,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain.acceptance-test-memory", &libvirt.Domain{}),
+					resource.TestCheckResourceAttr("libvirt_domain.acceptance-test-memory", "memory_backing.0.source_type", "memfd"),
+					resource.TestCheckResourceAttr("libvirt_domain.acceptance-test-memory", "memory_backing.0.access_mode", "shared"),
+					resource.TestCheckResourceAttr("libvirt_domain.acceptance-test-memory", "memory_backing.0.allocation_mode", "immediate"),
+					resource.TestCheckResourceAttr("libvirt_domain.acceptance-test-memory", "memory_backing.0.discard", "true"),
+					resource.TestCheckResourceAttr("libvirt_domain.acceptance-test-memory", "memory_backing.0.locked", "true"),
+					resource.TestCheckResourceAttr("libvirt_domain.acceptance-test-memory", "memory_backing.0.hugepages.0.size", "2048"),
+					resource.TestCheckResourceAttr("libvirt_domain.acceptance-test-memory", "memory_backing.0.hugepages.0.nodeset", "0-1"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_FwCfgName(t *testing.T) {
 	/*
 		Ignition file is mounted of domain through `fw_cfg`.

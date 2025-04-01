@@ -65,6 +65,7 @@ The following arguments are supported:
 * `qemu_agent` (Optional) By default is disabled, set to true for enabling it. More info [qemu-agent](https://wiki.libvirt.org/page/Qemu_guest_agent).
 * `tpm` (Optional) TPM device to attach to the domain. The `tpm` object structure is documented [below](#tpm-device).
 * `type` (Optional) The type of hypervisor to use for the domain.  Defaults to `kvm`, other values can be found [here](https://libvirt.org/formatdomain.html#id1)
+* `memory_backing` (Optional) Configures how memory is managed for the domain. The `memory_backing` object structure is documented [below](#memory-backing).
 ### Kernel and boot arguments
 
 * `kernel` - (Optional) The path of the kernel to boot
@@ -590,6 +591,54 @@ Additional attributes when `backend_type` is "emulator":
 * `backend_encryption_secret` - (Optional) [Secret object](https://libvirt.org/formatsecret.html) for encrypting the TPM state
 * `backend_version` - (Optional) TPM version
 * `backend_persistent_state` - (Optional) Keep the TPM state when a transient domain is powered off or undefined
+
+### Memory Backing
+
+The optional `memory_backing` block allows you to configure how memory is managed for the domain:
+
+```hcl
+resource "libvirt_domain" "domain" {
+  # ...
+  
+  memory_backing {
+    source_type = "memfd"
+    access_mode = "shared"
+    allocation_mode = "immediate"
+    discard = true
+    locked = true
+    
+    hugepages {
+      size = 2048
+      nodeset = "0-3"
+    }
+  }
+}
+```
+
+Attributes:
+
+* `source_type` - (Optional) The memory backing source type. Can be one of:
+  * `file` - Memory is backed by files on the host
+  * `anonymous` - Memory is backed by anonymous memory
+  * `memfd` - Memory is backed by memory file descriptors (memfd)
+
+* `access_mode` - (Optional) Memory access mode. Can be one of:
+  * `shared` - Memory can be shared between guests
+  * `private` - Memory is private to this guest
+
+* `allocation_mode` - (Optional) Memory allocation mode. Can be one of:
+  * `immediate` - All memory is allocated upfront
+  * `ondemand` - Memory is allocated as needed
+
+* `discard` - (Optional) Enable memory discard (return unused memory to the host)
+
+* `nosharepages` - (Optional) Disable memory sharing between guests
+
+* `locked` - (Optional) Lock memory to prevent swapping
+
+* `hugepages` - (Optional) Configure huge pages for the domain
+  * `size` - (Required) Huge page size in KiB
+  * `nodeset` - (Optional) NUMA nodes to allocate huge pages from
 
 ### Altering libvirt's generated domain XML definition
 
