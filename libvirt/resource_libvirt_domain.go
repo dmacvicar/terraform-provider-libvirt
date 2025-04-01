@@ -481,6 +481,85 @@ func resourceLibvirtDomain() *schema.Resource {
 					},
 				},
 			},
+			"launch_security": {
+				Type:     schema.TypeList,
+				Optional: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"type": {
+							Type:     schema.TypeString,
+							Required: true,
+							ValidateFunc: validation.StringInSlice([]string{
+								"sev", "sev-snp", "s390-pv",
+							}, false),
+							Description: "Launch security type (sev, sev-snp, or s390-pv)",
+						},
+						// SEV specific settings
+						"cbitpos": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "C-bit position for SEV",
+						},
+						"reduced_phys_bits": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "Reduced physical address bits for SEV",
+						},
+						"policy": {
+							Type:        schema.TypeInt,
+							Optional:    true,
+							Description: "Policy value for SEV",
+						},
+						"dh_cert": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Diffie-Hellman certificate for SEV",
+						},
+						"session": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Session information for SEV",
+						},
+						// SEV-SNP specific settings
+						"kernel_hashes": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Kernel hashes for SEV-SNP",
+						},
+						"author_key": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Author key for SEV-SNP",
+						},
+						"vcek": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "VCEK for SEV-SNP",
+						},
+						"guest_visible_workarounds": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Guest visible workarounds for SEV-SNP",
+						},
+						"id_block": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "ID block for SEV-SNP",
+						},
+						"id_auth": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "ID auth for SEV-SNP",
+						},
+						"host_data": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: "Host data for SEV-SNP",
+						},
+					},
+				},
+			},
 			"memory_backing": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -549,6 +628,102 @@ func resourceLibvirtDomain() *schema.Resource {
 			},
 		},
 	}
+}
+
+func setLaunchSecurity(d *schema.ResourceData, domainDef *libvirtxml.Domain) error {
+	if launchSecurityList, ok := d.GetOk("launch_security"); ok {
+		if len(launchSecurityList.([]interface{})) > 0 {
+			launchSecurity := launchSecurityList.([]interface{})[0].(map[string]interface{})
+			secType := launchSecurity["type"].(string)
+
+			// Initialize the launch security element
+			domainDef.LaunchSecurity = &libvirtxml.DomainLaunchSecurity{}
+
+			switch secType {
+			case "sev":
+				sev := &libvirtxml.DomainLaunchSecuritySEV{}
+
+				if v, ok := launchSecurity["cbitpos"]; ok && v.(int) > 0 {
+					cbitpos := uint(v.(int))
+					sev.CBitPos = &cbitpos
+				}
+
+				if v, ok := launchSecurity["reduced_phys_bits"]; ok && v.(int) > 0 {
+					reducedPhysBits := uint(v.(int))
+					sev.ReducedPhysBits = &reducedPhysBits
+				}
+
+				if v, ok := launchSecurity["policy"]; ok && v.(int) > 0 {
+					policy := uint(v.(int))
+					sev.Policy = &policy
+				}
+
+				if v, ok := launchSecurity["dh_cert"]; ok {
+					sev.DHCert = v.(string)
+				}
+
+				if v, ok := launchSecurity["session"]; ok {
+					sev.Session = v.(string)
+				}
+
+				domainDef.LaunchSecurity.SEV = sev
+
+			case "sev-snp":
+				sevSnp := &libvirtxml.DomainLaunchSecuritySEVSNP{}
+
+				if v, ok := launchSecurity["kernel_hashes"]; ok {
+					sevSnp.KernelHashes = v.(string)
+				}
+
+				if v, ok := launchSecurity["author_key"]; ok {
+					sevSnp.AuthorKey = v.(string)
+				}
+
+				if v, ok := launchSecurity["vcek"]; ok {
+					sevSnp.VCEK = v.(string)
+				}
+
+				if v, ok := launchSecurity["cbitpos"]; ok && v.(int) > 0 {
+					cbitpos := uint(v.(int))
+					sevSnp.CBitPos = &cbitpos
+				}
+
+				if v, ok := launchSecurity["reduced_phys_bits"]; ok && v.(int) > 0 {
+					reducedPhysBits := uint(v.(int))
+					sevSnp.ReducedPhysBits = &reducedPhysBits
+				}
+
+				if v, ok := launchSecurity["policy"]; ok && v.(int) > 0 {
+					policy := uint64(v.(int))
+					sevSnp.Policy = &policy
+				}
+
+				if v, ok := launchSecurity["guest_visible_workarounds"]; ok {
+					sevSnp.GuestVisibleWorkarounds = v.(string)
+				}
+
+				if v, ok := launchSecurity["id_block"]; ok {
+					sevSnp.IDBlock = v.(string)
+				}
+
+				if v, ok := launchSecurity["id_auth"]; ok {
+					sevSnp.IDAuth = v.(string)
+				}
+
+				if v, ok := launchSecurity["host_data"]; ok {
+					sevSnp.HostData = v.(string)
+				}
+
+				domainDef.LaunchSecurity.SEVSNP = sevSnp
+
+			case "s390-pv":
+				// S390 Protected Virtualization doesn't have any additional parameters
+				domainDef.LaunchSecurity.S390PV = &libvirtxml.DomainLaunchSecurityS390PV{}
+			}
+		}
+	}
+
+	return nil
 }
 
 func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -629,6 +804,10 @@ func resourceLibvirtDomainCreate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	if err := setMemoryBacking(d, &domainDef); err != nil {
+		return diag.FromErr(err)
+	}
+
+	if err := setLaunchSecurity(d, &domainDef); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -1113,6 +1292,59 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 
 	if len(filesystems) > 0 {
 		d.Set("filesystem", filesystems)
+	}
+
+	// Read launch security configuration
+	if domainDef.LaunchSecurity != nil {
+		launchSecurity := make(map[string]interface{})
+
+		if domainDef.LaunchSecurity.SEV != nil {
+			launchSecurity["type"] = "sev"
+
+			if domainDef.LaunchSecurity.SEV.CBitPos != nil {
+				launchSecurity["cbitpos"] = int(*domainDef.LaunchSecurity.SEV.CBitPos)
+			}
+
+			if domainDef.LaunchSecurity.SEV.ReducedPhysBits != nil {
+				launchSecurity["reduced_phys_bits"] = int(*domainDef.LaunchSecurity.SEV.ReducedPhysBits)
+			}
+
+			if domainDef.LaunchSecurity.SEV.Policy != nil {
+				launchSecurity["policy"] = int(*domainDef.LaunchSecurity.SEV.Policy)
+			}
+
+			launchSecurity["dh_cert"] = domainDef.LaunchSecurity.SEV.DHCert
+			launchSecurity["session"] = domainDef.LaunchSecurity.SEV.Session
+
+		} else if domainDef.LaunchSecurity.SEVSNP != nil {
+			launchSecurity["type"] = "sev-snp"
+
+			launchSecurity["kernel_hashes"] = domainDef.LaunchSecurity.SEVSNP.KernelHashes
+			launchSecurity["author_key"] = domainDef.LaunchSecurity.SEVSNP.AuthorKey
+			launchSecurity["vcek"] = domainDef.LaunchSecurity.SEVSNP.VCEK
+
+			if domainDef.LaunchSecurity.SEVSNP.CBitPos != nil {
+				launchSecurity["cbitpos"] = int(*domainDef.LaunchSecurity.SEVSNP.CBitPos)
+			}
+
+			if domainDef.LaunchSecurity.SEVSNP.ReducedPhysBits != nil {
+				launchSecurity["reduced_phys_bits"] = int(*domainDef.LaunchSecurity.SEVSNP.ReducedPhysBits)
+			}
+
+			if domainDef.LaunchSecurity.SEVSNP.Policy != nil {
+				launchSecurity["policy"] = int(*domainDef.LaunchSecurity.SEVSNP.Policy)
+			}
+
+			launchSecurity["guest_visible_workarounds"] = domainDef.LaunchSecurity.SEVSNP.GuestVisibleWorkarounds
+			launchSecurity["id_block"] = domainDef.LaunchSecurity.SEVSNP.IDBlock
+			launchSecurity["id_auth"] = domainDef.LaunchSecurity.SEVSNP.IDAuth
+			launchSecurity["host_data"] = domainDef.LaunchSecurity.SEVSNP.HostData
+
+		} else if domainDef.LaunchSecurity.S390PV != nil {
+			launchSecurity["type"] = "s390-pv"
+		}
+
+		d.Set("launch_security", []map[string]interface{}{launchSecurity})
 	}
 
 	// Read memory backing configuration

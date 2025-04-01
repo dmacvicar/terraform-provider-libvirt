@@ -640,6 +640,53 @@ Attributes:
   * `size` - (Required) Huge page size in KiB
   * `nodeset` - (Optional) NUMA nodes to allocate huge pages from
 
+### Launch Security
+
+The `launch_security` block allows configuring secure boot features:
+
+```hcl
+resource "libvirt_domain" "domain" {
+  # ...
+  
+  launch_security {
+    type = "sev"
+    cbitpos = 47
+    reduced_phys_bits = 1
+    policy = 3
+  }
+}
+```
+
+* `type` - (Required) The launch security type. Can be one of:
+  * `sev` - AMD Secure Encrypted Virtualization
+  * `sev-snp` - AMD SEV with Secure Nested Paging
+  * `s390-pv` - IBM S390 Protected Virtualization
+
+#### SEV Specific Settings
+
+These settings apply when `type` is set to `sev`:
+
+* `cbitpos` - (Optional) The C-bit position value
+* `reduced_phys_bits` - (Optional) The number of reduced physical address bits
+* `policy` - (Optional) The policy value
+* `dh_cert` - (Optional) The Diffie-Hellman certificate
+* `session` - (Optional) The session information
+
+#### SEV-SNP Specific Settings
+
+These settings apply when `type` is set to `sev-snp`:
+
+* `kernel_hashes` - (Optional) The kernel hashes
+* `author_key` - (Optional) The author key
+* `vcek` - (Optional) The VCEK value
+* `cbitpos` - (Optional) The C-bit position value
+* `reduced_phys_bits` - (Optional) The number of reduced physical address bits
+* `policy` - (Optional) The policy value
+* `guest_visible_workarounds` - (Optional) Guest visible workarounds
+* `id_block` - (Optional) The ID block
+* `id_auth` - (Optional) The ID auth
+* `host_data` - (Optional) The host data
+
 ### Altering libvirt's generated domain XML definition
 
 The optional `xml` block relates to the generated domain XML.
