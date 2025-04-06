@@ -256,12 +256,12 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 				if port != "22" {
 					// try with default port
 					if err := kh(net.JoinHostPort(hostName, "22"), remote, key); err != nil {
-						log.Printf("Host key verification failed for host '%s:%s' (%s) %v: %v", hostName, port, remote, key, err)
+						log.Printf("Host key verification failed for host '%s' (%s) %v: %v", hostName, remote, key, err)
 						return err
 					}
 					return nil
 				}
-				log.Printf("Host key verification failed for host '%s' (%s) %v: %v", hostName, remote, key, err)
+				log.Printf("Host key verification failed for host '%s:%s' (%s) %v: %v", hostName, port, remote, key, err)
 				return err
 			}
 			return nil
