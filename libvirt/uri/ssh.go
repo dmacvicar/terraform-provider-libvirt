@@ -118,7 +118,7 @@ func (u *ConnectionURI) parseAuthMethods(target string, sshcfg *ssh_config.Confi
 // construct the whole ssh connection, which can consist of multiple hops if using proxy jumps,
 // the ssh configuration file is loaded once and passed along to each host connection.
 func (u *ConnectionURI) dialSSH() (net.Conn, error) {
-	var sshcfg* ssh_config.Config = nil
+	var sshcfg *ssh_config.Config = nil
 
 	sshConfigFile, err := os.Open(os.ExpandEnv(defaultSSHConfigFile))
 	if err != nil {
@@ -252,11 +252,19 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		log.Printf("[DEBUG] Using known hosts file '%s' for target '%s'", os.ExpandEnv(knownHostsPath), target)
 
 		hostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			err := kh(net.JoinHostPort(hostName, port), remote, key)
-			if err != nil {
+			if err := kh(net.JoinHostPort(hostName, port), remote, key); err != nil {
+				if port != "22" {
+					// try with default port
+					if err := kh(net.JoinHostPort(hostName, "22"), remote, key); err != nil {
+						log.Printf("Host key verification failed for host '%s:%s' (%s) %v: %v", hostName, port, remote, key, err)
+						return err
+					}
+					return nil
+				}
 				log.Printf("Host key verification failed for host '%s' (%s) %v: %v", hostName, remote, key, err)
+				return err
 			}
-			return err
+			return nil
 		}
 
 		if sshcfg != nil {
@@ -306,7 +314,6 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 			cfg.User = sshu
 		}
 	}
-
 
 	cfg.Auth = u.parseAuthMethods(target, sshcfg)
 	if len(cfg.Auth) < 1 {
