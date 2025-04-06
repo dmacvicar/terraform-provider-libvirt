@@ -254,14 +254,15 @@ func (u *ConnectionURI) dialHost(target string, sshcfg *ssh_config.Config, depth
 		hostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			if err := kh(net.JoinHostPort(hostName, port), remote, key); err != nil {
 				if port != "22" {
-					// try with default port
+					log.Printf("Host key verification failed for host '%s:%s' (%s) %v: %v", hostName, port, remote, key, err)
+					log.Printf("Retrying host key check with default port 22")
 					if err := kh(net.JoinHostPort(hostName, "22"), remote, key); err != nil {
 						log.Printf("Host key verification failed for host '%s' (%s) %v: %v", hostName, remote, key, err)
 						return err
 					}
 					return nil
 				}
-				log.Printf("Host key verification failed for host '%s:%s' (%s) %v: %v", hostName, port, remote, key, err)
+				log.Printf("Host key verification failed for host '%s' (%s) %v: %v", hostName, remote, key, err)
 				return err
 			}
 			return nil
