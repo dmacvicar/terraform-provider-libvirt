@@ -408,6 +408,8 @@ The block supports:
 * `listen_type` - "listen type", defaults to "none"
 * `listen_address` - (Optional) IP Address where the VNC listener should be started if
 `listen_type` is set to `address`. Defaults to 127.0.0.1
+* `password` - (Optional) Password to set for VNC Access
+* `port` - (Optional) Port on which to run VNC when autoport is set to false
 * `websocket` - (Optional) Port to listen on for VNC WebSocket functionality (-1 meaning auto-allocation)
 
 On occasion we have found it necessary to set a `type` of `vnc` and a
@@ -424,6 +426,21 @@ resource "libvirt_domain" "my_machine" {
   graphics {
     type        = "vnc"
     listen_type = "address"
+  }
+}
+```
+
+VNC can be configured with an optional static port or password as follows:
+
+```hcl
+resource "libvirt_domain" "my_machine" {
+  ...
+  graphics {
+    type = "vnc"
+    listen_type = "address"
+    autoport = false
+    port = 12345
+    password = "mypasswd"
   }
 }
 ```

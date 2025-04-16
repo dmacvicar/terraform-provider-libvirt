@@ -283,6 +283,14 @@ func resourceLibvirtDomain() *schema.Resource {
 							Default:  "127.0.0.1",
 							ForceNew: true,
 						},
+						"password": {
+							Type:	  schema.TypeString,
+							Optional: true,
+						},
+						"port": {
+							Type:     schema.TypeInt,
+							Optional: true,
+						},
 						"websocket": {
 							Type:     schema.TypeInt,
 							Optional: true,

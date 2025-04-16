@@ -792,6 +792,144 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_Graphics_VNC(t *testing.T) {
+	var domain libvirt.Domain
+
+	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomVolumeName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomPoolPath := "/tmp/terraform-provider-libvirt-pool-" + randomPoolName
+	config := fmt.Sprintf(`
+	resource "libvirt_pool" "%s" {
+		name = "%s"
+		type = "dir"
+		path = "%s"
+	}
+
+	resource "libvirt_volume" "%s" {
+		name = "%s"
+		pool = "${libvirt_pool.%s.name}"
+	}
+
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		graphics {
+			type		= "vnc"
+			autoport	= "true"
+			listen_type = "none"
+		}
+	}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeName, randomVolumeName, randomPoolName, randomDomainName, randomDomainName)
+
+	configPassword := fmt.Sprintf(`
+	resource "libvirt_pool" "%s" {
+		name = "%s"
+		type = "dir"
+		path = "%s"
+	}
+
+	resource "libvirt_volume" "%s" {
+		name = "%s"
+		pool = "${libvirt_pool.%s.name}"
+	}
+
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		graphics {
+			type		= "vnc"
+			autoport	= "true"
+			listen_type = "address"
+			password	= "mypasswd"
+		}
+	}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeName, randomVolumeName, randomPoolName, randomDomainName, randomDomainName)
+
+
+	configStaticPort := fmt.Sprintf(`
+	resource "libvirt_pool" "%s" {
+		name = "%s"
+		type = "dir"
+		path = "%s"
+	}
+
+	resource "libvirt_volume" "%s" {
+		name = "%s"
+		pool = "${libvirt_pool.%s.name}"
+	}
+
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		graphics {
+			type		= "vnc"
+			autoport	= "false"
+			listen_type = "address"
+			port		= 12345
+		}
+	}`, randomPoolName, randomPoolName, randomPoolPath, randomVolumeName, randomVolumeName, randomPoolName, randomDomainName, randomDomainName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.type", "vnc"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.autoport", "true"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.listen_type", "none"),
+				),
+			},
+		},
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: configPassword,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.type", "vnc"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.autoport", "true"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.listen_type", "address"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.password", "mypasswd"),
+				),
+			},
+		},
+	})
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: configStaticPort,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.type", "vnc"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.autoport", "false"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.listen_type", "address"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "graphics.0.port", "12345"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_IgnitionObject(t *testing.T) {
 	var domain libvirt.Domain
 	var volume libvirt.StorageVol
