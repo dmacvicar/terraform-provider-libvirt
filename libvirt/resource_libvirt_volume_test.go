@@ -89,6 +89,88 @@ func testAccCheckLibvirtVolumeIsBackingStore(name string) resource.TestCheckFunc
 	}
 }
 
+func testAccCheckLibvirtVolumeDoesNotHaveBackingStore(name string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		vol, err := getVolumeFromTerraformState(name, state, virConn)
+		if err != nil {
+			return err
+		}
+
+		volXMLDesc, err := virConn.StorageVolGetXMLDesc(*vol, 0)
+		if err != nil {
+			return fmt.Errorf("Error retrieving libvirt volume XML description: %w", err)
+		}
+
+		volumeDef := newDefVolume()
+		err = xml.Unmarshal([]byte(volXMLDesc), &volumeDef)
+		if err != nil {
+			return fmt.Errorf("Error reading libvirt volume XML description: %w", err)
+		}
+
+		if volumeDef.BackingStore != nil {
+			return fmt.Errorf("FAIL: volume has a backing store, but it shouldn't")
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckLibvirtVolumeExpectedCapacity(name string, expectedCapacity uint64) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		vol, err := getVolumeFromTerraformState(name, state, virConn)
+		if err != nil {
+			return err
+		}
+
+		_, capacity, _, err := virConn.StorageVolGetInfo(*vol)
+		if err != nil {
+			return fmt.Errorf("Error retrieving libvirt volume info: %w", err)
+		}
+
+		if expectedCapacity != capacity {
+			return fmt.Errorf("FAIL: volume capacity is supposed to be %d bytes, but it's %d bytes", expectedCapacity, capacity)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckLibvirtVolumeExpectedFormat(name, expectedFormat string) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		virConn := testAccProvider.Meta().(*Client).libvirt
+
+		vol, err := getVolumeFromTerraformState(name, state, virConn)
+		if err != nil {
+			return err
+		}
+
+		volXMLDesc, err := virConn.StorageVolGetXMLDesc(*vol, 0)
+		if err != nil {
+			return fmt.Errorf("Error retrieving libvirt volume XML description: %w", err)
+		}
+
+		volumeDef := newDefVolume()
+		err = xml.Unmarshal([]byte(volXMLDesc), &volumeDef)
+		if err != nil {
+			return fmt.Errorf("Error reading libvirt volume XML description: %w", err)
+		}
+
+		if volumeDef.Target == nil {
+			return fmt.Errorf("FAIL: volume XML description doesn't contain target element")
+		} else if volumeDef.Target.Format == nil {
+			return fmt.Errorf("FAIL: volume XML description doesn't contain target.format element")
+		} else if volumeDef.Target.Format.Type != expectedFormat {
+			return fmt.Errorf("FAIL: volume format is supposed to be '%s', but it is '%s'", expectedFormat, volumeDef.Target.Format.Type)
+		}
+
+		return nil
+	}
+}
+
 func TestAccLibvirtVolume_Basic(t *testing.T) {
 	var volume libvirt.StorageVol
 	randomVolumeResource := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
@@ -196,6 +278,103 @@ func TestAccLibvirtVolume_BackingStoreTestByName(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_volume."+random, "size", "1073741824"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtVolume_BackingStoreCopy(t *testing.T) {
+	randomStr := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	poolPath := "/tmp/terraform-provider-libvirt-pool-" + randomStr
+	var baseSize uint64 = 5 * 1024 * 1024
+	var copySize uint64 = 10 * 1024 * 1024
+	config := fmt.Sprintf(`
+		resource "libvirt_pool" "pool_%[1]s" {
+		    name = "pool-%[1]s"
+		    type = "dir"
+		    path = "%[2]s"
+		}
+
+		resource "libvirt_volume" "base_raw_%[1]s" {
+			name   = "base-raw-%[1]s"
+			format = "raw"
+			size   = "%[3]d"
+		    pool   = "${libvirt_pool.pool_%[1]s.name}"
+		}
+
+		resource "libvirt_volume" "base_qcow2_%[1]s" {
+			name   = "base-qcow2-%[1]s"
+			format = "qcow2"
+			size   = "%[3]d"
+		    pool   = "${libvirt_pool.pool_%[1]s.name}"
+		}
+
+		resource "libvirt_volume" "copy_raw_from_raw_%[1]s" {
+			name             = "copy-raw-from-raw-%[1]s"
+			format           = "raw"
+			size             = "%[4]d"
+			base_volume_copy = true
+			base_volume_id   = "${libvirt_volume.base_raw_%[1]s.id}"
+		    pool             = "${libvirt_pool.pool_%[1]s.name}"
+		}
+
+		resource "libvirt_volume" "copy_raw_from_qcow2_%[1]s" {
+			name             = "copy-raw-from-qcow2_%[1]s"
+			format           = "raw"
+			size             = "%[4]d"
+			base_volume_copy = true
+			base_volume_id   = "${libvirt_volume.base_qcow2_%[1]s.id}"
+		    pool             = "${libvirt_pool.pool_%[1]s.name}"
+		}
+
+		resource "libvirt_volume" "copy_qcow2_from_raw_%[1]s" {
+			name             = "copy-qcow2-from-raw-%[1]s"
+			format           = "qcow2"
+			size             = "%[4]d"
+			base_volume_copy = true
+			base_volume_id   = "${libvirt_volume.base_raw_%[1]s.id}"
+		    pool             = "${libvirt_pool.pool_%[1]s.name}"
+		}
+
+		resource "libvirt_volume" "copy_qcow2_from_qcow2_%[1]s" {
+			name             = "copy-qcow2-from-qcow2-%[1]s"
+			format           = "qcow2"
+			size             = "%[4]d"
+			base_volume_copy = true
+			base_volume_id   = "${libvirt_volume.base_qcow2_%[1]s.id}"
+		    pool             = "${libvirt_pool.pool_%[1]s.name}"
+		}
+	`, randomStr, poolPath, baseSize, copySize)
+
+	volumes := map[string]string{
+		"copy_raw_from_raw_":     "raw",
+		"copy_raw_from_qcow2_":   "raw",
+		"copy_qcow2_from_raw_":   "qcow2",
+		"copy_qcow2_from_qcow2_": "qcow2",
+	}
+	var volume libvirt.StorageVol
+	testCheckFuncs := []resource.TestCheckFunc{}
+	for baseName, format := range volumes {
+		fullName := "libvirt_volume." + baseName + randomStr
+		testCheckFuncs = append(testCheckFuncs,
+			testAccCheckLibvirtVolumeExists(fullName, &volume),
+			testAccCheckLibvirtVolumeDoesNotHaveBackingStore(fullName),
+			testAccCheckLibvirtVolumeExpectedCapacity(fullName, copySize),
+			testAccCheckLibvirtVolumeExpectedFormat(fullName, format),
+		)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		CheckDestroy: resource.ComposeAggregateTestCheckFunc(
+			testAccCheckLibvirtVolumeDestroy,
+			testAccCheckLibvirtPoolDestroy,
+		),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check:  resource.ComposeTestCheckFunc(testCheckFuncs...),
 			},
 		},
 	})

@@ -64,6 +64,12 @@ The following arguments are supported:
   volume is going to be searched inside of `pool`.
 * `base_volume_pool` - (Optional) The name of the storage pool containing the
   volume defined by `base_volume_name`.
+* `base_volume_copy` - (Optional) If set to `true`, the volume is created as a copy of its backing volume
+  (by calling [virStorageVolCreateXMLFrom()](https://libvirt.org/html/libvirt-libvirt-storage.html#virStorageVolCreateXMLFrom)
+  instead of [virStorageVolCreateXML()](https://libvirt.org/html/libvirt-libvirt-storage.html#virStorageVolCreateXML), similar to `virsh vol-create-from`).
+  The created volume has no association with its backing volume, neither in its XML definition nor in the underlying storage backend.
+  For **qcow2**, this means that the volume is a brand-new, regular **qcow2** image rather than a CoW overlay of its backing file.
+  For **LVM**, this means that the volume is a regular volume rather than a snapshot volume. Data is simply copied from a backing volume.
 
 ### Altering libvirt's generated volume XML definition
 

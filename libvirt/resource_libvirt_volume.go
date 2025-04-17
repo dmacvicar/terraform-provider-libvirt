@@ -60,6 +60,12 @@ func resourceLibvirtVolume() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+			"base_volume_copy": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: true,
+				Default:  false,
+			},
 			"xml": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -121,6 +127,7 @@ func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	var img image
+	var baseVolume libvirt.StorageVol
 	// an source image was given, this mean we can't choose size
 	if source, ok := d.GetOk("source"); ok {
 		// source and size conflict
@@ -171,8 +178,6 @@ func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 
 		// first handle whether it has a backing image
 		// backing images can be specified by either (id), or by (name, pool)
-
-		var baseVolume libvirt.StorageVol
 		if baseVolumeID, ok := d.GetOk("base_volume_id"); ok {
 			if _, ok := d.GetOk("base_volume_name"); ok {
 				return diag.Errorf("'base_volume_name' can't be specified when also 'base_volume_id' is given")
@@ -195,11 +200,13 @@ func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 			if err != nil {
 				return diag.Errorf("can't retrieve base volume with name '%s': %s", baseVolumeName.(string), err)
 			}
+		} else if d.Get("base_volume_copy").(bool) {
+			diag.Errorf("'base_volume_id' or 'base_volume_name' must be specified when 'base_volume_copy' is set")
 		}
 
 		// FIXME - confirm test behaviour accurate
 		// if baseVolume != nil {
-		if baseVolume.Name != "" {
+		if !d.Get("base_volume_copy").(bool) && baseVolume.Name != "" {
 			backingStoreFragmentDef, err := newDefBackingStoreFromLibvirt(virConn, baseVolume)
 			if err != nil {
 				return diag.Errorf("could not retrieve backing store definition: %s", err.Error())
@@ -237,7 +244,12 @@ be smaller than the backing store specified with
 		return diag.Errorf("error applying XSLT stylesheet: %s", err)
 	}
 
-	volume, err := virConn.StorageVolCreateXML(pool, data, 0)
+	var volume libvirt.StorageVol
+	if d.Get("base_volume_copy").(bool) {
+		volume, err = virConn.StorageVolCreateXMLFrom(pool, data, baseVolume, 0)
+	} else {
+		volume, err = virConn.StorageVolCreateXML(pool, data, 0)
+	}
 	if err != nil {
 		if !isError(err, libvirt.ErrStorageVolExist) {
 			return diag.Errorf("error creating libvirt volume: %s", err)
@@ -263,6 +275,22 @@ be smaller than the backing store specified with
 			// see for reference: https://github.com/dmacvicar/terraform-provider-libvirt/issues/494
 			d.Set("id", "")
 			return diag.Errorf("error while uploading source %s: %s", img.String(), err)
+		}
+	}
+
+	if requiresResize, err := volumeRequiresResize(virConn, d, volume, baseVolume, pool); err != nil {
+		errContext := ""
+		for _, d := range err {
+			errContext = errContext + ": " + d.Summary
+		}
+		log.Printf("[WARNING] Could not determine whether volume '%s' requires resize%s", volume.Name, errContext)
+	} else if requiresResize {
+		if size, ok := d.GetOk("size"); ok {
+			if err := virConn.StorageVolResize(volume, uint64(size.(int)), 0); err != nil {
+				return diag.Errorf("failed to resize volume '%s': %s", volume.Key, err)
+			} else {
+				log.Printf("[INFO] Volume '%s' successfully resized", volume.Key)
+			}
 		}
 	}
 
