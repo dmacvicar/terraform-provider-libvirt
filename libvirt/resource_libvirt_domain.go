@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -287,6 +288,21 @@ func resourceLibvirtDomain() *schema.Resource {
 							Type:     schema.TypeInt,
 							Optional: true,
 						},
+						"port": {
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+							ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+								v := val.(string)
+								if v == "" {
+									return
+								}
+								if _, err := strconv.Atoi(v); err != nil {
+									errs = append(errs, fmt.Errorf("%q must be a valid port number, got: %s", key, v))
+								}
+								return
+							},
+						},
 					},
 				},
 			},
@@ -480,6 +496,28 @@ func resourceLibvirtDomain() *schema.Resource {
 					},
 				},
 			},
+		},
+		CustomizeDiff: func(ctx context.Context, d *schema.ResourceDiff, m interface{}) error {
+			// Validate port parameter constraints
+			if graphicsConfig, ok := d.GetOk("graphics.0"); ok {
+				graphics := graphicsConfig.(map[string]interface{})
+				graphicsType := graphics["type"].(string)
+				autoport := graphics["autoport"].(bool)
+				port := graphics["port"].(string)
+
+				// If port is specified, validate the constraints
+				if port != "" {
+					// Port can only be used with VNC
+					if graphicsType != "vnc" {
+						return fmt.Errorf("port parameter can only be used when type is 'vnc', got type: %s", graphicsType)
+					}
+					// When port is specified, autoport must be false
+					if autoport {
+						return fmt.Errorf("autoport must be false when port is specified")
+					}
+				}
+			}
+			return nil
 		},
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	testhelper "github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/test"
@@ -787,6 +788,97 @@ func TestAccLibvirtDomain_Graphics(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"libvirt_domain."+randomDomainName, "graphics.0.listen_address", "127.0.1.1"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtDomain_GraphicsVNCPort(t *testing.T) {
+	var domain libvirt.Domain
+	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+					graphics {
+						type        = "vnc"
+						autoport    = false
+						port        = "5900"
+						listen_type = "none"
+					}
+				}`, randomResourceName, randomDomainName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomResourceName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomResourceName, "name", randomDomainName),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomResourceName, "graphics.0.type", "vnc"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomResourceName, "graphics.0.autoport", "false"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomResourceName, "graphics.0.port", "5900"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomResourceName, "graphics.0.listen_type", "none"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccLibvirtDomain_GraphicsVNCPortValidation(t *testing.T) {
+	randomResourceName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+					graphics {
+						type        = "spice"
+						autoport    = false
+						port        = "5900"
+						listen_type = "none"
+					}
+				}`, randomResourceName, randomDomainName),
+				ExpectError: regexp.MustCompile("port parameter can only be used when type is 'vnc'"),
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+					graphics {
+						type        = "vnc"
+						autoport    = true
+						port        = "5900"
+						listen_type = "none"
+					}
+				}`, randomResourceName, randomDomainName),
+				ExpectError: regexp.MustCompile("autoport must be false when port is specified"),
+			},
+			{
+				Config: fmt.Sprintf(`
+				resource "libvirt_domain" "%s" {
+					name = "%s"
+					graphics {
+						type        = "vnc"
+						autoport    = false
+						port        = "invalid"
+						listen_type = "none"
+					}
+				}`, randomResourceName, randomDomainName),
+				ExpectError: regexp.MustCompile("must be a valid port number"),
 			},
 		},
 	})

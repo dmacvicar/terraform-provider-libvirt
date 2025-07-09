@@ -365,6 +365,16 @@ func setGraphics(d *schema.ResourceData, domainDef *libvirtxml.Domain, arch stri
 				listener,
 			}
 
+			// Handle port parameter for VNC
+			if port, ok := d.GetOk(prefix + ".port"); ok && port.(string) != "" {
+				// Port is specified, set it and ensure autoport is false
+				domainDef.Devices.Graphics[0].VNC.Port = port.(string)
+				domainDef.Devices.Graphics[0].VNC.AutoPort = "no"
+			} else {
+				// Port not specified, set to -1 (default)
+				domainDef.Devices.Graphics[0].VNC.Port = "-1"
+			}
+
 			if websocket, ok := d.GetOk(prefix + ".websocket"); ok {
 				domainDef.Devices.Graphics[0].VNC.WebSocket = websocket.(int)
 			}
