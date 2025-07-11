@@ -14,6 +14,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	libvirt "github.com/digitalocean/go-libvirt"
 	"github.com/dmacvicar/terraform-provider-libvirt/libvirt/helper/suppress"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"libvirt.org/go/libvirtxml"
@@ -767,9 +768,24 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 
 	virConn := meta.(*Client).libvirt
 
-	uuid := parseUUID(d.Id())
+	var domain libvirt.Domain
+	var err error
 
-	domain, err := virConn.DomainLookupByUUID(uuid)
+	// Try to parse as UUID first, fallback to name lookup if that fails
+	if uuid, parseErr := uuid.Parse(d.Id()); parseErr == nil {
+		// ID is a valid UUID, lookup by UUID
+		domain, err = virConn.DomainLookupByUUID(libvirt.UUID(uuid))
+	} else {
+		// ID is not a UUID, assume it's a domain name
+		log.Printf("[DEBUG] ID '%s' is not a UUID, looking up domain by name", d.Id())
+		domain, err = virConn.DomainLookupByName(d.Id())
+		
+		// If we found the domain by name, update the ID to use the UUID for consistency
+		if err == nil {
+			d.SetId(uuidString(domain.UUID))
+		}
+	}
+
 	if err != nil {
 		if isError(err, libvirt.ErrNoDomain) {
 			d.SetId("")
