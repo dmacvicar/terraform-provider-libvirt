@@ -3,6 +3,7 @@ package uri
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"io/fs"
 	"net"
@@ -44,7 +45,10 @@ func findResource(name string, dirs ...string) (string, error) {
 func amIRoot() (bool, error) {
 	u, err := user.Current()
 	if err != nil {
-		return false, err
+		// If user.Current() fails, try to get current UID directly
+		// This handles cases where the user doesn't exist in /etc/passwd
+		uid := os.Getuid()
+		return uid == 0, nil
 	}
 	return u.Uid == "0", nil
 }
@@ -129,5 +133,24 @@ func (u *ConnectionURI) dialTLS() (net.Conn, error) {
 		return nil, err
 	}
 
-	return tls.Dial("tcp", fmt.Sprintf("%s:%s", u.Hostname(), port), tlsConfig)
+	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%s", u.Hostname(), port), tlsConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// CRITICAL: Read server verification byte
+	// When running over TLS, after connection libvirt writes a single byte to
+	// the socket to indicate whether the server's check of the client's
+	// certificate has succeeded.
+	// See https://github.com/digitalocean/go-libvirt/issues/89#issuecomment-1607300636
+	buf := make([]byte, 1)
+	if n, err := conn.Read(buf); err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("failed to read server verification byte: %w", err)
+	} else if n != 1 || buf[0] != byte(1) {
+		conn.Close()
+		return nil, errors.New("server verification (of our certificate or IP address) failed")
+	}
+	
+	return conn, nil
 }
