@@ -15,7 +15,7 @@ func newDefVolume() libvirtxml.StorageVolume {
 				Type: "qcow2",
 			},
 			Permissions: &libvirtxml.StorageVolumeTargetPermissions{
-				Mode: "644",
+				Mode: "660",
 			},
 		},
 		Capacity: &libvirtxml.StorageVolumeSize{
