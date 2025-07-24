@@ -605,6 +605,24 @@ See https://github.com/dmacvicar/terraform-provider-libvirt/blob/main/examples/v
 
 ## Attributes Reference
 
-* `id` - a unique identifier for the resource.
+* `id` - a [uuid](https://en.wikipedia.org/wiki/Universally_unique_identifier) for the resource.
 * `network_interface.<N>.addresses.<M>` - M-th IP address assigned to the N-th
   network interface.
+
+
+## Import
+
+In Terraform v1.5.0 and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import instances using the `id`. This value can be found in the [General metadata](https://libvirt.org/formatdomain.html#general-metadata) section. For example:
+
+```terraform
+import {
+  to = libvirt_domain.my_domain
+  id = "12345678-1234-1234-1234-123456789012"
+}
+```
+
+Using `terraform import`, import instances using the `id`. For example:
+
+```console
+% terraform import libvirt_domain.my_domain 12345678-1234-1234-1234-123456789012
+```
