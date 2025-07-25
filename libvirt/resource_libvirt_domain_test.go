@@ -875,6 +875,41 @@ func TestAccLibvirtDomain_Cpu(t *testing.T) {
 	})
 }
 
+func TestAccLibvirtDomain_Tpm(t *testing.T) {
+	var domain libvirt.Domain
+	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)
+
+	config := fmt.Sprintf(`
+	resource "libvirt_domain" "%s" {
+		name = "%s"
+		tpm {
+			model           = "tpm-crb"
+			backend_type    = "emulator"
+			backend_version = "2.0"
+		}
+	}`, randomDomainName, randomDomainName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckLibvirtDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckLibvirtDomainExists("libvirt_domain."+randomDomainName, &domain),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "tpm.0.model", "tpm-crb"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "tpm.0.backend_type", "emulator"),
+					resource.TestCheckResourceAttr(
+						"libvirt_domain."+randomDomainName, "tpm.0.backend_version", "2.0"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccLibvirtDomain_Video(t *testing.T) {
 	var domain libvirt.Domain
 	randomDomainName := acctest.RandStringFromCharSet(10, acctest.CharSetAlpha)

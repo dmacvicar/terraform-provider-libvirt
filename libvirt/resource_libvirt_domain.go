@@ -861,6 +861,32 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 	d.Set("kernel", domainDef.OS.Kernel)
 	d.Set("initrd", domainDef.OS.Initrd)
 
+	var (
+		tpms []map[string]interface{}
+		tpm  map[string]interface{}
+	)
+	for _, tpmDef := range domainDef.Devices.TPMs {
+		tpm = map[string]interface{}{}
+		log.Printf(tpmDef.Model)
+		tpm["model"] = tpmDef.Model
+		if tpmDef.Backend.Emulator != nil {
+			tpm["backend_type"] = "emulator"
+			tpm["backend_version"] = tpmDef.Backend.Emulator.Version
+		} else if tpmDef.Backend.Passthrough != nil {
+			tpm["backend_type"] = "passthrough"
+			if tpmDef.Backend.Passthrough.Device != nil {
+				tpm["backend_device_path"] = tpmDef.Backend.Passthrough.Device.Path
+			}
+		} else {
+			log.Printf("TPM backend type from VM not implemented yet.")
+		}
+
+		tpms = append(tpms, tpm)
+	}
+	if len(tpms) > 0 {
+		d.Set("tpm", tpms)
+	}
+
 	caps, err := getHostCapabilities(virConn)
 	if err != nil {
 		return diag.FromErr(err)

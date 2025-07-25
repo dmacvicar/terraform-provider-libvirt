@@ -853,7 +853,7 @@ func setTPMs(d *schema.ResourceData, domainDef *libvirtxml.Domain) {
 	prefix := "tpm.0"
 	if _, ok := d.GetOk(prefix); ok {
 		tpm := libvirtxml.DomainTPM{}
-		if model, ok := d.GetOk(".model"); ok {
+		if model, ok := d.GetOk(prefix + ".model"); ok {
 			tpm.Model = model.(string)
 		}
 
