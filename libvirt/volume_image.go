@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -126,37 +127,8 @@ func (i *httpImage) Size() (uint64, error) {
 	return uint64(length), nil
 }
 
-//nolint:mnd
 func (i *httpImage) IsQCOW2() (bool, error) {
-	client := &http.Client{}
-	req, _ := http.NewRequest("GET", i.url.String(), nil)
-	req.Header.Set("Range", "bytes=0-7")
-	response, err := client.Do(req)
-	if err != nil {
-		return false, err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != http.StatusPartialContent {
-		return false, fmt.Errorf(
-			"can't retrieve partial header of resource to determine file type: %s - %s",
-			i.url.String(),
-			response.Status)
-	}
-
-	header, err := io.ReadAll(response.Body)
-	if err != nil {
-		return false, err
-	}
-
-	if len(header) < 8 {
-		return false, fmt.Errorf(
-			"can't retrieve read header of resource to determine file type: %s - %d bytes read",
-			i.url.String(),
-			len(header))
-	}
-
-	return isQCOW2Header(header)
+	return strings.ToLower(strings.TrimPrefix(path.Ext(i.url.Path), ".")) == "qcow2", nil
 }
 
 func (i *httpImage) Import(uploader func(io.Reader) error, vol libvirtxml.StorageVolume) error {

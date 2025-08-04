@@ -215,6 +215,10 @@ func resourceLibvirtDomain() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
+						"private": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
 						"macvtap": {
 							Type:     schema.TypeString,
 							Optional: true,
@@ -1010,6 +1014,7 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 			"network_name":   "",
 			"bridge":         "",
 			"vepa":           "",
+			"private":        "",
 			"macvtap":        "",
 			"passthrough":    "",
 			"mac":            mac,
@@ -1061,6 +1066,8 @@ func resourceLibvirtDomainRead(ctx context.Context, d *schema.ResourceData, meta
 			switch networkInterfaceDef.Source.Direct.Mode {
 			case "vepa":
 				netIface["vepa"] = networkInterfaceDef.Source.Direct.Dev
+			case "private":
+				netIface["private"] = networkInterfaceDef.Source.Direct.Dev
 			case "bridge":
 				netIface["macvtap"] = networkInterfaceDef.Source.Direct.Dev
 			case "passthrough":
