@@ -127,6 +127,7 @@ func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 		if _, ok := d.GetOk("size"); ok {
 			return diag.Errorf("'size' can't be specified when also 'source' is given (the size will be set to the size of the source image")
 		}
+
 		if _, ok := d.GetOk("base_volume_id"); ok {
 			return diag.Errorf("'base_volume_id' can't be specified when also 'source' is given")
 		}
@@ -139,17 +140,16 @@ func resourceLibvirtVolumeCreate(ctx context.Context, d *schema.ResourceData, me
 			return diag.FromErr(err)
 		}
 
-		// figure out the format of the image
-		isQCOW2, err := img.IsQCOW2()
-		if err != nil {
-			return diag.Errorf("error while determining image type for %s: %s", img.String(), err)
-		}
-		if isQCOW2 {
-			volumeDef.Target.Format.Type = "qcow2"
-		}
+		// if no format is given, autodetect
+		if !isFormatGiven {
+			isQCOW2, err := img.IsQCOW2()
+			if err != nil {
+				return diag.Errorf("error while determining image type for %s: %s", img.String(), err)
+			}
 
-		if isFormatGiven && isQCOW2 && givenFormat != "qcow2" {
-			return diag.Errorf("format other than QCOW2 explicitly specified for image detected as QCOW2 image: %s", img.String())
+			if isQCOW2 {
+				volumeDef.Target.Format.Type = "qcow2"
+			}
 		}
 
 		// update the image in the description, even if the file has not changed

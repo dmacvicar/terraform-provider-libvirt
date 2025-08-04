@@ -1189,8 +1189,8 @@ func createNvramFile(_ *testing.T) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if file.Close() != nil {
-		return "", err
+	if errF := file.Close(); errF != nil {
+		return "", errF
 	}
 	return file.Name(), nil
 }
