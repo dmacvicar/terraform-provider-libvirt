@@ -221,6 +221,7 @@ func resourceLibvirtNetwork() *schema.Resource {
 							Optional: true,
 							Required: false,
 							Computed: true,
+							ForceNew: true,
 						},
 					},
 				},
