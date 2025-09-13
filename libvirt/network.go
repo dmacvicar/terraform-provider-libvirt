@@ -142,7 +142,7 @@ func getIPsFromResource(d *schema.ResourceData) ([]libvirtxml.NetworkIP, error) 
 }
 
 func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.NetworkDHCP, error) {
-	_, ipNet, err := net.ParseCIDR(address)
+	ip, ipNet, err := net.ParseCIDR(address)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing addresses definition '%s': %w", address, err)
 	}
@@ -163,22 +163,25 @@ func getNetworkIPConfig(address string) (*libvirtxml.NetworkIP, *libvirtxml.Netw
 		return nil, nil, fmt.Errorf("netmask seems to be too strict: only %d IPs available (%s)", availableSubnetIPCount, family)
 	}
 
-	// we should calculate the range served by DHCP. For example, for
+	// calculate the range served by DHCP. For example, for
 	// 192.168.121.0/24 we will serve 192.168.121.2 - 192.168.121.254
 	start, end := networkRange(ipNet)
 
-	// skip the .0, (for the network),
+	// skip the .0, (for the network), and skip the .255 (for broadcast)
 	start[len(start)-1]++
+	end[len(end)-1]--
 
-	// assign the .1 to the host interface
+	// assign .1 host address iff host address is not given (.0)
+	if ip.Mask(ipNet.Mask).Equal(ip) {
+		ip[len(ip)-1] = 1
+		start[len(start)-1]++ // then skip the .1 too.
+	}
+
 	dni := &libvirtxml.NetworkIP{
-		Address: start.String(),
+		Address: ip.String(),
 		Prefix:  uint(ones),
 		Family:  family,
 	}
-
-	start[len(start)-1]++ // then skip the .1
-	end[len(end)-1]--     // and skip the .255 (for broadcast)
 
 	dhcp := &libvirtxml.NetworkDHCP{
 		Ranges: []libvirtxml.NetworkDHCPRange{

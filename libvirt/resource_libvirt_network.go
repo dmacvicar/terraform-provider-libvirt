@@ -85,6 +85,9 @@ func resourceLibvirtNetwork() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
+					return sameNetworkAddress(old, new)
+				},
 			},
 			"autostart": {
 				Type:     schema.TypeBool,
@@ -540,20 +543,11 @@ func resourceLibvirtNetworkRead(ctx context.Context, d *schema.ResourceData, met
 	addresses := []string{}
 	//nolint:mnd
 	for _, address := range networkDef.IPs {
-		// we get the host interface IP (ie, 10.10.8.1) but we want the network CIDR (ie, 10.10.8.0/24)
-		// so we need some transformations...
 		addr := net.ParseIP(address.Address)
 		if addr == nil {
 			return diag.Errorf("error parsing IP '%s': %s", address.Address, err)
 		}
-		bits := net.IPv6len * 8
-		if addr.To4() != nil {
-			bits = net.IPv4len * 8
-		}
-
-		mask := net.CIDRMask(int(address.Prefix), bits)
-		network := addr.Mask(mask)
-		addresses = append(addresses, fmt.Sprintf("%s/%d", network, address.Prefix))
+		addresses = append(addresses, fmt.Sprintf("%s/%d", addr, address.Prefix))
 	}
 	if len(addresses) > 0 {
 		d.Set("addresses", addresses)

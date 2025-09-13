@@ -27,11 +27,11 @@ func TestAccLibvirtNetwork_Addresses(t *testing.T) {
 				resource "libvirt_network" "%s" {
 					name      = "%s"
 					domain    = "k8s.local"
-					addresses = ["10.17.3.0/24"]
+					addresses = ["10.17.3.1/24"]
 				}`, randomNetworkResource, randomNetworkName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(randomNetworkResourceFull,
-						"addresses.0", "10.17.3.0/24"),
+						"addresses.0", "10.17.3.1/24"),
 					resource.TestCheckResourceAttr(randomNetworkResourceFull,
 						"mode", "nat"),
 				),

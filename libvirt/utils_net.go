@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"net"
+	"strings"
 )
 
 // randomMACAddress returns a randomized MAC address
@@ -69,4 +70,17 @@ func networkRange(network *net.IPNet) (firstIP net.IP, lastIP net.IP) {
 	}
 
 	return netIP.Mask(network.Mask), getLastIP(network, netIP)
+}
+
+// sameNetworkAddress returns true if both input strings (in addr/netmask format)
+// have the same network address
+func sameNetworkAddress(a, b string) bool {
+	_, netA, errA := net.ParseCIDR(strings.TrimSpace(a))
+	_, netB, errB := net.ParseCIDR(strings.TrimSpace(b))
+
+	if errA != nil || errB != nil {
+		return false // if either can't be parsed, treat as different
+	}
+
+	return netA.IP.Equal(netB.IP) && netA.Mask.String() == netB.Mask.String()
 }
