@@ -435,6 +435,47 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 		domain.PM = pm
 	}
 
+	// Set Disks
+	if len(model.Disks) > 0 {
+		devices := &libvirtxml.DomainDeviceList{}
+
+		for _, diskModel := range model.Disks {
+			disk := libvirtxml.DomainDisk{}
+
+			// Set device type (default to disk)
+			if !diskModel.Device.IsNull() && !diskModel.Device.IsUnknown() {
+				disk.Device = diskModel.Device.ValueString()
+			} else {
+				disk.Device = "disk"
+			}
+
+			// Set source (file path)
+			if !diskModel.Source.IsNull() && !diskModel.Source.IsUnknown() {
+				disk.Source = &libvirtxml.DomainDiskSource{
+					File: &libvirtxml.DomainDiskSourceFile{
+						File: diskModel.Source.ValueString(),
+					},
+				}
+			}
+
+			// Set target
+			if !diskModel.Target.IsNull() && !diskModel.Target.IsUnknown() {
+				disk.Target = &libvirtxml.DomainDiskTarget{
+					Dev: diskModel.Target.ValueString(),
+				}
+
+				// Set bus if specified
+				if !diskModel.Bus.IsNull() && !diskModel.Bus.IsUnknown() {
+					disk.Target.Bus = diskModel.Bus.ValueString()
+				}
+			}
+
+			devices.Disks = append(devices.Disks, disk)
+		}
+
+		domain.Devices = devices
+	}
+
 	return domain, nil
 }
 
@@ -762,5 +803,37 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		}
 
 		model.PM = pmModel
+	}
+
+	// Disks - only if user specified them
+	if len(model.Disks) > 0 && domain.Devices != nil && len(domain.Devices.Disks) > 0 {
+		disks := make([]DomainDiskModel, 0, len(domain.Devices.Disks))
+
+		for _, disk := range domain.Devices.Disks {
+			diskModel := DomainDiskModel{}
+
+			if disk.Device != "" {
+				diskModel.Device = types.StringValue(disk.Device)
+			}
+
+			// Get source (assuming file-based disk)
+			if disk.Source != nil && disk.Source.File != nil && disk.Source.File.File != "" {
+				diskModel.Source = types.StringValue(disk.Source.File.File)
+			}
+
+			// Get target
+			if disk.Target != nil {
+				if disk.Target.Dev != "" {
+					diskModel.Target = types.StringValue(disk.Target.Dev)
+				}
+				if disk.Target.Bus != "" {
+					diskModel.Bus = types.StringValue(disk.Target.Bus)
+				}
+			}
+
+			disks = append(disks, diskModel)
+		}
+
+		model.Disks = disks
 	}
 }

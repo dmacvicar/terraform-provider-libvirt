@@ -56,6 +56,7 @@ type DomainResourceModel struct {
 	CPU      *DomainCPUModel      `tfsdk:"cpu"`
 	Clock    *DomainClockModel    `tfsdk:"clock"`
 	PM       *DomainPMModel       `tfsdk:"pm"`
+	Disks    []DomainDiskModel    `tfsdk:"disk"`
 
 	// TODO: Add more fields as we implement them:
 	// - iothreads
@@ -106,6 +107,14 @@ type DomainClockModel struct {
 type DomainPMModel struct {
 	SuspendToMem  types.String `tfsdk:"suspend_to_mem"`
 	SuspendToDisk types.String `tfsdk:"suspend_to_disk"`
+}
+
+// DomainDiskModel describes a disk device
+type DomainDiskModel struct {
+	Device types.String `tfsdk:"device"`
+	Source types.String `tfsdk:"source"`
+	Target types.String `tfsdk:"target"`
+	Bus    types.String `tfsdk:"bus"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -432,6 +441,29 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 					"suspend_to_disk": schema.StringAttribute{
 						Description: "Suspend to disk policy (yes, no).",
 						Optional:    true,
+					},
+				},
+			},
+			"disk": schema.ListNestedBlock{
+				Description: "Disk devices attached to the domain.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"device": schema.StringAttribute{
+							Description: "Device type (disk, cdrom, floppy, lun).",
+							Optional:    true,
+						},
+						"source": schema.StringAttribute{
+							Description: "Path to the disk image file.",
+							Optional:    true,
+						},
+						"target": schema.StringAttribute{
+							Description: "Target device name (e.g., vda, sda, hda).",
+							Required:    true,
+						},
+						"bus": schema.StringAttribute{
+							Description: "Bus type (virtio, scsi, ide, sata, usb).",
+							Optional:    true,
+						},
 					},
 				},
 			},
