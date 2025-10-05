@@ -259,7 +259,8 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		}
 	}
 
-	if domain.CurrentMemory != nil {
+	// Only set current_memory if user originally specified it, to avoid inconsistency with libvirt defaults
+	if !model.CurrentMemory.IsNull() && !model.CurrentMemory.IsUnknown() && domain.CurrentMemory != nil {
 		currentMemoryKiB := int64(domain.CurrentMemory.Value)
 		if !model.Unit.IsNull() && !model.Unit.IsUnknown() {
 			targetUnit := model.Unit.ValueString()
@@ -286,13 +287,14 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		model.VCPU = types.Int64Value(int64(domain.VCPU.Value))
 	}
 
-	if domain.OnPoweroff != "" {
+	// Only preserve lifecycle actions if user originally specified them, to avoid inconsistency with libvirt defaults
+	if !model.OnPoweroff.IsNull() && !model.OnPoweroff.IsUnknown() && domain.OnPoweroff != "" {
 		model.OnPoweroff = types.StringValue(domain.OnPoweroff)
 	}
-	if domain.OnReboot != "" {
+	if !model.OnReboot.IsNull() && !model.OnReboot.IsUnknown() && domain.OnReboot != "" {
 		model.OnReboot = types.StringValue(domain.OnReboot)
 	}
-	if domain.OnCrash != "" {
+	if !model.OnCrash.IsNull() && !model.OnCrash.IsUnknown() && domain.OnCrash != "" {
 		model.OnCrash = types.StringValue(domain.OnCrash)
 	}
 
