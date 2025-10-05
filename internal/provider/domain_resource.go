@@ -81,11 +81,14 @@ type DomainOSModel struct {
 
 // DomainFeaturesModel describes VM features
 type DomainFeaturesModel struct {
-	PAE      types.Bool `tfsdk:"pae"`
-	ACPI     types.Bool `tfsdk:"acpi"`
-	APIC     types.Bool `tfsdk:"apic"`
-	Viridian types.Bool `tfsdk:"viridian"`
-	PrivNet  types.Bool `tfsdk:"privnet"`
+	PAE      types.Bool   `tfsdk:"pae"`
+	ACPI     types.Bool   `tfsdk:"acpi"`
+	APIC     types.Bool   `tfsdk:"apic"`
+	Viridian types.Bool   `tfsdk:"viridian"`
+	PrivNet  types.Bool   `tfsdk:"privnet"`
+	HAP      types.String `tfsdk:"hap"`
+	PMU      types.String `tfsdk:"pmu"`
+	VMPort   types.String `tfsdk:"vmport"`
 }
 
 // Metadata returns the resource type name
@@ -271,6 +274,18 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 					},
 					"privnet": schema.BoolAttribute{
 						Description: "Private network namespace.",
+						Optional:    true,
+					},
+					"hap": schema.StringAttribute{
+						Description: "Hardware Assisted Paging (on, off).",
+						Optional:    true,
+					},
+					"pmu": schema.StringAttribute{
+						Description: "Performance Monitoring Unit (on, off).",
+						Optional:    true,
+					},
+					"vmport": schema.StringAttribute{
+						Description: "VMware IO port emulation (on, off, auto).",
 						Optional:    true,
 					},
 				},

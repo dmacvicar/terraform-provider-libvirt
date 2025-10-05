@@ -264,6 +264,27 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 			}
 		}
 
+		// HAP - state-based
+		if !model.Features.HAP.IsNull() && !model.Features.HAP.IsUnknown() {
+			features.HAP = &libvirtxml.DomainFeatureState{
+				State: model.Features.HAP.ValueString(),
+			}
+		}
+
+		// PMU - state-based
+		if !model.Features.PMU.IsNull() && !model.Features.PMU.IsUnknown() {
+			features.PMU = &libvirtxml.DomainFeatureState{
+				State: model.Features.PMU.ValueString(),
+			}
+		}
+
+		// VMPort - state-based
+		if !model.Features.VMPort.IsNull() && !model.Features.VMPort.IsUnknown() {
+			features.VMPort = &libvirtxml.DomainFeatureState{
+				State: model.Features.VMPort.ValueString(),
+			}
+		}
+
 		domain.Features = features
 	}
 
@@ -447,6 +468,21 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		// PrivNet - presence = enabled
 		if domain.Features.PrivNet != nil {
 			featuresModel.PrivNet = types.BoolValue(true)
+		}
+
+		// HAP - state-based
+		if domain.Features.HAP != nil && domain.Features.HAP.State != "" {
+			featuresModel.HAP = types.StringValue(domain.Features.HAP.State)
+		}
+
+		// PMU - state-based
+		if domain.Features.PMU != nil && domain.Features.PMU.State != "" {
+			featuresModel.PMU = types.StringValue(domain.Features.PMU.State)
+		}
+
+		// VMPort - state-based
+		if domain.Features.VMPort != nil && domain.Features.VMPort.State != "" {
+			featuresModel.VMPort = types.StringValue(domain.Features.VMPort.State)
 		}
 
 		model.Features = featuresModel
