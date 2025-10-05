@@ -388,6 +388,29 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 		domain.CPU = cpu
 	}
 
+	// Set Clock
+	if model.Clock != nil {
+		clock := &libvirtxml.DomainClock{}
+
+		if !model.Clock.Offset.IsNull() && !model.Clock.Offset.IsUnknown() {
+			clock.Offset = model.Clock.Offset.ValueString()
+		}
+
+		if !model.Clock.Basis.IsNull() && !model.Clock.Basis.IsUnknown() {
+			clock.Basis = model.Clock.Basis.ValueString()
+		}
+
+		if !model.Clock.Adjustment.IsNull() && !model.Clock.Adjustment.IsUnknown() {
+			clock.Adjustment = model.Clock.Adjustment.ValueString()
+		}
+
+		if !model.Clock.TimeZone.IsNull() && !model.Clock.TimeZone.IsUnknown() {
+			clock.TimeZone = model.Clock.TimeZone.ValueString()
+		}
+
+		domain.Clock = clock
+	}
+
 	return domain, nil
 }
 
@@ -666,5 +689,28 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		}
 
 		model.CPU = cpuModel
+	}
+
+	// Clock - only preserve if user originally specified it
+	if model.Clock != nil && domain.Clock != nil {
+		clockModel := &DomainClockModel{}
+
+		if domain.Clock.Offset != "" {
+			clockModel.Offset = types.StringValue(domain.Clock.Offset)
+		}
+
+		if domain.Clock.Basis != "" {
+			clockModel.Basis = types.StringValue(domain.Clock.Basis)
+		}
+
+		if domain.Clock.Adjustment != "" {
+			clockModel.Adjustment = types.StringValue(domain.Clock.Adjustment)
+		}
+
+		if domain.Clock.TimeZone != "" {
+			clockModel.TimeZone = types.StringValue(domain.Clock.TimeZone)
+		}
+
+		model.Clock = clockModel
 	}
 }

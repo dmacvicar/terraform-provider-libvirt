@@ -53,6 +53,7 @@ type DomainResourceModel struct {
 	OS       *DomainOSModel       `tfsdk:"os"`
 	Features *DomainFeaturesModel `tfsdk:"features"`
 	CPU      *DomainCPUModel      `tfsdk:"cpu"`
+	Clock    *DomainClockModel    `tfsdk:"clock"`
 
 	// TODO: Add more fields as we implement them:
 	// - iothreads
@@ -89,6 +90,14 @@ type DomainCPUModel struct {
 	DeprecatedFeatures types.String `tfsdk:"deprecated_features"`
 	Model              types.String `tfsdk:"model"`
 	Vendor             types.String `tfsdk:"vendor"`
+}
+
+// DomainClockModel describes clock configuration
+type DomainClockModel struct {
+	Offset     types.String `tfsdk:"offset"`
+	Basis      types.String `tfsdk:"basis"`
+	Adjustment types.String `tfsdk:"adjustment"`
+	TimeZone   types.String `tfsdk:"timezone"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -376,6 +385,27 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 					},
 					"vendor": schema.StringAttribute{
 						Description: "CPU vendor.",
+						Optional:    true,
+					},
+				},
+			},
+			"clock": schema.SingleNestedBlock{
+				Description: "Clock configuration for the domain.",
+				Attributes: map[string]schema.Attribute{
+					"offset": schema.StringAttribute{
+						Description: "Clock offset (utc, localtime, timezone, variable).",
+						Optional:    true,
+					},
+					"basis": schema.StringAttribute{
+						Description: "Clock basis (utc, localtime).",
+						Optional:    true,
+					},
+					"adjustment": schema.StringAttribute{
+						Description: "Clock adjustment in seconds.",
+						Optional:    true,
+					},
+					"timezone": schema.StringAttribute{
+						Description: "Timezone name when offset is 'timezone'.",
 						Optional:    true,
 					},
 				},
