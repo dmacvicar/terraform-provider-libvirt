@@ -81,9 +81,11 @@ type DomainOSModel struct {
 
 // DomainFeaturesModel describes VM features
 type DomainFeaturesModel struct {
-	PAE  types.Bool `tfsdk:"pae"`
-	ACPI types.Bool `tfsdk:"acpi"`
-	APIC types.Bool `tfsdk:"apic"`
+	PAE      types.Bool `tfsdk:"pae"`
+	ACPI     types.Bool `tfsdk:"acpi"`
+	APIC     types.Bool `tfsdk:"apic"`
+	Viridian types.Bool `tfsdk:"viridian"`
+	PrivNet  types.Bool `tfsdk:"privnet"`
 }
 
 // Metadata returns the resource type name
@@ -261,6 +263,14 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 					},
 					"apic": schema.BoolAttribute{
 						Description: "APIC support.",
+						Optional:    true,
+					},
+					"viridian": schema.BoolAttribute{
+						Description: "Viridian enlightenments for Windows guests.",
+						Optional:    true,
+					},
+					"privnet": schema.BoolAttribute{
+						Description: "Private network namespace.",
 						Optional:    true,
 					},
 				},

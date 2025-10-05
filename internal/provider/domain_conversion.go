@@ -250,6 +250,20 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 			}
 		}
 
+		// Viridian - presence-based
+		if !model.Features.Viridian.IsNull() && !model.Features.Viridian.IsUnknown() {
+			if model.Features.Viridian.ValueBool() {
+				features.Viridian = &libvirtxml.DomainFeature{}
+			}
+		}
+
+		// PrivNet - presence-based
+		if !model.Features.PrivNet.IsNull() && !model.Features.PrivNet.IsUnknown() {
+			if model.Features.PrivNet.ValueBool() {
+				features.PrivNet = &libvirtxml.DomainFeature{}
+			}
+		}
+
 		domain.Features = features
 	}
 
@@ -423,6 +437,16 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		// APIC - presence = enabled
 		if domain.Features.APIC != nil {
 			featuresModel.APIC = types.BoolValue(true)
+		}
+
+		// Viridian - presence = enabled
+		if domain.Features.Viridian != nil {
+			featuresModel.Viridian = types.BoolValue(true)
+		}
+
+		// PrivNet - presence = enabled
+		if domain.Features.PrivNet != nil {
+			featuresModel.PrivNet = types.BoolValue(true)
 		}
 
 		model.Features = featuresModel
