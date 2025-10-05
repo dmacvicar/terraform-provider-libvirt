@@ -78,6 +78,66 @@ Check README.md for current implementation status and the roadmap. The README co
 6. **Reference old provider minimally** - mainly for connection handling and test ideas
 7. **Document decisions** - add technical decisions to README.md as they're made
 
+## Development Workflow - Work Incrementally
+
+**IMPORTANT**: Always work field-by-field or feature-by-feature with commits in between. Never implement multiple complex features in one iteration.
+
+### The Pattern: Add → Test → Commit → Repeat
+
+1. **Add ONE field or small group of related fields**
+   - Update model struct
+   - Add schema definition
+   - Implement conversion functions (model ↔ XML)
+
+2. **Verify it works**
+   - `make lint` - must pass with 0 issues
+   - `make build` - must compile
+   - `make testacc` - acceptance tests must pass
+
+3. **Commit immediately**
+   - Small, focused commit message
+   - Example: `feat: add title and description fields`
+   - Keep it simple - avoid verbose explanations
+
+4. **Repeat for next field**
+
+### What NOT to Do
+
+- ❌ Don't implement 10+ fields at once
+- ❌ Don't batch multiple commits
+- ❌ Don't skip testing between changes
+- ❌ Don't write verbose commit messages explaining everything
+- ❌ Don't say "all tests passing" or obvious statements in commits
+
+### Examples
+
+**Good approach:**
+```
+Commit 1: feat: add title and description fields
+Commit 2: feat: add lifecycle action fields
+Commit 3: feat: add iothreads field
+Commit 4: fix: preserve user input for optional fields with defaults
+```
+
+**Bad approach:**
+```
+Commit 1: feat: add title, description, lifecycle, iothreads, memory fields
+  - Added 15 new fields
+  - Updated all schemas
+  - Implemented conversions
+  - All tests passing
+  - Linting clean
+  (Then discover 20 compilation errors and test failures)
+```
+
+### Why This Matters
+
+- Easier to review individual changes
+- Faster to identify and fix issues
+- Each commit is a working state
+- Can revert problematic changes without losing good work
+- User can see steady progress
+
 ## Key Gotchas
 
 - The old provider simplified the libvirt API - we explicitly do NOT want that
