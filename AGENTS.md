@@ -13,6 +13,17 @@ This project is a complete v2 rewrite of the Terraform provider for libvirt to r
 
 3. **Proven Client**: Continue using the pure Go libvirt client from DigitalOcean (github.com/digitalocean/go-libvirt)
 
+## Schema Coverage Policy
+
+**We support the full libvirt XML schemas as implemented by `libvirt.org/go/libvirtxml`.**
+
+- **Source of Truth**: The official libvirt XML schemas located at `/usr/share/libvirt/schemas/` (domain.rng, network.rng, storagepool.rng, etc.)
+- **Implementation Boundary**: If libvirtxml has not added support for a schema element, we will not support it yet. We do not create custom XML structs.
+- **Coverage Goal**: Expose all fields that libvirtxml supports in our Terraform schemas, maintaining full API fidelity
+- **When libvirtxml is missing features**: Document the gap and consider contributing upstream to libvirtxml rather than working around it
+
+This ensures we provide comprehensive libvirt feature coverage while maintaining clean, maintainable code that leverages the official XML marshaling library.
+
 ## Project Structure
 
 ```
@@ -31,7 +42,11 @@ This project is a complete v2 rewrite of the Terraform provider for libvirt to r
 ## Important References
 
 - **Old Provider**: Located at ../terraform-provider-libvirt - reference for test cases and connection logic, but DO NOT copy the schema design
-- **Libvirt XML Schemas**: https://libvirt.org/format.html - the source of truth for resource schemas
+- **Libvirt XML Schemas**:
+  - Online docs: https://libvirt.org/format.html
+  - Local RNG schemas: `/usr/share/libvirt/schemas/` (domain.rng, network.rng, storagepool.rng, etc.)
+  - These are the source of truth for what features exist
+- **libvirtxml Library**: https://pkg.go.dev/libvirt.org/go/libvirtxml - defines what we can support
 - **Plugin Framework Examples**: https://github.com/hashicorp/terraform-provider-scaffolding-framework
 - **Good Plugin Framework Providers**: Look at terraform-provider-docker, terraform-provider-kubernetes for patterns
 
