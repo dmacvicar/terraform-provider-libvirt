@@ -49,8 +49,9 @@ type DomainResourceModel struct {
 	OnCrash    types.String `tfsdk:"on_crash"`
 	IOThreads  types.Int64  `tfsdk:"iothreads"`
 
-	// OS configuration
-	OS *DomainOSModel `tfsdk:"os"`
+	// Blocks
+	OS       *DomainOSModel       `tfsdk:"os"`
+	Features *DomainFeaturesModel `tfsdk:"features"`
 
 	// TODO: Add more fields as we implement them:
 	// - iothreads
@@ -76,6 +77,13 @@ type DomainOSModel struct {
 	LoaderReadOnly types.Bool   `tfsdk:"loader_readonly"`
 	LoaderType     types.String `tfsdk:"loader_type"`
 	NVRAMPath      types.String `tfsdk:"nvram_path"`
+}
+
+// DomainFeaturesModel describes VM features
+type DomainFeaturesModel struct {
+	PAE  types.Bool `tfsdk:"pae"`
+	ACPI types.Bool `tfsdk:"acpi"`
+	APIC types.Bool `tfsdk:"apic"`
 }
 
 // Metadata returns the resource type name
@@ -236,6 +244,23 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 					},
 					"nvram_path": schema.StringAttribute{
 						Description: "Path to NVRAM template for UEFI. Optional.",
+						Optional:    true,
+					},
+				},
+			},
+			"features": schema.SingleNestedBlock{
+				Description: "Hypervisor features to enable.",
+				Attributes: map[string]schema.Attribute{
+					"pae": schema.BoolAttribute{
+						Description: "Physical Address Extension mode.",
+						Optional:    true,
+					},
+					"acpi": schema.BoolAttribute{
+						Description: "ACPI support.",
+						Optional:    true,
+					},
+					"apic": schema.BoolAttribute{
+						Description: "APIC support.",
 						Optional:    true,
 					},
 				},

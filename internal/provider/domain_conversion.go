@@ -225,6 +225,34 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 		domain.OS = os
 	}
 
+	// Set features
+	if model.Features != nil {
+		features := &libvirtxml.DomainFeatureList{}
+
+		// PAE - presence-based
+		if !model.Features.PAE.IsNull() && !model.Features.PAE.IsUnknown() {
+			if model.Features.PAE.ValueBool() {
+				features.PAE = &libvirtxml.DomainFeature{}
+			}
+		}
+
+		// ACPI - presence-based
+		if !model.Features.ACPI.IsNull() && !model.Features.ACPI.IsUnknown() {
+			if model.Features.ACPI.ValueBool() {
+				features.ACPI = &libvirtxml.DomainFeature{}
+			}
+		}
+
+		// APIC - presence-based
+		if !model.Features.APIC.IsNull() && !model.Features.APIC.IsUnknown() {
+			if model.Features.APIC.ValueBool() {
+				features.APIC = &libvirtxml.DomainFeatureAPIC{}
+			}
+		}
+
+		domain.Features = features
+	}
+
 	return domain, nil
 }
 
@@ -376,5 +404,27 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		}
 
 		model.OS = osModel
+	}
+
+	// Features
+	if domain.Features != nil {
+		featuresModel := &DomainFeaturesModel{}
+
+		// PAE - presence = enabled
+		if domain.Features.PAE != nil {
+			featuresModel.PAE = types.BoolValue(true)
+		}
+
+		// ACPI - presence = enabled
+		if domain.Features.ACPI != nil {
+			featuresModel.ACPI = types.BoolValue(true)
+		}
+
+		// APIC - presence = enabled
+		if domain.Features.APIC != nil {
+			featuresModel.APIC = types.BoolValue(true)
+		}
+
+		model.Features = featuresModel
 	}
 }
