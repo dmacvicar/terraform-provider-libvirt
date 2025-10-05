@@ -679,31 +679,38 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 	if model.CPU != nil && domain.CPU != nil {
 		cpuModel := &DomainCPUModel{}
 
-		if domain.CPU.Mode != "" {
+		// Only set mode if user specified it
+		if !model.CPU.Mode.IsNull() && !model.CPU.Mode.IsUnknown() && domain.CPU.Mode != "" {
 			cpuModel.Mode = types.StringValue(domain.CPU.Mode)
 		}
 
-		if domain.CPU.Match != "" {
+		// Only set match if user specified it
+		if !model.CPU.Match.IsNull() && !model.CPU.Match.IsUnknown() && domain.CPU.Match != "" {
 			cpuModel.Match = types.StringValue(domain.CPU.Match)
 		}
 
-		if domain.CPU.Check != "" {
+		// Only set check if user specified it
+		if !model.CPU.Check.IsNull() && !model.CPU.Check.IsUnknown() && domain.CPU.Check != "" {
 			cpuModel.Check = types.StringValue(domain.CPU.Check)
 		}
 
-		if domain.CPU.Migratable != "" {
+		// Only set migratable if user specified it
+		if !model.CPU.Migratable.IsNull() && !model.CPU.Migratable.IsUnknown() && domain.CPU.Migratable != "" {
 			cpuModel.Migratable = types.StringValue(domain.CPU.Migratable)
 		}
 
-		if domain.CPU.DeprecatedFeatures != "" {
+		// Only set deprecated_features if user specified it
+		if !model.CPU.DeprecatedFeatures.IsNull() && !model.CPU.DeprecatedFeatures.IsUnknown() && domain.CPU.DeprecatedFeatures != "" {
 			cpuModel.DeprecatedFeatures = types.StringValue(domain.CPU.DeprecatedFeatures)
 		}
 
-		if domain.CPU.Model != nil && domain.CPU.Model.Value != "" {
+		// Only set model if user specified it
+		if !model.CPU.Model.IsNull() && !model.CPU.Model.IsUnknown() && domain.CPU.Model != nil && domain.CPU.Model.Value != "" {
 			cpuModel.Model = types.StringValue(domain.CPU.Model.Value)
 		}
 
-		if domain.CPU.Vendor != "" {
+		// Only set vendor if user specified it
+		if !model.CPU.Vendor.IsNull() && !model.CPU.Vendor.IsUnknown() && domain.CPU.Vendor != "" {
 			cpuModel.Vendor = types.StringValue(domain.CPU.Vendor)
 		}
 

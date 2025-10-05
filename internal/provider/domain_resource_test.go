@@ -130,3 +130,222 @@ resource "libvirt_domain" "test" {
 }
 `, name)
 }
+
+func TestAccDomainResource_metadata(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigMetadata("test-domain-metadata"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-metadata"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "title", "Test Domain"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "description", "A test domain with metadata"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigMetadata(name string) string {
+	return fmt.Sprintf(`
+provider "libvirt" {
+  uri = "qemu:///system"
+}
+
+resource "libvirt_domain" "test" {
+  name        = %[1]q
+  title       = "Test Domain"
+  description = "A test domain with metadata"
+  memory      = 512
+  unit        = "MiB"
+  vcpu        = 1
+  type        = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+}
+`, name)
+}
+
+func TestAccDomainResource_features(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigFeatures("test-domain-features"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-features"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "features.pae", "true"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "features.acpi", "true"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "features.apic", "true"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "features.hap", "on"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "features.pmu", "off"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigFeatures(name string) string {
+	return fmt.Sprintf(`
+provider "libvirt" {
+  uri = "qemu:///system"
+}
+
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  features {
+    pae  = true
+    acpi = true
+    apic = true
+    hap  = "on"
+    pmu  = "off"
+  }
+}
+`, name)
+}
+
+func TestAccDomainResource_cpu(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigCPU("test-domain-cpu"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-cpu"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "cpu.mode", "host-passthrough"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigCPU(name string) string {
+	return fmt.Sprintf(`
+provider "libvirt" {
+  uri = "qemu:///system"
+}
+
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 2
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  cpu {
+    mode = "host-passthrough"
+  }
+}
+`, name)
+}
+
+func TestAccDomainResource_clock(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigClock("test-domain-clock"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-clock"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.offset", "utc"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigClock(name string) string {
+	return fmt.Sprintf(`
+provider "libvirt" {
+  uri = "qemu:///system"
+}
+
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  clock {
+    offset = "utc"
+  }
+}
+`, name)
+}
+
+func TestAccDomainResource_lifecycle(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigLifecycle("test-domain-lifecycle"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-lifecycle"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "on_poweroff", "destroy"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "on_reboot", "restart"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "on_crash", "restart"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigLifecycle(name string) string {
+	return fmt.Sprintf(`
+provider "libvirt" {
+  uri = "qemu:///system"
+}
+
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  on_poweroff = "destroy"
+  on_reboot   = "restart"
+  on_crash    = "restart"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+}
+`, name)
+}
