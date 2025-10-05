@@ -36,15 +36,17 @@ type DomainResourceModel struct {
 	Type        types.String `tfsdk:"type"`
 	Title       types.String `tfsdk:"title"`
 	Description types.String `tfsdk:"description"`
-	Memory      types.Int64  `tfsdk:"memory"`
-	Unit        types.String `tfsdk:"unit"`
-	VCPU        types.Int64  `tfsdk:"vcpu"`
+	Memory     types.Int64  `tfsdk:"memory"`
+	Unit       types.String `tfsdk:"unit"`
+	VCPU       types.Int64  `tfsdk:"vcpu"`
+	OnPoweroff types.String `tfsdk:"on_poweroff"`
+	OnReboot   types.String `tfsdk:"on_reboot"`
+	OnCrash    types.String `tfsdk:"on_crash"`
 
 	// OS configuration
 	OS *DomainOSModel `tfsdk:"os"`
 
 	// TODO: Add more fields as we implement them:
-	// - lifecycle (on_poweroff, on_reboot, on_crash)
 	// - iothreads
 	// - current_memory, max_memory
 	// - features
@@ -132,6 +134,18 @@ providing fine-grained control over VM configuration.
 			},
 			"description": schema.StringAttribute{
 				Description: "Human-readable description of the domain.",
+				Optional:    true,
+			},
+			"on_poweroff": schema.StringAttribute{
+				Description: "Action to take when guest requests poweroff (destroy, restart, preserve, rename-restart).",
+				Optional:    true,
+			},
+			"on_reboot": schema.StringAttribute{
+				Description: "Action to take when guest requests reboot (destroy, restart, preserve, rename-restart).",
+				Optional:    true,
+			},
+			"on_crash": schema.StringAttribute{
+				Description: "Action to take when guest crashes (destroy, restart, preserve, rename-restart, coredump-destroy, coredump-restart).",
 				Optional:    true,
 			},
 		},

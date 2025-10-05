@@ -98,6 +98,17 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 		}
 	}
 
+	// Set lifecycle actions
+	if !model.OnPoweroff.IsNull() && !model.OnPoweroff.IsUnknown() {
+		domain.OnPoweroff = model.OnPoweroff.ValueString()
+	}
+	if !model.OnReboot.IsNull() && !model.OnReboot.IsUnknown() {
+		domain.OnReboot = model.OnReboot.ValueString()
+	}
+	if !model.OnCrash.IsNull() && !model.OnCrash.IsUnknown() {
+		domain.OnCrash = model.OnCrash.ValueString()
+	}
+
 	// Set OS configuration
 	if model.OS != nil {
 		os := &libvirtxml.DomainOS{}
@@ -215,6 +226,16 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 
 	if domain.VCPU != nil {
 		model.VCPU = types.Int64Value(int64(domain.VCPU.Value))
+	}
+
+	if domain.OnPoweroff != "" {
+		model.OnPoweroff = types.StringValue(domain.OnPoweroff)
+	}
+	if domain.OnReboot != "" {
+		model.OnReboot = types.StringValue(domain.OnReboot)
+	}
+	if domain.OnCrash != "" {
+		model.OnCrash = types.StringValue(domain.OnCrash)
 	}
 
 	if domain.OS != nil {
