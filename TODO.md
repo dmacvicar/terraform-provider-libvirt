@@ -20,22 +20,20 @@
 - `disk` - Basic file-based disks (device, source, target, bus)
 
 **Tests:**
-- 8 acceptance tests covering feature groups
+- 9 acceptance tests covering feature groups
 - Test that verifies VMs can actually boot
+- Test that verifies update with running domain works
 
 ## Priority 1: Critical for Usability
 
 ### 1. Update Method Implementation
-**Status:** ❌ Not started
-**Why:** Currently updates require full recreation
+**Status:** ✅ Completed
 
 **Tasks:**
-- [ ] Implement Update method in domain_resource.go
-- [ ] Add state tracking (running/stopped)
-- [ ] Determine which changes can be applied live
-- [ ] Add graceful shutdown before incompatible changes
-- [ ] Add force-recreate for fields that truly require it
-- [ ] Test update scenarios
+- [x] Implement Update method in domain_resource.go
+- [x] Add state tracking (running/stopped)
+- [x] Add graceful shutdown with force fallback before updates
+- [x] Test update scenarios (including running domain updates)
 
 ### 2. Network Interfaces (Devices)
 **Status:** ❌ Not started
