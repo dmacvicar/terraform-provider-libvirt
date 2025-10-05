@@ -42,6 +42,7 @@ type DomainResourceModel struct {
 	OnPoweroff types.String `tfsdk:"on_poweroff"`
 	OnReboot   types.String `tfsdk:"on_reboot"`
 	OnCrash    types.String `tfsdk:"on_crash"`
+	IOThreads  types.Int64  `tfsdk:"iothreads"`
 
 	// OS configuration
 	OS *DomainOSModel `tfsdk:"os"`
@@ -146,6 +147,10 @@ providing fine-grained control over VM configuration.
 			},
 			"on_crash": schema.StringAttribute{
 				Description: "Action to take when guest crashes (destroy, restart, preserve, rename-restart, coredump-destroy, coredump-restart).",
+				Optional:    true,
+			},
+			"iothreads": schema.Int64Attribute{
+				Description: "Number of I/O threads for virtio disks.",
 				Optional:    true,
 			},
 		},

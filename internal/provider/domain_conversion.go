@@ -109,6 +109,11 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 		domain.OnCrash = model.OnCrash.ValueString()
 	}
 
+	// Set I/O threads
+	if !model.IOThreads.IsNull() && !model.IOThreads.IsUnknown() {
+		domain.IOThreads = uint(model.IOThreads.ValueInt64())
+	}
+
 	// Set OS configuration
 	if model.OS != nil {
 		os := &libvirtxml.DomainOS{}
@@ -236,6 +241,10 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 	}
 	if domain.OnCrash != "" {
 		model.OnCrash = types.StringValue(domain.OnCrash)
+	}
+
+	if domain.IOThreads > 0 {
+		model.IOThreads = types.Int64Value(int64(domain.IOThreads))
 	}
 
 	if domain.OS != nil {
