@@ -67,6 +67,16 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 		domain.UUID = model.UUID.ValueString()
 	}
 
+	// Set title
+	if !model.Title.IsNull() && !model.Title.IsUnknown() {
+		domain.Title = model.Title.ValueString()
+	}
+
+	// Set description
+	if !model.Description.IsNull() && !model.Description.IsUnknown() {
+		domain.Description = model.Description.ValueString()
+	}
+
 	// Set memory
 	if !model.Memory.IsNull() && !model.Memory.IsUnknown() {
 		unit := "KiB"
@@ -172,6 +182,14 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 	if domain.UUID != "" {
 		model.UUID = types.StringValue(domain.UUID)
 		model.ID = types.StringValue(domain.UUID)
+	}
+
+	if domain.Title != "" {
+		model.Title = types.StringValue(domain.Title)
+	}
+
+	if domain.Description != "" {
+		model.Description = types.StringValue(domain.Description)
 	}
 
 	if domain.Memory != nil {

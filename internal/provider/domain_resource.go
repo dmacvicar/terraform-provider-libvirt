@@ -30,20 +30,26 @@ type DomainResource struct {
 
 // DomainResourceModel describes the resource data model
 type DomainResourceModel struct {
-	ID     types.String `tfsdk:"id"`
-	Name   types.String `tfsdk:"name"`
-	UUID   types.String `tfsdk:"uuid"`
-	Memory types.Int64  `tfsdk:"memory"`
-	Unit   types.String `tfsdk:"unit"`
-	VCPU   types.Int64  `tfsdk:"vcpu"`
-	Type   types.String `tfsdk:"type"`
+	ID          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	UUID        types.String `tfsdk:"uuid"`
+	Type        types.String `tfsdk:"type"`
+	Title       types.String `tfsdk:"title"`
+	Description types.String `tfsdk:"description"`
+	Memory      types.Int64  `tfsdk:"memory"`
+	Unit        types.String `tfsdk:"unit"`
+	VCPU        types.Int64  `tfsdk:"vcpu"`
 
 	// OS configuration
 	OS *DomainOSModel `tfsdk:"os"`
 
 	// TODO: Add more fields as we implement them:
+	// - lifecycle (on_poweroff, on_reboot, on_crash)
+	// - iothreads
+	// - current_memory, max_memory
 	// - features
 	// - cpu
+	// - clock
 	// - devices
 	// - etc.
 }
@@ -119,6 +125,14 @@ providing fine-grained control over VM configuration.
 				Description: "Domain type (e.g., 'kvm', 'qemu'). Defaults to 'kvm'.",
 				Optional:    true,
 				Computed:    true,
+			},
+			"title": schema.StringAttribute{
+				Description: "Short description title for the domain.",
+				Optional:    true,
+			},
+			"description": schema.StringAttribute{
+				Description: "Human-readable description of the domain.",
+				Optional:    true,
 			},
 		},
 		Blocks: map[string]schema.Block{
