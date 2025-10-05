@@ -15,14 +15,15 @@
 - `os` - OS configuration (type, arch, machine, firmware, boot devices, kernel boot, UEFI loader)
 - `features` - 20+ features (PAE, ACPI, APIC, HAP, PMU, VMPort, PVSpinlock, VMCoreInfo, HTM, NestedHV, CCFAssist, RAS, PS2, Viridian, PrivNet, IOAPIC, GIC)
 - `cpu` - Basic CPU (mode, match, check, migratable, model, vendor)
-- `clock` - Clock (offset, basis, adjustment, timezone)
+- `clock` - Clock (offset, basis, adjustment, timezone) with **nested timer blocks** (name, track, tickpolicy, frequency, mode, present, catchup)
 - `pm` - Power management (suspend_to_mem, suspend_to_disk)
 - `disk` - Basic file-based disks (device, source, target, bus)
 
 **Tests:**
-- 9 acceptance tests covering feature groups
+- 11 acceptance tests covering feature groups
 - Test that verifies VMs can actually boot
 - Test that verifies update with running domain works
+- Tests for complex nested blocks (clock timers with catchup)
 
 ## Priority 1: Critical for Usability
 
@@ -117,11 +118,12 @@
 - [ ] Add SMM with TSeg
 
 ### 10. Clock Timers
-**Status:** ❌ Partially done (basic clock only)
+**Status:** ✅ Completed
 
 **Tasks:**
-- [ ] Add timer blocks (rtc, pit, hpet, kvmclock, etc.)
-- [ ] Test Windows with hypervclock
+- [x] Add timer blocks (rtc, pit, hpet, kvmclock, hypervclock, etc.)
+- [x] Add nested catchup configuration
+- [x] Test timer configurations
 
 ## Priority 4: Other Resources
 
