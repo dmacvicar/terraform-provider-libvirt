@@ -370,6 +370,78 @@ func TestAccDomainResource_running(t *testing.T) {
 	})
 }
 
+func TestAccDomainResource_updateWithRunning(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create domain
+			{
+				Config: testAccDomainResourceConfigBasic("test-domain-update"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-update"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "memory", "512"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "vcpu", "1"),
+					testAccCheckDomainStart("test-domain-update"),
+				),
+			},
+			// Update while running
+			{
+				Config: testAccDomainResourceConfigBasicUpdated("test-domain-update"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-update"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "memory", "1024"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "vcpu", "2"),
+				),
+			},
+		},
+	})
+}
+
+func testAccCheckDomainStart(name string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		ctx := context.Background()
+		client, err := libvirtclient.NewClient(ctx, "qemu:///system")
+		if err != nil {
+			return fmt.Errorf("failed to create libvirt client: %w", err)
+		}
+		defer func() { _ = client.Close() }()
+
+		domains, _, err := client.Libvirt().ConnectListAllDomains(1, 0)
+		if err != nil {
+			return fmt.Errorf("failed to list domains: %w", err)
+		}
+
+		var targetDomain *libvirt.Domain
+		for _, d := range domains {
+			if d.Name == name {
+				targetDomain = &d
+				break
+			}
+		}
+
+		if targetDomain == nil {
+			return fmt.Errorf("domain %s not found", name)
+		}
+
+		err = client.Libvirt().DomainCreate(*targetDomain)
+		if err != nil {
+			return fmt.Errorf("failed to start domain %s: %w", name, err)
+		}
+
+		state, _, err := client.Libvirt().DomainGetState(*targetDomain, 0)
+		if err != nil {
+			return fmt.Errorf("failed to get domain state: %w", err)
+		}
+
+		if state != 1 {
+			return fmt.Errorf("domain is not running, state = %d", state)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckDomainCanStart(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Create a new libvirt client for testing

@@ -650,6 +650,7 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 	// If domain is running, shut it down first
 	if wasRunning {
+		// Try graceful shutdown first
 		err = r.client.Libvirt().DomainShutdown(oldDomain)
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -659,14 +660,18 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 			return
 		}
 
-		// Wait for shutdown with 30 second timeout
-		err = waitForDomainState(r.client, oldDomain, 5, 30*time.Second) // 5 = VIR_DOMAIN_SHUTOFF
+		// Wait for shutdown with 5 second timeout
+		err = waitForDomainState(r.client, oldDomain, 5, 5*time.Second) // 5 = VIR_DOMAIN_SHUTOFF
 		if err != nil {
-			resp.Diagnostics.AddError(
-				"Failed to Wait for Shutdown",
-				"Domain did not shutdown within 30 seconds: "+err.Error(),
-			)
-			return
+			// Graceful shutdown failed, force it
+			err = r.client.Libvirt().DomainDestroy(oldDomain)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"Failed to Stop Domain",
+					"Domain must be stopped before updating. Failed to force stop: "+err.Error(),
+				)
+				return
+			}
 		}
 	}
 
