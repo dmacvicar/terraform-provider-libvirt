@@ -90,6 +90,36 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 		}
 	}
 
+	// Set current memory
+	if !model.CurrentMemory.IsNull() && !model.CurrentMemory.IsUnknown() {
+		unit := "KiB"
+		if !model.Unit.IsNull() && !model.Unit.IsUnknown() {
+			unit = model.Unit.ValueString()
+		}
+		currentMemValue := uint(model.CurrentMemory.ValueInt64())
+		domain.CurrentMemory = &libvirtxml.DomainCurrentMemory{
+			Value: currentMemValue,
+			Unit:  unit,
+		}
+	}
+
+	// Set max memory
+	if !model.MaxMemory.IsNull() && !model.MaxMemory.IsUnknown() {
+		unit := "KiB"
+		if !model.Unit.IsNull() && !model.Unit.IsUnknown() {
+			unit = model.Unit.ValueString()
+		}
+		maxMemValue := uint(model.MaxMemory.ValueInt64())
+		maxMem := &libvirtxml.DomainMaxMemory{
+			Value: maxMemValue,
+			Unit:  unit,
+		}
+		if !model.MaxMemorySlots.IsNull() && !model.MaxMemorySlots.IsUnknown() {
+			maxMem.Slots = uint(model.MaxMemorySlots.ValueInt64())
+		}
+		domain.MaximumMemory = maxMem
+	}
+
 	// Set VCPU
 	if !model.VCPU.IsNull() && !model.VCPU.IsUnknown() {
 		vcpuValue := uint(model.VCPU.ValueInt64())
@@ -226,6 +256,29 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 			} else {
 				model.Unit = types.StringValue("KiB")
 			}
+		}
+	}
+
+	if domain.CurrentMemory != nil {
+		currentMemoryKiB := int64(domain.CurrentMemory.Value)
+		if !model.Unit.IsNull() && !model.Unit.IsUnknown() {
+			targetUnit := model.Unit.ValueString()
+			model.CurrentMemory = types.Int64Value(convertMemory(currentMemoryKiB, "KiB", targetUnit))
+		} else {
+			model.CurrentMemory = types.Int64Value(currentMemoryKiB)
+		}
+	}
+
+	if domain.MaximumMemory != nil {
+		maxMemoryKiB := int64(domain.MaximumMemory.Value)
+		if !model.Unit.IsNull() && !model.Unit.IsUnknown() {
+			targetUnit := model.Unit.ValueString()
+			model.MaxMemory = types.Int64Value(convertMemory(maxMemoryKiB, "KiB", targetUnit))
+		} else {
+			model.MaxMemory = types.Int64Value(maxMemoryKiB)
+		}
+		if domain.MaximumMemory.Slots > 0 {
+			model.MaxMemorySlots = types.Int64Value(int64(domain.MaximumMemory.Slots))
 		}
 	}
 

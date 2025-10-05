@@ -36,9 +36,12 @@ type DomainResourceModel struct {
 	Type        types.String `tfsdk:"type"`
 	Title       types.String `tfsdk:"title"`
 	Description types.String `tfsdk:"description"`
-	Memory     types.Int64  `tfsdk:"memory"`
-	Unit       types.String `tfsdk:"unit"`
-	VCPU       types.Int64  `tfsdk:"vcpu"`
+	Memory         types.Int64  `tfsdk:"memory"`
+	Unit           types.String `tfsdk:"unit"`
+	CurrentMemory  types.Int64  `tfsdk:"current_memory"`
+	MaxMemory      types.Int64  `tfsdk:"max_memory"`
+	MaxMemorySlots types.Int64  `tfsdk:"max_memory_slots"`
+	VCPU           types.Int64  `tfsdk:"vcpu"`
 	OnPoweroff types.String `tfsdk:"on_poweroff"`
 	OnReboot   types.String `tfsdk:"on_reboot"`
 	OnCrash    types.String `tfsdk:"on_crash"`
@@ -119,6 +122,18 @@ providing fine-grained control over VM configuration.
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
+			},
+			"current_memory": schema.Int64Attribute{
+				Description: "Actual memory allocation at boot time. If not set, defaults to memory value.",
+				Optional:    true,
+			},
+			"max_memory": schema.Int64Attribute{
+				Description: "Maximum memory for hotplug. Must be >= memory.",
+				Optional:    true,
+			},
+			"max_memory_slots": schema.Int64Attribute{
+				Description: "Number of slots for memory hotplug. Required when max_memory is set.",
+				Optional:    true,
 			},
 			"vcpu": schema.Int64Attribute{
 				Description: "Number of virtual CPUs.",
