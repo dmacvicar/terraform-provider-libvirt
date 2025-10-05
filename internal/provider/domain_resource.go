@@ -3,7 +3,9 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
 
+	golibvirt "github.com/digitalocean/go-libvirt"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -597,6 +599,22 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
+// waitForDomainState waits for a domain to reach the specified state with a timeout
+func waitForDomainState(client *libvirt.Client, domain golibvirt.Domain, targetState int32, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		state, _, err := client.Libvirt().DomainGetState(domain, 0)
+		if err != nil {
+			return fmt.Errorf("failed to get domain state: %w", err)
+		}
+		if state == targetState {
+			return nil
+		}
+		time.Sleep(1 * time.Second)
+	}
+	return fmt.Errorf("timeout waiting for domain to reach state %d", targetState)
+}
+
 // Update updates the domain
 func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan DomainResourceModel
@@ -606,6 +624,50 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// Look up the existing domain
+	oldDomain, err := r.client.LookupDomainByUUID(state.UUID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Domain Lookup Failed",
+			"Failed to look up existing domain: "+err.Error(),
+		)
+		return
+	}
+
+	// Check if domain is running - we need to shut it down for updates
+	domainState, _, err := r.client.Libvirt().DomainGetState(oldDomain, 0)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Failed to Get Domain State",
+			"Failed to check if domain is running: "+err.Error(),
+		)
+		return
+	}
+
+	wasRunning := domainState == 1 // 1 = VIR_DOMAIN_RUNNING
+
+	// If domain is running, shut it down first
+	if wasRunning {
+		err = r.client.Libvirt().DomainShutdown(oldDomain)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Failed to Shutdown Domain",
+				"Domain must be stopped before updating. Failed to shutdown: "+err.Error(),
+			)
+			return
+		}
+
+		// Wait for shutdown with 30 second timeout
+		err = waitForDomainState(r.client, oldDomain, 5, 30*time.Second) // 5 = VIR_DOMAIN_SHUTOFF
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Failed to Wait for Shutdown",
+				"Domain did not shutdown within 30 seconds: "+err.Error(),
+			)
+			return
+		}
 	}
 
 	// Convert Terraform model to libvirt XML
@@ -632,15 +694,6 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	// Undefine the old domain
-	oldDomain, err := r.client.LookupDomainByUUID(state.UUID.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Domain Lookup Failed",
-			"Failed to look up existing domain: "+err.Error(),
-		)
-		return
-	}
-
 	err = r.client.Libvirt().DomainUndefine(oldDomain)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -658,6 +711,27 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 			"Failed to define updated domain in libvirt: "+err.Error(),
 		)
 		return
+	}
+
+	// If domain was running before, start it again
+	if wasRunning {
+		updatedDomain, err := r.client.LookupDomainByUUID(state.UUID.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Failed to Lookup Updated Domain",
+				"Domain was updated but failed to look it up for restart: "+err.Error(),
+			)
+			return
+		}
+
+		err = r.client.Libvirt().DomainCreate(updatedDomain)
+		if err != nil {
+			resp.Diagnostics.AddWarning(
+				"Failed to Restart Domain",
+				"Domain was updated but failed to restart automatically: "+err.Error(),
+			)
+			// Continue anyway - domain is defined correctly
+		}
 	}
 
 	// Read back the domain to get updated state
