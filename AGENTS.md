@@ -70,13 +70,13 @@ Check README.md for current implementation status and the roadmap. The README co
 
 ## Working with This Project
 
-1. **Always check README.md first** - it tracks the current state and TODOs
-2. **Update README.md** - as you complete tasks, update the checkboxes and status
+1. **Check TODO.md for current tasks** - single source of truth for what needs to be done
+2. **Do NOT create random documentation files** - use existing files (TODO.md, README.md, AGENTS.md, DOMAIN_COVERAGE_ANALYSIS.md)
 3. **Run `make lint` before committing** - all code must pass linting
 4. **Run `make fmt` to format code** - use standard Go formatting
 5. **Preserve design principles** - schema must follow libvirt XML closely
 6. **Reference old provider minimally** - mainly for connection handling and test ideas
-7. **Document decisions** - add technical decisions to README.md as they're made
+7. **Update TODO.md** - as you complete tasks, mark them done and update status
 
 ## Development Workflow - Work Incrementally
 
@@ -98,6 +98,7 @@ Check README.md for current implementation status and the roadmap. The README co
    - Small, focused commit message
    - Example: `feat: add title and description fields`
    - Keep it simple - avoid verbose explanations
+   - **DO NOT add promotional text, links, or "Generated with" messages**
 
 4. **Repeat for next field**
 
