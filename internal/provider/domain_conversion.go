@@ -351,6 +351,43 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 		domain.Features = features
 	}
 
+	// Set CPU
+	if model.CPU != nil {
+		cpu := &libvirtxml.DomainCPU{}
+
+		if !model.CPU.Mode.IsNull() && !model.CPU.Mode.IsUnknown() {
+			cpu.Mode = model.CPU.Mode.ValueString()
+		}
+
+		if !model.CPU.Match.IsNull() && !model.CPU.Match.IsUnknown() {
+			cpu.Match = model.CPU.Match.ValueString()
+		}
+
+		if !model.CPU.Check.IsNull() && !model.CPU.Check.IsUnknown() {
+			cpu.Check = model.CPU.Check.ValueString()
+		}
+
+		if !model.CPU.Migratable.IsNull() && !model.CPU.Migratable.IsUnknown() {
+			cpu.Migratable = model.CPU.Migratable.ValueString()
+		}
+
+		if !model.CPU.DeprecatedFeatures.IsNull() && !model.CPU.DeprecatedFeatures.IsUnknown() {
+			cpu.DeprecatedFeatures = model.CPU.DeprecatedFeatures.ValueString()
+		}
+
+		if !model.CPU.Model.IsNull() && !model.CPU.Model.IsUnknown() {
+			cpu.Model = &libvirtxml.DomainCPUModel{
+				Value: model.CPU.Model.ValueString(),
+			}
+		}
+
+		if !model.CPU.Vendor.IsNull() && !model.CPU.Vendor.IsUnknown() {
+			cpu.Vendor = model.CPU.Vendor.ValueString()
+		}
+
+		domain.CPU = cpu
+	}
+
 	return domain, nil
 }
 
@@ -594,5 +631,40 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		}
 
 		model.Features = featuresModel
+	}
+
+	// CPU - only preserve if user originally specified it
+	if model.CPU != nil && domain.CPU != nil {
+		cpuModel := &DomainCPUModel{}
+
+		if domain.CPU.Mode != "" {
+			cpuModel.Mode = types.StringValue(domain.CPU.Mode)
+		}
+
+		if domain.CPU.Match != "" {
+			cpuModel.Match = types.StringValue(domain.CPU.Match)
+		}
+
+		if domain.CPU.Check != "" {
+			cpuModel.Check = types.StringValue(domain.CPU.Check)
+		}
+
+		if domain.CPU.Migratable != "" {
+			cpuModel.Migratable = types.StringValue(domain.CPU.Migratable)
+		}
+
+		if domain.CPU.DeprecatedFeatures != "" {
+			cpuModel.DeprecatedFeatures = types.StringValue(domain.CPU.DeprecatedFeatures)
+		}
+
+		if domain.CPU.Model != nil && domain.CPU.Model.Value != "" {
+			cpuModel.Model = types.StringValue(domain.CPU.Model.Value)
+		}
+
+		if domain.CPU.Vendor != "" {
+			cpuModel.Vendor = types.StringValue(domain.CPU.Vendor)
+		}
+
+		model.CPU = cpuModel
 	}
 }

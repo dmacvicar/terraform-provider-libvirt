@@ -52,6 +52,7 @@ type DomainResourceModel struct {
 	// Blocks
 	OS       *DomainOSModel       `tfsdk:"os"`
 	Features *DomainFeaturesModel `tfsdk:"features"`
+	CPU      *DomainCPUModel      `tfsdk:"cpu"`
 
 	// TODO: Add more fields as we implement them:
 	// - iothreads
@@ -77,6 +78,17 @@ type DomainOSModel struct {
 	LoaderReadOnly types.Bool   `tfsdk:"loader_readonly"`
 	LoaderType     types.String `tfsdk:"loader_type"`
 	NVRAMPath      types.String `tfsdk:"nvram_path"`
+}
+
+// DomainCPUModel describes CPU configuration
+type DomainCPUModel struct {
+	Mode               types.String `tfsdk:"mode"`
+	Match              types.String `tfsdk:"match"`
+	Check              types.String `tfsdk:"check"`
+	Migratable         types.String `tfsdk:"migratable"`
+	DeprecatedFeatures types.String `tfsdk:"deprecated_features"`
+	Model              types.String `tfsdk:"model"`
+	Vendor             types.String `tfsdk:"vendor"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -331,6 +343,39 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 					},
 					"gic_version": schema.StringAttribute{
 						Description: "GIC version for ARM guests.",
+						Optional:    true,
+					},
+				},
+			},
+			"cpu": schema.SingleNestedBlock{
+				Description: "CPU configuration for the domain.",
+				Attributes: map[string]schema.Attribute{
+					"mode": schema.StringAttribute{
+						Description: "CPU mode (host-model, host-passthrough, custom).",
+						Optional:    true,
+					},
+					"match": schema.StringAttribute{
+						Description: "CPU match policy (exact, minimum, strict).",
+						Optional:    true,
+					},
+					"check": schema.StringAttribute{
+						Description: "CPU check policy (none, partial, full).",
+						Optional:    true,
+					},
+					"migratable": schema.StringAttribute{
+						Description: "Whether the CPU is migratable (on, off).",
+						Optional:    true,
+					},
+					"deprecated_features": schema.StringAttribute{
+						Description: "How to handle deprecated features (allow, forbid).",
+						Optional:    true,
+					},
+					"model": schema.StringAttribute{
+						Description: "CPU model name.",
+						Optional:    true,
+					},
+					"vendor": schema.StringAttribute{
+						Description: "CPU vendor.",
 						Optional:    true,
 					},
 				},
