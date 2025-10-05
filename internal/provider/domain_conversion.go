@@ -77,6 +77,14 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 		domain.Description = model.Description.ValueString()
 	}
 
+	// Set bootloader (Xen paravirt)
+	if !model.Bootloader.IsNull() && !model.Bootloader.IsUnknown() {
+		domain.Bootloader = model.Bootloader.ValueString()
+	}
+	if !model.BootloaderArgs.IsNull() && !model.BootloaderArgs.IsUnknown() {
+		domain.BootloaderArgs = model.BootloaderArgs.ValueString()
+	}
+
 	// Set memory
 	if !model.Memory.IsNull() && !model.Memory.IsUnknown() {
 		unit := "KiB"
@@ -236,6 +244,13 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 
 	if domain.Description != "" {
 		model.Description = types.StringValue(domain.Description)
+	}
+
+	if domain.Bootloader != "" {
+		model.Bootloader = types.StringValue(domain.Bootloader)
+	}
+	if domain.BootloaderArgs != "" {
+		model.BootloaderArgs = types.StringValue(domain.BootloaderArgs)
 	}
 
 	if domain.Memory != nil {

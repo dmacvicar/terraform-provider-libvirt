@@ -33,9 +33,11 @@ type DomainResourceModel struct {
 	ID          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	UUID        types.String `tfsdk:"uuid"`
-	Type        types.String `tfsdk:"type"`
-	Title       types.String `tfsdk:"title"`
-	Description types.String `tfsdk:"description"`
+	Type           types.String `tfsdk:"type"`
+	Title          types.String `tfsdk:"title"`
+	Description    types.String `tfsdk:"description"`
+	Bootloader     types.String `tfsdk:"bootloader"`
+	BootloaderArgs types.String `tfsdk:"bootloader_args"`
 	Memory         types.Int64  `tfsdk:"memory"`
 	Unit           types.String `tfsdk:"unit"`
 	CurrentMemory  types.Int64  `tfsdk:"current_memory"`
@@ -150,6 +152,14 @@ providing fine-grained control over VM configuration.
 			},
 			"description": schema.StringAttribute{
 				Description: "Human-readable description of the domain.",
+				Optional:    true,
+			},
+			"bootloader": schema.StringAttribute{
+				Description: "Bootloader path for paravirtualized guests (Xen).",
+				Optional:    true,
+			},
+			"bootloader_args": schema.StringAttribute{
+				Description: "Arguments to pass to bootloader.",
 				Optional:    true,
 			},
 			"on_poweroff": schema.StringAttribute{
