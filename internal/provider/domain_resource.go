@@ -99,10 +99,29 @@ type DomainCPUModel struct {
 
 // DomainClockModel describes clock configuration
 type DomainClockModel struct {
-	Offset     types.String `tfsdk:"offset"`
-	Basis      types.String `tfsdk:"basis"`
-	Adjustment types.String `tfsdk:"adjustment"`
-	TimeZone   types.String `tfsdk:"timezone"`
+	Offset     types.String        `tfsdk:"offset"`
+	Basis      types.String        `tfsdk:"basis"`
+	Adjustment types.String        `tfsdk:"adjustment"`
+	TimeZone   types.String        `tfsdk:"timezone"`
+	Timers     []DomainTimerModel  `tfsdk:"timer"`
+}
+
+// DomainTimerModel describes a clock timer
+type DomainTimerModel struct {
+	Name       types.String              `tfsdk:"name"`
+	Track      types.String              `tfsdk:"track"`
+	TickPolicy types.String              `tfsdk:"tickpolicy"`
+	Frequency  types.Int64               `tfsdk:"frequency"`
+	Mode       types.String              `tfsdk:"mode"`
+	Present    types.String              `tfsdk:"present"`
+	CatchUp    *DomainTimerCatchUpModel  `tfsdk:"catchup"`
+}
+
+// DomainTimerCatchUpModel describes timer catchup configuration
+type DomainTimerCatchUpModel struct {
+	Threshold types.Int64 `tfsdk:"threshold"`
+	Slew      types.Int64 `tfsdk:"slew"`
+	Limit     types.Int64 `tfsdk:"limit"`
 }
 
 // DomainPMModel describes power management configuration
@@ -430,6 +449,58 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 					"timezone": schema.StringAttribute{
 						Description: "Timezone name when offset is 'timezone'.",
 						Optional:    true,
+					},
+				},
+				Blocks: map[string]schema.Block{
+					"timer": schema.ListNestedBlock{
+						Description: "Timer devices for the guest clock.",
+						NestedObject: schema.NestedBlockObject{
+							Attributes: map[string]schema.Attribute{
+								"name": schema.StringAttribute{
+									Description: "Timer name (platform, pit, rtc, hpet, tsc, kvmclock, hypervclock, armvtimer).",
+									Required:    true,
+								},
+								"track": schema.StringAttribute{
+									Description: "Track source (guest, wall).",
+									Optional:    true,
+								},
+								"tickpolicy": schema.StringAttribute{
+									Description: "Tick policy (delay, catchup, merge, discard).",
+									Optional:    true,
+								},
+								"frequency": schema.Int64Attribute{
+									Description: "Timer frequency in Hz.",
+									Optional:    true,
+								},
+								"mode": schema.StringAttribute{
+									Description: "Timer mode (auto, native, emulate, paravirt, smpsafe).",
+									Optional:    true,
+								},
+								"present": schema.StringAttribute{
+									Description: "Whether timer is present (yes, no).",
+									Optional:    true,
+								},
+							},
+							Blocks: map[string]schema.Block{
+								"catchup": schema.SingleNestedBlock{
+									Description: "Timer catchup configuration.",
+									Attributes: map[string]schema.Attribute{
+										"threshold": schema.Int64Attribute{
+											Description: "Threshold in nanoseconds.",
+											Optional:    true,
+										},
+										"slew": schema.Int64Attribute{
+											Description: "Slew in nanoseconds.",
+											Optional:    true,
+										},
+										"limit": schema.Int64Attribute{
+											Description: "Limit in nanoseconds.",
+											Optional:    true,
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},

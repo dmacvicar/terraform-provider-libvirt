@@ -398,6 +398,127 @@ func TestAccDomainResource_updateWithRunning(t *testing.T) {
 	})
 }
 
+func TestAccDomainResource_clockTimers(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigClockTimers("test-domain-timers"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-timers"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.offset", "utc"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.#", "3"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.name", "rtc"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.tickpolicy", "catchup"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.1.name", "pit"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.1.tickpolicy", "delay"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.2.name", "hpet"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.2.present", "no"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigClockTimers(name string) string {
+	return fmt.Sprintf(`
+provider "libvirt" {
+  uri = "qemu:///system"
+}
+
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  clock {
+    offset = "utc"
+
+    timer {
+      name       = "rtc"
+      tickpolicy = "catchup"
+    }
+
+    timer {
+      name       = "pit"
+      tickpolicy = "delay"
+    }
+
+    timer {
+      name    = "hpet"
+      present = "no"
+    }
+  }
+}
+`, name)
+}
+
+func TestAccDomainResource_clockTimerCatchup(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigClockTimerCatchup("test-domain-timer-catchup"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-timer-catchup"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.name", "rtc"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.tickpolicy", "catchup"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.catchup.threshold", "123"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.catchup.slew", "120"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.catchup.limit", "10000"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigClockTimerCatchup(name string) string {
+	return fmt.Sprintf(`
+provider "libvirt" {
+  uri = "qemu:///system"
+}
+
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  clock {
+    offset = "utc"
+
+    timer {
+      name       = "rtc"
+      tickpolicy = "catchup"
+
+      catchup {
+        threshold = 123
+        slew      = 120
+        limit     = 10000
+      }
+    }
+  }
+}
+`, name)
+}
+
 func testAccCheckDomainStart(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ctx := context.Background()

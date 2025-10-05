@@ -413,6 +413,56 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 			clock.TimeZone = model.Clock.TimeZone.ValueString()
 		}
 
+		// Convert timers
+		for _, timerModel := range model.Clock.Timers {
+			timer := libvirtxml.DomainTimer{}
+
+			if !timerModel.Name.IsNull() && !timerModel.Name.IsUnknown() {
+				timer.Name = timerModel.Name.ValueString()
+			}
+
+			if !timerModel.Track.IsNull() && !timerModel.Track.IsUnknown() {
+				timer.Track = timerModel.Track.ValueString()
+			}
+
+			if !timerModel.TickPolicy.IsNull() && !timerModel.TickPolicy.IsUnknown() {
+				timer.TickPolicy = timerModel.TickPolicy.ValueString()
+			}
+
+			if !timerModel.Frequency.IsNull() && !timerModel.Frequency.IsUnknown() {
+				timer.Frequency = uint64(timerModel.Frequency.ValueInt64())
+			}
+
+			if !timerModel.Mode.IsNull() && !timerModel.Mode.IsUnknown() {
+				timer.Mode = timerModel.Mode.ValueString()
+			}
+
+			if !timerModel.Present.IsNull() && !timerModel.Present.IsUnknown() {
+				timer.Present = timerModel.Present.ValueString()
+			}
+
+			// Convert catchup
+			if timerModel.CatchUp != nil {
+				catchup := &libvirtxml.DomainTimerCatchUp{}
+
+				if !timerModel.CatchUp.Threshold.IsNull() && !timerModel.CatchUp.Threshold.IsUnknown() {
+					catchup.Threshold = uint(timerModel.CatchUp.Threshold.ValueInt64())
+				}
+
+				if !timerModel.CatchUp.Slew.IsNull() && !timerModel.CatchUp.Slew.IsUnknown() {
+					catchup.Slew = uint(timerModel.CatchUp.Slew.ValueInt64())
+				}
+
+				if !timerModel.CatchUp.Limit.IsNull() && !timerModel.CatchUp.Limit.IsUnknown() {
+					catchup.Limit = uint(timerModel.CatchUp.Limit.ValueInt64())
+				}
+
+				timer.CatchUp = catchup
+			}
+
+			clock.Timer = append(clock.Timer, timer)
+		}
+
 		domain.Clock = clock
 	}
 
@@ -785,6 +835,62 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 
 		if domain.Clock.TimeZone != "" {
 			clockModel.TimeZone = types.StringValue(domain.Clock.TimeZone)
+		}
+
+		// Convert timers - only if user specified them
+		if len(model.Clock.Timers) > 0 && len(domain.Clock.Timer) > 0 {
+			timers := make([]DomainTimerModel, 0, len(domain.Clock.Timer))
+
+			for _, timer := range domain.Clock.Timer {
+				timerModel := DomainTimerModel{}
+
+				if timer.Name != "" {
+					timerModel.Name = types.StringValue(timer.Name)
+				}
+
+				if timer.Track != "" {
+					timerModel.Track = types.StringValue(timer.Track)
+				}
+
+				if timer.TickPolicy != "" {
+					timerModel.TickPolicy = types.StringValue(timer.TickPolicy)
+				}
+
+				if timer.Frequency != 0 {
+					timerModel.Frequency = types.Int64Value(int64(timer.Frequency))
+				}
+
+				if timer.Mode != "" {
+					timerModel.Mode = types.StringValue(timer.Mode)
+				}
+
+				if timer.Present != "" {
+					timerModel.Present = types.StringValue(timer.Present)
+				}
+
+				// Convert catchup if present
+				if timer.CatchUp != nil {
+					catchupModel := &DomainTimerCatchUpModel{}
+
+					if timer.CatchUp.Threshold != 0 {
+						catchupModel.Threshold = types.Int64Value(int64(timer.CatchUp.Threshold))
+					}
+
+					if timer.CatchUp.Slew != 0 {
+						catchupModel.Slew = types.Int64Value(int64(timer.CatchUp.Slew))
+					}
+
+					if timer.CatchUp.Limit != 0 {
+						catchupModel.Limit = types.Int64Value(int64(timer.CatchUp.Limit))
+					}
+
+					timerModel.CatchUp = catchupModel
+				}
+
+				timers = append(timers, timerModel)
+			}
+
+			clockModel.Timers = timers
 		}
 
 		model.Clock = clockModel
