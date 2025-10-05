@@ -378,7 +378,7 @@ func testAccCheckDomainCanStart(name string) resource.TestCheckFunc {
 		if err != nil {
 			return fmt.Errorf("failed to create libvirt client: %w", err)
 		}
-		defer client.Close()
+		defer func() { _ = client.Close() }()
 
 		// Look up the domain by name using the raw libvirt API
 		domains, _, err := client.Libvirt().ConnectListAllDomains(1, 0)
