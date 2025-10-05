@@ -53,12 +53,13 @@ type DomainResourceModel struct {
 	IOThreads  types.Int64  `tfsdk:"iothreads"`
 
 	// Blocks
-	OS       *DomainOSModel       `tfsdk:"os"`
-	Features *DomainFeaturesModel `tfsdk:"features"`
-	CPU      *DomainCPUModel      `tfsdk:"cpu"`
-	Clock    *DomainClockModel    `tfsdk:"clock"`
-	PM       *DomainPMModel       `tfsdk:"pm"`
-	Disks    []DomainDiskModel    `tfsdk:"disk"`
+	OS         *DomainOSModel          `tfsdk:"os"`
+	Features   *DomainFeaturesModel    `tfsdk:"features"`
+	CPU        *DomainCPUModel         `tfsdk:"cpu"`
+	Clock      *DomainClockModel       `tfsdk:"clock"`
+	PM         *DomainPMModel          `tfsdk:"pm"`
+	Disks      []DomainDiskModel       `tfsdk:"disk"`
+	Interfaces []DomainInterfaceModel  `tfsdk:"interface"`
 
 	// TODO: Add more fields as we implement them:
 	// - iothreads
@@ -136,6 +137,22 @@ type DomainDiskModel struct {
 	Source types.String `tfsdk:"source"`
 	Target types.String `tfsdk:"target"`
 	Bus    types.String `tfsdk:"bus"`
+}
+
+// DomainInterfaceModel describes a network interface
+type DomainInterfaceModel struct {
+	Type   types.String                  `tfsdk:"type"`
+	MAC    types.String                  `tfsdk:"mac"`
+	Model  types.String                  `tfsdk:"model"`
+	Source *DomainInterfaceSourceModel   `tfsdk:"source"`
+}
+
+// DomainInterfaceSourceModel describes the interface source
+type DomainInterfaceSourceModel struct {
+	Network   types.String `tfsdk:"network"`
+	PortGroup types.String `tfsdk:"portgroup"`
+	Bridge    types.String `tfsdk:"bridge"`
+	Dev       types.String `tfsdk:"dev"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -536,6 +553,48 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 						"bus": schema.StringAttribute{
 							Description: "Bus type (virtio, scsi, ide, sata, usb).",
 							Optional:    true,
+						},
+					},
+				},
+			},
+			"interface": schema.ListNestedBlock{
+				Description: "Network interfaces attached to the domain.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"type": schema.StringAttribute{
+							Description: "Interface type (network, bridge, user, direct, etc.).",
+							Required:    true,
+						},
+						"mac": schema.StringAttribute{
+							Description: "MAC address for the interface.",
+							Optional:    true,
+						},
+						"model": schema.StringAttribute{
+							Description: "Device model (virtio, e1000, rtl8139, etc.).",
+							Optional:    true,
+						},
+					},
+					Blocks: map[string]schema.Block{
+						"source": schema.SingleNestedBlock{
+							Description: "Interface source configuration.",
+							Attributes: map[string]schema.Attribute{
+								"network": schema.StringAttribute{
+									Description: "Network name (for type=network).",
+									Optional:    true,
+								},
+								"portgroup": schema.StringAttribute{
+									Description: "Port group name (for type=network).",
+									Optional:    true,
+								},
+								"bridge": schema.StringAttribute{
+									Description: "Bridge name (for type=bridge).",
+									Optional:    true,
+								},
+								"dev": schema.StringAttribute{
+									Description: "Device name (for type=user or type=direct).",
+									Optional:    true,
+								},
+							},
 						},
 					},
 				},

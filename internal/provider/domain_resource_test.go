@@ -617,3 +617,48 @@ func testAccCheckDomainCanStart(name string) resource.TestCheckFunc {
 		return nil
 	}
 }
+
+func TestAccDomainResource_network(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigNetwork("test-domain-network"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-network"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "interface.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "interface.0.type", "network"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "interface.0.source.network", "default"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "interface.0.model", "virtio"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigNetwork(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  interface {
+    type  = "network"
+    model = "virtio"
+    source {
+      network = "default"
+    }
+  }
+}
+`, name)
+}

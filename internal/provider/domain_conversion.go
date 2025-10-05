@@ -487,7 +487,9 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 
 	// Set Disks
 	if len(model.Disks) > 0 {
-		devices := &libvirtxml.DomainDeviceList{}
+		if domain.Devices == nil {
+			domain.Devices = &libvirtxml.DomainDeviceList{}
+		}
 
 		for _, diskModel := range model.Disks {
 			disk := libvirtxml.DomainDisk{}
@@ -520,10 +522,69 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 				}
 			}
 
-			devices.Disks = append(devices.Disks, disk)
+			domain.Devices.Disks = append(domain.Devices.Disks, disk)
+		}
+	}
+
+	// Set Interfaces
+	if len(model.Interfaces) > 0 {
+		if domain.Devices == nil {
+			domain.Devices = &libvirtxml.DomainDeviceList{}
 		}
 
-		domain.Devices = devices
+		for _, ifaceModel := range model.Interfaces {
+			iface := libvirtxml.DomainInterface{}
+
+			// Set MAC address
+			if !ifaceModel.MAC.IsNull() && !ifaceModel.MAC.IsUnknown() {
+				iface.MAC = &libvirtxml.DomainInterfaceMAC{
+					Address: ifaceModel.MAC.ValueString(),
+				}
+			}
+
+			// Set model
+			if !ifaceModel.Model.IsNull() && !ifaceModel.Model.IsUnknown() {
+				iface.Model = &libvirtxml.DomainInterfaceModel{
+					Type: ifaceModel.Model.ValueString(),
+				}
+			}
+
+			// Set source based on type
+			if !ifaceModel.Type.IsNull() && !ifaceModel.Type.IsUnknown() && ifaceModel.Source != nil {
+				ifaceType := ifaceModel.Type.ValueString()
+				source := &libvirtxml.DomainInterfaceSource{}
+
+				switch ifaceType {
+				case "network":
+					network := &libvirtxml.DomainInterfaceSourceNetwork{}
+					if !ifaceModel.Source.Network.IsNull() && !ifaceModel.Source.Network.IsUnknown() {
+						network.Network = ifaceModel.Source.Network.ValueString()
+					}
+					if !ifaceModel.Source.PortGroup.IsNull() && !ifaceModel.Source.PortGroup.IsUnknown() {
+						network.PortGroup = ifaceModel.Source.PortGroup.ValueString()
+					}
+					source.Network = network
+
+				case "bridge":
+					bridge := &libvirtxml.DomainInterfaceSourceBridge{}
+					if !ifaceModel.Source.Bridge.IsNull() && !ifaceModel.Source.Bridge.IsUnknown() {
+						bridge.Bridge = ifaceModel.Source.Bridge.ValueString()
+					}
+					source.Bridge = bridge
+
+				case "user":
+					user := &libvirtxml.DomainInterfaceSourceUser{}
+					if !ifaceModel.Source.Dev.IsNull() && !ifaceModel.Source.Dev.IsUnknown() {
+						user.Dev = ifaceModel.Source.Dev.ValueString()
+					}
+					source.User = user
+				}
+
+				iface.Source = source
+			}
+
+			domain.Devices.Interfaces = append(domain.Devices.Interfaces, iface)
+		}
 	}
 
 	return domain, nil
@@ -941,5 +1002,69 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		}
 
 		model.Disks = disks
+	}
+
+	// Interfaces - only if user specified them
+	if len(model.Interfaces) > 0 && domain.Devices != nil && len(domain.Devices.Interfaces) > 0 {
+		interfaces := make([]DomainInterfaceModel, 0, len(domain.Devices.Interfaces))
+
+		for i, iface := range domain.Devices.Interfaces {
+			// Only process if we have a corresponding model entry
+			if i >= len(model.Interfaces) {
+				break
+			}
+
+			ifaceModel := DomainInterfaceModel{}
+			origModel := model.Interfaces[i]
+
+			// Type - determine from source
+			if iface.Source != nil {
+				if iface.Source.Network != nil {
+					ifaceModel.Type = types.StringValue("network")
+				} else if iface.Source.Bridge != nil {
+					ifaceModel.Type = types.StringValue("bridge")
+				} else if iface.Source.User != nil {
+					ifaceModel.Type = types.StringValue("user")
+				}
+			}
+
+			// MAC - only if user specified it
+			if !origModel.MAC.IsNull() && iface.MAC != nil && iface.MAC.Address != "" {
+				ifaceModel.MAC = types.StringValue(iface.MAC.Address)
+			}
+
+			// Model - only if user specified it
+			if !origModel.Model.IsNull() && iface.Model != nil && iface.Model.Type != "" {
+				ifaceModel.Model = types.StringValue(iface.Model.Type)
+			}
+
+			// Source - only if user specified it
+			if origModel.Source != nil && iface.Source != nil {
+				sourceModel := &DomainInterfaceSourceModel{}
+
+				if iface.Source.Network != nil {
+					if !origModel.Source.Network.IsNull() && iface.Source.Network.Network != "" {
+						sourceModel.Network = types.StringValue(iface.Source.Network.Network)
+					}
+					if !origModel.Source.PortGroup.IsNull() && iface.Source.Network.PortGroup != "" {
+						sourceModel.PortGroup = types.StringValue(iface.Source.Network.PortGroup)
+					}
+				} else if iface.Source.Bridge != nil {
+					if !origModel.Source.Bridge.IsNull() && iface.Source.Bridge.Bridge != "" {
+						sourceModel.Bridge = types.StringValue(iface.Source.Bridge.Bridge)
+					}
+				} else if iface.Source.User != nil {
+					if !origModel.Source.Dev.IsNull() && iface.Source.User.Dev != "" {
+						sourceModel.Dev = types.StringValue(iface.Source.User.Dev)
+					}
+				}
+
+				ifaceModel.Source = sourceModel
+			}
+
+			interfaces = append(interfaces, ifaceModel)
+		}
+
+		model.Interfaces = interfaces
 	}
 }

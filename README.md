@@ -83,13 +83,74 @@ resource "libvirt_domain" "example" {
 }
 ```
 
-### Key Points
+### Handling Elements with Text Content and Attributes
 
-- **Flattening**: We don't distinguish between XML attributes and elements in HCL - both become HCL attributes
-- **Consistency**: The same XML structure always maps to the same HCL structure
-- **Readability**: HCL blocks follow Terraform conventions for better readability
-- **Pragmatic Exceptions**: Some XML patterns (like `<memory unit="MiB">512</memory>`) are simplified to single values with fixed units for better UX
-- **Migration**: This consistent mapping enables automated migration from the old provider or from raw libvirt XML
+Some libvirt XML elements have both text content and attributes. For better ergonomics, we apply these patterns:
+
+#### Simple value with unit only
+
+**XML**: `<memory unit="MiB">512</memory>`
+
+The unit is fixed and the value becomes a simple attribute:
+```hcl
+memory = 512  # Always MiB
+```
+
+This applies to all scaledInteger fields (memory, hard_limit, soft_limit, etc.). We pick a sensible default unit per field.
+
+#### Value with unit plus one other attribute
+
+**XML**: `<maxMemory unit="MiB" slots="16">2048</maxMemory>`
+
+The value is flattened with a fixed unit, the other attribute becomes a separate field:
+```hcl
+max_memory       = 2048
+max_memory_slots = 16
+```
+
+#### Value with multiple attributes
+
+**XML**: `<vcpu placement="static" cpuset="0-3" current="2">4</vcpu>`
+
+A nested block is used with the value and all attributes:
+```hcl
+vcpu {
+  value     = 4
+  placement = "static"
+  cpuset    = "0-3"
+  current   = 2
+}
+```
+
+#### Source elements with type-dependent attributes
+
+When a source element has different attribute sets depending on a type, we use a nested block:
+
+**XML**:
+```xml
+<interface type="network">
+  <source network="default" portgroup="web"/>
+</interface>
+```
+
+**HCL**:
+```hcl
+interface {
+  type = "network"
+  source {
+    network   = "default"
+    portgroup = "web"
+  }
+}
+```
+
+If the source always has the same pattern, it can be flattened to a simple attribute.
+
+### Notes
+
+- We don't distinguish between XML attributes and elements in HCL - both become HCL attributes
+- The same XML structure always maps to the same HCL structure
+- This consistent mapping enables automated migration from the old provider or from raw libvirt XML
 
 For detailed XML schemas, see the [libvirt domain format documentation](https://libvirt.org/formatdomain.html).
 
