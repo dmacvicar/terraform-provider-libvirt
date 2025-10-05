@@ -67,6 +67,11 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 		domain.UUID = model.UUID.ValueString()
 	}
 
+	// Set HWUUID if provided
+	if !model.HWUUID.IsNull() && !model.HWUUID.IsUnknown() {
+		domain.HWUUID = model.HWUUID.ValueString()
+	}
+
 	// Set title
 	if !model.Title.IsNull() && !model.Title.IsUnknown() {
 		domain.Title = model.Title.ValueString()
@@ -441,6 +446,10 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 	if domain.UUID != "" {
 		model.UUID = types.StringValue(domain.UUID)
 		model.ID = types.StringValue(domain.UUID)
+	}
+
+	if domain.HWUUID != "" {
+		model.HWUUID = types.StringValue(domain.HWUUID)
 	}
 
 	if domain.Title != "" {

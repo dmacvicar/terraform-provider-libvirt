@@ -33,6 +33,7 @@ type DomainResourceModel struct {
 	ID          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	UUID        types.String `tfsdk:"uuid"`
+	HWUUID      types.String `tfsdk:"hwuuid"`
 	Type           types.String `tfsdk:"type"`
 	Title          types.String `tfsdk:"title"`
 	Description    types.String `tfsdk:"description"`
@@ -162,6 +163,10 @@ providing fine-grained control over VM configuration.
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
+			},
+			"hwuuid": schema.StringAttribute{
+				Description: "Hardware UUID for the domain.",
+				Optional:    true,
 			},
 			"memory": schema.Int64Attribute{
 				Description: "Maximum memory allocation in the specified unit. Default unit is KiB.",
