@@ -18,6 +18,81 @@ This rewrite improves upon the original provider in several ways:
 - **No Abstraction**: The Terraform schema mirrors the libvirt XML structure as closely as possible, providing full access to underlying features rather than simplified abstractions.
 - **User Input Preservation**: For optional+computed fields, we preserve the user's input value even when libvirt normalizes it (e.g., "q35" vs "pc-q35-10.1") to avoid unnecessary diffs.
 
+## XML to HCL Mapping
+
+This provider maps libvirt's XML structure to Terraform's HCL configuration language using a consistent, predictable pattern:
+
+### Mapping Rules
+
+1. **XML Elements → HCL Blocks**
+   - Nested XML elements become nested HCL blocks
+   - Example: `<os>...</os>` → `os { ... }`
+
+2. **XML Attributes → HCL Attributes**
+   - Both XML element attributes and simple text content become HCL attributes
+   - Example: `<timer name="rtc" tickpolicy="catchup"/>` → `timer { name = "rtc"; tickpolicy = "catchup" }`
+
+3. **Repeated Elements → HCL Lists**
+   - Multiple XML elements of the same type become HCL block lists
+   - Example: Multiple `<timer>` elements → `timer { ... }` blocks (can be repeated)
+
+### Example Mapping
+
+**Libvirt XML:**
+```xml
+<domain type="kvm">
+  <name>example-vm</name>
+  <memory unit="MiB">512</memory>
+  <vcpu>1</vcpu>
+  <clock offset="utc">
+    <timer name="rtc" tickpolicy="catchup">
+      <catchup threshold="123" slew="120" limit="10000"/>
+    </timer>
+    <timer name="pit" tickpolicy="delay"/>
+  </clock>
+</domain>
+```
+
+**Terraform HCL:**
+```hcl
+resource "libvirt_domain" "example" {
+  name   = "example-vm"
+  type   = "kvm"
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+
+  clock {
+    offset = "utc"
+
+    timer {
+      name       = "rtc"
+      tickpolicy = "catchup"
+
+      catchup {
+        threshold = 123
+        slew      = 120
+        limit     = 10000
+      }
+    }
+
+    timer {
+      name       = "pit"
+      tickpolicy = "delay"
+    }
+  }
+}
+```
+
+### Key Points
+
+- **Flattening**: We don't distinguish between XML attributes and elements in HCL - both become HCL attributes
+- **Consistency**: The same XML structure always maps to the same HCL structure
+- **Readability**: HCL blocks follow Terraform conventions for better readability
+- **Migration**: This consistent mapping enables automated migration from the old provider or from raw libvirt XML
+
+For detailed XML schemas, see the [libvirt domain format documentation](https://libvirt.org/formatdomain.html).
+
 ## Development Approach
 
 Terraform providers are largely scaffolding and domain conversion (Terraform HCL ↔ Provider API). This project leverages AI agents to accelerate development while maintaining code quality through automated linting and testing.
