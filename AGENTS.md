@@ -24,6 +24,93 @@ This project is a complete v2 rewrite of the Terraform provider for libvirt to r
 
 This ensures we provide comprehensive libvirt feature coverage while maintaining clean, maintainable code that leverages the official XML marshaling library.
 
+## XML to HCL Mapping Patterns
+
+### General Mapping Rules
+
+1. **XML Elements → HCL Blocks**
+   - Nested XML elements become nested HCL blocks
+   - Example: `<os>...</os>` → `os { ... }`
+
+2. **XML Attributes → HCL Attributes**
+   - XML element attributes become HCL attributes within their block
+   - Example: `<timer name="rtc" tickpolicy="catchup"/>` → `timer { name = "rtc"; tickpolicy = "catchup" }`
+
+3. **Repeated Elements → HCL Lists**
+   - Multiple XML elements of the same type become repeated HCL blocks
+   - Example: Multiple `<timer>` elements → multiple `timer { }` blocks
+
+### Special Cases: Elements with Text Content + Attributes
+
+Many libvirt XML elements follow the `scaledInteger` pattern (24+ occurrences in domain schema):
+```xml
+<memory unit="MiB">512</memory>
+<vcpu placement="static" current="2">4</vcpu>
+```
+
+**Pattern**: Element has both text content AND attributes.
+
+**Our Convention**: We make pragmatic UX decisions and document exceptions to the general mapping rules:
+
+#### Exception 1: Units on Value Elements
+
+**XML Pattern**: `<element unit="...">value</element>` (scaledInteger type)
+
+**HCL Pattern**: Flatten to single attribute with **fixed unit**
+```hcl
+memory = 512  # Always interpreted as MiB
+vcpu   = 4    # Just the count value
+```
+
+**Rules**:
+- Choose a sensible default unit for each field (document in schema description)
+- Do NOT expose `unit` as a separate attribute initially
+- If we need unit configurability later, add `{attribute}_unit` (e.g., `memory_unit`)
+- This applies to: memory, current_memory, max_memory, and all other scaledInteger fields
+
+**Rationale**:
+- Better UX for the 95% case where unit is consistent
+- Reduces verbosity in common configurations
+- Maintains backward compatibility path if we need to add unit control
+
+#### Exception 2: Value Elements with Additional Attributes
+
+**XML Pattern**: `<element attr1="..." attr2="...">value</element>`
+
+Example:
+```xml
+<vcpu placement="static" cpuset="0-3" current="2">4</vcpu>
+<maxMemory unit="MiB" slots="16">2048</maxMemory>
+```
+
+**Decision Matrix**:
+
+| Attributes | Approach | Example |
+|------------|----------|---------|
+| Just unit | Use Exception 1 (flatten, fixed unit) | `memory = 512` |
+| Unit + 1 other | Flatten with separate attributes | `max_memory = 2048; max_memory_slots = 16` |
+| Multiple non-unit | Create nested block | `vcpu { value = 4; placement = "static"; cpuset = "0-3" }` |
+
+**Rules**:
+- If there's ONLY a unit attribute: Apply Exception 1 (flatten, fixed unit)
+- If there's unit + ONE other attribute: Flatten to `{element} = value` + `{element}_{attr} = ...`
+- If there are MULTIPLE non-unit attributes: Create a proper nested block with all attributes
+
+**Current Exceptions**:
+- `memory = 512` (unit fixed to MiB)
+- `current_memory = 256` (unit fixed to MiB, shares top-level unit)
+- `max_memory = 2048; max_memory_slots = 16` (unit fixed to MiB, slots as separate attribute)
+- `vcpu = 4` (placement/cpuset/current not yet exposed - TODO: needs nested block when we add them)
+
+### Future Compatibility
+
+If we later need to expose units or create proper nested blocks:
+1. Add `{attribute}_unit` string attribute (optional)
+2. When null/unset, use the documented default unit
+3. For full nested blocks, deprecate flattened attributes and create new nested block structure
+
+This maintains backward compatibility while allowing migration to more structured forms.
+
 ## Project Structure
 
 ```

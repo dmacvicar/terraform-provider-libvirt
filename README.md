@@ -58,8 +58,7 @@ This provider maps libvirt's XML structure to Terraform's HCL configuration lang
 resource "libvirt_domain" "example" {
   name   = "example-vm"
   type   = "kvm"
-  memory = 512
-  unit   = "MiB"
+  memory = 512  # MiB (unit fixed for simplicity)
   vcpu   = 1
 
   clock {
@@ -89,6 +88,7 @@ resource "libvirt_domain" "example" {
 - **Flattening**: We don't distinguish between XML attributes and elements in HCL - both become HCL attributes
 - **Consistency**: The same XML structure always maps to the same HCL structure
 - **Readability**: HCL blocks follow Terraform conventions for better readability
+- **Pragmatic Exceptions**: Some XML patterns (like `<memory unit="MiB">512</memory>`) are simplified to single values with fixed units for better UX
 - **Migration**: This consistent mapping enables automated migration from the old provider or from raw libvirt XML
 
 For detailed XML schemas, see the [libvirt domain format documentation](https://libvirt.org/formatdomain.html).
