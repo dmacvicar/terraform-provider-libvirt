@@ -147,3 +147,49 @@ Commit 1: feat: add title, description, lifecycle, iothreads, memory fields
 - Connection management is tricky - see old provider for proven patterns
 - Testing requires libvirt daemon - tests should be skippable in CI if needed
 - Libvirt normalizes values (e.g., "q35" → "pc-q35-10.1") - preserve user input to avoid diffs
+
+## Critical Pattern: Preserve User Intent
+
+**Problem**: Libvirt often sets default values for optional fields. If we naively read back all values from libvirt XML, Terraform will detect a diff between what the user specified (null) and what libvirt returned (a default value).
+
+**Solution**: Only populate fields in the model during XML→model conversion if the user originally specified them.
+
+### Example
+
+```go
+// ❌ WRONG - causes "inconsistent result" errors
+if domain.OnPoweroff != "" {
+    model.OnPoweroff = types.StringValue(domain.OnPoweroff)
+}
+
+// ✅ CORRECT - only set if user originally specified it
+if !model.OnPoweroff.IsNull() && !model.OnPoweroff.IsUnknown() && domain.OnPoweroff != "" {
+    model.OnPoweroff = types.StringValue(domain.OnPoweroff)
+}
+```
+
+### When to Apply This Pattern
+
+Apply this for **optional** fields where libvirt provides defaults:
+- Lifecycle actions (on_poweroff, on_reboot, on_crsh - libvirt defaults to "destroy"/"restart")
+- Current memory (libvirt defaults to same as memory)
+- Boot devices (libvirt may add default boot order)
+- Machine type (libvirt may expand "q35" to "pc-q35-10.1")
+
+### When NOT to Apply
+
+Don't apply for:
+- **Required** fields (name, memory, vcpu)
+- **Computed** fields that should always reflect libvirt's state (uuid, id)
+- Fields where libvirt doesn't set defaults
+
+### Testing for This Issue
+
+If you see errors like:
+```
+Error: Provider produced inconsistent result after apply
+When applying changes to libvirt_domain.test, provider produced an
+unexpected new value: .on_poweroff: was null, but now cty.StringVal("destroy")
+```
+
+This means you need to add the user-input check to that field's XML→model conversion.
