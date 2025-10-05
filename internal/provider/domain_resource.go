@@ -81,14 +81,21 @@ type DomainOSModel struct {
 
 // DomainFeaturesModel describes VM features
 type DomainFeaturesModel struct {
-	PAE      types.Bool   `tfsdk:"pae"`
-	ACPI     types.Bool   `tfsdk:"acpi"`
-	APIC     types.Bool   `tfsdk:"apic"`
-	Viridian types.Bool   `tfsdk:"viridian"`
-	PrivNet  types.Bool   `tfsdk:"privnet"`
-	HAP      types.String `tfsdk:"hap"`
-	PMU      types.String `tfsdk:"pmu"`
-	VMPort   types.String `tfsdk:"vmport"`
+	PAE        types.Bool   `tfsdk:"pae"`
+	ACPI       types.Bool   `tfsdk:"acpi"`
+	APIC       types.Bool   `tfsdk:"apic"`
+	Viridian   types.Bool   `tfsdk:"viridian"`
+	PrivNet    types.Bool   `tfsdk:"privnet"`
+	HAP        types.String `tfsdk:"hap"`
+	PMU        types.String `tfsdk:"pmu"`
+	VMPort     types.String `tfsdk:"vmport"`
+	PVSpinlock types.String `tfsdk:"pvspinlock"`
+	VMCoreInfo types.String `tfsdk:"vmcoreinfo"`
+	HTM        types.String `tfsdk:"htm"`
+	NestedHV   types.String `tfsdk:"nested_hv"`
+	CCFAssist  types.String `tfsdk:"ccf_assist"`
+	RAS        types.String `tfsdk:"ras"`
+	PS2        types.String `tfsdk:"ps2"`
 }
 
 // Metadata returns the resource type name
@@ -286,6 +293,34 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 					},
 					"vmport": schema.StringAttribute{
 						Description: "VMware IO port emulation (on, off, auto).",
+						Optional:    true,
+					},
+					"pvspinlock": schema.StringAttribute{
+						Description: "Paravirtualized spinlock prevention (on, off).",
+						Optional:    true,
+					},
+					"vmcoreinfo": schema.StringAttribute{
+						Description: "VM crash information (on, off).",
+						Optional:    true,
+					},
+					"htm": schema.StringAttribute{
+						Description: "Hardware Transactional Memory (on, off).",
+						Optional:    true,
+					},
+					"nested_hv": schema.StringAttribute{
+						Description: "Nested HV (on, off).",
+						Optional:    true,
+					},
+					"ccf_assist": schema.StringAttribute{
+						Description: "CCF Assist (on, off).",
+						Optional:    true,
+					},
+					"ras": schema.StringAttribute{
+						Description: "Reliability, Availability and Serviceability (on, off).",
+						Optional:    true,
+					},
+					"ps2": schema.StringAttribute{
+						Description: "PS/2 controller (on, off).",
 						Optional:    true,
 					},
 				},

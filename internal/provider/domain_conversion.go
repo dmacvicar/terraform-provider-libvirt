@@ -285,6 +285,55 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 			}
 		}
 
+		// PVSpinlock - state-based
+		if !model.Features.PVSpinlock.IsNull() && !model.Features.PVSpinlock.IsUnknown() {
+			features.PVSpinlock = &libvirtxml.DomainFeatureState{
+				State: model.Features.PVSpinlock.ValueString(),
+			}
+		}
+
+		// VMCoreInfo - state-based
+		if !model.Features.VMCoreInfo.IsNull() && !model.Features.VMCoreInfo.IsUnknown() {
+			features.VMCoreInfo = &libvirtxml.DomainFeatureState{
+				State: model.Features.VMCoreInfo.ValueString(),
+			}
+		}
+
+		// HTM - state-based
+		if !model.Features.HTM.IsNull() && !model.Features.HTM.IsUnknown() {
+			features.HTM = &libvirtxml.DomainFeatureState{
+				State: model.Features.HTM.ValueString(),
+			}
+		}
+
+		// NestedHV - state-based
+		if !model.Features.NestedHV.IsNull() && !model.Features.NestedHV.IsUnknown() {
+			features.NestedHV = &libvirtxml.DomainFeatureState{
+				State: model.Features.NestedHV.ValueString(),
+			}
+		}
+
+		// CCFAssist - state-based
+		if !model.Features.CCFAssist.IsNull() && !model.Features.CCFAssist.IsUnknown() {
+			features.CCFAssist = &libvirtxml.DomainFeatureState{
+				State: model.Features.CCFAssist.ValueString(),
+			}
+		}
+
+		// RAS - state-based
+		if !model.Features.RAS.IsNull() && !model.Features.RAS.IsUnknown() {
+			features.RAS = &libvirtxml.DomainFeatureState{
+				State: model.Features.RAS.ValueString(),
+			}
+		}
+
+		// PS2 - state-based
+		if !model.Features.PS2.IsNull() && !model.Features.PS2.IsUnknown() {
+			features.PS2 = &libvirtxml.DomainFeatureState{
+				State: model.Features.PS2.ValueString(),
+			}
+		}
+
 		domain.Features = features
 	}
 
@@ -483,6 +532,41 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		// VMPort - state-based
 		if domain.Features.VMPort != nil && domain.Features.VMPort.State != "" {
 			featuresModel.VMPort = types.StringValue(domain.Features.VMPort.State)
+		}
+
+		// PVSpinlock - state-based
+		if domain.Features.PVSpinlock != nil && domain.Features.PVSpinlock.State != "" {
+			featuresModel.PVSpinlock = types.StringValue(domain.Features.PVSpinlock.State)
+		}
+
+		// VMCoreInfo - state-based
+		if domain.Features.VMCoreInfo != nil && domain.Features.VMCoreInfo.State != "" {
+			featuresModel.VMCoreInfo = types.StringValue(domain.Features.VMCoreInfo.State)
+		}
+
+		// HTM - state-based
+		if domain.Features.HTM != nil && domain.Features.HTM.State != "" {
+			featuresModel.HTM = types.StringValue(domain.Features.HTM.State)
+		}
+
+		// NestedHV - state-based
+		if domain.Features.NestedHV != nil && domain.Features.NestedHV.State != "" {
+			featuresModel.NestedHV = types.StringValue(domain.Features.NestedHV.State)
+		}
+
+		// CCFAssist - state-based
+		if domain.Features.CCFAssist != nil && domain.Features.CCFAssist.State != "" {
+			featuresModel.CCFAssist = types.StringValue(domain.Features.CCFAssist.State)
+		}
+
+		// RAS - state-based
+		if domain.Features.RAS != nil && domain.Features.RAS.State != "" {
+			featuresModel.RAS = types.StringValue(domain.Features.RAS.State)
+		}
+
+		// PS2 - state-based
+		if domain.Features.PS2 != nil && domain.Features.PS2.State != "" {
+			featuresModel.PS2 = types.StringValue(domain.Features.PS2.State)
 		}
 
 		model.Features = featuresModel
