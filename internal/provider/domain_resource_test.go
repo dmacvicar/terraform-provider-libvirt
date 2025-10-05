@@ -1,10 +1,14 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"github.com/digitalocean/go-libvirt"
+	libvirtclient "github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccDomainResource_basic(t *testing.T) {
@@ -348,4 +352,75 @@ resource "libvirt_domain" "test" {
   }
 }
 `, name)
+}
+
+func TestAccDomainResource_running(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigBasic("test-domain-running"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-running"),
+					testAccCheckDomainCanStart("test-domain-running"),
+				),
+			},
+		},
+	})
+}
+
+func testAccCheckDomainCanStart(name string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		// Create a new libvirt client for testing
+		ctx := context.Background()
+		client, err := libvirtclient.NewClient(ctx, "qemu:///system")
+		if err != nil {
+			return fmt.Errorf("failed to create libvirt client: %w", err)
+		}
+		defer client.Close()
+
+		// Look up the domain by name using the raw libvirt API
+		domains, _, err := client.Libvirt().ConnectListAllDomains(1, 0)
+		if err != nil {
+			return fmt.Errorf("failed to list domains: %w", err)
+		}
+
+		var targetDomain *libvirt.Domain
+		for _, d := range domains {
+			if d.Name == name {
+				targetDomain = &d
+				break
+			}
+		}
+
+		if targetDomain == nil {
+			return fmt.Errorf("domain %s not found", name)
+		}
+
+		// Try to start it
+		err = client.Libvirt().DomainCreate(*targetDomain)
+		if err != nil {
+			return fmt.Errorf("failed to start domain %s: %w", name, err)
+		}
+
+		// Verify it's running
+		state, _, err := client.Libvirt().DomainGetState(*targetDomain, 0)
+		if err != nil {
+			return fmt.Errorf("failed to get domain state: %w", err)
+		}
+
+		// libvirt.DomainRunning = 1
+		if state != 1 {
+			return fmt.Errorf("domain is not running, state = %d", state)
+		}
+
+		// Stop it so cleanup works
+		err = client.Libvirt().DomainDestroy(*targetDomain)
+		if err != nil {
+			return fmt.Errorf("failed to stop domain: %w", err)
+		}
+
+		return nil
+	}
 }
