@@ -334,6 +334,20 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 			}
 		}
 
+		// IOAPIC - driver attribute
+		if !model.Features.IOAPICDriver.IsNull() && !model.Features.IOAPICDriver.IsUnknown() {
+			features.IOAPIC = &libvirtxml.DomainFeatureIOAPIC{
+				Driver: model.Features.IOAPICDriver.ValueString(),
+			}
+		}
+
+		// GIC - version attribute
+		if !model.Features.GICVersion.IsNull() && !model.Features.GICVersion.IsUnknown() {
+			features.GIC = &libvirtxml.DomainFeatureGIC{
+				Version: model.Features.GICVersion.ValueString(),
+			}
+		}
+
 		domain.Features = features
 	}
 
@@ -567,6 +581,16 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		// PS2 - state-based
 		if domain.Features.PS2 != nil && domain.Features.PS2.State != "" {
 			featuresModel.PS2 = types.StringValue(domain.Features.PS2.State)
+		}
+
+		// IOAPIC - driver attribute
+		if domain.Features.IOAPIC != nil && domain.Features.IOAPIC.Driver != "" {
+			featuresModel.IOAPICDriver = types.StringValue(domain.Features.IOAPIC.Driver)
+		}
+
+		// GIC - version attribute
+		if domain.Features.GIC != nil && domain.Features.GIC.Version != "" {
+			featuresModel.GICVersion = types.StringValue(domain.Features.GIC.Version)
 		}
 
 		model.Features = featuresModel

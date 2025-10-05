@@ -81,21 +81,23 @@ type DomainOSModel struct {
 
 // DomainFeaturesModel describes VM features
 type DomainFeaturesModel struct {
-	PAE        types.Bool   `tfsdk:"pae"`
-	ACPI       types.Bool   `tfsdk:"acpi"`
-	APIC       types.Bool   `tfsdk:"apic"`
-	Viridian   types.Bool   `tfsdk:"viridian"`
-	PrivNet    types.Bool   `tfsdk:"privnet"`
-	HAP        types.String `tfsdk:"hap"`
-	PMU        types.String `tfsdk:"pmu"`
-	VMPort     types.String `tfsdk:"vmport"`
-	PVSpinlock types.String `tfsdk:"pvspinlock"`
-	VMCoreInfo types.String `tfsdk:"vmcoreinfo"`
-	HTM        types.String `tfsdk:"htm"`
-	NestedHV   types.String `tfsdk:"nested_hv"`
-	CCFAssist  types.String `tfsdk:"ccf_assist"`
-	RAS        types.String `tfsdk:"ras"`
-	PS2        types.String `tfsdk:"ps2"`
+	PAE          types.Bool   `tfsdk:"pae"`
+	ACPI         types.Bool   `tfsdk:"acpi"`
+	APIC         types.Bool   `tfsdk:"apic"`
+	Viridian     types.Bool   `tfsdk:"viridian"`
+	PrivNet      types.Bool   `tfsdk:"privnet"`
+	HAP          types.String `tfsdk:"hap"`
+	PMU          types.String `tfsdk:"pmu"`
+	VMPort       types.String `tfsdk:"vmport"`
+	PVSpinlock   types.String `tfsdk:"pvspinlock"`
+	VMCoreInfo   types.String `tfsdk:"vmcoreinfo"`
+	HTM          types.String `tfsdk:"htm"`
+	NestedHV     types.String `tfsdk:"nested_hv"`
+	CCFAssist    types.String `tfsdk:"ccf_assist"`
+	RAS          types.String `tfsdk:"ras"`
+	PS2          types.String `tfsdk:"ps2"`
+	IOAPICDriver types.String `tfsdk:"ioapic_driver"`
+	GICVersion   types.String `tfsdk:"gic_version"`
 }
 
 // Metadata returns the resource type name
@@ -321,6 +323,14 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 					},
 					"ps2": schema.StringAttribute{
 						Description: "PS/2 controller (on, off).",
+						Optional:    true,
+					},
+					"ioapic_driver": schema.StringAttribute{
+						Description: "IOAPIC driver (kvm, qemu).",
+						Optional:    true,
+					},
+					"gic_version": schema.StringAttribute{
+						Description: "GIC version for ARM guests.",
 						Optional:    true,
 					},
 				},
