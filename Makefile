@@ -56,3 +56,9 @@ vet: ## Run go vet
 .PHONY: check
 check: lint vet test ## Run all checks (lint, vet, test)
 	@echo "All checks passed!"
+
+docs: ## Generate provider documentation
+	@echo "Installing tfplugindocs..."
+	@go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest
+	@echo "Generating documentation..."
+	@PATH="$(PATH):$(shell go env GOPATH)/bin" tfplugindocs generate

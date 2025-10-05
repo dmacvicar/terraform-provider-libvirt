@@ -18,12 +18,13 @@
 - `clock` - Clock (offset, basis, adjustment, timezone) with **nested timer blocks** (name, track, tickpolicy, frequency, mode, present, catchup)
 - `pm` - Power management (suspend_to_mem, suspend_to_disk)
 - `disk` - Basic file-based disks (device, source, target, bus)
+- `interface` - Network interfaces (network, bridge, user types with type-dependent source block)
 
 **Tests:**
-- 11 acceptance tests covering feature groups
+- 12 acceptance tests covering feature groups
 - Test that verifies VMs can actually boot
 - Test that verifies update with running domain works
-- Tests for complex nested blocks (clock timers with catchup)
+- Tests for complex nested blocks (clock timers with catchup, network interfaces)
 
 ## Priority 1: Critical for Usability
 
@@ -37,16 +38,15 @@
 - [x] Test update scenarios (including running domain updates)
 
 ### 2. Network Interfaces (Devices)
-**Status:** ❌ Not started
-**Why:** VMs need networking to be useful
+**Status:** ✅ Completed
 
 **Tasks:**
-- [ ] Add `interface` block to domain schema
-- [ ] Implement basic types: network, bridge, user
-- [ ] Add MAC address, model fields
-- [ ] Conversion: model ↔ libvirtxml.DomainInterface
-- [ ] Add acceptance test
-- [ ] Document in examples/
+- [x] Add `interface` block to domain schema
+- [x] Implement basic types: network, bridge, user
+- [x] Add MAC address, model fields
+- [x] Conversion: model ↔ libvirtxml.DomainInterface
+- [x] Add acceptance test
+- [x] Add example configuration
 
 ### 3. State Management
 **Status:** ❌ Not started
