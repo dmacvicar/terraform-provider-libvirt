@@ -54,6 +54,7 @@ type DomainResourceModel struct {
 	Features *DomainFeaturesModel `tfsdk:"features"`
 	CPU      *DomainCPUModel      `tfsdk:"cpu"`
 	Clock    *DomainClockModel    `tfsdk:"clock"`
+	PM       *DomainPMModel       `tfsdk:"pm"`
 
 	// TODO: Add more fields as we implement them:
 	// - iothreads
@@ -98,6 +99,12 @@ type DomainClockModel struct {
 	Basis      types.String `tfsdk:"basis"`
 	Adjustment types.String `tfsdk:"adjustment"`
 	TimeZone   types.String `tfsdk:"timezone"`
+}
+
+// DomainPMModel describes power management configuration
+type DomainPMModel struct {
+	SuspendToMem  types.String `tfsdk:"suspend_to_mem"`
+	SuspendToDisk types.String `tfsdk:"suspend_to_disk"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -406,6 +413,19 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 					},
 					"timezone": schema.StringAttribute{
 						Description: "Timezone name when offset is 'timezone'.",
+						Optional:    true,
+					},
+				},
+			},
+			"pm": schema.SingleNestedBlock{
+				Description: "Power management configuration for the domain.",
+				Attributes: map[string]schema.Attribute{
+					"suspend_to_mem": schema.StringAttribute{
+						Description: "Suspend to memory policy (yes, no).",
+						Optional:    true,
+					},
+					"suspend_to_disk": schema.StringAttribute{
+						Description: "Suspend to disk policy (yes, no).",
 						Optional:    true,
 					},
 				},

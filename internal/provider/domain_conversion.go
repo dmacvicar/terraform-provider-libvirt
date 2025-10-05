@@ -411,6 +411,25 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 		domain.Clock = clock
 	}
 
+	// Set PM
+	if model.PM != nil {
+		pm := &libvirtxml.DomainPM{}
+
+		if !model.PM.SuspendToMem.IsNull() && !model.PM.SuspendToMem.IsUnknown() {
+			pm.SuspendToMem = &libvirtxml.DomainPMPolicy{
+				Enabled: model.PM.SuspendToMem.ValueString(),
+			}
+		}
+
+		if !model.PM.SuspendToDisk.IsNull() && !model.PM.SuspendToDisk.IsUnknown() {
+			pm.SuspendToDisk = &libvirtxml.DomainPMPolicy{
+				Enabled: model.PM.SuspendToDisk.ValueString(),
+			}
+		}
+
+		domain.PM = pm
+	}
+
 	return domain, nil
 }
 
@@ -712,5 +731,20 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		}
 
 		model.Clock = clockModel
+	}
+
+	// PM - only preserve if user originally specified it
+	if model.PM != nil && domain.PM != nil {
+		pmModel := &DomainPMModel{}
+
+		if domain.PM.SuspendToMem != nil && domain.PM.SuspendToMem.Enabled != "" {
+			pmModel.SuspendToMem = types.StringValue(domain.PM.SuspendToMem.Enabled)
+		}
+
+		if domain.PM.SuspendToDisk != nil && domain.PM.SuspendToDisk.Enabled != "" {
+			pmModel.SuspendToDisk = types.StringValue(domain.PM.SuspendToDisk.Enabled)
+		}
+
+		model.PM = pmModel
 	}
 }
