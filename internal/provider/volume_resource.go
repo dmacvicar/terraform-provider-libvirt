@@ -14,8 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"libvirt.org/go/libvirtxml"
 )
@@ -31,15 +29,15 @@ type VolumeResource struct {
 
 // VolumeResourceModel describes the resource data model
 type VolumeResourceModel struct {
-	ID         types.String `tfsdk:"id"`
-	Name       types.String `tfsdk:"name"`
-	Pool       types.String `tfsdk:"pool"`
-	Key        types.String `tfsdk:"key"`
-	Capacity   types.Int64  `tfsdk:"capacity"`
-	Allocation types.Int64  `tfsdk:"allocation"`
-	Path       types.String `tfsdk:"path"`
-	Format     types.String `tfsdk:"format"`
-	BackingStore types.Object `tfsdk:"backing_store"`
+	ID           types.String             `tfsdk:"id"`
+	Name         types.String             `tfsdk:"name"`
+	Pool         types.String             `tfsdk:"pool"`
+	Key          types.String             `tfsdk:"key"`
+	Capacity     types.Int64              `tfsdk:"capacity"`
+	Allocation   types.Int64              `tfsdk:"allocation"`
+	Path         types.String             `tfsdk:"path"`
+	Format       types.String             `tfsdk:"format"`
+	BackingStore *VolumeBackingStoreModel `tfsdk:"backing_store"`
 }
 
 // VolumeBackingStoreModel describes the backing store block
@@ -122,9 +120,10 @@ See the [libvirt storage volume documentation](https://libvirt.org/formatstorage
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"backing_store": schema.SingleNestedAttribute{
+		},
+		Blocks: map[string]schema.Block{
+			"backing_store": schema.SingleNestedBlock{
 				Description: "Backing store configuration for copy-on-write volumes",
-				Optional:    true,
 				Attributes: map[string]schema.Attribute{
 					"path": schema.StringAttribute{
 						Description: "Path to the backing volume",
@@ -201,21 +200,14 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	// Set backing store if specified
-	if !model.BackingStore.IsNull() {
-		var backingStore VolumeBackingStoreModel
-		diags := model.BackingStore.As(ctx, &backingStore, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
+	if model.BackingStore != nil {
 		volumeDef.BackingStore = &libvirtxml.StorageVolumeBackingStore{
-			Path: backingStore.Path.ValueString(),
+			Path: model.BackingStore.Path.ValueString(),
 		}
 
-		if !backingStore.Format.IsNull() {
+		if !model.BackingStore.Format.IsNull() {
 			volumeDef.BackingStore.Format = &libvirtxml.StorageVolumeTargetFormat{
-				Type: backingStore.Format.ValueString(),
+				Type: model.BackingStore.Format.ValueString(),
 			}
 		}
 	}
@@ -339,7 +331,7 @@ func (r *VolumeResource) readVolume(ctx context.Context, model *VolumeResourceMo
 
 	// Set backing store if present
 	if volumeDef.BackingStore != nil {
-		backingStoreModel := VolumeBackingStoreModel{
+		backingStoreModel := &VolumeBackingStoreModel{
 			Path: types.StringValue(volumeDef.BackingStore.Path),
 		}
 
@@ -349,15 +341,7 @@ func (r *VolumeResource) readVolume(ctx context.Context, model *VolumeResourceMo
 			backingStoreModel.Format = types.StringNull()
 		}
 
-		backingStoreObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
-			"path":   types.StringType,
-			"format": types.StringType,
-		}, backingStoreModel)
-		diags.Append(d...)
-		if diags.HasError() {
-			return diags
-		}
-		model.BackingStore = backingStoreObj
+		model.BackingStore = backingStoreModel
 	}
 
 	return diags
