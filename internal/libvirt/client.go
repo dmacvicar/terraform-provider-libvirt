@@ -105,23 +105,10 @@ func (c *Client) Ping(ctx context.Context) error {
 
 // LookupDomainByUUID looks up a domain by its UUID string
 func (c *Client) LookupDomainByUUID(uuidStr string) (libvirt.Domain, error) {
-	// Parse UUID string to libvirt UUID type
-	// Remove hyphens from UUID string
-	uuidStr = strings.ReplaceAll(uuidStr, "-", "")
-
-	// Decode hex string to bytes
-	uuidBytes, err := hex.DecodeString(uuidStr)
+	uuid, err := parseUUID(uuidStr)
 	if err != nil {
-		return libvirt.Domain{}, fmt.Errorf("invalid UUID: %w", err)
+		return libvirt.Domain{}, err
 	}
-
-	if len(uuidBytes) != 16 {
-		return libvirt.Domain{}, fmt.Errorf("invalid UUID length: expected 16 bytes, got %d", len(uuidBytes))
-	}
-
-	// Convert to libvirt.UUID
-	var uuid libvirt.UUID
-	copy(uuid[:], uuidBytes)
 
 	// Look up the domain
 	domain, err := c.conn.DomainLookupByUUID(uuid)
@@ -130,4 +117,48 @@ func (c *Client) LookupDomainByUUID(uuidStr string) (libvirt.Domain, error) {
 	}
 
 	return domain, nil
+}
+
+// LookupPoolByUUID looks up a storage pool by its UUID string
+func (c *Client) LookupPoolByUUID(uuidStr string) (libvirt.StoragePool, error) {
+	uuid, err := parseUUID(uuidStr)
+	if err != nil {
+		return libvirt.StoragePool{}, err
+	}
+
+	// Look up the pool
+	pool, err := c.conn.StoragePoolLookupByUUID(uuid)
+	if err != nil {
+		return libvirt.StoragePool{}, fmt.Errorf("storage pool not found: %w", err)
+	}
+
+	return pool, nil
+}
+
+// parseUUID converts a UUID string to libvirt.UUID type
+func parseUUID(uuidStr string) (libvirt.UUID, error) {
+	// Remove hyphens from UUID string
+	uuidStr = strings.ReplaceAll(uuidStr, "-", "")
+
+	// Decode hex string to bytes
+	uuidBytes, err := hex.DecodeString(uuidStr)
+	if err != nil {
+		return libvirt.UUID{}, fmt.Errorf("invalid UUID: %w", err)
+	}
+
+	if len(uuidBytes) != 16 {
+		return libvirt.UUID{}, fmt.Errorf("invalid UUID length: expected 16 bytes, got %d", len(uuidBytes))
+	}
+
+	// Convert to libvirt.UUID
+	var uuid libvirt.UUID
+	copy(uuid[:], uuidBytes)
+
+	return uuid, nil
+}
+
+// UUIDString converts a libvirt.UUID to a hyphenated string representation
+func UUIDString(uuid libvirt.UUID) string {
+	return fmt.Sprintf("%x-%x-%x-%x-%x",
+		uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:16])
 }
