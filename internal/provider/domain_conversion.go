@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"libvirt.org/go/libvirtxml"
 )
@@ -50,7 +51,7 @@ func convertMemory(value int64, fromUnit, toUnit string) int64 {
 
 // domainModelToXML converts a DomainResourceModel to libvirtxml.Domain
 // TODO: Consider refactoring this function to reduce complexity once we add more fields
-func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
+func domainModelToXML(ctx context.Context, client *libvirt.Client, model *DomainResourceModel) (*libvirtxml.Domain, error) {
 	domain := &libvirtxml.Domain{
 		Name: model.Name.ValueString(),
 	}
@@ -501,11 +502,39 @@ func domainModelToXML(model *DomainResourceModel) (*libvirtxml.Domain, error) {
 				disk.Device = "disk"
 			}
 
-			// Set source (file path)
-			if !diskModel.Source.IsNull() && !diskModel.Source.IsUnknown() {
+			// Set source - either from volume_id or direct file path
+			var sourcePath string
+			if !diskModel.VolumeID.IsNull() && !diskModel.VolumeID.IsUnknown() {
+				// Look up volume by key and get its path
+				volumeKey := diskModel.VolumeID.ValueString()
+				volume, err := client.Libvirt().StorageVolLookupByKey(volumeKey)
+				if err != nil {
+					return nil, fmt.Errorf("failed to lookup volume %s: %w", volumeKey, err)
+				}
+
+				volumeXML, err := client.Libvirt().StorageVolGetXMLDesc(volume, 0)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get volume XML: %w", err)
+				}
+
+				var volumeDef libvirtxml.StorageVolume
+				if err := volumeDef.Unmarshal(volumeXML); err != nil {
+					return nil, fmt.Errorf("failed to parse volume XML: %w", err)
+				}
+
+				if volumeDef.Target != nil {
+					sourcePath = volumeDef.Target.Path
+				} else {
+					return nil, fmt.Errorf("volume %s has no target path", volumeKey)
+				}
+			} else if !diskModel.Source.IsNull() && !diskModel.Source.IsUnknown() {
+				sourcePath = diskModel.Source.ValueString()
+			}
+
+			if sourcePath != "" {
 				disk.Source = &libvirtxml.DomainDiskSource{
 					File: &libvirtxml.DomainDiskSourceFile{
-						File: diskModel.Source.ValueString(),
+						File: sourcePath,
 					},
 				}
 			}

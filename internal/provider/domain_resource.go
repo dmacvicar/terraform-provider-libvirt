@@ -136,10 +136,11 @@ type DomainPMModel struct {
 
 // DomainDiskModel describes a disk device
 type DomainDiskModel struct {
-	Device types.String `tfsdk:"device"`
-	Source types.String `tfsdk:"source"`
-	Target types.String `tfsdk:"target"`
-	Bus    types.String `tfsdk:"bus"`
+	Device   types.String `tfsdk:"device"`
+	Source   types.String `tfsdk:"source"`
+	VolumeID types.String `tfsdk:"volume_id"`
+	Target   types.String `tfsdk:"target"`
+	Bus      types.String `tfsdk:"bus"`
 }
 
 // DomainInterfaceModel describes a network interface
@@ -566,7 +567,11 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 							Optional:    true,
 						},
 						"source": schema.StringAttribute{
-							Description: "Path to the disk image file.",
+							Description: "Path to the disk image file. Mutually exclusive with volume_id.",
+							Optional:    true,
+						},
+						"volume_id": schema.StringAttribute{
+							Description: "ID (key) of a libvirt_volume to use as the disk source. Mutually exclusive with source.",
 							Optional:    true,
 						},
 						"target": schema.StringAttribute{
@@ -700,7 +705,7 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	// Convert Terraform model to libvirt XML
-	domainXML, err := domainModelToXML(&plan)
+	domainXML, err := domainModelToXML(ctx, r.client, &plan)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid Domain Configuration",
@@ -913,7 +918,7 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	// Convert Terraform model to libvirt XML
-	domainXML, err := domainModelToXML(&plan)
+	domainXML, err := domainModelToXML(ctx, r.client, &plan)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid Domain Configuration",
