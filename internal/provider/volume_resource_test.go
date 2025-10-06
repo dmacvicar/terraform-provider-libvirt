@@ -40,7 +40,7 @@ provider "libvirt" {
 resource "libvirt_pool" "test" {
   name = "test-pool-volume"
   type = "dir"
-  target {
+  target = {
     path = "/tmp/terraform-provider-libvirt-pool-volume"
   }
 }
@@ -80,7 +80,7 @@ provider "libvirt" {
 resource "libvirt_pool" "test" {
   name = "test-pool-backing"
   type = "dir"
-  target {
+  target = {
     path = "/tmp/terraform-provider-libvirt-pool-backing"
   }
 }
@@ -98,7 +98,7 @@ resource "libvirt_volume" "cow" {
   capacity = 1073741824
   format   = "qcow2"
 
-  backing_store {
+  backing_store = {
     path   = libvirt_volume.base.path
     format = "qcow2"
   }
@@ -134,7 +134,7 @@ provider "libvirt" {
 resource "libvirt_pool" "test" {
   name = "test-pool-integration"
   type = "dir"
-  target {
+  target = {
     path = "/tmp/terraform-provider-libvirt-pool-integration"
   }
 }

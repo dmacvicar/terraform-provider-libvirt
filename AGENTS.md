@@ -50,6 +50,12 @@ For XML elements with both text content and attributes, see the "Handling Elemen
 - Multiple attributes → nested block: `vcpu { value = 4; placement = "static"; cpuset = "0-3" }`
 - Type-dependent source → nested block: `source { network = "default" }`
 
+### Provider Schema Implementation Notes
+
+- When Terraform configuration uses attribute syntax (for example `target = { path = "/data" }`) model it with `schema.SingleNestedAttribute`/`ListNestedAttribute`. Using block types for these shapes causes plan-time errors.
+- Only declare blocks in the schema when the provider exposes a real HCL block (e.g., `disk { ... }`, `os { ... }`).
+- During XML → model conversion, populate optional fields only if the user set them; this avoids diffs from libvirt defaults or normalized values.
+
 ## Project Structure
 
 ```

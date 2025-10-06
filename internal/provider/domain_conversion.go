@@ -1001,28 +1001,35 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		model.PM = pmModel
 	}
 
-	// Disks - only if user specified them
+	// Disks - only preserve optional fields the user specified
 	if len(model.Disks) > 0 && domain.Devices != nil && len(domain.Devices.Disks) > 0 {
-		disks := make([]DomainDiskModel, 0, len(domain.Devices.Disks))
+		origDisks := model.Disks
+		disks := make([]DomainDiskModel, 0, len(origDisks))
 
-		for _, disk := range domain.Devices.Disks {
+		for i := 0; i < len(origDisks) && i < len(domain.Devices.Disks); i++ {
+			disk := domain.Devices.Disks[i]
+			orig := origDisks[i]
 			diskModel := DomainDiskModel{}
 
-			if disk.Device != "" {
+			if !orig.Device.IsNull() && !orig.Device.IsUnknown() && disk.Device != "" {
 				diskModel.Device = types.StringValue(disk.Device)
 			}
 
-			// Get source (assuming file-based disk)
-			if disk.Source != nil && disk.Source.File != nil && disk.Source.File.File != "" {
+			// Preserve source only when the user specified a source path
+			if !orig.Source.IsNull() && !orig.Source.IsUnknown() && disk.Source != nil && disk.Source.File != nil && disk.Source.File.File != "" {
 				diskModel.Source = types.StringValue(disk.Source.File.File)
 			}
 
-			// Get target
+			// Preserve volume_id exactly as provided by the user to avoid replacing it with libvirt paths
+			if !orig.VolumeID.IsNull() && !orig.VolumeID.IsUnknown() {
+				diskModel.VolumeID = orig.VolumeID
+			}
+
 			if disk.Target != nil {
 				if disk.Target.Dev != "" {
 					diskModel.Target = types.StringValue(disk.Target.Dev)
 				}
-				if disk.Target.Bus != "" {
+				if !orig.Bus.IsNull() && !orig.Bus.IsUnknown() && disk.Target.Bus != "" {
 					diskModel.Bus = types.StringValue(disk.Target.Bus)
 				}
 			}

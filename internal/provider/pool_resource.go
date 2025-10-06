@@ -432,53 +432,56 @@ func (r *PoolResource) readPool(ctx context.Context, model *PoolResourceModel, p
 		model.Target = targetObj
 	}
 
-	// Set source (if present)
-	if poolDef.Source != nil {
+	// Set source (if present and user-specified)
+	deviceObjectType := types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"path": types.StringType,
+		},
+	}
+	sourceAttrTypes := map[string]attr.Type{
+		"name":   types.StringType,
+		"device": types.ListType{ElemType: deviceObjectType},
+	}
+
+	if poolDef.Source != nil && !model.Source.IsNull() && !model.Source.IsUnknown() {
+
 		sourceModel := PoolSourceModel{
-			Name: types.StringValue(poolDef.Source.Name),
+			Name:   types.StringNull(),
+			Device: types.ListNull(deviceObjectType),
 		}
 
-		// Convert devices
+		if poolDef.Source.Name != "" {
+			sourceModel.Name = types.StringValue(poolDef.Source.Name)
+		}
+
 		if len(poolDef.Source.Device) > 0 {
 			var devices []PoolSourceDeviceModel
 			for _, dev := range poolDef.Source.Device {
+				if dev.Path == "" {
+					continue
+				}
 				devices = append(devices, PoolSourceDeviceModel{
 					Path: types.StringValue(dev.Path),
 				})
 			}
-			deviceList, d := types.ListValueFrom(ctx, types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"path": types.StringType,
-				},
-			}, devices)
-			diags.Append(d...)
-			if diags.HasError() {
-				return diags
+			if len(devices) > 0 {
+				deviceList, d := types.ListValueFrom(ctx, deviceObjectType, devices)
+				diags.Append(d...)
+				if diags.HasError() {
+					return diags
+				}
+				sourceModel.Device = deviceList
 			}
-			sourceModel.Device = deviceList
-		} else {
-			sourceModel.Device = types.ListNull(types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"path": types.StringType,
-				},
-			})
 		}
 
-		sourceObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
-			"name": types.StringType,
-			"device": types.ListType{
-				ElemType: types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"path": types.StringType,
-					},
-				},
-			},
-		}, sourceModel)
+		sourceObj, d := types.ObjectValueFrom(ctx, sourceAttrTypes, sourceModel)
 		diags.Append(d...)
 		if diags.HasError() {
 			return diags
 		}
 		model.Source = sourceObj
+	} else if !model.Source.IsNull() && !model.Source.IsUnknown() {
+		model.Source = types.ObjectNull(sourceAttrTypes)
 	}
 
 	return diags

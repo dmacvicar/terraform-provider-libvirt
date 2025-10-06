@@ -228,7 +228,14 @@
 **Tasks:**
 - [ ] Add seclabel block (SELinux, AppArmor)
 
-### 19. Host Device Passthrough
+### 19. Test Suite Configuration
+**Status:** ❌ Not started
+
+**Tasks:**
+- [ ] Centralize libvirt URI configuration for acceptance tests (avoid hardcoding `qemu:///system`; allow overriding when running the suite)
+- [ ] Replace hardcoded `/tmp/...` paths in tests with suite-managed temporary directories
+
+### 20. Host Device Passthrough
 **Status:** ❌ Not started
 
 **Tasks:**

@@ -40,7 +40,7 @@ provider "libvirt" {
 resource "libvirt_pool" "test" {
   name = %[1]q
   type = "dir"
-  target {
+  target = {
     path = "/tmp/terraform-provider-libvirt-pool-dir"
   }
 }
