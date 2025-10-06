@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"libvirt.org/go/libvirtxml"
 )
@@ -30,15 +31,15 @@ type PoolResource struct {
 
 // PoolResourceModel describes the resource data model
 type PoolResourceModel struct {
-	ID         types.String     `tfsdk:"id"`
-	Name       types.String     `tfsdk:"name"`
-	Type       types.String     `tfsdk:"type"`
-	UUID       types.String     `tfsdk:"uuid"`
-	Capacity   types.Int64      `tfsdk:"capacity"`
-	Allocation types.Int64      `tfsdk:"allocation"`
-	Available  types.Int64      `tfsdk:"available"`
-	Target     *PoolTargetModel `tfsdk:"target"`
-	Source     *PoolSourceModel `tfsdk:"source"`
+	ID         types.String `tfsdk:"id"`
+	Name       types.String `tfsdk:"name"`
+	Type       types.String `tfsdk:"type"`
+	UUID       types.String `tfsdk:"uuid"`
+	Capacity   types.Int64  `tfsdk:"capacity"`
+	Allocation types.Int64  `tfsdk:"allocation"`
+	Available  types.Int64  `tfsdk:"available"`
+	Target     types.Object `tfsdk:"target"`
+	Source     types.Object `tfsdk:"source"`
 }
 
 // PoolTargetModel describes the target block
@@ -123,10 +124,9 @@ See the [libvirt storage pool documentation](https://libvirt.org/formatstorage.h
 				Description: "Available space in bytes",
 				Computed:    true,
 			},
-		},
-		Blocks: map[string]schema.Block{
-			"target": schema.SingleNestedBlock{
+			"target": schema.SingleNestedAttribute{
 				Description: "Target path for the storage pool",
+				Required:    true,
 				Attributes: map[string]schema.Attribute{
 					"path": schema.StringAttribute{
 						Description: "Path where the storage pool is located on the host",
@@ -137,18 +137,18 @@ See the [libvirt storage pool documentation](https://libvirt.org/formatstorage.h
 					},
 				},
 			},
-			"source": schema.SingleNestedBlock{
+			"source": schema.SingleNestedAttribute{
 				Description: "Source configuration for the storage pool (required for logical pools)",
+				Optional:    true,
 				Attributes: map[string]schema.Attribute{
 					"name": schema.StringAttribute{
 						Description: "Name of the source (e.g., volume group name for logical pools)",
 						Optional:    true,
 					},
-				},
-				Blocks: map[string]schema.Block{
-					"device": schema.ListNestedBlock{
+					"device": schema.ListNestedAttribute{
 						Description: "List of devices to use for the storage pool (e.g., physical volumes for logical pools)",
-						NestedObject: schema.NestedBlockObject{
+						Optional:    true,
+						NestedObject: schema.NestedAttributeObject{
 							Attributes: map[string]schema.Attribute{
 								"path": schema.StringAttribute{
 									Description: "Path to the device",
@@ -213,24 +213,38 @@ func (r *PoolResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// Set target path
-	if model.Target != nil {
+	if !model.Target.IsNull() {
+		var target PoolTargetModel
+		diags := model.Target.As(ctx, &target, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
 		poolDef.Target = &libvirtxml.StoragePoolTarget{
-			Path: model.Target.Path.ValueString(),
+			Path: target.Path.ValueString(),
 		}
 	}
 
 	// Set source (for logical pools)
 	var skipBuild bool
-	if model.Source != nil {
-		poolDef.Source = &libvirtxml.StoragePoolSource{}
-
-		if !model.Source.Name.IsNull() {
-			poolDef.Source.Name = model.Source.Name.ValueString()
+	if !model.Source.IsNull() {
+		var source PoolSourceModel
+		diags := model.Source.As(ctx, &source, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
 		}
 
-		if !model.Source.Device.IsNull() {
+		poolDef.Source = &libvirtxml.StoragePoolSource{}
+
+		if !source.Name.IsNull() {
+			poolDef.Source.Name = source.Name.ValueString()
+		}
+
+		if !source.Device.IsNull() {
 			var devices []PoolSourceDeviceModel
-			diags := model.Source.Device.ElementsAs(ctx, &devices, false)
+			diags := source.Device.ElementsAs(ctx, &devices, false)
 			resp.Diagnostics.Append(diags...)
 			if resp.Diagnostics.HasError() {
 				return
@@ -405,14 +419,22 @@ func (r *PoolResource) readPool(ctx context.Context, model *PoolResourceModel, p
 
 	// Set target
 	if poolDef.Target != nil {
-		model.Target = &PoolTargetModel{
+		targetModel := PoolTargetModel{
 			Path: types.StringValue(poolDef.Target.Path),
 		}
+		targetObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+			"path": types.StringType,
+		}, targetModel)
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+		model.Target = targetObj
 	}
 
 	// Set source (if present)
 	if poolDef.Source != nil {
-		sourceModel := &PoolSourceModel{
+		sourceModel := PoolSourceModel{
 			Name: types.StringValue(poolDef.Source.Name),
 		}
 
@@ -442,7 +464,21 @@ func (r *PoolResource) readPool(ctx context.Context, model *PoolResourceModel, p
 			})
 		}
 
-		model.Source = sourceModel
+		sourceObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+			"name": types.StringType,
+			"device": types.ListType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"path": types.StringType,
+					},
+				},
+			},
+		}, sourceModel)
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+		model.Source = sourceObj
 	}
 
 	return diags
