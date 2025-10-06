@@ -253,21 +253,32 @@ Run `make help` to see all targets.
 
 ## Current Status
 
-**Working:**
-- ✅ Domain resource with basic OS configuration
-- ✅ Memory and VCPU management
-- ✅ Connection to qemu:///system
-- ✅ Acceptance tests passing
+See [TODO.md](./TODO.md) for detailed implementation tracking.
 
-**In Progress:**
-- ⏳ Device support (disks, networks, graphics)
-- ⏳ Additional connection types
-- ⏳ Documentation generation
+**Completed:**
+- ✅ Domain resource with comprehensive configuration
+  - OS configuration (type, arch, machine, firmware, boot devices, kernel boot, UEFI loader)
+  - Memory and VCPU management with hotplug support
+  - Features block (20+ hypervisor features)
+  - CPU configuration (mode, match, check, model, vendor)
+  - Clock configuration with nested timer blocks and catchup
+  - Power management configuration
+  - Basic disk support (file-based)
+  - Network interfaces (network, bridge, user types)
+  - Lifecycle actions (on_poweroff, on_reboot, on_crash)
+  - State management with running attribute and create/destroy flags
+- ✅ Full CRUD operations with update support
+- ✅ Connection to qemu:///system
+- ✅ 12 acceptance tests passing
+- ✅ Documentation generation
 
 **Planned:**
+- 📋 Graphics devices (VNC, Spice)
+- 📋 Expanded disk support (driver attributes, network disks)
+- 📋 CPU enhancements (topology, features, NUMA)
 - 📋 Storage pool and volume resources
 - 📋 Network resources
-- 📋 Additional domain features (CPU, features, etc.)
+- 📋 Host device passthrough
 
 ## Contributing
 

@@ -19,6 +19,13 @@
 - `pm` - Power management (suspend_to_mem, suspend_to_disk)
 - `disk` - Basic file-based disks (device, source, target, bus)
 - `interface` - Network interfaces (network, bridge, user types with type-dependent source block)
+- `create` - Domain creation flags (paused, autodestroy, bypass_cache, force_boot, validate, reset_nvram)
+- `destroy` - Domain destruction options (graceful, timeout)
+
+**State Management:**
+- `running` - Boolean attribute to control whether domain should be running
+- Proper state transitions during create, update, and delete
+- Uses golibvirt constants for all state and flag operations
 
 **Tests:**
 - 12 acceptance tests covering feature groups
@@ -49,15 +56,17 @@
 - [x] Add example configuration
 
 ### 3. State Management
-**Status:** ❌ Not started
-**Why:** VMs should start automatically by default
+**Status:** ✅ Completed
 
 **Tasks:**
-- [ ] Add `running` boolean attribute (default true)
-- [ ] Start domain on create if running=true
-- [ ] Handle state transitions on update
-- [ ] Add helper methods for domain lifecycle
-- [ ] Test running/stopped states
+- [x] Add `running` boolean attribute
+- [x] Add `create` block with flags (paused, autodestroy, bypass_cache, force_boot, validate, reset_nvram)
+- [x] Add `destroy` block with graceful and timeout options
+- [x] Start domain on create if running=true
+- [x] Handle state transitions on update
+- [x] Add helper methods for domain lifecycle (waitForDomainState)
+- [x] Test running/stopped states
+- [x] Use proper golibvirt constants instead of magic numbers
 
 ## Priority 2: Common Use Cases
 

@@ -175,6 +175,7 @@ Commit 1: feat: add title, description, lifecycle, iothreads, memory fields
 - Connection management is tricky - see old provider for proven patterns
 - Testing requires libvirt daemon - tests should be skippable in CI if needed
 - Libvirt normalizes values (e.g., "q35" → "pc-q35-10.1") - preserve user input to avoid diffs
+- **Use go-libvirt constants**: Never use magic numbers for libvirt enums - always use the proper constants from `golibvirt`
 
 ## Critical Pattern: Preserve User Intent
 
@@ -221,3 +222,91 @@ unexpected new value: .on_poweroff: was null, but now cty.StringVal("destroy")
 ```
 
 This means you need to add the user-input check to that field's XML→model conversion.
+
+## Critical Pattern: Use libvirt Constants
+
+**Problem**: Using magic numbers (like `1` for "running" state) makes code unreadable and error-prone.
+
+**Solution**: Always use the proper constants from the `go-libvirt` package (imported as `golibvirt`).
+
+### Import Pattern
+
+```go
+import (
+    golibvirt "github.com/digitalocean/go-libvirt"
+)
+```
+
+### Examples
+
+#### Domain States
+
+```go
+// ❌ WRONG - magic numbers
+if state == 1 {  // What does 1 mean?
+    // ...
+}
+
+// ✅ CORRECT - use constants
+if uint32(state) == uint32(golibvirt.DomainRunning) {
+    // ...
+}
+```
+
+#### Domain Creation Flags
+
+```go
+// ❌ WRONG - magic numbers
+var flags uint32 = 0
+if paused {
+    flags |= 1  // What flag is this?
+}
+if autodestroy {
+    flags |= 2  // And this?
+}
+
+// ✅ CORRECT - use constants
+var flags uint32 = 0
+if paused {
+    flags |= uint32(golibvirt.DomainStartPaused)
+}
+if autodestroy {
+    flags |= uint32(golibvirt.DomainStartAutodestroy)
+}
+```
+
+### Common Constants
+
+**Domain States:**
+- `golibvirt.DomainRunning` - Domain is running
+- `golibvirt.DomainShutoff` - Domain is shut off
+- `golibvirt.DomainPaused` - Domain is paused
+- `golibvirt.DomainCrashed` - Domain has crashed
+
+**Domain Start Flags:**
+- `golibvirt.DomainStartPaused` - Start domain in paused state
+- `golibvirt.DomainStartAutodestroy` - Destroy domain on client disconnect
+- `golibvirt.DomainStartBypassCache` - Bypass file system cache
+- `golibvirt.DomainStartForceBoot` - Force boot, even if saved state exists
+- `golibvirt.DomainStartValidate` - Validate the XML before starting
+- `golibvirt.DomainStartResetNvram` - Reset NVRAM on boot
+
+### Type Casting
+
+The `go-libvirt` library uses various integer types. Always cast to the appropriate type:
+
+```go
+// DomainGetState returns int32
+state, _, err := client.Libvirt().DomainGetState(domain, 0)
+
+// Cast to uint32 for comparison with constants
+if uint32(state) == uint32(golibvirt.DomainRunning) {
+    // ...
+}
+```
+
+### Where to Find Constants
+
+Check the `go-libvirt` package documentation or source code:
+- https://pkg.go.dev/github.com/digitalocean/go-libvirt
+- Look for const declarations matching the libvirt C API enums

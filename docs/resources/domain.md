@@ -93,8 +93,12 @@ resource "libvirt_domain" "kernel_boot" {
 - `bootloader_args` (String) Arguments to pass to bootloader.
 - `clock` (Block, Optional) Clock configuration for the domain. (see [below for nested schema](#nestedblock--clock))
 - `cpu` (Block, Optional) CPU configuration for the domain. (see [below for nested schema](#nestedblock--cpu))
+- `create` (Block, Optional) Domain start flags corresponding to virDomainCreateFlags. Only used when running=true.
+
+See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainCreateFlags). (see [below for nested schema](#nestedblock--create))
 - `current_memory` (Number) Actual memory allocation at boot time. If not set, defaults to memory value.
 - `description` (String) Human-readable description of the domain.
+- `destroy` (Block, Optional) Domain shutdown behavior. Controls how the domain is stopped when running changes from true to false or when the resource is destroyed. (see [below for nested schema](#nestedblock--destroy))
 - `disk` (Block List) Disk devices attached to the domain. (see [below for nested schema](#nestedblock--disk))
 - `features` (Block, Optional) Hypervisor features to enable. (see [below for nested schema](#nestedblock--features))
 - `hwuuid` (String) Hardware UUID for the domain.
@@ -107,6 +111,7 @@ resource "libvirt_domain" "kernel_boot" {
 - `on_reboot` (String) Action to take when guest requests reboot (destroy, restart, preserve, rename-restart).
 - `os` (Block, Optional) Operating system configuration. See [libvirt OS element documentation](https://libvirt.org/formatdomain.html#operating-system-booting). (see [below for nested schema](#nestedblock--os))
 - `pm` (Block, Optional) Power management configuration for the domain. (see [below for nested schema](#nestedblock--pm))
+- `running` (Boolean) Whether the domain should be running. If true, the domain will be started after creation. If false or unset, the domain will only be defined but not started.
 - `title` (String) Short description title for the domain.
 - `type` (String) Domain type (e.g., 'kvm', 'qemu'). Defaults to 'kvm'.
 - `unit` (String) Memory unit (KiB, MiB, GiB, TiB). Defaults to KiB if not specified.
@@ -167,6 +172,28 @@ Optional:
 - `mode` (String) CPU mode (host-model, host-passthrough, custom).
 - `model` (String) CPU model name.
 - `vendor` (String) CPU vendor.
+
+
+<a id="nestedblock--create"></a>
+### Nested Schema for `create`
+
+Optional:
+
+- `autodestroy` (Boolean) Automatically destroy domain when connection closes (VIR_DOMAIN_START_AUTODESTROY).
+- `bypass_cache` (Boolean) Avoid filesystem cache pollution (VIR_DOMAIN_START_BYPASS_CACHE).
+- `force_boot` (Boolean) Boot domain, discarding any managed save state (VIR_DOMAIN_START_FORCE_BOOT).
+- `paused` (Boolean) Launch domain in paused state (VIR_DOMAIN_START_PAUSED).
+- `reset_nvram` (Boolean) Re-initialize NVRAM from template (VIR_DOMAIN_START_RESET_NVRAM).
+- `validate` (Boolean) Validate XML document against schema (VIR_DOMAIN_START_VALIDATE).
+
+
+<a id="nestedblock--destroy"></a>
+### Nested Schema for `destroy`
+
+Optional:
+
+- `graceful` (Boolean) Attempt graceful shutdown before forcing. Defaults to true.
+- `timeout` (Number) Timeout in seconds to wait for graceful shutdown before forcing. Defaults to 300.
 
 
 <a id="nestedblock--disk"></a>
