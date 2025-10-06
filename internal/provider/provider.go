@@ -117,6 +117,7 @@ func (p *LibvirtProvider) Resources(ctx context.Context) []func() resource.Resou
 	return []func() resource.Resource{
 		NewDomainResource,
 		NewPoolResource,
+		NewVolumeResource,
 	}
 }
 
