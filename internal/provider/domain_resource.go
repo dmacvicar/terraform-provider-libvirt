@@ -51,6 +51,7 @@ type DomainResourceModel struct {
 	OnReboot   types.String `tfsdk:"on_reboot"`
 	OnCrash    types.String `tfsdk:"on_crash"`
 	IOThreads  types.Int64  `tfsdk:"iothreads"`
+	Running    types.Bool   `tfsdk:"running"`
 
 	// Blocks
 	OS         *DomainOSModel          `tfsdk:"os"`
@@ -60,6 +61,8 @@ type DomainResourceModel struct {
 	PM         *DomainPMModel          `tfsdk:"pm"`
 	Disks      []DomainDiskModel       `tfsdk:"disk"`
 	Interfaces []DomainInterfaceModel  `tfsdk:"interface"`
+	Create     *DomainCreateModel      `tfsdk:"create"`
+	Destroy    *DomainDestroyModel     `tfsdk:"destroy"`
 
 	// TODO: Add more fields as we implement them:
 	// - iothreads
@@ -176,6 +179,22 @@ type DomainFeaturesModel struct {
 	GICVersion   types.String `tfsdk:"gic_version"`
 }
 
+// DomainCreateModel describes domain start flags
+type DomainCreateModel struct {
+	Paused      types.Bool `tfsdk:"paused"`
+	Autodestroy types.Bool `tfsdk:"autodestroy"`
+	BypassCache types.Bool `tfsdk:"bypass_cache"`
+	ForceBoot   types.Bool `tfsdk:"force_boot"`
+	Validate    types.Bool `tfsdk:"validate"`
+	ResetNVRAM  types.Bool `tfsdk:"reset_nvram"`
+}
+
+// DomainDestroyModel describes domain shutdown behavior
+type DomainDestroyModel struct {
+	Graceful types.Bool  `tfsdk:"graceful"`
+	Timeout  types.Int64 `tfsdk:"timeout"`
+}
+
 // Metadata returns the resource type name
 func (r *DomainResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_domain"
@@ -278,6 +297,10 @@ providing fine-grained control over VM configuration.
 			},
 			"iothreads": schema.Int64Attribute{
 				Description: "Number of I/O threads for virtio disks.",
+				Optional:    true,
+			},
+			"running": schema.BoolAttribute{
+				Description: "Whether the domain should be running. If true, the domain will be started after creation. If false or unset, the domain will only be defined but not started.",
 				Optional:    true,
 			},
 		},
@@ -599,6 +622,53 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 					},
 				},
 			},
+			"create": schema.SingleNestedBlock{
+				Description: "Domain start flags. Only used when running=true. Controls how the domain is started.",
+				MarkdownDescription: `
+Domain start flags corresponding to virDomainCreateFlags. Only used when running=true.
+
+See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainCreateFlags).
+`,
+				Attributes: map[string]schema.Attribute{
+					"paused": schema.BoolAttribute{
+						Description: "Launch domain in paused state (VIR_DOMAIN_START_PAUSED).",
+						Optional:    true,
+					},
+					"autodestroy": schema.BoolAttribute{
+						Description: "Automatically destroy domain when connection closes (VIR_DOMAIN_START_AUTODESTROY).",
+						Optional:    true,
+					},
+					"bypass_cache": schema.BoolAttribute{
+						Description: "Avoid filesystem cache pollution (VIR_DOMAIN_START_BYPASS_CACHE).",
+						Optional:    true,
+					},
+					"force_boot": schema.BoolAttribute{
+						Description: "Boot domain, discarding any managed save state (VIR_DOMAIN_START_FORCE_BOOT).",
+						Optional:    true,
+					},
+					"validate": schema.BoolAttribute{
+						Description: "Validate XML document against schema (VIR_DOMAIN_START_VALIDATE).",
+						Optional:    true,
+					},
+					"reset_nvram": schema.BoolAttribute{
+						Description: "Re-initialize NVRAM from template (VIR_DOMAIN_START_RESET_NVRAM).",
+						Optional:    true,
+					},
+				},
+			},
+			"destroy": schema.SingleNestedBlock{
+				Description: "Domain shutdown behavior. Controls how the domain is stopped when running changes from true to false or when the resource is destroyed.",
+				Attributes: map[string]schema.Attribute{
+					"graceful": schema.BoolAttribute{
+						Description: "Attempt graceful shutdown before forcing. Defaults to true.",
+						Optional:    true,
+					},
+					"timeout": schema.Int64Attribute{
+						Description: "Timeout in seconds to wait for graceful shutdown before forcing. Defaults to 300.",
+						Optional:    true,
+					},
+				},
+			},
 		},
 	}
 }
@@ -682,6 +752,43 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 	// Update state with computed values
 	xmlToDomainModel(parsedDomain, &plan)
 
+	// Start the domain if running=true
+	if !plan.Running.IsNull() && plan.Running.ValueBool() {
+		var flags uint32
+
+		// Build flags from create block
+		if plan.Create != nil {
+			if !plan.Create.Paused.IsNull() && plan.Create.Paused.ValueBool() {
+				flags |= uint32(golibvirt.DomainStartPaused)
+			}
+			if !plan.Create.Autodestroy.IsNull() && plan.Create.Autodestroy.ValueBool() {
+				flags |= uint32(golibvirt.DomainStartAutodestroy)
+			}
+			if !plan.Create.BypassCache.IsNull() && plan.Create.BypassCache.ValueBool() {
+				flags |= uint32(golibvirt.DomainStartBypassCache)
+			}
+			if !plan.Create.ForceBoot.IsNull() && plan.Create.ForceBoot.ValueBool() {
+				flags |= uint32(golibvirt.DomainStartForceBoot)
+			}
+			if !plan.Create.Validate.IsNull() && plan.Create.Validate.ValueBool() {
+				flags |= uint32(golibvirt.DomainStartValidate)
+			}
+			if !plan.Create.ResetNVRAM.IsNull() && plan.Create.ResetNVRAM.ValueBool() {
+				flags |= uint32(golibvirt.DomainStartResetNvram)
+			}
+		}
+
+		// Start the domain
+		_, err = r.client.Libvirt().DomainCreateWithFlags(domain, flags)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Failed to Start Domain",
+				"Domain was defined but failed to start: "+err.Error(),
+			)
+			return
+		}
+	}
+
 	// Save state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -730,14 +837,14 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 }
 
 // waitForDomainState waits for a domain to reach the specified state with a timeout
-func waitForDomainState(client *libvirt.Client, domain golibvirt.Domain, targetState int32, timeout time.Duration) error {
+func waitForDomainState(client *libvirt.Client, domain golibvirt.Domain, targetState uint32, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
 		state, _, err := client.Libvirt().DomainGetState(domain, 0)
 		if err != nil {
 			return fmt.Errorf("failed to get domain state: %w", err)
 		}
-		if state == targetState {
+		if uint32(state) == targetState {
 			return nil
 		}
 		time.Sleep(1 * time.Second)
@@ -776,7 +883,7 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	wasRunning := domainState == 1 // 1 = VIR_DOMAIN_RUNNING
+	wasRunning := uint32(domainState) == uint32(golibvirt.DomainRunning)
 
 	// If domain is running, shut it down first
 	if wasRunning {
@@ -791,7 +898,7 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		}
 
 		// Wait for shutdown with 5 second timeout
-		err = waitForDomainState(r.client, oldDomain, 5, 5*time.Second) // 5 = VIR_DOMAIN_SHUTOFF
+		err = waitForDomainState(r.client, oldDomain, uint32(golibvirt.DomainShutoff), 5*time.Second)
 		if err != nil {
 			// Graceful shutdown failed, force it
 			err = r.client.Libvirt().DomainDestroy(oldDomain)
@@ -848,8 +955,10 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	// If domain was running before, start it again
-	if wasRunning {
+	// Handle running state transitions based on plan.Running
+	shouldBeRunning := !plan.Running.IsNull() && plan.Running.ValueBool()
+
+	if shouldBeRunning {
 		updatedDomain, err := r.client.LookupDomainByUUID(state.UUID.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -859,18 +968,41 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 			return
 		}
 
-		err = r.client.Libvirt().DomainCreate(updatedDomain)
+		// Build flags from create block
+		var flags uint32
+		if plan.Create != nil {
+			if !plan.Create.Paused.IsNull() && plan.Create.Paused.ValueBool() {
+				flags |= uint32(golibvirt.DomainStartPaused)
+			}
+			if !plan.Create.Autodestroy.IsNull() && plan.Create.Autodestroy.ValueBool() {
+				flags |= uint32(golibvirt.DomainStartAutodestroy)
+			}
+			if !plan.Create.BypassCache.IsNull() && plan.Create.BypassCache.ValueBool() {
+				flags |= uint32(golibvirt.DomainStartBypassCache)
+			}
+			if !plan.Create.ForceBoot.IsNull() && plan.Create.ForceBoot.ValueBool() {
+				flags |= uint32(golibvirt.DomainStartForceBoot)
+			}
+			if !plan.Create.Validate.IsNull() && plan.Create.Validate.ValueBool() {
+				flags |= uint32(golibvirt.DomainStartValidate)
+			}
+			if !plan.Create.ResetNVRAM.IsNull() && plan.Create.ResetNVRAM.ValueBool() {
+				flags |= uint32(golibvirt.DomainStartResetNvram)
+			}
+		}
+
+		_, err = r.client.Libvirt().DomainCreateWithFlags(updatedDomain, flags)
 		if err != nil {
 			resp.Diagnostics.AddWarning(
-				"Failed to Restart Domain",
-				"Domain was updated but failed to restart automatically: "+err.Error(),
+				"Failed to Start Domain",
+				"Domain was updated but failed to start: "+err.Error(),
 			)
 			// Continue anyway - domain is defined correctly
 		}
 	}
 
 	// Read back the domain to get updated state
-	updatedDomain, err := r.client.LookupDomainByUUID(state.UUID.ValueString())
+	finalDomain, err := r.client.LookupDomainByUUID(state.UUID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to Read Updated Domain",
@@ -879,7 +1011,7 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	xmlDesc, err := r.client.Libvirt().DomainGetXMLDesc(updatedDomain, 0)
+	xmlDesc, err := r.client.Libvirt().DomainGetXMLDesc(finalDomain, 0)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to Read Domain",
@@ -929,7 +1061,7 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	}
 
 	// DomainState values: 0=nostate, 1=running, 2=blocked, 3=paused, 4=shutdown, 5=shutoff, 6=crashed, 7=pmsuspended
-	if domainState == 1 { // running
+	if uint32(domainState) == uint32(golibvirt.DomainRunning) {
 		err = r.client.Libvirt().DomainDestroy(domain)
 		if err != nil {
 			resp.Diagnostics.AddError(

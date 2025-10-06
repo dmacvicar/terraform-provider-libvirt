@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/digitalocean/go-libvirt"
+	golibvirt "github.com/digitalocean/go-libvirt"
 	libvirtclient "github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -360,10 +360,11 @@ func TestAccDomainResource_running(t *testing.T) {
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDomainResourceConfigBasic("test-domain-running"),
+				Config: testAccDomainResourceConfigRunning("test-domain-running"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-running"),
-					testAccCheckDomainCanStart("test-domain-running"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "running", "true"),
+					testAccCheckDomainIsRunning("test-domain-running"),
 				),
 			},
 		},
@@ -519,6 +520,68 @@ resource "libvirt_domain" "test" {
 `, name)
 }
 
+func testAccDomainResourceConfigRunning(name string) string {
+	return fmt.Sprintf(`
+provider "libvirt" {
+  uri = "qemu:///system"
+}
+
+resource "libvirt_domain" "test" {
+  name    = %[1]q
+  memory  = 512
+  unit    = "MiB"
+  vcpu    = 1
+  type    = "kvm"
+  running = true
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+}
+`, name)
+}
+
+func testAccCheckDomainIsRunning(name string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		ctx := context.Background()
+		client, err := libvirtclient.NewClient(ctx, "qemu:///system")
+		if err != nil {
+			return fmt.Errorf("failed to create libvirt client: %w", err)
+		}
+		defer func() { _ = client.Close() }()
+
+		domains, _, err := client.Libvirt().ConnectListAllDomains(1, 0)
+		if err != nil {
+			return fmt.Errorf("failed to list domains: %w", err)
+		}
+
+		var targetDomain *golibvirt.Domain
+		for _, d := range domains {
+			if d.Name == name {
+				targetDomain = &d
+				break
+			}
+		}
+
+		if targetDomain == nil {
+			return fmt.Errorf("domain %s not found", name)
+		}
+
+		state, _, err := client.Libvirt().DomainGetState(*targetDomain, 0)
+		if err != nil {
+			return fmt.Errorf("failed to get domain state: %w", err)
+		}
+
+		if uint32(state) != uint32(golibvirt.DomainRunning) {
+			return fmt.Errorf("domain is not running, state = %d", state)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckDomainStart(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ctx := context.Background()
@@ -533,7 +596,7 @@ func testAccCheckDomainStart(name string) resource.TestCheckFunc {
 			return fmt.Errorf("failed to list domains: %w", err)
 		}
 
-		var targetDomain *libvirt.Domain
+		var targetDomain *golibvirt.Domain
 		for _, d := range domains {
 			if d.Name == name {
 				targetDomain = &d
@@ -555,7 +618,7 @@ func testAccCheckDomainStart(name string) resource.TestCheckFunc {
 			return fmt.Errorf("failed to get domain state: %w", err)
 		}
 
-		if state != 1 {
+		if uint32(state) != uint32(golibvirt.DomainRunning) {
 			return fmt.Errorf("domain is not running, state = %d", state)
 		}
 
@@ -563,6 +626,7 @@ func testAccCheckDomainStart(name string) resource.TestCheckFunc {
 	}
 }
 
+//nolint:unused
 func testAccCheckDomainCanStart(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Create a new libvirt client for testing
@@ -579,7 +643,7 @@ func testAccCheckDomainCanStart(name string) resource.TestCheckFunc {
 			return fmt.Errorf("failed to list domains: %w", err)
 		}
 
-		var targetDomain *libvirt.Domain
+		var targetDomain *golibvirt.Domain
 		for _, d := range domains {
 			if d.Name == name {
 				targetDomain = &d
@@ -603,8 +667,7 @@ func testAccCheckDomainCanStart(name string) resource.TestCheckFunc {
 			return fmt.Errorf("failed to get domain state: %w", err)
 		}
 
-		// libvirt.DomainRunning = 1
-		if state != 1 {
+		if uint32(state) != uint32(golibvirt.DomainRunning) {
 			return fmt.Errorf("domain is not running, state = %d", state)
 		}
 
