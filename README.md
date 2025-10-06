@@ -253,32 +253,94 @@ Run `make help` to see all targets.
 
 ## Current Status
 
-See [TODO.md](./TODO.md) for detailed implementation tracking.
+This table shows implementation status and compatibility with the [original provider](https://github.com/dmacvicar/terraform-provider-libvirt):
 
-**Completed:**
-- ✅ Domain resource with comprehensive configuration
-  - OS configuration (type, arch, machine, firmware, boot devices, kernel boot, UEFI loader)
-  - Memory and VCPU management with hotplug support
-  - Features block (20+ hypervisor features)
-  - CPU configuration (mode, match, check, model, vendor)
-  - Clock configuration with nested timer blocks and catchup
-  - Power management configuration
-  - Basic disk support (file-based)
-  - Network interfaces (network, bridge, user types)
-  - Lifecycle actions (on_poweroff, on_reboot, on_crash)
-  - State management with running attribute and create/destroy flags
-- ✅ Full CRUD operations with update support
-- ✅ Connection to qemu:///system
-- ✅ 12 acceptance tests passing
-- ✅ Documentation generation
+### Provider Configuration
 
-**Planned:**
-- 📋 Graphics devices (VNC, Spice)
-- 📋 Expanded disk support (driver attributes, network disks)
-- 📋 CPU enhancements (topology, features, NUMA)
-- 📋 Storage pool and volume resources
-- 📋 Network resources
-- 📋 Host device passthrough
+| Feature | Status | Old Provider | Notes |
+|---------|--------|--------------|-------|
+| qemu:///system | ✅ | ✅ | Local system connection |
+| SSH transports | ○ | ✅ | qemu+ssh://, qemu+ssh://user@host/system |
+
+### Domain Resource (libvirt_domain)
+
+| Feature Category | Status | Old Provider | Notes |
+|-----------------|--------|--------------|-------|
+| Basic config | ✅ | ✅ | name, memory, vcpu, type, description |
+| Metadata | ○ | ✅ | Custom metadata XML |
+| OS & boot | ✅ | ✅ | type, arch, machine, firmware, boot devices |
+| Kernel boot | ✅ | ✅ | kernel, initrd, cmdline |
+| CPU | ⚠️ | ⚠️ | Basic (mode) only; topology/features planned |
+| Memory | ⚠️ | ⚠️ | Basic only; hugepages planned |
+| Features | ✅ | ⚠️ | 20+ features; more than old provider |
+| Clock & timers | ✅ | ○ | Full support including nested catchup |
+| Power management | ✅ | ○ | suspend_to_mem, suspend_to_disk |
+| Disks (basic) | ✅ | ✅ | File-based disks |
+| Disks (volume) | ○ | ✅ | volume_id reference to libvirt_volume |
+| Disks (URL) | ○ | ✅ | URL download support |
+| Disks (block) | ○ | ✅ | Block device passthrough |
+| Disks (SCSI) | ○ | ✅ | SCSI bus, WWN identifier |
+| Network (basic) | ✅ | ✅ | network, bridge types |
+| Network (user) | ✅ | ✅ | User-mode networking |
+| Network (macvtap) | ○ | ✅ | macvtap, vepa, passthrough modes |
+| Network (wait_for_lease) | ○ | ✅ | Wait for DHCP lease |
+| Graphics | ○ | ✅ | Spice/VNC display |
+| Video | ○ | ✅ | Video device (cirrus, etc.) |
+| Console/Serial | ○ | ✅ | Console and serial devices |
+| Filesystem (9p) | ○ | ✅ | Host directory sharing via virtio-9p |
+| TPM | ○ | ✅ | TPM device emulation |
+| NVRAM | ⚠️ | ✅ | Basic UEFI loader; template support planned |
+| State management | ✅ | ✅ | running attribute |
+| Autostart | ○ | ✅ | Start domain on host boot |
+| Cloud-init | ○ | ✅ | libvirt_cloudinit_disk resource |
+| CoreOS Ignition | ○ | ✅ | libvirt_ignition resource |
+| Combustion | ○ | ✅ | libvirt_combustion resource |
+| QEMU agent | ○ | ✅ | Integration with qemu-guest-agent |
+| XML XSLT | ○ | ✅ | XSLT transforms for custom XML |
+
+### Volume Resource (libvirt_volume)
+
+| Feature | Status | Old Provider | Notes |
+|---------|--------|--------------|-------|
+| Resource | ○ | ✅ | Create and manage volumes |
+| URL download | ○ | ✅ | Download cloud images from URLs |
+| Format | ○ | ✅ | qcow2, raw format support |
+| Backing volumes | ○ | ✅ | base_volume_id for COW |
+| XML XSLT | ○ | ✅ | XSLT transforms |
+
+### Pool Resource (libvirt_pool)
+
+| Feature | Status | Old Provider | Notes |
+|---------|--------|--------------|-------|
+| Resource | ○ | ✅ | Create and manage storage pools |
+| Pool types | ○ | ✅ | dir (directory) and logical (LVM) |
+
+### Network Resource (libvirt_network)
+
+| Feature | Status | Old Provider | Notes |
+|---------|--------|--------------|-------|
+| Resource | ○ | ✅ | Create and manage networks |
+| Network modes | ○ | ✅ | nat, isolated, route, open, bridge |
+| DHCP | ○ | ✅ | DHCP configuration |
+| DNS | ○ | ✅ | DNS hosts, forwarders, SRV records |
+| Routes | ○ | ✅ | Static routes |
+| Dnsmasq options | ○ | ✅ | Custom dnsmasq configuration |
+| Autostart | ○ | ✅ | Start network on host boot |
+
+### Data Sources
+
+| Feature | Status | Old Provider | Notes |
+|---------|--------|--------------|-------|
+| Node info | ○ | ✅ | Host system information |
+| Node devices | ○ | ✅ | PCI, USB device enumeration |
+| Network templates | ○ | ✅ | DNS host/SRV/dnsmasq templates |
+
+**Legend:**
+- ✅ Fully implemented
+- ⚠️ Partially implemented
+- ○ Not yet implemented
+
+See [TODO.md](./TODO.md) for detailed implementation tracking
 
 ## Contributing
 

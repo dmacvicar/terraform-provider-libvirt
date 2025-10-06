@@ -116,6 +116,7 @@ func (p *LibvirtProvider) Configure(ctx context.Context, req provider.ConfigureR
 func (p *LibvirtProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewDomainResource,
+		NewPoolResource,
 	}
 }
 

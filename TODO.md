@@ -70,7 +70,7 @@
 
 ## Priority 2: Common Use Cases
 
-### 4. Graphics Devices
+### 4. Graphics Devices [OLD: ✅]
 **Status:** ❌ Not started
 **Why:** Interactive VMs need display
 
@@ -81,21 +81,26 @@
 - [ ] Add listen address, port, password
 - [ ] Test with virt-viewer
 
-### 5. Expand Disk Support
+### 5. Expand Disk Support [OLD: ✅]
 **Status:** ❌ Partially done (basic only)
 
 **Tasks:**
+- [ ] Add volume_id support (reference to libvirt_volume)
+- [ ] Add URL source support
+- [ ] Add block device support
+- [ ] Add SCSI support (scsi flag, WWN)
 - [ ] Add driver attributes (type, cache, io, discard)
 - [ ] Add readonly, shareable flags
 - [ ] Add boot order
 - [ ] Support network disks (RBD, iSCSI)
 - [ ] Add disk driver test
 
-### 6. Essential Devices
+### 6. Essential Devices [OLD: ✅]
 **Status:** ❌ Not started
 
 **Tasks:**
 - [ ] Console/Serial devices
+- [ ] Video device
 - [ ] RNG device (virtio-rng)
 - [ ] Input devices (tablet for VNC)
 
@@ -136,49 +141,100 @@
 
 ## Priority 4: Other Resources
 
-### 11. Network Resource
+### 11. Network Resource [OLD: ✅]
 **Status:** ❌ Not started
 
 **Tasks:**
 - [ ] Define libvirt_network resource
-- [ ] Schema (name, mode, bridge, addresses, dhcp)
+- [ ] Schema (name, mode, bridge, addresses)
+- [ ] Network modes (nat, isolated, route, open, bridge)
+- [ ] DHCP configuration
+- [ ] DNS configuration (hosts, forwarders, SRV records)
+- [ ] Routes
+- [ ] Dnsmasq options
+- [ ] Autostart
 - [ ] CRUD operations
 - [ ] Tests
 
-### 12. Pool Resource
+### 12. Pool Resource [OLD: ✅]
 **Status:** ❌ Not started
 
 **Tasks:**
 - [ ] Define libvirt_pool resource
 - [ ] Schema (name, type, target path)
+- [ ] Pool types (dir, logical/LVM)
 - [ ] CRUD operations
 - [ ] Tests
 
-### 13. Volume Resource
+### 13. Volume Resource [OLD: ✅]
 **Status:** ❌ Not started
 
 **Tasks:**
 - [ ] Define libvirt_volume resource
 - [ ] Schema (name, pool, size, format)
+- [ ] URL download support
+- [ ] Format support (qcow2, raw)
+- [ ] Backing volumes (base_volume_id)
+- [ ] XML XSLT transforms
 - [ ] CRUD operations
-- [ ] Integration with disk devices
+- [ ] Integration with disk devices (volume_id)
 - [ ] Tests
 
 ## Priority 5: Advanced Features
 
-### 14. Security Labels
+### 14. Additional Domain Features [OLD: ✅]
+**Status:** ❌ Not started
+
+**Tasks:**
+- [ ] Metadata - Custom metadata XML
+- [ ] Autostart - Domain autostart
+- [ ] TPM device
+- [ ] Filesystem (9p) - virtio-9p host directory sharing
+- [ ] NVRAM template support
+- [ ] QEMU agent integration
+- [ ] XML XSLT transforms
+- [ ] Network wait_for_lease
+- [ ] Network macvtap/vepa/passthrough
+
+### 15. Cloud-init Resources [OLD: ✅]
+**Status:** ❌ Not started
+
+**Tasks:**
+- [ ] libvirt_cloudinit_disk resource
+- [ ] libvirt_ignition resource (CoreOS)
+- [ ] libvirt_combustion resource
+
+### 16. Data Sources [OLD: ✅]
+**Status:** ❌ Not started
+
+**Tasks:**
+- [ ] libvirt_node_info datasource
+- [ ] libvirt_node_device_info datasource
+- [ ] libvirt_node_devices datasource
+- [ ] libvirt_network_dns_host_template datasource
+- [ ] libvirt_network_dns_srv_template datasource
+- [ ] libvirt_network_dnsmasq_options_template datasource
+
+### 17. Provider Configuration [OLD: ✅]
+**Status:** ❌ Not started
+
+**Tasks:**
+- [ ] SSH transport support (qemu+ssh://)
+- [ ] Other URI schemes support
+
+### 18. Security Labels
 **Status:** ❌ Not started
 
 **Tasks:**
 - [ ] Add seclabel block (SELinux, AppArmor)
 
-### 15. Host Device Passthrough
+### 19. Host Device Passthrough
 **Status:** ❌ Not started
 
 **Tasks:**
 - [ ] Add hostdev block (PCI, USB passthrough)
 
-### 16. Advanced Tuning
+### 20. Advanced Tuning
 **Status:** ❌ Not started
 
 **Tasks:**
