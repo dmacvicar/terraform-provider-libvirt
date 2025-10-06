@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	golibvirt "github.com/digitalocean/go-libvirt"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -12,7 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"libvirt.org/go/libvirtxml"
 )
 
 // Ensure the implementation satisfies the resource.Resource interface
@@ -161,16 +166,98 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
+	volumeName := model.Name.ValueString()
+	poolName := model.Pool.ValueString()
+
 	tflog.Debug(ctx, "Creating storage volume", map[string]any{
-		"name": model.Name.ValueString(),
-		"pool": model.Pool.ValueString(),
+		"name": volumeName,
+		"pool": poolName,
 	})
 
-	// TODO: Implement create logic
-	resp.Diagnostics.AddError(
-		"Not Implemented",
-		"Volume resource create is not yet implemented",
-	)
+	// Look up the pool
+	pool, err := r.client.Libvirt().StoragePoolLookupByName(poolName)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Pool Not Found",
+			fmt.Sprintf("Storage pool '%s' not found: %s", poolName, err),
+		)
+		return
+	}
+
+	// Build volume definition
+	volumeDef := &libvirtxml.StorageVolume{
+		Name: volumeName,
+		Capacity: &libvirtxml.StorageVolumeSize{
+			Value: uint64(model.Capacity.ValueInt64()),
+		},
+		Target: &libvirtxml.StorageVolumeTarget{},
+	}
+
+	// Set format if specified
+	if !model.Format.IsNull() && !model.Format.IsUnknown() {
+		volumeDef.Target.Format = &libvirtxml.StorageVolumeTargetFormat{
+			Type: model.Format.ValueString(),
+		}
+	}
+
+	// Set backing store if specified
+	if !model.BackingStore.IsNull() {
+		var backingStore VolumeBackingStoreModel
+		diags := model.BackingStore.As(ctx, &backingStore, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		volumeDef.BackingStore = &libvirtxml.StorageVolumeBackingStore{
+			Path: backingStore.Path.ValueString(),
+		}
+
+		if !backingStore.Format.IsNull() {
+			volumeDef.BackingStore.Format = &libvirtxml.StorageVolumeTargetFormat{
+				Type: backingStore.Format.ValueString(),
+			}
+		}
+	}
+
+	// Marshal to XML
+	xmlDoc, err := volumeDef.Marshal()
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"XML Marshaling Failed",
+			fmt.Sprintf("Failed to marshal storage volume XML: %s", err),
+		)
+		return
+	}
+
+	tflog.Debug(ctx, "Generated volume XML", map[string]any{"xml": xmlDoc})
+
+	// Create the volume
+	volume, err := r.client.Libvirt().StorageVolCreateXML(pool, xmlDoc, 0)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Volume Creation Failed",
+			fmt.Sprintf("Failed to create storage volume: %s", err),
+		)
+		return
+	}
+
+	// Set the ID (use key)
+	model.ID = types.StringValue(volume.Key)
+	model.Key = types.StringValue(volume.Key)
+
+	tflog.Info(ctx, "Created storage volume", map[string]any{
+		"key":  volume.Key,
+		"name": volumeName,
+	})
+
+	// Read back the full state
+	resp.Diagnostics.Append(r.readVolume(ctx, &model, volume)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
 }
 
 // Read reads the storage volume state
@@ -181,7 +268,99 @@ func (r *VolumeResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	// TODO: Implement read logic
+	// Look up the volume by key
+	volume, err := r.client.Libvirt().StorageVolLookupByKey(model.Key.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddWarning(
+			"Volume Not Found",
+			fmt.Sprintf("Storage volume not found, removing from state: %s", err),
+		)
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	// Read the volume state
+	resp.Diagnostics.Append(r.readVolume(ctx, &model, volume)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
+}
+
+// readVolume reads volume state from libvirt and populates the model
+func (r *VolumeResource) readVolume(ctx context.Context, model *VolumeResourceModel, volume golibvirt.StorageVol) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// Get volume XML
+	xmlDoc, err := r.client.Libvirt().StorageVolGetXMLDesc(volume, 0)
+	if err != nil {
+		diags.AddError(
+			"Failed to Get Volume XML",
+			fmt.Sprintf("Could not retrieve storage volume XML: %s", err),
+		)
+		return diags
+	}
+
+	// Parse XML
+	var volumeDef libvirtxml.StorageVolume
+	if err := volumeDef.Unmarshal(xmlDoc); err != nil {
+		diags.AddError(
+			"Failed to Parse Volume XML",
+			fmt.Sprintf("Could not parse storage volume XML: %s", err),
+		)
+		return diags
+	}
+
+	// Get volume info for allocation
+	volType, capacity, allocation, err := r.client.Libvirt().StorageVolGetInfo(volume)
+	if err != nil {
+		diags.AddError(
+			"Failed to Get Volume Info",
+			fmt.Sprintf("Could not retrieve storage volume info: %s", err),
+		)
+		return diags
+	}
+	_ = volType // Unused for now
+
+	// Update model
+	model.Name = types.StringValue(volumeDef.Name)
+	model.Key = types.StringValue(volumeDef.Key)
+	model.Capacity = types.Int64Value(int64(capacity))
+	model.Allocation = types.Int64Value(int64(allocation))
+
+	if volumeDef.Target != nil {
+		model.Path = types.StringValue(volumeDef.Target.Path)
+
+		if volumeDef.Target.Format != nil {
+			model.Format = types.StringValue(volumeDef.Target.Format.Type)
+		}
+	}
+
+	// Set backing store if present
+	if volumeDef.BackingStore != nil {
+		backingStoreModel := VolumeBackingStoreModel{
+			Path: types.StringValue(volumeDef.BackingStore.Path),
+		}
+
+		if volumeDef.BackingStore.Format != nil {
+			backingStoreModel.Format = types.StringValue(volumeDef.BackingStore.Format.Type)
+		} else {
+			backingStoreModel.Format = types.StringNull()
+		}
+
+		backingStoreObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+			"path":   types.StringType,
+			"format": types.StringType,
+		}, backingStoreModel)
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+		model.BackingStore = backingStoreObj
+	}
+
+	return diags
 }
 
 // Update updates the storage volume (volumes are immutable, so this should not be called)
@@ -200,11 +379,35 @@ func (r *VolumeResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
+	volumeName := model.Name.ValueString()
+
 	tflog.Debug(ctx, "Deleting storage volume", map[string]any{
-		"name": model.Name.ValueString(),
+		"name": volumeName,
+		"key":  model.Key.ValueString(),
 	})
 
-	// TODO: Implement delete logic
+	// Look up the volume by key
+	volume, err := r.client.Libvirt().StorageVolLookupByKey(model.Key.ValueString())
+	if err != nil {
+		// Volume doesn't exist, consider it deleted
+		tflog.Info(ctx, "Storage volume not found, considering deleted", map[string]any{
+			"name": volumeName,
+		})
+		return
+	}
+
+	// Delete the volume
+	if err := r.client.Libvirt().StorageVolDelete(volume, 0); err != nil {
+		resp.Diagnostics.AddError(
+			"Failed to Delete Volume",
+			fmt.Sprintf("Could not delete storage volume: %s", err),
+		)
+		return
+	}
+
+	tflog.Info(ctx, "Deleted storage volume", map[string]any{
+		"name": volumeName,
+	})
 }
 
 // ImportState imports an existing storage volume
