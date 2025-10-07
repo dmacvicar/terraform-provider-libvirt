@@ -23,30 +23,32 @@ resource "libvirt_domain" "example" {
     machine = "q35"
   }
 
-  # Network interface connected to default network
-  interface {
-    type  = "network"
-    model = "virtio"
-    source {
-      network = "default"
-    }
-  }
-
-  # Additional network interface on a specific network
-  interface {
-    type  = "network"
-    model = "virtio"
-    source {
-      network   = "custom-network"
-      portgroup = "web-servers"
-    }
-  }
-
-  # Bridge interface
-  interface {
-    type = "bridge"
-    source {
-      bridge = "br0"
-    }
+  devices = {
+    interfaces = [
+      # Network interface connected to default network
+      {
+        type  = "network"
+        model = "virtio"
+        source = {
+          network = "default"
+        }
+      },
+      # Additional network interface on a specific network
+      {
+        type  = "network"
+        model = "virtio"
+        source = {
+          network   = "custom-network"
+          portgroup = "web-servers"
+        }
+      },
+      # Bridge interface
+      {
+        type = "bridge"
+        source = {
+          bridge = "br0"
+        }
+      }
+    ]
   }
 }

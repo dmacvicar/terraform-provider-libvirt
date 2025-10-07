@@ -83,6 +83,56 @@ resource "libvirt_domain" "example" {
 }
 ```
 
+**Example with Devices (Disks and Network Interfaces):**
+
+**Libvirt XML:**
+```xml
+<domain type="kvm">
+  <name>example-vm</name>
+  <memory unit="MiB">512</memory>
+  <vcpu>1</vcpu>
+  <devices>
+    <disk type="file" device="disk">
+      <source file="/var/lib/libvirt/images/disk.qcow2"/>
+      <target dev="vda" bus="virtio"/>
+    </disk>
+    <interface type="network">
+      <source network="default"/>
+      <model type="virtio"/>
+    </interface>
+  </devices>
+</domain>
+```
+
+**Terraform HCL:**
+```hcl
+resource "libvirt_domain" "example" {
+  name   = "example-vm"
+  type   = "kvm"
+  memory = 512
+  vcpu   = 1
+
+  devices = {
+    disks = [
+      {
+        source = "/var/lib/libvirt/images/disk.qcow2"
+        target = "vda"
+        bus    = "virtio"
+      }
+    ]
+    interfaces = [
+      {
+        type  = "network"
+        model = "virtio"
+        source = {
+          network = "default"
+        }
+      }
+    ]
+  }
+}
+```
+
 ### Handling Elements with Text Content and Attributes
 
 Some libvirt XML elements have both text content and attributes. For better ergonomics, we apply these patterns:
@@ -151,6 +201,7 @@ If the source always has the same pattern, it can be flattened to a simple attri
 - We don't distinguish between XML attributes and elements in HCL - both become HCL attributes
 - The same XML structure always maps to the same HCL structure
 - This consistent mapping enables automated migration from the old provider or from raw libvirt XML
+- **Nested Attributes vs Blocks**: Following [HashiCorp's guidance](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/blocks), new features use nested attributes (e.g., `devices = { ... }`) instead of blocks. Some existing features (`os`, `features`, `clock`, etc.) use blocks for ergonomics.
 
 For detailed XML schemas, see the [libvirt domain format documentation](https://libvirt.org/formatdomain.html).
 

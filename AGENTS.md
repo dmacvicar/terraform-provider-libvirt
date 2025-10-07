@@ -56,19 +56,52 @@ For XML elements with both text content and attributes, see the "Handling Elemen
 
 Per [HashiCorp guidance](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/blocks), new provider implementations should use nested attribute types instead of block types. Blocks are mainly for migrating legacy SDK-based providers.
 
-- Use `schema.SingleNestedAttribute` for single objects (e.g., `os = { type = "hvm" }`)
+**Why nested attributes?**
+- Best practice for new providers per Terraform Plugin Framework documentation
+- More explicit syntax with `=` and array brackets `[...]`
+- Better type safety and validation
+- Consistent with modern Terraform providers
+
+**Implementation:**
+- Use `schema.SingleNestedAttribute` for single objects (e.g., `target = { path = "/data" }`)
 - Use `schema.ListNestedAttribute` for lists of objects (e.g., `disks = [{ target = "vda" }]`)
-- **Exception**: The domain resource currently uses blocks for `os`, `features`, `cpu`, `clock`, `pm`, `create`, and `destroy` for backward compatibility and ergonomics. New features should use nested attributes.
+- Model fields should be `types.Object` or `types.List` accordingly
+- Use `.As(ctx, &model, basetypes.ObjectAsOptions{})` to extract from `types.Object`
+- Use `.ElementsAs(ctx, &array, false)` to extract from `types.List`
+
+**Current State:**
+- **Devices** (`devices`): Uses nested attributes ✅
+  - `devices = { disks = [...], interfaces = [...] }`
+- **Existing blocks** (`os`, `features`, `cpu`, `clock`, `pm`, `create`, `destroy`): Still use blocks for ergonomics
+  - These may be converted later, but it's not urgent
+- **New features**: Should use nested attributes
 
 **Follow the libvirt XML Schema Structure**
 
-The Terraform schema must mirror the libvirt XML structure:
-- XML: `<domain><devices><disk>...</disk></devices></domain>`
-- HCL: `devices = { disks = [...] }`
+The Terraform schema must mirror the libvirt XML structure exactly. This is critical for correctness.
+
+Example:
+- XML: `<domain><devices><disk>...</disk><interface>...</interface></devices></domain>`
+- HCL: `devices = { disks = [...], interfaces = [...] }`
+
+**Key principle**: If libvirt XML has a container element (like `<devices>`), we must have a corresponding container in HCL.
 
 **Preserve User Input**
 
 During XML → model conversion, populate optional fields only if the user set them; this avoids diffs from libvirt defaults or normalized values.
+
+Example:
+```go
+// ❌ WRONG - sets field even if user didn't specify it
+if domain.OnPoweroff != "" {
+    model.OnPoweroff = types.StringValue(domain.OnPoweroff)
+}
+
+// ✅ CORRECT - only set if user originally specified it
+if !model.OnPoweroff.IsNull() && !model.OnPoweroff.IsUnknown() && domain.OnPoweroff != "" {
+    model.OnPoweroff = types.StringValue(domain.OnPoweroff)
+}
+```
 
 ## Project Structure
 

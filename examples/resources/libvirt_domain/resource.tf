@@ -13,10 +13,24 @@ resource "libvirt_domain" "example" {
     boot_devices = ["hd", "network"]
   }
 
-  # TODO: Add device configuration once implemented
-  # - disks
-  # - network interfaces
-  # - graphics
+  devices = {
+    disks = [
+      {
+        source = "/var/lib/libvirt/images/example.qcow2"
+        target = "vda"
+        bus    = "virtio"
+      }
+    ]
+    interfaces = [
+      {
+        type  = "network"
+        model = "virtio"
+        source = {
+          network = "default"
+        }
+      }
+    ]
+  }
 }
 
 # VM with UEFI firmware
