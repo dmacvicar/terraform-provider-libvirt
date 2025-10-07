@@ -31,21 +31,30 @@ type VolumeResource struct {
 
 // VolumeResourceModel describes the resource data model
 type VolumeResourceModel struct {
-	ID         types.String `tfsdk:"id"`
-	Name       types.String `tfsdk:"name"`
-	Pool       types.String `tfsdk:"pool"`
-	Key        types.String `tfsdk:"key"`
-	Capacity   types.Int64  `tfsdk:"capacity"`
-	Allocation types.Int64  `tfsdk:"allocation"`
-	Path       types.String `tfsdk:"path"`
-	Format     types.String `tfsdk:"format"`
+	ID           types.String `tfsdk:"id"`
+	Name         types.String `tfsdk:"name"`
+	Pool         types.String `tfsdk:"pool"`
+	Key          types.String `tfsdk:"key"`
+	Capacity     types.Int64  `tfsdk:"capacity"`
+	Allocation   types.Int64  `tfsdk:"allocation"`
+	Path         types.String `tfsdk:"path"`
+	Format       types.String `tfsdk:"format"`
 	BackingStore types.Object `tfsdk:"backing_store"`
+	Permissions  types.Object `tfsdk:"permissions"`
 }
 
 // VolumeBackingStoreModel describes the backing store block
 type VolumeBackingStoreModel struct {
 	Path   types.String `tfsdk:"path"`
 	Format types.String `tfsdk:"format"`
+}
+
+// VolumePermissionsModel describes permissions for the volume
+type VolumePermissionsModel struct {
+	Owner types.String `tfsdk:"owner"`
+	Group types.String `tfsdk:"group"`
+	Mode  types.String `tfsdk:"mode"`
+	Label types.String `tfsdk:"label"`
 }
 
 // NewVolumeResource creates a new volume resource
@@ -136,6 +145,28 @@ See the [libvirt storage volume documentation](https://libvirt.org/formatstorage
 					},
 				},
 			},
+			"permissions": schema.SingleNestedAttribute{
+				Description: "Permissions for the volume file",
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"owner": schema.StringAttribute{
+						Description: "Numeric user ID for the volume file owner",
+						Optional:    true,
+					},
+					"group": schema.StringAttribute{
+						Description: "Numeric group ID for the volume file group",
+						Optional:    true,
+					},
+					"mode": schema.StringAttribute{
+						Description: "Octal permission mode for the volume file (e.g., '0644')",
+						Optional:    true,
+					},
+					"label": schema.StringAttribute{
+						Description: "SELinux label for the volume file",
+						Optional:    true,
+					},
+				},
+			},
 		},
 	}
 }
@@ -217,6 +248,31 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 			volumeDef.BackingStore.Format = &libvirtxml.StorageVolumeTargetFormat{
 				Type: backingStore.Format.ValueString(),
 			}
+		}
+	}
+
+	// Set permissions if specified
+	if !model.Permissions.IsNull() && !model.Permissions.IsUnknown() {
+		var permissions VolumePermissionsModel
+		diags := model.Permissions.As(ctx, &permissions, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		volumeDef.Target.Permissions = &libvirtxml.StorageVolumeTargetPermissions{}
+
+		if !permissions.Owner.IsNull() && !permissions.Owner.IsUnknown() {
+			volumeDef.Target.Permissions.Owner = permissions.Owner.ValueString()
+		}
+		if !permissions.Group.IsNull() && !permissions.Group.IsUnknown() {
+			volumeDef.Target.Permissions.Group = permissions.Group.ValueString()
+		}
+		if !permissions.Mode.IsNull() && !permissions.Mode.IsUnknown() {
+			volumeDef.Target.Permissions.Mode = permissions.Mode.ValueString()
+		}
+		if !permissions.Label.IsNull() && !permissions.Label.IsUnknown() {
+			volumeDef.Target.Permissions.Label = permissions.Label.ValueString()
 		}
 	}
 
@@ -358,6 +414,41 @@ func (r *VolumeResource) readVolume(ctx context.Context, model *VolumeResourceMo
 			return diags
 		}
 		model.BackingStore = backingStoreObj
+	}
+
+	// Set permissions if present and user specified them
+	if !model.Permissions.IsNull() && !model.Permissions.IsUnknown() && volumeDef.Target != nil && volumeDef.Target.Permissions != nil {
+		permissionsModel := VolumePermissionsModel{
+			Owner: types.StringNull(),
+			Group: types.StringNull(),
+			Mode:  types.StringNull(),
+			Label: types.StringNull(),
+		}
+
+		if volumeDef.Target.Permissions.Owner != "" {
+			permissionsModel.Owner = types.StringValue(volumeDef.Target.Permissions.Owner)
+		}
+		if volumeDef.Target.Permissions.Group != "" {
+			permissionsModel.Group = types.StringValue(volumeDef.Target.Permissions.Group)
+		}
+		if volumeDef.Target.Permissions.Mode != "" {
+			permissionsModel.Mode = types.StringValue(volumeDef.Target.Permissions.Mode)
+		}
+		if volumeDef.Target.Permissions.Label != "" {
+			permissionsModel.Label = types.StringValue(volumeDef.Target.Permissions.Label)
+		}
+
+		permissionsObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+			"owner": types.StringType,
+			"group": types.StringType,
+			"mode":  types.StringType,
+			"label": types.StringType,
+		}, permissionsModel)
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+		model.Permissions = permissionsObj
 	}
 
 	return diags
