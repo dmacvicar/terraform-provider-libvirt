@@ -34,6 +34,7 @@ type VolumeResourceModel struct {
 	ID           types.String `tfsdk:"id"`
 	Name         types.String `tfsdk:"name"`
 	Pool         types.String `tfsdk:"pool"`
+	Type         types.String `tfsdk:"type"`
 	Key          types.String `tfsdk:"key"`
 	Capacity     types.Int64  `tfsdk:"capacity"`
 	Allocation   types.Int64  `tfsdk:"allocation"`
@@ -98,6 +99,15 @@ See the [libvirt storage volume documentation](https://libvirt.org/formatstorage
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"type": schema.StringAttribute{
+				Description: "Volume type (file, block, dir, network, netdir)",
+				Optional:    true,
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"key": schema.StringAttribute{
@@ -222,6 +232,11 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 			Value: uint64(model.Capacity.ValueInt64()),
 		},
 		Target: &libvirtxml.StorageVolumeTarget{},
+	}
+
+	// Set type if specified
+	if !model.Type.IsNull() && !model.Type.IsUnknown() {
+		volumeDef.Type = model.Type.ValueString()
 	}
 
 	// Set format if specified
@@ -382,6 +397,11 @@ func (r *VolumeResource) readVolume(ctx context.Context, model *VolumeResourceMo
 	// Update model
 	model.Name = types.StringValue(volumeDef.Name)
 	model.Key = types.StringValue(volumeDef.Key)
+
+	if volumeDef.Type != "" {
+		model.Type = types.StringValue(volumeDef.Type)
+	}
+
 	model.Capacity = types.Int64Value(int64(capacity))
 	model.Allocation = types.Int64Value(int64(allocation))
 
