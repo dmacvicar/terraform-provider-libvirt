@@ -44,7 +44,16 @@ type PoolResourceModel struct {
 
 // PoolTargetModel describes the target block
 type PoolTargetModel struct {
-	Path types.String `tfsdk:"path"`
+	Path        types.String `tfsdk:"path"`
+	Permissions types.Object `tfsdk:"permissions"`
+}
+
+// PoolPermissionsModel describes permissions for the pool directory
+type PoolPermissionsModel struct {
+	Owner types.String `tfsdk:"owner"`
+	Group types.String `tfsdk:"group"`
+	Mode  types.String `tfsdk:"mode"`
+	Label types.String `tfsdk:"label"`
 }
 
 // PoolSourceModel describes the source block
@@ -135,6 +144,28 @@ See the [libvirt storage pool documentation](https://libvirt.org/formatstorage.h
 							stringplanmodifier.RequiresReplace(),
 						},
 					},
+					"permissions": schema.SingleNestedAttribute{
+						Description: "Permissions for the pool directory",
+						Optional:    true,
+						Attributes: map[string]schema.Attribute{
+							"owner": schema.StringAttribute{
+								Description: "Numeric user ID for the pool directory owner",
+								Optional:    true,
+							},
+							"group": schema.StringAttribute{
+								Description: "Numeric group ID for the pool directory group",
+								Optional:    true,
+							},
+							"mode": schema.StringAttribute{
+								Description: "Octal permission mode for the pool directory (e.g., '0755')",
+								Optional:    true,
+							},
+							"label": schema.StringAttribute{
+								Description: "SELinux label for the pool directory",
+								Optional:    true,
+							},
+						},
+					},
 				},
 			},
 			"source": schema.SingleNestedAttribute{
@@ -223,6 +254,31 @@ func (r *PoolResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 		poolDef.Target = &libvirtxml.StoragePoolTarget{
 			Path: target.Path.ValueString(),
+		}
+
+		// Set target permissions if specified
+		if !target.Permissions.IsNull() && !target.Permissions.IsUnknown() {
+			var permissions PoolPermissionsModel
+			diags := target.Permissions.As(ctx, &permissions, basetypes.ObjectAsOptions{})
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			poolDef.Target.Permissions = &libvirtxml.StoragePoolTargetPermissions{}
+
+			if !permissions.Owner.IsNull() && !permissions.Owner.IsUnknown() {
+				poolDef.Target.Permissions.Owner = permissions.Owner.ValueString()
+			}
+			if !permissions.Group.IsNull() && !permissions.Group.IsUnknown() {
+				poolDef.Target.Permissions.Group = permissions.Group.ValueString()
+			}
+			if !permissions.Mode.IsNull() && !permissions.Mode.IsUnknown() {
+				poolDef.Target.Permissions.Mode = permissions.Mode.ValueString()
+			}
+			if !permissions.Label.IsNull() && !permissions.Label.IsUnknown() {
+				poolDef.Target.Permissions.Label = permissions.Label.ValueString()
+			}
 		}
 	}
 
@@ -419,11 +475,57 @@ func (r *PoolResource) readPool(ctx context.Context, model *PoolResourceModel, p
 
 	// Set target
 	if poolDef.Target != nil {
-		targetModel := PoolTargetModel{
-			Path: types.StringValue(poolDef.Target.Path),
+		permissionsObjectType := types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"owner": types.StringType,
+				"group": types.StringType,
+				"mode":  types.StringType,
+				"label": types.StringType,
+			},
 		}
+
+		targetModel := PoolTargetModel{
+			Path:        types.StringValue(poolDef.Target.Path),
+			Permissions: types.ObjectNull(permissionsObjectType.AttrTypes),
+		}
+
+		// Set permissions if present and user specified them
+		if !model.Target.IsNull() && !model.Target.IsUnknown() {
+			var origTarget PoolTargetModel
+			d := model.Target.As(ctx, &origTarget, basetypes.ObjectAsOptions{})
+			diags.Append(d...)
+			if !diags.HasError() && !origTarget.Permissions.IsNull() && !origTarget.Permissions.IsUnknown() && poolDef.Target.Permissions != nil {
+				permissionsModel := PoolPermissionsModel{
+					Owner: types.StringNull(),
+					Group: types.StringNull(),
+					Mode:  types.StringNull(),
+					Label: types.StringNull(),
+				}
+
+				if poolDef.Target.Permissions.Owner != "" {
+					permissionsModel.Owner = types.StringValue(poolDef.Target.Permissions.Owner)
+				}
+				if poolDef.Target.Permissions.Group != "" {
+					permissionsModel.Group = types.StringValue(poolDef.Target.Permissions.Group)
+				}
+				if poolDef.Target.Permissions.Mode != "" {
+					permissionsModel.Mode = types.StringValue(poolDef.Target.Permissions.Mode)
+				}
+				if poolDef.Target.Permissions.Label != "" {
+					permissionsModel.Label = types.StringValue(poolDef.Target.Permissions.Label)
+				}
+
+				permissionsObj, d := types.ObjectValueFrom(ctx, permissionsObjectType.AttrTypes, permissionsModel)
+				diags.Append(d...)
+				if !diags.HasError() {
+					targetModel.Permissions = permissionsObj
+				}
+			}
+		}
+
 		targetObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
-			"path": types.StringType,
+			"path":        types.StringType,
+			"permissions": permissionsObjectType,
 		}, targetModel)
 		diags.Append(d...)
 		if diags.HasError() {
