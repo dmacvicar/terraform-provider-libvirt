@@ -117,8 +117,8 @@ func TestAccVolumeResource_withDomain(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_pool.test", "name", "test-pool-integration"),
 					resource.TestCheckResourceAttr("libvirt_volume.test", "name", "test-integration.qcow2"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-integration"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "disk.0.target", "vda"),
-					resource.TestCheckResourceAttrSet("libvirt_domain.test", "disk.0.volume_id"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target", "vda"),
+					resource.TestCheckResourceAttrSet("libvirt_domain.test", "devices.disks.0.volume_id"),
 				),
 			},
 		},
@@ -157,10 +157,14 @@ resource "libvirt_domain" "test" {
     machine = "q35"
   }
 
-  disk {
-    volume_id = libvirt_volume.test.id
-    target    = "vda"
-    bus       = "virtio"
+  devices = {
+    disks = [
+      {
+        volume_id = libvirt_volume.test.id
+        target    = "vda"
+        bus       = "virtio"
+      }
+    ]
   }
 }
 `, name)

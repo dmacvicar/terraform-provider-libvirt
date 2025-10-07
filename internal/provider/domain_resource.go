@@ -53,25 +53,17 @@ type DomainResourceModel struct {
 	IOThreads  types.Int64  `tfsdk:"iothreads"`
 	Running    types.Bool   `tfsdk:"running"`
 
-	// Blocks
-	OS         *DomainOSModel          `tfsdk:"os"`
-	Features   *DomainFeaturesModel    `tfsdk:"features"`
-	CPU        *DomainCPUModel         `tfsdk:"cpu"`
-	Clock      *DomainClockModel       `tfsdk:"clock"`
-	PM         *DomainPMModel          `tfsdk:"pm"`
-	Disks      []DomainDiskModel       `tfsdk:"disk"`
-	Interfaces []DomainInterfaceModel  `tfsdk:"interface"`
-	Create     *DomainCreateModel      `tfsdk:"create"`
-	Destroy    *DomainDestroyModel     `tfsdk:"destroy"`
+	// Blocks (using blocks for now, but devices uses nested attributes per HashiCorp guidance)
+	OS       *DomainOSModel      `tfsdk:"os"`
+	Features *DomainFeaturesModel `tfsdk:"features"`
+	CPU      *DomainCPUModel     `tfsdk:"cpu"`
+	Clock    *DomainClockModel   `tfsdk:"clock"`
+	PM       *DomainPMModel      `tfsdk:"pm"`
+	Create   *DomainCreateModel  `tfsdk:"create"`
+	Destroy  *DomainDestroyModel `tfsdk:"destroy"`
 
-	// TODO: Add more fields as we implement them:
-	// - iothreads
-	// - current_memory, max_memory
-	// - features
-	// - cpu
-	// - clock
-	// - devices
-	// - etc.
+	// Nested attribute (following HashiCorp guidance for new schemas)
+	Devices types.Object `tfsdk:"devices"`
 }
 
 // DomainOSModel describes the OS configuration
@@ -157,6 +149,12 @@ type DomainInterfaceSourceModel struct {
 	PortGroup types.String `tfsdk:"portgroup"`
 	Bridge    types.String `tfsdk:"bridge"`
 	Dev       types.String `tfsdk:"dev"`
+}
+
+// DomainDevicesModel describes all devices in the domain
+type DomainDevicesModel struct {
+	Disks      types.List `tfsdk:"disks"`
+	Interfaces types.List `tfsdk:"interfaces"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -303,6 +301,82 @@ providing fine-grained control over VM configuration.
 			"running": schema.BoolAttribute{
 				Description: "Whether the domain should be running. If true, the domain will be started after creation. If false or unset, the domain will only be defined but not started.",
 				Optional:    true,
+			},
+			"devices": schema.SingleNestedAttribute{
+				Description: "Devices attached to the domain (disks, network interfaces, etc.).",
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"disks": schema.ListNestedAttribute{
+						Description: "Disk devices attached to the domain.",
+						Optional:    true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"device": schema.StringAttribute{
+									Description: "Device type (disk, cdrom, floppy, lun).",
+									Optional:    true,
+								},
+								"source": schema.StringAttribute{
+									Description: "Path to the disk image file. Mutually exclusive with volume_id.",
+									Optional:    true,
+								},
+								"volume_id": schema.StringAttribute{
+									Description: "ID (key) of a libvirt_volume to use as the disk source. Mutually exclusive with source.",
+									Optional:    true,
+								},
+								"target": schema.StringAttribute{
+									Description: "Target device name (e.g., vda, sda, hda).",
+									Required:    true,
+								},
+								"bus": schema.StringAttribute{
+									Description: "Bus type (virtio, scsi, ide, sata, usb).",
+									Optional:    true,
+								},
+							},
+						},
+					},
+					"interfaces": schema.ListNestedAttribute{
+						Description: "Network interfaces attached to the domain.",
+						Optional:    true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"type": schema.StringAttribute{
+									Description: "Interface type (network, bridge, user, direct, etc.).",
+									Required:    true,
+								},
+								"mac": schema.StringAttribute{
+									Description: "MAC address for the interface.",
+									Optional:    true,
+								},
+								"model": schema.StringAttribute{
+									Description: "Device model (virtio, e1000, rtl8139, etc.).",
+									Optional:    true,
+								},
+								"source": schema.SingleNestedAttribute{
+									Description: "Interface source configuration.",
+									Optional:    true,
+									Attributes: map[string]schema.Attribute{
+										"network": schema.StringAttribute{
+											Description: "Network name (for type=network).",
+											Optional:    true,
+										},
+										"portgroup": schema.StringAttribute{
+											Description: "Port group name (for type=network).",
+											Optional:    true,
+										},
+										"bridge": schema.StringAttribute{
+											Description: "Bridge name (for type=bridge).",
+											Optional:    true,
+										},
+										"dev": schema.StringAttribute{
+											Description: "Device name (for type=user or type=direct).",
+											Optional:    true,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 		Blocks: map[string]schema.Block{
@@ -558,75 +632,6 @@ Operating system configuration. See [libvirt OS element documentation](https://l
 					},
 				},
 			},
-			"disk": schema.ListNestedBlock{
-				Description: "Disk devices attached to the domain.",
-				NestedObject: schema.NestedBlockObject{
-					Attributes: map[string]schema.Attribute{
-						"device": schema.StringAttribute{
-							Description: "Device type (disk, cdrom, floppy, lun).",
-							Optional:    true,
-						},
-						"source": schema.StringAttribute{
-							Description: "Path to the disk image file. Mutually exclusive with volume_id.",
-							Optional:    true,
-						},
-						"volume_id": schema.StringAttribute{
-							Description: "ID (key) of a libvirt_volume to use as the disk source. Mutually exclusive with source.",
-							Optional:    true,
-						},
-						"target": schema.StringAttribute{
-							Description: "Target device name (e.g., vda, sda, hda).",
-							Required:    true,
-						},
-						"bus": schema.StringAttribute{
-							Description: "Bus type (virtio, scsi, ide, sata, usb).",
-							Optional:    true,
-						},
-					},
-				},
-			},
-			"interface": schema.ListNestedBlock{
-				Description: "Network interfaces attached to the domain.",
-				NestedObject: schema.NestedBlockObject{
-					Attributes: map[string]schema.Attribute{
-						"type": schema.StringAttribute{
-							Description: "Interface type (network, bridge, user, direct, etc.).",
-							Required:    true,
-						},
-						"mac": schema.StringAttribute{
-							Description: "MAC address for the interface.",
-							Optional:    true,
-						},
-						"model": schema.StringAttribute{
-							Description: "Device model (virtio, e1000, rtl8139, etc.).",
-							Optional:    true,
-						},
-					},
-					Blocks: map[string]schema.Block{
-						"source": schema.SingleNestedBlock{
-							Description: "Interface source configuration.",
-							Attributes: map[string]schema.Attribute{
-								"network": schema.StringAttribute{
-									Description: "Network name (for type=network).",
-									Optional:    true,
-								},
-								"portgroup": schema.StringAttribute{
-									Description: "Port group name (for type=network).",
-									Optional:    true,
-								},
-								"bridge": schema.StringAttribute{
-									Description: "Bridge name (for type=bridge).",
-									Optional:    true,
-								},
-								"dev": schema.StringAttribute{
-									Description: "Device name (for type=user or type=direct).",
-									Optional:    true,
-								},
-							},
-						},
-					},
-				},
-			},
 			"create": schema.SingleNestedBlock{
 				Description: "Domain start flags. Only used when running=true. Controls how the domain is started.",
 				MarkdownDescription: `
@@ -755,7 +760,10 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	// Update state with computed values
-	xmlToDomainModel(parsedDomain, &plan)
+	resp.Diagnostics.Append(xmlToDomainModel(ctx, parsedDomain, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Start the domain if running=true
 	if !plan.Running.IsNull() && plan.Running.ValueBool() {
@@ -835,7 +843,10 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	// Update state
-	xmlToDomainModel(parsedDomain, &state)
+	resp.Diagnostics.Append(xmlToDomainModel(ctx, parsedDomain, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Save state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -1034,7 +1045,10 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	xmlToDomainModel(parsedDomain, &plan)
+	resp.Diagnostics.Append(xmlToDomainModel(ctx, parsedDomain, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Save updated state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)

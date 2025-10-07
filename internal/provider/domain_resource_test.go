@@ -690,10 +690,10 @@ func TestAccDomainResource_network(t *testing.T) {
 				Config: testAccDomainResourceConfigNetwork("test-domain-network"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-network"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "interface.#", "1"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "interface.0.type", "network"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "interface.0.source.network", "default"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "interface.0.model", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "network"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.network", "default"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model", "virtio"),
 				),
 			},
 		},
@@ -715,12 +715,16 @@ resource "libvirt_domain" "test" {
     machine = "q35"
   }
 
-  interface {
-    type  = "network"
-    model = "virtio"
-    source {
-      network = "default"
-    }
+  devices = {
+    interfaces = [
+      {
+        type  = "network"
+        model = "virtio"
+        source = {
+          network = "default"
+        }
+      }
+    ]
   }
 }
 `, name)

@@ -52,9 +52,23 @@ For XML elements with both text content and attributes, see the "Handling Elemen
 
 ### Provider Schema Implementation Notes
 
-- When Terraform configuration uses attribute syntax (for example `target = { path = "/data" }`) model it with `schema.SingleNestedAttribute`/`ListNestedAttribute`. Using block types for these shapes causes plan-time errors.
-- Only declare blocks in the schema when the provider exposes a real HCL block (e.g., `disk { ... }`, `os { ... }`).
-- During XML → model conversion, populate optional fields only if the user set them; this avoids diffs from libvirt defaults or normalized values.
+**Use Nested Attributes, Not Blocks**
+
+Per [HashiCorp guidance](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/blocks), new provider implementations should use nested attribute types instead of block types. Blocks are mainly for migrating legacy SDK-based providers.
+
+- Use `schema.SingleNestedAttribute` for single objects (e.g., `os = { type = "hvm" }`)
+- Use `schema.ListNestedAttribute` for lists of objects (e.g., `disks = [{ target = "vda" }]`)
+- **Exception**: The domain resource currently uses blocks for `os`, `features`, `cpu`, `clock`, `pm`, `create`, and `destroy` for backward compatibility and ergonomics. New features should use nested attributes.
+
+**Follow the libvirt XML Schema Structure**
+
+The Terraform schema must mirror the libvirt XML structure:
+- XML: `<domain><devices><disk>...</disk></devices></domain>`
+- HCL: `devices = { disks = [...] }`
+
+**Preserve User Input**
+
+During XML → model conversion, populate optional fields only if the user set them; this avoids diffs from libvirt defaults or normalized values.
 
 ## Project Structure
 

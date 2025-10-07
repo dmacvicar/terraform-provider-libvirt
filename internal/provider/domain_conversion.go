@@ -6,7 +6,10 @@ import (
 	"fmt"
 
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -486,13 +489,27 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 		domain.PM = pm
 	}
 
-	// Set Disks
-	if len(model.Disks) > 0 {
+	// Set Devices (Disks and Interfaces)
+	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+		var devices DomainDevicesModel
+		diags := model.Devices.As(ctx, &devices, basetypes.ObjectAsOptions{})
+		if diags.HasError() {
+			return nil, fmt.Errorf("failed to extract devices: %v", diags.Errors())
+		}
+
 		if domain.Devices == nil {
 			domain.Devices = &libvirtxml.DomainDeviceList{}
 		}
 
-		for _, diskModel := range model.Disks {
+		// Process disks
+		if !devices.Disks.IsNull() && !devices.Disks.IsUnknown() {
+			var disks []DomainDiskModel
+			diags := devices.Disks.ElementsAs(ctx, &disks, false)
+			if diags.HasError() {
+				return nil, fmt.Errorf("failed to extract disks: %v", diags.Errors())
+			}
+
+			for _, diskModel := range disks {
 			disk := libvirtxml.DomainDisk{}
 
 			// Set device type (default to disk)
@@ -551,17 +568,19 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 				}
 			}
 
-			domain.Devices.Disks = append(domain.Devices.Disks, disk)
-		}
-	}
-
-	// Set Interfaces
-	if len(model.Interfaces) > 0 {
-		if domain.Devices == nil {
-			domain.Devices = &libvirtxml.DomainDeviceList{}
+				domain.Devices.Disks = append(domain.Devices.Disks, disk)
+			}
 		}
 
-		for _, ifaceModel := range model.Interfaces {
+		// Process interfaces
+		if !devices.Interfaces.IsNull() && !devices.Interfaces.IsUnknown() {
+			var interfaces []DomainInterfaceModel
+			diags := devices.Interfaces.ElementsAs(ctx, &interfaces, false)
+			if diags.HasError() {
+				return nil, fmt.Errorf("failed to extract interfaces: %v", diags.Errors())
+			}
+
+			for _, ifaceModel := range interfaces {
 			iface := libvirtxml.DomainInterface{}
 
 			// Set MAC address
@@ -612,7 +631,8 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 				iface.Source = source
 			}
 
-			domain.Devices.Interfaces = append(domain.Devices.Interfaces, iface)
+				domain.Devices.Interfaces = append(domain.Devices.Interfaces, iface)
+			}
 		}
 	}
 
@@ -620,7 +640,8 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 }
 
 // xmlToDomainModel converts libvirtxml.Domain to a DomainResourceModel
-func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
+func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *DomainResourceModel) diag.Diagnostics {
+	var diags diag.Diagnostics
 	model.Name = types.StringValue(domain.Name)
 	model.Type = types.StringValue(domain.Type)
 
@@ -1001,106 +1022,210 @@ func xmlToDomainModel(domain *libvirtxml.Domain, model *DomainResourceModel) {
 		model.PM = pmModel
 	}
 
-	// Disks - only preserve optional fields the user specified
-	if len(model.Disks) > 0 && domain.Devices != nil && len(domain.Devices.Disks) > 0 {
-		origDisks := model.Disks
-		disks := make([]DomainDiskModel, 0, len(origDisks))
-
-		for i := 0; i < len(origDisks) && i < len(domain.Devices.Disks); i++ {
-			disk := domain.Devices.Disks[i]
-			orig := origDisks[i]
-			diskModel := DomainDiskModel{}
-
-			if !orig.Device.IsNull() && !orig.Device.IsUnknown() && disk.Device != "" {
-				diskModel.Device = types.StringValue(disk.Device)
-			}
-
-			// Preserve source only when the user specified a source path
-			if !orig.Source.IsNull() && !orig.Source.IsUnknown() && disk.Source != nil && disk.Source.File != nil && disk.Source.File.File != "" {
-				diskModel.Source = types.StringValue(disk.Source.File.File)
-			}
-
-			// Preserve volume_id exactly as provided by the user to avoid replacing it with libvirt paths
-			if !orig.VolumeID.IsNull() && !orig.VolumeID.IsUnknown() {
-				diskModel.VolumeID = orig.VolumeID
-			}
-
-			if disk.Target != nil {
-				if disk.Target.Dev != "" {
-					diskModel.Target = types.StringValue(disk.Target.Dev)
-				}
-				if !orig.Bus.IsNull() && !orig.Bus.IsUnknown() && disk.Target.Bus != "" {
-					diskModel.Bus = types.StringValue(disk.Target.Bus)
-				}
-			}
-
-			disks = append(disks, diskModel)
+	// Devices - only preserve optional fields the user specified
+	if !model.Devices.IsNull() && !model.Devices.IsUnknown() && domain.Devices != nil {
+		// Extract the current devices model from state
+		var origDevices DomainDevicesModel
+		d := model.Devices.As(ctx, &origDevices, basetypes.ObjectAsOptions{})
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
 		}
 
-		model.Disks = disks
-	}
+		var disks []DomainDiskModel
+		var interfaces []DomainInterfaceModel
 
-	// Interfaces - only if user specified them
-	if len(model.Interfaces) > 0 && domain.Devices != nil && len(domain.Devices.Interfaces) > 0 {
-		interfaces := make([]DomainInterfaceModel, 0, len(domain.Devices.Interfaces))
-
-		for i, iface := range domain.Devices.Interfaces {
-			// Only process if we have a corresponding model entry
-			if i >= len(model.Interfaces) {
-				break
+		// Process disks - only preserve optional fields the user specified
+		if !origDevices.Disks.IsNull() && !origDevices.Disks.IsUnknown() && len(domain.Devices.Disks) > 0 {
+			var origDisks []DomainDiskModel
+			d := origDevices.Disks.ElementsAs(ctx, &origDisks, false)
+			diags.Append(d...)
+			if diags.HasError() {
+				return diags
 			}
 
-			ifaceModel := DomainInterfaceModel{}
-			origModel := model.Interfaces[i]
+			disks = make([]DomainDiskModel, 0, len(origDisks))
 
-			// Type - determine from source
-			if iface.Source != nil {
-				if iface.Source.Network != nil {
-					ifaceModel.Type = types.StringValue("network")
-				} else if iface.Source.Bridge != nil {
-					ifaceModel.Type = types.StringValue("bridge")
-				} else if iface.Source.User != nil {
-					ifaceModel.Type = types.StringValue("user")
+			for i := 0; i < len(origDisks) && i < len(domain.Devices.Disks); i++ {
+				disk := domain.Devices.Disks[i]
+				orig := origDisks[i]
+				diskModel := DomainDiskModel{}
+
+				if !orig.Device.IsNull() && !orig.Device.IsUnknown() && disk.Device != "" {
+					diskModel.Device = types.StringValue(disk.Device)
 				}
-			}
 
-			// MAC - only if user specified it
-			if !origModel.MAC.IsNull() && iface.MAC != nil && iface.MAC.Address != "" {
-				ifaceModel.MAC = types.StringValue(iface.MAC.Address)
-			}
+				// Preserve source only when the user specified a source path
+				if !orig.Source.IsNull() && !orig.Source.IsUnknown() && disk.Source != nil && disk.Source.File != nil && disk.Source.File.File != "" {
+					diskModel.Source = types.StringValue(disk.Source.File.File)
+				}
 
-			// Model - only if user specified it
-			if !origModel.Model.IsNull() && iface.Model != nil && iface.Model.Type != "" {
-				ifaceModel.Model = types.StringValue(iface.Model.Type)
-			}
+				// Preserve volume_id exactly as provided by the user to avoid replacing it with libvirt paths
+				if !orig.VolumeID.IsNull() && !orig.VolumeID.IsUnknown() {
+					diskModel.VolumeID = orig.VolumeID
+				}
 
-			// Source - only if user specified it
-			if origModel.Source != nil && iface.Source != nil {
-				sourceModel := &DomainInterfaceSourceModel{}
-
-				if iface.Source.Network != nil {
-					if !origModel.Source.Network.IsNull() && iface.Source.Network.Network != "" {
-						sourceModel.Network = types.StringValue(iface.Source.Network.Network)
+				if disk.Target != nil {
+					if disk.Target.Dev != "" {
+						diskModel.Target = types.StringValue(disk.Target.Dev)
 					}
-					if !origModel.Source.PortGroup.IsNull() && iface.Source.Network.PortGroup != "" {
-						sourceModel.PortGroup = types.StringValue(iface.Source.Network.PortGroup)
-					}
-				} else if iface.Source.Bridge != nil {
-					if !origModel.Source.Bridge.IsNull() && iface.Source.Bridge.Bridge != "" {
-						sourceModel.Bridge = types.StringValue(iface.Source.Bridge.Bridge)
-					}
-				} else if iface.Source.User != nil {
-					if !origModel.Source.Dev.IsNull() && iface.Source.User.Dev != "" {
-						sourceModel.Dev = types.StringValue(iface.Source.User.Dev)
+					if !orig.Bus.IsNull() && !orig.Bus.IsUnknown() && disk.Target.Bus != "" {
+						diskModel.Bus = types.StringValue(disk.Target.Bus)
 					}
 				}
 
-				ifaceModel.Source = sourceModel
+				disks = append(disks, diskModel)
 			}
-
-			interfaces = append(interfaces, ifaceModel)
 		}
 
-		model.Interfaces = interfaces
+		// Process interfaces - only if user specified them
+		if !origDevices.Interfaces.IsNull() && !origDevices.Interfaces.IsUnknown() && len(domain.Devices.Interfaces) > 0 {
+			var origInterfaces []DomainInterfaceModel
+			d := origDevices.Interfaces.ElementsAs(ctx, &origInterfaces, false)
+			diags.Append(d...)
+			if diags.HasError() {
+				return diags
+			}
+
+			interfaces = make([]DomainInterfaceModel, 0, len(domain.Devices.Interfaces))
+
+			for i, iface := range domain.Devices.Interfaces {
+				// Only process if we have a corresponding model entry
+				if i >= len(origInterfaces) {
+					break
+				}
+
+				ifaceModel := DomainInterfaceModel{}
+				origModel := origInterfaces[i]
+
+				// Type - determine from source
+				if iface.Source != nil {
+					if iface.Source.Network != nil {
+						ifaceModel.Type = types.StringValue("network")
+					} else if iface.Source.Bridge != nil {
+						ifaceModel.Type = types.StringValue("bridge")
+					} else if iface.Source.User != nil {
+						ifaceModel.Type = types.StringValue("user")
+					}
+				}
+
+				// MAC - only if user specified it
+				if !origModel.MAC.IsNull() && iface.MAC != nil && iface.MAC.Address != "" {
+					ifaceModel.MAC = types.StringValue(iface.MAC.Address)
+				}
+
+				// Model - only if user specified it
+				if !origModel.Model.IsNull() && iface.Model != nil && iface.Model.Type != "" {
+					ifaceModel.Model = types.StringValue(iface.Model.Type)
+				}
+
+				// Source - only if user specified it
+				if origModel.Source != nil && iface.Source != nil {
+					sourceModel := &DomainInterfaceSourceModel{}
+
+					if iface.Source.Network != nil {
+						if !origModel.Source.Network.IsNull() && iface.Source.Network.Network != "" {
+							sourceModel.Network = types.StringValue(iface.Source.Network.Network)
+						}
+						if !origModel.Source.PortGroup.IsNull() && iface.Source.Network.PortGroup != "" {
+							sourceModel.PortGroup = types.StringValue(iface.Source.Network.PortGroup)
+						}
+					} else if iface.Source.Bridge != nil {
+						if !origModel.Source.Bridge.IsNull() && iface.Source.Bridge.Bridge != "" {
+							sourceModel.Bridge = types.StringValue(iface.Source.Bridge.Bridge)
+						}
+					} else if iface.Source.User != nil {
+						if !origModel.Source.Dev.IsNull() && iface.Source.User.Dev != "" {
+							sourceModel.Dev = types.StringValue(iface.Source.User.Dev)
+						}
+					}
+
+					ifaceModel.Source = sourceModel
+				}
+
+				interfaces = append(interfaces, ifaceModel)
+			}
+		}
+
+		// Create the devices lists
+		disksList, d := types.ListValueFrom(ctx, types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"device":    types.StringType,
+				"source":    types.StringType,
+				"volume_id": types.StringType,
+				"target":    types.StringType,
+				"bus":       types.StringType,
+			},
+		}, disks)
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+
+		interfacesList, d := types.ListValueFrom(ctx, types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"type":  types.StringType,
+				"mac":   types.StringType,
+				"model": types.StringType,
+				"source": types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"network":   types.StringType,
+						"portgroup": types.StringType,
+						"bridge":    types.StringType,
+						"dev":       types.StringType,
+					},
+				},
+			},
+		}, interfaces)
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+
+		// Create the new devices model
+		newDevices := DomainDevicesModel{
+			Disks:      disksList,
+			Interfaces: interfacesList,
+		}
+
+		// Create the devices object
+		devicesObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+			"disks": types.ListType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"device":    types.StringType,
+						"source":    types.StringType,
+						"volume_id": types.StringType,
+						"target":    types.StringType,
+						"bus":       types.StringType,
+					},
+				},
+			},
+			"interfaces": types.ListType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"type":  types.StringType,
+						"mac":   types.StringType,
+						"model": types.StringType,
+						"source": types.ObjectType{
+							AttrTypes: map[string]attr.Type{
+								"network":   types.StringType,
+								"portgroup": types.StringType,
+								"bridge":    types.StringType,
+								"dev":       types.StringType,
+							},
+						},
+					},
+				},
+			},
+		}, newDevices)
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+
+		model.Devices = devicesObj
 	}
+
+	return diags
 }
