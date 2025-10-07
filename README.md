@@ -327,7 +327,7 @@ This table shows implementation status and compatibility with the [original prov
 | Clock & timers | ✅ | ○ | Full support including nested catchup |
 | Power management | ✅ | ○ | suspend_to_mem, suspend_to_disk |
 | Disks (basic) | ✅ | ✅ | File-based disks |
-| Disks (volume) | ○ | ✅ | volume_id reference to libvirt_volume |
+| Disks (volume) | ✅ | ✅ | volume_id reference to libvirt_volume |
 | Disks (URL) | ○ | ✅ | URL download support |
 | Disks (block) | ○ | ✅ | Block device passthrough |
 | Disks (SCSI) | ○ | ✅ | SCSI bus, WWN identifier |
@@ -353,18 +353,23 @@ This table shows implementation status and compatibility with the [original prov
 
 | Feature | Status | Old Provider | Notes |
 |---------|--------|--------------|-------|
-| Resource | ○ | ✅ | Create and manage volumes |
-| URL download | ○ | ✅ | Download cloud images from URLs |
-| Format | ○ | ✅ | qcow2, raw format support |
-| Backing volumes | ○ | ✅ | base_volume_id for COW |
+| Resource | ✅ | ✅ | Create and manage volumes |
+| Type | ✅ | ✅ | Volume type (file, block, dir, etc.) |
+| Format | ✅ | ✅ | qcow2, raw format support |
+| Backing volumes | ✅ | ✅ | backing_store for COW |
+| Permissions | ✅ | ✅ | owner, group, mode, label |
+| URL download | ○ | ✅ | Download cloud images (deferred) |
 | XML XSLT | ○ | ✅ | XSLT transforms |
 
 ### Pool Resource (libvirt_pool)
 
 | Feature | Status | Old Provider | Notes |
 |---------|--------|--------------|-------|
-| Resource | ○ | ✅ | Create and manage storage pools |
-| Pool types | ○ | ✅ | dir (directory) and logical (LVM) |
+| Resource | ✅ | ✅ | Create and manage storage pools |
+| Pool types | ✅ | ✅ | dir (directory) type |
+| Target permissions | ✅ | ✅ | owner, group, mode, label |
+| Source | ✅ | ✅ | name, device (for LVM) |
+| Logical pools | ⚠️ | ✅ | Partial - needs testing |
 
 ### Network Resource (libvirt_network)
 
