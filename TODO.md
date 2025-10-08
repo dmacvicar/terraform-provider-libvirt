@@ -71,15 +71,15 @@
 ## Priority 2: Common Use Cases
 
 ### 4. Graphics Devices [OLD: ✅]
-**Status:** ❌ Not started
-**Why:** Interactive VMs need display
+**Status:** ✅ Completed
 
 **Tasks:**
-- [ ] Add `graphics` block
-- [ ] Support VNC type
-- [ ] Support Spice type
-- [ ] Add listen address, port, password
-- [ ] Test with virt-viewer
+- [x] Add `graphics` nested attribute to devices
+- [x] Support VNC type (socket, port, autoport, websocket, listen)
+- [x] Support Spice type (port, tlsport, autoport, listen)
+- [x] Model ↔ libvirtxml conversion
+- [x] Acceptance test
+- [x] Documentation
 
 ### 5. Expand Disk Support [OLD: ✅]
 **Status:** ⚠️ Partially done (basic + volume_id done)

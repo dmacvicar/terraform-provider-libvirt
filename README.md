@@ -336,7 +336,7 @@ This table shows implementation status and compatibility with the [original prov
 | Network (user) | ✅ | ✅ | User-mode networking |
 | Network (macvtap) | ○ | ✅ | macvtap, vepa, passthrough modes |
 | Network (wait_for_lease) | ○ | ✅ | Wait for DHCP lease |
-| Graphics | ○ | ✅ | Spice/VNC display |
+| Graphics | ✅ | ✅ | VNC/Spice display (autoport, listen, port) |
 | Video | ○ | ✅ | Video device (cirrus, etc.) |
 | Console/Serial | ○ | ✅ | Console and serial devices |
 | Filesystem (9p) | ○ | ✅ | Host directory sharing via virtio-9p |
