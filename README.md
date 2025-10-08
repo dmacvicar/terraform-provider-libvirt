@@ -326,8 +326,9 @@ This table shows implementation status and compatibility with the [original prov
 | Features | ✅ | ⚠️ | 20+ features; more than old provider |
 | Clock & timers | ✅ | ○ | Full support including nested catchup |
 | Power management | ✅ | ○ | suspend_to_mem, suspend_to_disk |
-| Disks (basic) | ✅ | ✅ | File-based disks |
+| Disks (basic) | ✅ | ✅ | File-based disks with device, target, bus |
 | Disks (volume) | ✅ | ✅ | volume_id reference to libvirt_volume |
+| Disks (driver) | ○ | ⚠️ | cache, io, discard options |
 | Disks (URL) | ○ | ✅ | URL download support |
 | Disks (block) | ○ | ✅ | Block device passthrough |
 | Disks (SCSI) | ○ | ✅ | SCSI bus, WWN identifier |

@@ -215,6 +215,7 @@ Optional:
 Optional:
 
 - `disks` (Attributes List) Disk devices attached to the domain. (see [below for nested schema](#nestedatt--devices--disks))
+- `graphics` (Attributes) Graphics device for the domain (VNC or Spice). Only one type can be specified. (see [below for nested schema](#nestedatt--devices--graphics))
 - `interfaces` (Attributes List) Network interfaces attached to the domain. (see [below for nested schema](#nestedatt--devices--interfaces))
 
 <a id="nestedatt--devices--disks"></a>
@@ -230,6 +231,38 @@ Optional:
 - `device` (String) Device type (disk, cdrom, floppy, lun).
 - `source` (String) Path to the disk image file. Mutually exclusive with volume_id.
 - `volume_id` (String) ID (key) of a libvirt_volume to use as the disk source. Mutually exclusive with source.
+
+
+<a id="nestedatt--devices--graphics"></a>
+### Nested Schema for `devices.graphics`
+
+Optional:
+
+- `spice` (Attributes) Spice graphics configuration. Mutually exclusive with vnc. (see [below for nested schema](#nestedatt--devices--graphics--spice))
+- `vnc` (Attributes) VNC graphics configuration. Mutually exclusive with spice. (see [below for nested schema](#nestedatt--devices--graphics--vnc))
+
+<a id="nestedatt--devices--graphics--spice"></a>
+### Nested Schema for `devices.graphics.spice`
+
+Optional:
+
+- `autoport` (String) Auto-allocate port (yes/no). Optional.
+- `listen` (String) Listen address for Spice server. Optional.
+- `port` (Number) TCP port for Spice server. Use -1 for auto. Optional.
+- `tlsport` (Number) TLS port for Spice server. Optional.
+
+
+<a id="nestedatt--devices--graphics--vnc"></a>
+### Nested Schema for `devices.graphics.vnc`
+
+Optional:
+
+- `autoport` (String) Auto-allocate port (yes/no). Optional.
+- `listen` (String) Listen address for VNC server. Optional.
+- `port` (Number) TCP port for VNC server. Use -1 for auto. Optional.
+- `socket` (String) UNIX socket path for VNC server. Optional.
+- `websocket` (Number) WebSocket port for VNC. Optional.
+
 
 
 <a id="nestedatt--devices--interfaces"></a>

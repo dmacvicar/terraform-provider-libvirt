@@ -634,6 +634,74 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 				domain.Devices.Interfaces = append(domain.Devices.Interfaces, iface)
 			}
 		}
+
+		// Process graphics
+		if !devices.Graphics.IsNull() && !devices.Graphics.IsUnknown() {
+			var graphicsModel DomainGraphicsModel
+			diags := devices.Graphics.As(ctx, &graphicsModel, basetypes.ObjectAsOptions{})
+			if diags.HasError() {
+				return nil, fmt.Errorf("failed to extract graphics: %v", diags.Errors())
+			}
+
+			graphic := libvirtxml.DomainGraphic{}
+
+			// Handle VNC graphics
+			if !graphicsModel.VNC.IsNull() && !graphicsModel.VNC.IsUnknown() {
+				var vncModel DomainGraphicsVNCModel
+				diags := graphicsModel.VNC.As(ctx, &vncModel, basetypes.ObjectAsOptions{})
+				if diags.HasError() {
+					return nil, fmt.Errorf("failed to extract VNC graphics: %v", diags.Errors())
+				}
+
+				vnc := &libvirtxml.DomainGraphicVNC{}
+
+				if !vncModel.Socket.IsNull() && !vncModel.Socket.IsUnknown() {
+					vnc.Socket = vncModel.Socket.ValueString()
+				}
+				if !vncModel.Port.IsNull() && !vncModel.Port.IsUnknown() {
+					vnc.Port = int(vncModel.Port.ValueInt64())
+				}
+				if !vncModel.AutoPort.IsNull() && !vncModel.AutoPort.IsUnknown() {
+					vnc.AutoPort = vncModel.AutoPort.ValueString()
+				}
+				if !vncModel.WebSocket.IsNull() && !vncModel.WebSocket.IsUnknown() {
+					vnc.WebSocket = int(vncModel.WebSocket.ValueInt64())
+				}
+				if !vncModel.Listen.IsNull() && !vncModel.Listen.IsUnknown() {
+					vnc.Listen = vncModel.Listen.ValueString()
+				}
+
+				graphic.VNC = vnc
+			}
+
+			// Handle Spice graphics
+			if !graphicsModel.Spice.IsNull() && !graphicsModel.Spice.IsUnknown() {
+				var spiceModel DomainGraphicsSpiceModel
+				diags := graphicsModel.Spice.As(ctx, &spiceModel, basetypes.ObjectAsOptions{})
+				if diags.HasError() {
+					return nil, fmt.Errorf("failed to extract Spice graphics: %v", diags.Errors())
+				}
+
+				spice := &libvirtxml.DomainGraphicSpice{}
+
+				if !spiceModel.Port.IsNull() && !spiceModel.Port.IsUnknown() {
+					spice.Port = int(spiceModel.Port.ValueInt64())
+				}
+				if !spiceModel.TLSPort.IsNull() && !spiceModel.TLSPort.IsUnknown() {
+					spice.TLSPort = int(spiceModel.TLSPort.ValueInt64())
+				}
+				if !spiceModel.AutoPort.IsNull() && !spiceModel.AutoPort.IsUnknown() {
+					spice.AutoPort = spiceModel.AutoPort.ValueString()
+				}
+				if !spiceModel.Listen.IsNull() && !spiceModel.Listen.IsUnknown() {
+					spice.Listen = spiceModel.Listen.ValueString()
+				}
+
+				graphic.Spice = spice
+			}
+
+			domain.Devices.Graphics = append(domain.Devices.Graphics, graphic)
+		}
 	}
 
 	return domain, nil
@@ -1147,6 +1215,117 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			}
 		}
 
+		// Process graphics - only preserve optional fields the user specified
+		var graphicsModel *DomainGraphicsModel
+		if !origDevices.Graphics.IsNull() && !origDevices.Graphics.IsUnknown() && len(domain.Devices.Graphics) > 0 {
+			var origGraphics DomainGraphicsModel
+			d := origDevices.Graphics.As(ctx, &origGraphics, basetypes.ObjectAsOptions{})
+			diags.Append(d...)
+			if diags.HasError() {
+				return diags
+			}
+
+			graphic := domain.Devices.Graphics[0] // libvirt only supports one graphics device
+			newGraphics := DomainGraphicsModel{}
+
+			// Initialize null objects for unused types
+			vncNullObj := types.ObjectNull(map[string]attr.Type{
+				"socket":    types.StringType,
+				"port":      types.Int64Type,
+				"autoport":  types.StringType,
+				"websocket": types.Int64Type,
+				"listen":    types.StringType,
+			})
+			spiceNullObj := types.ObjectNull(map[string]attr.Type{
+				"port":     types.Int64Type,
+				"tlsport":  types.Int64Type,
+				"autoport": types.StringType,
+				"listen":   types.StringType,
+			})
+
+			// Set defaults
+			newGraphics.VNC = vncNullObj
+			newGraphics.Spice = spiceNullObj
+
+			// Handle VNC
+			if !origGraphics.VNC.IsNull() && graphic.VNC != nil {
+				var origVNC DomainGraphicsVNCModel
+				d := origGraphics.VNC.As(ctx, &origVNC, basetypes.ObjectAsOptions{})
+				diags.Append(d...)
+				if diags.HasError() {
+					return diags
+				}
+
+				vncModel := DomainGraphicsVNCModel{}
+				if !origVNC.Socket.IsNull() && graphic.VNC.Socket != "" {
+					vncModel.Socket = types.StringValue(graphic.VNC.Socket)
+				}
+				if !origVNC.Port.IsNull() {
+					vncModel.Port = types.Int64Value(int64(graphic.VNC.Port))
+				}
+				if !origVNC.AutoPort.IsNull() && graphic.VNC.AutoPort != "" {
+					vncModel.AutoPort = types.StringValue(graphic.VNC.AutoPort)
+				}
+				if !origVNC.WebSocket.IsNull() {
+					vncModel.WebSocket = types.Int64Value(int64(graphic.VNC.WebSocket))
+				}
+				if !origVNC.Listen.IsNull() && graphic.VNC.Listen != "" {
+					vncModel.Listen = types.StringValue(graphic.VNC.Listen)
+				}
+
+				vncObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+					"socket":    types.StringType,
+					"port":      types.Int64Type,
+					"autoport":  types.StringType,
+					"websocket": types.Int64Type,
+					"listen":    types.StringType,
+				}, vncModel)
+				diags.Append(d...)
+				if diags.HasError() {
+					return diags
+				}
+				newGraphics.VNC = vncObj
+			}
+
+			// Handle Spice
+			if !origGraphics.Spice.IsNull() && graphic.Spice != nil {
+				var origSpice DomainGraphicsSpiceModel
+				d := origGraphics.Spice.As(ctx, &origSpice, basetypes.ObjectAsOptions{})
+				diags.Append(d...)
+				if diags.HasError() {
+					return diags
+				}
+
+				spiceModel := DomainGraphicsSpiceModel{}
+				if !origSpice.Port.IsNull() {
+					spiceModel.Port = types.Int64Value(int64(graphic.Spice.Port))
+				}
+				if !origSpice.TLSPort.IsNull() {
+					spiceModel.TLSPort = types.Int64Value(int64(graphic.Spice.TLSPort))
+				}
+				if !origSpice.AutoPort.IsNull() && graphic.Spice.AutoPort != "" {
+					spiceModel.AutoPort = types.StringValue(graphic.Spice.AutoPort)
+				}
+				if !origSpice.Listen.IsNull() && graphic.Spice.Listen != "" {
+					spiceModel.Listen = types.StringValue(graphic.Spice.Listen)
+				}
+
+				spiceObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+					"port":     types.Int64Type,
+					"tlsport":  types.Int64Type,
+					"autoport": types.StringType,
+					"listen":   types.StringType,
+				}, spiceModel)
+				diags.Append(d...)
+				if diags.HasError() {
+					return diags
+				}
+				newGraphics.Spice = spiceObj
+			}
+
+			graphicsModel = &newGraphics
+		}
+
 		// Create the devices lists
 		disksList, d := types.ListValueFrom(ctx, types.ObjectType{
 			AttrTypes: map[string]attr.Type{
@@ -1182,10 +1361,60 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			return diags
 		}
 
+		// Create graphics object if present
+		var graphicsObj types.Object
+		if graphicsModel != nil {
+			var err diag.Diagnostics
+			graphicsObj, err = types.ObjectValueFrom(ctx, map[string]attr.Type{
+				"vnc": types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"socket":    types.StringType,
+						"port":      types.Int64Type,
+						"autoport":  types.StringType,
+						"websocket": types.Int64Type,
+						"listen":    types.StringType,
+					},
+				},
+				"spice": types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"port":     types.Int64Type,
+						"tlsport":  types.Int64Type,
+						"autoport": types.StringType,
+						"listen":   types.StringType,
+					},
+				},
+			}, graphicsModel)
+			diags.Append(err...)
+			if diags.HasError() {
+				return diags
+			}
+		} else {
+			graphicsObj = types.ObjectNull(map[string]attr.Type{
+				"vnc": types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"socket":    types.StringType,
+						"port":      types.Int64Type,
+						"autoport":  types.StringType,
+						"websocket": types.Int64Type,
+						"listen":    types.StringType,
+					},
+				},
+				"spice": types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"port":     types.Int64Type,
+						"tlsport":  types.Int64Type,
+						"autoport": types.StringType,
+						"listen":   types.StringType,
+					},
+				},
+			})
+		}
+
 		// Create the new devices model
 		newDevices := DomainDevicesModel{
 			Disks:      disksList,
 			Interfaces: interfacesList,
+			Graphics:   graphicsObj,
 		}
 
 		// Create the devices object
@@ -1214,6 +1443,27 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 								"bridge":    types.StringType,
 								"dev":       types.StringType,
 							},
+						},
+					},
+				},
+			},
+			"graphics": types.ObjectType{
+				AttrTypes: map[string]attr.Type{
+					"vnc": types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"socket":    types.StringType,
+							"port":      types.Int64Type,
+							"autoport":  types.StringType,
+							"websocket": types.Int64Type,
+							"listen":    types.StringType,
+						},
+					},
+					"spice": types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"port":     types.Int64Type,
+							"tlsport":  types.Int64Type,
+							"autoport": types.StringType,
+							"listen":   types.StringType,
 						},
 					},
 				},

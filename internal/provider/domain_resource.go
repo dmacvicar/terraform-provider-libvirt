@@ -151,10 +151,34 @@ type DomainInterfaceSourceModel struct {
 	Dev       types.String `tfsdk:"dev"`
 }
 
+// DomainGraphicsModel describes a graphics device
+type DomainGraphicsModel struct {
+	VNC   types.Object `tfsdk:"vnc"`
+	Spice types.Object `tfsdk:"spice"`
+}
+
+// DomainGraphicsVNCModel describes VNC graphics configuration
+type DomainGraphicsVNCModel struct {
+	Socket    types.String `tfsdk:"socket"`
+	Port      types.Int64  `tfsdk:"port"`
+	AutoPort  types.String `tfsdk:"autoport"`
+	WebSocket types.Int64  `tfsdk:"websocket"`
+	Listen    types.String `tfsdk:"listen"`
+}
+
+// DomainGraphicsSpiceModel describes Spice graphics configuration
+type DomainGraphicsSpiceModel struct {
+	Port     types.Int64  `tfsdk:"port"`
+	TLSPort  types.Int64  `tfsdk:"tlsport"`
+	AutoPort types.String `tfsdk:"autoport"`
+	Listen   types.String `tfsdk:"listen"`
+}
+
 // DomainDevicesModel describes all devices in the domain
 type DomainDevicesModel struct {
-	Disks      types.List `tfsdk:"disks"`
-	Interfaces types.List `tfsdk:"interfaces"`
+	Disks      types.List   `tfsdk:"disks"`
+	Interfaces types.List   `tfsdk:"interfaces"`
+	Graphics   types.Object `tfsdk:"graphics"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -371,6 +395,60 @@ providing fine-grained control over VM configuration.
 											Description: "Device name (for type=user or type=direct).",
 											Optional:    true,
 										},
+									},
+								},
+							},
+						},
+					},
+					"graphics": schema.SingleNestedAttribute{
+						Description: "Graphics device for the domain (VNC or Spice). Only one type can be specified.",
+						Optional:    true,
+						Attributes: map[string]schema.Attribute{
+							"vnc": schema.SingleNestedAttribute{
+								Description: "VNC graphics configuration. Mutually exclusive with spice.",
+								Optional:    true,
+								Attributes: map[string]schema.Attribute{
+									"socket": schema.StringAttribute{
+										Description: "UNIX socket path for VNC server. Optional.",
+										Optional:    true,
+									},
+									"port": schema.Int64Attribute{
+										Description: "TCP port for VNC server. Use -1 for auto. Optional.",
+										Optional:    true,
+									},
+									"autoport": schema.StringAttribute{
+										Description: "Auto-allocate port (yes/no). Optional.",
+										Optional:    true,
+									},
+									"websocket": schema.Int64Attribute{
+										Description: "WebSocket port for VNC. Optional.",
+										Optional:    true,
+									},
+									"listen": schema.StringAttribute{
+										Description: "Listen address for VNC server. Optional.",
+										Optional:    true,
+									},
+								},
+							},
+							"spice": schema.SingleNestedAttribute{
+								Description: "Spice graphics configuration. Mutually exclusive with vnc.",
+								Optional:    true,
+								Attributes: map[string]schema.Attribute{
+									"port": schema.Int64Attribute{
+										Description: "TCP port for Spice server. Use -1 for auto. Optional.",
+										Optional:    true,
+									},
+									"tlsport": schema.Int64Attribute{
+										Description: "TLS port for Spice server. Optional.",
+										Optional:    true,
+									},
+									"autoport": schema.StringAttribute{
+										Description: "Auto-allocate port (yes/no). Optional.",
+										Optional:    true,
+									},
+									"listen": schema.StringAttribute{
+										Description: "Listen address for Spice server. Optional.",
+										Optional:    true,
 									},
 								},
 							},

@@ -729,3 +729,46 @@ resource "libvirt_domain" "test" {
 }
 `, name)
 }
+
+func TestAccDomainResource_graphics(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigGraphicsVNC("test-domain-graphics"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-graphics"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.graphics.vnc.autoport", "yes"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigGraphicsVNC(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    graphics = {
+      vnc = {
+        autoport = "yes"
+        listen   = "0.0.0.0"
+      }
+    }
+  }
+}
+`, name)
+}

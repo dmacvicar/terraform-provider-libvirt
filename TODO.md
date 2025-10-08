@@ -82,18 +82,18 @@
 - [ ] Test with virt-viewer
 
 ### 5. Expand Disk Support [OLD: ✅]
-**Status:** ❌ Partially done (basic only)
+**Status:** ⚠️ Partially done (basic + volume_id done)
 
 **Tasks:**
-- [ ] Add volume_id support (reference to libvirt_volume)
+- [x] Add volume_id support (reference to libvirt_volume)
+- [ ] Add driver attributes (cache, io, discard, type) - **HIGH VALUE**
+- [ ] Add readonly flag (for CD-ROMs)
+- [ ] Add shareable flag (for shared storage)
+- [ ] Add boot order attribute
+- [ ] Add serial and WWN fields (SCSI identifiers)
 - [ ] Add URL source support
 - [ ] Add block device support
-- [ ] Add SCSI support (scsi flag, WWN)
-- [ ] Add driver attributes (type, cache, io, discard)
-- [ ] Add readonly, shareable flags
-- [ ] Add boot order
 - [ ] Support network disks (RBD, iSCSI)
-- [ ] Add disk driver test
 
 ### 6. Essential Devices [OLD: ✅]
 **Status:** ❌ Not started
@@ -182,8 +182,27 @@
 - [x] CRUD operations
 - [x] Integration with disk devices (volume_id)
 - [x] Tests
-- [ ] URL download support (deferred - needs elegant redesign)
+- [ ] URL download support - **SPEC READY**
 - [ ] XML XSLT transforms (not implementing - against design principles)
+
+**URL Download Spec (for libvirt_volume):**
+- Detect URLs in existing `source` attribute (http://, https://)
+- Require `capacity` and `format` when source is URL (no HTTP HEAD, no auto-detection)
+- Stream HTTP GET → StorageVolUpload (works with remote libvirt)
+- Simple retry logic: 3 attempts, 2s exponential backoff, retry on 5xx/network errors
+- ForceNew on source changes (no re-download/update support)
+- Implementation: ~50-80 lines in volume_resource.go
+- No caching, no If-Modified-Since (Terraform state prevents unnecessary recreates)
+- Example:
+  ```hcl
+  resource "libvirt_volume" "base" {
+    name     = "ubuntu.qcow2"
+    pool     = "default"
+    source   = "https://cloud-images.ubuntu.com/.../ubuntu.img"
+    capacity = 2361393152  # required for URLs
+    format   = "qcow2"     # required for URLs
+  }
+  ```
 
 ## Priority 5: Advanced Features
 
