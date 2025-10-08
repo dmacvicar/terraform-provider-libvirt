@@ -135,6 +135,22 @@ func (c *Client) LookupPoolByUUID(uuidStr string) (libvirt.StoragePool, error) {
 	return pool, nil
 }
 
+// LookupNetworkByUUID looks up a network by its UUID string
+func (c *Client) LookupNetworkByUUID(uuidStr string) (libvirt.Network, error) {
+	uuid, err := parseUUID(uuidStr)
+	if err != nil {
+		return libvirt.Network{}, err
+	}
+
+	// Look up the network
+	network, err := c.conn.NetworkLookupByUUID(uuid)
+	if err != nil {
+		return libvirt.Network{}, fmt.Errorf("network not found: %w", err)
+	}
+
+	return network, nil
+}
+
 // parseUUID converts a UUID string to libvirt.UUID type
 func parseUUID(uuidStr string) (libvirt.UUID, error) {
 	// Remove hyphens from UUID string

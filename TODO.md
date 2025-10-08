@@ -142,19 +142,22 @@
 ## Priority 4: Other Resources
 
 ### 11. Network Resource [OLD: ✅]
-**Status:** ❌ Not started
+**Status:** ✅ Completed (basic modes: NAT and isolated)
 
 **Tasks:**
-- [ ] Define libvirt_network resource
-- [ ] Schema (name, mode, bridge, addresses)
-- [ ] Network modes (nat, isolated, route, open, bridge)
-- [ ] DHCP configuration
-- [ ] DNS configuration (hosts, forwarders, SRV records)
-- [ ] Routes
-- [ ] Dnsmasq options
-- [ ] Autostart
-- [ ] CRUD operations
-- [ ] Tests
+- [x] Define libvirt_network resource
+- [x] Schema (name, mode, bridge, addresses)
+- [x] Network modes: nat, none (isolated)
+- [x] IP address configuration (CIDR)
+- [x] Autostart support
+- [x] CRUD operations
+- [x] Acceptance tests
+- [x] Documentation
+- [ ] Advanced modes: route, open, bridge (deferred)
+- [ ] DHCP ranges and static hosts (deferred)
+- [ ] DNS configuration (deferred)
+- [ ] Routes (deferred)
+- [ ] Dnsmasq options (deferred)
 
 ### 12. Pool Resource [OLD: ✅]
 **Status:** ✅ Completed (~95% parity)

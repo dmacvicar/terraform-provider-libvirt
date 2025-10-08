@@ -153,11 +153,13 @@ Check README.md for current implementation status and the roadmap. The README co
 2. **Keep TODO.md updated** - as you complete tasks, mark items as done and update the "Current Status" section
 3. **Do NOT create random documentation files** - use existing files (TODO.md, README.md, AGENTS.md, DOMAIN_COVERAGE_ANALYSIS.md)
 4. **NEVER create new .md files without explicit user authorization** - ask first before creating any documentation
-5. **Run `make lint` before committing** - all code must pass linting
-6. **Run `make fmt` to format code** - use standard Go formatting
-7. **Preserve design principles** - schema must follow libvirt XML closely
-8. **Reference old provider minimally** - mainly for connection handling and test ideas
-9. **Track progress continuously** - update TODO.md after completing each feature or task
+5. **NEVER install software or modify system configuration** - only work within the source directories. If dependencies are missing, inform the user.
+6. **NEVER use sudo or any system administration commands** - no system modifications, no service restarts, no package installs
+7. **Run `make lint` before committing** - all code must pass linting
+8. **Run `make fmt` to format code** - use standard Go formatting
+9. **Preserve design principles** - schema must follow libvirt XML closely
+10. **Reference old provider minimally** - mainly for connection handling and test ideas
+11. **Track progress continuously** - update TODO.md after completing each feature or task
 
 ## Development Workflow - Work Incrementally
 

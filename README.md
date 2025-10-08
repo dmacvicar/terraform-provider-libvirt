@@ -376,13 +376,14 @@ This table shows implementation status and compatibility with the [original prov
 
 | Feature | Status | Old Provider | Notes |
 |---------|--------|--------------|-------|
-| Resource | ○ | ✅ | Create and manage networks |
-| Network modes | ○ | ✅ | nat, isolated, route, open, bridge |
-| DHCP | ○ | ✅ | DHCP configuration |
-| DNS | ○ | ✅ | DNS hosts, forwarders, SRV records |
-| Routes | ○ | ✅ | Static routes |
-| Dnsmasq options | ○ | ✅ | Custom dnsmasq configuration |
-| Autostart | ○ | ✅ | Start network on host boot |
+| Resource | ✅ | ✅ | Create and manage networks |
+| Network modes | ⚠️ | ✅ | nat and isolated (none) modes implemented |
+| IP addresses | ✅ | ✅ | CIDR configuration (e.g., 10.17.3.0/24) |
+| Autostart | ✅ | ✅ | Start network on host boot |
+| DHCP | ○ | ✅ | DHCP ranges and static hosts (deferred) |
+| DNS | ○ | ✅ | DNS hosts, forwarders, SRV records (deferred) |
+| Routes | ○ | ✅ | Static routes (deferred) |
+| Dnsmasq options | ○ | ✅ | Custom dnsmasq configuration (deferred) |
 
 ### Data Sources
 
