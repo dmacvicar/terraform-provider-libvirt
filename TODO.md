@@ -157,28 +157,33 @@
 - [ ] Tests
 
 ### 12. Pool Resource [OLD: ✅]
-**Status:** ❌ Not started
+**Status:** ✅ Completed (~95% parity)
 
 **Tasks:**
-- [ ] Define libvirt_pool resource
-- [ ] Schema (name, type, target path)
-- [ ] Pool types (dir, logical/LVM)
-- [ ] CRUD operations
-- [ ] Tests
+- [x] Define libvirt_pool resource
+- [x] Schema (name, type, target path)
+- [x] Pool types (dir, logical/LVM)
+- [x] Target permissions (owner, group, mode, label)
+- [x] Source (name, device for LVM)
+- [x] CRUD operations
+- [x] Tests
+- [ ] XML XSLT transforms (not implementing - against design principles)
 
 ### 13. Volume Resource [OLD: ✅]
-**Status:** ❌ Not started
+**Status:** ✅ Completed (~95% parity)
 
 **Tasks:**
-- [ ] Define libvirt_volume resource
-- [ ] Schema (name, pool, size, format)
-- [ ] URL download support
-- [ ] Format support (qcow2, raw)
-- [ ] Backing volumes (base_volume_id)
-- [ ] XML XSLT transforms
-- [ ] CRUD operations
-- [ ] Integration with disk devices (volume_id)
-- [ ] Tests
+- [x] Define libvirt_volume resource
+- [x] Schema (name, pool, capacity, format)
+- [x] Type attribute (file, block, dir, network, netdir)
+- [x] Format support (qcow2, raw)
+- [x] Backing volumes (backing_store)
+- [x] Permissions (owner, group, mode, label)
+- [x] CRUD operations
+- [x] Integration with disk devices (volume_id)
+- [x] Tests
+- [ ] URL download support (deferred - needs elegant redesign)
+- [ ] XML XSLT transforms (not implementing - against design principles)
 
 ## Priority 5: Advanced Features
 
