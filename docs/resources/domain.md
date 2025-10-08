@@ -33,10 +33,24 @@ resource "libvirt_domain" "example" {
     boot_devices = ["hd", "network"]
   }
 
-  # TODO: Add device configuration once implemented
-  # - disks
-  # - network interfaces
-  # - graphics
+  devices = {
+    disks = [
+      {
+        source = "/var/lib/libvirt/images/example.qcow2"
+        target = "vda"
+        bus    = "virtio"
+      }
+    ]
+    interfaces = [
+      {
+        type  = "network"
+        model = "virtio"
+        source = {
+          network = "default"
+        }
+      }
+    ]
+  }
 }
 
 # VM with UEFI firmware
@@ -99,10 +113,9 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 - `current_memory` (Number) Actual memory allocation at boot time. If not set, defaults to memory value.
 - `description` (String) Human-readable description of the domain.
 - `destroy` (Block, Optional) Domain shutdown behavior. Controls how the domain is stopped when running changes from true to false or when the resource is destroyed. (see [below for nested schema](#nestedblock--destroy))
-- `disk` (Block List) Disk devices attached to the domain. (see [below for nested schema](#nestedblock--disk))
+- `devices` (Attributes) Devices attached to the domain (disks, network interfaces, etc.). (see [below for nested schema](#nestedatt--devices))
 - `features` (Block, Optional) Hypervisor features to enable. (see [below for nested schema](#nestedblock--features))
 - `hwuuid` (String) Hardware UUID for the domain.
-- `interface` (Block List) Network interfaces attached to the domain. (see [below for nested schema](#nestedblock--interface))
 - `iothreads` (Number) Number of I/O threads for virtio disks.
 - `max_memory` (Number) Maximum memory for hotplug. Must be >= memory.
 - `max_memory_slots` (Number) Number of slots for memory hotplug. Required when max_memory is set.
@@ -196,8 +209,16 @@ Optional:
 - `timeout` (Number) Timeout in seconds to wait for graceful shutdown before forcing. Defaults to 300.
 
 
-<a id="nestedblock--disk"></a>
-### Nested Schema for `disk`
+<a id="nestedatt--devices"></a>
+### Nested Schema for `devices`
+
+Optional:
+
+- `disks` (Attributes List) Disk devices attached to the domain. (see [below for nested schema](#nestedatt--devices--disks))
+- `interfaces` (Attributes List) Network interfaces attached to the domain. (see [below for nested schema](#nestedatt--devices--interfaces))
+
+<a id="nestedatt--devices--disks"></a>
+### Nested Schema for `devices.disks`
 
 Required:
 
@@ -207,7 +228,34 @@ Optional:
 
 - `bus` (String) Bus type (virtio, scsi, ide, sata, usb).
 - `device` (String) Device type (disk, cdrom, floppy, lun).
-- `source` (String) Path to the disk image file.
+- `source` (String) Path to the disk image file. Mutually exclusive with volume_id.
+- `volume_id` (String) ID (key) of a libvirt_volume to use as the disk source. Mutually exclusive with source.
+
+
+<a id="nestedatt--devices--interfaces"></a>
+### Nested Schema for `devices.interfaces`
+
+Required:
+
+- `type` (String) Interface type (network, bridge, user, direct, etc.).
+
+Optional:
+
+- `mac` (String) MAC address for the interface.
+- `model` (String) Device model (virtio, e1000, rtl8139, etc.).
+- `source` (Attributes) Interface source configuration. (see [below for nested schema](#nestedatt--devices--interfaces--source))
+
+<a id="nestedatt--devices--interfaces--source"></a>
+### Nested Schema for `devices.interfaces.source`
+
+Optional:
+
+- `bridge` (String) Bridge name (for type=bridge).
+- `dev` (String) Device name (for type=user or type=direct).
+- `network` (String) Network name (for type=network).
+- `portgroup` (String) Port group name (for type=network).
+
+
 
 
 <a id="nestedblock--features"></a>
@@ -232,31 +280,6 @@ Optional:
 - `viridian` (Boolean) Viridian enlightenments for Windows guests.
 - `vmcoreinfo` (String) VM crash information (on, off).
 - `vmport` (String) VMware IO port emulation (on, off, auto).
-
-
-<a id="nestedblock--interface"></a>
-### Nested Schema for `interface`
-
-Required:
-
-- `type` (String) Interface type (network, bridge, user, direct, etc.).
-
-Optional:
-
-- `mac` (String) MAC address for the interface.
-- `model` (String) Device model (virtio, e1000, rtl8139, etc.).
-- `source` (Block, Optional) Interface source configuration. (see [below for nested schema](#nestedblock--interface--source))
-
-<a id="nestedblock--interface--source"></a>
-### Nested Schema for `interface.source`
-
-Optional:
-
-- `bridge` (String) Bridge name (for type=bridge).
-- `dev` (String) Device name (for type=user or type=direct).
-- `network` (String) Network name (for type=network).
-- `portgroup` (String) Port group name (for type=network).
-
 
 
 <a id="nestedblock--os"></a>
