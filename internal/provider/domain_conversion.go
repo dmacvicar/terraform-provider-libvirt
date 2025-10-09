@@ -1446,49 +1446,64 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			})
 		}
 
-		// Process filesystems
-		filesystems := make([]DomainFilesystemModel, 0, len(domain.Devices.Filesystems))
-		for _, fs := range domain.Devices.Filesystems {
-			fsModel := DomainFilesystemModel{}
-
-			// Extract source directory
-			if fs.Source != nil && fs.Source.Mount != nil {
-				fsModel.Source = types.StringValue(fs.Source.Mount.Dir)
-			}
-
-			// Extract target directory
-			if fs.Target != nil {
-				fsModel.Target = types.StringValue(fs.Target.Dir)
-			}
-
-			// Extract access mode
-			if fs.AccessMode != "" {
-				fsModel.AccessMode = types.StringValue(fs.AccessMode)
-			} else {
-				fsModel.AccessMode = types.StringValue("mapped")
-			}
-
-			// Extract readonly
-			if fs.ReadOnly != nil {
-				fsModel.ReadOnly = types.BoolValue(true)
-			} else {
-				fsModel.ReadOnly = types.BoolValue(false)
-			}
-
-			filesystems = append(filesystems, fsModel)
-		}
-
-		filesystemsList, d := types.ListValueFrom(ctx, types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"accessmode": types.StringType,
-				"source":     types.StringType,
-				"target":     types.StringType,
-				"readonly":   types.BoolType,
+		// Process filesystems - only if user originally specified them
+		filesystemsType := types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: map[string]attr.Type{
+					"accessmode": types.StringType,
+					"source":     types.StringType,
+					"target":     types.StringType,
+					"readonly":   types.BoolType,
+				},
 			},
-		}, filesystems)
-		diags.Append(d...)
-		if diags.HasError() {
-			return diags
+		}
+		filesystemsList := types.ListNull(filesystemsType.ElemType.(types.ObjectType))
+
+		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+			var existingDevices DomainDevicesModel
+			diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+
+			if !existingDevices.Filesystems.IsNull() && !existingDevices.Filesystems.IsUnknown() {
+				filesystems := make([]DomainFilesystemModel, 0, len(domain.Devices.Filesystems))
+				for _, fs := range domain.Devices.Filesystems {
+					fsModel := DomainFilesystemModel{}
+
+					if fs.Source != nil && fs.Source.Mount != nil {
+						fsModel.Source = types.StringValue(fs.Source.Mount.Dir)
+					}
+
+					if fs.Target != nil {
+						fsModel.Target = types.StringValue(fs.Target.Dir)
+					}
+
+					if fs.AccessMode != "" {
+						fsModel.AccessMode = types.StringValue(fs.AccessMode)
+					} else {
+						fsModel.AccessMode = types.StringValue("mapped")
+					}
+
+					if fs.ReadOnly != nil {
+						fsModel.ReadOnly = types.BoolValue(true)
+					} else {
+						fsModel.ReadOnly = types.BoolValue(false)
+					}
+
+					filesystems = append(filesystems, fsModel)
+				}
+
+				filesystemsList, d = types.ListValueFrom(ctx, types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"accessmode": types.StringType,
+						"source":     types.StringType,
+						"target":     types.StringType,
+						"readonly":   types.BoolType,
+					},
+				}, filesystems)
+				diags.Append(d...)
+				if diags.HasError() {
+					return diags
+				}
+			}
 		}
 
 		// Create the new devices model
