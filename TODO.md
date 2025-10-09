@@ -84,16 +84,16 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [x] Documentation
 
 ### 5. Domain Autostart
-**Status:** ❌ Not started
+**Status:** ✅ Completed
 **libvirtxml:** libvirt API (DomainSetAutostart/DomainGetAutostart)
 **Old provider:** `autostart` boolean field
 
 **Tasks:**
-- [ ] Add `autostart` boolean attribute to domain schema
-- [ ] Call DomainSetAutostart() in Create/Update
-- [ ] Call DomainGetAutostart() in Read
-- [ ] Add acceptance test
-- [ ] Update examples
+- [x] Add `autostart` boolean attribute to domain schema
+- [x] Call DomainSetAutostart() in Create/Update
+- [x] Call DomainGetAutostart() in Read
+- [x] Add acceptance test
+- [x] Update examples
 
 ### 6. Filesystem (virtio-9p)
 **Status:** ❌ Not started
