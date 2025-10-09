@@ -68,9 +68,11 @@
 - [x] Test running/stopped states
 - [x] Use proper golibvirt constants instead of magic numbers
 
-## Priority 2: Common Use Cases
+## Priority 2: Old Provider Parity (Pure Libvirt Features)
 
-### 4. Graphics Devices [OLD: ✅]
+These features are supported by libvirtxml, were present in the old provider, and are NOT provider additions on top of libvirt (no cloudinit, URL download, etc.)
+
+### 4. Graphics Devices
 **Status:** ✅ Completed
 
 **Tasks:**
@@ -81,28 +83,153 @@
 - [x] Acceptance test
 - [x] Documentation
 
-### 5. Expand Disk Support [OLD: ✅]
-**Status:** ⚠️ Partially done (basic + volume_id done)
+### 5. Domain Autostart
+**Status:** ❌ Not started
+**libvirtxml:** libvirt API (DomainSetAutostart/DomainGetAutostart)
+**Old provider:** `autostart` boolean field
 
 **Tasks:**
-- [x] Add volume_id support (reference to libvirt_volume)
-- [ ] Add driver attributes (cache, io, discard, type) - **HIGH VALUE**
+- [ ] Add `autostart` boolean attribute to domain schema
+- [ ] Call DomainSetAutostart() in Create/Update
+- [ ] Call DomainGetAutostart() in Read
+- [ ] Add acceptance test
+- [ ] Update examples
+
+### 6. Filesystem (virtio-9p)
+**Status:** ❌ Not started
+**libvirtxml:** `DomainFilesystem`
+**Old provider:** `filesystem` block
+
+**Tasks:**
+- [ ] Add filesystem nested attribute to devices
+- [ ] Fields: accessmode, source, target, readonly
+- [ ] Model ↔ libvirtxml.DomainFilesystem conversion
+- [ ] Add acceptance test
+- [ ] Update examples
+
+### 7. SCSI Disks with WWN
+**Status:** ❌ Not started
+**libvirtxml:** `DomainDisk` (Bus="scsi", WWN field)
+**Old provider:** `disk.scsi` boolean + `disk.wwn`
+
+**Tasks:**
+- [ ] Add `wwn` field to disk model (optional, computed)
+- [ ] Generate WWN if not provided for SCSI disks
+- [ ] Add acceptance test with SCSI disk
+
+### 8. Block Device Disks
+**Status:** ❌ Not started
+**libvirtxml:** `DomainDisk` with type="block"
+**Old provider:** `disk.block_device` field
+
+**Tasks:**
+- [ ] Support type="block" in disk source
+- [ ] Add acceptance test with block device
+
+### 9. Console/Serial Devices
+**Status:** ❌ Not started
+**libvirtxml:** `DomainConsole`, `DomainSerial`
+**Old provider:** `console` block
+
+**Tasks:**
+- [ ] Add console/serial nested attributes to devices
+- [ ] Fields: type, source_path, source_host, source_service, target_port, target_type
+- [ ] Model ↔ libvirtxml conversion
+- [ ] Add acceptance test
+
+### 10. Video Device
+**Status:** ❌ Not started
+**libvirtxml:** `DomainVideo`
+**Old provider:** `video` block with type
+
+**Tasks:**
+- [ ] Add video nested attribute to devices
+- [ ] Fields: type (model)
+- [ ] Model ↔ libvirtxml.DomainVideo conversion
+- [ ] Add acceptance test
+
+### 11. Direct Network Types (macvtap, vepa, passthrough)
+**Status:** ❌ Not started
+**libvirtxml:** `DomainInterface` with type="direct"
+**Old provider:** `network_interface` with vepa, macvtap, passthrough, private
+
+**Tasks:**
+- [ ] Add type="direct" support to interface
+- [ ] Add source.dev and source.mode fields
+- [ ] Update conversion for direct types
+- [ ] Add acceptance test
+
+### 12. NVRAM Template
+**Status:** ⚠️ Partial (only file/path, not template)
+**libvirtxml:** `DomainLoader.Template`
+**Old provider:** `nvram.template` field
+
+**Tasks:**
+- [ ] Add nvram_template field to os block
+- [ ] Update conversion to set loader template
+- [ ] Add acceptance test with UEFI
+
+### 13. TPM Device
+**Status:** ❌ Not started
+**libvirtxml:** `DomainTPM`
+**Old provider:** `tpm` block
+
+**Tasks:**
+- [ ] Add tpm nested attribute to devices
+- [ ] Fields: model, backend_type, backend_device_path, backend_encryption_secret, backend_version, backend_persistent_state
+- [ ] Model ↔ libvirtxml.DomainTPM conversion
+- [ ] Add acceptance test
+
+### 14. Emulator Path
+**Status:** ❌ Not started
+**libvirtxml:** `DomainDeviceList.Emulator`
+**Old provider:** `emulator` field
+
+**Tasks:**
+- [ ] Add emulator string attribute to devices
+- [ ] Update conversion to set emulator path
+- [ ] Add acceptance test
+
+### 15. Metadata (Custom XML)
+**Status:** ❌ Not started
+**libvirtxml:** `Domain.Metadata`
+**Old provider:** `metadata` string field
+
+**Tasks:**
+- [ ] Add metadata string attribute to domain
+- [ ] Update conversion to handle custom metadata XML
+- [ ] Add acceptance test
+
+## Priority 3: Additional Disk/Network Enhancements
+
+### 16. Disk Driver Attributes (NEW - not in old provider)
+**Status:** ❌ Not started
+**libvirtxml:** `DomainDiskDriver` fields
+
+**Tasks:**
+- [ ] Add driver nested attribute (cache, io, discard, type) - **HIGH VALUE**
 - [ ] Add readonly flag (for CD-ROMs)
 - [ ] Add shareable flag (for shared storage)
 - [ ] Add boot order attribute
-- [ ] Add serial and WWN fields (SCSI identifiers)
-- [ ] Add URL source support
-- [ ] Add block device support
 - [ ] Support network disks (RBD, iSCSI)
 
-### 6. Essential Devices [OLD: ✅]
+### 17. RNG Device (virtio-rng)
 **Status:** ❌ Not started
+**libvirtxml:** `DomainRNG`
+**Old provider:** Added by default
 
 **Tasks:**
-- [ ] Console/Serial devices
-- [ ] Video device
-- [ ] RNG device (virtio-rng)
-- [ ] Input devices (tablet for VNC)
+- [ ] Add RNG nested attribute to devices
+- [ ] Fields: model, backend (random device path)
+- [ ] Add acceptance test
+
+### 18. Input Devices
+**Status:** ❌ Not started
+**libvirtxml:** `DomainInput`
+
+**Tasks:**
+- [ ] Add input devices (tablet for VNC)
+- [ ] Add acceptance test
 
 ## Priority 3: Advanced Domain Fields
 

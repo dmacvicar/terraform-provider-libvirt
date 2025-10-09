@@ -52,6 +52,7 @@ type DomainResourceModel struct {
 	OnCrash    types.String `tfsdk:"on_crash"`
 	IOThreads  types.Int64  `tfsdk:"iothreads"`
 	Running    types.Bool   `tfsdk:"running"`
+	Autostart  types.Bool   `tfsdk:"autostart"`
 
 	// Blocks (using blocks for now, but devices uses nested attributes per HashiCorp guidance)
 	OS       *DomainOSModel      `tfsdk:"os"`
@@ -325,6 +326,11 @@ providing fine-grained control over VM configuration.
 			"running": schema.BoolAttribute{
 				Description: "Whether the domain should be running. If true, the domain will be started after creation. If false or unset, the domain will only be defined but not started.",
 				Optional:    true,
+			},
+			"autostart": schema.BoolAttribute{
+				Description: "Whether the domain should be started automatically when the host boots. Defaults to false.",
+				Optional:    true,
+				Computed:    true,
 			},
 			"devices": schema.SingleNestedAttribute{
 				Description: "Devices attached to the domain (disks, network interfaces, etc.).",
@@ -880,6 +886,22 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 		}
 	}
 
+	// Set autostart if specified
+	if !plan.Autostart.IsNull() {
+		autostart := int32(0)
+		if plan.Autostart.ValueBool() {
+			autostart = 1
+		}
+		err = r.client.Libvirt().DomainSetAutostart(domain, autostart)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Failed to Set Autostart",
+				"Domain was created but failed to set autostart: "+err.Error(),
+			)
+			return
+		}
+	}
+
 	// Save state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -925,6 +947,17 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// Get autostart status
+	autostart, err := r.client.Libvirt().DomainGetAutostart(domain)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Failed to Get Autostart Status",
+			"Failed to read domain autostart setting: "+err.Error(),
+		)
+		return
+	}
+	state.Autostart = types.BoolValue(autostart == 1)
 
 	// Save state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -1126,6 +1159,22 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 	resp.Diagnostics.Append(xmlToDomainModel(ctx, parsedDomain, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// Update autostart if it changed
+	if !plan.Autostart.IsNull() {
+		autostart := int32(0)
+		if plan.Autostart.ValueBool() {
+			autostart = 1
+		}
+		err = r.client.Libvirt().DomainSetAutostart(finalDomain, autostart)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Failed to Set Autostart",
+				"Domain was updated but failed to set autostart: "+err.Error(),
+			)
+			return
+		}
 	}
 
 	// Save updated state

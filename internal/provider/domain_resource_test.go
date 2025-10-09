@@ -772,3 +772,95 @@ resource "libvirt_domain" "test" {
 }
 `, name)
 }
+
+func TestAccDomainResource_autostart(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create with autostart=true
+			{
+				Config: testAccDomainResourceConfigAutostart("test-domain-autostart", true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-autostart"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "autostart", "true"),
+					testAccCheckDomainAutostart("libvirt_domain.test", true),
+				),
+			},
+			// Update to autostart=false
+			{
+				Config: testAccDomainResourceConfigAutostart("test-domain-autostart", false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "autostart", "false"),
+					testAccCheckDomainAutostart("libvirt_domain.test", false),
+				),
+			},
+			// Update back to autostart=true
+			{
+				Config: testAccDomainResourceConfigAutostart("test-domain-autostart", true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "autostart", "true"),
+					testAccCheckDomainAutostart("libvirt_domain.test", true),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigAutostart(name string, autostart bool) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name      = %[1]q
+  memory    = 512
+  unit      = "MiB"
+  vcpu      = 1
+  type      = "kvm"
+  autostart = %[2]t
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+}
+`, name, autostart)
+}
+
+func testAccCheckDomainAutostart(resourceName string, expected bool) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("not found: %s", resourceName)
+		}
+
+		uuid := rs.Primary.Attributes["uuid"]
+		if uuid == "" {
+			return fmt.Errorf("no UUID is set")
+		}
+
+		// Get libvirt client
+		ctx := context.Background()
+		client, err := libvirtclient.NewClient(ctx, "qemu:///system")
+		if err != nil {
+			return fmt.Errorf("failed to create libvirt client: %w", err)
+		}
+		defer func() { _ = client.Close() }()
+
+		domain, err := client.LookupDomainByUUID(uuid)
+		if err != nil {
+			return fmt.Errorf("failed to lookup domain: %w", err)
+		}
+
+		autostart, err := client.Libvirt().DomainGetAutostart(domain)
+		if err != nil {
+			return fmt.Errorf("failed to get autostart: %w", err)
+		}
+
+		actualAutostart := (autostart == 1)
+		if actualAutostart != expected {
+			return fmt.Errorf("expected autostart=%v, got %v", expected, actualAutostart)
+		}
+
+		return nil
+	}
+}
