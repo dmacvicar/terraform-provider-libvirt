@@ -864,3 +864,66 @@ func testAccCheckDomainAutostart(resourceName string, expected bool) resource.Te
 		return nil
 	}
 }
+
+func TestAccDomainResource_filesystem(t *testing.T) {
+	// Create temporary directories for testing
+	sharedDir := t.TempDir()
+	dataDir := t.TempDir()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigFilesystem("test-domain-fs", sharedDir, dataDir),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-fs"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.#", "2"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.0.source", sharedDir),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.0.target", "shared"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.0.accessmode", "mapped"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.0.readonly", "true"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.1.source", dataDir),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.1.target", "data"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.1.accessmode", "passthrough"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.1.readonly", "false"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigFilesystem(name, sharedDir, dataDir string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    filesystems = [
+      {
+        source     = %[2]q
+        target     = "shared"
+        accessmode = "mapped"
+        readonly   = true
+      },
+      {
+        source     = %[3]q
+        target     = "data"
+        accessmode = "passthrough"
+        readonly   = false
+      }
+    ]
+  }
+}
+`, name, sharedDir, dataDir)
+}

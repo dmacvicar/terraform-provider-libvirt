@@ -702,6 +702,42 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 
 			domain.Devices.Graphics = append(domain.Devices.Graphics, graphic)
 		}
+
+		// Process filesystems
+		if !devices.Filesystems.IsNull() && !devices.Filesystems.IsUnknown() {
+			var filesystems []DomainFilesystemModel
+			diags := devices.Filesystems.ElementsAs(ctx, &filesystems, false)
+			if diags.HasError() {
+				return nil, fmt.Errorf("failed to extract filesystems: %v", diags.Errors())
+			}
+
+			for _, fsModel := range filesystems {
+				fs := libvirtxml.DomainFilesystem{
+					Source: &libvirtxml.DomainFilesystemSource{
+						Mount: &libvirtxml.DomainFilesystemSourceMount{
+							Dir: fsModel.Source.ValueString(),
+						},
+					},
+					Target: &libvirtxml.DomainFilesystemTarget{
+						Dir: fsModel.Target.ValueString(),
+					},
+				}
+
+				// Set access mode (default to "mapped" if not specified)
+				if !fsModel.AccessMode.IsNull() && !fsModel.AccessMode.IsUnknown() {
+					fs.AccessMode = fsModel.AccessMode.ValueString()
+				} else {
+					fs.AccessMode = "mapped"
+				}
+
+				// Set readonly
+				if !fsModel.ReadOnly.IsNull() && !fsModel.ReadOnly.IsUnknown() && fsModel.ReadOnly.ValueBool() {
+					fs.ReadOnly = &libvirtxml.DomainFilesystemReadOnly{}
+				}
+
+				domain.Devices.Filesystems = append(domain.Devices.Filesystems, fs)
+			}
+		}
 	}
 
 	return domain, nil
@@ -1410,11 +1446,57 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			})
 		}
 
+		// Process filesystems
+		filesystems := make([]DomainFilesystemModel, 0, len(domain.Devices.Filesystems))
+		for _, fs := range domain.Devices.Filesystems {
+			fsModel := DomainFilesystemModel{}
+
+			// Extract source directory
+			if fs.Source != nil && fs.Source.Mount != nil {
+				fsModel.Source = types.StringValue(fs.Source.Mount.Dir)
+			}
+
+			// Extract target directory
+			if fs.Target != nil {
+				fsModel.Target = types.StringValue(fs.Target.Dir)
+			}
+
+			// Extract access mode
+			if fs.AccessMode != "" {
+				fsModel.AccessMode = types.StringValue(fs.AccessMode)
+			} else {
+				fsModel.AccessMode = types.StringValue("mapped")
+			}
+
+			// Extract readonly
+			if fs.ReadOnly != nil {
+				fsModel.ReadOnly = types.BoolValue(true)
+			} else {
+				fsModel.ReadOnly = types.BoolValue(false)
+			}
+
+			filesystems = append(filesystems, fsModel)
+		}
+
+		filesystemsList, d := types.ListValueFrom(ctx, types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"accessmode": types.StringType,
+				"source":     types.StringType,
+				"target":     types.StringType,
+				"readonly":   types.BoolType,
+			},
+		}, filesystems)
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+
 		// Create the new devices model
 		newDevices := DomainDevicesModel{
-			Disks:      disksList,
-			Interfaces: interfacesList,
-			Graphics:   graphicsObj,
+			Disks:       disksList,
+			Interfaces:  interfacesList,
+			Graphics:    graphicsObj,
+			Filesystems: filesystemsList,
 		}
 
 		// Create the devices object
@@ -1444,6 +1526,16 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 								"dev":       types.StringType,
 							},
 						},
+					},
+				},
+			},
+			"filesystems": types.ListType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"accessmode": types.StringType,
+						"source":     types.StringType,
+						"target":     types.StringType,
+						"readonly":   types.BoolType,
 					},
 				},
 			},

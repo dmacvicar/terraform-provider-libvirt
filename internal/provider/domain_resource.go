@@ -177,9 +177,18 @@ type DomainGraphicsSpiceModel struct {
 
 // DomainDevicesModel describes all devices in the domain
 type DomainDevicesModel struct {
-	Disks      types.List   `tfsdk:"disks"`
-	Interfaces types.List   `tfsdk:"interfaces"`
-	Graphics   types.Object `tfsdk:"graphics"`
+	Disks       types.List   `tfsdk:"disks"`
+	Interfaces  types.List   `tfsdk:"interfaces"`
+	Graphics    types.Object `tfsdk:"graphics"`
+	Filesystems types.List   `tfsdk:"filesystems"`
+}
+
+// DomainFilesystemModel describes a filesystem device
+type DomainFilesystemModel struct {
+	AccessMode types.String `tfsdk:"accessmode"`
+	Source     types.String `tfsdk:"source"`
+	Target     types.String `tfsdk:"target"`
+	ReadOnly   types.Bool   `tfsdk:"readonly"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -328,9 +337,8 @@ providing fine-grained control over VM configuration.
 				Optional:    true,
 			},
 			"autostart": schema.BoolAttribute{
-				Description: "Whether the domain should be started automatically when the host boots. Defaults to false.",
+				Description: "Whether the domain should be started automatically when the host boots.",
 				Optional:    true,
-				Computed:    true,
 			},
 			"devices": schema.SingleNestedAttribute{
 				Description: "Devices attached to the domain (disks, network interfaces, etc.).",
@@ -456,6 +464,30 @@ providing fine-grained control over VM configuration.
 										Description: "Listen address for Spice server. Optional.",
 										Optional:    true,
 									},
+								},
+							},
+						},
+					},
+					"filesystems": schema.ListNestedAttribute{
+						Description: "Filesystem devices for sharing host directories with the guest (virtio-9p).",
+						Optional:    true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"accessmode": schema.StringAttribute{
+									Description: "Access mode (mapped, passthrough, squash). Defaults to mapped.",
+									Optional:    true,
+								},
+								"source": schema.StringAttribute{
+									Description: "Host directory path to share.",
+									Required:    true,
+								},
+								"target": schema.StringAttribute{
+									Description: "Mount tag visible in the guest (used to mount the filesystem).",
+									Required:    true,
+								},
+								"readonly": schema.BoolAttribute{
+									Description: "Whether the filesystem should be mounted read-only in the guest. Defaults to true.",
+									Optional:    true,
 								},
 							},
 						},
@@ -948,16 +980,18 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	// Get autostart status
-	autostart, err := r.client.Libvirt().DomainGetAutostart(domain)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Failed to Get Autostart Status",
-			"Failed to read domain autostart setting: "+err.Error(),
-		)
-		return
+	// Get autostart status - only if user originally specified it
+	if !state.Autostart.IsNull() && !state.Autostart.IsUnknown() {
+		autostart, err := r.client.Libvirt().DomainGetAutostart(domain)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Failed to Get Autostart Status",
+				"Failed to read domain autostart setting: "+err.Error(),
+			)
+			return
+		}
+		state.Autostart = types.BoolValue(autostart == 1)
 	}
-	state.Autostart = types.BoolValue(autostart == 1)
 
 	// Save state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
