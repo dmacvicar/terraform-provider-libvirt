@@ -96,16 +96,16 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [x] Update examples
 
 ### 6. Filesystem (virtio-9p)
-**Status:** ❌ Not started
+**Status:** ✅ Completed
 **libvirtxml:** `DomainFilesystem`
 **Old provider:** `filesystem` block
 
 **Tasks:**
-- [ ] Add filesystem nested attribute to devices
-- [ ] Fields: accessmode, source, target, readonly
-- [ ] Model ↔ libvirtxml.DomainFilesystem conversion
-- [ ] Add acceptance test
-- [ ] Update examples
+- [x] Add filesystem nested attribute to devices
+- [x] Fields: accessmode, source, target, readonly
+- [x] Model ↔ libvirtxml.DomainFilesystem conversion
+- [x] Add acceptance test (using t.TempDir())
+- [x] Update examples
 
 ### 7. SCSI Disks with WWN
 **Status:** ❌ Not started
