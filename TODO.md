@@ -181,14 +181,14 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [ ] Add acceptance test
 
 ### 14. Emulator Path
-**Status:** ❌ Not started
+**Status:** ✅ Completed
 **libvirtxml:** `DomainDeviceList.Emulator`
 **Old provider:** `emulator` field
 
 **Tasks:**
-- [ ] Add emulator string attribute to devices
-- [ ] Update conversion to set emulator path
-- [ ] Add acceptance test
+- [x] Add emulator string attribute to devices
+- [x] Update conversion to set emulator path
+- [x] Add acceptance test
 
 ### 15. Metadata (Custom XML)
 **Status:** ❌ Not started
