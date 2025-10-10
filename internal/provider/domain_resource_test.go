@@ -773,6 +773,46 @@ resource "libvirt_domain" "test" {
 `, name)
 }
 
+func TestAccDomainResource_video(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigVideo("test-domain-video"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-video"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.video.type", "vga"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigVideo(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    video = {
+      type = "vga"
+    }
+  }
+}
+`, name)
+}
+
 func TestAccDomainResource_autostart(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },

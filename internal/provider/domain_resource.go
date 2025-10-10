@@ -181,6 +181,7 @@ type DomainDevicesModel struct {
 	Interfaces  types.List   `tfsdk:"interfaces"`
 	Graphics    types.Object `tfsdk:"graphics"`
 	Filesystems types.List   `tfsdk:"filesystems"`
+	Video       types.Object `tfsdk:"video"`
 }
 
 // DomainFilesystemModel describes a filesystem device
@@ -189,6 +190,11 @@ type DomainFilesystemModel struct {
 	Source     types.String `tfsdk:"source"`
 	Target     types.String `tfsdk:"target"`
 	ReadOnly   types.Bool   `tfsdk:"readonly"`
+}
+
+// DomainVideoModel describes a video device
+type DomainVideoModel struct {
+	Type types.String `tfsdk:"type"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -484,6 +490,16 @@ providing fine-grained control over VM configuration.
 									Description: "Whether the filesystem should be mounted read-only in the guest. Defaults to true.",
 									Optional:    true,
 								},
+							},
+						},
+					},
+					"video": schema.SingleNestedAttribute{
+						Description: "Video device for the domain.",
+						Optional:    true,
+						Attributes: map[string]schema.Attribute{
+							"type": schema.StringAttribute{
+								Description: "Video device model type (e.g., cirrus, vga, qxl, virtio, vbox, vmvga, gop). Optional.",
+								Optional:    true,
 							},
 						},
 					},

@@ -738,6 +738,26 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 				domain.Devices.Filesystems = append(domain.Devices.Filesystems, fs)
 			}
 		}
+
+		// Process video
+		if !devices.Video.IsNull() && !devices.Video.IsUnknown() {
+			var videoModel DomainVideoModel
+			diags := devices.Video.As(ctx, &videoModel, basetypes.ObjectAsOptions{})
+			if diags.HasError() {
+				return nil, fmt.Errorf("failed to extract video: %v", diags.Errors())
+			}
+
+			video := libvirtxml.DomainVideo{
+				Model: libvirtxml.DomainVideoModel{},
+			}
+
+			// Set video type
+			if !videoModel.Type.IsNull() && !videoModel.Type.IsUnknown() {
+				video.Model.Type = videoModel.Type.ValueString()
+			}
+
+			domain.Devices.Videos = append(domain.Devices.Videos, video)
+		}
 	}
 
 	return domain, nil
@@ -1497,12 +1517,46 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			}
 		}
 
+	// Process video
+	var videoObj types.Object
+	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+		var existingDevices DomainDevicesModel
+		diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+
+		if !existingDevices.Video.IsNull() && !existingDevices.Video.IsUnknown() && len(domain.Devices.Videos) > 0 {
+			video := domain.Devices.Videos[0]
+			videoModel := DomainVideoModel{}
+
+			if video.Model.Type != "" {
+				videoModel.Type = types.StringValue(video.Model.Type)
+			}
+
+			var err diag.Diagnostics
+			videoObj, err = types.ObjectValueFrom(ctx, map[string]attr.Type{
+				"type": types.StringType,
+			}, videoModel)
+			diags.Append(err...)
+			if diags.HasError() {
+				return diags
+			}
+		} else {
+			videoObj = types.ObjectNull(map[string]attr.Type{
+				"type": types.StringType,
+			})
+		}
+	} else {
+		videoObj = types.ObjectNull(map[string]attr.Type{
+			"type": types.StringType,
+		})
+	}
+
 		// Create the new devices model
 		newDevices := DomainDevicesModel{
 			Disks:       disksList,
 			Interfaces:  interfacesList,
 			Graphics:    graphicsObj,
 			Filesystems: filesystemsList,
+		Video:       videoObj,
 		}
 
 		// Create the devices object
@@ -1564,6 +1618,11 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 							"listen":   types.StringType,
 						},
 					},
+				},
+			},
+			"video": types.ObjectType{
+				AttrTypes: map[string]attr.Type{
+					"type": types.StringType,
 				},
 			},
 		}, newDevices)
