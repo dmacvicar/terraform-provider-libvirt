@@ -813,6 +813,44 @@ resource "libvirt_domain" "test" {
 `, name)
 }
 
+func TestAccDomainResource_emulator(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigEmulator("test-domain-emulator"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-emulator"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.emulator", "/usr/bin/qemu-system-x86_64"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigEmulator(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    emulator = "/usr/bin/qemu-system-x86_64"
+  }
+}
+`, name)
+}
+
 func TestAccDomainResource_autostart(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },

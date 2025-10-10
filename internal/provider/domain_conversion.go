@@ -758,6 +758,11 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 
 			domain.Devices.Videos = append(domain.Devices.Videos, video)
 		}
+
+		// Process emulator
+		if !devices.Emulator.IsNull() && !devices.Emulator.IsUnknown() {
+			domain.Devices.Emulator = devices.Emulator.ValueString()
+		}
 	}
 
 	return domain, nil
@@ -1550,6 +1555,21 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		})
 	}
 
+
+	// Process emulator
+	var emulatorStr types.String
+	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+		var existingDevices DomainDevicesModel
+		diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+
+		if !existingDevices.Emulator.IsNull() && !existingDevices.Emulator.IsUnknown() && domain.Devices.Emulator != "" {
+			emulatorStr = types.StringValue(domain.Devices.Emulator)
+		} else {
+			emulatorStr = types.StringNull()
+		}
+	} else {
+		emulatorStr = types.StringNull()
+	}
 		// Create the new devices model
 		newDevices := DomainDevicesModel{
 			Disks:       disksList,
@@ -1557,6 +1577,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			Graphics:    graphicsObj,
 			Filesystems: filesystemsList,
 		Video:       videoObj,
+		Emulator:    emulatorStr,
 		}
 
 		// Create the devices object
@@ -1625,6 +1646,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 					"type": types.StringType,
 				},
 			},
+			"emulator": types.StringType,
 		}, newDevices)
 		diags.Append(d...)
 		if diags.HasError() {

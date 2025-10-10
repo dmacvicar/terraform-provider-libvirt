@@ -182,6 +182,7 @@ type DomainDevicesModel struct {
 	Graphics    types.Object `tfsdk:"graphics"`
 	Filesystems types.List   `tfsdk:"filesystems"`
 	Video       types.Object `tfsdk:"video"`
+	Emulator    types.String `tfsdk:"emulator"`
 }
 
 // DomainFilesystemModel describes a filesystem device
@@ -503,6 +504,10 @@ providing fine-grained control over VM configuration.
 							},
 						},
 					},
+				"emulator": schema.StringAttribute{
+					Description: "Path to the emulator binary (e.g., /usr/bin/qemu-system-x86_64). Optional, libvirt chooses default if not specified.",
+					Optional:    true,
+				},
 				},
 			},
 		},
