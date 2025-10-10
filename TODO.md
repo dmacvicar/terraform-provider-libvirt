@@ -138,15 +138,15 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [ ] Add acceptance test
 
 ### 10. Video Device
-**Status:** ❌ Not started
+**Status:** ✅ Completed
 **libvirtxml:** `DomainVideo`
 **Old provider:** `video` block with type
 
 **Tasks:**
-- [ ] Add video nested attribute to devices
-- [ ] Fields: type (model)
-- [ ] Model ↔ libvirtxml.DomainVideo conversion
-- [ ] Add acceptance test
+- [x] Add video nested attribute to devices
+- [x] Fields: type (model)
+- [x] Model ↔ libvirtxml.DomainVideo conversion
+- [x] Add acceptance test
 
 ### 11. Direct Network Types (macvtap, vepa, passthrough)
 **Status:** ❌ Not started
