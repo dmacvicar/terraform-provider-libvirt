@@ -865,6 +865,47 @@ func testAccCheckDomainAutostart(resourceName string, expected bool) resource.Te
 	}
 }
 
+func TestAccDomainResource_preserveUserIntent(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigMinimal("test-domain-minimal"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					// Verify fields user didn't set are NOT in state (even though libvirt defaults them)
+					resource.TestCheckNoResourceAttr("libvirt_domain.test", "on_poweroff"),
+					resource.TestCheckNoResourceAttr("libvirt_domain.test", "on_reboot"),
+					resource.TestCheckNoResourceAttr("libvirt_domain.test", "on_crash"),
+					resource.TestCheckNoResourceAttr("libvirt_domain.test", "autostart"),
+					resource.TestCheckNoResourceAttr("libvirt_domain.test", "unit"),
+					resource.TestCheckNoResourceAttr("libvirt_domain.test", "type"),
+					resource.TestCheckNoResourceAttr("libvirt_domain.test", "current_memory"),
+					resource.TestCheckNoResourceAttr("libvirt_domain.test", "os.boot_devices.#"),
+					// Verify required fields ARE in state
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-minimal"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "memory", "512"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "vcpu", "1"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigMinimal(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  vcpu   = 1
+
+  os {
+    type = "hvm"
+  }
+}
+`, name)
+}
+
 func TestAccDomainResource_filesystem(t *testing.T) {
 	// Create temporary directories for testing
 	sharedDir := t.TempDir()

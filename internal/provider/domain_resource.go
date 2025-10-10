@@ -272,12 +272,8 @@ providing fine-grained control over VM configuration.
 				Required:    true,
 			},
 			"unit": schema.StringAttribute{
-				Description: "Memory unit (KiB, MiB, GiB, TiB). Defaults to KiB if not specified.",
+				Description: "Memory unit (KiB, MiB, GiB, TiB).",
 				Optional:    true,
-				Computed:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"current_memory": schema.Int64Attribute{
 				Description: "Actual memory allocation at boot time. If not set, defaults to memory value.",
@@ -296,9 +292,8 @@ providing fine-grained control over VM configuration.
 				Required:    true,
 			},
 			"type": schema.StringAttribute{
-				Description: "Domain type (e.g., 'kvm', 'qemu'). Defaults to 'kvm'.",
+				Description: "Domain type (e.g., 'kvm', 'qemu').",
 				Optional:    true,
-				Computed:    true,
 			},
 			"title": schema.StringAttribute{
 				Description: "Short description title for the domain.",

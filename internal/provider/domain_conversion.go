@@ -747,7 +747,11 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *DomainResourceModel) diag.Diagnostics {
 	var diags diag.Diagnostics
 	model.Name = types.StringValue(domain.Name)
-	model.Type = types.StringValue(domain.Type)
+
+	// Only populate type if user originally specified it
+	if !model.Type.IsNull() && !model.Type.IsUnknown() {
+		model.Type = types.StringValue(domain.Type)
+	}
 
 	if domain.UUID != "" {
 		model.UUID = types.StringValue(domain.UUID)
@@ -784,13 +788,9 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			model.Memory = types.Int64Value(convertMemory(memoryKiB, "KiB", targetUnit))
 			model.Unit = types.StringValue(targetUnit)
 		} else {
-			// Otherwise, use what libvirt returned
+			// User didn't specify unit, just use KiB for the memory value
 			model.Memory = types.Int64Value(memoryKiB)
-			if domain.Memory.Unit != "" {
-				model.Unit = types.StringValue(domain.Memory.Unit)
-			} else {
-				model.Unit = types.StringValue("KiB")
-			}
+			// Don't populate unit - preserve user intent by leaving it null
 		}
 	}
 
@@ -842,30 +842,25 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 
 		if domain.OS.Type != nil {
 			osModel.Type = types.StringValue(domain.OS.Type.Type)
-			if domain.OS.Type.Arch != "" {
+
+			// Only populate arch if user originally specified it
+			if !model.OS.Arch.IsNull() && !model.OS.Arch.IsUnknown() && domain.OS.Type.Arch != "" {
 				osModel.Arch = types.StringValue(domain.OS.Type.Arch)
 			}
-			// For machine type, preserve what the user specified in their config
-			// even though libvirt may have expanded it (e.g., q35 -> pc-q35-10.1)
-			// This prevents unnecessary diffs
+
+			// Only populate machine if user originally specified it
+			// Preserve user's value to avoid diffs when libvirt expands it (e.g., q35 -> pc-q35-10.1)
 			if !model.OS.Machine.IsNull() && !model.OS.Machine.IsUnknown() {
 				osModel.Machine = model.OS.Machine
-			} else if domain.OS.Type.Machine != "" {
-				osModel.Machine = types.StringValue(domain.OS.Type.Machine)
 			}
 		}
 
-		// For boot devices, preserve what the user specified
-		// If they didn't specify any, use what libvirt added
+		// Only preserve boot devices if user explicitly specified them
 		if !model.OS.BootDevices.IsNull() && !model.OS.BootDevices.IsUnknown() {
 			osModel.BootDevices = model.OS.BootDevices
-		} else if len(domain.OS.BootDevices) > 0 {
-			bootDevices := make([]types.String, len(domain.OS.BootDevices))
-			for i, boot := range domain.OS.BootDevices {
-				bootDevices[i] = types.StringValue(boot.Dev)
-			}
-			listValue, _ := types.ListValueFrom(context.Background(), types.StringType, bootDevices)
-			osModel.BootDevices = listValue
+		} else {
+			// Initialize as null list with proper type to avoid type errors
+			osModel.BootDevices = types.ListNull(types.StringType)
 		}
 
 		if domain.OS.Kernel != "" {
