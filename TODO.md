@@ -266,6 +266,19 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [x] Add nested catchup configuration
 - [x] Test timer configurations
 
+## Priority 3.5: Provider Infrastructure
+
+### Machine Type Diff Logic
+**Status:** ❌ Not started
+**Issue:** Currently preserving user's machine value (e.g., "q35") in state to avoid diffs when libvirt expands it (e.g., to "pc-q35-10.1"). This works but storing unexpanded value isn't ideal.
+**Better approach:** Implement sophisticated diff logic that understands libvirt's machine type expansion.
+
+**Tasks:**
+- [ ] Research Terraform Plugin Framework diff suppression patterns
+- [ ] Implement machine type normalization/comparison logic
+- [ ] Store actual libvirt value but suppress diff when it's just expansion
+- [ ] Update tests
+
 ## Priority 4: Other Resources
 
 ### 11. Network Resource [OLD: ✅]

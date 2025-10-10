@@ -748,7 +748,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 	var diags diag.Diagnostics
 	model.Name = types.StringValue(domain.Name)
 
-	// Only populate type if user originally specified it
+	// Only set type if user specified it
 	if !model.Type.IsNull() && !model.Type.IsUnknown() {
 		model.Type = types.StringValue(domain.Type)
 	}
@@ -788,13 +788,11 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			model.Memory = types.Int64Value(convertMemory(memoryKiB, "KiB", targetUnit))
 			model.Unit = types.StringValue(targetUnit)
 		} else {
-			// User didn't specify unit, just use KiB for the memory value
 			model.Memory = types.Int64Value(memoryKiB)
-			// Don't populate unit - preserve user intent by leaving it null
 		}
 	}
 
-	// Only set current_memory if user originally specified it, to avoid inconsistency with libvirt defaults
+	// Only set current_memory if user specified it
 	if !model.CurrentMemory.IsNull() && !model.CurrentMemory.IsUnknown() && domain.CurrentMemory != nil {
 		currentMemoryKiB := int64(domain.CurrentMemory.Value)
 		if !model.Unit.IsNull() && !model.Unit.IsUnknown() {
@@ -822,7 +820,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		model.VCPU = types.Int64Value(int64(domain.VCPU.Value))
 	}
 
-	// Only preserve lifecycle actions if user originally specified them, to avoid inconsistency with libvirt defaults
+	// Only set lifecycle actions if user specified them
 	if !model.OnPoweroff.IsNull() && !model.OnPoweroff.IsUnknown() && domain.OnPoweroff != "" {
 		model.OnPoweroff = types.StringValue(domain.OnPoweroff)
 	}
@@ -843,23 +841,21 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		if domain.OS.Type != nil {
 			osModel.Type = types.StringValue(domain.OS.Type.Type)
 
-			// Only populate arch if user originally specified it
+			// Only set arch if user specified it
 			if !model.OS.Arch.IsNull() && !model.OS.Arch.IsUnknown() && domain.OS.Type.Arch != "" {
 				osModel.Arch = types.StringValue(domain.OS.Type.Arch)
 			}
 
-			// Only populate machine if user originally specified it
-			// Preserve user's value to avoid diffs when libvirt expands it (e.g., q35 -> pc-q35-10.1)
+			// Preserve user's value to avoid diffs from libvirt expansion (e.g., q35 -> pc-q35-10.1)
 			if !model.OS.Machine.IsNull() && !model.OS.Machine.IsUnknown() {
 				osModel.Machine = model.OS.Machine
 			}
 		}
 
-		// Only preserve boot devices if user explicitly specified them
+		// Only set boot_devices if user specified them
 		if !model.OS.BootDevices.IsNull() && !model.OS.BootDevices.IsUnknown() {
 			osModel.BootDevices = model.OS.BootDevices
 		} else {
-			// Initialize as null list with proper type to avoid type errors
 			osModel.BootDevices = types.ListNull(types.StringType)
 		}
 
@@ -985,7 +981,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		model.Features = featuresModel
 	}
 
-	// CPU - only preserve if user originally specified it
+	// Only set CPU if user specified it
 	if model.CPU != nil && domain.CPU != nil {
 		cpuModel := &DomainCPUModel{}
 
@@ -1027,7 +1023,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		model.CPU = cpuModel
 	}
 
-	// Clock - only preserve if user originally specified it
+	// Only set clock if user specified it
 	if model.Clock != nil && domain.Clock != nil {
 		clockModel := &DomainClockModel{}
 
@@ -1106,7 +1102,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		model.Clock = clockModel
 	}
 
-	// PM - only preserve if user originally specified it
+	// Only set PM if user specified it
 	if model.PM != nil && domain.PM != nil {
 		pmModel := &DomainPMModel{}
 
@@ -1121,7 +1117,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		model.PM = pmModel
 	}
 
-	// Devices - only preserve optional fields the user specified
+	// Only set devices if user specified them
 	if !model.Devices.IsNull() && !model.Devices.IsUnknown() && domain.Devices != nil {
 		// Extract the current devices model from state
 		var origDevices DomainDevicesModel
@@ -1134,7 +1130,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		var disks []DomainDiskModel
 		var interfaces []DomainInterfaceModel
 
-		// Process disks - only preserve optional fields the user specified
+		// Process disks
 		if !origDevices.Disks.IsNull() && !origDevices.Disks.IsUnknown() && len(domain.Devices.Disks) > 0 {
 			var origDisks []DomainDiskModel
 			d := origDevices.Disks.ElementsAs(ctx, &origDisks, false)
@@ -1246,7 +1242,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			}
 		}
 
-		// Process graphics - only preserve optional fields the user specified
+		// Process graphics
 		var graphicsModel *DomainGraphicsModel
 		if !origDevices.Graphics.IsNull() && !origDevices.Graphics.IsUnknown() && len(domain.Devices.Graphics) > 0 {
 			var origGraphics DomainGraphicsModel
@@ -1441,7 +1437,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			})
 		}
 
-		// Process filesystems - only if user originally specified them
+		// Process filesystems
 		filesystemsType := types.ListType{
 			ElemType: types.ObjectType{
 				AttrTypes: map[string]attr.Type{
