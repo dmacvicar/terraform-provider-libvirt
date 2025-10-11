@@ -11,10 +11,39 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
+func testAccCheckDomainDestroy(s *terraform.State) error {
+	ctx := context.Background()
+	client, err := libvirtclient.NewClient(ctx, "qemu:///system")
+	if err != nil {
+		return fmt.Errorf("failed to create libvirt client: %w", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "libvirt_domain" {
+			continue
+		}
+
+		uuid := rs.Primary.Attributes["uuid"]
+		if uuid == "" {
+			continue
+		}
+
+		// Try to find the domain - it should not exist
+		_, err := client.LookupDomainByUUID(uuid)
+		if err == nil {
+			return fmt.Errorf("domain %s still exists after destroy", uuid)
+		}
+	}
+
+	return nil
+}
+
 func TestAccDomainResource_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
@@ -54,6 +83,7 @@ func TestAccDomainResource_uefi(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigUEFI("test-domain-uefi"),
@@ -139,6 +169,7 @@ func TestAccDomainResource_metadata(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigMetadata("test-domain-metadata"),
@@ -180,6 +211,7 @@ func TestAccDomainResource_features(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigFeatures("test-domain-features"),
@@ -230,6 +262,7 @@ func TestAccDomainResource_cpu(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigCPU("test-domain-cpu"),
@@ -272,6 +305,7 @@ func TestAccDomainResource_clock(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigClock("test-domain-clock"),
@@ -314,6 +348,7 @@ func TestAccDomainResource_lifecycle(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigLifecycle("test-domain-lifecycle"),
@@ -358,6 +393,7 @@ func TestAccDomainResource_running(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigRunning("test-domain-running"),
@@ -375,6 +411,7 @@ func TestAccDomainResource_updateWithRunning(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			// Create domain
 			{
@@ -403,6 +440,7 @@ func TestAccDomainResource_clockTimers(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigClockTimers("test-domain-timers"),
@@ -467,6 +505,7 @@ func TestAccDomainResource_clockTimerCatchup(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigClockTimerCatchup("test-domain-timer-catchup"),
@@ -685,6 +724,7 @@ func TestAccDomainResource_network(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigNetwork("test-domain-network"),
@@ -734,6 +774,7 @@ func TestAccDomainResource_graphics(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigGraphicsVNC("test-domain-graphics"),
@@ -777,6 +818,7 @@ func TestAccDomainResource_video(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigVideo("test-domain-video"),
@@ -817,6 +859,7 @@ func TestAccDomainResource_emulator(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigEmulator("test-domain-emulator"),
@@ -855,6 +898,7 @@ func TestAccDomainResource_console(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigConsole("test-domain-console"),
@@ -907,6 +951,7 @@ func TestAccDomainResource_autostart(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			// Create with autostart=true
 			{
@@ -999,6 +1044,7 @@ func TestAccDomainResource_preserveUserIntent(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigMinimal("test-domain-minimal"),
@@ -1044,6 +1090,7 @@ func TestAccDomainResource_filesystem(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDomainResourceConfigFilesystem("test-domain-fs", sharedDir, dataDir),
