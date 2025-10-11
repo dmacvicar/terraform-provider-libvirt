@@ -228,6 +228,119 @@ Commit 1: feat: add title, description, lifecycle, iothreads, memory fields
 - Can revert problematic changes without losing good work
 - User can see steady progress
 
+## Testing Patterns
+
+### Acceptance Tests
+
+Acceptance tests verify the provider works against real libvirt infrastructure. They use the Terraform Plugin Testing framework.
+
+**Test Structure:**
+```go
+func TestAccDomainResource_basic(t *testing.T) {
+    resource.Test(t, resource.TestCase{
+        PreCheck:                 func() { testAccPreCheck(t) },
+        ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+        CheckDestroy:             testAccCheckDomainDestroy,
+        Steps: []resource.TestStep{
+            {
+                Config: testAccDomainResourceConfigBasic("test-domain-basic"),
+                Check: resource.ComposeAggregateTestCheckFunc(
+                    resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-basic"),
+                ),
+            },
+        },
+    })
+}
+```
+
+**Key Fields:**
+- `PreCheck` - Verify prerequisites (libvirt available)
+- `ProtoV6ProviderFactories` - Provider factory for Plugin Framework
+- `CheckDestroy` - Verify resources cleaned up after test
+- `Steps` - Test steps (create, update, delete)
+
+### Test Sweepers
+
+Test sweepers clean up leaked resources from failed tests. They're especially useful when tests fail before reaching the destroy phase.
+
+**Setup (required once):**
+
+Add to `provider_test.go`:
+```go
+func TestMain(m *testing.M) {
+    resource.TestMain(m)
+}
+```
+
+**Register sweepers** in resource test files:
+```go
+func init() {
+    resource.AddTestSweepers("libvirt_domain", &resource.Sweeper{
+        Name: "libvirt_domain",
+        F: func(uri string) error {
+            ctx := context.Background()
+            client, err := libvirtclient.NewClient(ctx, uri)
+            if err != nil {
+                return fmt.Errorf("failed to create libvirt client: %w", err)
+            }
+            defer client.Close()
+
+            // List all domains
+            domains, err := client.Libvirt().Domains()
+            if err != nil {
+                return err
+            }
+
+            // Delete test domains (prefix: test-)
+            for _, domain := range domains {
+                if strings.HasPrefix(domain.Name, "test-") {
+                    _ = client.Libvirt().DomainDestroy(domain)
+                    _ = client.Libvirt().DomainUndefine(domain)
+                }
+            }
+            return nil
+        },
+    })
+}
+```
+
+**Dependencies:** Sweepers can specify dependencies to ensure cleanup order:
+```go
+resource.AddTestSweepers("libvirt_domain", &resource.Sweeper{
+    Name: "libvirt_domain",
+    Dependencies: []string{"libvirt_volume"},  // Clean volumes first
+    F: func(uri string) error { /* ... */ },
+})
+```
+
+**Running sweepers:**
+```bash
+# List available sweepers
+go test -sweep-list
+
+# Run all sweepers for qemu:///system
+go test -sweep=qemu:///system
+
+# Run specific sweeper
+go test -sweep=qemu:///system -sweep-run=libvirt_domain
+
+# Add to Makefile
+make sweep  # Should run: go test -sweep=qemu:///system -timeout 10m
+```
+
+**Best Practices:**
+- Prefix all test resources with `test-` for easy identification
+- Only delete resources matching test prefix
+- Handle errors gracefully (sweeper failures shouldn't block other sweepers)
+- Register sweepers for resources that may leak (domains, volumes, networks, pools)
+- Set dependencies to ensure proper cleanup order
+
+**Important Notes:**
+- The string parameter (e.g., "qemu:///system") is provider-specific, NOT just for AWS regions
+- For libvirt, it's the connection URI
+- Sweepers run manually, not automatically on test failure
+- Run sweepers before test runs to ensure clean state, or after to cleanup failures
+
 ## Key Gotchas
 
 - The old provider simplified the libvirt API - we explicitly do NOT want that
