@@ -127,15 +127,15 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [ ] Add acceptance test with block device
 
 ### 9. Console/Serial Devices
-**Status:** ❌ Not started
+**Status:** ✅ Completed
 **libvirtxml:** `DomainConsole`, `DomainSerial`
 **Old provider:** `console` block
 
 **Tasks:**
-- [ ] Add console/serial nested attributes to devices
-- [ ] Fields: type, source_path, source_host, source_service, target_port, target_type
-- [ ] Model ↔ libvirtxml conversion
-- [ ] Add acceptance test
+- [x] Add console/serial nested attributes to devices
+- [x] Fields: type, source_path, target_port, target_type (pty and file types supported)
+- [x] Model ↔ libvirtxml conversion
+- [x] Add acceptance test
 
 ### 10. Video Device
 **Status:** ✅ Completed
