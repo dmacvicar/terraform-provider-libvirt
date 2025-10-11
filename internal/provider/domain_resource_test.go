@@ -13,7 +13,7 @@ import (
 
 func testAccCheckDomainDestroy(s *terraform.State) error {
 	ctx := context.Background()
-	client, err := libvirtclient.NewClient(ctx, "qemu:///system")
+	client, err := libvirtclient.NewClient(ctx, testAccLibvirtURI())
 	if err != nil {
 		return fmt.Errorf("failed to create libvirt client: %w", err)
 	}
@@ -99,9 +99,6 @@ func TestAccDomainResource_uefi(t *testing.T) {
 
 func testAccDomainResourceConfigBasic(name string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_domain" "test" {
   name   = %[1]q
@@ -121,9 +118,6 @@ resource "libvirt_domain" "test" {
 
 func testAccDomainResourceConfigBasicUpdated(name string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_domain" "test" {
   name   = %[1]q
@@ -143,9 +137,6 @@ resource "libvirt_domain" "test" {
 
 func testAccDomainResourceConfigUEFI(name string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_domain" "test" {
   name   = %[1]q
@@ -185,9 +176,6 @@ func TestAccDomainResource_metadata(t *testing.T) {
 
 func testAccDomainResourceConfigMetadata(name string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_domain" "test" {
   name        = %[1]q
@@ -230,9 +218,6 @@ func TestAccDomainResource_features(t *testing.T) {
 
 func testAccDomainResourceConfigFeatures(name string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_domain" "test" {
   name   = %[1]q
@@ -277,9 +262,6 @@ func TestAccDomainResource_cpu(t *testing.T) {
 
 func testAccDomainResourceConfigCPU(name string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_domain" "test" {
   name   = %[1]q
@@ -320,9 +302,6 @@ func TestAccDomainResource_clock(t *testing.T) {
 
 func testAccDomainResourceConfigClock(name string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_domain" "test" {
   name   = %[1]q
@@ -365,9 +344,6 @@ func TestAccDomainResource_lifecycle(t *testing.T) {
 
 func testAccDomainResourceConfigLifecycle(name string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_domain" "test" {
   name   = %[1]q
@@ -462,9 +438,6 @@ func TestAccDomainResource_clockTimers(t *testing.T) {
 
 func testAccDomainResourceConfigClockTimers(name string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_domain" "test" {
   name   = %[1]q
@@ -524,9 +497,6 @@ func TestAccDomainResource_clockTimerCatchup(t *testing.T) {
 
 func testAccDomainResourceConfigClockTimerCatchup(name string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_domain" "test" {
   name   = %[1]q
@@ -561,9 +531,6 @@ resource "libvirt_domain" "test" {
 
 func testAccDomainResourceConfigRunning(name string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_domain" "test" {
   name    = %[1]q
@@ -585,7 +552,7 @@ resource "libvirt_domain" "test" {
 func testAccCheckDomainIsRunning(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ctx := context.Background()
-		client, err := libvirtclient.NewClient(ctx, "qemu:///system")
+		client, err := libvirtclient.NewClient(ctx, testAccLibvirtURI())
 		if err != nil {
 			return fmt.Errorf("failed to create libvirt client: %w", err)
 		}
@@ -624,7 +591,7 @@ func testAccCheckDomainIsRunning(name string) resource.TestCheckFunc {
 func testAccCheckDomainStart(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ctx := context.Background()
-		client, err := libvirtclient.NewClient(ctx, "qemu:///system")
+		client, err := libvirtclient.NewClient(ctx, testAccLibvirtURI())
 		if err != nil {
 			return fmt.Errorf("failed to create libvirt client: %w", err)
 		}
@@ -670,7 +637,7 @@ func testAccCheckDomainCanStart(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		// Create a new libvirt client for testing
 		ctx := context.Background()
-		client, err := libvirtclient.NewClient(ctx, "qemu:///system")
+		client, err := libvirtclient.NewClient(ctx, testAccLibvirtURI())
 		if err != nil {
 			return fmt.Errorf("failed to create libvirt client: %w", err)
 		}
@@ -1015,7 +982,7 @@ func testAccCheckDomainAutostart(resourceName string, expected bool) resource.Te
 
 		// Get libvirt client
 		ctx := context.Background()
-		client, err := libvirtclient.NewClient(ctx, "qemu:///system")
+		client, err := libvirtclient.NewClient(ctx, testAccLibvirtURI())
 		if err != nil {
 			return fmt.Errorf("failed to create libvirt client: %w", err)
 		}

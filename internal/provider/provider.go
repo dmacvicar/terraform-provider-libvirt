@@ -73,8 +73,15 @@ func (p *LibvirtProvider) Configure(ctx context.Context, req provider.ConfigureR
 		return
 	}
 
-	// Default URI to qemu:///system if not configured
+	// Determine URI with precedence: config > env var > default
 	uri := "qemu:///system"
+
+	// Check environment variable first
+	if envURI := os.Getenv("LIBVIRT_DEFAULT_URI"); envURI != "" {
+		uri = envURI
+	}
+
+	// Config overrides environment variable
 	if !config.URI.IsNull() && !config.URI.IsUnknown() {
 		uri = config.URI.ValueString()
 	}
