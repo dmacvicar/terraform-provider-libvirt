@@ -8,13 +8,15 @@ import (
 )
 
 func TestAccVolumeResource_basic(t *testing.T) {
+	poolPath := t.TempDir()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccVolumeResourceConfigBasic("test-volume"),
+				Config: testAccVolumeResourceConfigBasic("test-volume", poolPath),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_volume.test", "name", "test-volume.qcow2"),
 					resource.TestCheckResourceAttr("libvirt_volume.test", "pool", "test-pool-volume"),
@@ -31,17 +33,14 @@ func TestAccVolumeResource_basic(t *testing.T) {
 	})
 }
 
-func testAccVolumeResourceConfigBasic(name string) string {
+func testAccVolumeResourceConfigBasic(name, poolPath string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_pool" "test" {
   name = "test-pool-volume"
   type = "dir"
   target = {
-    path = "/tmp/terraform-provider-libvirt-pool-volume"
+    path = %[2]q
   }
 }
 
@@ -51,16 +50,18 @@ resource "libvirt_volume" "test" {
   capacity = 1073741824
   format   = "qcow2"
 }
-`, name)
+`, name, poolPath)
 }
 
 func TestAccVolumeResource_backingStore(t *testing.T) {
+	poolPath := t.TempDir()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccVolumeResourceConfigBackingStore("test-volume-cow"),
+				Config: testAccVolumeResourceConfigBackingStore("test-volume-cow", poolPath),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_volume.base", "name", "test-volume-cow-base.qcow2"),
 					resource.TestCheckResourceAttr("libvirt_volume.cow", "name", "test-volume-cow.qcow2"),
@@ -71,17 +72,14 @@ func TestAccVolumeResource_backingStore(t *testing.T) {
 	})
 }
 
-func testAccVolumeResourceConfigBackingStore(name string) string {
+func testAccVolumeResourceConfigBackingStore(name, poolPath string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_pool" "test" {
   name = "test-pool-backing"
   type = "dir"
   target = {
-    path = "/tmp/terraform-provider-libvirt-pool-backing"
+    path = %[2]q
   }
 }
 
@@ -103,16 +101,18 @@ resource "libvirt_volume" "cow" {
     format = "qcow2"
   }
 }
-`, name)
+`, name, poolPath)
 }
 
 func TestAccVolumeResource_withDomain(t *testing.T) {
+	poolPath := t.TempDir()
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccVolumeResourceConfigWithDomain("test-integration"),
+				Config: testAccVolumeResourceConfigWithDomain("test-integration", poolPath),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_pool.test", "name", "test-pool-integration"),
 					resource.TestCheckResourceAttr("libvirt_volume.test", "name", "test-integration.qcow2"),
@@ -125,17 +125,14 @@ func TestAccVolumeResource_withDomain(t *testing.T) {
 	})
 }
 
-func testAccVolumeResourceConfigWithDomain(name string) string {
+func testAccVolumeResourceConfigWithDomain(name, poolPath string) string {
 	return fmt.Sprintf(`
-provider "libvirt" {
-  uri = "qemu:///system"
-}
 
 resource "libvirt_pool" "test" {
   name = "test-pool-integration"
   type = "dir"
   target = {
-    path = "/tmp/terraform-provider-libvirt-pool-integration"
+    path = %[2]q
   }
 }
 
@@ -167,5 +164,5 @@ resource "libvirt_domain" "test" {
     ]
   }
 }
-`, name)
+`, name, poolPath)
 }
