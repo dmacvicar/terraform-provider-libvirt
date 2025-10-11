@@ -24,6 +24,59 @@ This project is a complete v2 rewrite of the Terraform provider for libvirt to r
 
 This ensures we provide comprehensive libvirt feature coverage while maintaining clean, maintainable code that leverages the official XML marshaling library.
 
+## Feature Implementation Priority
+
+**CRITICAL: Read this section before implementing any features.**
+
+When deciding what to implement next, follow this priority order:
+
+### Priority 1: Pure Libvirt Features from Old Provider
+**These are the highest priority features to implement.**
+
+- Features that existed in the old provider (github.com/dmacvicar/terraform-provider-libvirt)
+- AND are part of native libvirt functionality
+- NOT provider-specific additions or conveniences
+
+**Examples of Priority 1 (implement these):**
+- Console/Serial devices (libvirtxml.DomainConsole, DomainSerial)
+- Video devices (libvirtxml.DomainVideo)
+- TPM devices (libvirtxml.DomainTPM)
+- Emulator path (libvirtxml.DomainDeviceList.Emulator)
+- SCSI disks with WWN (libvirtxml.DomainDisk)
+- Block device disks (libvirtxml.DomainDisk with type="block")
+- Direct network types: macvtap, vepa, passthrough (libvirtxml.DomainInterface)
+- NVRAM template (libvirtxml.DomainLoader.Template)
+- Metadata custom XML (libvirtxml.Domain.Metadata)
+- RNG devices (libvirtxml.DomainRNG)
+- Input devices (libvirtxml.DomainInput)
+
+**Examples of NOT Priority 1 (defer these):**
+- ❌ Cloud-init support (libvirt_cloudinit_disk resource) - provider addition, not libvirt
+- ❌ URL download for volumes (source = "http://...") - provider convenience, not libvirt
+- ❌ CoreOS Ignition (libvirt_ignition resource) - provider addition
+- ❌ Combustion support - provider addition
+- ❌ XML XSLT transforms - provider addition, against design principles
+
+### Priority 2: Advanced Libvirt Features
+- CPU topology, features, NUMA (libvirtxml supports)
+- Memory backing, hugepages (libvirtxml supports)
+- Advanced features blocks (HyperV, KVM, SMM)
+- Host device passthrough (libvirtxml.DomainHostdev)
+- Advanced tuning (CPUTune, NUMATune, BlockIOTune)
+
+### Priority 3: Provider Conveniences (Maybe Never)
+- Cloud-init integration
+- URL download
+- XSLT transforms
+- Other abstractions on top of libvirt
+
+**Why this order matters:**
+- Users migrating from the old provider expect feature parity with pure libvirt features
+- Provider-specific conveniences can be built later (or never, if they conflict with design principles)
+- Focus on exposing libvirt's full API first, conveniences second
+
+**When in doubt:** Check if the feature exists in libvirtxml and was in the old provider. If yes to both and it's not a provider addition, it's Priority 1.
+
 ## XML to HCL Mapping Patterns
 
 ### General Mapping Rules
