@@ -185,6 +185,7 @@ type DomainDevicesModel struct {
 	Emulator    types.String `tfsdk:"emulator"`
 	Consoles    types.List   `tfsdk:"consoles"`
 	Serials     types.List   `tfsdk:"serials"`
+	RNGs        types.List   `tfsdk:"rngs"`
 }
 
 // DomainFilesystemModel describes a filesystem device
@@ -214,6 +215,12 @@ type DomainSerialModel struct {
 	SourcePath types.String `tfsdk:"source_path"`
 	TargetType types.String `tfsdk:"target_type"`
 	TargetPort types.Int64  `tfsdk:"target_port"`
+}
+
+// DomainRNGModel describes an RNG device
+type DomainRNGModel struct {
+	Model  types.String `tfsdk:"model"`
+	Device types.String `tfsdk:"device"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -569,6 +576,22 @@ providing fine-grained control over VM configuration.
 							},
 							"target_port": schema.Int64Attribute{
 								Description: "Target port number. Optional.",
+								Optional:    true,
+							},
+						},
+					},
+				},
+				"rngs": schema.ListNestedAttribute{
+					Description: "Random number generator devices for the domain.",
+					Optional:    true,
+					NestedObject: schema.NestedAttributeObject{
+						Attributes: map[string]schema.Attribute{
+							"model": schema.StringAttribute{
+								Description: "RNG device model (virtio, virtio-transitional, virtio-non-transitional). Defaults to virtio.",
+								Optional:    true,
+							},
+							"device": schema.StringAttribute{
+								Description: "Backend random device path (e.g., /dev/random, /dev/urandom, /dev/hwrng). Defaults to /dev/urandom.",
 								Optional:    true,
 							},
 						},

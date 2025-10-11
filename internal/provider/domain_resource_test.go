@@ -1148,3 +1148,49 @@ resource "libvirt_domain" "test" {
 }
 `, name, sharedDir, dataDir)
 }
+
+func TestAccDomainResource_rng(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigRNG("test-domain-rng"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-rng"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.rngs.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.rngs.0.model", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.rngs.0.device", "/dev/urandom"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigRNG(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    rngs = [
+      {
+        model  = "virtio"
+        device = "/dev/urandom"
+      }
+    ]
+  }
+}
+`, name)
+}

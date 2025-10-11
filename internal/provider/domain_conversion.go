@@ -862,6 +862,40 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 			domain.Devices.Serials = append(domain.Devices.Serials, serial)
 		}
 	}
+
+	// Process RNGs
+	if !devices.RNGs.IsNull() && !devices.RNGs.IsUnknown() {
+		var rngs []DomainRNGModel
+		diags := devices.RNGs.ElementsAs(ctx, &rngs, false)
+		if diags.HasError() {
+			return nil, fmt.Errorf("failed to extract rngs: %v", diags.Errors())
+		}
+
+		for _, rngModel := range rngs {
+			rng := libvirtxml.DomainRNG{}
+
+			// Set model (default to virtio)
+			if !rngModel.Model.IsNull() && !rngModel.Model.IsUnknown() {
+				rng.Model = rngModel.Model.ValueString()
+			} else {
+				rng.Model = "virtio"
+			}
+
+			// Set backend (Random device)
+			device := "/dev/urandom" // default
+			if !rngModel.Device.IsNull() && !rngModel.Device.IsUnknown() {
+				device = rngModel.Device.ValueString()
+			}
+
+			rng.Backend = &libvirtxml.DomainRNGBackend{
+				Random: &libvirtxml.DomainRNGBackendRandom{
+					Device: device,
+				},
+			}
+
+			domain.Devices.RNGs = append(domain.Devices.RNGs, rng)
+		}
+	}
 	}
 
 	return domain, nil
@@ -1799,6 +1833,52 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			}
 		}
 	}
+
+	// Process RNGs
+	rngsType := types.ListType{
+		ElemType: types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"model":  types.StringType,
+				"device": types.StringType,
+			},
+		},
+	}
+	rngsList := types.ListNull(rngsType.ElemType.(types.ObjectType))
+
+	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+		var existingDevices DomainDevicesModel
+		diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+
+		if !existingDevices.RNGs.IsNull() && !existingDevices.RNGs.IsUnknown() && len(domain.Devices.RNGs) > 0 {
+			rngs := make([]DomainRNGModel, 0, len(domain.Devices.RNGs))
+			for _, rng := range domain.Devices.RNGs {
+				rngModel := DomainRNGModel{}
+
+				if rng.Model != "" {
+					rngModel.Model = types.StringValue(rng.Model)
+				}
+
+				// Extract device path from backend
+				if rng.Backend != nil && rng.Backend.Random != nil && rng.Backend.Random.Device != "" {
+					rngModel.Device = types.StringValue(rng.Backend.Random.Device)
+				}
+
+				rngs = append(rngs, rngModel)
+			}
+
+			rngsList, d = types.ListValueFrom(ctx, types.ObjectType{
+				AttrTypes: map[string]attr.Type{
+					"model":  types.StringType,
+					"device": types.StringType,
+				},
+			}, rngs)
+			diags.Append(d...)
+			if diags.HasError() {
+				return diags
+			}
+		}
+	}
+
 		newDevices := DomainDevicesModel{
 			Disks:       disksList,
 			Interfaces:  interfacesList,
@@ -1808,6 +1888,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		Emulator:    emulatorStr,
 		Consoles:    consolesList,
 		Serials:     serialsList,
+		RNGs:        rngsList,
 		}
 
 		// Create the devices object
@@ -1894,6 +1975,14 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 						"source_path": types.StringType,
 						"target_type": types.StringType,
 						"target_port": types.Int64Type,
+					},
+				},
+			},
+			"rngs": types.ListType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"model":  types.StringType,
+						"device": types.StringType,
 					},
 				},
 			},
