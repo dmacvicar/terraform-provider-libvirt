@@ -8,6 +8,7 @@ import (
 
 	libvirtclient "github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func init() {
@@ -44,10 +45,39 @@ func init() {
 	})
 }
 
+func testAccCheckNetworkDestroy(s *terraform.State) error {
+	ctx := context.Background()
+	client, err := libvirtclient.NewClient(ctx, testAccLibvirtURI())
+	if err != nil {
+		return fmt.Errorf("failed to create libvirt client: %w", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	for _, rs := range s.RootModule().Resources {
+		if rs.Type != "libvirt_network" {
+			continue
+		}
+
+		uuid := rs.Primary.Attributes["uuid"]
+		if uuid == "" {
+			continue
+		}
+
+		// Try to find the network - it should not exist
+		_, err := client.LookupNetworkByUUID(uuid)
+		if err == nil {
+			return fmt.Errorf("network %s still exists after destroy", uuid)
+		}
+	}
+
+	return nil
+}
+
 func TestAccNetworkResource_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckNetworkDestroy,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
@@ -71,6 +101,7 @@ func TestAccNetworkResource_isolated(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccNetworkResourceConfigIsolated("test-network-isolated"),
