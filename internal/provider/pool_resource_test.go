@@ -1,11 +1,49 @@
 package provider
 
 import (
+	"context"
 	"fmt"
+	"strings"
 	"testing"
 
+	libvirtclient "github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
+
+func init() {
+	resource.AddTestSweepers("libvirt_pool", &resource.Sweeper{
+		Name:         "libvirt_pool",
+		Dependencies: []string{"libvirt_volume"},
+		F: func(uri string) error {
+			ctx := context.Background()
+			client, err := libvirtclient.NewClient(ctx, uri)
+			if err != nil {
+				return fmt.Errorf("failed to create libvirt client: %w", err)
+			}
+			defer func() { _ = client.Close() }()
+
+			// List all storage pools
+			pools, _, err := client.Libvirt().ConnectListAllStoragePools(1, 0)
+			if err != nil {
+				return fmt.Errorf("failed to list storage pools: %w", err)
+			}
+
+			// Delete test pools (prefix: test-)
+			for _, pool := range pools {
+				if strings.HasPrefix(pool.Name, "test-") || strings.HasPrefix(pool.Name, "test_") {
+					// Try to destroy if active
+					_ = client.Libvirt().StoragePoolDestroy(pool)
+					// Undefine the pool
+					if err := client.Libvirt().StoragePoolUndefine(pool); err != nil {
+						fmt.Printf("Warning: failed to undefine pool %s: %v\n", pool.Name, err)
+					}
+				}
+			}
+
+			return nil
+		},
+	})
+}
 
 func TestAccPoolResource_dir(t *testing.T) {
 	poolPath := t.TempDir()

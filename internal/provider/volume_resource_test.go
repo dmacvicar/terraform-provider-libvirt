@@ -1,11 +1,53 @@
 package provider
 
 import (
+	"context"
 	"fmt"
+	"strings"
 	"testing"
 
+	libvirtclient "github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
+
+func init() {
+	resource.AddTestSweepers("libvirt_volume", &resource.Sweeper{
+		Name:         "libvirt_volume",
+		Dependencies: []string{"libvirt_domain"},
+		F: func(uri string) error {
+			ctx := context.Background()
+			client, err := libvirtclient.NewClient(ctx, uri)
+			if err != nil {
+				return fmt.Errorf("failed to create libvirt client: %w", err)
+			}
+			defer func() { _ = client.Close() }()
+
+			// List all storage pools
+			pools, _, err := client.Libvirt().ConnectListAllStoragePools(1, 0)
+			if err != nil {
+				return fmt.Errorf("failed to list storage pools: %w", err)
+			}
+
+			// For each pool, list volumes and delete test volumes
+			for _, pool := range pools {
+				vols, _, err := client.Libvirt().StoragePoolListAllVolumes(pool, 1, 0)
+				if err != nil {
+					continue // Skip pools we can't read
+				}
+
+				for _, vol := range vols {
+					if strings.HasPrefix(vol.Name, "test-") || strings.HasPrefix(vol.Name, "test_") {
+						if err := client.Libvirt().StorageVolDelete(vol, 0); err != nil {
+							fmt.Printf("Warning: failed to delete volume %s: %v\n", vol.Name, err)
+						}
+					}
+				}
+			}
+
+			return nil
+		},
+	})
+}
 
 func TestAccVolumeResource_basic(t *testing.T) {
 	poolPath := t.TempDir()

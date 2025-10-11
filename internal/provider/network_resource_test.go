@@ -1,11 +1,48 @@
 package provider
 
 import (
+	"context"
 	"fmt"
+	"strings"
 	"testing"
 
+	libvirtclient "github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
+
+func init() {
+	resource.AddTestSweepers("libvirt_network", &resource.Sweeper{
+		Name: "libvirt_network",
+		F: func(uri string) error {
+			ctx := context.Background()
+			client, err := libvirtclient.NewClient(ctx, uri)
+			if err != nil {
+				return fmt.Errorf("failed to create libvirt client: %w", err)
+			}
+			defer func() { _ = client.Close() }()
+
+			// List all networks
+			networks, _, err := client.Libvirt().ConnectListAllNetworks(1, 0)
+			if err != nil {
+				return fmt.Errorf("failed to list networks: %w", err)
+			}
+
+			// Delete test networks (prefix: test-)
+			for _, network := range networks {
+				if strings.HasPrefix(network.Name, "test-") || strings.HasPrefix(network.Name, "test_") {
+					// Try to destroy if active
+					_ = client.Libvirt().NetworkDestroy(network)
+					// Undefine the network
+					if err := client.Libvirt().NetworkUndefine(network); err != nil {
+						fmt.Printf("Warning: failed to undefine network %s: %v\n", network.Name, err)
+					}
+				}
+			}
+
+			return nil
+		},
+	})
+}
 
 func TestAccNetworkResource_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
