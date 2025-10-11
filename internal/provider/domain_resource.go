@@ -183,6 +183,8 @@ type DomainDevicesModel struct {
 	Filesystems types.List   `tfsdk:"filesystems"`
 	Video       types.Object `tfsdk:"video"`
 	Emulator    types.String `tfsdk:"emulator"`
+	Consoles    types.List   `tfsdk:"consoles"`
+	Serials     types.List   `tfsdk:"serials"`
 }
 
 // DomainFilesystemModel describes a filesystem device
@@ -196,6 +198,22 @@ type DomainFilesystemModel struct {
 // DomainVideoModel describes a video device
 type DomainVideoModel struct {
 	Type types.String `tfsdk:"type"`
+}
+
+// DomainConsoleModel describes a console device
+type DomainConsoleModel struct {
+	Type       types.String `tfsdk:"type"`
+	SourcePath types.String `tfsdk:"source_path"`
+	TargetType types.String `tfsdk:"target_type"`
+	TargetPort types.Int64  `tfsdk:"target_port"`
+}
+
+// DomainSerialModel describes a serial device
+type DomainSerialModel struct {
+	Type       types.String `tfsdk:"type"`
+	SourcePath types.String `tfsdk:"source_path"`
+	TargetType types.String `tfsdk:"target_type"`
+	TargetPort types.Int64  `tfsdk:"target_port"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -507,6 +525,54 @@ providing fine-grained control over VM configuration.
 				"emulator": schema.StringAttribute{
 					Description: "Path to the emulator binary (e.g., /usr/bin/qemu-system-x86_64). Optional, libvirt chooses default if not specified.",
 					Optional:    true,
+				},
+				"consoles": schema.ListNestedAttribute{
+					Description: "Console devices for the domain.",
+					Optional:    true,
+					NestedObject: schema.NestedAttributeObject{
+						Attributes: map[string]schema.Attribute{
+							"type": schema.StringAttribute{
+								Description: "Console source type (pty, file, unix, tcp, etc.). Optional, defaults to pty.",
+								Optional:    true,
+							},
+							"source_path": schema.StringAttribute{
+								Description: "Source path for file or unix socket types. Optional.",
+								Optional:    true,
+							},
+							"target_type": schema.StringAttribute{
+								Description: "Target type (serial, virtio, xen, etc.). Optional.",
+								Optional:    true,
+							},
+							"target_port": schema.Int64Attribute{
+								Description: "Target port number. Optional.",
+								Optional:    true,
+							},
+						},
+					},
+				},
+				"serials": schema.ListNestedAttribute{
+					Description: "Serial devices for the domain.",
+					Optional:    true,
+					NestedObject: schema.NestedAttributeObject{
+						Attributes: map[string]schema.Attribute{
+							"type": schema.StringAttribute{
+								Description: "Serial source type (pty, file, unix, tcp, etc.). Optional, defaults to pty.",
+								Optional:    true,
+							},
+							"source_path": schema.StringAttribute{
+								Description: "Source path for file or unix socket types. Optional.",
+								Optional:    true,
+							},
+							"target_type": schema.StringAttribute{
+								Description: "Target type (isa-serial, usb-serial, pci-serial, etc.). Optional.",
+								Optional:    true,
+							},
+							"target_port": schema.Int64Attribute{
+								Description: "Target port number. Optional.",
+								Optional:    true,
+							},
+						},
+					},
 				},
 				},
 			},

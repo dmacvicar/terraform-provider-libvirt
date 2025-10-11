@@ -851,6 +851,58 @@ resource "libvirt_domain" "test" {
 `, name)
 }
 
+func TestAccDomainResource_console(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigConsole("test-domain-console"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-console"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.0.type", "pty"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigConsole(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    consoles = [
+      {
+        type        = "pty"
+        target_type = "serial"
+        target_port = 0
+      }
+    ]
+    serials = [
+      {
+        type        = "pty"
+        target_type = "isa-serial"
+        target_port = 0
+      }
+    ]
+  }
+}
+`, name)
+}
+
 func TestAccDomainResource_autostart(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },

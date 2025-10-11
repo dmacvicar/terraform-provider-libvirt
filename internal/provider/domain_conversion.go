@@ -763,6 +763,105 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 		if !devices.Emulator.IsNull() && !devices.Emulator.IsUnknown() {
 			domain.Devices.Emulator = devices.Emulator.ValueString()
 		}
+	// Process consoles
+	if !devices.Consoles.IsNull() && !devices.Consoles.IsUnknown() {
+		var consoles []DomainConsoleModel
+		diags := devices.Consoles.ElementsAs(ctx, &consoles, false)
+		if diags.HasError() {
+			return nil, fmt.Errorf("failed to extract consoles: %v", diags.Errors())
+		}
+
+		for _, consoleModel := range consoles {
+			console := libvirtxml.DomainConsole{}
+
+			// Set source based on type
+			sourceType := "pty" // default
+			if !consoleModel.Type.IsNull() && !consoleModel.Type.IsUnknown() {
+				sourceType = consoleModel.Type.ValueString()
+			}
+
+			switch sourceType {
+			case "pty":
+				console.Source = &libvirtxml.DomainChardevSource{
+					Pty: &libvirtxml.DomainChardevSourcePty{},
+				}
+				if !consoleModel.SourcePath.IsNull() && !consoleModel.SourcePath.IsUnknown() {
+					console.Source.Pty.Path = consoleModel.SourcePath.ValueString()
+				}
+			case "file":
+				console.Source = &libvirtxml.DomainChardevSource{
+					File: &libvirtxml.DomainChardevSourceFile{},
+				}
+				if !consoleModel.SourcePath.IsNull() && !consoleModel.SourcePath.IsUnknown() {
+					console.Source.File.Path = consoleModel.SourcePath.ValueString()
+				}
+			}
+
+			// Set target
+			if !consoleModel.TargetType.IsNull() || !consoleModel.TargetPort.IsNull() {
+				console.Target = &libvirtxml.DomainConsoleTarget{}
+				if !consoleModel.TargetType.IsNull() && !consoleModel.TargetType.IsUnknown() {
+					console.Target.Type = consoleModel.TargetType.ValueString()
+				}
+				if !consoleModel.TargetPort.IsNull() && !consoleModel.TargetPort.IsUnknown() {
+					port := uint(consoleModel.TargetPort.ValueInt64())
+					console.Target.Port = &port
+				}
+			}
+
+			domain.Devices.Consoles = append(domain.Devices.Consoles, console)
+		}
+	}
+
+	// Process serials
+	if !devices.Serials.IsNull() && !devices.Serials.IsUnknown() {
+		var serials []DomainSerialModel
+		diags := devices.Serials.ElementsAs(ctx, &serials, false)
+		if diags.HasError() {
+			return nil, fmt.Errorf("failed to extract serials: %v", diags.Errors())
+		}
+
+		for _, serialModel := range serials {
+			serial := libvirtxml.DomainSerial{}
+
+			// Set source based on type
+			sourceType := "pty" // default
+			if !serialModel.Type.IsNull() && !serialModel.Type.IsUnknown() {
+				sourceType = serialModel.Type.ValueString()
+			}
+
+			switch sourceType {
+			case "pty":
+				serial.Source = &libvirtxml.DomainChardevSource{
+					Pty: &libvirtxml.DomainChardevSourcePty{},
+				}
+				if !serialModel.SourcePath.IsNull() && !serialModel.SourcePath.IsUnknown() {
+					serial.Source.Pty.Path = serialModel.SourcePath.ValueString()
+				}
+			case "file":
+				serial.Source = &libvirtxml.DomainChardevSource{
+					File: &libvirtxml.DomainChardevSourceFile{},
+				}
+				if !serialModel.SourcePath.IsNull() && !serialModel.SourcePath.IsUnknown() {
+					serial.Source.File.Path = serialModel.SourcePath.ValueString()
+				}
+			}
+
+			// Set target
+			if !serialModel.TargetType.IsNull() || !serialModel.TargetPort.IsNull() {
+				serial.Target = &libvirtxml.DomainSerialTarget{}
+				if !serialModel.TargetType.IsNull() && !serialModel.TargetType.IsUnknown() {
+					serial.Target.Type = serialModel.TargetType.ValueString()
+				}
+				if !serialModel.TargetPort.IsNull() && !serialModel.TargetPort.IsUnknown() {
+					port := uint(serialModel.TargetPort.ValueInt64())
+					serial.Target.Port = &port
+				}
+			}
+
+			domain.Devices.Serials = append(domain.Devices.Serials, serial)
+		}
+	}
 	}
 
 	return domain, nil
@@ -1571,6 +1670,135 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		emulatorStr = types.StringNull()
 	}
 		// Create the new devices model
+	// Process consoles
+	consolesType := types.ListType{
+		ElemType: types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"type":        types.StringType,
+				"source_path": types.StringType,
+				"target_type": types.StringType,
+				"target_port": types.Int64Type,
+			},
+		},
+	}
+	consolesList := types.ListNull(consolesType.ElemType.(types.ObjectType))
+
+	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+		var existingDevices DomainDevicesModel
+		diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+
+		if !existingDevices.Consoles.IsNull() && !existingDevices.Consoles.IsUnknown() && len(domain.Devices.Consoles) > 0 {
+			consoles := make([]DomainConsoleModel, 0, len(domain.Devices.Consoles))
+			for _, console := range domain.Devices.Consoles {
+				consoleModel := DomainConsoleModel{}
+
+				// Determine source type
+				if console.Source != nil {
+					if console.Source.Pty != nil {
+						consoleModel.Type = types.StringValue("pty")
+						if console.Source.Pty.Path != "" {
+							consoleModel.SourcePath = types.StringValue(console.Source.Pty.Path)
+						}
+					} else if console.Source.File != nil {
+						consoleModel.Type = types.StringValue("file")
+						if console.Source.File.Path != "" {
+							consoleModel.SourcePath = types.StringValue(console.Source.File.Path)
+						}
+					}
+				}
+
+				// Process target
+				if console.Target != nil {
+					if console.Target.Type != "" {
+						consoleModel.TargetType = types.StringValue(console.Target.Type)
+					}
+					if console.Target.Port != nil {
+						consoleModel.TargetPort = types.Int64Value(int64(*console.Target.Port))
+					}
+				}
+
+				consoles = append(consoles, consoleModel)
+			}
+
+			consolesList, d = types.ListValueFrom(ctx, types.ObjectType{
+				AttrTypes: map[string]attr.Type{
+					"type":        types.StringType,
+					"source_path": types.StringType,
+					"target_type": types.StringType,
+					"target_port": types.Int64Type,
+				},
+			}, consoles)
+			diags.Append(d...)
+			if diags.HasError() {
+				return diags
+			}
+		}
+	}
+
+	// Process serials
+	serialsType := types.ListType{
+		ElemType: types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"type":        types.StringType,
+				"source_path": types.StringType,
+				"target_type": types.StringType,
+				"target_port": types.Int64Type,
+			},
+		},
+	}
+	serialsList := types.ListNull(serialsType.ElemType.(types.ObjectType))
+
+	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+		var existingDevices DomainDevicesModel
+		diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+
+		if !existingDevices.Serials.IsNull() && !existingDevices.Serials.IsUnknown() && len(domain.Devices.Serials) > 0 {
+			serials := make([]DomainSerialModel, 0, len(domain.Devices.Serials))
+			for _, serial := range domain.Devices.Serials {
+				serialModel := DomainSerialModel{}
+
+				// Determine source type
+				if serial.Source != nil {
+					if serial.Source.Pty != nil {
+						serialModel.Type = types.StringValue("pty")
+						if serial.Source.Pty.Path != "" {
+							serialModel.SourcePath = types.StringValue(serial.Source.Pty.Path)
+						}
+					} else if serial.Source.File != nil {
+						serialModel.Type = types.StringValue("file")
+						if serial.Source.File.Path != "" {
+							serialModel.SourcePath = types.StringValue(serial.Source.File.Path)
+						}
+					}
+				}
+
+				// Process target
+				if serial.Target != nil {
+					if serial.Target.Type != "" {
+						serialModel.TargetType = types.StringValue(serial.Target.Type)
+					}
+					if serial.Target.Port != nil {
+						serialModel.TargetPort = types.Int64Value(int64(*serial.Target.Port))
+					}
+				}
+
+				serials = append(serials, serialModel)
+			}
+
+			serialsList, d = types.ListValueFrom(ctx, types.ObjectType{
+				AttrTypes: map[string]attr.Type{
+					"type":        types.StringType,
+					"source_path": types.StringType,
+					"target_type": types.StringType,
+					"target_port": types.Int64Type,
+				},
+			}, serials)
+			diags.Append(d...)
+			if diags.HasError() {
+				return diags
+			}
+		}
+	}
 		newDevices := DomainDevicesModel{
 			Disks:       disksList,
 			Interfaces:  interfacesList,
@@ -1578,6 +1806,8 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			Filesystems: filesystemsList,
 		Video:       videoObj,
 		Emulator:    emulatorStr,
+		Consoles:    consolesList,
+		Serials:     serialsList,
 		}
 
 		// Create the devices object
@@ -1647,6 +1877,26 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 				},
 			},
 			"emulator": types.StringType,
+			"consoles": types.ListType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"type":        types.StringType,
+						"source_path": types.StringType,
+						"target_type": types.StringType,
+						"target_port": types.Int64Type,
+					},
+				},
+			},
+			"serials": types.ListType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"type":        types.StringType,
+						"source_path": types.StringType,
+						"target_type": types.StringType,
+						"target_port": types.Int64Type,
+					},
+				},
+			},
 		}, newDevices)
 		diags.Append(d...)
 		if diags.HasError() {
