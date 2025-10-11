@@ -1,4 +1,4 @@
-.PHONY: help build install test testacc lint fmt clean
+.PHONY: help build install test testacc sweep lint fmt clean
 
 # Default target
 .DEFAULT_GOAL := help
@@ -30,6 +30,10 @@ test: lint ## Run unit tests
 testacc: lint ## Run acceptance tests (requires running libvirt)
 	@echo "Running acceptance tests..."
 	@TF_ACC=1 go test -v -timeout 10m ./internal/provider
+
+sweep: ## Clean up leaked test resources from failed tests
+	@echo "Running test sweepers..."
+	@go test -sweep=$(shell if [ -n "$$LIBVIRT_TEST_URI" ]; then echo "$$LIBVIRT_TEST_URI"; else echo "qemu:///system"; fi) -timeout 10m ./internal/provider
 
 lint: ## Run golangci-lint
 	@echo "Running golangci-lint..."

@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	golibvirt "github.com/digitalocean/go-libvirt"
@@ -10,6 +11,41 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
+
+func init() {
+	resource.AddTestSweepers("libvirt_domain", &resource.Sweeper{
+		Name: "libvirt_domain",
+		F: func(uri string) error {
+			ctx := context.Background()
+			client, err := libvirtclient.NewClient(ctx, uri)
+			if err != nil {
+				return fmt.Errorf("failed to create libvirt client: %w", err)
+			}
+			defer func() { _ = client.Close() }()
+
+			// List all domains
+			domains, _, err := client.Libvirt().ConnectListAllDomains(1, 0)
+			if err != nil {
+				return fmt.Errorf("failed to list domains: %w", err)
+			}
+
+			// Delete test domains (prefix: test-)
+			for _, domain := range domains {
+				if strings.HasPrefix(domain.Name, "test-") || strings.HasPrefix(domain.Name, "test_") {
+					// Try to destroy if running
+					_ = client.Libvirt().DomainDestroy(domain)
+					// Undefine the domain
+					if err := client.Libvirt().DomainUndefine(domain); err != nil {
+						// Log but don't fail - domain might already be gone
+						fmt.Printf("Warning: failed to undefine domain %s: %v\n", domain.Name, err)
+					}
+				}
+			}
+
+			return nil
+		},
+	})
+}
 
 func testAccCheckDomainDestroy(s *terraform.State) error {
 	ctx := context.Background()
