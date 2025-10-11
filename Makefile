@@ -33,7 +33,7 @@ testacc: lint ## Run acceptance tests (requires running libvirt)
 
 sweep: ## Clean up leaked test resources from failed tests
 	@echo "Running test sweepers..."
-	@go test -sweep=$(shell if [ -n "$$LIBVIRT_TEST_URI" ]; then echo "$$LIBVIRT_TEST_URI"; else echo "qemu:///system"; fi) -timeout 10m ./internal/provider
+	@cd internal/provider && go test -sweep=$(shell if [ -n "$$LIBVIRT_TEST_URI" ]; then echo "$$LIBVIRT_TEST_URI"; else echo "qemu:///system"; fi) -timeout 10m .
 
 lint: ## Run golangci-lint
 	@echo "Running golangci-lint..."
