@@ -61,10 +61,10 @@ type DomainResourceModel struct {
 	PM       types.Object `tfsdk:"pm"`
 	Create   types.Object `tfsdk:"create"`
 	Devices  types.Object `tfsdk:"devices"`
+	Destroy  types.Object `tfsdk:"destroy"`
 
-	// TODO: convert these blocks to nested attributes
-	Clock   *DomainClockModel   `tfsdk:"clock"`
-	Destroy *DomainDestroyModel `tfsdk:"destroy"`
+	// TODO: convert this block to nested attribute
+	Clock *DomainClockModel `tfsdk:"clock"`
 }
 
 // DomainOSModel describes the OS configuration
@@ -818,6 +818,20 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 				},
 				},
 			},
+			"destroy": schema.SingleNestedAttribute{
+				Description: "Domain shutdown behavior. Controls how the domain is stopped when running changes from true to false or when the resource is destroyed.",
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"graceful": schema.BoolAttribute{
+						Description: "Attempt graceful shutdown before forcing. Defaults to true.",
+						Optional:    true,
+					},
+					"timeout": schema.Int64Attribute{
+						Description: "Timeout in seconds to wait for graceful shutdown before forcing. Defaults to 300.",
+						Optional:    true,
+					},
+				},
+			},
 		},
 		Blocks: map[string]schema.Block{
 			"clock": schema.SingleNestedBlock{
@@ -890,19 +904,6 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 								},
 							},
 						},
-					},
-				},
-			},
-			"destroy": schema.SingleNestedBlock{
-				Description: "Domain shutdown behavior. Controls how the domain is stopped when running changes from true to false or when the resource is destroyed.",
-				Attributes: map[string]schema.Attribute{
-					"graceful": schema.BoolAttribute{
-						Description: "Attempt graceful shutdown before forcing. Defaults to true.",
-						Optional:    true,
-					},
-					"timeout": schema.Int64Attribute{
-						Description: "Timeout in seconds to wait for graceful shutdown before forcing. Defaults to 300.",
-						Optional:    true,
 					},
 				},
 			},

@@ -113,7 +113,7 @@ resource "libvirt_domain" "kernel_boot" {
 See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainCreateFlags). (see [below for nested schema](#nestedatt--create))
 - `current_memory` (Number) Actual memory allocation at boot time. If not set, defaults to memory value.
 - `description` (String) Human-readable description of the domain.
-- `destroy` (Block, Optional) Domain shutdown behavior. Controls how the domain is stopped when running changes from true to false or when the resource is destroyed. (see [below for nested schema](#nestedblock--destroy))
+- `destroy` (Attributes) Domain shutdown behavior. Controls how the domain is stopped when running changes from true to false or when the resource is destroyed. (see [below for nested schema](#nestedatt--destroy))
 - `devices` (Attributes) Devices attached to the domain (disks, network interfaces, etc.). (see [below for nested schema](#nestedatt--devices))
 - `features` (Attributes) Hypervisor features to enable. (see [below for nested schema](#nestedatt--features))
 - `hwuuid` (String) Hardware UUID for the domain.
@@ -201,7 +201,7 @@ Optional:
 - `validate` (Boolean) Validate XML document against schema (VIR_DOMAIN_START_VALIDATE).
 
 
-<a id="nestedblock--destroy"></a>
+<a id="nestedatt--destroy"></a>
 ### Nested Schema for `destroy`
 
 Optional:
