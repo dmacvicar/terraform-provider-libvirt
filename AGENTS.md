@@ -77,6 +77,49 @@ When deciding what to implement next, follow this priority order:
 
 **When in doubt:** Check if the feature exists in libvirtxml and was in the old provider. If yes to both and it's not a provider addition, it's Priority 1.
 
+## Schema Design: Always Consult RNG Schemas First
+
+**CRITICAL: Before implementing any HCL schema or behavior, always check the libvirt RNG schemas.**
+
+The official libvirt XML schemas located at `/usr/share/libvirt/schemas/` are the authoritative source for understanding:
+
+1. **Which fields are optional vs required**
+2. **Valid values and patterns** (e.g., WWN must be 16 hex digits: `(0x)?[0-9a-fA-F]{16}`)
+3. **Default behavior** - does libvirt auto-generate values, or is it purely optional?
+4. **Constraints and validation rules**
+
+### How to Check RNG Schemas
+
+```bash
+# Search for a specific field (e.g., wwn)
+grep -A 5 -B 5 "wwn" /usr/share/libvirt/schemas/domaincommon.rng
+
+# Find type definitions
+grep -A 10 "define name=\"wwn\"" /usr/share/libvirt/schemas/basictypes.rng
+
+# Check what's optional vs required
+# <optional> wrapping means the field is optional
+# <element> without <optional> is required
+```
+
+### Example: WWN Field
+
+When implementing the WWN field for disks, consulting the RNG schema revealed:
+
+1. **It's optional**: Wrapped in `<optional>` tags in domaincommon.rng
+2. **Format constraint**: `(0x)?[0-9a-fA-F]{16}` (16 hex digits, optionally prefixed with "0x")
+3. **No auto-generation**: Libvirt doesn't generate WWN values - it's purely user-specified
+4. **No SCSI-specific requirement**: It's not required for SCSI disks, just optional
+
+This prevented us from incorrectly implementing auto-generation logic (which would violate the "no abstraction" principle).
+
+### Key Principles
+
+- **Don't assume** - Check the RNG schema to understand libvirt's actual behavior
+- **Don't add abstractions** - If libvirt doesn't auto-generate a value, neither should we
+- **Match the schema** - Optional in RNG = `Optional: true` in Terraform, etc.
+- **Preserve patterns** - Copy validation patterns from RNG to Terraform validators where appropriate
+
 ## XML to HCL Mapping Patterns
 
 ### General Mapping Rules
