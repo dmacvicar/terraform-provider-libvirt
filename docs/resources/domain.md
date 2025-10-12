@@ -106,7 +106,7 @@ resource "libvirt_domain" "kernel_boot" {
 - `autostart` (Boolean) Whether the domain should be started automatically when the host boots.
 - `bootloader` (String) Bootloader path for paravirtualized guests (Xen).
 - `bootloader_args` (String) Arguments to pass to bootloader.
-- `clock` (Block, Optional) Clock configuration for the domain. (see [below for nested schema](#nestedblock--clock))
+- `clock` (Attributes) Clock configuration for the domain. (see [below for nested schema](#nestedatt--clock))
 - `cpu` (Attributes) CPU configuration for the domain. (see [below for nested schema](#nestedatt--cpu))
 - `create` (Attributes) Domain start flags corresponding to virDomainCreateFlags. Only used when running=true.
 
@@ -135,7 +135,7 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 
 - `id` (String) Domain identifier (UUID)
 
-<a id="nestedblock--clock"></a>
+<a id="nestedatt--clock"></a>
 ### Nested Schema for `clock`
 
 Optional:
@@ -143,10 +143,10 @@ Optional:
 - `adjustment` (String) Clock adjustment in seconds.
 - `basis` (String) Clock basis (utc, localtime).
 - `offset` (String) Clock offset (utc, localtime, timezone, variable).
-- `timer` (Block List) Timer devices for the guest clock. (see [below for nested schema](#nestedblock--clock--timer))
+- `timer` (Attributes List) Timer devices for the guest clock. (see [below for nested schema](#nestedatt--clock--timer))
 - `timezone` (String) Timezone name when offset is 'timezone'.
 
-<a id="nestedblock--clock--timer"></a>
+<a id="nestedatt--clock--timer"></a>
 ### Nested Schema for `clock.timer`
 
 Required:
@@ -155,14 +155,14 @@ Required:
 
 Optional:
 
-- `catchup` (Block, Optional) Timer catchup configuration. (see [below for nested schema](#nestedblock--clock--timer--catchup))
+- `catchup` (Attributes) Timer catchup configuration. (see [below for nested schema](#nestedatt--clock--timer--catchup))
 - `frequency` (Number) Timer frequency in Hz.
 - `mode` (String) Timer mode (auto, native, emulate, paravirt, smpsafe).
 - `present` (String) Whether timer is present (yes, no).
 - `tickpolicy` (String) Tick policy (delay, catchup, merge, discard).
 - `track` (String) Track source (guest, wall).
 
-<a id="nestedblock--clock--timer--catchup"></a>
+<a id="nestedatt--clock--timer--catchup"></a>
 ### Nested Schema for `clock.timer.catchup`
 
 Optional:

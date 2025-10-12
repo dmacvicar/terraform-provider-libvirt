@@ -59,12 +59,10 @@ type DomainResourceModel struct {
 	Features types.Object `tfsdk:"features"`
 	CPU      types.Object `tfsdk:"cpu"`
 	PM       types.Object `tfsdk:"pm"`
-	Create   types.Object `tfsdk:"create"`
-	Devices  types.Object `tfsdk:"devices"`
-	Destroy  types.Object `tfsdk:"destroy"`
-
-	// TODO: convert this block to nested attribute
-	Clock *DomainClockModel `tfsdk:"clock"`
+	Create  types.Object `tfsdk:"create"`
+	Devices types.Object `tfsdk:"devices"`
+	Destroy types.Object `tfsdk:"destroy"`
+	Clock   types.Object `tfsdk:"clock"`
 }
 
 // DomainOSModel describes the OS configuration
@@ -96,22 +94,22 @@ type DomainCPUModel struct {
 
 // DomainClockModel describes clock configuration
 type DomainClockModel struct {
-	Offset     types.String        `tfsdk:"offset"`
-	Basis      types.String        `tfsdk:"basis"`
-	Adjustment types.String        `tfsdk:"adjustment"`
-	TimeZone   types.String        `tfsdk:"timezone"`
-	Timers     []DomainTimerModel  `tfsdk:"timer"`
+	Offset     types.String `tfsdk:"offset"`
+	Basis      types.String `tfsdk:"basis"`
+	Adjustment types.String `tfsdk:"adjustment"`
+	TimeZone   types.String `tfsdk:"timezone"`
+	Timers     types.List   `tfsdk:"timer"`
 }
 
 // DomainTimerModel describes a clock timer
 type DomainTimerModel struct {
-	Name       types.String              `tfsdk:"name"`
-	Track      types.String              `tfsdk:"track"`
-	TickPolicy types.String              `tfsdk:"tickpolicy"`
-	Frequency  types.Int64               `tfsdk:"frequency"`
-	Mode       types.String              `tfsdk:"mode"`
-	Present    types.String              `tfsdk:"present"`
-	CatchUp    *DomainTimerCatchUpModel  `tfsdk:"catchup"`
+	Name       types.String `tfsdk:"name"`
+	Track      types.String `tfsdk:"track"`
+	TickPolicy types.String `tfsdk:"tickpolicy"`
+	Frequency  types.Int64  `tfsdk:"frequency"`
+	Mode       types.String `tfsdk:"mode"`
+	Present    types.String `tfsdk:"present"`
+	CatchUp    types.Object `tfsdk:"catchup"`
 }
 
 // DomainTimerCatchUpModel describes timer catchup configuration
@@ -832,10 +830,9 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 					},
 				},
 			},
-		},
-		Blocks: map[string]schema.Block{
-			"clock": schema.SingleNestedBlock{
+			"clock": schema.SingleNestedAttribute{
 				Description: "Clock configuration for the domain.",
+				Optional:    true,
 				Attributes: map[string]schema.Attribute{
 					"offset": schema.StringAttribute{
 						Description: "Clock offset (utc, localtime, timezone, variable).",
@@ -853,11 +850,10 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 						Description: "Timezone name when offset is 'timezone'.",
 						Optional:    true,
 					},
-				},
-				Blocks: map[string]schema.Block{
-					"timer": schema.ListNestedBlock{
+					"timer": schema.ListNestedAttribute{
 						Description: "Timer devices for the guest clock.",
-						NestedObject: schema.NestedBlockObject{
+						Optional:    true,
+						NestedObject: schema.NestedAttributeObject{
 							Attributes: map[string]schema.Attribute{
 								"name": schema.StringAttribute{
 									Description: "Timer name (platform, pit, rtc, hpet, tsc, kvmclock, hypervclock, armvtimer).",
@@ -883,10 +879,9 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 									Description: "Whether timer is present (yes, no).",
 									Optional:    true,
 								},
-							},
-							Blocks: map[string]schema.Block{
-								"catchup": schema.SingleNestedBlock{
+								"catchup": schema.SingleNestedAttribute{
 									Description: "Timer catchup configuration.",
+									Optional:    true,
 									Attributes: map[string]schema.Attribute{
 										"threshold": schema.Int64Attribute{
 											Description: "Threshold in nanoseconds.",
