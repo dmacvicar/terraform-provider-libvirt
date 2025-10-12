@@ -124,17 +124,26 @@ This prevented us from incorrectly implementing auto-generation logic (which wou
 
 ### General Mapping Rules
 
-1. **XML Elements → HCL Blocks**
-   - Nested XML elements become nested HCL blocks
-   - Example: `<os>...</os>` → `os { ... }`
+**IMPORTANT: Always use nested attributes, never blocks. Follow Terraform Plugin Framework best practices.**
+
+Per [HashiCorp's guidance](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/blocks), blocks are primarily for backward compatibility when migrating from SDK v2. New providers should use nested attributes.
+
+1. **XML Elements → HCL Nested Attributes**
+   - Nested XML elements become nested attribute objects with `=` syntax
+   - Example: `<os>...</os>` → `os = { ... }`
+   - Example: `<devices>...</devices>` → `devices = { disks = [...], interfaces = [...] }`
 
 2. **XML Attributes → HCL Attributes**
-   - XML element attributes become HCL attributes within their block
-   - Example: `<timer name="rtc" tickpolicy="catchup"/>` → `timer { name = "rtc"; tickpolicy = "catchup" }`
+   - XML element attributes become attributes within nested objects
+   - Example: `<timer name="rtc" tickpolicy="catchup"/>` → `timer = { name = "rtc", tickpolicy = "catchup" }`
 
-3. **Repeated Elements → HCL Lists**
-   - Multiple XML elements of the same type become repeated HCL blocks
-   - Example: Multiple `<timer>` elements → multiple `timer { }` blocks
+3. **Repeated Elements → HCL Lists of Objects**
+   - Multiple XML elements of the same type become lists of nested objects
+   - Example: Multiple `<timer>` elements → `timers = [{ name = "rtc", ... }, { name = "pit", ... }]`
+
+4. **Container Elements → Nested Objects**
+   - Container elements become nested objects that may contain lists or other nested objects
+   - Example: `<clock><timer name="rtc"/></clock>` → `clock = { timers = [{ name = "rtc" }] }`
 
 ### Elements with Text Content + Attributes
 
@@ -142,35 +151,33 @@ For XML elements with both text content and attributes, see the "Handling Elemen
 
 **Quick reference:**
 - Unit only → flatten with fixed unit: `memory = 512`
-- Unit + 1 other → flatten both: `max_memory = 2048; max_memory_slots = 16`
-- Multiple attributes → nested block: `vcpu { value = 4; placement = "static"; cpuset = "0-3" }`
-- Type-dependent source → nested block: `source { network = "default" }`
+- Unit + 1 other → flatten both: `max_memory = 2048, max_memory_slots = 16`
+- Multiple attributes → nested object: `vcpu = { value = 4, placement = "static", cpuset = "0-3" }`
+- Type-dependent source → nested object: `source = { network = "default" }`
+- Multiple elements → list of objects: `timers = [{ name = "rtc" }, { name = "pit" }]`
 
-### Provider Schema Implementation Notes
+### Implementation Guidelines
 
-**Use Nested Attributes, Not Blocks**
-
-Per [HashiCorp guidance](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/blocks), new provider implementations should use nested attribute types instead of block types. Blocks are mainly for migrating legacy SDK-based providers.
-
-**Why nested attributes?**
-- Best practice for new providers per Terraform Plugin Framework documentation
-- More explicit syntax with `=` and array brackets `[...]`
-- Better type safety and validation
-- Consistent with modern Terraform providers
-
-**Implementation:**
-- Use `schema.SingleNestedAttribute` for single objects (e.g., `target = { path = "/data" }`)
-- Use `schema.ListNestedAttribute` for lists of objects (e.g., `disks = [{ target = "vda" }]`)
-- Model fields should be `types.Object` or `types.List` accordingly
+**Always use nested attributes:**
+- Use `schema.SingleNestedAttribute` for single objects
+- Use `schema.ListNestedAttribute` for lists of objects
+- Model fields should be `types.Object` or `types.List`
 - Use `.As(ctx, &model, basetypes.ObjectAsOptions{})` to extract from `types.Object`
 - Use `.ElementsAs(ctx, &array, false)` to extract from `types.List`
 
-**Current State:**
-- **Devices** (`devices`): Uses nested attributes ✅
-  - `devices = { disks = [...], interfaces = [...] }`
-- **Existing blocks** (`os`, `features`, `cpu`, `clock`, `pm`, `create`, `destroy`): Still use blocks for ergonomics
-  - These may be converted later, but it's not urgent
-- **New features**: Should use nested attributes
+**Why nested attributes only:**
+- Required by Terraform Plugin Framework best practices per HashiCorp documentation
+- Blocks are for backward compatibility when migrating from SDK v2
+- Nested attributes provide better type safety and validation
+- Clear, explicit syntax with `=` and array brackets `[...]`
+- Consistent across the entire provider schema
+
+**Current Technical Debt:**
+Some fields were incorrectly implemented as blocks and need conversion to nested attributes:
+- `os`, `features`, `cpu`, `clock` (with `timer` sub-blocks), `pm`, `create`, `destroy`
+- These work but violate framework best practices
+- See TODO.md for tracking conversion tasks
+- All new features MUST use nested attributes
 
 **Follow the libvirt XML Schema Structure**
 
@@ -180,7 +187,7 @@ Example:
 - XML: `<domain><devices><disk>...</disk><interface>...</interface></devices></domain>`
 - HCL: `devices = { disks = [...], interfaces = [...] }`
 
-**Key principle**: If libvirt XML has a container element (like `<devices>`), we must have a corresponding container in HCL.
+**Key principle**: If libvirt XML has a container element (like `<devices>`), we must have a corresponding nested object in HCL.
 
 **Preserve User Intent Pattern**
 

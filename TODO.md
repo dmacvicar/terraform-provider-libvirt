@@ -1,5 +1,56 @@
 # TODO - Terraform Provider for Libvirt v2
 
+## Technical Debt - Block to Nested Attribute Conversion
+
+**Background:** Several fields were incorrectly implemented using blocks instead of nested attributes. Per [HashiCorp's guidance](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/blocks), blocks are primarily for SDK v2 migration compatibility. New providers should use nested attributes.
+
+**Impact:** These currently work but violate framework best practices and create inconsistency in the schema design.
+
+**Fields needing conversion:**
+
+1. **`os` block → `os` nested attribute**
+   - Status: ❌ Not started
+   - Complexity: Medium (simple single-level structure)
+   - Breaking change: Yes (users must change `os { }` to `os = { }`)
+
+2. **`features` block → `features` nested attribute**
+   - Status: ❌ Not started
+   - Complexity: Medium (many boolean fields)
+   - Breaking change: Yes
+
+3. **`cpu` block → `cpu` nested attribute**
+   - Status: ❌ Not started
+   - Complexity: Low (few fields currently)
+   - Breaking change: Yes
+
+4. **`clock` block with `timer` nested blocks → `clock` nested attribute with `timers` list**
+   - Status: ❌ Not started
+   - Complexity: High (nested blocks within blocks, including `catchup` sub-block)
+   - Breaking change: Yes (also renames `timer` to `timers`)
+   - Example change: `clock { timer { catchup { } } }` → `clock = { timers = [{ catchup = { } }] }`
+
+5. **`pm` block → `pm` nested attribute**
+   - Status: ❌ Not started
+   - Complexity: Low (only 2 fields)
+   - Breaking change: Yes
+
+6. **`create` block → `create` nested attribute**
+   - Status: ❌ Not started
+   - Complexity: Low (boolean flags only)
+   - Breaking change: Yes
+
+7. **`destroy` block → `destroy` nested attribute**
+   - Status: ❌ Not started
+   - Complexity: Low (2 fields)
+   - Breaking change: Yes
+
+**Migration strategy:**
+- Since this is a v2 rewrite and pre-1.0, we can make breaking changes
+- Consider doing all conversions in a single PR to minimize user disruption
+- Update all examples and tests simultaneously
+- Document the breaking changes clearly
+- Priority: Should be done before 1.0 release, ideally sooner to reduce rework
+
 ## Current Status
 
 ### ✅ Completed - Domain Resource (Basic)

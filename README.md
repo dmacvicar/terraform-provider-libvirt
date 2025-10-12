@@ -201,7 +201,7 @@ If the source always has the same pattern, it can be flattened to a simple attri
 - We don't distinguish between XML attributes and elements in HCL - both become HCL attributes
 - The same XML structure always maps to the same HCL structure
 - This consistent mapping enables automated migration from the old provider or from raw libvirt XML
-- **Nested Attributes vs Blocks**: Following [HashiCorp's guidance](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/blocks), new features use nested attributes (e.g., `devices = { ... }`) instead of blocks. Some existing features (`os`, `features`, `clock`, etc.) use blocks for ergonomics.
+- **Nested Attributes vs Blocks**: Following [HashiCorp's guidance](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/blocks), new features use nested attributes (e.g., `devices = { ... }`) instead of blocks. Some existing features (`os`, `features`, `clock`, etc.) incorrectly use blocks and need conversion (see TODO.md).
 
 For detailed XML schemas, see the [libvirt domain format documentation](https://libvirt.org/formatdomain.html).
 
