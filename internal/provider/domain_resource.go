@@ -56,14 +56,14 @@ type DomainResourceModel struct {
 
 	OS       types.Object `tfsdk:"os"`
 	Features types.Object `tfsdk:"features"`
+	CPU      types.Object `tfsdk:"cpu"`
 	Devices  types.Object `tfsdk:"devices"`
 
 	// TODO: convert these blocks to nested attributes
-	CPU      *DomainCPUModel     `tfsdk:"cpu"`
-	Clock    *DomainClockModel   `tfsdk:"clock"`
-	PM       *DomainPMModel      `tfsdk:"pm"`
-	Create   *DomainCreateModel  `tfsdk:"create"`
-	Destroy  *DomainDestroyModel `tfsdk:"destroy"`
+	Clock   *DomainClockModel   `tfsdk:"clock"`
+	PM      *DomainPMModel      `tfsdk:"pm"`
+	Create  *DomainCreateModel  `tfsdk:"create"`
+	Destroy *DomainDestroyModel `tfsdk:"destroy"`
 }
 
 // DomainOSModel describes the OS configuration
@@ -441,6 +441,40 @@ providing fine-grained control over VM configuration.
 					},
 				},
 			},
+			"cpu": schema.SingleNestedAttribute{
+				Description: "CPU configuration for the domain.",
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"mode": schema.StringAttribute{
+						Description: "CPU mode (host-model, host-passthrough, custom).",
+						Optional:    true,
+					},
+					"match": schema.StringAttribute{
+						Description: "CPU match policy (exact, minimum, strict).",
+						Optional:    true,
+					},
+					"check": schema.StringAttribute{
+						Description: "CPU check policy (none, partial, full).",
+						Optional:    true,
+					},
+					"migratable": schema.StringAttribute{
+						Description: "Whether the CPU is migratable (on, off).",
+						Optional:    true,
+					},
+					"deprecated_features": schema.StringAttribute{
+						Description: "How to handle deprecated features (allow, forbid).",
+						Optional:    true,
+					},
+					"model": schema.StringAttribute{
+						Description: "CPU model name.",
+						Optional:    true,
+					},
+					"vendor": schema.StringAttribute{
+						Description: "CPU vendor.",
+						Optional:    true,
+					},
+				},
+			},
 			"os": schema.SingleNestedAttribute{
 				Description: "Operating system configuration for the domain.",
 				Optional:    true,
@@ -736,39 +770,6 @@ providing fine-grained control over VM configuration.
 			},
 		},
 		Blocks: map[string]schema.Block{
-			"cpu": schema.SingleNestedBlock{
-				Description: "CPU configuration for the domain.",
-				Attributes: map[string]schema.Attribute{
-					"mode": schema.StringAttribute{
-						Description: "CPU mode (host-model, host-passthrough, custom).",
-						Optional:    true,
-					},
-					"match": schema.StringAttribute{
-						Description: "CPU match policy (exact, minimum, strict).",
-						Optional:    true,
-					},
-					"check": schema.StringAttribute{
-						Description: "CPU check policy (none, partial, full).",
-						Optional:    true,
-					},
-					"migratable": schema.StringAttribute{
-						Description: "Whether the CPU is migratable (on, off).",
-						Optional:    true,
-					},
-					"deprecated_features": schema.StringAttribute{
-						Description: "How to handle deprecated features (allow, forbid).",
-						Optional:    true,
-					},
-					"model": schema.StringAttribute{
-						Description: "CPU model name.",
-						Optional:    true,
-					},
-					"vendor": schema.StringAttribute{
-						Description: "CPU vendor.",
-						Optional:    true,
-					},
-				},
-			},
 			"clock": schema.SingleNestedBlock{
 				Description: "Clock configuration for the domain.",
 				Attributes: map[string]schema.Attribute{

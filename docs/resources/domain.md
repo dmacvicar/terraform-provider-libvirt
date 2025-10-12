@@ -107,7 +107,7 @@ resource "libvirt_domain" "kernel_boot" {
 - `bootloader` (String) Bootloader path for paravirtualized guests (Xen).
 - `bootloader_args` (String) Arguments to pass to bootloader.
 - `clock` (Block, Optional) Clock configuration for the domain. (see [below for nested schema](#nestedblock--clock))
-- `cpu` (Block, Optional) CPU configuration for the domain. (see [below for nested schema](#nestedblock--cpu))
+- `cpu` (Attributes) CPU configuration for the domain. (see [below for nested schema](#nestedatt--cpu))
 - `create` (Block, Optional) Domain start flags corresponding to virDomainCreateFlags. Only used when running=true.
 
 See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainCreateFlags). (see [below for nested schema](#nestedblock--create))
@@ -174,7 +174,7 @@ Optional:
 
 
 
-<a id="nestedblock--cpu"></a>
+<a id="nestedatt--cpu"></a>
 ### Nested Schema for `cpu`
 
 Optional:

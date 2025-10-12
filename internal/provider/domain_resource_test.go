@@ -312,7 +312,7 @@ resource "libvirt_domain" "test" {
     machine = "q35"
   }
 
-  cpu {
+  cpu = {
     mode = "host-passthrough"
   }
 }

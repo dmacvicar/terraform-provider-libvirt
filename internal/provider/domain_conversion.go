@@ -373,37 +373,43 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 	}
 
 	// Set CPU
-	if model.CPU != nil {
+	if !model.CPU.IsNull() && !model.CPU.IsUnknown() {
+		var cpuModel DomainCPUModel
+		diags := model.CPU.As(ctx, &cpuModel, basetypes.ObjectAsOptions{})
+		if diags.HasError() {
+			return nil, fmt.Errorf("failed to extract cpu: %v", diags.Errors())
+		}
+
 		cpu := &libvirtxml.DomainCPU{}
 
-		if !model.CPU.Mode.IsNull() && !model.CPU.Mode.IsUnknown() {
-			cpu.Mode = model.CPU.Mode.ValueString()
+		if !cpuModel.Mode.IsNull() && !cpuModel.Mode.IsUnknown() {
+			cpu.Mode = cpuModel.Mode.ValueString()
 		}
 
-		if !model.CPU.Match.IsNull() && !model.CPU.Match.IsUnknown() {
-			cpu.Match = model.CPU.Match.ValueString()
+		if !cpuModel.Match.IsNull() && !cpuModel.Match.IsUnknown() {
+			cpu.Match = cpuModel.Match.ValueString()
 		}
 
-		if !model.CPU.Check.IsNull() && !model.CPU.Check.IsUnknown() {
-			cpu.Check = model.CPU.Check.ValueString()
+		if !cpuModel.Check.IsNull() && !cpuModel.Check.IsUnknown() {
+			cpu.Check = cpuModel.Check.ValueString()
 		}
 
-		if !model.CPU.Migratable.IsNull() && !model.CPU.Migratable.IsUnknown() {
-			cpu.Migratable = model.CPU.Migratable.ValueString()
+		if !cpuModel.Migratable.IsNull() && !cpuModel.Migratable.IsUnknown() {
+			cpu.Migratable = cpuModel.Migratable.ValueString()
 		}
 
-		if !model.CPU.DeprecatedFeatures.IsNull() && !model.CPU.DeprecatedFeatures.IsUnknown() {
-			cpu.DeprecatedFeatures = model.CPU.DeprecatedFeatures.ValueString()
+		if !cpuModel.DeprecatedFeatures.IsNull() && !cpuModel.DeprecatedFeatures.IsUnknown() {
+			cpu.DeprecatedFeatures = cpuModel.DeprecatedFeatures.ValueString()
 		}
 
-		if !model.CPU.Model.IsNull() && !model.CPU.Model.IsUnknown() {
+		if !cpuModel.Model.IsNull() && !cpuModel.Model.IsUnknown() {
 			cpu.Model = &libvirtxml.DomainCPUModel{
-				Value: model.CPU.Model.ValueString(),
+				Value: cpuModel.Model.ValueString(),
 			}
 		}
 
-		if !model.CPU.Vendor.IsNull() && !model.CPU.Vendor.IsUnknown() {
-			cpu.Vendor = model.CPU.Vendor.ValueString()
+		if !cpuModel.Vendor.IsNull() && !cpuModel.Vendor.IsUnknown() {
+			cpu.Vendor = cpuModel.Vendor.ValueString()
 		}
 
 		domain.CPU = cpu
@@ -1207,45 +1213,67 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 	}
 
 	// Only set CPU if user specified it
-	if model.CPU != nil && domain.CPU != nil {
-		cpuModel := &DomainCPUModel{}
+	if !model.CPU.IsNull() && !model.CPU.IsUnknown() && domain.CPU != nil {
+		// Extract original cpu model to check what user specified
+		var origCPU DomainCPUModel
+		d := model.CPU.As(ctx, &origCPU, basetypes.ObjectAsOptions{})
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+
+		cpuModel := DomainCPUModel{}
 
 		// Only set mode if user specified it
-		if !model.CPU.Mode.IsNull() && !model.CPU.Mode.IsUnknown() && domain.CPU.Mode != "" {
+		if !origCPU.Mode.IsNull() && !origCPU.Mode.IsUnknown() && domain.CPU.Mode != "" {
 			cpuModel.Mode = types.StringValue(domain.CPU.Mode)
 		}
 
 		// Only set match if user specified it
-		if !model.CPU.Match.IsNull() && !model.CPU.Match.IsUnknown() && domain.CPU.Match != "" {
+		if !origCPU.Match.IsNull() && !origCPU.Match.IsUnknown() && domain.CPU.Match != "" {
 			cpuModel.Match = types.StringValue(domain.CPU.Match)
 		}
 
 		// Only set check if user specified it
-		if !model.CPU.Check.IsNull() && !model.CPU.Check.IsUnknown() && domain.CPU.Check != "" {
+		if !origCPU.Check.IsNull() && !origCPU.Check.IsUnknown() && domain.CPU.Check != "" {
 			cpuModel.Check = types.StringValue(domain.CPU.Check)
 		}
 
 		// Only set migratable if user specified it
-		if !model.CPU.Migratable.IsNull() && !model.CPU.Migratable.IsUnknown() && domain.CPU.Migratable != "" {
+		if !origCPU.Migratable.IsNull() && !origCPU.Migratable.IsUnknown() && domain.CPU.Migratable != "" {
 			cpuModel.Migratable = types.StringValue(domain.CPU.Migratable)
 		}
 
 		// Only set deprecated_features if user specified it
-		if !model.CPU.DeprecatedFeatures.IsNull() && !model.CPU.DeprecatedFeatures.IsUnknown() && domain.CPU.DeprecatedFeatures != "" {
+		if !origCPU.DeprecatedFeatures.IsNull() && !origCPU.DeprecatedFeatures.IsUnknown() && domain.CPU.DeprecatedFeatures != "" {
 			cpuModel.DeprecatedFeatures = types.StringValue(domain.CPU.DeprecatedFeatures)
 		}
 
 		// Only set model if user specified it
-		if !model.CPU.Model.IsNull() && !model.CPU.Model.IsUnknown() && domain.CPU.Model != nil && domain.CPU.Model.Value != "" {
+		if !origCPU.Model.IsNull() && !origCPU.Model.IsUnknown() && domain.CPU.Model != nil && domain.CPU.Model.Value != "" {
 			cpuModel.Model = types.StringValue(domain.CPU.Model.Value)
 		}
 
 		// Only set vendor if user specified it
-		if !model.CPU.Vendor.IsNull() && !model.CPU.Vendor.IsUnknown() && domain.CPU.Vendor != "" {
+		if !origCPU.Vendor.IsNull() && !origCPU.Vendor.IsUnknown() && domain.CPU.Vendor != "" {
 			cpuModel.Vendor = types.StringValue(domain.CPU.Vendor)
 		}
 
-		model.CPU = cpuModel
+		cpuObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+			"mode":                types.StringType,
+			"match":               types.StringType,
+			"check":               types.StringType,
+			"migratable":          types.StringType,
+			"deprecated_features": types.StringType,
+			"model":               types.StringType,
+			"vendor":              types.StringType,
+		}, cpuModel)
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+
+		model.CPU = cpuObj
 	}
 
 	// Only set clock if user specified it
