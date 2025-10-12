@@ -103,6 +103,7 @@ resource "libvirt_domain" "kernel_boot" {
 
 ### Optional
 
+- `autostart` (Boolean) Whether the domain should be started automatically when the host boots.
 - `bootloader` (String) Bootloader path for paravirtualized guests (Xen).
 - `bootloader_args` (String) Arguments to pass to bootloader.
 - `clock` (Block, Optional) Clock configuration for the domain. (see [below for nested schema](#nestedblock--clock))
@@ -114,7 +115,7 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 - `description` (String) Human-readable description of the domain.
 - `destroy` (Block, Optional) Domain shutdown behavior. Controls how the domain is stopped when running changes from true to false or when the resource is destroyed. (see [below for nested schema](#nestedblock--destroy))
 - `devices` (Attributes) Devices attached to the domain (disks, network interfaces, etc.). (see [below for nested schema](#nestedatt--devices))
-- `features` (Block, Optional) Hypervisor features to enable. (see [below for nested schema](#nestedblock--features))
+- `features` (Attributes) Hypervisor features to enable. (see [below for nested schema](#nestedatt--features))
 - `hwuuid` (String) Hardware UUID for the domain.
 - `iothreads` (Number) Number of I/O threads for virtio disks.
 - `max_memory` (Number) Maximum memory for hotplug. Must be >= memory.
@@ -122,12 +123,12 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 - `on_crash` (String) Action to take when guest crashes (destroy, restart, preserve, rename-restart, coredump-destroy, coredump-restart).
 - `on_poweroff` (String) Action to take when guest requests poweroff (destroy, restart, preserve, rename-restart).
 - `on_reboot` (String) Action to take when guest requests reboot (destroy, restart, preserve, rename-restart).
-- `os` (Block, Optional) Operating system configuration. See [libvirt OS element documentation](https://libvirt.org/formatdomain.html#operating-system-booting). (see [below for nested schema](#nestedblock--os))
+- `os` (Attributes) Operating system configuration for the domain. (see [below for nested schema](#nestedatt--os))
 - `pm` (Block, Optional) Power management configuration for the domain. (see [below for nested schema](#nestedblock--pm))
 - `running` (Boolean) Whether the domain should be running. If true, the domain will be started after creation. If false or unset, the domain will only be defined but not started.
 - `title` (String) Short description title for the domain.
-- `type` (String) Domain type (e.g., 'kvm', 'qemu'). Defaults to 'kvm'.
-- `unit` (String) Memory unit (KiB, MiB, GiB, TiB). Defaults to KiB if not specified.
+- `type` (String) Domain type (e.g., 'kvm', 'qemu').
+- `unit` (String) Memory unit (KiB, MiB, GiB, TiB).
 - `uuid` (String) Domain UUID. If not specified, one will be generated.
 
 ### Read-Only
@@ -214,9 +215,26 @@ Optional:
 
 Optional:
 
+- `consoles` (Attributes List) Console devices for the domain. (see [below for nested schema](#nestedatt--devices--consoles))
 - `disks` (Attributes List) Disk devices attached to the domain. (see [below for nested schema](#nestedatt--devices--disks))
+- `emulator` (String) Path to the emulator binary (e.g., /usr/bin/qemu-system-x86_64). Optional, libvirt chooses default if not specified.
+- `filesystems` (Attributes List) Filesystem devices for sharing host directories with the guest (virtio-9p). (see [below for nested schema](#nestedatt--devices--filesystems))
 - `graphics` (Attributes) Graphics device for the domain (VNC or Spice). Only one type can be specified. (see [below for nested schema](#nestedatt--devices--graphics))
 - `interfaces` (Attributes List) Network interfaces attached to the domain. (see [below for nested schema](#nestedatt--devices--interfaces))
+- `rngs` (Attributes List) Random number generator devices for the domain. (see [below for nested schema](#nestedatt--devices--rngs))
+- `serials` (Attributes List) Serial devices for the domain. (see [below for nested schema](#nestedatt--devices--serials))
+- `video` (Attributes) Video device for the domain. (see [below for nested schema](#nestedatt--devices--video))
+
+<a id="nestedatt--devices--consoles"></a>
+### Nested Schema for `devices.consoles`
+
+Optional:
+
+- `source_path` (String) Source path for file or unix socket types. Optional.
+- `target_port` (Number) Target port number. Optional.
+- `target_type` (String) Target type (serial, virtio, xen, etc.). Optional.
+- `type` (String) Console source type (pty, file, unix, tcp, etc.). Optional, defaults to pty.
+
 
 <a id="nestedatt--devices--disks"></a>
 ### Nested Schema for `devices.disks`
@@ -231,6 +249,21 @@ Optional:
 - `device` (String) Device type (disk, cdrom, floppy, lun).
 - `source` (String) Path to the disk image file. Mutually exclusive with volume_id.
 - `volume_id` (String) ID (key) of a libvirt_volume to use as the disk source. Mutually exclusive with source.
+- `wwn` (String) World Wide Name identifier for the disk (typically for SCSI disks). If not specified for SCSI disks, one will be generated. Format: 16 hex digits.
+
+
+<a id="nestedatt--devices--filesystems"></a>
+### Nested Schema for `devices.filesystems`
+
+Required:
+
+- `source` (String) Host directory path to share.
+- `target` (String) Mount tag visible in the guest (used to mount the filesystem).
+
+Optional:
+
+- `accessmode` (String) Access mode (mapped, passthrough, squash). Defaults to mapped.
+- `readonly` (Boolean) Whether the filesystem should be mounted read-only in the guest. Defaults to true.
 
 
 <a id="nestedatt--devices--graphics"></a>
@@ -290,8 +323,36 @@ Optional:
 
 
 
+<a id="nestedatt--devices--rngs"></a>
+### Nested Schema for `devices.rngs`
 
-<a id="nestedblock--features"></a>
+Optional:
+
+- `device` (String) Backend random device path (e.g., /dev/random, /dev/urandom, /dev/hwrng). Defaults to /dev/urandom.
+- `model` (String) RNG device model (virtio, virtio-transitional, virtio-non-transitional). Defaults to virtio.
+
+
+<a id="nestedatt--devices--serials"></a>
+### Nested Schema for `devices.serials`
+
+Optional:
+
+- `source_path` (String) Source path for file or unix socket types. Optional.
+- `target_port` (Number) Target port number. Optional.
+- `target_type` (String) Target type (isa-serial, usb-serial, pci-serial, etc.). Optional.
+- `type` (String) Serial source type (pty, file, unix, tcp, etc.). Optional, defaults to pty.
+
+
+<a id="nestedatt--devices--video"></a>
+### Nested Schema for `devices.video`
+
+Optional:
+
+- `type` (String) Video device model type (e.g., cirrus, vga, qxl, virtio, vbox, vmvga, gop). Optional.
+
+
+
+<a id="nestedatt--features"></a>
 ### Nested Schema for `features`
 
 Optional:
@@ -315,26 +376,26 @@ Optional:
 - `vmport` (String) VMware IO port emulation (on, off, auto).
 
 
-<a id="nestedblock--os"></a>
+<a id="nestedatt--os"></a>
 ### Nested Schema for `os`
 
 Required:
 
-- `type` (String) OS type (e.g., 'hvm' for fully virtualized, 'linux' for paravirtualized). Required.
+- `type` (String) OS type (e.g., 'hvm' for fully virtualized, 'linux' for paravirtualized).
 
 Optional:
 
-- `arch` (String) CPU architecture (e.g., 'x86_64', 'aarch64'). Optional.
-- `boot_devices` (List of String) Ordered list of boot devices (e.g., 'hd', 'network', 'cdrom'). Optional. If not specified, libvirt may add default boot devices.
-- `firmware` (String) Firmware type (e.g., 'efi', 'bios'). Optional.
-- `initrd` (String) Path to initrd image for direct kernel boot. Optional.
-- `kernel` (String) Path to kernel image for direct kernel boot. Optional.
-- `kernel_args` (String) Kernel command line arguments. Optional.
-- `loader_path` (String) Path to UEFI firmware loader. Optional.
-- `loader_readonly` (Boolean) Whether the UEFI firmware is read-only. Optional.
-- `loader_type` (String) Loader type ('rom' or 'pflash'). Optional.
-- `machine` (String) Machine type (e.g., 'pc', 'q35'). Optional. Note: This value represents what you want, but libvirt may internally expand it to a versioned type.
-- `nvram_path` (String) Path to NVRAM template for UEFI. Optional.
+- `arch` (String) CPU architecture (e.g., 'x86_64', 'aarch64').
+- `boot_devices` (List of String) Ordered list of boot devices (e.g., 'hd', 'network', 'cdrom'). If not specified, libvirt may add default boot devices.
+- `firmware` (String) Firmware type (e.g., 'efi', 'bios').
+- `initrd` (String) Path to initrd image for direct kernel boot.
+- `kernel` (String) Path to kernel image for direct kernel boot.
+- `kernel_args` (String) Kernel command line arguments.
+- `loader_path` (String) Path to UEFI firmware loader.
+- `loader_readonly` (Boolean) Whether the UEFI firmware is read-only.
+- `loader_type` (String) Loader type ('rom' or 'pflash').
+- `machine` (String) Machine type (e.g., 'pc', 'q35'). Note: This value represents what you want, but libvirt may internally expand it to a versioned type.
+- `nvram_path` (String) Path to NVRAM template for UEFI.
 
 
 <a id="nestedblock--pm"></a>

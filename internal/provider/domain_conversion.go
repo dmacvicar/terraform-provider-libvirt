@@ -241,125 +241,131 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 	}
 
 	// Set features
-	if model.Features != nil {
+	if !model.Features.IsNull() && !model.Features.IsUnknown() {
+		var featuresModel DomainFeaturesModel
+		diags := model.Features.As(ctx, &featuresModel, basetypes.ObjectAsOptions{})
+		if diags.HasError() {
+			return nil, fmt.Errorf("failed to extract features: %v", diags.Errors())
+		}
+
 		features := &libvirtxml.DomainFeatureList{}
 
 		// PAE - presence-based
-		if !model.Features.PAE.IsNull() && !model.Features.PAE.IsUnknown() {
-			if model.Features.PAE.ValueBool() {
+		if !featuresModel.PAE.IsNull() && !featuresModel.PAE.IsUnknown() {
+			if featuresModel.PAE.ValueBool() {
 				features.PAE = &libvirtxml.DomainFeature{}
 			}
 		}
 
 		// ACPI - presence-based
-		if !model.Features.ACPI.IsNull() && !model.Features.ACPI.IsUnknown() {
-			if model.Features.ACPI.ValueBool() {
+		if !featuresModel.ACPI.IsNull() && !featuresModel.ACPI.IsUnknown() {
+			if featuresModel.ACPI.ValueBool() {
 				features.ACPI = &libvirtxml.DomainFeature{}
 			}
 		}
 
 		// APIC - presence-based
-		if !model.Features.APIC.IsNull() && !model.Features.APIC.IsUnknown() {
-			if model.Features.APIC.ValueBool() {
+		if !featuresModel.APIC.IsNull() && !featuresModel.APIC.IsUnknown() {
+			if featuresModel.APIC.ValueBool() {
 				features.APIC = &libvirtxml.DomainFeatureAPIC{}
 			}
 		}
 
 		// Viridian - presence-based
-		if !model.Features.Viridian.IsNull() && !model.Features.Viridian.IsUnknown() {
-			if model.Features.Viridian.ValueBool() {
+		if !featuresModel.Viridian.IsNull() && !featuresModel.Viridian.IsUnknown() {
+			if featuresModel.Viridian.ValueBool() {
 				features.Viridian = &libvirtxml.DomainFeature{}
 			}
 		}
 
 		// PrivNet - presence-based
-		if !model.Features.PrivNet.IsNull() && !model.Features.PrivNet.IsUnknown() {
-			if model.Features.PrivNet.ValueBool() {
+		if !featuresModel.PrivNet.IsNull() && !featuresModel.PrivNet.IsUnknown() {
+			if featuresModel.PrivNet.ValueBool() {
 				features.PrivNet = &libvirtxml.DomainFeature{}
 			}
 		}
 
 		// HAP - state-based
-		if !model.Features.HAP.IsNull() && !model.Features.HAP.IsUnknown() {
+		if !featuresModel.HAP.IsNull() && !featuresModel.HAP.IsUnknown() {
 			features.HAP = &libvirtxml.DomainFeatureState{
-				State: model.Features.HAP.ValueString(),
+				State: featuresModel.HAP.ValueString(),
 			}
 		}
 
 		// PMU - state-based
-		if !model.Features.PMU.IsNull() && !model.Features.PMU.IsUnknown() {
+		if !featuresModel.PMU.IsNull() && !featuresModel.PMU.IsUnknown() {
 			features.PMU = &libvirtxml.DomainFeatureState{
-				State: model.Features.PMU.ValueString(),
+				State: featuresModel.PMU.ValueString(),
 			}
 		}
 
 		// VMPort - state-based
-		if !model.Features.VMPort.IsNull() && !model.Features.VMPort.IsUnknown() {
+		if !featuresModel.VMPort.IsNull() && !featuresModel.VMPort.IsUnknown() {
 			features.VMPort = &libvirtxml.DomainFeatureState{
-				State: model.Features.VMPort.ValueString(),
+				State: featuresModel.VMPort.ValueString(),
 			}
 		}
 
 		// PVSpinlock - state-based
-		if !model.Features.PVSpinlock.IsNull() && !model.Features.PVSpinlock.IsUnknown() {
+		if !featuresModel.PVSpinlock.IsNull() && !featuresModel.PVSpinlock.IsUnknown() {
 			features.PVSpinlock = &libvirtxml.DomainFeatureState{
-				State: model.Features.PVSpinlock.ValueString(),
+				State: featuresModel.PVSpinlock.ValueString(),
 			}
 		}
 
 		// VMCoreInfo - state-based
-		if !model.Features.VMCoreInfo.IsNull() && !model.Features.VMCoreInfo.IsUnknown() {
+		if !featuresModel.VMCoreInfo.IsNull() && !featuresModel.VMCoreInfo.IsUnknown() {
 			features.VMCoreInfo = &libvirtxml.DomainFeatureState{
-				State: model.Features.VMCoreInfo.ValueString(),
+				State: featuresModel.VMCoreInfo.ValueString(),
 			}
 		}
 
 		// HTM - state-based
-		if !model.Features.HTM.IsNull() && !model.Features.HTM.IsUnknown() {
+		if !featuresModel.HTM.IsNull() && !featuresModel.HTM.IsUnknown() {
 			features.HTM = &libvirtxml.DomainFeatureState{
-				State: model.Features.HTM.ValueString(),
+				State: featuresModel.HTM.ValueString(),
 			}
 		}
 
 		// NestedHV - state-based
-		if !model.Features.NestedHV.IsNull() && !model.Features.NestedHV.IsUnknown() {
+		if !featuresModel.NestedHV.IsNull() && !featuresModel.NestedHV.IsUnknown() {
 			features.NestedHV = &libvirtxml.DomainFeatureState{
-				State: model.Features.NestedHV.ValueString(),
+				State: featuresModel.NestedHV.ValueString(),
 			}
 		}
 
 		// CCFAssist - state-based
-		if !model.Features.CCFAssist.IsNull() && !model.Features.CCFAssist.IsUnknown() {
+		if !featuresModel.CCFAssist.IsNull() && !featuresModel.CCFAssist.IsUnknown() {
 			features.CCFAssist = &libvirtxml.DomainFeatureState{
-				State: model.Features.CCFAssist.ValueString(),
+				State: featuresModel.CCFAssist.ValueString(),
 			}
 		}
 
 		// RAS - state-based
-		if !model.Features.RAS.IsNull() && !model.Features.RAS.IsUnknown() {
+		if !featuresModel.RAS.IsNull() && !featuresModel.RAS.IsUnknown() {
 			features.RAS = &libvirtxml.DomainFeatureState{
-				State: model.Features.RAS.ValueString(),
+				State: featuresModel.RAS.ValueString(),
 			}
 		}
 
 		// PS2 - state-based
-		if !model.Features.PS2.IsNull() && !model.Features.PS2.IsUnknown() {
+		if !featuresModel.PS2.IsNull() && !featuresModel.PS2.IsUnknown() {
 			features.PS2 = &libvirtxml.DomainFeatureState{
-				State: model.Features.PS2.ValueString(),
+				State: featuresModel.PS2.ValueString(),
 			}
 		}
 
 		// IOAPIC - driver attribute
-		if !model.Features.IOAPICDriver.IsNull() && !model.Features.IOAPICDriver.IsUnknown() {
+		if !featuresModel.IOAPICDriver.IsNull() && !featuresModel.IOAPICDriver.IsUnknown() {
 			features.IOAPIC = &libvirtxml.DomainFeatureIOAPIC{
-				Driver: model.Features.IOAPICDriver.ValueString(),
+				Driver: featuresModel.IOAPICDriver.ValueString(),
 			}
 		}
 
 		// GIC - version attribute
-		if !model.Features.GICVersion.IsNull() && !model.Features.GICVersion.IsUnknown() {
+		if !featuresModel.GICVersion.IsNull() && !featuresModel.GICVersion.IsUnknown() {
 			features.GIC = &libvirtxml.DomainFeatureGIC{
-				Version: model.Features.GICVersion.ValueString(),
+				Version: featuresModel.GICVersion.ValueString(),
 			}
 		}
 
@@ -1084,9 +1090,9 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		model.OS = osObj
 	}
 
-	// Features
-	if domain.Features != nil {
-		featuresModel := &DomainFeaturesModel{}
+	// Features - only if user specified it
+	if !model.Features.IsNull() && !model.Features.IsUnknown() && domain.Features != nil {
+		featuresModel := DomainFeaturesModel{}
 
 		// PAE - presence = enabled
 		if domain.Features.PAE != nil {
@@ -1173,7 +1179,31 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			featuresModel.GICVersion = types.StringValue(domain.Features.GIC.Version)
 		}
 
-		model.Features = featuresModel
+		featuresObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+			"pae":           types.BoolType,
+			"acpi":          types.BoolType,
+			"apic":          types.BoolType,
+			"viridian":      types.BoolType,
+			"privnet":       types.BoolType,
+			"hap":           types.StringType,
+			"pmu":           types.StringType,
+			"vmport":        types.StringType,
+			"pvspinlock":    types.StringType,
+			"vmcoreinfo":    types.StringType,
+			"htm":           types.StringType,
+			"nested_hv":     types.StringType,
+			"ccf_assist":    types.StringType,
+			"ras":           types.StringType,
+			"ps2":           types.StringType,
+			"ioapic_driver": types.StringType,
+			"gic_version":   types.StringType,
+		}, featuresModel)
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+
+		model.Features = featuresObj
 	}
 
 	// Only set CPU if user specified it

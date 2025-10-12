@@ -268,7 +268,7 @@ resource "libvirt_domain" "test" {
     machine = "q35"
   }
 
-  features {
+  features = {
     pae  = true
     acpi = true
     apic = true

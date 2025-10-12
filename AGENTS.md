@@ -444,6 +444,20 @@ make sweep  # Should run: go test -sweep=qemu:///system -timeout 10m
 - Sweepers run manually, not automatically on test failure
 - Run sweepers before test runs to ensure clean state, or after to cleanup failures
 
+**Cleaning Up Test Resources:**
+
+Instead of manually running `virsh undefine` commands to clean up test domains, use the built-in sweeper:
+
+```bash
+# Clean up all test resources
+make sweep
+
+# Or run directly
+go test -sweep=qemu:///system -timeout 10m ./internal/provider
+```
+
+This automatically removes all test resources (domains, volumes, networks, pools) with the `test-` prefix.
+
 ## Key Gotchas
 
 - The old provider simplified the libvirt API - we explicitly do NOT want that

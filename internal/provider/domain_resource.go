@@ -54,11 +54,11 @@ type DomainResourceModel struct {
 	Running    types.Bool   `tfsdk:"running"`
 	Autostart  types.Bool   `tfsdk:"autostart"`
 
-	OS      types.Object `tfsdk:"os"`
-	Devices types.Object `tfsdk:"devices"`
+	OS       types.Object `tfsdk:"os"`
+	Features types.Object `tfsdk:"features"`
+	Devices  types.Object `tfsdk:"devices"`
 
 	// TODO: convert these blocks to nested attributes
-	Features *DomainFeaturesModel `tfsdk:"features"`
 	CPU      *DomainCPUModel     `tfsdk:"cpu"`
 	Clock    *DomainClockModel   `tfsdk:"clock"`
 	PM       *DomainPMModel      `tfsdk:"pm"`
@@ -367,6 +367,80 @@ providing fine-grained control over VM configuration.
 				Description: "Whether the domain should be started automatically when the host boots.",
 				Optional:    true,
 			},
+			"features": schema.SingleNestedAttribute{
+				Description: "Hypervisor features to enable.",
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"pae": schema.BoolAttribute{
+						Description: "Physical Address Extension mode.",
+						Optional:    true,
+					},
+					"acpi": schema.BoolAttribute{
+						Description: "ACPI support.",
+						Optional:    true,
+					},
+					"apic": schema.BoolAttribute{
+						Description: "APIC support.",
+						Optional:    true,
+					},
+					"viridian": schema.BoolAttribute{
+						Description: "Viridian enlightenments for Windows guests.",
+						Optional:    true,
+					},
+					"privnet": schema.BoolAttribute{
+						Description: "Private network namespace.",
+						Optional:    true,
+					},
+					"hap": schema.StringAttribute{
+						Description: "Hardware Assisted Paging (on, off).",
+						Optional:    true,
+					},
+					"pmu": schema.StringAttribute{
+						Description: "Performance Monitoring Unit (on, off).",
+						Optional:    true,
+					},
+					"vmport": schema.StringAttribute{
+						Description: "VMware IO port emulation (on, off, auto).",
+						Optional:    true,
+					},
+					"pvspinlock": schema.StringAttribute{
+						Description: "Paravirtualized spinlock prevention (on, off).",
+						Optional:    true,
+					},
+					"vmcoreinfo": schema.StringAttribute{
+						Description: "VM crash information (on, off).",
+						Optional:    true,
+					},
+					"htm": schema.StringAttribute{
+						Description: "Hardware Transactional Memory (on, off).",
+						Optional:    true,
+					},
+					"nested_hv": schema.StringAttribute{
+						Description: "Nested HV (on, off).",
+						Optional:    true,
+					},
+					"ccf_assist": schema.StringAttribute{
+						Description: "CCF Assist (on, off).",
+						Optional:    true,
+					},
+					"ras": schema.StringAttribute{
+						Description: "Reliability, Availability and Serviceability (on, off).",
+						Optional:    true,
+					},
+					"ps2": schema.StringAttribute{
+						Description: "PS/2 controller (on, off).",
+						Optional:    true,
+					},
+					"ioapic_driver": schema.StringAttribute{
+						Description: "IOAPIC driver (kvm, qemu).",
+						Optional:    true,
+					},
+					"gic_version": schema.StringAttribute{
+						Description: "GIC version for ARM guests.",
+						Optional:    true,
+					},
+				},
+			},
 			"os": schema.SingleNestedAttribute{
 				Description: "Operating system configuration for the domain.",
 				Optional:    true,
@@ -662,79 +736,6 @@ providing fine-grained control over VM configuration.
 			},
 		},
 		Blocks: map[string]schema.Block{
-			"features": schema.SingleNestedBlock{
-				Description: "Hypervisor features to enable.",
-				Attributes: map[string]schema.Attribute{
-					"pae": schema.BoolAttribute{
-						Description: "Physical Address Extension mode.",
-						Optional:    true,
-					},
-					"acpi": schema.BoolAttribute{
-						Description: "ACPI support.",
-						Optional:    true,
-					},
-					"apic": schema.BoolAttribute{
-						Description: "APIC support.",
-						Optional:    true,
-					},
-					"viridian": schema.BoolAttribute{
-						Description: "Viridian enlightenments for Windows guests.",
-						Optional:    true,
-					},
-					"privnet": schema.BoolAttribute{
-						Description: "Private network namespace.",
-						Optional:    true,
-					},
-					"hap": schema.StringAttribute{
-						Description: "Hardware Assisted Paging (on, off).",
-						Optional:    true,
-					},
-					"pmu": schema.StringAttribute{
-						Description: "Performance Monitoring Unit (on, off).",
-						Optional:    true,
-					},
-					"vmport": schema.StringAttribute{
-						Description: "VMware IO port emulation (on, off, auto).",
-						Optional:    true,
-					},
-					"pvspinlock": schema.StringAttribute{
-						Description: "Paravirtualized spinlock prevention (on, off).",
-						Optional:    true,
-					},
-					"vmcoreinfo": schema.StringAttribute{
-						Description: "VM crash information (on, off).",
-						Optional:    true,
-					},
-					"htm": schema.StringAttribute{
-						Description: "Hardware Transactional Memory (on, off).",
-						Optional:    true,
-					},
-					"nested_hv": schema.StringAttribute{
-						Description: "Nested HV (on, off).",
-						Optional:    true,
-					},
-					"ccf_assist": schema.StringAttribute{
-						Description: "CCF Assist (on, off).",
-						Optional:    true,
-					},
-					"ras": schema.StringAttribute{
-						Description: "Reliability, Availability and Serviceability (on, off).",
-						Optional:    true,
-					},
-					"ps2": schema.StringAttribute{
-						Description: "PS/2 controller (on, off).",
-						Optional:    true,
-					},
-					"ioapic_driver": schema.StringAttribute{
-						Description: "IOAPIC driver (kvm, qemu).",
-						Optional:    true,
-					},
-					"gic_version": schema.StringAttribute{
-						Description: "GIC version for ARM guests.",
-						Optional:    true,
-					},
-				},
-			},
 			"cpu": schema.SingleNestedBlock{
 				Description: "CPU configuration for the domain.",
 				Attributes: map[string]schema.Attribute{
