@@ -57,11 +57,11 @@ type DomainResourceModel struct {
 	OS       types.Object `tfsdk:"os"`
 	Features types.Object `tfsdk:"features"`
 	CPU      types.Object `tfsdk:"cpu"`
+	PM       types.Object `tfsdk:"pm"`
 	Devices  types.Object `tfsdk:"devices"`
 
 	// TODO: convert these blocks to nested attributes
 	Clock   *DomainClockModel   `tfsdk:"clock"`
-	PM      *DomainPMModel      `tfsdk:"pm"`
 	Create  *DomainCreateModel  `tfsdk:"create"`
 	Destroy *DomainDestroyModel `tfsdk:"destroy"`
 }
@@ -475,6 +475,20 @@ providing fine-grained control over VM configuration.
 					},
 				},
 			},
+			"pm": schema.SingleNestedAttribute{
+				Description: "Power management configuration for the domain.",
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"suspend_to_mem": schema.StringAttribute{
+						Description: "Suspend to memory policy (yes, no).",
+						Optional:    true,
+					},
+					"suspend_to_disk": schema.StringAttribute{
+						Description: "Suspend to disk policy (yes, no).",
+						Optional:    true,
+					},
+				},
+			},
 			"os": schema.SingleNestedAttribute{
 				Description: "Operating system configuration for the domain.",
 				Optional:    true,
@@ -840,19 +854,6 @@ providing fine-grained control over VM configuration.
 								},
 							},
 						},
-					},
-				},
-			},
-			"pm": schema.SingleNestedBlock{
-				Description: "Power management configuration for the domain.",
-				Attributes: map[string]schema.Attribute{
-					"suspend_to_mem": schema.StringAttribute{
-						Description: "Suspend to memory policy (yes, no).",
-						Optional:    true,
-					},
-					"suspend_to_disk": schema.StringAttribute{
-						Description: "Suspend to disk policy (yes, no).",
-						Optional:    true,
 					},
 				},
 			},

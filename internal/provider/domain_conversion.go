@@ -489,18 +489,24 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 	}
 
 	// Set PM
-	if model.PM != nil {
+	if !model.PM.IsNull() && !model.PM.IsUnknown() {
+		var pmModel DomainPMModel
+		diags := model.PM.As(ctx, &pmModel, basetypes.ObjectAsOptions{})
+		if diags.HasError() {
+			return nil, fmt.Errorf("failed to extract pm: %v", diags.Errors())
+		}
+
 		pm := &libvirtxml.DomainPM{}
 
-		if !model.PM.SuspendToMem.IsNull() && !model.PM.SuspendToMem.IsUnknown() {
+		if !pmModel.SuspendToMem.IsNull() && !pmModel.SuspendToMem.IsUnknown() {
 			pm.SuspendToMem = &libvirtxml.DomainPMPolicy{
-				Enabled: model.PM.SuspendToMem.ValueString(),
+				Enabled: pmModel.SuspendToMem.ValueString(),
 			}
 		}
 
-		if !model.PM.SuspendToDisk.IsNull() && !model.PM.SuspendToDisk.IsUnknown() {
+		if !pmModel.SuspendToDisk.IsNull() && !pmModel.SuspendToDisk.IsUnknown() {
 			pm.SuspendToDisk = &libvirtxml.DomainPMPolicy{
-				Enabled: model.PM.SuspendToDisk.ValueString(),
+				Enabled: pmModel.SuspendToDisk.ValueString(),
 			}
 		}
 
@@ -1356,8 +1362,8 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 	}
 
 	// Only set PM if user specified it
-	if model.PM != nil && domain.PM != nil {
-		pmModel := &DomainPMModel{}
+	if !model.PM.IsNull() && !model.PM.IsUnknown() && domain.PM != nil {
+		pmModel := DomainPMModel{}
 
 		if domain.PM.SuspendToMem != nil && domain.PM.SuspendToMem.Enabled != "" {
 			pmModel.SuspendToMem = types.StringValue(domain.PM.SuspendToMem.Enabled)
@@ -1367,7 +1373,16 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			pmModel.SuspendToDisk = types.StringValue(domain.PM.SuspendToDisk.Enabled)
 		}
 
-		model.PM = pmModel
+		pmObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+			"suspend_to_mem":  types.StringType,
+			"suspend_to_disk": types.StringType,
+		}, pmModel)
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+
+		model.PM = pmObj
 	}
 
 	// Only set devices if user specified them

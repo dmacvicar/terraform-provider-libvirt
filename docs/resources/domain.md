@@ -124,7 +124,7 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 - `on_poweroff` (String) Action to take when guest requests poweroff (destroy, restart, preserve, rename-restart).
 - `on_reboot` (String) Action to take when guest requests reboot (destroy, restart, preserve, rename-restart).
 - `os` (Attributes) Operating system configuration for the domain. (see [below for nested schema](#nestedatt--os))
-- `pm` (Block, Optional) Power management configuration for the domain. (see [below for nested schema](#nestedblock--pm))
+- `pm` (Attributes) Power management configuration for the domain. (see [below for nested schema](#nestedatt--pm))
 - `running` (Boolean) Whether the domain should be running. If true, the domain will be started after creation. If false or unset, the domain will only be defined but not started.
 - `title` (String) Short description title for the domain.
 - `type` (String) Domain type (e.g., 'kvm', 'qemu').
@@ -398,7 +398,7 @@ Optional:
 - `nvram_path` (String) Path to NVRAM template for UEFI.
 
 
-<a id="nestedblock--pm"></a>
+<a id="nestedatt--pm"></a>
 ### Nested Schema for `pm`
 
 Optional:
