@@ -568,6 +568,11 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 				}
 			}
 
+			// Set WWN if specified
+			if !diskModel.WWN.IsNull() && !diskModel.WWN.IsUnknown() {
+				disk.WWN = diskModel.WWN.ValueString()
+			}
+
 				domain.Devices.Disks = append(domain.Devices.Disks, disk)
 			}
 		}
@@ -1327,6 +1332,11 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 					}
 				}
 
+				// Set WWN if present
+				if !orig.WWN.IsNull() && !orig.WWN.IsUnknown() && disk.WWN != "" {
+					diskModel.WWN = types.StringValue(disk.WWN)
+				}
+
 				disks = append(disks, diskModel)
 			}
 		}
@@ -1519,6 +1529,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 				"volume_id": types.StringType,
 				"target":    types.StringType,
 				"bus":       types.StringType,
+				"wwn":       types.StringType,
 			},
 		}, disks)
 		diags.Append(d...)
@@ -1901,6 +1912,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 						"volume_id": types.StringType,
 						"target":    types.StringType,
 						"bus":       types.StringType,
+						"wwn":       types.StringType,
 					},
 				},
 			},

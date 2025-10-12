@@ -1194,3 +1194,67 @@ resource "libvirt_domain" "test" {
 }
 `, name)
 }
+
+func TestAccDomainResource_diskWWN(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigDiskWWN("test-domain-wwn"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-wwn"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target", "sda"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.bus", "scsi"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.wwn", "5000c50015ea71ad"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigDiskWWN(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_pool" "test" {
+  name = %[1]q
+  type = "dir"
+  target = {
+    path = "/tmp/terraform-provider-libvirt-pool-%[1]s"
+  }
+}
+
+resource "libvirt_volume" "test" {
+  name   = "%[1]s.qcow2"
+  pool   = libvirt_pool.test.name
+  format = "qcow2"
+  capacity = 1073741824
+}
+
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    disks = [
+      {
+        volume_id = libvirt_volume.test.id
+        target    = "sda"
+        bus       = "scsi"
+        wwn       = "5000c50015ea71ad"
+      }
+    ]
+  }
+}
+`, name)
+}

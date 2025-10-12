@@ -134,6 +134,7 @@ type DomainDiskModel struct {
 	VolumeID types.String `tfsdk:"volume_id"`
 	Target   types.String `tfsdk:"target"`
 	Bus      types.String `tfsdk:"bus"`
+	WWN      types.String `tfsdk:"wwn"`
 }
 
 // DomainInterfaceModel describes a network interface
@@ -395,6 +396,11 @@ providing fine-grained control over VM configuration.
 								"bus": schema.StringAttribute{
 									Description: "Bus type (virtio, scsi, ide, sata, usb).",
 									Optional:    true,
+								},
+								"wwn": schema.StringAttribute{
+									Description: "World Wide Name identifier for the disk (typically for SCSI disks). If not specified for SCSI disks, one will be generated. Format: 16 hex digits.",
+									Optional:    true,
+									Computed:    true,
 								},
 							},
 						},
