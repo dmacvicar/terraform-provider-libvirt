@@ -190,7 +190,7 @@ resource "libvirt_domain" "test" {
   memory = 512
   vcpu   = 1
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"

@@ -162,30 +162,36 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 	}
 
 	// Set OS configuration
-	if model.OS != nil {
+	if !model.OS.IsNull() && !model.OS.IsUnknown() {
+		var osModel DomainOSModel
+		diags := model.OS.As(ctx, &osModel, basetypes.ObjectAsOptions{})
+		if diags.HasError() {
+			return nil, fmt.Errorf("failed to extract OS: %v", diags.Errors())
+		}
+
 		os := &libvirtxml.DomainOS{}
 
 		// OS type is required
-		if model.OS.Type.IsNull() || model.OS.Type.IsUnknown() {
+		if osModel.Type.IsNull() || osModel.Type.IsUnknown() {
 			return nil, fmt.Errorf("os.type is required")
 		}
 
 		os.Type = &libvirtxml.DomainOSType{
-			Type: model.OS.Type.ValueString(),
+			Type: osModel.Type.ValueString(),
 		}
 
 		// Optional OS type attributes
-		if !model.OS.Arch.IsNull() && !model.OS.Arch.IsUnknown() {
-			os.Type.Arch = model.OS.Arch.ValueString()
+		if !osModel.Arch.IsNull() && !osModel.Arch.IsUnknown() {
+			os.Type.Arch = osModel.Arch.ValueString()
 		}
-		if !model.OS.Machine.IsNull() && !model.OS.Machine.IsUnknown() {
-			os.Type.Machine = model.OS.Machine.ValueString()
+		if !osModel.Machine.IsNull() && !osModel.Machine.IsUnknown() {
+			os.Type.Machine = osModel.Machine.ValueString()
 		}
 
 		// Boot devices
-		if !model.OS.BootDevices.IsNull() && !model.OS.BootDevices.IsUnknown() {
+		if !osModel.BootDevices.IsNull() && !osModel.BootDevices.IsUnknown() {
 			var bootDevices []types.String
-			model.OS.BootDevices.ElementsAs(context.Background(), &bootDevices, false)
+			osModel.BootDevices.ElementsAs(context.Background(), &bootDevices, false)
 			for _, dev := range bootDevices {
 				if !dev.IsNull() && !dev.IsUnknown() {
 					os.BootDevices = append(os.BootDevices, libvirtxml.DomainBootDevice{
@@ -196,38 +202,38 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 		}
 
 		// Direct kernel boot
-		if !model.OS.Kernel.IsNull() && !model.OS.Kernel.IsUnknown() {
-			os.Kernel = model.OS.Kernel.ValueString()
+		if !osModel.Kernel.IsNull() && !osModel.Kernel.IsUnknown() {
+			os.Kernel = osModel.Kernel.ValueString()
 		}
-		if !model.OS.Initrd.IsNull() && !model.OS.Initrd.IsUnknown() {
-			os.Initrd = model.OS.Initrd.ValueString()
+		if !osModel.Initrd.IsNull() && !osModel.Initrd.IsUnknown() {
+			os.Initrd = osModel.Initrd.ValueString()
 		}
-		if !model.OS.KernelArgs.IsNull() && !model.OS.KernelArgs.IsUnknown() {
-			os.Cmdline = model.OS.KernelArgs.ValueString()
+		if !osModel.KernelArgs.IsNull() && !osModel.KernelArgs.IsUnknown() {
+			os.Cmdline = osModel.KernelArgs.ValueString()
 		}
 
 		// UEFI loader
-		if !model.OS.LoaderPath.IsNull() && !model.OS.LoaderPath.IsUnknown() {
+		if !osModel.LoaderPath.IsNull() && !osModel.LoaderPath.IsUnknown() {
 			loader := &libvirtxml.DomainLoader{
-				Path: model.OS.LoaderPath.ValueString(),
+				Path: osModel.LoaderPath.ValueString(),
 			}
-			if !model.OS.LoaderReadOnly.IsNull() && !model.OS.LoaderReadOnly.IsUnknown() {
+			if !osModel.LoaderReadOnly.IsNull() && !osModel.LoaderReadOnly.IsUnknown() {
 				readOnly := "no"
-				if model.OS.LoaderReadOnly.ValueBool() {
+				if osModel.LoaderReadOnly.ValueBool() {
 					readOnly = "yes"
 				}
 				loader.Readonly = readOnly
 			}
-			if !model.OS.LoaderType.IsNull() && !model.OS.LoaderType.IsUnknown() {
-				loader.Type = model.OS.LoaderType.ValueString()
+			if !osModel.LoaderType.IsNull() && !osModel.LoaderType.IsUnknown() {
+				loader.Type = osModel.LoaderType.ValueString()
 			}
 			os.Loader = loader
 		}
 
 		// NVRAM
-		if !model.OS.NVRAMPath.IsNull() && !model.OS.NVRAMPath.IsUnknown() {
+		if !osModel.NVRAMPath.IsNull() && !osModel.NVRAMPath.IsUnknown() {
 			os.NVRam = &libvirtxml.DomainNVRam{
-				NVRam: model.OS.NVRAMPath.ValueString(),
+				NVRam: osModel.NVRAMPath.ValueString(),
 			}
 		}
 
@@ -998,26 +1004,33 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		model.IOThreads = types.Int64Value(int64(domain.IOThreads))
 	}
 
-	if domain.OS != nil {
-		osModel := &DomainOSModel{}
+	if !model.OS.IsNull() && !model.OS.IsUnknown() && domain.OS != nil {
+		var origOS DomainOSModel
+		d := model.OS.As(ctx, &origOS, basetypes.ObjectAsOptions{})
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+
+		osModel := DomainOSModel{}
 
 		if domain.OS.Type != nil {
 			osModel.Type = types.StringValue(domain.OS.Type.Type)
 
 			// Only set arch if user specified it
-			if !model.OS.Arch.IsNull() && !model.OS.Arch.IsUnknown() && domain.OS.Type.Arch != "" {
+			if !origOS.Arch.IsNull() && !origOS.Arch.IsUnknown() && domain.OS.Type.Arch != "" {
 				osModel.Arch = types.StringValue(domain.OS.Type.Arch)
 			}
 
 			// Preserve user's value to avoid diffs from libvirt expansion (e.g., q35 -> pc-q35-10.1)
-			if !model.OS.Machine.IsNull() && !model.OS.Machine.IsUnknown() {
-				osModel.Machine = model.OS.Machine
+			if !origOS.Machine.IsNull() && !origOS.Machine.IsUnknown() {
+				osModel.Machine = origOS.Machine
 			}
 		}
 
 		// Only set boot_devices if user specified them
-		if !model.OS.BootDevices.IsNull() && !model.OS.BootDevices.IsUnknown() {
-			osModel.BootDevices = model.OS.BootDevices
+		if !origOS.BootDevices.IsNull() && !origOS.BootDevices.IsUnknown() {
+			osModel.BootDevices = origOS.BootDevices
 		} else {
 			osModel.BootDevices = types.ListNull(types.StringType)
 		}
@@ -1049,7 +1062,26 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			osModel.NVRAMPath = types.StringValue(domain.OS.NVRam.NVRam)
 		}
 
-		model.OS = osModel
+		osObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+			"type":            types.StringType,
+			"arch":            types.StringType,
+			"machine":         types.StringType,
+			"firmware":        types.StringType,
+			"boot_devices":    types.ListType{ElemType: types.StringType},
+			"kernel":          types.StringType,
+			"initrd":          types.StringType,
+			"kernel_args":     types.StringType,
+			"loader_path":     types.StringType,
+			"loader_readonly": types.BoolType,
+			"loader_type":     types.StringType,
+			"nvram_path":      types.StringType,
+		}, osModel)
+		diags.Append(d...)
+		if diags.HasError() {
+			return diags
+		}
+
+		model.OS = osObj
 	}
 
 	// Features

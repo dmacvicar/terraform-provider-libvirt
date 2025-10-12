@@ -143,7 +143,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -162,7 +162,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 2
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -181,7 +181,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 2
   type   = "kvm"
 
-  os {
+  os = {
     type        = "hvm"
     arch        = "x86_64"
     machine     = "q35"
@@ -222,7 +222,7 @@ resource "libvirt_domain" "test" {
   vcpu        = 1
   type        = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -262,7 +262,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -306,7 +306,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 2
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -346,7 +346,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -392,7 +392,7 @@ resource "libvirt_domain" "test" {
   on_reboot   = "restart"
   on_crash    = "restart"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -482,7 +482,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -541,7 +541,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -576,7 +576,7 @@ resource "libvirt_domain" "test" {
   type    = "kvm"
   running = true
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -752,7 +752,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -799,7 +799,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -843,7 +843,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -884,7 +884,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -924,7 +924,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -995,7 +995,7 @@ resource "libvirt_domain" "test" {
   type      = "kvm"
   autostart = %[2]t
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -1078,7 +1078,7 @@ resource "libvirt_domain" "test" {
   memory = 512
   vcpu   = 1
 
-  os {
+  os = {
     type = "hvm"
   }
 }
@@ -1123,7 +1123,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -1177,7 +1177,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"
@@ -1239,7 +1239,7 @@ resource "libvirt_domain" "test" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
+  os = {
     type    = "hvm"
     arch    = "x86_64"
     machine = "q35"

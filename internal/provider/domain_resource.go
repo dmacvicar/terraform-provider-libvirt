@@ -54,17 +54,16 @@ type DomainResourceModel struct {
 	Running    types.Bool   `tfsdk:"running"`
 	Autostart  types.Bool   `tfsdk:"autostart"`
 
-	// Blocks (using blocks for now, but devices uses nested attributes per HashiCorp guidance)
-	OS       *DomainOSModel      `tfsdk:"os"`
+	OS      types.Object `tfsdk:"os"`
+	Devices types.Object `tfsdk:"devices"`
+
+	// TODO: convert these blocks to nested attributes
 	Features *DomainFeaturesModel `tfsdk:"features"`
 	CPU      *DomainCPUModel     `tfsdk:"cpu"`
 	Clock    *DomainClockModel   `tfsdk:"clock"`
 	PM       *DomainPMModel      `tfsdk:"pm"`
 	Create   *DomainCreateModel  `tfsdk:"create"`
 	Destroy  *DomainDestroyModel `tfsdk:"destroy"`
-
-	// Nested attribute (following HashiCorp guidance for new schemas)
-	Devices types.Object `tfsdk:"devices"`
 }
 
 // DomainOSModel describes the OS configuration
@@ -368,6 +367,62 @@ providing fine-grained control over VM configuration.
 				Description: "Whether the domain should be started automatically when the host boots.",
 				Optional:    true,
 			},
+			"os": schema.SingleNestedAttribute{
+				Description: "Operating system configuration for the domain.",
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"type": schema.StringAttribute{
+						Description: "OS type (e.g., 'hvm' for fully virtualized, 'linux' for paravirtualized).",
+						Required:    true,
+					},
+					"arch": schema.StringAttribute{
+						Description: "CPU architecture (e.g., 'x86_64', 'aarch64').",
+						Optional:    true,
+					},
+					"machine": schema.StringAttribute{
+						Description: "Machine type (e.g., 'pc', 'q35'). Note: This value represents what you want, but libvirt may internally expand it to a versioned type.",
+						Optional:    true,
+					},
+					"firmware": schema.StringAttribute{
+						Description: "Firmware type (e.g., 'efi', 'bios').",
+						Optional:    true,
+					},
+					"boot_devices": schema.ListAttribute{
+						Description: "Ordered list of boot devices (e.g., 'hd', 'network', 'cdrom'). If not specified, libvirt may add default boot devices.",
+						Optional:    true,
+						Computed:    true,
+						ElementType: types.StringType,
+					},
+					"kernel": schema.StringAttribute{
+						Description: "Path to kernel image for direct kernel boot.",
+						Optional:    true,
+					},
+					"initrd": schema.StringAttribute{
+						Description: "Path to initrd image for direct kernel boot.",
+						Optional:    true,
+					},
+					"kernel_args": schema.StringAttribute{
+						Description: "Kernel command line arguments.",
+						Optional:    true,
+					},
+					"loader_path": schema.StringAttribute{
+						Description: "Path to UEFI firmware loader.",
+						Optional:    true,
+					},
+					"loader_readonly": schema.BoolAttribute{
+						Description: "Whether the UEFI firmware is read-only.",
+						Optional:    true,
+					},
+					"loader_type": schema.StringAttribute{
+						Description: "Loader type ('rom' or 'pflash').",
+						Optional:    true,
+					},
+					"nvram_path": schema.StringAttribute{
+						Description: "Path to NVRAM template for UEFI.",
+						Optional:    true,
+					},
+				},
+			},
 			"devices": schema.SingleNestedAttribute{
 				Description: "Devices attached to the domain (disks, network interfaces, etc.).",
 				Optional:    true,
@@ -607,66 +662,6 @@ providing fine-grained control over VM configuration.
 			},
 		},
 		Blocks: map[string]schema.Block{
-			"os": schema.SingleNestedBlock{
-				Description: "Operating system configuration for the domain.",
-				MarkdownDescription: `
-Operating system configuration. See [libvirt OS element documentation](https://libvirt.org/formatdomain.html#operating-system-booting).
-`,
-				Attributes: map[string]schema.Attribute{
-					"type": schema.StringAttribute{
-						Description: "OS type (e.g., 'hvm' for fully virtualized, 'linux' for paravirtualized). Required.",
-						Required:    true,
-					},
-					"arch": schema.StringAttribute{
-						Description: "CPU architecture (e.g., 'x86_64', 'aarch64'). Optional.",
-						Optional:    true,
-					},
-					"machine": schema.StringAttribute{
-						Description: "Machine type (e.g., 'pc', 'q35'). Optional. " +
-							"Note: This value represents what you want, but libvirt may internally expand it to a versioned type.",
-						Optional: true,
-					},
-					"firmware": schema.StringAttribute{
-						Description: "Firmware type (e.g., 'efi', 'bios'). Optional.",
-						Optional:    true,
-					},
-					"boot_devices": schema.ListAttribute{
-						Description: "Ordered list of boot devices (e.g., 'hd', 'network', 'cdrom'). Optional. " +
-							"If not specified, libvirt may add default boot devices.",
-						Optional:    true,
-						Computed:    true,
-						ElementType: types.StringType,
-					},
-					"kernel": schema.StringAttribute{
-						Description: "Path to kernel image for direct kernel boot. Optional.",
-						Optional:    true,
-					},
-					"initrd": schema.StringAttribute{
-						Description: "Path to initrd image for direct kernel boot. Optional.",
-						Optional:    true,
-					},
-					"kernel_args": schema.StringAttribute{
-						Description: "Kernel command line arguments. Optional.",
-						Optional:    true,
-					},
-					"loader_path": schema.StringAttribute{
-						Description: "Path to UEFI firmware loader. Optional.",
-						Optional:    true,
-					},
-					"loader_readonly": schema.BoolAttribute{
-						Description: "Whether the UEFI firmware is read-only. Optional.",
-						Optional:    true,
-					},
-					"loader_type": schema.StringAttribute{
-						Description: "Loader type ('rom' or 'pflash'). Optional.",
-						Optional:    true,
-					},
-					"nvram_path": schema.StringAttribute{
-						Description: "Path to NVRAM template for UEFI. Optional.",
-						Optional:    true,
-					},
-				},
-			},
 			"features": schema.SingleNestedBlock{
 				Description: "Hypervisor features to enable.",
 				Attributes: map[string]schema.Attribute{
