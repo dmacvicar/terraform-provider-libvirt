@@ -108,14 +108,14 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [x] Update examples
 
 ### 7. SCSI Disks with WWN
-**Status:** ❌ Not started
+**Status:** ✅ Completed
 **libvirtxml:** `DomainDisk` (Bus="scsi", WWN field)
 **Old provider:** `disk.scsi` boolean + `disk.wwn`
 
 **Tasks:**
-- [ ] Add `wwn` field to disk model (optional, computed)
-- [ ] Generate WWN if not provided for SCSI disks
-- [ ] Add acceptance test with SCSI disk
+- [x] Add `wwn` field to disk model (optional, computed)
+- [x] Add WWN to XML ↔ Model conversion
+- [x] Add acceptance test with SCSI disk
 
 ### 8. Block Device Disks
 **Status:** ❌ Not started
