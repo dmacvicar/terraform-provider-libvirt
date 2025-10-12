@@ -563,8 +563,7 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 				disk.Device = "disk"
 			}
 
-			// Set source - either from volume_id or direct file path
-			var sourcePath string
+			// Set source - either from volume_id, direct file path, or block device
 			if !diskModel.VolumeID.IsNull() && !diskModel.VolumeID.IsUnknown() {
 				// Look up volume by key and get its path
 				volumeKey := diskModel.VolumeID.ValueString()
@@ -584,18 +583,26 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 				}
 
 				if volumeDef.Target != nil {
-					sourcePath = volumeDef.Target.Path
+					disk.Source = &libvirtxml.DomainDiskSource{
+						File: &libvirtxml.DomainDiskSourceFile{
+							File: volumeDef.Target.Path,
+						},
+					}
 				} else {
 					return nil, fmt.Errorf("volume %s has no target path", volumeKey)
 				}
 			} else if !diskModel.Source.IsNull() && !diskModel.Source.IsUnknown() {
-				sourcePath = diskModel.Source.ValueString()
-			}
-
-			if sourcePath != "" {
+				// File-based disk
 				disk.Source = &libvirtxml.DomainDiskSource{
 					File: &libvirtxml.DomainDiskSourceFile{
-						File: sourcePath,
+						File: diskModel.Source.ValueString(),
+					},
+				}
+			} else if !diskModel.BlockDevice.IsNull() && !diskModel.BlockDevice.IsUnknown() {
+				// Block device disk
+				disk.Source = &libvirtxml.DomainDiskSource{
+					Block: &libvirtxml.DomainDiskSourceBlock{
+						Dev: diskModel.BlockDevice.ValueString(),
 					},
 				}
 			}
@@ -675,6 +682,16 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 						user.Dev = ifaceModel.Source.Dev.ValueString()
 					}
 					source.User = user
+
+				case "direct":
+					direct := &libvirtxml.DomainInterfaceSourceDirect{}
+					if !ifaceModel.Source.Dev.IsNull() && !ifaceModel.Source.Dev.IsUnknown() {
+						direct.Dev = ifaceModel.Source.Dev.ValueString()
+					}
+					if !ifaceModel.Source.Mode.IsNull() && !ifaceModel.Source.Mode.IsUnknown() {
+						direct.Mode = ifaceModel.Source.Mode.ValueString()
+					}
+					source.Direct = direct
 				}
 
 				iface.Source = source
@@ -1542,6 +1559,11 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 					diskModel.VolumeID = orig.VolumeID
 				}
 
+				// Preserve block_device only when the user specified a block device path
+				if !orig.BlockDevice.IsNull() && !orig.BlockDevice.IsUnknown() && disk.Source != nil && disk.Source.Block != nil && disk.Source.Block.Dev != "" {
+					diskModel.BlockDevice = types.StringValue(disk.Source.Block.Dev)
+				}
+
 				if disk.Target != nil {
 					if disk.Target.Dev != "" {
 						diskModel.Target = types.StringValue(disk.Target.Dev)
@@ -1588,6 +1610,8 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 						ifaceModel.Type = types.StringValue("bridge")
 					} else if iface.Source.User != nil {
 						ifaceModel.Type = types.StringValue("user")
+					} else if iface.Source.Direct != nil {
+						ifaceModel.Type = types.StringValue("direct")
 					}
 				}
 
@@ -1619,6 +1643,13 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 					} else if iface.Source.User != nil {
 						if !origModel.Source.Dev.IsNull() && iface.Source.User.Dev != "" {
 							sourceModel.Dev = types.StringValue(iface.Source.User.Dev)
+						}
+					} else if iface.Source.Direct != nil {
+						if !origModel.Source.Dev.IsNull() && iface.Source.Direct.Dev != "" {
+							sourceModel.Dev = types.StringValue(iface.Source.Direct.Dev)
+						}
+						if !origModel.Source.Mode.IsNull() && iface.Source.Direct.Mode != "" {
+							sourceModel.Mode = types.StringValue(iface.Source.Direct.Mode)
 						}
 					}
 
@@ -1743,12 +1774,13 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		// Create the devices lists
 		disksList, d := types.ListValueFrom(ctx, types.ObjectType{
 			AttrTypes: map[string]attr.Type{
-				"device":    types.StringType,
-				"source":    types.StringType,
-				"volume_id": types.StringType,
-				"target":    types.StringType,
-				"bus":       types.StringType,
-				"wwn":       types.StringType,
+				"device":       types.StringType,
+				"source":       types.StringType,
+				"volume_id":    types.StringType,
+				"block_device": types.StringType,
+				"target":       types.StringType,
+				"bus":          types.StringType,
+				"wwn":          types.StringType,
 			},
 		}, disks)
 		diags.Append(d...)
@@ -1767,6 +1799,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 						"portgroup": types.StringType,
 						"bridge":    types.StringType,
 						"dev":       types.StringType,
+						"mode":      types.StringType,
 					},
 				},
 			},
@@ -2126,12 +2159,13 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			"disks": types.ListType{
 				ElemType: types.ObjectType{
 					AttrTypes: map[string]attr.Type{
-						"device":    types.StringType,
-						"source":    types.StringType,
-						"volume_id": types.StringType,
-						"target":    types.StringType,
-						"bus":       types.StringType,
-						"wwn":       types.StringType,
+						"device":       types.StringType,
+						"source":       types.StringType,
+						"volume_id":    types.StringType,
+						"block_device": types.StringType,
+						"target":       types.StringType,
+						"bus":          types.StringType,
+						"wwn":          types.StringType,
 					},
 				},
 			},
@@ -2147,6 +2181,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 								"portgroup": types.StringType,
 								"bridge":    types.StringType,
 								"dev":       types.StringType,
+								"mode":      types.StringType,
 							},
 						},
 					},

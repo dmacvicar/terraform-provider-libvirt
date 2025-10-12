@@ -127,12 +127,13 @@ type DomainPMModel struct {
 
 // DomainDiskModel describes a disk device
 type DomainDiskModel struct {
-	Device   types.String `tfsdk:"device"`
-	Source   types.String `tfsdk:"source"`
-	VolumeID types.String `tfsdk:"volume_id"`
-	Target   types.String `tfsdk:"target"`
-	Bus      types.String `tfsdk:"bus"`
-	WWN      types.String `tfsdk:"wwn"`
+	Device      types.String `tfsdk:"device"`
+	Source      types.String `tfsdk:"source"`
+	VolumeID    types.String `tfsdk:"volume_id"`
+	BlockDevice types.String `tfsdk:"block_device"`
+	Target      types.String `tfsdk:"target"`
+	Bus         types.String `tfsdk:"bus"`
+	WWN         types.String `tfsdk:"wwn"`
 }
 
 // DomainInterfaceModel describes a network interface
@@ -149,6 +150,7 @@ type DomainInterfaceSourceModel struct {
 	PortGroup types.String `tfsdk:"portgroup"`
 	Bridge    types.String `tfsdk:"bridge"`
 	Dev       types.String `tfsdk:"dev"`
+	Mode      types.String `tfsdk:"mode"`
 }
 
 // DomainGraphicsModel describes a graphics device
@@ -593,11 +595,15 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 									Optional:    true,
 								},
 								"source": schema.StringAttribute{
-									Description: "Path to the disk image file. Mutually exclusive with volume_id.",
+									Description: "Path to the disk image file. Mutually exclusive with volume_id and block_device.",
 									Optional:    true,
 								},
 								"volume_id": schema.StringAttribute{
-									Description: "ID (key) of a libvirt_volume to use as the disk source. Mutually exclusive with source.",
+									Description: "ID (key) of a libvirt_volume to use as the disk source. Mutually exclusive with source and block_device.",
+									Optional:    true,
+								},
+								"block_device": schema.StringAttribute{
+									Description: "Block device path (e.g., /dev/sdb, /dev/nvme0n1). Mutually exclusive with source and volume_id.",
 									Optional:    true,
 								},
 								"target": schema.StringAttribute{
@@ -651,6 +657,10 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 										},
 										"dev": schema.StringAttribute{
 											Description: "Device name (for type=user or type=direct).",
+											Optional:    true,
+										},
+										"mode": schema.StringAttribute{
+											Description: "Direct mode (for type=direct). Options: bridge, vepa, private, passthrough.",
 											Optional:    true,
 										},
 									},

@@ -352,7 +352,7 @@ resource "libvirt_domain" "test" {
     machine = "q35"
   }
 
-  clock {
+  clock = {
     offset = "utc"
   }
 }
@@ -488,23 +488,23 @@ resource "libvirt_domain" "test" {
     machine = "q35"
   }
 
-  clock {
+  clock = {
     offset = "utc"
 
-    timer {
-      name       = "rtc"
-      tickpolicy = "catchup"
-    }
-
-    timer {
-      name       = "pit"
-      tickpolicy = "delay"
-    }
-
-    timer {
-      name    = "hpet"
-      present = "no"
-    }
+    timer = [
+      {
+        name       = "rtc"
+        tickpolicy = "catchup"
+      },
+      {
+        name       = "pit"
+        tickpolicy = "delay"
+      },
+      {
+        name    = "hpet"
+        present = "no"
+      }
+    ]
   }
 }
 `, name)
@@ -547,19 +547,21 @@ resource "libvirt_domain" "test" {
     machine = "q35"
   }
 
-  clock {
+  clock = {
     offset = "utc"
 
-    timer {
-      name       = "rtc"
-      tickpolicy = "catchup"
+    timer = [
+      {
+        name       = "rtc"
+        tickpolicy = "catchup"
 
-      catchup {
-        threshold = 123
-        slew      = 120
-        limit     = 10000
+        catchup = {
+          threshold = 123
+          slew      = 120
+          limit     = 10000
+        }
       }
-    }
+    ]
   }
 }
 `, name)
@@ -765,6 +767,266 @@ resource "libvirt_domain" "test" {
         model = "virtio"
         source = {
           network = "default"
+        }
+      }
+    ]
+  }
+}
+`, name)
+}
+
+func TestAccDomainResource_directNetworkBridge(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigDirectNetworkBridge("test-domain-direct-bridge"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-direct-bridge"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.mode", "bridge"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model", "virtio"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigDirectNetworkBridge(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os = {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    interfaces = [
+      {
+        type  = "direct"
+        model = "virtio"
+        source = {
+          dev  = "eth0"
+          mode = "bridge"
+        }
+      }
+    ]
+  }
+}
+`, name)
+}
+
+func TestAccDomainResource_directNetworkVEPA(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigDirectNetworkVEPA("test-domain-direct-vepa"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-direct-vepa"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
+					resource.TestCheckResourceAttr("libvirt.test", "devices.interfaces.0.source.mode", "vepa"),
+					resource.TestCheckResourceAttr("libvirt.test", "devices.interfaces.0.model", "virtio"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigDirectNetworkVEPA(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os = {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    interfaces = [
+      {
+        type  = "direct"
+        model = "virtio"
+        source = {
+          dev  = "eth0"
+          mode = "vepa"
+        }
+      }
+    ]
+  }
+}
+`, name)
+}
+
+func TestAccDomainResource_directNetworkPrivate(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigDirectNetworkPrivate("test-domain-direct-private"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-direct-private"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.mode", "private"),
+					resource.TestCheckResourceAttr("libvirt.test", "devices.interfaces.0.model", "virtio"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigDirectNetworkPrivate(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os = {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    interfaces = [
+      {
+        type  = "direct"
+        model = "virtio"
+        source = {
+          dev  = "eth0"
+          mode = "private"
+        }
+      }
+    ]
+  }
+}
+`, name)
+}
+
+func TestAccDomainResource_directNetworkPassthrough(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigDirectNetworkPassthrough("test-direct-passthrough"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-direct-passthrough"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.mode", "passthrough"),
+					resource.TestCheckResourceAttr("libvirt.test", "devices.interfaces.0.model", "virtio"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigDirectNetworkPassthrough(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os = {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    interfaces = [
+      {
+        type  = "direct"
+        model = "virtio"
+        source = {
+          dev  = "eth0"
+          mode = "passthrough"
+        }
+      }
+    ]
+  }
+}
+`, name)
+}
+
+func TestAccDomainResource_directNetworkMacvtap(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+	PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigDirectNetworkMacvtap("test-direct-macvtap"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-direct-macvtap"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.mode", "bridge"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model", "virtio"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigDirectNetworkMacvtap(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os = {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    interfaces = [
+      {
+        type  = "direct"
+        model = "virtio"
+        source = {
+          dev  = "eth0"
+          mode = "bridge"
         }
       }
     ]
@@ -1252,6 +1514,54 @@ resource "libvirt_domain" "test" {
         target    = "sda"
         bus       = "scsi"
         wwn       = "5000c50015ea71ad"
+      }
+    ]
+  }
+}
+`, name)
+}
+
+func TestAccDomainResource_diskBlockDevice(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigDiskBlockDevice("test-domain-blockdev"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-blockdev"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.block_device", "/dev/null"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target", "vda"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.bus", "virtio"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigDiskBlockDevice(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os = {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    disks = [
+      {
+        block_device = "/dev/null"
+        target       = "vda"
+        bus          = "virtio"
       }
     ]
   }
