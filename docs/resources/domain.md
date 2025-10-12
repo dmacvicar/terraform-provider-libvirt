@@ -108,9 +108,9 @@ resource "libvirt_domain" "kernel_boot" {
 - `bootloader_args` (String) Arguments to pass to bootloader.
 - `clock` (Block, Optional) Clock configuration for the domain. (see [below for nested schema](#nestedblock--clock))
 - `cpu` (Attributes) CPU configuration for the domain. (see [below for nested schema](#nestedatt--cpu))
-- `create` (Block, Optional) Domain start flags corresponding to virDomainCreateFlags. Only used when running=true.
+- `create` (Attributes) Domain start flags corresponding to virDomainCreateFlags. Only used when running=true.
 
-See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainCreateFlags). (see [below for nested schema](#nestedblock--create))
+See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainCreateFlags). (see [below for nested schema](#nestedatt--create))
 - `current_memory` (Number) Actual memory allocation at boot time. If not set, defaults to memory value.
 - `description` (String) Human-readable description of the domain.
 - `destroy` (Block, Optional) Domain shutdown behavior. Controls how the domain is stopped when running changes from true to false or when the resource is destroyed. (see [below for nested schema](#nestedblock--destroy))
@@ -188,7 +188,7 @@ Optional:
 - `vendor` (String) CPU vendor.
 
 
-<a id="nestedblock--create"></a>
+<a id="nestedatt--create"></a>
 ### Nested Schema for `create`
 
 Optional:

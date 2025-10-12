@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // Ensure the implementation satisfies the expected interfaces
@@ -58,11 +59,11 @@ type DomainResourceModel struct {
 	Features types.Object `tfsdk:"features"`
 	CPU      types.Object `tfsdk:"cpu"`
 	PM       types.Object `tfsdk:"pm"`
+	Create   types.Object `tfsdk:"create"`
 	Devices  types.Object `tfsdk:"devices"`
 
 	// TODO: convert these blocks to nested attributes
 	Clock   *DomainClockModel   `tfsdk:"clock"`
-	Create  *DomainCreateModel  `tfsdk:"create"`
 	Destroy *DomainDestroyModel `tfsdk:"destroy"`
 }
 
@@ -489,6 +490,41 @@ providing fine-grained control over VM configuration.
 					},
 				},
 			},
+			"create": schema.SingleNestedAttribute{
+				Description: "Domain start flags. Only used when running=true. Controls how the domain is started.",
+				MarkdownDescription: `
+Domain start flags corresponding to virDomainCreateFlags. Only used when running=true.
+
+See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainCreateFlags).
+`,
+				Optional: true,
+				Attributes: map[string]schema.Attribute{
+					"paused": schema.BoolAttribute{
+						Description: "Launch domain in paused state (VIR_DOMAIN_START_PAUSED).",
+						Optional:    true,
+					},
+					"autodestroy": schema.BoolAttribute{
+						Description: "Automatically destroy domain when connection closes (VIR_DOMAIN_START_AUTODESTROY).",
+						Optional:    true,
+					},
+					"bypass_cache": schema.BoolAttribute{
+						Description: "Avoid filesystem cache pollution (VIR_DOMAIN_START_BYPASS_CACHE).",
+						Optional:    true,
+					},
+					"force_boot": schema.BoolAttribute{
+						Description: "Boot domain, discarding any managed save state (VIR_DOMAIN_START_FORCE_BOOT).",
+						Optional:    true,
+					},
+					"validate": schema.BoolAttribute{
+						Description: "Validate XML document against schema (VIR_DOMAIN_START_VALIDATE).",
+						Optional:    true,
+					},
+					"reset_nvram": schema.BoolAttribute{
+						Description: "Re-initialize NVRAM from template (VIR_DOMAIN_START_RESET_NVRAM).",
+						Optional:    true,
+					},
+				},
+			},
 			"os": schema.SingleNestedAttribute{
 				Description: "Operating system configuration for the domain.",
 				Optional:    true,
@@ -857,40 +893,6 @@ providing fine-grained control over VM configuration.
 					},
 				},
 			},
-			"create": schema.SingleNestedBlock{
-				Description: "Domain start flags. Only used when running=true. Controls how the domain is started.",
-				MarkdownDescription: `
-Domain start flags corresponding to virDomainCreateFlags. Only used when running=true.
-
-See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainCreateFlags).
-`,
-				Attributes: map[string]schema.Attribute{
-					"paused": schema.BoolAttribute{
-						Description: "Launch domain in paused state (VIR_DOMAIN_START_PAUSED).",
-						Optional:    true,
-					},
-					"autodestroy": schema.BoolAttribute{
-						Description: "Automatically destroy domain when connection closes (VIR_DOMAIN_START_AUTODESTROY).",
-						Optional:    true,
-					},
-					"bypass_cache": schema.BoolAttribute{
-						Description: "Avoid filesystem cache pollution (VIR_DOMAIN_START_BYPASS_CACHE).",
-						Optional:    true,
-					},
-					"force_boot": schema.BoolAttribute{
-						Description: "Boot domain, discarding any managed save state (VIR_DOMAIN_START_FORCE_BOOT).",
-						Optional:    true,
-					},
-					"validate": schema.BoolAttribute{
-						Description: "Validate XML document against schema (VIR_DOMAIN_START_VALIDATE).",
-						Optional:    true,
-					},
-					"reset_nvram": schema.BoolAttribute{
-						Description: "Re-initialize NVRAM from template (VIR_DOMAIN_START_RESET_NVRAM).",
-						Optional:    true,
-					},
-				},
-			},
 			"destroy": schema.SingleNestedBlock{
 				Description: "Domain shutdown behavior. Controls how the domain is stopped when running changes from true to false or when the resource is destroyed.",
 				Attributes: map[string]schema.Attribute{
@@ -995,23 +997,29 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 		var flags uint32
 
 		// Build flags from create block
-		if plan.Create != nil {
-			if !plan.Create.Paused.IsNull() && plan.Create.Paused.ValueBool() {
+		if !plan.Create.IsNull() && !plan.Create.IsUnknown() {
+			var createModel DomainCreateModel
+			resp.Diagnostics.Append(plan.Create.As(ctx, &createModel, basetypes.ObjectAsOptions{})...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			if !createModel.Paused.IsNull() && createModel.Paused.ValueBool() {
 				flags |= uint32(golibvirt.DomainStartPaused)
 			}
-			if !plan.Create.Autodestroy.IsNull() && plan.Create.Autodestroy.ValueBool() {
+			if !createModel.Autodestroy.IsNull() && createModel.Autodestroy.ValueBool() {
 				flags |= uint32(golibvirt.DomainStartAutodestroy)
 			}
-			if !plan.Create.BypassCache.IsNull() && plan.Create.BypassCache.ValueBool() {
+			if !createModel.BypassCache.IsNull() && createModel.BypassCache.ValueBool() {
 				flags |= uint32(golibvirt.DomainStartBypassCache)
 			}
-			if !plan.Create.ForceBoot.IsNull() && plan.Create.ForceBoot.ValueBool() {
+			if !createModel.ForceBoot.IsNull() && createModel.ForceBoot.ValueBool() {
 				flags |= uint32(golibvirt.DomainStartForceBoot)
 			}
-			if !plan.Create.Validate.IsNull() && plan.Create.Validate.ValueBool() {
+			if !createModel.Validate.IsNull() && createModel.Validate.ValueBool() {
 				flags |= uint32(golibvirt.DomainStartValidate)
 			}
-			if !plan.Create.ResetNVRAM.IsNull() && plan.Create.ResetNVRAM.ValueBool() {
+			if !createModel.ResetNVRAM.IsNull() && createModel.ResetNVRAM.ValueBool() {
 				flags |= uint32(golibvirt.DomainStartResetNvram)
 			}
 		}
@@ -1240,23 +1248,29 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 		// Build flags from create block
 		var flags uint32
-		if plan.Create != nil {
-			if !plan.Create.Paused.IsNull() && plan.Create.Paused.ValueBool() {
+		if !plan.Create.IsNull() && !plan.Create.IsUnknown() {
+			var createModel DomainCreateModel
+			resp.Diagnostics.Append(plan.Create.As(ctx, &createModel, basetypes.ObjectAsOptions{})...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			if !createModel.Paused.IsNull() && createModel.Paused.ValueBool() {
 				flags |= uint32(golibvirt.DomainStartPaused)
 			}
-			if !plan.Create.Autodestroy.IsNull() && plan.Create.Autodestroy.ValueBool() {
+			if !createModel.Autodestroy.IsNull() && createModel.Autodestroy.ValueBool() {
 				flags |= uint32(golibvirt.DomainStartAutodestroy)
 			}
-			if !plan.Create.BypassCache.IsNull() && plan.Create.BypassCache.ValueBool() {
+			if !createModel.BypassCache.IsNull() && createModel.BypassCache.ValueBool() {
 				flags |= uint32(golibvirt.DomainStartBypassCache)
 			}
-			if !plan.Create.ForceBoot.IsNull() && plan.Create.ForceBoot.ValueBool() {
+			if !createModel.ForceBoot.IsNull() && createModel.ForceBoot.ValueBool() {
 				flags |= uint32(golibvirt.DomainStartForceBoot)
 			}
-			if !plan.Create.Validate.IsNull() && plan.Create.Validate.ValueBool() {
+			if !createModel.Validate.IsNull() && createModel.Validate.ValueBool() {
 				flags |= uint32(golibvirt.DomainStartValidate)
 			}
-			if !plan.Create.ResetNVRAM.IsNull() && plan.Create.ResetNVRAM.ValueBool() {
+			if !createModel.ResetNVRAM.IsNull() && createModel.ResetNVRAM.ValueBool() {
 				flags |= uint32(golibvirt.DomainStartResetNvram)
 			}
 		}
