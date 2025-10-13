@@ -192,14 +192,14 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [x] Add acceptance test
 
 ### 15. Metadata (Custom XML)
-**Status:** ❌ Not started
+**Status:** ✅ Completed
 **libvirtxml:** `Domain.Metadata`
 **Old provider:** `metadata` string field
 
 **Tasks:**
-- [ ] Add metadata string attribute to domain
-- [ ] Update conversion to handle custom metadata XML
-- [ ] Add acceptance test
+- [x] Add metadata string attribute to domain
+- [x] Update conversion to handle custom metadata XML
+- [x] Add acceptance test
 
 ## Priority 3: Additional Disk/Network Enhancements
 
