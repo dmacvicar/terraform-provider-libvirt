@@ -840,8 +840,8 @@ func TestAccDomainResource_directNetworkVEPA(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
-					resource.TestCheckResourceAttr("libvirt.test", "devices.interfaces.0.source.mode", "vepa"),
-					resource.TestCheckResourceAttr("libvirt.test", "devices.interfaces.0.model", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.mode", "vepa"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model", "virtio"),
 				),
 			},
 		},
@@ -893,7 +893,7 @@ func TestAccDomainResource_directNetworkPrivate(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.mode", "private"),
-					resource.TestCheckResourceAttr("libvirt.test", "devices.interfaces.0.model", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model", "virtio"),
 				),
 			},
 		},
@@ -945,7 +945,7 @@ func TestAccDomainResource_directNetworkPassthrough(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.mode", "passthrough"),
-					resource.TestCheckResourceAttr("libvirt.test", "devices.interfaces.0.model", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model", "virtio"),
 				),
 			},
 		},
@@ -1562,6 +1562,94 @@ resource "libvirt_domain" "test" {
         block_device = "/dev/null"
         target       = "vda"
         bus          = "virtio"
+      }
+    ]
+  }
+}
+`, name)
+}
+
+func TestAccDomainResource_nvramTemplate(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigNvramTemplate("test-domain-nvram-$(date +%s)"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "os.nvram.path", "/tmp/test-domain-nvram-$(date +%s).fd"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "os.nvram.template", "/usr/share/edk2/x64/OVMF_VARS.4m.fd"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigNvramTemplate(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os = {
+    type        = "hvm"
+    arch        = "x86_64"
+    machine     = "q35"
+    loader_path = "/usr/share/edk2/x64/OVMF_CODE.fd"
+    nvram = {
+      path     = "/tmp/%[1]s.fd"
+      template = "/usr/share/edk2/x64/OVMF_VARS.4m.fd"
+    }
+  }
+}
+`, name)
+}
+
+// TPM support requires swtpm to be installed on the host
+func TestAccDomainResource_tpm(t *testing.T) {
+	t.Skip("TPM emulator (swtpm) not available in test environment")
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigTPM("test-domain-tpm"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-tpm"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.tpms.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.tpms.0.model", "tpm-tis"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.tpms.0.backend_type", "emulator"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigTPM(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os = {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    tpms = [
+      {
+        model        = "tpm-tis"
+        backend_type = "emulator"
       }
     ]
   }

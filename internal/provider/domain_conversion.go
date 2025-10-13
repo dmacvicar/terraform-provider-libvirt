@@ -231,9 +231,43 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 		}
 
 		// NVRAM
-		if !osModel.NVRAMPath.IsNull() && !osModel.NVRAMPath.IsUnknown() {
-			os.NVRam = &libvirtxml.DomainNVRam{
-				NVRam: osModel.NVRAMPath.ValueString(),
+		if !osModel.NVRAM.IsNull() && !osModel.NVRAM.IsUnknown() {
+			var nvramModel DomainNVRAMModel
+			diags := osModel.NVRAM.As(ctx, &nvramModel, basetypes.ObjectAsOptions{})
+			if diags.HasError() {
+				return nil, fmt.Errorf("failed to extract nvram: %v", diags.Errors())
+			}
+
+			// Create NVRAM if any NVRAM field is specified
+			if !nvramModel.Path.IsNull() && !nvramModel.Path.IsUnknown() ||
+				!nvramModel.Template.IsNull() && !nvramModel.Template.IsUnknown() ||
+				!nvramModel.Format.IsNull() && !nvramModel.Format.IsUnknown() ||
+				!nvramModel.TemplateFormat.IsNull() && !nvramModel.TemplateFormat.IsUnknown() {
+
+				nvram := &libvirtxml.DomainNVRam{}
+
+				// Set path if specified
+				if !nvramModel.Path.IsNull() && !nvramModel.Path.IsUnknown() {
+					nvram.NVRam = nvramModel.Path.ValueString()
+				}
+
+				// Set template if specified
+				if !nvramModel.Template.IsNull() && !nvramModel.Template.IsUnknown() {
+					nvram.Template = nvramModel.Template.ValueString()
+				}
+
+				// Set format if specified
+				if !nvramModel.Format.IsNull() && !nvramModel.Format.IsUnknown() {
+					nvram.Format = nvramModel.Format.ValueString()
+				}
+
+				// Set template format if specified
+				if !nvramModel.TemplateFormat.IsNull() && !nvramModel.TemplateFormat.IsUnknown() {
+					nvram.TemplateFormat = nvramModel.TemplateFormat.ValueString()
+				}
+
+	
+				os.NVRam = nvram
 			}
 		}
 
@@ -962,6 +996,69 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 			domain.Devices.RNGs = append(domain.Devices.RNGs, rng)
 		}
 	}
+
+	// Process TPMs
+	if !devices.TPMs.IsNull() && !devices.TPMs.IsUnknown() {
+		var tpms []DomainTPMModel
+		diags := devices.TPMs.ElementsAs(ctx, &tpms, false)
+		if diags.HasError() {
+			return nil, fmt.Errorf("failed to extract tpms: %v", diags.Errors())
+		}
+
+		for _, tpmModel := range tpms {
+			tpm := libvirtxml.DomainTPM{}
+
+			// Set model
+			if !tpmModel.Model.IsNull() && !tpmModel.Model.IsUnknown() {
+				tpm.Model = tpmModel.Model.ValueString()
+			}
+
+			// Set backend type (default to emulator)
+			backendType := "emulator"
+			if !tpmModel.BackendType.IsNull() && !tpmModel.BackendType.IsUnknown() {
+				backendType = tpmModel.BackendType.ValueString()
+			}
+
+			switch backendType {
+			case "passthrough":
+				if !tpmModel.BackendDevicePath.IsNull() && !tpmModel.BackendDevicePath.IsUnknown() {
+					tpm.Backend = &libvirtxml.DomainTPMBackend{
+						Passthrough: &libvirtxml.DomainTPMBackendPassthrough{
+							Device: &libvirtxml.DomainTPMBackendDevice{
+								Path: tpmModel.BackendDevicePath.ValueString(),
+							},
+						},
+					}
+				}
+			case "emulator":
+				emulator := &libvirtxml.DomainTPMBackendEmulator{}
+
+				if !tpmModel.BackendVersion.IsNull() && !tpmModel.BackendVersion.IsUnknown() {
+					emulator.Version = tpmModel.BackendVersion.ValueString()
+				}
+
+				if !tpmModel.BackendEncryptionSecret.IsNull() && !tpmModel.BackendEncryptionSecret.IsUnknown() {
+					emulator.Encryption = &libvirtxml.DomainTPMBackendEncryption{
+						Secret: tpmModel.BackendEncryptionSecret.ValueString(),
+					}
+				}
+
+				if !tpmModel.BackendPersistentState.IsNull() && !tpmModel.BackendPersistentState.IsUnknown() {
+					if tpmModel.BackendPersistentState.ValueBool() {
+						emulator.PersistentState = "yes"
+					} else {
+						emulator.PersistentState = "no"
+					}
+				}
+
+				tpm.Backend = &libvirtxml.DomainTPMBackend{
+					Emulator: emulator,
+				}
+			}
+
+			domain.Devices.TPMs = append(domain.Devices.TPMs, tpm)
+		}
+	}
 	}
 
 	return domain, nil
@@ -1108,14 +1205,68 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			case "no":
 				osModel.LoaderReadOnly = types.BoolValue(false)
 			}
-			if domain.OS.Loader.Type != "" {
+			// Only set loader_type if user originally specified it
+			if !origOS.LoaderType.IsNull() && !origOS.LoaderType.IsUnknown() && domain.OS.Loader.Type != "" {
 				osModel.LoaderType = types.StringValue(domain.OS.Loader.Type)
 			}
 		}
 
-		if domain.OS.NVRam != nil {
-			osModel.NVRAMPath = types.StringValue(domain.OS.NVRam.NVRam)
+		// Handle NVRAM - only if user specified it
+		var nvramObj types.Object
+		if !origOS.NVRAM.IsNull() && !origOS.NVRAM.IsUnknown() {
+			// Extract original NVRAM model to check what user specified
+			var origNVRAM DomainNVRAMModel
+			d := origOS.NVRAM.As(ctx, &origNVRAM, basetypes.ObjectAsOptions{})
+			diags.Append(d...)
+			if diags.HasError() {
+				return diags
+			}
+
+			nvramModel := DomainNVRAMModel{}
+
+			// Only set path if user specified it and we have NVRam from libvirt
+			if !origNVRAM.Path.IsNull() && !origNVRAM.Path.IsUnknown() && domain.OS.NVRam != nil && domain.OS.NVRam.NVRam != "" {
+				nvramModel.Path = types.StringValue(domain.OS.NVRam.NVRam)
+			}
+
+			// Only set template if user specified it and we have template from libvirt
+			if !origNVRAM.Template.IsNull() && !origNVRAM.Template.IsUnknown() && domain.OS.NVRam != nil && domain.OS.NVRam.Template != "" {
+				nvramModel.Template = types.StringValue(domain.OS.NVRam.Template)
+			}
+
+			// Only set format if user specified it and we have format from libvirt
+			if !origNVRAM.Format.IsNull() && !origNVRAM.Format.IsUnknown() && domain.OS.NVRam != nil && domain.OS.NVRam.Format != "" {
+				nvramModel.Format = types.StringValue(domain.OS.NVRam.Format)
+			}
+
+			// Only set template format if user specified it and we have template format from libvirt
+			if !origNVRAM.TemplateFormat.IsNull() && !origNVRAM.TemplateFormat.IsUnknown() && domain.OS.NVRam != nil && domain.OS.NVRam.TemplateFormat != "" {
+				nvramModel.TemplateFormat = types.StringValue(domain.OS.NVRam.TemplateFormat)
+			}
+
+		
+	
+			nvram, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+				"path":           types.StringType,
+				"template":       types.StringType,
+				"format":         types.StringType,
+				"template_format": types.StringType,
+			}, nvramModel)
+			diags.Append(d...)
+			if diags.HasError() {
+				return diags
+			}
+			nvramObj = nvram
+		} else {
+			nvramObj = types.ObjectNull(map[string]attr.Type{
+				"path":           types.StringType,
+				"template":       types.StringType,
+				"format":         types.StringType,
+				"template_format": types.StringType,
+			})
 		}
+
+		osModel.NVRAM = nvramObj
 
 		osObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
 			"type":            types.StringType,
@@ -1129,7 +1280,14 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			"loader_path":     types.StringType,
 			"loader_readonly": types.BoolType,
 			"loader_type":     types.StringType,
-			"nvram_path":      types.StringType,
+			"nvram":           types.ObjectType{
+				AttrTypes: map[string]attr.Type{
+					"path":           types.StringType,
+					"template":       types.StringType,
+					"format":         types.StringType,
+					"template_format": types.StringType,
+				},
+			},
 		}, osModel)
 		diags.Append(d...)
 		if diags.HasError() {
@@ -2142,6 +2300,75 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		}
 	}
 
+	// Process TPMs
+	tpmsType := types.ListType{
+		ElemType: types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"model":                         types.StringType,
+				"backend_type":                  types.StringType,
+				"backend_device_path":           types.StringType,
+				"backend_encryption_secret":     types.StringType,
+				"backend_version":               types.StringType,
+				"backend_persistent_state":      types.BoolType,
+			},
+		},
+	}
+	tpmsList := types.ListNull(tpmsType.ElemType.(types.ObjectType))
+
+	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+		var existingDevices DomainDevicesModel
+		diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+
+		if !existingDevices.TPMs.IsNull() && !existingDevices.TPMs.IsUnknown() && len(domain.Devices.TPMs) > 0 {
+			tpms := make([]DomainTPMModel, 0, len(domain.Devices.TPMs))
+			for _, tpm := range domain.Devices.TPMs {
+				tpmModel := DomainTPMModel{}
+
+				if tpm.Model != "" {
+					tpmModel.Model = types.StringValue(tpm.Model)
+				}
+
+				// Extract backend information
+				if tpm.Backend != nil {
+					if tpm.Backend.Passthrough != nil {
+						tpmModel.BackendType = types.StringValue("passthrough")
+						if tpm.Backend.Passthrough.Device != nil && tpm.Backend.Passthrough.Device.Path != "" {
+							tpmModel.BackendDevicePath = types.StringValue(tpm.Backend.Passthrough.Device.Path)
+						}
+					} else if tpm.Backend.Emulator != nil {
+						tpmModel.BackendType = types.StringValue("emulator")
+						if tpm.Backend.Emulator.Version != "" {
+							tpmModel.BackendVersion = types.StringValue(tpm.Backend.Emulator.Version)
+						}
+						if tpm.Backend.Emulator.Encryption != nil && tpm.Backend.Emulator.Encryption.Secret != "" {
+							tpmModel.BackendEncryptionSecret = types.StringValue(tpm.Backend.Emulator.Encryption.Secret)
+						}
+						if tpm.Backend.Emulator.PersistentState != "" {
+							tpmModel.BackendPersistentState = types.BoolValue(tpm.Backend.Emulator.PersistentState == "yes")
+						}
+					}
+				}
+
+				tpms = append(tpms, tpmModel)
+			}
+
+			tpmsList, d = types.ListValueFrom(ctx, types.ObjectType{
+				AttrTypes: map[string]attr.Type{
+					"model":                         types.StringType,
+					"backend_type":                  types.StringType,
+					"backend_device_path":           types.StringType,
+					"backend_encryption_secret":     types.StringType,
+					"backend_version":               types.StringType,
+					"backend_persistent_state":      types.BoolType,
+				},
+			}, tpms)
+			diags.Append(d...)
+			if diags.HasError() {
+				return diags
+			}
+		}
+	}
+
 		newDevices := DomainDevicesModel{
 			Disks:       disksList,
 			Interfaces:  interfacesList,
@@ -2152,6 +2379,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		Consoles:    consolesList,
 		Serials:     serialsList,
 		RNGs:        rngsList,
+		TPMs:        tpmsList,
 		}
 
 		// Create the devices object
@@ -2249,6 +2477,18 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 					AttrTypes: map[string]attr.Type{
 						"model":  types.StringType,
 						"device": types.StringType,
+					},
+				},
+			},
+			"tpms": types.ListType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"model":                      types.StringType,
+						"backend_type":               types.StringType,
+						"backend_device_path":        types.StringType,
+						"backend_encryption_secret":  types.StringType,
+						"backend_version":            types.StringType,
+						"backend_persistent_state":   types.BoolType,
 					},
 				},
 			},

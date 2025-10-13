@@ -149,36 +149,37 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [x] Add acceptance test
 
 ### 11. Direct Network Types (macvtap, vepa, passthrough)
-**Status:** ❌ Not started
+**Status:** ✅ Completed
 **libvirtxml:** `DomainInterface` with type="direct"
 **Old provider:** `network_interface` with vepa, macvtap, passthrough, private
 
 **Tasks:**
-- [ ] Add type="direct" support to interface
-- [ ] Add source.dev and source.mode fields
-- [ ] Update conversion for direct types
-- [ ] Add acceptance test
+- [x] Add type="direct" support to interface
+- [x] Add source.dev and source.mode fields
+- [x] Update conversion for direct types
+- [x] Add acceptance test
 
 ### 12. NVRAM Template
-**Status:** ⚠️ Partial (only file/path, not template)
-**libvirtxml:** `DomainLoader.Template`
+**Status:** ✅ Completed
+**libvirtxml:** `DomainNVRam.Template`
 **Old provider:** `nvram.template` field
 
 **Tasks:**
-- [ ] Add nvram_template field to os block
-- [ ] Update conversion to set loader template
-- [ ] Add acceptance test with UEFI
+- [x] Add nvram template field to os block (path, template, format, template_format)
+- [x] Update conversion functions to handle NVRAM template properly
+- [x] Add acceptance test with UEFI
+- [x] Remove unsupported address and alias fields (not in libvirtxml)
 
 ### 13. TPM Device
-**Status:** ❌ Not started
+**Status:** ✅ Completed
 **libvirtxml:** `DomainTPM`
 **Old provider:** `tpm` block
 
 **Tasks:**
-- [ ] Add tpm nested attribute to devices
-- [ ] Fields: model, backend_type, backend_device_path, backend_encryption_secret, backend_version, backend_persistent_state
-- [ ] Model ↔ libvirtxml.DomainTPM conversion
-- [ ] Add acceptance test
+- [x] Add tpm nested attribute to devices
+- [x] Fields: model, backend_type, backend_device_path, backend_encryption_secret, backend_version, backend_persistent_state
+- [x] Model ↔ libvirtxml.DomainTPM conversion
+- [x] Add acceptance test (skipped - requires swtpm)
 
 ### 14. Emulator Path
 **Status:** ✅ Completed

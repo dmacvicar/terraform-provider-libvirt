@@ -69,7 +69,10 @@ resource "libvirt_domain" "uefi_example" {
     loader_path = "/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd"
     loader_readonly = true
     loader_type     = "pflash"
-    nvram_path      = "/usr/share/edk2/x64/OVMF_VARS.4m.fd"
+    nvram = {
+      path     = "/var/lib/libvirt/qemu/nvram/uefi-vm.fd"
+      template = "/usr/share/edk2/x64/OVMF_VARS.4m.fd"
+    }
     boot_devices    = ["hd"]
   }
 }
@@ -245,10 +248,11 @@ Required:
 
 Optional:
 
+- `block_device` (String) Block device path (e.g., /dev/sdb, /dev/nvme0n1). Mutually exclusive with source and volume_id.
 - `bus` (String) Bus type (virtio, scsi, ide, sata, usb).
 - `device` (String) Device type (disk, cdrom, floppy, lun).
-- `source` (String) Path to the disk image file. Mutually exclusive with volume_id.
-- `volume_id` (String) ID (key) of a libvirt_volume to use as the disk source. Mutually exclusive with source.
+- `source` (String) Path to the disk image file. Mutually exclusive with volume_id and block_device.
+- `volume_id` (String) ID (key) of a libvirt_volume to use as the disk source. Mutually exclusive with source and block_device.
 - `wwn` (String) World Wide Name identifier for the disk (typically for SCSI disks). If not specified for SCSI disks, one will be generated. Format: 16 hex digits.
 
 
@@ -318,6 +322,7 @@ Optional:
 
 - `bridge` (String) Bridge name (for type=bridge).
 - `dev` (String) Device name (for type=user or type=direct).
+- `mode` (String) Direct mode (for type=direct). Options: bridge, vepa, private, passthrough.
 - `network` (String) Network name (for type=network).
 - `portgroup` (String) Port group name (for type=network).
 
@@ -395,7 +400,16 @@ Optional:
 - `loader_readonly` (Boolean) Whether the UEFI firmware is read-only.
 - `loader_type` (String) Loader type ('rom' or 'pflash').
 - `machine` (String) Machine type (e.g., 'pc', 'q35'). Note: This value represents what you want, but libvirt may internally expand it to a versioned type.
-- `nvram_path` (String) Path to NVRAM template for UEFI.
+- `nvram` (Attributes) NVRAM configuration for UEFI. (see [below for nested schema](#nestedatt--os--nvram))
+
+<a id="nestedatt--os--nvram"></a>
+### Nested Schema for `os.nvram`
+
+Optional:
+
+- `path` (String) Path to the NVRAM file for the domain.
+- `template` (String) Path to NVRAM template file for UEFI variable store. This template is copied to create the domain's NVRAM.
+
 
 
 <a id="nestedatt--pm"></a>

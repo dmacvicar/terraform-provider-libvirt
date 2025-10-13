@@ -49,7 +49,10 @@ resource "libvirt_domain" "uefi_example" {
     loader_path = "/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd"
     loader_readonly = true
     loader_type     = "pflash"
-    nvram_path      = "/usr/share/edk2/x64/OVMF_VARS.4m.fd"
+    nvram = {
+      path     = "/var/lib/libvirt/qemu/nvram/uefi-vm.fd"
+      template = "/usr/share/edk2/x64/OVMF_VARS.4m.fd"
+    }
     boot_devices    = ["hd"]
   }
 }

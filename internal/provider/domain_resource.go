@@ -67,18 +67,33 @@ type DomainResourceModel struct {
 
 // DomainOSModel describes the OS configuration
 type DomainOSModel struct {
-	Type           types.String `tfsdk:"type"`
-	Arch           types.String `tfsdk:"arch"`
-	Machine        types.String `tfsdk:"machine"`
-	Firmware       types.String `tfsdk:"firmware"`
-	BootDevices    types.List   `tfsdk:"boot_devices"`
-	Kernel         types.String `tfsdk:"kernel"`
-	Initrd         types.String `tfsdk:"initrd"`
-	KernelArgs     types.String `tfsdk:"kernel_args"`
-	LoaderPath     types.String `tfsdk:"loader_path"`
-	LoaderReadOnly types.Bool   `tfsdk:"loader_readonly"`
-	LoaderType     types.String `tfsdk:"loader_type"`
-	NVRAMPath      types.String `tfsdk:"nvram_path"`
+	Type      types.String `tfsdk:"type"`
+	Arch      types.String `tfsdk:"arch"`
+	Machine   types.String `tfsdk:"machine"`
+	Firmware  types.String `tfsdk:"firmware"`
+	BootDevices types.List `tfsdk:"boot_devices"`
+	Kernel    types.String `tfsdk:"kernel"`
+	Initrd    types.String `tfsdk:"initrd"`
+	KernelArgs types.String `tfsdk:"kernel_args"`
+	LoaderPath types.String `tfsdk:"loader_path"`
+	LoaderReadOnly types.Bool `tfsdk:"loader_readonly"`
+	LoaderType types.String `tfsdk:"loader_type"`
+	NVRAM     types.Object `tfsdk:"nvram"`
+}
+
+// DomainNVRAMModel describes NVRAM configuration
+type DomainNVRAMModel struct {
+	Path           types.String `tfsdk:"path"`
+	Template       types.String `tfsdk:"template"`
+	Format         types.String `tfsdk:"format"`
+	TemplateFormat types.String `tfsdk:"template_format"`
+}
+
+// DomainNVRAMSourceModel describes NVRAM source configuration
+type DomainNVRAMSourceModel struct {
+	File     types.String `tfsdk:"file"`
+	Block    types.String `tfsdk:"block"`
+	VolumeID types.String `tfsdk:"volume_id"`
 }
 
 // DomainCPUModel describes CPU configuration
@@ -187,6 +202,7 @@ type DomainDevicesModel struct {
 	Consoles    types.List   `tfsdk:"consoles"`
 	Serials     types.List   `tfsdk:"serials"`
 	RNGs        types.List   `tfsdk:"rngs"`
+	TPMs        types.List   `tfsdk:"tpms"`
 }
 
 // DomainFilesystemModel describes a filesystem device
@@ -222,6 +238,16 @@ type DomainSerialModel struct {
 type DomainRNGModel struct {
 	Model  types.String `tfsdk:"model"`
 	Device types.String `tfsdk:"device"`
+}
+
+// DomainTPMModel describes a TPM device
+type DomainTPMModel struct {
+	Model                  types.String `tfsdk:"model"`
+	BackendType            types.String `tfsdk:"backend_type"`
+	BackendDevicePath      types.String `tfsdk:"backend_device_path"`
+	BackendEncryptionSecret types.String `tfsdk:"backend_encryption_secret"`
+	BackendVersion         types.String `tfsdk:"backend_version"`
+	BackendPersistentState types.Bool   `tfsdk:"backend_persistent_state"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -575,9 +601,27 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 						Description: "Loader type ('rom' or 'pflash').",
 						Optional:    true,
 					},
-					"nvram_path": schema.StringAttribute{
-						Description: "Path to NVRAM template for UEFI.",
+					"nvram": schema.SingleNestedAttribute{
+						Description: "NVRAM configuration for UEFI.",
 						Optional:    true,
+						Attributes: map[string]schema.Attribute{
+							"path": schema.StringAttribute{
+								Description: "Path to the NVRAM file for the domain.",
+								Optional:    true,
+							},
+							"template": schema.StringAttribute{
+								Description: "Path to NVRAM template file for UEFI variable store. This template is copied to create the domain's NVRAM.",
+								Optional:    true,
+							},
+							"format": schema.StringAttribute{
+								Description: "Format of the NVRAM file (e.g., 'raw', 'qcow2').",
+								Optional:    true,
+							},
+							"template_format": schema.StringAttribute{
+								Description: "Format of the template file (e.g., 'raw', 'qcow2').",
+								Optional:    true,
+							},
+						},
 					},
 				},
 			},
@@ -819,6 +863,38 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 							},
 							"device": schema.StringAttribute{
 								Description: "Backend random device path (e.g., /dev/random, /dev/urandom, /dev/hwrng). Defaults to /dev/urandom.",
+								Optional:    true,
+							},
+						},
+					},
+				},
+				"tpms": schema.ListNestedAttribute{
+					Description: "TPM devices for the domain. Only one TPM device is supported per domain.",
+					Optional:    true,
+					NestedObject: schema.NestedAttributeObject{
+						Attributes: map[string]schema.Attribute{
+							"model": schema.StringAttribute{
+								Description: "TPM device model (e.g., 'tpm-tis', 'tpm-crb', 'tpm-spapr').",
+								Optional:    true,
+							},
+							"backend_type": schema.StringAttribute{
+								Description: "TPM backend type ('passthrough', 'emulator'). Defaults to 'emulator'.",
+								Optional:    true,
+							},
+							"backend_device_path": schema.StringAttribute{
+								Description: "Device path for passthrough backend (e.g., '/dev/tpm0'). Only used with backend_type='passthrough'.",
+								Optional:    true,
+							},
+							"backend_encryption_secret": schema.StringAttribute{
+								Description: "UUID of secret for encrypted state persistence. Only used with backend_type='emulator'.",
+								Optional:    true,
+							},
+							"backend_version": schema.StringAttribute{
+								Description: "TPM backend version (e.g., '2.0'). Only used with backend_type='emulator'.",
+								Optional:    true,
+							},
+							"backend_persistent_state": schema.BoolAttribute{
+								Description: "Whether TPM state should be persistent across VM restarts. Only used with backend_type='emulator'.",
 								Optional:    true,
 							},
 						},
