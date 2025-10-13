@@ -202,8 +202,7 @@ func TestAccDomainResource_metadata(t *testing.T) {
 				Config: testAccDomainResourceConfigMetadata("test-domain-metadata"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-metadata"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "title", "Test Domain"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "description", "A test domain with metadata"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "metadata", "<app1:test xmlns:app1=\"http://test.example.com/app1/\"><app1:foo>bar</app1:foo></app1:test>"),
 				),
 			},
 		},
@@ -214,13 +213,12 @@ func testAccDomainResourceConfigMetadata(name string) string {
 	return fmt.Sprintf(`
 
 resource "libvirt_domain" "test" {
-  name        = %[1]q
-  title       = "Test Domain"
-  description = "A test domain with metadata"
-  memory      = 512
-  unit        = "MiB"
-  vcpu        = 1
-  type        = "kvm"
+  name     = %[1]q
+  memory   = 512
+  unit     = "MiB"
+  vcpu     = 1
+  type     = "kvm"
+  metadata = "<app1:test xmlns:app1=\"http://test.example.com/app1/\"><app1:foo>bar</app1:foo></app1:test>"
 
   os = {
     type    = "hvm"

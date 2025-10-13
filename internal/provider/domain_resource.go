@@ -54,6 +54,7 @@ type DomainResourceModel struct {
 	IOThreads  types.Int64  `tfsdk:"iothreads"`
 	Running    types.Bool   `tfsdk:"running"`
 	Autostart  types.Bool   `tfsdk:"autostart"`
+	Metadata   types.String `tfsdk:"metadata"`
 
 	OS       types.Object `tfsdk:"os"`
 	Features types.Object `tfsdk:"features"`
@@ -393,6 +394,27 @@ providing fine-grained control over VM configuration.
 			"autostart": schema.BoolAttribute{
 				Description: "Whether the domain should be started automatically when the host boots.",
 				Optional:    true,
+			},
+			"metadata": schema.StringAttribute{
+				Description: "Custom metadata XML for the domain. Must be valid XML using custom namespaces. Applications must use custom namespaces on their XML nodes/trees, with only one top-level element per namespace. Example: '<app1:foo xmlns:app1=\"http://app1.org/app1/\">content</app1:foo>'",
+				MarkdownDescription: `Custom metadata XML for the domain.
+
+This allows applications to store custom information within the domain's XML configuration.
+
+**Requirements:**
+- Must be valid XML
+- Must use custom namespaces (e.g., ` + "`xmlns:app1=\"http://app1.org/app1/\"`" + `)
+- Only one top-level element per namespace
+
+**Example:**
+` + "```xml" + `
+<app1:foo xmlns:app1="http://app1.org/app1/">
+  <app1:bar>some content</app1:bar>
+</app1:foo>
+` + "```" + `
+
+See [libvirt metadata documentation](https://libvirt.org/formatdomain.html#metadata) for more details.`,
+				Optional: true,
 			},
 			"features": schema.SingleNestedAttribute{
 				Description: "Hypervisor features to enable.",

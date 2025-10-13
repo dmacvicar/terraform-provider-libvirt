@@ -4,6 +4,8 @@ package provider
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -19,6 +21,17 @@ const (
 	unitGiB = "GiB"
 	unitTiB = "TiB"
 )
+
+// normalizeXMLWhitespace normalizes whitespace in XML strings to avoid diffs
+// caused by libvirt's XML pretty-printing
+func normalizeXMLWhitespace(xml string) string {
+	// Remove leading/trailing whitespace
+	xml = strings.TrimSpace(xml)
+	// Replace multiple whitespace characters (including newlines) between tags with a single space
+	re := regexp.MustCompile(`>\s+<`)
+	xml = re.ReplaceAllString(xml, "><")
+	return xml
+}
 
 // convertMemory converts memory values between units
 func convertMemory(value int64, fromUnit, toUnit string) int64 {
@@ -84,6 +97,13 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 	// Set description
 	if !model.Description.IsNull() && !model.Description.IsUnknown() {
 		domain.Description = model.Description.ValueString()
+	}
+
+	// Set metadata
+	if !model.Metadata.IsNull() && !model.Metadata.IsUnknown() {
+		domain.Metadata = &libvirtxml.DomainMetadata{
+			XML: model.Metadata.ValueString(),
+		}
 	}
 
 	// Set bootloader (Xen paravirt)
@@ -1089,6 +1109,11 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 
 	if domain.Description != "" {
 		model.Description = types.StringValue(domain.Description)
+	}
+
+	// Only populate metadata if user originally specified it
+	if !model.Metadata.IsNull() && !model.Metadata.IsUnknown() && domain.Metadata != nil && domain.Metadata.XML != "" {
+		model.Metadata = types.StringValue(normalizeXMLWhitespace(domain.Metadata.XML))
 	}
 
 	if domain.Bootloader != "" {
