@@ -123,6 +123,23 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 - `iothreads` (Number) Number of I/O threads for virtio disks.
 - `max_memory` (Number) Maximum memory for hotplug. Must be >= memory.
 - `max_memory_slots` (Number) Number of slots for memory hotplug. Required when max_memory is set.
+- `metadata` (String) Custom metadata XML for the domain.
+
+This allows applications to store custom information within the domain's XML configuration.
+
+**Requirements:**
+- Must be valid XML
+- Must use custom namespaces (e.g., `xmlns:app1="http://app1.org/app1/"`)
+- Only one top-level element per namespace
+
+**Example:**
+```xml
+<app1:foo xmlns:app1="http://app1.org/app1/">
+  <app1:bar>some content</app1:bar>
+</app1:foo>
+```
+
+See [libvirt metadata documentation](https://libvirt.org/formatdomain.html#metadata) for more details.
 - `on_crash` (String) Action to take when guest crashes (destroy, restart, preserve, rename-restart, coredump-destroy, coredump-restart).
 - `on_poweroff` (String) Action to take when guest requests poweroff (destroy, restart, preserve, rename-restart).
 - `on_reboot` (String) Action to take when guest requests reboot (destroy, restart, preserve, rename-restart).
@@ -226,6 +243,7 @@ Optional:
 - `interfaces` (Attributes List) Network interfaces attached to the domain. (see [below for nested schema](#nestedatt--devices--interfaces))
 - `rngs` (Attributes List) Random number generator devices for the domain. (see [below for nested schema](#nestedatt--devices--rngs))
 - `serials` (Attributes List) Serial devices for the domain. (see [below for nested schema](#nestedatt--devices--serials))
+- `tpms` (Attributes List) TPM devices for the domain. Only one TPM device is supported per domain. (see [below for nested schema](#nestedatt--devices--tpms))
 - `video` (Attributes) Video device for the domain. (see [below for nested schema](#nestedatt--devices--video))
 
 <a id="nestedatt--devices--consoles"></a>
@@ -348,6 +366,19 @@ Optional:
 - `type` (String) Serial source type (pty, file, unix, tcp, etc.). Optional, defaults to pty.
 
 
+<a id="nestedatt--devices--tpms"></a>
+### Nested Schema for `devices.tpms`
+
+Optional:
+
+- `backend_device_path` (String) Device path for passthrough backend (e.g., '/dev/tpm0'). Only used with backend_type='passthrough'.
+- `backend_encryption_secret` (String) UUID of secret for encrypted state persistence. Only used with backend_type='emulator'.
+- `backend_persistent_state` (Boolean) Whether TPM state should be persistent across VM restarts. Only used with backend_type='emulator'.
+- `backend_type` (String) TPM backend type ('passthrough', 'emulator'). Defaults to 'emulator'.
+- `backend_version` (String) TPM backend version (e.g., '2.0'). Only used with backend_type='emulator'.
+- `model` (String) TPM device model (e.g., 'tpm-tis', 'tpm-crb', 'tpm-spapr').
+
+
 <a id="nestedatt--devices--video"></a>
 ### Nested Schema for `devices.video`
 
@@ -407,8 +438,10 @@ Optional:
 
 Optional:
 
+- `format` (String) Format of the NVRAM file (e.g., 'raw', 'qcow2').
 - `path` (String) Path to the NVRAM file for the domain.
 - `template` (String) Path to NVRAM template file for UEFI variable store. This template is copied to create the domain's NVRAM.
+- `template_format` (String) Format of the template file (e.g., 'raw', 'qcow2').
 
 
 

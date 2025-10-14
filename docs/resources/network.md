@@ -21,12 +21,53 @@ Manages a libvirt virtual network.
 
 ### Optional
 
-- `addresses` (List of String) List of IPv4/IPv6 CIDR addresses for the network (e.g., '10.17.3.0/24', 'fd00::/64').
 - `autostart` (Boolean) Whether the network should be started automatically when the host boots.
 - `bridge` (String) Bridge name. If not specified, libvirt will auto-generate one.
+- `ips` (Attributes List) IP address configurations for the network. Each entry can specify address, netmask/prefix, family, and DHCP settings. (see [below for nested schema](#nestedatt--ips))
 - `mode` (String) Network forwarding mode: 'nat' (default), 'none' (isolated), 'route', 'open', 'bridge'.
 - `uuid` (String) Network UUID. If not specified, one will be generated.
 
 ### Read-Only
 
 - `id` (String) Network identifier (UUID)
+
+<a id="nestedatt--ips"></a>
+### Nested Schema for `ips`
+
+Optional:
+
+- `address` (String) IP address (e.g., '10.17.3.1', 'fd00::1'). Optional - if not specified, one will be derived from the network.
+- `dhcp` (Attributes) DHCP server configuration for this IP range. (see [below for nested schema](#nestedatt--ips--dhcp))
+- `family` (String) Address family ('ipv4' or 'ipv6'). Optional - will be auto-detected from address if not specified.
+- `local_ptr` (String) Whether to generate local PTR records ('yes' or 'no').
+- `netmask` (String) Network mask for IPv4 (e.g., '255.255.255.0'). Mutually exclusive with prefix.
+- `prefix` (Number) Network prefix length (e.g., 24 for 255.255.255.0, 64 for IPv6). Mutually exclusive with netmask.
+
+<a id="nestedatt--ips--dhcp"></a>
+### Nested Schema for `ips.dhcp`
+
+Optional:
+
+- `hosts` (Attributes List) Static DHCP host entries. (see [below for nested schema](#nestedatt--ips--dhcp--hosts))
+- `ranges` (Attributes List) DHCP address ranges to hand out. (see [below for nested schema](#nestedatt--ips--dhcp--ranges))
+
+<a id="nestedatt--ips--dhcp--hosts"></a>
+### Nested Schema for `ips.dhcp.hosts`
+
+Required:
+
+- `ip` (String) IP address to assign to this host.
+- `mac` (String) MAC address of the host.
+
+Optional:
+
+- `name` (String) Hostname for this host.
+
+
+<a id="nestedatt--ips--dhcp--ranges"></a>
+### Nested Schema for `ips.dhcp.ranges`
+
+Required:
+
+- `end` (String) End IP address of the range.
+- `start` (String) Start IP address of the range.
