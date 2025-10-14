@@ -5,12 +5,10 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"net"
-	"net/url"
 	"strings"
-	"time"
 
 	"github.com/digitalocean/go-libvirt"
+	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt/dialers"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -26,35 +24,24 @@ func NewClient(ctx context.Context, uri string) (*Client, error) {
 		"uri": uri,
 	})
 
-	parsedURI, err := url.Parse(uri)
+	// Create the appropriate dialer based on the URI
+	dialer, err := dialers.NewDialerFromURI(uri)
 	if err != nil {
-		return nil, fmt.Errorf("invalid libvirt URI: %w", err)
+		return nil, fmt.Errorf("failed to create dialer: %w", err)
 	}
 
-	// For now, we only support qemu:///system (Unix socket connection)
-	// We'll add support for other transports later
-	if parsedURI.Scheme != "qemu" {
-		return nil, fmt.Errorf("unsupported URI scheme: %s (only qemu:// is currently supported)", parsedURI.Scheme)
-	}
+	tflog.Debug(ctx, "Dialing libvirt connection", map[string]any{
+		"uri": uri,
+	})
 
-	if parsedURI.Host != "" {
-		return nil, fmt.Errorf("remote connections not yet supported (URI contains host: %s)", parsedURI.Host)
-	}
-
-	// Determine the socket path based on the URI path
-	socketPath := "/var/run/libvirt/libvirt-sock"
-	if parsedURI.Path == "/session" {
-		socketPath = fmt.Sprintf("/run/user/%d/libvirt/libvirt-sock", 1000) // TODO: Get actual UID
-	}
-
-	// Connect to libvirt via Unix socket
-	conn, err := net.DialTimeout("unix", socketPath, 10*time.Second)
+	// Establish the connection
+	conn, err := dialer.Dial()
 	if err != nil {
-		return nil, fmt.Errorf("failed to dial libvirt socket %s: %w", socketPath, err)
+		return nil, fmt.Errorf("failed to dial libvirt: %w", err)
 	}
 
 	// Create libvirt client
-	//nolint:staticcheck // NewWithDialer is too complex for our simple use case
+	//nolint:staticcheck // NewWithDialer is too complex for our use case
 	l := libvirt.New(conn)
 	if err := l.Connect(); err != nil {
 		_ = conn.Close()
@@ -62,8 +49,7 @@ func NewClient(ctx context.Context, uri string) (*Client, error) {
 	}
 
 	tflog.Info(ctx, "Successfully connected to libvirt", map[string]any{
-		"uri":    uri,
-		"socket": socketPath,
+		"uri": uri,
 	})
 
 	return &Client{
