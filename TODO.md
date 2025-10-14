@@ -454,12 +454,13 @@ resource "libvirt_volume" "base" {
 XSLT transforms allow arbitrary XML manipulation, which conflicts with the design principle of closely modeling the libvirt API. Users should use the provider's schema instead.
 
 ### 33. Provider Configuration Enhancements
-**Status:** ❌ Not started
+**Status:** ✅ Completed (Transport support)
 **Old provider:** SSH transport support
 
 **Tasks:**
-- [ ] SSH transport support (qemu+ssh://, qemu+ssh://user@host/system)
-- [ ] Other URI schemes support (test, tcp, etc.)
+- [x] SSH transport support (qemu+ssh://, qemu+sshcmd://user@host/system)
+- [x] TCP and TLS transport support (qemu+tcp://, qemu+tls://)
+- [x] Local socket support (qemu:///system, qemu:///session)
 - [ ] Connection pooling/reuse improvements
 
 ### 34. Additional Provider Features

@@ -349,7 +349,11 @@ This table shows implementation status and compatibility with the [original prov
 | Feature | Status | Old Provider | Notes |
 |---------|--------|--------------|-------|
 | qemu:///system | ✅ | ✅ | Local system connection |
-| SSH transports | ○ | ✅ | qemu+ssh://, qemu+ssh://user@host/system |
+| qemu:///session | ✅ | ✅ | Local user session connection |
+| qemu+ssh:// | ✅ | ✅ | SSH transport (Go SSH library) |
+| qemu+sshcmd:// | ✅ | ✅ | SSH transport (native command) |
+| qemu+tcp:// | ✅ | ✅ | TCP transport |
+| qemu+tls:// | ✅ | ✅ | TLS transport |
 
 ### Domain Resource (libvirt_domain)
 
