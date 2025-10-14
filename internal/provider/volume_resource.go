@@ -42,6 +42,17 @@ type VolumeResourceModel struct {
 	Format       types.String `tfsdk:"format"`
 	BackingStore types.Object `tfsdk:"backing_store"`
 	Permissions  types.Object `tfsdk:"permissions"`
+	Create       types.Object `tfsdk:"create"`
+}
+
+// VolumeCreateModel describes the create block for volume initialization
+type VolumeCreateModel struct {
+	Content types.Object `tfsdk:"content"`
+}
+
+// VolumeCreateContentModel describes the content block for uploading from URL
+type VolumeCreateContentModel struct {
+	URL types.String `tfsdk:"url"`
 }
 
 // VolumeBackingStoreModel describes the backing store block
@@ -118,10 +129,12 @@ See the [libvirt storage volume documentation](https://libvirt.org/formatstorage
 				},
 			},
 			"capacity": schema.Int64Attribute{
-				Description: "Volume capacity in bytes",
-				Required:    true,
+				Description: "Volume capacity in bytes. Required for empty volumes, computed when using create.content",
+				Optional:    true,
+				Computed:    true,
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.RequiresReplace(),
+					int64planmodifier.UseStateForUnknown(),
 				},
 			},
 			"allocation": schema.Int64Attribute{
@@ -177,6 +190,22 @@ See the [libvirt storage volume documentation](https://libvirt.org/formatstorage
 					},
 				},
 			},
+			"create": schema.SingleNestedAttribute{
+				Description: "Volume creation options for initializing volume content from external sources",
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"content": schema.SingleNestedAttribute{
+						Description: "Upload content from a URL or local file",
+						Required:    true,
+						Attributes: map[string]schema.Attribute{
+							"url": schema.StringAttribute{
+								Description: "URL to download content from (supports https://, file://, or absolute paths)",
+								Required:    true,
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -225,11 +254,70 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
+	// Check if we're uploading content from a URL
+	var uploadStream *URLStream
+	var uploadCapacity int64
+
+	if !model.Create.IsNull() && !model.Create.IsUnknown() {
+		var createModel VolumeCreateModel
+		diags := model.Create.As(ctx, &createModel, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		if !createModel.Content.IsNull() && !createModel.Content.IsUnknown() {
+			var contentModel VolumeCreateContentModel
+			diags := createModel.Content.As(ctx, &contentModel, basetypes.ObjectAsOptions{})
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			uploadURL := contentModel.URL.ValueString()
+			tflog.Debug(ctx, "Opening URL stream for volume upload", map[string]any{
+				"url": uploadURL,
+			})
+
+			// Open the URL stream
+			stream, err := OpenURLStream(ctx, uploadURL)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"Failed to Open URL",
+					fmt.Sprintf("Could not open URL for upload: %s", err),
+				)
+				return
+			}
+			uploadStream = stream
+			uploadCapacity = stream.Size
+
+			tflog.Info(ctx, "URL stream opened", map[string]any{
+				"url":  uploadURL,
+				"size": uploadCapacity,
+			})
+		}
+	}
+
+	// Determine capacity: from upload stream or from user-provided value
+	var capacity int64
+	if uploadStream != nil {
+		capacity = uploadCapacity
+	} else {
+		if model.Capacity.IsNull() || model.Capacity.IsUnknown() {
+			resp.Diagnostics.AddError(
+				"Missing Capacity",
+				"Volume capacity is required when not uploading from a URL",
+			)
+			return
+		}
+		capacity = model.Capacity.ValueInt64()
+	}
+
 	// Build volume definition
 	volumeDef := &libvirtxml.StorageVolume{
 		Name: volumeName,
 		Capacity: &libvirtxml.StorageVolumeSize{
-			Value: uint64(model.Capacity.ValueInt64()),
+			Value: uint64(capacity),
 		},
 		Target: &libvirtxml.StorageVolumeTarget{},
 	}
@@ -321,6 +409,38 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		"key":  volume.Key,
 		"name": volumeName,
 	})
+
+	// Upload content if we have a stream
+	if uploadStream != nil {
+		defer func() {
+			if err := uploadStream.Reader.Close(); err != nil {
+				tflog.Warn(ctx, "Failed to close upload stream", map[string]any{
+					"error": err.Error(),
+				})
+			}
+		}()
+
+		tflog.Info(ctx, "Uploading content to volume", map[string]any{
+			"size": uploadCapacity,
+		})
+
+		// Upload the content using StorageVolUpload
+		// The 0 flag means start at offset 0, uploadCapacity is the length
+		err = r.client.Libvirt().StorageVolUpload(volume, uploadStream.Reader, 0, uint64(uploadCapacity), 0)
+		if err != nil {
+			// Upload failed, try to clean up the volume
+			_ = r.client.Libvirt().StorageVolDelete(volume, 0)
+			resp.Diagnostics.AddError(
+				"Volume Upload Failed",
+				fmt.Sprintf("Failed to upload content to volume: %s", err),
+			)
+			return
+		}
+
+		tflog.Info(ctx, "Successfully uploaded content to volume", map[string]any{
+			"bytes": uploadCapacity,
+		})
+	}
 
 	// Read back the full state
 	resp.Diagnostics.Append(r.readVolume(ctx, &model, volume)...)

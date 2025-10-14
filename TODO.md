@@ -1,5 +1,33 @@
 # TODO - Terraform Provider for Libvirt v2
 
+## Executive Summary
+
+### ✅ Core Resources - ALL COMPLETE
+- **libvirt_domain** - Virtual machines (full feature parity with old provider for pure libvirt features)
+- **libvirt_volume** - Storage volumes (100% feature parity with old provider)
+- **libvirt_pool** - Storage pools (95% parity)
+- **libvirt_network** - Networks (basic NAT/isolated modes complete, DHCP/DNS/routes deferred)
+
+### 🟡 Pure Libvirt Features Still Missing
+- **Data Sources**: node_info, node_device_info, node_devices (Priority 2)
+- **Advanced Domain**: CPU topology/features, memory backing/hugepages, HyperV/KVM features, input devices
+- **Advanced Network**: DHCP ranges, DNS config, static routes, network modes (route/open/bridge)
+- **Advanced Disk**: driver options (cache, io, discard), readonly/shareable flags, boot order, network disks
+
+### 🔴 Provider Conveniences (Deferred - "On Top" of Libvirt)
+- **Cloud-init Resources**: libvirt_cloudinit_disk, libvirt_ignition, libvirt_combustion
+- **Template Data Sources**: dns_host_template, dns_srv_template, dnsmasq_options_template
+- **XSLT Transforms**: Custom XML transformations
+- **Provider Config**: SSH transport (qemu+ssh://)
+
+### 📋 Next Priority Actions
+1. Implement native libvirt data sources (node_info, node_device_info, node_devices)
+2. Advanced domain features (CPU topology, memory backing, HyperV features)
+3. Advanced disk features (driver options, readonly/shareable)
+4. Advanced network features (DHCP, DNS, routes)
+
+---
+
 ## Current Status
 
 ### ✅ Completed - Domain Resource (Basic)
@@ -201,9 +229,46 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [x] Update conversion to handle custom metadata XML
 - [x] Add acceptance test
 
+### 16. RNG Device (virtio-rng)
+**Status:** ✅ Completed
+**libvirtxml:** `DomainRNG`
+**Old provider:** Added by default
+
+**Tasks:**
+- [x] Add RNG nested attribute to devices
+- [x] Fields: model, backend (random device path)
+- [x] Add acceptance test
+
+### 17. Native Libvirt Data Sources
+**Status:** ❌ Not started
+**Priority:** Should be implemented next for full old provider parity
+
+**libvirt_node_info** - Host system information
+- Uses: `virNodeGetInfo` API
+- Fields: cores, cpus, memory, mhz, model, nodes, sockets, threads
+- Old provider: data_source_libvirt_node_info.go
+
+**libvirt_node_device_info** - Device details
+- Uses: `virNodeDeviceGetXMLDesc` API
+- Fields: name, path, parent, driver, devnode, capability (with PCI/USB details)
+- Old provider: data_source_libvirt_node_device_info.go
+
+**libvirt_node_devices** - Device enumeration
+- Uses: `virNodeListDevices` API
+- Fields: capability filter
+- Returns: list of device names
+- Old provider: data_source_libvirt_node_devices.go
+
+**Tasks:**
+- [ ] Implement libvirt_node_info data source
+- [ ] Implement libvirt_node_device_info data source
+- [ ] Implement libvirt_node_devices data source
+- [ ] Add acceptance tests for each
+- [ ] Add documentation
+
 ## Priority 3: Additional Disk/Network Enhancements
 
-### 16. Advanced Disk Features (NEW - not in old provider)
+### 18. Advanced Disk Features (NEW - not in old provider)
 **Status:** ❌ Not started
 **libvirtxml:** Additional `DomainDiskDriver` and `DomainDisk` fields
 **Note:** Old provider only had basic driver.name/type auto-detection, no user-configurable driver attributes
@@ -215,17 +280,7 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [ ] Add boot order attribute
 - [ ] Support network disks (RBD, iSCSI)
 
-### 17. RNG Device (virtio-rng)
-**Status:** ✅ Completed
-**libvirtxml:** `DomainRNG`
-**Old provider:** Added by default
-
-**Tasks:**
-- [x] Add RNG nested attribute to devices
-- [x] Fields: model, backend (random device path)
-- [x] Add acceptance test
-
-### 18. Input Devices
+### 19. Input Devices
 **Status:** ❌ Not started
 **libvirtxml:** `DomainInput`
 
@@ -235,7 +290,7 @@ These features are supported by libvirtxml, were present in the old provider, an
 
 ## Priority 3: Advanced Domain Fields
 
-### 7. CPU Enhancements
+### 20. CPU Enhancements
 **Status:** ❌ Partially done (basic only)
 
 **Tasks:**
@@ -244,7 +299,7 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [ ] Add NUMA cell configuration
 - [ ] Test topology scenarios
 
-### 8. Memory Enhancements
+### 21. Memory Enhancements
 **Status:** ❌ Partially done (basic only)
 
 **Tasks:**
@@ -252,7 +307,7 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [ ] Memory tune (hard_limit, soft_limit)
 - [ ] Test hugepages
 
-### 9. Features Enhancements
+### 22. Features Enhancements
 **Status:** ❌ Partially done (simple features only)
 
 **Tasks:**
@@ -260,17 +315,9 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [ ] Add KVM feature block
 - [ ] Add SMM with TSeg
 
-### 10. Clock Timers
-**Status:** ✅ Completed
-
-**Tasks:**
-- [x] Add timer blocks (rtc, pit, hpet, kvmclock, hypervclock, etc.)
-- [x] Add nested catchup configuration
-- [x] Test timer configurations
-
 ## Priority 3.5: Provider Infrastructure
 
-### Machine Type Diff Logic
+### 23. Machine Type Diff Logic
 **Status:** ❌ Not started
 **Issue:** Currently preserving user's machine value (e.g., "q35") in state to avoid diffs when libvirt expands it (e.g., to "pc-q35-10.1"). This works but storing unexpanded value isn't ideal.
 **Better approach:** Implement sophisticated diff logic that understands libvirt's machine type expansion.
@@ -281,172 +328,193 @@ These features are supported by libvirtxml, were present in the old provider, an
 - [ ] Store actual libvirt value but suppress diff when it's just expansion
 - [ ] Update tests
 
-## Priority 4: Other Resources
-
-### 11. Network Resource [OLD: ✅]
-**Status:** ✅ Completed (basic modes: NAT and isolated)
-
-**Tasks:**
-- [x] Define libvirt_network resource
-- [x] Schema (name, mode, bridge, addresses)
-- [x] Network modes: nat, none (isolated)
-- [x] IP address configuration (CIDR)
-- [x] Autostart support
-- [x] CRUD operations
-- [x] Acceptance tests
-- [x] Documentation
-- [ ] Advanced modes: route, open, bridge (deferred)
-- [ ] DHCP ranges and static hosts (deferred)
-- [ ] DNS configuration (deferred)
-- [ ] Routes (deferred)
-- [ ] Dnsmasq options (deferred)
-
-### 12. Pool Resource [OLD: ✅]
-**Status:** ✅ Completed (~95% parity)
-
-**Tasks:**
-- [x] Define libvirt_pool resource
-- [x] Schema (name, type, target path)
-- [x] Pool types (dir, logical/LVM)
-- [x] Target permissions (owner, group, mode, label)
-- [x] Source (name, device for LVM)
-- [x] CRUD operations
-- [x] Tests
-- [ ] XML XSLT transforms (not implementing - against design principles)
-
-### 13. Volume Resource [OLD: ✅]
-**Status:** ✅ Completed (~95% parity)
-
-**Tasks:**
-- [x] Define libvirt_volume resource
-- [x] Schema (name, pool, capacity, format)
-- [x] Type attribute (file, block, dir, network, netdir)
-- [x] Format support (qcow2, raw)
-- [x] Backing volumes (backing_store)
-- [x] Permissions (owner, group, mode, label)
-- [x] CRUD operations
-- [x] Integration with disk devices (volume_id)
-- [x] Tests
-- [ ] URL download support - **SPEC READY**
-- [ ] XML XSLT transforms (not implementing - against design principles)
-
-**URL Download Spec (for libvirt_volume):**
-- Detect URLs in existing `source` attribute (http://, https://)
-- Require `capacity` and `format` when source is URL (no HTTP HEAD, no auto-detection)
-- Stream HTTP GET → StorageVolUpload (works with remote libvirt)
-- Simple retry logic: 3 attempts, 2s exponential backoff, retry on 5xx/network errors
-- ForceNew on source changes (no re-download/update support)
-- Implementation: ~50-80 lines in volume_resource.go
-- No caching, no If-Modified-Since (Terraform state prevents unnecessary recreates)
-- Example:
-  ```hcl
-  resource "libvirt_volume" "base" {
-    name     = "ubuntu.qcow2"
-    pool     = "default"
-    source   = "https://cloud-images.ubuntu.com/.../ubuntu.img"
-    capacity = 2361393152  # required for URLs
-    format   = "qcow2"     # required for URLs
-  }
-  ```
-
-## Priority 5: Advanced Features
-
-### 14. Additional Domain Features [OLD: ✅]
-**Status:** ❌ Not started
-
-**Tasks:**
-- [ ] Metadata - Custom metadata XML
-- [ ] Autostart - Domain autostart
-- [ ] TPM device
-- [ ] Filesystem (9p) - virtio-9p host directory sharing
-- [ ] NVRAM template support
-- [ ] QEMU agent integration
-- [ ] XML XSLT transforms
-- [ ] Network wait_for_lease
-- [ ] Network macvtap/vepa/passthrough
-
-### 15. Cloud-init Resources [OLD: ✅]
-**Status:** ❌ Not started
-
-**Tasks:**
-- [ ] libvirt_cloudinit_disk resource
-- [ ] libvirt_ignition resource (CoreOS)
-- [ ] libvirt_combustion resource
-
-### 16. Data Sources [OLD: ✅]
-**Status:** ❌ Not started
-
-**Tasks:**
-- [ ] libvirt_node_info datasource
-- [ ] libvirt_node_device_info datasource
-- [ ] libvirt_node_devices datasource
-- [ ] libvirt_network_dns_host_template datasource
-- [ ] libvirt_network_dns_srv_template datasource
-- [ ] libvirt_network_dnsmasq_options_template datasource
-
-### 17. Provider Configuration [OLD: ✅]
-**Status:** ❌ Not started
-
-**Tasks:**
-- [ ] SSH transport support (qemu+ssh://)
-- [ ] Other URI schemes support
-
-### 18. Security Labels
-**Status:** ❌ Not started
-
-**Tasks:**
-- [ ] Add seclabel block (SELinux, AppArmor)
-
-### 19. Test Suite Configuration
+### 24. Test Suite Configuration
 **Status:** ❌ Not started
 
 **Tasks:**
 - [ ] Centralize libvirt URI configuration for acceptance tests (avoid hardcoding `qemu:///system`; allow overriding when running the suite)
 - [ ] Replace hardcoded `/tmp/...` paths in tests with suite-managed temporary directories
 
-### 20. Host Device Passthrough
+## Priority 4: Advanced Network Features
+
+### 25. Network Resource Enhancements
+**Status:** Basic modes complete (NAT and isolated), advanced features deferred
+
+**Advanced Network Modes:**
+- [ ] Route mode (forward mode="route")
+- [ ] Open mode (forward mode="open")
+- [ ] Bridge mode (forward mode="bridge")
+
+**DHCP Configuration:**
+- [ ] DHCP ranges (start/end addresses)
+- [ ] Static host mappings (MAC to IP)
+- [ ] DHCP options
+
+**DNS Configuration:**
+- [ ] DNS hosts (hostname to IP)
+- [ ] DNS forwarders
+- [ ] DNS SRV records
+
+**Other:**
+- [ ] Static routes
+- [ ] Dnsmasq options
+- [ ] Network port groups
+
+## Priority 5: Advanced Libvirt Features
+
+### 26. Security Labels
 **Status:** ❌ Not started
+**libvirtxml:** `DomainSecLabel`
+
+**Tasks:**
+- [ ] Add seclabel block (SELinux, AppArmor)
+- [ ] Support dynamic, static, and none labels
+- [ ] Add acceptance tests
+
+### 27. Host Device Passthrough
+**Status:** ❌ Not started
+**libvirtxml:** `DomainHostdev`
 
 **Tasks:**
 - [ ] Add hostdev block (PCI, USB passthrough)
+- [ ] Support managed/unmanaged modes
+- [ ] Add acceptance tests
 
-### 20. Advanced Tuning
+### 28. Advanced Tuning
 **Status:** ❌ Not started
+**libvirtxml:** `DomainCPUTune`, `DomainNUMATune`, `DomainBlockIOTune`
 
 **Tasks:**
 - [ ] CPUTune (vcpu pinning, shares, quota)
-- [ ] NUMATune
-- [ ] BlockIOTune
+- [ ] NUMATune (memory node affinity)
+- [ ] BlockIOTune (I/O throttling)
 - [ ] IOThreadIDs with pinning
+
+## Priority 6: Provider Conveniences (Deferred - "On Top" of Libvirt)
+
+These features are **provider-specific additions** that build on top of libvirt's native functionality. They do not directly correspond to libvirt APIs and are lower priority than pure libvirt features.
+
+### 29. Cloud-init Resources
+**Status:** ❌ Not started - Provider convenience, not native libvirt
+**Old provider:** libvirt_cloudinit_disk, libvirt_ignition, libvirt_combustion
+
+These resources generate ISO images with cloud-init/ignition/combustion data and attach them as CD-ROM devices. They are abstractions on top of libvirt's disk functionality.
+
+**Tasks:**
+- [ ] libvirt_cloudinit_disk resource (generates cloud-init ISO)
+- [ ] libvirt_ignition resource (CoreOS Ignition ISO)
+- [ ] libvirt_combustion resource (openSUSE Combustion ISO)
+
+### 30. Template Data Sources
+**Status:** ❌ Not started - Provider convenience, not native libvirt
+**Old provider:** dns_host_template, dns_srv_template, dnsmasq_options_template
+
+These are simple template formatters with no libvirt API calls. They format data for use with the network resource.
+
+**Tasks:**
+- [ ] libvirt_network_dns_host_template datasource
+- [ ] libvirt_network_dns_srv_template datasource
+- [ ] libvirt_network_dnsmasq_options_template datasource
+
+### 31. Volume URL Download
+**Status:** ✅ Completed
+**Old provider:** volume `source` attribute with HTTP(S) URLs
+
+This feature downloads images from URLs and uploads them to libvirt storage. It's a convenience wrapper around HTTP + StorageVolUpload.
+
+**Implementation:**
+- Uses `create.content.url` block instead of `source` attribute
+- Supports HTTPS URLs and local file paths (file:// or absolute paths)
+- Capacity is computed from Content-Length header (HTTPS) or file size (local)
+- Format must be explicitly specified by user
+- Streams directly to StorageVolUpload (no temp files)
+- ForceNew on URL change (no re-download support)
+- ~200 lines total (volume_upload.go utility + volume_resource.go integration)
+
+Example:
+```hcl
+resource "libvirt_volume" "base" {
+  name   = "ubuntu.qcow2"
+  pool   = "default"
+  format = "qcow2"  # required
+
+  create = {
+    content = {
+      url = "https://cloud-images.ubuntu.com/.../ubuntu.img"
+    }
+  }
+  # capacity automatically computed
+}
+```
+
+### 32. XML XSLT Transforms
+**Status:** ❌ Not implementing - Against design principles
+**Old provider:** xslt attribute on resources
+
+XSLT transforms allow arbitrary XML manipulation, which conflicts with the design principle of closely modeling the libvirt API. Users should use the provider's schema instead.
+
+### 33. Provider Configuration Enhancements
+**Status:** ❌ Not started
+**Old provider:** SSH transport support
+
+**Tasks:**
+- [ ] SSH transport support (qemu+ssh://, qemu+ssh://user@host/system)
+- [ ] Other URI schemes support (test, tcp, etc.)
+- [ ] Connection pooling/reuse improvements
+
+### 34. Additional Provider Features
+**Status:** ❌ Not started - Provider conveniences
+
+**Tasks:**
+- [ ] QEMU agent integration (wait for IP address, execute commands)
+- [ ] Network wait_for_lease (poll DHCP lease tables)
+- [ ] Domain wait_for_guest_agent (wait for agent to come online)
 
 ## Known Gaps (Low Priority)
 
-See DOMAIN_COVERAGE_ANALYSIS.md for complete details.
+See DOMAIN_COVERAGE_ANALYSIS.md for complete details. These are libvirtxml-supported fields that haven't been prioritized yet.
 
 **Domain fields not yet implemented:**
-- GenID, Metadata (custom XML), Resource (cgroup partition)
+- GenID, Resource (cgroup partition)
 - Perf events, KeyWrap, LaunchSecurity
 - SysInfo (SMBIOS), IDMap (containers), ThrottleGroups
 - Hypervisor namespaces (QEMU commandline, etc.)
 
 **Device types not yet implemented:**
-- Controllers, Leases, Filesystems, Smartcards
-- Parallel/Serial ports, Channels, TPMs
-- Sounds, Audios, Videos, Watchdogs
-- MemBalloon, Panics, Shmems, Memorydevs
-- IOMMU, VSock, Crypto, PStore
+- Controllers (except implicit ones)
+- Channels, Smartcards
+- Sound/Audio devices
+- Watchdog, MemBalloon, Panic devices
+- Advanced devices: Shmems, Memorydevs, IOMMU, VSock, Crypto, PStore
 
-## Documentation Tasks
+## Documentation & Migration
 
-- [ ] Update README.md with current status
-- [ ] Add examples for all implemented features
-- [ ] Add migration guide from old provider
+### Documentation Tasks
+- [ ] Update README.md status table to reflect completed features
+- [ ] Add comprehensive examples for all implemented features
+- [ ] Write migration guide from old provider (v1 → v2)
 - [ ] Document breaking changes vs old provider
+- [ ] Add architecture decision records (ADRs)
 
-## Notes
+### Example Gaps
+- [ ] Complete domain example with all device types
+- [ ] Network configuration examples (NAT, isolated, etc.)
+- [ ] Storage pool examples (directory, LVM)
+- [ ] Volume examples (qcow2, raw, backing stores)
+- [ ] UEFI boot examples
+- [ ] Multi-VM examples with shared storage
 
+## Development Notes
+
+**Workflow:**
 - Incremental development: Add → Test → Commit → Repeat
+- Keep commits small and focused (1-3 related features max)
+- Always run `make lint` before committing
+- Run acceptance tests for affected resources
+
+**Design Principles:**
 - Follow libvirt XML schema closely (per AGENTS.md)
-- Only support what libvirtxml supports
-- User intent preservation for optional fields
-- Keep commits small and focused
+- Only support what libvirtxml supports (no custom XML structs)
+- Preserve user intent for optional fields (avoid unnecessary diffs)
+- Use nested attributes, not blocks (per Terraform Plugin Framework best practices)
+- Always use golibvirt constants, never magic numbers

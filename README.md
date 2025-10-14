@@ -264,6 +264,44 @@ resource "libvirt_domain" "example" {
 
 See the [examples](./examples) directory for more usage examples.
 
+## Migration from v1 (Old Provider)
+
+### Volume Source URLs
+
+If you're migrating from the original provider and used the `source` attribute on volumes to download cloud images, note that this feature is now available via the `create.content.url` block:
+
+**Old provider (v1):**
+```hcl
+resource "libvirt_volume" "ubuntu" {
+  name   = "ubuntu.qcow2"
+  pool   = "default"
+  source = "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img"
+  # size was automatically detected from Content-Length
+}
+```
+
+**New provider (v2):**
+```hcl
+resource "libvirt_volume" "ubuntu" {
+  name   = "ubuntu.qcow2"
+  pool   = "default"
+  format = "qcow2"  # Must specify format
+
+  create = {
+    content = {
+      url = "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img"
+    }
+  }
+  # capacity is automatically detected from Content-Length header
+}
+```
+
+**Important notes:**
+1. **Format is required**: You must explicitly specify the `format` attribute (e.g., `"qcow2"`, `"raw"`). The old provider auto-detected format from file extension, but the new provider requires it.
+2. **Capacity is computed**: Like the old provider, `capacity` is automatically computed from the HTTP `Content-Length` header (or file size for local files). You don't need to specify it.
+3. **Local files supported**: You can use absolute paths or `file://` URIs for local files: `url = "/path/to/local.qcow2"` or `url = "file:///path/to/local.qcow2"`
+4. **Content-Length required**: For HTTPS URLs, the server must provide a `Content-Length` header. If it doesn't, volume creation will fail.
+
 ## Development
 
 ### Prerequisites
@@ -359,7 +397,7 @@ This table shows implementation status and compatibility with the [original prov
 | Format | ✅ | ✅ | qcow2, raw format support |
 | Backing volumes | ✅ | ✅ | backing_store for COW |
 | Permissions | ✅ | ✅ | owner, group, mode, label |
-| URL download | ○ | ✅ | Download cloud images (deferred) |
+| URL download | ✅ | ✅ | Download via create.content.url (HTTPS + local files) |
 | XML XSLT | ○ | ✅ | XSLT transforms |
 
 ### Pool Resource (libvirt_pool)

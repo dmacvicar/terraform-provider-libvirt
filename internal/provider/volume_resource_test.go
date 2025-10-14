@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -207,4 +208,64 @@ resource "libvirt_domain" "test" {
   }
 }
 `, name, poolPath)
+}
+
+func TestAccVolumeResource_uploadFromFile(t *testing.T) {
+	poolPath := t.TempDir()
+
+	// Create a test file to upload
+	sourceDir := t.TempDir()
+	sourceFilePath := sourceDir + "/source.img"
+
+	// Write test content to the source file
+	testContent := make([]byte, 1024*1024) // 1MB test file
+	for i := range testContent {
+		testContent[i] = byte(i % 256)
+	}
+	if err := os.WriteFile(sourceFilePath, testContent, 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVolumeResourceConfigUploadFromFile("test-volume-upload", poolPath, sourceFilePath),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_volume.test", "name", "test-volume-upload.img"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "pool", "test-pool-upload"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "format", "raw"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "capacity", "1048576"), // 1MB
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "id"),
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "key"),
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "path"),
+				),
+			},
+		},
+	})
+}
+
+func testAccVolumeResourceConfigUploadFromFile(name, poolPath, sourceFile string) string {
+	return fmt.Sprintf(`
+resource "libvirt_pool" "test" {
+  name = "test-pool-upload"
+  type = "dir"
+  target = {
+    path = %[2]q
+  }
+}
+
+resource "libvirt_volume" "test" {
+  name   = "%[1]s.img"
+  pool   = libvirt_pool.test.name
+  format = "raw"
+
+  create = {
+    content = {
+      url = %[3]q
+    }
+  }
+}
+`, name, poolPath, sourceFile)
 }
