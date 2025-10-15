@@ -35,14 +35,8 @@ provider "libvirt" {
   # For user session:
   # uri = "qemu:///session"
 
-  # For remote connections via SSH:
+  # For remote connections (not yet implemented):
   # uri = "qemu+ssh://user@remote-host/system"
-
-  # For SSH using native command (respects ~/.ssh/config):
-  # uri = "qemu+sshcmd://user@remote-host/system"
-
-  # For TLS connections:
-  # uri = "qemu+tls://remote-host/system"
 }
 ```
 
@@ -52,15 +46,3 @@ provider "libvirt" {
 ### Optional
 
 - `uri` (String) Libvirt connection URI. Defaults to `qemu:///system` if not specified. See [libvirt URI documentation](https://libvirt.org/uri.html) for details.
-
-## Connection Transports
-
-The provider supports multiple transport mechanisms:
-
-- **Local Unix socket**: `qemu:///system`, `qemu:///session`
-- **SSH (Go library)**: `qemu+ssh://user@host/system`
-- **SSH (native command)**: `qemu+sshcmd://user@host/system`
-- **TCP**: `qemu+tcp://host/system`
-- **TLS**: `qemu+tls://host/system`
-
-For detailed information about each transport, configuration options, and examples, see [Transport Configuration](./transports.md).
