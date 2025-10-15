@@ -1,0 +1,16 @@
+---
+page_title: "{{.Type}} {{.Name}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description | trimspace }}
+
+## Example Usage
+
+{{tffile "examples/data-sources/libvirt_node_devices/data-source.tf"}}
+
+{{ .SchemaMarkdown | trimspace }}
