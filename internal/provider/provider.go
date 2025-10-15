@@ -134,5 +134,6 @@ func (p *LibvirtProvider) Resources(ctx context.Context) []func() resource.Resou
 func (p *LibvirtProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewNodeInfoDataSource,
+		NewNodeDevicesDataSource,
 	}
 }
