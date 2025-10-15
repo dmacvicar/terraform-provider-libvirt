@@ -262,6 +262,34 @@ resource "libvirt_domain" "example" {
 }
 ```
 
+### Connection URIs
+
+The provider supports multiple connection transports:
+
+```hcl
+# Local system socket
+provider "libvirt" {
+  uri = "qemu:///system"
+}
+
+# Remote via SSH (Go library)
+provider "libvirt" {
+  uri = "qemu+ssh://user@host.example.com/system"
+}
+
+# Remote via SSH (native command, respects ~/.ssh/config)
+provider "libvirt" {
+  uri = "qemu+sshcmd://user@host.example.com/system"
+}
+
+# Remote via TLS
+provider "libvirt" {
+  uri = "qemu+tls://host.example.com/system"
+}
+```
+
+See [docs/transports.md](./docs/transports.md) for detailed transport configuration and examples.
+
 See the [examples](./examples) directory for more usage examples.
 
 ## Migration from v1 (Old Provider)

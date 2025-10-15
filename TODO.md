@@ -461,7 +461,70 @@ XSLT transforms allow arbitrary XML manipulation, which conflicts with the desig
 - [x] SSH transport support (qemu+ssh://, qemu+sshcmd://user@host/system)
 - [x] TCP and TLS transport support (qemu+tcp://, qemu+tls://)
 - [x] Local socket support (qemu:///system, qemu:///session)
+- [x] Transport documentation with examples
 - [ ] Connection pooling/reuse improvements
+- [ ] SSH dialer strategy decision (see below)
+- [ ] Transport acceptance tests (see below)
+
+**SSH Dialer Strategy Discussion:**
+
+Currently, the provider supports both SSH transports:
+- `qemu+ssh://` - Uses Go SSH library (upstream go-libvirt dialer)
+- `qemu+sshcmd://` - Uses native SSH command (ported from old provider)
+
+**Decision Points:**
+1. **Default behavior:** Should we make `qemu+ssh://` default to one or the other?
+   - Option A: Keep current behavior (ssh = Go library, sshcmd = native command)
+   - Option B: Make sshcmd the default for `qemu+ssh://`, add flag to use Go library
+   - Option C: Auto-detect based on presence of ~/.ssh/config or complexity of URI parameters
+
+2. **Trade-offs:**
+   - Go library (`qemu+ssh://`):
+     - ✅ Pure Go, no external dependencies
+     - ✅ Consistent cross-platform behavior
+     - ❌ Doesn't respect ~/.ssh/config (ProxyJump, ControlMaster, etc.)
+     - ❌ Limited SSH feature support
+
+   - Native command (`qemu+sshcmd://`):
+     - ✅ Full SSH feature support (ProxyJump, agent forwarding, etc.)
+     - ✅ Respects ~/.ssh/config settings
+     - ✅ Familiar behavior for SSH users
+     - ❌ Requires ssh binary on PATH
+     - ❌ Requires nc or virt-ssh-helper on remote system
+     - ❌ Process spawning overhead
+
+3. **User Feedback:**
+   - Old provider used native SSH command approach
+   - Users migrating may expect SSH config to be respected
+   - But pure Go solution is more portable for CI/CD environments
+
+**Recommendation:** Keep current explicit distinction (ssh vs sshcmd) for now. This gives users clear control and allows both use cases. Could revisit based on user feedback.
+
+**Transport Acceptance Tests:**
+
+Need to determine approach for testing remote transports:
+
+**Challenges:**
+- SSH tests require SSH server setup
+- TLS tests require certificate infrastructure
+- Tests need to be reproducible in CI/CD
+
+**Options:**
+1. **Mock/Stub tests:** Test dialer creation and URI parsing without actual connections
+2. **Docker-based tests:** Spin up containers with SSH/libvirt for integration tests
+3. **Conditional tests:** Skip remote transport tests unless specific environment variables set
+4. **Manual tests:** Document manual testing procedures, rely on real-world usage
+
+**Current Testing:**
+- Local transport tests work (qemu:///system)
+- URI parsing and dialer factory tested via builds
+- No automated remote transport tests yet
+
+**Recommended Approach:**
+- Phase 1: Add unit tests for URI parsing and dialer creation (no network I/O)
+- Phase 2: Add Docker-based integration tests for SSH transport (optional, CI can skip)
+- Phase 3: Document manual testing procedures for TLS and other transports
+- Phase 4: Consider test fixtures or recording/playback for remote transport tests
 
 ### 34. Additional Provider Features
 **Status:** ❌ Not started - Provider conveniences
