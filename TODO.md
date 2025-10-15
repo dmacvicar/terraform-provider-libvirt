@@ -627,16 +627,136 @@ Must test with at least these common device types:
 
 These features are **provider-specific additions** that build on top of libvirt's native functionality. They do not directly correspond to libvirt APIs and are lower priority than pure libvirt features.
 
-### 29. Cloud-init Resources
+### 29. Cloud-init/Ignition/Combustion Disk Resources
 **Status:** ❌ Not started - Provider convenience, not native libvirt
 **Old provider:** libvirt_cloudinit_disk, libvirt_ignition, libvirt_combustion
 
-These resources generate ISO images with cloud-init/ignition/combustion data and attach them as CD-ROM devices. They are abstractions on top of libvirt's disk functionality.
+These resources generate files (ISO for cloud-init, plain files for ignition/combustion) that are then uploaded to libvirt volumes via the existing volume upload mechanism.
+
+**Design:**
+- Simple file generators that output path + size
+- No validation (validation belongs in external cloud-init/ignition resources)
+- Opaque tmp directory (not user-configurable)
+- Pure Go ISO generation (no mkisofs dependency)
+- ForceNew triggered by content checksum
+
+**Resource: libvirt_cloudinit_disk**
+
+Schema:
+- `name` (string, required, ForceNew) - Name for the resource
+- `user_data` (string, required, ForceNew) - Cloud-init user-data content
+- `meta_data` (string, required, ForceNew) - Cloud-init meta-data content
+- `network_config` (string, optional, ForceNew) - Cloud-init network configuration
+- `path` (string, computed) - Full path to generated ISO file
+- `size` (int64, computed) - Size of ISO in bytes
+
+Implementation:
+- Uses Go ISO library (github.com/kdomanski/iso9660 or similar)
+- Creates ISO with cidata volume label
+- Stores in opaque temp location
+- Outputs path for use with libvirt_volume.create.content.url
+
+Example usage:
+```hcl
+resource "libvirt_cloudinit_disk" "init" {
+  name           = "vm-init"
+  user_data      = file("user-data.yaml")
+  meta_data      = yamlencode({
+    instance-id    = "vm-01"
+    local-hostname = "webserver"
+  })
+  network_config = file("network-config.yaml")
+}
+
+resource "libvirt_volume" "cloudinit" {
+  name   = "vm-cloudinit"
+  pool   = "default"
+  format = "raw"
+
+  create = {
+    content = {
+      url = libvirt_cloudinit_disk.init.path
+    }
+  }
+}
+
+resource "libvirt_domain" "vm" {
+  devices = {
+    disks = [
+      # ... other disks
+      {
+        source = libvirt_volume.cloudinit.id
+        target = "vdb"
+        bus    = "virtio"
+      }
+    ]
+  }
+}
+```
+
+**Resource: libvirt_ignition_disk**
+
+Schema:
+- `name` (string, required, ForceNew) - Name for the resource
+- `content` (string, required, ForceNew) - Ignition JSON content
+- `path` (string, computed) - Full path to generated file
+- `size` (int64, computed) - Size of file in bytes
+
+Implementation:
+- Simple file write (no validation)
+- Stores in opaque temp location
+- Outputs path for use with libvirt_volume
+
+Example usage:
+```hcl
+resource "libvirt_ignition_disk" "ignition" {
+  name    = "fcos-init"
+  content = data.ignition_config.fcos.rendered
+}
+
+resource "libvirt_volume" "ignition" {
+  name   = "fcos-ignition"
+  pool   = "default"
+  format = "raw"
+
+  create = {
+    content = {
+      url = libvirt_ignition_disk.ignition.path
+    }
+  }
+}
+```
+
+**Resource: libvirt_combustion_disk**
+
+Schema:
+- `name` (string, required, ForceNew) - Name for the resource
+- `content` (string, required, ForceNew) - Combustion script content
+- `path` (string, computed) - Full path to generated file
+- `size` (int64, computed) - Size of file in bytes
+
+Implementation:
+- Simple file write (no validation)
+- Identical to ignition but for shell scripts
+- Stores in opaque temp location
 
 **Tasks:**
-- [ ] libvirt_cloudinit_disk resource (generates cloud-init ISO)
-- [ ] libvirt_ignition resource (CoreOS Ignition ISO)
-- [ ] libvirt_combustion resource (openSUSE Combustion ISO)
+- [ ] Research/choose Go ISO generation library (1 hour)
+- [ ] Implement libvirt_cloudinit_disk (4 hours)
+  - [ ] Resource schema and lifecycle
+  - [ ] ISO generation with Go library
+  - [ ] Content checksum for ForceNew detection
+  - [ ] Acceptance test with volume integration
+- [ ] Implement libvirt_ignition_disk (2 hours)
+  - [ ] Resource schema and lifecycle
+  - [ ] Simple file write
+  - [ ] Acceptance test
+- [ ] Implement libvirt_combustion_disk (1 hour)
+  - [ ] Reuse ignition implementation
+  - [ ] Acceptance test
+- [ ] Documentation and examples (2 hours)
+
+**Total Estimated Effort:** ~10 hours
 
 ### 30. Network Data Source
 **Status:** ❌ Deferred - Unclear use case vs resource
