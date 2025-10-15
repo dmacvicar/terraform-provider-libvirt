@@ -16,9 +16,8 @@
 
 ### 🔴 Provider Conveniences (Deferred - "On Top" of Libvirt)
 - **Cloud-init Resources**: libvirt_cloudinit_disk, libvirt_ignition, libvirt_combustion
-- **Template Data Sources**: dns_host_template, dns_srv_template, dnsmasq_options_template
+- **Template Data Sources**: dns_host_template, dns_srv_template, dnsmasq_options_template, libvirt_network (data source)
 - **XSLT Transforms**: Custom XML transformations
-- **Provider Config**: SSH transport (qemu+ssh://)
 
 ### 📋 Next Priority Actions
 1. Implement native libvirt data sources (node_info, node_device_info, node_devices)
@@ -243,28 +242,262 @@ These features are supported by libvirtxml, were present in the old provider, an
 **Status:** ❌ Not started
 **Priority:** Should be implemented next for full old provider parity
 
-**libvirt_node_info** - Host system information
-- Uses: `virNodeGetInfo` API
-- Fields: cores, cpus, memory, mhz, model, nodes, sockets, threads
-- Old provider: data_source_libvirt_node_info.go
+These are pure libvirt API features - no provider abstractions or conveniences.
 
-**libvirt_node_device_info** - Device details
-- Uses: `virNodeDeviceGetXMLDesc` API
-- Fields: name, path, parent, driver, devnode, capability (with PCI/USB details)
-- Old provider: data_source_libvirt_node_device_info.go
+---
 
-**libvirt_node_devices** - Device enumeration
-- Uses: `virNodeListDevices` API
-- Fields: capability filter
-- Returns: list of device names
-- Old provider: data_source_libvirt_node_devices.go
+#### libvirt_node_info - Host System Information
+**Complexity:** Low (1-2 hours)
+**go-libvirt API:** `NodeGetInfo()`
+**libvirtxml:** Not needed (direct API return values)
+**Old provider:** data_source_libvirt_node_info.go
+
+**API Surface:**
+```go
+func (l *Libvirt) NodeGetInfo() (
+    rModel [32]int8,      // CPU model name
+    rMemory uint64,       // Total memory in KB
+    rCpus int32,          // Total logical CPUs
+    rMhz int32,           // CPU frequency
+    rNodes int32,         // NUMA nodes
+    rSockets int32,       // CPU sockets
+    rCores int32,         // Cores per socket
+    rThreads int32,       // Threads per core
+    err error
+)
+```
+
+**Schema:**
+- `cpu_model` (string, computed) - CPU model name
+- `memory_total_kb` (int64, computed) - Total host memory in KB
+- `cpu_cores_total` (int32, computed) - Total logical CPUs
+- `numa_nodes` (int32, computed) - Number of NUMA nodes
+- `cpu_sockets` (int32, computed) - Number of CPU sockets
+- `cpu_cores_per_socket` (int32, computed) - Cores per socket
+- `cpu_threads_per_core` (int32, computed) - Threads per core
+
+**Implementation Notes:**
+- Single API call, no XML parsing required
+- Need helper to convert `[32]int8` model array to string (null-terminated)
+- All fields are computed-only
+- Use hash of all values for data source ID
+
+**Use Cases:**
+- Determining host capabilities before provisioning VMs
+- Validating CPU/memory requirements
+- Dynamic resource allocation based on host specs
+
+---
+
+#### libvirt_node_devices - Device Enumeration
+**Complexity:** Low (1-2 hours)
+**go-libvirt API:** `NodeNumOfDevices()` + `NodeListDevices()`
+**libvirtxml:** Not needed (returns string array)
+**Old provider:** data_source_libvirt_node_devices.go
+
+**API Surface:**
+```go
+func (l *Libvirt) NodeNumOfDevices(Cap OptString, Flags uint32) (rNum int32, err error)
+func (l *Libvirt) NodeListDevices(Cap OptString, Maxnames int32, Flags uint32) (rNames []string, err error)
+```
+
+**Schema:**
+- `capability` (string, optional) - Filter by device capability type
+  - Valid values: "system", "pci", "usb_device", "usb", "net", "scsi_host", "scsi", "storage", "drm", "mdev", "ccw", "css", "ap_queue", "ap_card", "ap_matrix", "ccw_group"
+  - Empty/null = return all devices
+- `devices` (set of strings, computed) - List of device names (sorted)
+
+**Implementation Notes:**
+- Two API calls: get count first, then list devices
+- Device names are libvirt-generated strings (e.g., "pci_0000_00_1f_2", "net_eth0_00_11_22_33_44_55")
+- Sort the device list for consistency
+- Capability filter uses `libvirt.OptString` type (optional string)
+
+**Use Cases:**
+- Finding PCI devices for passthrough (capability="pci")
+- Listing network interfaces (capability="net")
+- Discovering storage devices (capability="storage")
+- Building dynamic device lists for domain configuration
+
+---
+
+#### libvirt_node_device_info - Device Details
+**Complexity:** High (8-12 hours)
+**go-libvirt API:** `NodeDeviceLookupByName()` + `NodeDeviceGetXMLDesc()`
+**libvirtxml:** ✅ **FULLY SUPPORTED** via `libvirtxml.NodeDevice`
+**Old provider:** data_source_libvirt_node_device_info.go (with custom XML structs)
+
+**API Surface:**
+```go
+func (l *Libvirt) NodeDeviceLookupByName(Name string) (rDev NodeDevice, err error)
+func (l *Libvirt) NodeDeviceGetXMLDesc(Name string, Flags uint32) (rXML string, err error)
+```
+
+**libvirtxml.NodeDevice Structure:**
+```go
+type NodeDevice struct {
+    Name       string                   // Device name
+    Path       string                   // Sysfs path
+    DevNodes   []NodeDeviceDevNode      // Device nodes (for DRM)
+    Parent     string                   // Parent device
+    Driver     *NodeDeviceDriver        // Driver info (optional)
+    Capability NodeDeviceCapability     // Device-specific capability
+}
+
+// NodeDeviceCapability contains pointers to all device types
+// Only one will be non-nil based on device type
+type NodeDeviceCapability struct {
+    System      *NodeDeviceSystemCapability      // system: host info
+    PCI         *NodeDevicePCICapability         // pci: PCI devices
+    USB         *NodeDeviceUSBCapability         // usb: USB host controllers
+    USBDevice   *NodeDeviceUSBDeviceCapability   // usb_device: USB devices
+    Net         *NodeDeviceNetCapability         // net: network interfaces
+    SCSIHost    *NodeDeviceSCSIHostCapability    // scsi_host: SCSI hosts
+    SCSITarget  *NodeDeviceSCSITargetCapability  // scsi_target: SCSI targets
+    SCSI        *NodeDeviceSCSICapability        // scsi: SCSI devices
+    Storage     *NodeDeviceStorageCapability     // storage: storage devices
+    DRM         *NodeDeviceDRMCapability         // drm: DRM devices
+    CCW         *NodeDeviceCCWCapability         // ccw: s390 CCW
+    MDev        *NodeDeviceMDevCapability        // mdev: mediated devices
+    CSS         *NodeDeviceCSSCapability         // css: s390 CSS
+    APQueue     *NodeDeviceAPQueueCapability     // ap_queue: AP queue
+    APCard      *NodeDeviceAPCardCapability      // ap_card: AP card
+    APMatrix    *NodeDeviceAPMatrixCapability    // ap_matrix: AP matrix
+    CCWGroup    *NodeDeviceCCWGroupCapability    // ccw_group: CCW group
+}
+```
+
+**Schema:**
+- `name` (string, required) - Device name from libvirt_node_devices
+- `path` (string, computed) - Sysfs path to device
+- `parent` (string, computed) - Parent device name
+- `xml` (string, computed) - Raw XML description (for debugging)
+- `devnode` (list of objects, computed) - Device nodes (for DRM devices)
+  - `type` (string) - Node type
+  - `path` (string) - Device node path
+- `capability` (single nested, computed) - Device capability details
+  - `type` (string) - Capability type ("pci", "usb_device", etc.)
+  - All device-specific fields (domain, bus, slot, function for PCI; vendor, product for USB, etc.)
+
+**Important Design Decision:**
+The old provider created separate XML structs for each device type (DevicePCI, DeviceUSB, etc.), which violates our design principle. We MUST use `libvirtxml.NodeDevice` exclusively.
+
+**Recommended Implementation Approach:**
+1. Use `libvirtxml.NodeDevice.Unmarshal()` to parse device XML
+2. Create a flat capability schema with ALL possible fields from all device types
+3. Based on which capability pointer is non-nil, populate only relevant fields
+4. All device-specific fields should be optional+computed in schema
+5. Type discrimination uses the non-nil capability pointer
+
+**Schema Example (Flat Capability with All Fields):**
+```hcl
+capability = {
+  type = "pci"
+
+  # PCI-specific fields (populated)
+  domain   = 0
+  bus      = 1
+  slot     = 0
+  function = 0
+  class    = "0x030000"
+  product  = { id = "0x1234", name = "GPU Model" }
+  vendor   = { id = "0x10de", name = "NVIDIA" }
+  iommu_group = { number = 15, addresses = [...] }
+
+  # USB-specific fields (null/unset)
+  # Storage-specific fields (null/unset)
+  # ... other device types (null/unset)
+}
+```
+
+**Conversion Pattern:**
+```go
+func convertNodeDeviceCapability(cap libvirtxml.NodeDeviceCapability) types.Object {
+    attrs := map[string]attr.Value{}
+
+    // Populate all fields as null first
+    attrs["domain"] = types.Int64Null()
+    attrs["bus"] = types.Int64Null()
+    // ... all other fields ...
+
+    // Then populate based on which capability is present
+    switch {
+    case cap.PCI != nil:
+        attrs["type"] = types.StringValue("pci")
+        attrs["domain"] = types.Int64Value(int64(cap.PCI.Domain))
+        attrs["bus"] = types.Int64Value(int64(cap.PCI.Bus))
+        attrs["slot"] = types.Int64Value(int64(cap.PCI.Slot))
+        attrs["function"] = types.Int64Value(int64(cap.PCI.Function))
+        // ... other PCI fields
+
+    case cap.USBDevice != nil:
+        attrs["type"] = types.StringValue("usb_device")
+        // ... USB device fields
+
+    case cap.Net != nil:
+        attrs["type"] = types.StringValue("net")
+        // ... network interface fields
+
+    case cap.Storage != nil:
+        attrs["type"] = types.StringValue("storage")
+        // ... storage device fields
+
+    // ... handle all 16 device capability types
+    }
+
+    return types.ObjectValueMust(capabilityAttrTypes, attrs)
+}
+```
+
+**Device Types to Support (16 total):**
+1. **system** - Host system info (vendor, model, serial, UUID)
+2. **pci** - PCI devices (domain, bus, slot, function, vendor, product, IOMMU group)
+3. **usb** - USB host controllers (number, class, subclass, protocol)
+4. **usb_device** - USB devices (bus, device, vendor, product)
+5. **net** - Network interfaces (interface name, address, link state, features)
+6. **scsi_host** - SCSI host controllers (host number, unique_id)
+7. **scsi_target** - SCSI targets
+8. **scsi** - SCSI devices (host, bus, target, lun, type)
+9. **storage** - Storage devices (block, drive_type, model, serial, size)
+10. **drm** - DRM devices (type, devnodes)
+11. **ccw** - s390 CCW devices
+12. **mdev** - Mediated devices
+13. **css** - s390 CSS devices
+14. **ap_queue** - AP queue devices
+15. **ap_card** - AP card devices
+16. **ap_matrix** - AP matrix devices
+17. **ccw_group** - CCW group devices
+
+**Testing Priority:**
+Must test with at least these common device types:
+- PCI devices (most common for GPU passthrough)
+- USB devices
+- Network interfaces
+- Storage devices
+
+**Use Cases:**
+- Getting PCI device details for GPU passthrough (vendor/product IDs, IOMMU group)
+- Finding USB device information for device passthrough
+- Checking storage device capabilities and serial numbers
+- Network interface details (MAC address, link state, speed)
+- Validating IOMMU group membership for PCI passthrough
+
+**Effort Breakdown:**
+- Schema definition: 2-3 hours (many fields across 16+ device types)
+- Conversion logic: 3-4 hours (switch/case for each device type)
+- Testing: 3-5 hours (need real hardware or mocked device XML)
+
+---
 
 **Tasks:**
-- [ ] Implement libvirt_node_info data source
-- [ ] Implement libvirt_node_device_info data source
-- [ ] Implement libvirt_node_devices data source
-- [ ] Add acceptance tests for each
-- [ ] Add documentation
+- [ ] Implement libvirt_node_info data source (Low complexity, 1-2 hours)
+- [ ] Implement libvirt_node_devices data source (Low complexity, 1-2 hours)
+- [ ] Implement libvirt_node_device_info data source (High complexity, 8-12 hours)
+- [ ] Add acceptance tests for each data source
+- [ ] Add documentation and examples
+- [ ] Test with real PCI/USB/network/storage devices
+
+**Total Estimated Effort:** 15-20 hours for complete native data source parity
 
 ## Priority 3: Additional Disk/Network Enhancements
 
@@ -405,18 +638,61 @@ These resources generate ISO images with cloud-init/ignition/combustion data and
 - [ ] libvirt_ignition resource (CoreOS Ignition ISO)
 - [ ] libvirt_combustion resource (openSUSE Combustion ISO)
 
-### 30. Template Data Sources
+### 30. Network Data Source
+**Status:** ❌ Deferred - Unclear use case vs resource
+**Old provider:** data_source_libvirt_network.go
+
+**Rationale for Deferring:**
+- The data source appears to look up existing networks by name and return their configuration
+- This duplicates the resource Read functionality
+- Unclear what API surface it provides beyond what's available in the resource
+- Users can reference networks created outside Terraform using resource imports or explicit dependencies
+- Low priority compared to node device data sources which provide unique functionality
+
+**If Implemented Later:**
+- Use `NetworkLookupByName()` + `NetworkGetXMLDesc()`
+- Reuse existing network resource schema and conversion functions
+- Schema: `name` (required) + all network resource fields (computed)
+
+---
+
+### 31. Template Data Sources
 **Status:** ❌ Not started - Provider convenience, not native libvirt
 **Old provider:** dns_host_template, dns_srv_template, dnsmasq_options_template
 
 These are simple template formatters with no libvirt API calls. They format data for use with the network resource.
 
-**Tasks:**
-- [ ] libvirt_network_dns_host_template datasource
-- [ ] libvirt_network_dns_srv_template datasource
-- [ ] libvirt_network_dnsmasq_options_template datasource
+**Rationale for Deferring:**
+- These don't interact with libvirt at all - they just format maps/objects
+- They were workarounds for Terraform's limited dynamic expression capabilities in older versions
+- Modern Terraform (0.12+) has `for` expressions and dynamic blocks that make these unnecessary
+- Against design principle of closely modeling libvirt API
+- Low value compared to native libvirt data sources
 
-### 31. Volume URL Download
+**Modern Alternative:**
+Users can format these directly in HCL:
+```hcl
+# Old way (template data source):
+data "libvirt_network_dns_host_template" "host" {
+  ip       = "10.0.0.10"
+  hostname = "server1"
+}
+
+# Modern way (direct HCL):
+locals {
+  dns_host = {
+    ip       = "10.0.0.10"
+    hostname = "server1"
+  }
+}
+```
+
+**Tasks:**
+- [ ] libvirt_network_dns_host_template datasource (if ever needed)
+- [ ] libvirt_network_dns_srv_template datasource (if ever needed)
+- [ ] libvirt_network_dnsmasq_options_template datasource (if ever needed)
+
+### 32. Volume URL Download
 **Status:** ✅ Completed
 **Old provider:** volume `source` attribute with HTTP(S) URLs
 
@@ -447,13 +723,13 @@ resource "libvirt_volume" "base" {
 }
 ```
 
-### 32. XML XSLT Transforms
+### 33. XML XSLT Transforms
 **Status:** ❌ Not implementing - Against design principles
 **Old provider:** xslt attribute on resources
 
 XSLT transforms allow arbitrary XML manipulation, which conflicts with the design principle of closely modeling the libvirt API. Users should use the provider's schema instead.
 
-### 33. Provider Configuration Enhancements
+### 34. Provider Configuration Enhancements
 **Status:** ✅ Completed (Transport support)
 **Old provider:** SSH transport support
 
@@ -526,7 +802,7 @@ Need to determine approach for testing remote transports:
 - Phase 3: Document manual testing procedures for TLS and other transports
 - Phase 4: Consider test fixtures or recording/playback for remote transport tests
 
-### 34. Additional Provider Features
+### 35. Additional Provider Features
 **Status:** ❌ Not started - Provider conveniences
 
 **Tasks:**

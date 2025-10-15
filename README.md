@@ -459,9 +459,11 @@ This table shows implementation status and compatibility with the [original prov
 
 | Feature | Status | Old Provider | Notes |
 |---------|--------|--------------|-------|
-| Node info | ○ | ✅ | Host system information |
-| Node devices | ○ | ✅ | PCI, USB device enumeration |
-| Network templates | ○ | ✅ | DNS host/SRV/dnsmasq templates |
+| Node info | ○ | ✅ | Host system information (CPU, memory) |
+| Node devices | ○ | ✅ | Device enumeration by capability |
+| Node device info | ○ | ✅ | Detailed device information (PCI, USB, etc.) |
+| Network lookup | ○ | ✅ | Lookup existing networks (deferred) |
+| Network templates | ○ | ✅ | DNS/dnsmasq templates (deferred - use HCL instead) |
 
 **Legend:**
 - ✅ Fully implemented
