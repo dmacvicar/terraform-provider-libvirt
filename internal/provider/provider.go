@@ -133,6 +133,6 @@ func (p *LibvirtProvider) Resources(ctx context.Context) []func() resource.Resou
 // DataSources returns the list of data sources supported by this provider
 func (p *LibvirtProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		// TODO: Add data sources as they are implemented
+		NewNodeInfoDataSource,
 	}
 }
