@@ -617,47 +617,70 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 				disk.Device = "disk"
 			}
 
-			// Set source - either from volume_id, direct file path, or block device
-			if !diskModel.VolumeID.IsNull() && !diskModel.VolumeID.IsUnknown() {
-				// Look up volume by key and get its path
-				volumeKey := diskModel.VolumeID.ValueString()
-				volume, err := client.Libvirt().StorageVolLookupByKey(volumeKey)
-				if err != nil {
-					return nil, fmt.Errorf("failed to lookup volume %s: %w", volumeKey, err)
-				}
+			// Set source from the source configuration
+			if diskModel.Source != nil {
+				// Check for pool+volume (volume-based disk)
+				if !diskModel.Source.Pool.IsNull() && !diskModel.Source.Volume.IsNull() {
+					poolName := diskModel.Source.Pool.ValueString()
+					volumeName := diskModel.Source.Volume.ValueString()
 
-				volumeXML, err := client.Libvirt().StorageVolGetXMLDesc(volume, 0)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get volume XML: %w", err)
-				}
+					// Look up the pool
+					pool, err := client.Libvirt().StoragePoolLookupByName(poolName)
+					if err != nil {
+						return nil, fmt.Errorf("failed to lookup pool %s: %w", poolName, err)
+					}
 
-				var volumeDef libvirtxml.StorageVolume
-				if err := volumeDef.Unmarshal(volumeXML); err != nil {
-					return nil, fmt.Errorf("failed to parse volume XML: %w", err)
-				}
+					// Look up the volume
+					volume, err := client.Libvirt().StorageVolLookupByName(pool, volumeName)
+					if err != nil {
+						return nil, fmt.Errorf("failed to lookup volume %s in pool %s: %w", volumeName, poolName, err)
+					}
 
-				if volumeDef.Target != nil {
+					// Get volume XML to extract format
+					volumeXML, err := client.Libvirt().StorageVolGetXMLDesc(volume, 0)
+					if err != nil {
+						return nil, fmt.Errorf("failed to get volume XML: %w", err)
+					}
+
+					var volumeDef libvirtxml.StorageVolume
+					if err := volumeDef.Unmarshal(volumeXML); err != nil {
+						return nil, fmt.Errorf("failed to parse volume XML: %w", err)
+					}
+
+					// Set volume source
 					disk.Source = &libvirtxml.DomainDiskSource{
-						File: &libvirtxml.DomainDiskSourceFile{
-							File: volumeDef.Target.Path,
+						Volume: &libvirtxml.DomainDiskSourceVolume{
+							Pool:   poolName,
+							Volume: volumeName,
 						},
 					}
-				} else {
-					return nil, fmt.Errorf("volume %s has no target path", volumeKey)
-				}
-			} else if !diskModel.Source.IsNull() && !diskModel.Source.IsUnknown() {
-				// File-based disk
-				disk.Source = &libvirtxml.DomainDiskSource{
-					File: &libvirtxml.DomainDiskSourceFile{
-						File: diskModel.Source.ValueString(),
-					},
-				}
-			} else if !diskModel.BlockDevice.IsNull() && !diskModel.BlockDevice.IsUnknown() {
-				// Block device disk
-				disk.Source = &libvirtxml.DomainDiskSource{
-					Block: &libvirtxml.DomainDiskSourceBlock{
-						Dev: diskModel.BlockDevice.ValueString(),
-					},
+
+					// Set disk driver format from volume format
+					if volumeDef.Target != nil && volumeDef.Target.Format != nil && volumeDef.Target.Format.Type != "" {
+						formatType := volumeDef.Target.Format.Type
+						// QEMU doesn't support 'iso' format directly, use 'raw' instead
+						if formatType == "iso" {
+							formatType = "raw"
+						}
+						disk.Driver = &libvirtxml.DomainDiskDriver{
+							Name: "qemu",
+							Type: formatType,
+						}
+					}
+				} else if !diskModel.Source.File.IsNull() {
+					// File-based disk
+					disk.Source = &libvirtxml.DomainDiskSource{
+						File: &libvirtxml.DomainDiskSourceFile{
+							File: diskModel.Source.File.ValueString(),
+						},
+					}
+				} else if !diskModel.Source.Block.IsNull() {
+					// Block device disk
+					disk.Source = &libvirtxml.DomainDiskSource{
+						Block: &libvirtxml.DomainDiskSourceBlock{
+							Dev: diskModel.Source.Block.ValueString(),
+						},
+					}
 				}
 			}
 
@@ -1732,19 +1755,29 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 					diskModel.Device = types.StringValue(disk.Device)
 				}
 
-				// Preserve source only when the user specified a source path
-				if !orig.Source.IsNull() && !orig.Source.IsUnknown() && disk.Source != nil && disk.Source.File != nil && disk.Source.File.File != "" {
-					diskModel.Source = types.StringValue(disk.Source.File.File)
-				}
+				// Preserve source configuration from the original model
+				if orig.Source != nil && disk.Source != nil {
+					diskModel.Source = &DomainDiskSourceModel{}
 
-				// Preserve volume_id exactly as provided by the user to avoid replacing it with libvirt paths
-				if !orig.VolumeID.IsNull() && !orig.VolumeID.IsUnknown() {
-					diskModel.VolumeID = orig.VolumeID
-				}
+					// Preserve pool+volume for volume-based disks
+					if !orig.Source.Pool.IsNull() && !orig.Source.Volume.IsNull() {
+						diskModel.Source.Pool = orig.Source.Pool
+						diskModel.Source.Volume = orig.Source.Volume
+					} else if disk.Source.Volume != nil {
+						// Disk from libvirt has volume source, populate from XML
+						diskModel.Source.Pool = types.StringValue(disk.Source.Volume.Pool)
+						diskModel.Source.Volume = types.StringValue(disk.Source.Volume.Volume)
+					}
 
-				// Preserve block_device only when the user specified a block device path
-				if !orig.BlockDevice.IsNull() && !orig.BlockDevice.IsUnknown() && disk.Source != nil && disk.Source.Block != nil && disk.Source.Block.Dev != "" {
-					diskModel.BlockDevice = types.StringValue(disk.Source.Block.Dev)
+					// Preserve file path for file-based disks
+					if !orig.Source.File.IsNull() && disk.Source.File != nil && disk.Source.File.File != "" {
+						diskModel.Source.File = types.StringValue(disk.Source.File.File)
+					}
+
+					// Preserve block device for block-based disks
+					if !orig.Source.Block.IsNull() && disk.Source.Block != nil && disk.Source.Block.Dev != "" {
+						diskModel.Source.Block = types.StringValue(disk.Source.Block.Dev)
+					}
 				}
 
 				if disk.Target != nil {
@@ -1957,13 +1990,18 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 		// Create the devices lists
 		disksList, d := types.ListValueFrom(ctx, types.ObjectType{
 			AttrTypes: map[string]attr.Type{
-				"device":       types.StringType,
-				"source":       types.StringType,
-				"volume_id":    types.StringType,
-				"block_device": types.StringType,
-				"target":       types.StringType,
-				"bus":          types.StringType,
-				"wwn":          types.StringType,
+				"device": types.StringType,
+				"source": types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"pool":   types.StringType,
+						"volume": types.StringType,
+						"file":   types.StringType,
+						"block":  types.StringType,
+					},
+				},
+				"target": types.StringType,
+				"bus":    types.StringType,
+				"wwn":    types.StringType,
 			},
 		}, disks)
 		diags.Append(d...)

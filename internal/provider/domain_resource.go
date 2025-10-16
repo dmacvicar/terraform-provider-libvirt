@@ -143,13 +143,19 @@ type DomainPMModel struct {
 
 // DomainDiskModel describes a disk device
 type DomainDiskModel struct {
-	Device      types.String `tfsdk:"device"`
-	Source      types.String `tfsdk:"source"`
-	VolumeID    types.String `tfsdk:"volume_id"`
-	BlockDevice types.String `tfsdk:"block_device"`
-	Target      types.String `tfsdk:"target"`
-	Bus         types.String `tfsdk:"bus"`
-	WWN         types.String `tfsdk:"wwn"`
+	Device types.String              `tfsdk:"device"`
+	Source *DomainDiskSourceModel    `tfsdk:"source"`
+	Target types.String              `tfsdk:"target"`
+	Bus    types.String              `tfsdk:"bus"`
+	WWN    types.String              `tfsdk:"wwn"`
+}
+
+// DomainDiskSourceModel describes the disk source
+type DomainDiskSourceModel struct {
+	Pool   types.String `tfsdk:"pool"`
+	Volume types.String `tfsdk:"volume"`
+	File   types.String `tfsdk:"file"`
+	Block  types.String `tfsdk:"block"`
 }
 
 // DomainInterfaceModel describes a network interface
@@ -660,17 +666,27 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 									Description: "Device type (disk, cdrom, floppy, lun).",
 									Optional:    true,
 								},
-								"source": schema.StringAttribute{
-									Description: "Path to the disk image file. Mutually exclusive with volume_id and block_device.",
+								"source": schema.SingleNestedAttribute{
+									Description: "Disk source configuration. Specify one of: pool+volume for libvirt volumes, file for file paths, or block for block devices.",
 									Optional:    true,
-								},
-								"volume_id": schema.StringAttribute{
-									Description: "ID (key) of a libvirt_volume to use as the disk source. Mutually exclusive with source and block_device.",
-									Optional:    true,
-								},
-								"block_device": schema.StringAttribute{
-									Description: "Block device path (e.g., /dev/sdb, /dev/nvme0n1). Mutually exclusive with source and volume_id.",
-									Optional:    true,
+									Attributes: map[string]schema.Attribute{
+										"pool": schema.StringAttribute{
+											Description: "Storage pool name for volume-based disks. Use with 'volume'.",
+											Optional:    true,
+										},
+										"volume": schema.StringAttribute{
+											Description: "Volume name in the storage pool. Use with 'pool'.",
+											Optional:    true,
+										},
+										"file": schema.StringAttribute{
+											Description: "Path to disk image file. Mutually exclusive with pool/volume and block.",
+											Optional:    true,
+										},
+										"block": schema.StringAttribute{
+											Description: "Block device path (e.g., /dev/sdb). Mutually exclusive with pool/volume and file.",
+											Optional:    true,
+										},
+									},
 								},
 								"target": schema.StringAttribute{
 									Description: "Target device name (e.g., vda, sda, hda).",
