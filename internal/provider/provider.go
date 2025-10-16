@@ -127,6 +127,9 @@ func (p *LibvirtProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewPoolResource,
 		NewVolumeResource,
 		NewNetworkResource,
+		NewCloudInitDiskResource,
+		NewIgnitionResource,
+		NewCombustionResource,
 	}
 }
 
