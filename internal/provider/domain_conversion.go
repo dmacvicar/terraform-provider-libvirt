@@ -329,7 +329,6 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 					nvram.TemplateFormat = nvramModel.TemplateFormat.ValueString()
 				}
 
-
 				os.NVRam = nvram
 			}
 		}
@@ -651,158 +650,100 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 			}
 
 			for _, diskModel := range disks {
-			disk := libvirtxml.DomainDisk{}
+				disk := libvirtxml.DomainDisk{}
 
-			// Set device type (default to disk)
-			if !diskModel.Device.IsNull() && !diskModel.Device.IsUnknown() {
-				disk.Device = diskModel.Device.ValueString()
-			} else {
-				disk.Device = "disk"
-			}
+				// Set device type (default to disk)
+				if !diskModel.Device.IsNull() && !diskModel.Device.IsUnknown() {
+					disk.Device = diskModel.Device.ValueString()
+				} else {
+					disk.Device = "disk"
+				}
 
-			// Set source from the source configuration
-			if diskModel.Source != nil {
-				// Check for pool+volume (volume-based disk)
-				if !diskModel.Source.Pool.IsNull() && !diskModel.Source.Volume.IsNull() {
-					poolName := diskModel.Source.Pool.ValueString()
-					volumeName := diskModel.Source.Volume.ValueString()
+				// Set source from the source configuration
+				if diskModel.Source != nil {
+					// Check for pool+volume (volume-based disk)
+					if !diskModel.Source.Pool.IsNull() && !diskModel.Source.Volume.IsNull() {
+						poolName := diskModel.Source.Pool.ValueString()
+						volumeName := diskModel.Source.Volume.ValueString()
 
-					// Look up the pool
-					pool, err := client.Libvirt().StoragePoolLookupByName(poolName)
-					if err != nil {
-						return nil, fmt.Errorf("failed to lookup pool %s: %w", poolName, err)
-					}
-
-					// Look up the volume
-					volume, err := client.Libvirt().StorageVolLookupByName(pool, volumeName)
-					if err != nil {
-						return nil, fmt.Errorf("failed to lookup volume %s in pool %s: %w", volumeName, poolName, err)
-					}
-
-					// Get volume XML to extract format
-					volumeXML, err := client.Libvirt().StorageVolGetXMLDesc(volume, 0)
-					if err != nil {
-						return nil, fmt.Errorf("failed to get volume XML: %w", err)
-					}
-
-					var volumeDef libvirtxml.StorageVolume
-					if err := volumeDef.Unmarshal(volumeXML); err != nil {
-						return nil, fmt.Errorf("failed to parse volume XML: %w", err)
-					}
-
-					// Set volume source
-					disk.Source = &libvirtxml.DomainDiskSource{
-						Volume: &libvirtxml.DomainDiskSourceVolume{
-							Pool:   poolName,
-							Volume: volumeName,
-						},
-					}
-
-					// Set disk driver format from volume format
-					if volumeDef.Target != nil && volumeDef.Target.Format != nil && volumeDef.Target.Format.Type != "" {
-						formatType := volumeDef.Target.Format.Type
-						// QEMU doesn't support 'iso' format directly, use 'raw' instead
-						if formatType == "iso" {
-							formatType = "raw"
+						// Look up the pool
+						pool, err := client.Libvirt().StoragePoolLookupByName(poolName)
+						if err != nil {
+							return nil, fmt.Errorf("failed to lookup pool %s: %w", poolName, err)
 						}
-						disk.Driver = &libvirtxml.DomainDiskDriver{
-							Name: "qemu",
-							Type: formatType,
+
+						// Look up the volume
+						volume, err := client.Libvirt().StorageVolLookupByName(pool, volumeName)
+						if err != nil {
+							return nil, fmt.Errorf("failed to lookup volume %s in pool %s: %w", volumeName, poolName, err)
 						}
-					}
-				} else if !diskModel.Source.File.IsNull() {
-					// File-based disk
-					disk.Source = &libvirtxml.DomainDiskSource{
-						File: &libvirtxml.DomainDiskSourceFile{
-							File: diskModel.Source.File.ValueString(),
-						},
-					}
-				} else if !diskModel.Source.Block.IsNull() {
-					// Block device disk
-					disk.Source = &libvirtxml.DomainDiskSource{
-						Block: &libvirtxml.DomainDiskSourceBlock{
-							Dev: diskModel.Source.Block.ValueString(),
-						},
-					}
-				}
-			}
 
-			// Set target
-			if !diskModel.Target.IsNull() && !diskModel.Target.IsUnknown() {
-				disk.Target = &libvirtxml.DomainDiskTarget{
-					Dev: diskModel.Target.ValueString(),
-				}
+						// Get volume XML to extract format
+						volumeXML, err := client.Libvirt().StorageVolGetXMLDesc(volume, 0)
+						if err != nil {
+							return nil, fmt.Errorf("failed to get volume XML: %w", err)
+						}
 
-				// Set bus if specified
-				if !diskModel.Bus.IsNull() && !diskModel.Bus.IsUnknown() {
-					disk.Target.Bus = diskModel.Bus.ValueString()
-				}
-			}
+						var volumeDef libvirtxml.StorageVolume
+						if err := volumeDef.Unmarshal(volumeXML); err != nil {
+							return nil, fmt.Errorf("failed to parse volume XML: %w", err)
+						}
 
-			// Set WWN if specified
-			if !diskModel.WWN.IsNull() && !diskModel.WWN.IsUnknown() {
-				disk.WWN = diskModel.WWN.ValueString()
-			}
-
-			// Set backing store if specified
-			if !diskModel.BackingStore.IsNull() && !diskModel.BackingStore.IsUnknown() {
-				var backingStoreModel DomainDiskBackingStoreModel
-				diags := diskModel.BackingStore.As(ctx, &backingStoreModel, basetypes.ObjectAsOptions{})
-				if diags.HasError() {
-					return nil, fmt.Errorf("failed to extract backing_store: %v", diags.Errors())
-				}
-
-				backingStore := &libvirtxml.DomainDiskBackingStore{}
-
-				// Set index if specified
-				if !backingStoreModel.Index.IsNull() && !backingStoreModel.Index.IsUnknown() {
-					index := uint(backingStoreModel.Index.ValueInt64())
-					backingStore.Index = index
-				}
-
-				// Set format if specified
-				if !backingStoreModel.Format.IsNull() && !backingStoreModel.Format.IsUnknown() {
-					backingStore.Format = &libvirtxml.DomainDiskFormat{
-						Type: backingStoreModel.Format.ValueString(),
-					}
-				}
-
-				// Set source if specified
-				if !backingStoreModel.Source.IsNull() && !backingStoreModel.Source.IsUnknown() {
-					var sourceModel DomainDiskSourceModel
-					diags := backingStoreModel.Source.As(ctx, &sourceModel, basetypes.ObjectAsOptions{})
-					if diags.HasError() {
-						return nil, fmt.Errorf("failed to extract backing_store source: %v", diags.Errors())
-					}
-
-					// Create disk source based on what's specified
-					if !sourceModel.Pool.IsNull() && !sourceModel.Volume.IsNull() {
-						// Volume-based backing store
-						backingStore.Source = &libvirtxml.DomainDiskSource{
+						// Set volume source
+						disk.Source = &libvirtxml.DomainDiskSource{
 							Volume: &libvirtxml.DomainDiskSourceVolume{
-								Pool:   sourceModel.Pool.ValueString(),
-								Volume: sourceModel.Volume.ValueString(),
+								Pool:   poolName,
+								Volume: volumeName,
 							},
 						}
-					} else if !sourceModel.File.IsNull() {
-						// File-based backing store
-						backingStore.Source = &libvirtxml.DomainDiskSource{
+
+						// Set disk driver format from volume format
+						if volumeDef.Target != nil && volumeDef.Target.Format != nil && volumeDef.Target.Format.Type != "" {
+							formatType := volumeDef.Target.Format.Type
+							// QEMU doesn't support 'iso' format directly, use 'raw' instead
+							if formatType == "iso" {
+								formatType = "raw"
+							}
+							disk.Driver = &libvirtxml.DomainDiskDriver{
+								Name: "qemu",
+								Type: formatType,
+							}
+						}
+					} else if !diskModel.Source.File.IsNull() {
+						// File-based disk
+						disk.Source = &libvirtxml.DomainDiskSource{
 							File: &libvirtxml.DomainDiskSourceFile{
-								File: sourceModel.File.ValueString(),
+								File: diskModel.Source.File.ValueString(),
 							},
 						}
-					} else if !sourceModel.Block.IsNull() {
-						// Block device backing store
-						backingStore.Source = &libvirtxml.DomainDiskSource{
+					} else if !diskModel.Source.Block.IsNull() {
+						// Block device disk
+						disk.Source = &libvirtxml.DomainDiskSource{
 							Block: &libvirtxml.DomainDiskSourceBlock{
-								Dev: sourceModel.Block.ValueString(),
+								Dev: diskModel.Source.Block.ValueString(),
 							},
 						}
 					}
 				}
 
-				disk.BackingStore = backingStore
-			}
+				// Set target
+				if diskModel.Target != nil {
+					target := &libvirtxml.DomainDiskTarget{}
+
+					if !diskModel.Target.Dev.IsNull() && !diskModel.Target.Dev.IsUnknown() {
+						target.Dev = diskModel.Target.Dev.ValueString()
+					}
+					if !diskModel.Target.Bus.IsNull() && !diskModel.Target.Bus.IsUnknown() {
+						target.Bus = diskModel.Target.Bus.ValueString()
+					}
+
+					disk.Target = target
+				}
+
+				// Set WWN if specified
+				if !diskModel.WWN.IsNull() && !diskModel.WWN.IsUnknown() {
+					disk.WWN = diskModel.WWN.ValueString()
+				}
 
 				domain.Devices.Disks = append(domain.Devices.Disks, disk)
 			}
@@ -817,65 +758,65 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 			}
 
 			for _, ifaceModel := range interfaces {
-			iface := libvirtxml.DomainInterface{}
+				iface := libvirtxml.DomainInterface{}
 
-			// Set MAC address
-			if !ifaceModel.MAC.IsNull() && !ifaceModel.MAC.IsUnknown() {
-				iface.MAC = &libvirtxml.DomainInterfaceMAC{
-					Address: ifaceModel.MAC.ValueString(),
-				}
-			}
-
-			// Set model
-			if !ifaceModel.Model.IsNull() && !ifaceModel.Model.IsUnknown() {
-				iface.Model = &libvirtxml.DomainInterfaceModel{
-					Type: ifaceModel.Model.ValueString(),
-				}
-			}
-
-			// Set source based on type
-			if !ifaceModel.Type.IsNull() && !ifaceModel.Type.IsUnknown() && ifaceModel.Source != nil {
-				ifaceType := ifaceModel.Type.ValueString()
-				source := &libvirtxml.DomainInterfaceSource{}
-
-				switch ifaceType {
-				case "network":
-					network := &libvirtxml.DomainInterfaceSourceNetwork{}
-					if !ifaceModel.Source.Network.IsNull() && !ifaceModel.Source.Network.IsUnknown() {
-						network.Network = ifaceModel.Source.Network.ValueString()
+				// Set MAC address
+				if !ifaceModel.MAC.IsNull() && !ifaceModel.MAC.IsUnknown() {
+					iface.MAC = &libvirtxml.DomainInterfaceMAC{
+						Address: ifaceModel.MAC.ValueString(),
 					}
-					if !ifaceModel.Source.PortGroup.IsNull() && !ifaceModel.Source.PortGroup.IsUnknown() {
-						network.PortGroup = ifaceModel.Source.PortGroup.ValueString()
-					}
-					source.Network = network
-
-				case "bridge":
-					bridge := &libvirtxml.DomainInterfaceSourceBridge{}
-					if !ifaceModel.Source.Bridge.IsNull() && !ifaceModel.Source.Bridge.IsUnknown() {
-						bridge.Bridge = ifaceModel.Source.Bridge.ValueString()
-					}
-					source.Bridge = bridge
-
-				case "user":
-					user := &libvirtxml.DomainInterfaceSourceUser{}
-					if !ifaceModel.Source.Dev.IsNull() && !ifaceModel.Source.Dev.IsUnknown() {
-						user.Dev = ifaceModel.Source.Dev.ValueString()
-					}
-					source.User = user
-
-				case "direct":
-					direct := &libvirtxml.DomainInterfaceSourceDirect{}
-					if !ifaceModel.Source.Dev.IsNull() && !ifaceModel.Source.Dev.IsUnknown() {
-						direct.Dev = ifaceModel.Source.Dev.ValueString()
-					}
-					if !ifaceModel.Source.Mode.IsNull() && !ifaceModel.Source.Mode.IsUnknown() {
-						direct.Mode = ifaceModel.Source.Mode.ValueString()
-					}
-					source.Direct = direct
 				}
 
-				iface.Source = source
-			}
+				// Set model
+				if !ifaceModel.Model.IsNull() && !ifaceModel.Model.IsUnknown() {
+					iface.Model = &libvirtxml.DomainInterfaceModel{
+						Type: ifaceModel.Model.ValueString(),
+					}
+				}
+
+				// Set source based on type
+				if !ifaceModel.Type.IsNull() && !ifaceModel.Type.IsUnknown() && ifaceModel.Source != nil {
+					ifaceType := ifaceModel.Type.ValueString()
+					source := &libvirtxml.DomainInterfaceSource{}
+
+					switch ifaceType {
+					case "network":
+						network := &libvirtxml.DomainInterfaceSourceNetwork{}
+						if !ifaceModel.Source.Network.IsNull() && !ifaceModel.Source.Network.IsUnknown() {
+							network.Network = ifaceModel.Source.Network.ValueString()
+						}
+						if !ifaceModel.Source.PortGroup.IsNull() && !ifaceModel.Source.PortGroup.IsUnknown() {
+							network.PortGroup = ifaceModel.Source.PortGroup.ValueString()
+						}
+						source.Network = network
+
+					case "bridge":
+						bridge := &libvirtxml.DomainInterfaceSourceBridge{}
+						if !ifaceModel.Source.Bridge.IsNull() && !ifaceModel.Source.Bridge.IsUnknown() {
+							bridge.Bridge = ifaceModel.Source.Bridge.ValueString()
+						}
+						source.Bridge = bridge
+
+					case "user":
+						user := &libvirtxml.DomainInterfaceSourceUser{}
+						if !ifaceModel.Source.Dev.IsNull() && !ifaceModel.Source.Dev.IsUnknown() {
+							user.Dev = ifaceModel.Source.Dev.ValueString()
+						}
+						source.User = user
+
+					case "direct":
+						direct := &libvirtxml.DomainInterfaceSourceDirect{}
+						if !ifaceModel.Source.Dev.IsNull() && !ifaceModel.Source.Dev.IsUnknown() {
+							direct.Dev = ifaceModel.Source.Dev.ValueString()
+						}
+						if !ifaceModel.Source.Mode.IsNull() && !ifaceModel.Source.Mode.IsUnknown() {
+							direct.Mode = ifaceModel.Source.Mode.ValueString()
+						}
+						source.Direct = direct
+					}
+
+					iface.Source = source
+				}
 
 				domain.Devices.Interfaces = append(domain.Devices.Interfaces, iface)
 			}
@@ -1009,202 +950,202 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 		if !devices.Emulator.IsNull() && !devices.Emulator.IsUnknown() {
 			domain.Devices.Emulator = devices.Emulator.ValueString()
 		}
-	// Process consoles
-	if !devices.Consoles.IsNull() && !devices.Consoles.IsUnknown() {
-		var consoles []DomainConsoleModel
-		diags := devices.Consoles.ElementsAs(ctx, &consoles, false)
-		if diags.HasError() {
-			return nil, fmt.Errorf("failed to extract consoles: %v", diags.Errors())
+		// Process consoles
+		if !devices.Consoles.IsNull() && !devices.Consoles.IsUnknown() {
+			var consoles []DomainConsoleModel
+			diags := devices.Consoles.ElementsAs(ctx, &consoles, false)
+			if diags.HasError() {
+				return nil, fmt.Errorf("failed to extract consoles: %v", diags.Errors())
+			}
+
+			for _, consoleModel := range consoles {
+				console := libvirtxml.DomainConsole{}
+
+				// Set source based on type
+				sourceType := "pty" // default
+				if !consoleModel.Type.IsNull() && !consoleModel.Type.IsUnknown() {
+					sourceType = consoleModel.Type.ValueString()
+				}
+
+				switch sourceType {
+				case "pty":
+					console.Source = &libvirtxml.DomainChardevSource{
+						Pty: &libvirtxml.DomainChardevSourcePty{},
+					}
+					if !consoleModel.SourcePath.IsNull() && !consoleModel.SourcePath.IsUnknown() {
+						console.Source.Pty.Path = consoleModel.SourcePath.ValueString()
+					}
+				case "file":
+					console.Source = &libvirtxml.DomainChardevSource{
+						File: &libvirtxml.DomainChardevSourceFile{},
+					}
+					if !consoleModel.SourcePath.IsNull() && !consoleModel.SourcePath.IsUnknown() {
+						console.Source.File.Path = consoleModel.SourcePath.ValueString()
+					}
+				}
+
+				// Set target
+				if !consoleModel.TargetType.IsNull() || !consoleModel.TargetPort.IsNull() {
+					console.Target = &libvirtxml.DomainConsoleTarget{}
+					if !consoleModel.TargetType.IsNull() && !consoleModel.TargetType.IsUnknown() {
+						console.Target.Type = consoleModel.TargetType.ValueString()
+					}
+					if !consoleModel.TargetPort.IsNull() && !consoleModel.TargetPort.IsUnknown() {
+						port := uint(consoleModel.TargetPort.ValueInt64())
+						console.Target.Port = &port
+					}
+				}
+
+				domain.Devices.Consoles = append(domain.Devices.Consoles, console)
+			}
 		}
 
-		for _, consoleModel := range consoles {
-			console := libvirtxml.DomainConsole{}
-
-			// Set source based on type
-			sourceType := "pty" // default
-			if !consoleModel.Type.IsNull() && !consoleModel.Type.IsUnknown() {
-				sourceType = consoleModel.Type.ValueString()
+		// Process serials
+		if !devices.Serials.IsNull() && !devices.Serials.IsUnknown() {
+			var serials []DomainSerialModel
+			diags := devices.Serials.ElementsAs(ctx, &serials, false)
+			if diags.HasError() {
+				return nil, fmt.Errorf("failed to extract serials: %v", diags.Errors())
 			}
 
-			switch sourceType {
-			case "pty":
-				console.Source = &libvirtxml.DomainChardevSource{
-					Pty: &libvirtxml.DomainChardevSourcePty{},
+			for _, serialModel := range serials {
+				serial := libvirtxml.DomainSerial{}
+
+				// Set source based on type
+				sourceType := "pty" // default
+				if !serialModel.Type.IsNull() && !serialModel.Type.IsUnknown() {
+					sourceType = serialModel.Type.ValueString()
 				}
-				if !consoleModel.SourcePath.IsNull() && !consoleModel.SourcePath.IsUnknown() {
-					console.Source.Pty.Path = consoleModel.SourcePath.ValueString()
+
+				switch sourceType {
+				case "pty":
+					serial.Source = &libvirtxml.DomainChardevSource{
+						Pty: &libvirtxml.DomainChardevSourcePty{},
+					}
+					if !serialModel.SourcePath.IsNull() && !serialModel.SourcePath.IsUnknown() {
+						serial.Source.Pty.Path = serialModel.SourcePath.ValueString()
+					}
+				case "file":
+					serial.Source = &libvirtxml.DomainChardevSource{
+						File: &libvirtxml.DomainChardevSourceFile{},
+					}
+					if !serialModel.SourcePath.IsNull() && !serialModel.SourcePath.IsUnknown() {
+						serial.Source.File.Path = serialModel.SourcePath.ValueString()
+					}
 				}
-			case "file":
-				console.Source = &libvirtxml.DomainChardevSource{
-					File: &libvirtxml.DomainChardevSourceFile{},
+
+				// Set target
+				if !serialModel.TargetType.IsNull() || !serialModel.TargetPort.IsNull() {
+					serial.Target = &libvirtxml.DomainSerialTarget{}
+					if !serialModel.TargetType.IsNull() && !serialModel.TargetType.IsUnknown() {
+						serial.Target.Type = serialModel.TargetType.ValueString()
+					}
+					if !serialModel.TargetPort.IsNull() && !serialModel.TargetPort.IsUnknown() {
+						port := uint(serialModel.TargetPort.ValueInt64())
+						serial.Target.Port = &port
+					}
 				}
-				if !consoleModel.SourcePath.IsNull() && !consoleModel.SourcePath.IsUnknown() {
-					console.Source.File.Path = consoleModel.SourcePath.ValueString()
-				}
+
+				domain.Devices.Serials = append(domain.Devices.Serials, serial)
 			}
-
-			// Set target
-			if !consoleModel.TargetType.IsNull() || !consoleModel.TargetPort.IsNull() {
-				console.Target = &libvirtxml.DomainConsoleTarget{}
-				if !consoleModel.TargetType.IsNull() && !consoleModel.TargetType.IsUnknown() {
-					console.Target.Type = consoleModel.TargetType.ValueString()
-				}
-				if !consoleModel.TargetPort.IsNull() && !consoleModel.TargetPort.IsUnknown() {
-					port := uint(consoleModel.TargetPort.ValueInt64())
-					console.Target.Port = &port
-				}
-			}
-
-			domain.Devices.Consoles = append(domain.Devices.Consoles, console)
-		}
-	}
-
-	// Process serials
-	if !devices.Serials.IsNull() && !devices.Serials.IsUnknown() {
-		var serials []DomainSerialModel
-		diags := devices.Serials.ElementsAs(ctx, &serials, false)
-		if diags.HasError() {
-			return nil, fmt.Errorf("failed to extract serials: %v", diags.Errors())
-		}
-
-		for _, serialModel := range serials {
-			serial := libvirtxml.DomainSerial{}
-
-			// Set source based on type
-			sourceType := "pty" // default
-			if !serialModel.Type.IsNull() && !serialModel.Type.IsUnknown() {
-				sourceType = serialModel.Type.ValueString()
-			}
-
-			switch sourceType {
-			case "pty":
-				serial.Source = &libvirtxml.DomainChardevSource{
-					Pty: &libvirtxml.DomainChardevSourcePty{},
-				}
-				if !serialModel.SourcePath.IsNull() && !serialModel.SourcePath.IsUnknown() {
-					serial.Source.Pty.Path = serialModel.SourcePath.ValueString()
-				}
-			case "file":
-				serial.Source = &libvirtxml.DomainChardevSource{
-					File: &libvirtxml.DomainChardevSourceFile{},
-				}
-				if !serialModel.SourcePath.IsNull() && !serialModel.SourcePath.IsUnknown() {
-					serial.Source.File.Path = serialModel.SourcePath.ValueString()
-				}
-			}
-
-			// Set target
-			if !serialModel.TargetType.IsNull() || !serialModel.TargetPort.IsNull() {
-				serial.Target = &libvirtxml.DomainSerialTarget{}
-				if !serialModel.TargetType.IsNull() && !serialModel.TargetType.IsUnknown() {
-					serial.Target.Type = serialModel.TargetType.ValueString()
-				}
-				if !serialModel.TargetPort.IsNull() && !serialModel.TargetPort.IsUnknown() {
-					port := uint(serialModel.TargetPort.ValueInt64())
-					serial.Target.Port = &port
-				}
-			}
-
-			domain.Devices.Serials = append(domain.Devices.Serials, serial)
-		}
-	}
-
-	// Process RNGs
-	if !devices.RNGs.IsNull() && !devices.RNGs.IsUnknown() {
-		var rngs []DomainRNGModel
-		diags := devices.RNGs.ElementsAs(ctx, &rngs, false)
-		if diags.HasError() {
-			return nil, fmt.Errorf("failed to extract rngs: %v", diags.Errors())
 		}
 
-		for _, rngModel := range rngs {
-			rng := libvirtxml.DomainRNG{}
-
-			// Set model (default to virtio)
-			if !rngModel.Model.IsNull() && !rngModel.Model.IsUnknown() {
-				rng.Model = rngModel.Model.ValueString()
-			} else {
-				rng.Model = "virtio"
+		// Process RNGs
+		if !devices.RNGs.IsNull() && !devices.RNGs.IsUnknown() {
+			var rngs []DomainRNGModel
+			diags := devices.RNGs.ElementsAs(ctx, &rngs, false)
+			if diags.HasError() {
+				return nil, fmt.Errorf("failed to extract rngs: %v", diags.Errors())
 			}
 
-			// Set backend (Random device)
-			device := "/dev/urandom" // default
-			if !rngModel.Device.IsNull() && !rngModel.Device.IsUnknown() {
-				device = rngModel.Device.ValueString()
-			}
+			for _, rngModel := range rngs {
+				rng := libvirtxml.DomainRNG{}
 
-			rng.Backend = &libvirtxml.DomainRNGBackend{
-				Random: &libvirtxml.DomainRNGBackendRandom{
-					Device: device,
-				},
-			}
+				// Set model (default to virtio)
+				if !rngModel.Model.IsNull() && !rngModel.Model.IsUnknown() {
+					rng.Model = rngModel.Model.ValueString()
+				} else {
+					rng.Model = "virtio"
+				}
 
-			domain.Devices.RNGs = append(domain.Devices.RNGs, rng)
+				// Set backend (Random device)
+				device := "/dev/urandom" // default
+				if !rngModel.Device.IsNull() && !rngModel.Device.IsUnknown() {
+					device = rngModel.Device.ValueString()
+				}
+
+				rng.Backend = &libvirtxml.DomainRNGBackend{
+					Random: &libvirtxml.DomainRNGBackendRandom{
+						Device: device,
+					},
+				}
+
+				domain.Devices.RNGs = append(domain.Devices.RNGs, rng)
+			}
 		}
-	}
 
-	// Process TPMs
-	if !devices.TPMs.IsNull() && !devices.TPMs.IsUnknown() {
-		var tpms []DomainTPMModel
-		diags := devices.TPMs.ElementsAs(ctx, &tpms, false)
-		if diags.HasError() {
-			return nil, fmt.Errorf("failed to extract tpms: %v", diags.Errors())
-		}
-
-		for _, tpmModel := range tpms {
-			tpm := libvirtxml.DomainTPM{}
-
-			// Set model
-			if !tpmModel.Model.IsNull() && !tpmModel.Model.IsUnknown() {
-				tpm.Model = tpmModel.Model.ValueString()
+		// Process TPMs
+		if !devices.TPMs.IsNull() && !devices.TPMs.IsUnknown() {
+			var tpms []DomainTPMModel
+			diags := devices.TPMs.ElementsAs(ctx, &tpms, false)
+			if diags.HasError() {
+				return nil, fmt.Errorf("failed to extract tpms: %v", diags.Errors())
 			}
 
-			// Set backend type (default to emulator)
-			backendType := "emulator"
-			if !tpmModel.BackendType.IsNull() && !tpmModel.BackendType.IsUnknown() {
-				backendType = tpmModel.BackendType.ValueString()
-			}
+			for _, tpmModel := range tpms {
+				tpm := libvirtxml.DomainTPM{}
 
-			switch backendType {
-			case "passthrough":
-				if !tpmModel.BackendDevicePath.IsNull() && !tpmModel.BackendDevicePath.IsUnknown() {
-					tpm.Backend = &libvirtxml.DomainTPMBackend{
-						Passthrough: &libvirtxml.DomainTPMBackendPassthrough{
-							Device: &libvirtxml.DomainTPMBackendDevice{
-								Path: tpmModel.BackendDevicePath.ValueString(),
+				// Set model
+				if !tpmModel.Model.IsNull() && !tpmModel.Model.IsUnknown() {
+					tpm.Model = tpmModel.Model.ValueString()
+				}
+
+				// Set backend type (default to emulator)
+				backendType := "emulator"
+				if !tpmModel.BackendType.IsNull() && !tpmModel.BackendType.IsUnknown() {
+					backendType = tpmModel.BackendType.ValueString()
+				}
+
+				switch backendType {
+				case "passthrough":
+					if !tpmModel.BackendDevicePath.IsNull() && !tpmModel.BackendDevicePath.IsUnknown() {
+						tpm.Backend = &libvirtxml.DomainTPMBackend{
+							Passthrough: &libvirtxml.DomainTPMBackendPassthrough{
+								Device: &libvirtxml.DomainTPMBackendDevice{
+									Path: tpmModel.BackendDevicePath.ValueString(),
+								},
 							},
-						},
+						}
+					}
+				case "emulator":
+					emulator := &libvirtxml.DomainTPMBackendEmulator{}
+
+					if !tpmModel.BackendVersion.IsNull() && !tpmModel.BackendVersion.IsUnknown() {
+						emulator.Version = tpmModel.BackendVersion.ValueString()
+					}
+
+					if !tpmModel.BackendEncryptionSecret.IsNull() && !tpmModel.BackendEncryptionSecret.IsUnknown() {
+						emulator.Encryption = &libvirtxml.DomainTPMBackendEncryption{
+							Secret: tpmModel.BackendEncryptionSecret.ValueString(),
+						}
+					}
+
+					if !tpmModel.BackendPersistentState.IsNull() && !tpmModel.BackendPersistentState.IsUnknown() {
+						if tpmModel.BackendPersistentState.ValueBool() {
+							emulator.PersistentState = "yes"
+						} else {
+							emulator.PersistentState = "no"
+						}
+					}
+
+					tpm.Backend = &libvirtxml.DomainTPMBackend{
+						Emulator: emulator,
 					}
 				}
-			case "emulator":
-				emulator := &libvirtxml.DomainTPMBackendEmulator{}
 
-				if !tpmModel.BackendVersion.IsNull() && !tpmModel.BackendVersion.IsUnknown() {
-					emulator.Version = tpmModel.BackendVersion.ValueString()
-				}
-
-				if !tpmModel.BackendEncryptionSecret.IsNull() && !tpmModel.BackendEncryptionSecret.IsUnknown() {
-					emulator.Encryption = &libvirtxml.DomainTPMBackendEncryption{
-						Secret: tpmModel.BackendEncryptionSecret.ValueString(),
-					}
-				}
-
-				if !tpmModel.BackendPersistentState.IsNull() && !tpmModel.BackendPersistentState.IsUnknown() {
-					if tpmModel.BackendPersistentState.ValueBool() {
-						emulator.PersistentState = "yes"
-					} else {
-						emulator.PersistentState = "no"
-					}
-				}
-
-				tpm.Backend = &libvirtxml.DomainTPMBackend{
-					Emulator: emulator,
-				}
+				domain.Devices.TPMs = append(domain.Devices.TPMs, tpm)
 			}
-
-			domain.Devices.TPMs = append(domain.Devices.TPMs, tpm)
 		}
-	}
 	}
 
 	return domain, nil
@@ -1427,8 +1368,6 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 				nvramModel.TemplateFormat = types.StringValue(domain.OS.NVRam.TemplateFormat)
 			}
 
-
-
 			nvram, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
 				"path":            types.StringType,
 				"source":          types.ObjectType{AttrTypes: diskSourceAttrTypes},
@@ -1465,7 +1404,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			"loader_path":     types.StringType,
 			"loader_readonly": types.BoolType,
 			"loader_type":     types.StringType,
-			"nvram":           types.ObjectType{
+			"nvram": types.ObjectType{
 				AttrTypes: map[string]attr.Type{
 					"path":            types.StringType,
 					"source":          types.ObjectType{AttrTypes: diskSourceAttrTypes},
@@ -1887,9 +1826,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			for i := 0; i < len(origDisks) && i < len(domain.Devices.Disks); i++ {
 				disk := domain.Devices.Disks[i]
 				orig := origDisks[i]
-				diskModel := DomainDiskModel{
-					BackingStore: orig.BackingStore,
-				}
+				diskModel := DomainDiskModel{}
 
 				if !orig.Device.IsNull() && !orig.Device.IsUnknown() && disk.Device != "" {
 					diskModel.Device = types.StringValue(disk.Device)
@@ -1920,72 +1857,27 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 					}
 				}
 
-				if disk.Target != nil {
-					if disk.Target.Dev != "" {
-						diskModel.Target = types.StringValue(disk.Target.Dev)
+				if disk.Target != nil && orig.Target != nil {
+					targetModel := &DomainDiskTargetModel{
+						Dev: types.StringNull(),
+						Bus: types.StringNull(),
 					}
-					if !orig.Bus.IsNull() && !orig.Bus.IsUnknown() && disk.Target.Bus != "" {
-						diskModel.Bus = types.StringValue(disk.Target.Bus)
+
+					if !orig.Target.Dev.IsNull() && !orig.Target.Dev.IsUnknown() && disk.Target.Dev != "" {
+						targetModel.Dev = types.StringValue(disk.Target.Dev)
+					}
+					if !orig.Target.Bus.IsNull() && !orig.Target.Bus.IsUnknown() && disk.Target.Bus != "" {
+						targetModel.Bus = types.StringValue(disk.Target.Bus)
+					}
+
+					if !targetModel.Dev.IsNull() {
+						diskModel.Target = targetModel
 					}
 				}
 
 				// Set WWN if present
 				if !orig.WWN.IsNull() && !orig.WWN.IsUnknown() && disk.WWN != "" {
 					diskModel.WWN = types.StringValue(disk.WWN)
-				}
-
-				// Set backing store if user specified it and it exists
-				if !orig.BackingStore.IsNull() && !orig.BackingStore.IsUnknown() && disk.BackingStore != nil {
-					backingStoreModel := DomainDiskBackingStoreModel{
-						Index:  types.Int64Null(),
-						Format: types.StringNull(),
-						Source: types.ObjectNull(diskSourceAttrTypes),
-					}
-
-					// Set index if present
-					if disk.BackingStore.Index != 0 {
-						backingStoreModel.Index = types.Int64Value(int64(disk.BackingStore.Index))
-					}
-
-					// Set format if present
-					if disk.BackingStore.Format != nil && disk.BackingStore.Format.Type != "" {
-						backingStoreModel.Format = types.StringValue(disk.BackingStore.Format.Type)
-					}
-
-					// Set source if present
-					if disk.BackingStore.Source != nil {
-						sourceModel := DomainDiskSourceModel{
-							Pool:   types.StringNull(),
-							Volume: types.StringNull(),
-							File:   types.StringNull(),
-							Block:  types.StringNull(),
-						}
-
-						if disk.BackingStore.Source.Volume != nil {
-							sourceModel.Pool = types.StringValue(disk.BackingStore.Source.Volume.Pool)
-							sourceModel.Volume = types.StringValue(disk.BackingStore.Source.Volume.Volume)
-						} else if disk.BackingStore.Source.File != nil && disk.BackingStore.Source.File.File != "" {
-							sourceModel.File = types.StringValue(disk.BackingStore.Source.File.File)
-						} else if disk.BackingStore.Source.Block != nil && disk.BackingStore.Source.Block.Dev != "" {
-							sourceModel.Block = types.StringValue(disk.BackingStore.Source.Block.Dev)
-						}
-
-						sourceObj, d := types.ObjectValueFrom(ctx, diskSourceAttrTypes, sourceModel)
-						diags.Append(d...)
-						if !diags.HasError() {
-							backingStoreModel.Source = sourceObj
-						}
-					}
-
-					backingStoreObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
-						"index":  types.Int64Type,
-						"format": types.StringType,
-						"source": types.ObjectType{AttrTypes: diskSourceAttrTypes},
-					}, backingStoreModel)
-					diags.Append(d...)
-					if !diags.HasError() {
-						diskModel.BackingStore = backingStoreObj
-					}
 				}
 
 				disks = append(disks, diskModel)
@@ -2188,18 +2080,13 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 				"source": types.ObjectType{
 					AttrTypes: diskSourceAttrTypes,
 				},
-				"target": types.StringType,
-				"bus":    types.StringType,
-				"wwn":    types.StringType,
-				"backing_store": types.ObjectType{
+				"target": types.ObjectType{
 					AttrTypes: map[string]attr.Type{
-						"index":  types.Int64Type,
-						"format": types.StringType,
-						"source": types.ObjectType{
-							AttrTypes: diskSourceAttrTypes,
-						},
+						"dev": types.StringType,
+						"bus": types.StringType,
 					},
 				},
+				"wwn": types.StringType,
 			},
 		}, disks)
 		diags.Append(d...)
@@ -2337,310 +2224,309 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			}
 		}
 
-	// Process video
-	var videoObj types.Object
-	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
-		var existingDevices DomainDevicesModel
-		diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+		// Process video
+		var videoObj types.Object
+		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+			var existingDevices DomainDevicesModel
+			diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
 
-		if !existingDevices.Video.IsNull() && !existingDevices.Video.IsUnknown() && len(domain.Devices.Videos) > 0 {
-			video := domain.Devices.Videos[0]
-			videoModel := DomainVideoModel{}
+			if !existingDevices.Video.IsNull() && !existingDevices.Video.IsUnknown() && len(domain.Devices.Videos) > 0 {
+				video := domain.Devices.Videos[0]
+				videoModel := DomainVideoModel{}
 
-			if video.Model.Type != "" {
-				videoModel.Type = types.StringValue(video.Model.Type)
-			}
+				if video.Model.Type != "" {
+					videoModel.Type = types.StringValue(video.Model.Type)
+				}
 
-			var err diag.Diagnostics
-			videoObj, err = types.ObjectValueFrom(ctx, map[string]attr.Type{
-				"type": types.StringType,
-			}, videoModel)
-			diags.Append(err...)
-			if diags.HasError() {
-				return diags
+				var err diag.Diagnostics
+				videoObj, err = types.ObjectValueFrom(ctx, map[string]attr.Type{
+					"type": types.StringType,
+				}, videoModel)
+				diags.Append(err...)
+				if diags.HasError() {
+					return diags
+				}
+			} else {
+				videoObj = types.ObjectNull(map[string]attr.Type{
+					"type": types.StringType,
+				})
 			}
 		} else {
 			videoObj = types.ObjectNull(map[string]attr.Type{
 				"type": types.StringType,
 			})
 		}
-	} else {
-		videoObj = types.ObjectNull(map[string]attr.Type{
-			"type": types.StringType,
-		})
-	}
 
+		// Process emulator
+		var emulatorStr types.String
+		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+			var existingDevices DomainDevicesModel
+			diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
 
-	// Process emulator
-	var emulatorStr types.String
-	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
-		var existingDevices DomainDevicesModel
-		diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
-
-		if !existingDevices.Emulator.IsNull() && !existingDevices.Emulator.IsUnknown() && domain.Devices.Emulator != "" {
-			emulatorStr = types.StringValue(domain.Devices.Emulator)
+			if !existingDevices.Emulator.IsNull() && !existingDevices.Emulator.IsUnknown() && domain.Devices.Emulator != "" {
+				emulatorStr = types.StringValue(domain.Devices.Emulator)
+			} else {
+				emulatorStr = types.StringNull()
+			}
 		} else {
 			emulatorStr = types.StringNull()
 		}
-	} else {
-		emulatorStr = types.StringNull()
-	}
 		// Create the new devices model
-	// Process consoles
-	consolesType := types.ListType{
-		ElemType: types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"type":        types.StringType,
-				"source_path": types.StringType,
-				"target_type": types.StringType,
-				"target_port": types.Int64Type,
-			},
-		},
-	}
-	consolesList := types.ListNull(consolesType.ElemType.(types.ObjectType))
-
-	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
-		var existingDevices DomainDevicesModel
-		diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
-
-		if !existingDevices.Consoles.IsNull() && !existingDevices.Consoles.IsUnknown() && len(domain.Devices.Consoles) > 0 {
-			consoles := make([]DomainConsoleModel, 0, len(domain.Devices.Consoles))
-			for _, console := range domain.Devices.Consoles {
-				consoleModel := DomainConsoleModel{}
-
-				// Determine source type
-				if console.Source != nil {
-					if console.Source.Pty != nil {
-						consoleModel.Type = types.StringValue("pty")
-						if console.Source.Pty.Path != "" {
-							consoleModel.SourcePath = types.StringValue(console.Source.Pty.Path)
-						}
-					} else if console.Source.File != nil {
-						consoleModel.Type = types.StringValue("file")
-						if console.Source.File.Path != "" {
-							consoleModel.SourcePath = types.StringValue(console.Source.File.Path)
-						}
-					}
-				}
-
-				// Process target
-				if console.Target != nil {
-					if console.Target.Type != "" {
-						consoleModel.TargetType = types.StringValue(console.Target.Type)
-					}
-					if console.Target.Port != nil {
-						consoleModel.TargetPort = types.Int64Value(int64(*console.Target.Port))
-					}
-				}
-
-				consoles = append(consoles, consoleModel)
-			}
-
-			consolesList, d = types.ListValueFrom(ctx, types.ObjectType{
+		// Process consoles
+		consolesType := types.ListType{
+			ElemType: types.ObjectType{
 				AttrTypes: map[string]attr.Type{
 					"type":        types.StringType,
 					"source_path": types.StringType,
 					"target_type": types.StringType,
 					"target_port": types.Int64Type,
 				},
-			}, consoles)
-			diags.Append(d...)
-			if diags.HasError() {
-				return diags
+			},
+		}
+		consolesList := types.ListNull(consolesType.ElemType.(types.ObjectType))
+
+		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+			var existingDevices DomainDevicesModel
+			diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+
+			if !existingDevices.Consoles.IsNull() && !existingDevices.Consoles.IsUnknown() && len(domain.Devices.Consoles) > 0 {
+				consoles := make([]DomainConsoleModel, 0, len(domain.Devices.Consoles))
+				for _, console := range domain.Devices.Consoles {
+					consoleModel := DomainConsoleModel{}
+
+					// Determine source type
+					if console.Source != nil {
+						if console.Source.Pty != nil {
+							consoleModel.Type = types.StringValue("pty")
+							if console.Source.Pty.Path != "" {
+								consoleModel.SourcePath = types.StringValue(console.Source.Pty.Path)
+							}
+						} else if console.Source.File != nil {
+							consoleModel.Type = types.StringValue("file")
+							if console.Source.File.Path != "" {
+								consoleModel.SourcePath = types.StringValue(console.Source.File.Path)
+							}
+						}
+					}
+
+					// Process target
+					if console.Target != nil {
+						if console.Target.Type != "" {
+							consoleModel.TargetType = types.StringValue(console.Target.Type)
+						}
+						if console.Target.Port != nil {
+							consoleModel.TargetPort = types.Int64Value(int64(*console.Target.Port))
+						}
+					}
+
+					consoles = append(consoles, consoleModel)
+				}
+
+				consolesList, d = types.ListValueFrom(ctx, types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"type":        types.StringType,
+						"source_path": types.StringType,
+						"target_type": types.StringType,
+						"target_port": types.Int64Type,
+					},
+				}, consoles)
+				diags.Append(d...)
+				if diags.HasError() {
+					return diags
+				}
 			}
 		}
-	}
 
-	// Process serials
-	serialsType := types.ListType{
-		ElemType: types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"type":        types.StringType,
-				"source_path": types.StringType,
-				"target_type": types.StringType,
-				"target_port": types.Int64Type,
-			},
-		},
-	}
-	serialsList := types.ListNull(serialsType.ElemType.(types.ObjectType))
-
-	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
-		var existingDevices DomainDevicesModel
-		diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
-
-		if !existingDevices.Serials.IsNull() && !existingDevices.Serials.IsUnknown() && len(domain.Devices.Serials) > 0 {
-			serials := make([]DomainSerialModel, 0, len(domain.Devices.Serials))
-			for _, serial := range domain.Devices.Serials {
-				serialModel := DomainSerialModel{}
-
-				// Determine source type
-				if serial.Source != nil {
-					if serial.Source.Pty != nil {
-						serialModel.Type = types.StringValue("pty")
-						if serial.Source.Pty.Path != "" {
-							serialModel.SourcePath = types.StringValue(serial.Source.Pty.Path)
-						}
-					} else if serial.Source.File != nil {
-						serialModel.Type = types.StringValue("file")
-						if serial.Source.File.Path != "" {
-							serialModel.SourcePath = types.StringValue(serial.Source.File.Path)
-						}
-					}
-				}
-
-				// Process target
-				if serial.Target != nil {
-					if serial.Target.Type != "" {
-						serialModel.TargetType = types.StringValue(serial.Target.Type)
-					}
-					if serial.Target.Port != nil {
-						serialModel.TargetPort = types.Int64Value(int64(*serial.Target.Port))
-					}
-				}
-
-				serials = append(serials, serialModel)
-			}
-
-			serialsList, d = types.ListValueFrom(ctx, types.ObjectType{
+		// Process serials
+		serialsType := types.ListType{
+			ElemType: types.ObjectType{
 				AttrTypes: map[string]attr.Type{
 					"type":        types.StringType,
 					"source_path": types.StringType,
 					"target_type": types.StringType,
 					"target_port": types.Int64Type,
 				},
-			}, serials)
-			diags.Append(d...)
-			if diags.HasError() {
-				return diags
+			},
+		}
+		serialsList := types.ListNull(serialsType.ElemType.(types.ObjectType))
+
+		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+			var existingDevices DomainDevicesModel
+			diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+
+			if !existingDevices.Serials.IsNull() && !existingDevices.Serials.IsUnknown() && len(domain.Devices.Serials) > 0 {
+				serials := make([]DomainSerialModel, 0, len(domain.Devices.Serials))
+				for _, serial := range domain.Devices.Serials {
+					serialModel := DomainSerialModel{}
+
+					// Determine source type
+					if serial.Source != nil {
+						if serial.Source.Pty != nil {
+							serialModel.Type = types.StringValue("pty")
+							if serial.Source.Pty.Path != "" {
+								serialModel.SourcePath = types.StringValue(serial.Source.Pty.Path)
+							}
+						} else if serial.Source.File != nil {
+							serialModel.Type = types.StringValue("file")
+							if serial.Source.File.Path != "" {
+								serialModel.SourcePath = types.StringValue(serial.Source.File.Path)
+							}
+						}
+					}
+
+					// Process target
+					if serial.Target != nil {
+						if serial.Target.Type != "" {
+							serialModel.TargetType = types.StringValue(serial.Target.Type)
+						}
+						if serial.Target.Port != nil {
+							serialModel.TargetPort = types.Int64Value(int64(*serial.Target.Port))
+						}
+					}
+
+					serials = append(serials, serialModel)
+				}
+
+				serialsList, d = types.ListValueFrom(ctx, types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"type":        types.StringType,
+						"source_path": types.StringType,
+						"target_type": types.StringType,
+						"target_port": types.Int64Type,
+					},
+				}, serials)
+				diags.Append(d...)
+				if diags.HasError() {
+					return diags
+				}
 			}
 		}
-	}
 
-	// Process RNGs
-	rngsType := types.ListType{
-		ElemType: types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"model":  types.StringType,
-				"device": types.StringType,
-			},
-		},
-	}
-	rngsList := types.ListNull(rngsType.ElemType.(types.ObjectType))
-
-	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
-		var existingDevices DomainDevicesModel
-		diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
-
-		if !existingDevices.RNGs.IsNull() && !existingDevices.RNGs.IsUnknown() && len(domain.Devices.RNGs) > 0 {
-			rngs := make([]DomainRNGModel, 0, len(domain.Devices.RNGs))
-			for _, rng := range domain.Devices.RNGs {
-				rngModel := DomainRNGModel{}
-
-				if rng.Model != "" {
-					rngModel.Model = types.StringValue(rng.Model)
-				}
-
-				// Extract device path from backend
-				if rng.Backend != nil && rng.Backend.Random != nil && rng.Backend.Random.Device != "" {
-					rngModel.Device = types.StringValue(rng.Backend.Random.Device)
-				}
-
-				rngs = append(rngs, rngModel)
-			}
-
-			rngsList, d = types.ListValueFrom(ctx, types.ObjectType{
+		// Process RNGs
+		rngsType := types.ListType{
+			ElemType: types.ObjectType{
 				AttrTypes: map[string]attr.Type{
 					"model":  types.StringType,
 					"device": types.StringType,
 				},
-			}, rngs)
-			diags.Append(d...)
-			if diags.HasError() {
-				return diags
-			}
-		}
-	}
-
-	// Process TPMs
-	tpmsType := types.ListType{
-		ElemType: types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"model":                         types.StringType,
-				"backend_type":                  types.StringType,
-				"backend_device_path":           types.StringType,
-				"backend_encryption_secret":     types.StringType,
-				"backend_version":               types.StringType,
-				"backend_persistent_state":      types.BoolType,
 			},
-		},
-	}
-	tpmsList := types.ListNull(tpmsType.ElemType.(types.ObjectType))
+		}
+		rngsList := types.ListNull(rngsType.ElemType.(types.ObjectType))
 
-	if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
-		var existingDevices DomainDevicesModel
-		diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+			var existingDevices DomainDevicesModel
+			diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
 
-		if !existingDevices.TPMs.IsNull() && !existingDevices.TPMs.IsUnknown() && len(domain.Devices.TPMs) > 0 {
-			tpms := make([]DomainTPMModel, 0, len(domain.Devices.TPMs))
-			for _, tpm := range domain.Devices.TPMs {
-				tpmModel := DomainTPMModel{}
+			if !existingDevices.RNGs.IsNull() && !existingDevices.RNGs.IsUnknown() && len(domain.Devices.RNGs) > 0 {
+				rngs := make([]DomainRNGModel, 0, len(domain.Devices.RNGs))
+				for _, rng := range domain.Devices.RNGs {
+					rngModel := DomainRNGModel{}
 
-				if tpm.Model != "" {
-					tpmModel.Model = types.StringValue(tpm.Model)
+					if rng.Model != "" {
+						rngModel.Model = types.StringValue(rng.Model)
+					}
+
+					// Extract device path from backend
+					if rng.Backend != nil && rng.Backend.Random != nil && rng.Backend.Random.Device != "" {
+						rngModel.Device = types.StringValue(rng.Backend.Random.Device)
+					}
+
+					rngs = append(rngs, rngModel)
 				}
 
-				// Extract backend information
-				if tpm.Backend != nil {
-					if tpm.Backend.Passthrough != nil {
-						tpmModel.BackendType = types.StringValue("passthrough")
-						if tpm.Backend.Passthrough.Device != nil && tpm.Backend.Passthrough.Device.Path != "" {
-							tpmModel.BackendDevicePath = types.StringValue(tpm.Backend.Passthrough.Device.Path)
-						}
-					} else if tpm.Backend.Emulator != nil {
-						tpmModel.BackendType = types.StringValue("emulator")
-						if tpm.Backend.Emulator.Version != "" {
-							tpmModel.BackendVersion = types.StringValue(tpm.Backend.Emulator.Version)
-						}
-						if tpm.Backend.Emulator.Encryption != nil && tpm.Backend.Emulator.Encryption.Secret != "" {
-							tpmModel.BackendEncryptionSecret = types.StringValue(tpm.Backend.Emulator.Encryption.Secret)
-						}
-						if tpm.Backend.Emulator.PersistentState != "" {
-							tpmModel.BackendPersistentState = types.BoolValue(tpm.Backend.Emulator.PersistentState == "yes")
+				rngsList, d = types.ListValueFrom(ctx, types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"model":  types.StringType,
+						"device": types.StringType,
+					},
+				}, rngs)
+				diags.Append(d...)
+				if diags.HasError() {
+					return diags
+				}
+			}
+		}
+
+		// Process TPMs
+		tpmsType := types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: map[string]attr.Type{
+					"model":                     types.StringType,
+					"backend_type":              types.StringType,
+					"backend_device_path":       types.StringType,
+					"backend_encryption_secret": types.StringType,
+					"backend_version":           types.StringType,
+					"backend_persistent_state":  types.BoolType,
+				},
+			},
+		}
+		tpmsList := types.ListNull(tpmsType.ElemType.(types.ObjectType))
+
+		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+			var existingDevices DomainDevicesModel
+			diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+
+			if !existingDevices.TPMs.IsNull() && !existingDevices.TPMs.IsUnknown() && len(domain.Devices.TPMs) > 0 {
+				tpms := make([]DomainTPMModel, 0, len(domain.Devices.TPMs))
+				for _, tpm := range domain.Devices.TPMs {
+					tpmModel := DomainTPMModel{}
+
+					if tpm.Model != "" {
+						tpmModel.Model = types.StringValue(tpm.Model)
+					}
+
+					// Extract backend information
+					if tpm.Backend != nil {
+						if tpm.Backend.Passthrough != nil {
+							tpmModel.BackendType = types.StringValue("passthrough")
+							if tpm.Backend.Passthrough.Device != nil && tpm.Backend.Passthrough.Device.Path != "" {
+								tpmModel.BackendDevicePath = types.StringValue(tpm.Backend.Passthrough.Device.Path)
+							}
+						} else if tpm.Backend.Emulator != nil {
+							tpmModel.BackendType = types.StringValue("emulator")
+							if tpm.Backend.Emulator.Version != "" {
+								tpmModel.BackendVersion = types.StringValue(tpm.Backend.Emulator.Version)
+							}
+							if tpm.Backend.Emulator.Encryption != nil && tpm.Backend.Emulator.Encryption.Secret != "" {
+								tpmModel.BackendEncryptionSecret = types.StringValue(tpm.Backend.Emulator.Encryption.Secret)
+							}
+							if tpm.Backend.Emulator.PersistentState != "" {
+								tpmModel.BackendPersistentState = types.BoolValue(tpm.Backend.Emulator.PersistentState == "yes")
+							}
 						}
 					}
+
+					tpms = append(tpms, tpmModel)
 				}
 
-				tpms = append(tpms, tpmModel)
-			}
-
-			tpmsList, d = types.ListValueFrom(ctx, types.ObjectType{
-				AttrTypes: map[string]attr.Type{
-					"model":                         types.StringType,
-					"backend_type":                  types.StringType,
-					"backend_device_path":           types.StringType,
-					"backend_encryption_secret":     types.StringType,
-					"backend_version":               types.StringType,
-					"backend_persistent_state":      types.BoolType,
-				},
-			}, tpms)
-			diags.Append(d...)
-			if diags.HasError() {
-				return diags
+				tpmsList, d = types.ListValueFrom(ctx, types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"model":                     types.StringType,
+						"backend_type":              types.StringType,
+						"backend_device_path":       types.StringType,
+						"backend_encryption_secret": types.StringType,
+						"backend_version":           types.StringType,
+						"backend_persistent_state":  types.BoolType,
+					},
+				}, tpms)
+				diags.Append(d...)
+				if diags.HasError() {
+					return diags
+				}
 			}
 		}
-	}
 
 		newDevices := DomainDevicesModel{
 			Disks:       disksList,
 			Interfaces:  interfacesList,
 			Graphics:    graphicsObj,
 			Filesystems: filesystemsList,
-		Video:       videoObj,
-		Emulator:    emulatorStr,
-		Consoles:    consolesList,
-		Serials:     serialsList,
-		RNGs:        rngsList,
-		TPMs:        tpmsList,
+			Video:       videoObj,
+			Emulator:    emulatorStr,
+			Consoles:    consolesList,
+			Serials:     serialsList,
+			RNGs:        rngsList,
+			TPMs:        tpmsList,
 		}
 
 		// Create the devices object
@@ -2650,16 +2536,13 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 					AttrTypes: map[string]attr.Type{
 						"device": types.StringType,
 						"source": types.ObjectType{AttrTypes: diskSourceAttrTypes},
-						"target": types.StringType,
-						"bus":    types.StringType,
-						"wwn":    types.StringType,
-						"backing_store": types.ObjectType{
+						"target": types.ObjectType{
 							AttrTypes: map[string]attr.Type{
-								"index":  types.Int64Type,
-								"format": types.StringType,
-								"source": types.ObjectType{AttrTypes: diskSourceAttrTypes},
+								"dev": types.StringType,
+								"bus": types.StringType,
 							},
 						},
+						"wwn": types.StringType,
 					},
 				},
 			},
@@ -2749,12 +2632,12 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			"tpms": types.ListType{
 				ElemType: types.ObjectType{
 					AttrTypes: map[string]attr.Type{
-						"model":                      types.StringType,
-						"backend_type":               types.StringType,
-						"backend_device_path":        types.StringType,
-						"backend_encryption_secret":  types.StringType,
-						"backend_version":            types.StringType,
-						"backend_persistent_state":   types.BoolType,
+						"model":                     types.StringType,
+						"backend_type":              types.StringType,
+						"backend_device_path":       types.StringType,
+						"backend_encryption_secret": types.StringType,
+						"backend_version":           types.StringType,
+						"backend_persistent_state":  types.BoolType,
 					},
 				},
 			},

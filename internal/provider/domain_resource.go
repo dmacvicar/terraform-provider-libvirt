@@ -33,10 +33,10 @@ type DomainResource struct {
 
 // DomainResourceModel describes the resource data model
 type DomainResourceModel struct {
-	ID          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	UUID        types.String `tfsdk:"uuid"`
-	HWUUID      types.String `tfsdk:"hwuuid"`
+	ID             types.String `tfsdk:"id"`
+	Name           types.String `tfsdk:"name"`
+	UUID           types.String `tfsdk:"uuid"`
+	HWUUID         types.String `tfsdk:"hwuuid"`
 	Type           types.String `tfsdk:"type"`
 	Title          types.String `tfsdk:"title"`
 	Description    types.String `tfsdk:"description"`
@@ -48,38 +48,38 @@ type DomainResourceModel struct {
 	MaxMemory      types.Int64  `tfsdk:"max_memory"`
 	MaxMemorySlots types.Int64  `tfsdk:"max_memory_slots"`
 	VCPU           types.Int64  `tfsdk:"vcpu"`
-	OnPoweroff types.String `tfsdk:"on_poweroff"`
-	OnReboot   types.String `tfsdk:"on_reboot"`
-	OnCrash    types.String `tfsdk:"on_crash"`
-	IOThreads  types.Int64  `tfsdk:"iothreads"`
-	Running    types.Bool   `tfsdk:"running"`
-	Autostart  types.Bool   `tfsdk:"autostart"`
-	Metadata   types.String `tfsdk:"metadata"`
+	OnPoweroff     types.String `tfsdk:"on_poweroff"`
+	OnReboot       types.String `tfsdk:"on_reboot"`
+	OnCrash        types.String `tfsdk:"on_crash"`
+	IOThreads      types.Int64  `tfsdk:"iothreads"`
+	Running        types.Bool   `tfsdk:"running"`
+	Autostart      types.Bool   `tfsdk:"autostart"`
+	Metadata       types.String `tfsdk:"metadata"`
 
 	OS       types.Object `tfsdk:"os"`
 	Features types.Object `tfsdk:"features"`
 	CPU      types.Object `tfsdk:"cpu"`
 	PM       types.Object `tfsdk:"pm"`
-	Create  types.Object `tfsdk:"create"`
-	Devices types.Object `tfsdk:"devices"`
-	Destroy types.Object `tfsdk:"destroy"`
-	Clock   types.Object `tfsdk:"clock"`
+	Create   types.Object `tfsdk:"create"`
+	Devices  types.Object `tfsdk:"devices"`
+	Destroy  types.Object `tfsdk:"destroy"`
+	Clock    types.Object `tfsdk:"clock"`
 }
 
 // DomainOSModel describes the OS configuration
 type DomainOSModel struct {
-	Type      types.String `tfsdk:"type"`
-	Arch      types.String `tfsdk:"arch"`
-	Machine   types.String `tfsdk:"machine"`
-	Firmware  types.String `tfsdk:"firmware"`
-	BootDevices types.List `tfsdk:"boot_devices"`
-	Kernel    types.String `tfsdk:"kernel"`
-	Initrd    types.String `tfsdk:"initrd"`
-	KernelArgs types.String `tfsdk:"kernel_args"`
-	LoaderPath types.String `tfsdk:"loader_path"`
-	LoaderReadOnly types.Bool `tfsdk:"loader_readonly"`
-	LoaderType types.String `tfsdk:"loader_type"`
-	NVRAM     types.Object `tfsdk:"nvram"`
+	Type           types.String `tfsdk:"type"`
+	Arch           types.String `tfsdk:"arch"`
+	Machine        types.String `tfsdk:"machine"`
+	Firmware       types.String `tfsdk:"firmware"`
+	BootDevices    types.List   `tfsdk:"boot_devices"`
+	Kernel         types.String `tfsdk:"kernel"`
+	Initrd         types.String `tfsdk:"initrd"`
+	KernelArgs     types.String `tfsdk:"kernel_args"`
+	LoaderPath     types.String `tfsdk:"loader_path"`
+	LoaderReadOnly types.Bool   `tfsdk:"loader_readonly"`
+	LoaderType     types.String `tfsdk:"loader_type"`
+	NVRAM          types.Object `tfsdk:"nvram"`
 }
 
 // DomainNVRAMModel describes NVRAM configuration
@@ -137,19 +137,10 @@ type DomainPMModel struct {
 
 // DomainDiskModel describes a disk device
 type DomainDiskModel struct {
-	Device       types.String           `tfsdk:"device"`
-	Source       *DomainDiskSourceModel `tfsdk:"source"`
-	Target       types.String           `tfsdk:"target"`
-	Bus          types.String           `tfsdk:"bus"`
-	WWN          types.String           `tfsdk:"wwn"`
-	BackingStore types.Object           `tfsdk:"backing_store"`
-}
-
-// DomainDiskBackingStoreModel describes a disk backing store
-type DomainDiskBackingStoreModel struct {
-	Index  types.Int64  `tfsdk:"index"`
-	Format types.String `tfsdk:"format"`
-	Source types.Object `tfsdk:"source"`
+	Device types.String           `tfsdk:"device"`
+	Source *DomainDiskSourceModel `tfsdk:"source"`
+	Target *DomainDiskTargetModel `tfsdk:"target"`
+	WWN    types.String           `tfsdk:"wwn"`
 }
 
 // DomainDiskSourceModel describes the disk source
@@ -160,12 +151,18 @@ type DomainDiskSourceModel struct {
 	Block  types.String `tfsdk:"block"`
 }
 
+// DomainDiskTargetModel describes the disk target mapping
+type DomainDiskTargetModel struct {
+	Dev types.String `tfsdk:"dev"`
+	Bus types.String `tfsdk:"bus"`
+}
+
 // DomainInterfaceModel describes a network interface
 type DomainInterfaceModel struct {
-	Type   types.String                  `tfsdk:"type"`
-	MAC    types.String                  `tfsdk:"mac"`
-	Model  types.String                  `tfsdk:"model"`
-	Source *DomainInterfaceSourceModel   `tfsdk:"source"`
+	Type   types.String                `tfsdk:"type"`
+	MAC    types.String                `tfsdk:"mac"`
+	Model  types.String                `tfsdk:"model"`
+	Source *DomainInterfaceSourceModel `tfsdk:"source"`
 }
 
 // DomainInterfaceSourceModel describes the interface source
@@ -251,12 +248,12 @@ type DomainRNGModel struct {
 
 // DomainTPMModel describes a TPM device
 type DomainTPMModel struct {
-	Model                  types.String `tfsdk:"model"`
-	BackendType            types.String `tfsdk:"backend_type"`
-	BackendDevicePath      types.String `tfsdk:"backend_device_path"`
+	Model                   types.String `tfsdk:"model"`
+	BackendType             types.String `tfsdk:"backend_type"`
+	BackendDevicePath       types.String `tfsdk:"backend_device_path"`
 	BackendEncryptionSecret types.String `tfsdk:"backend_encryption_secret"`
-	BackendVersion         types.String `tfsdk:"backend_version"`
-	BackendPersistentState types.Bool   `tfsdk:"backend_persistent_state"`
+	BackendVersion          types.String `tfsdk:"backend_version"`
+	BackendPersistentState  types.Bool   `tfsdk:"backend_persistent_state"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -712,54 +709,24 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 										},
 									},
 								},
-								"target": schema.StringAttribute{
-									Description: "Target device name (e.g., vda, sda, hda).",
+								"target": schema.SingleNestedAttribute{
+									Description: "Guest device target mapping.",
 									Required:    true,
-								},
-								"bus": schema.StringAttribute{
-									Description: "Bus type (virtio, scsi, ide, sata, usb).",
-									Optional:    true,
+									Attributes: map[string]schema.Attribute{
+										"dev": schema.StringAttribute{
+											Description: "Target device name (e.g., vda, sda, hda).",
+											Required:    true,
+										},
+										"bus": schema.StringAttribute{
+											Description: "Bus type (virtio, scsi, ide, sata, usb).",
+											Optional:    true,
+										},
+									},
 								},
 								"wwn": schema.StringAttribute{
 									Description: "World Wide Name identifier for the disk (typically for SCSI disks). If not specified for SCSI disks, one will be generated. Format: 16 hex digits.",
 									Optional:    true,
 									Computed:    true,
-								},
-								"backing_store": schema.SingleNestedAttribute{
-									Description: "Backing store configuration for the disk. Used for copy-on-write disks.",
-									Optional:    true,
-									Attributes: map[string]schema.Attribute{
-										"index": schema.Int64Attribute{
-											Description: "Backing store index. Optional.",
-											Optional:    true,
-										},
-										"format": schema.StringAttribute{
-											Description: "Format of the backing store (e.g., 'qcow2', 'raw').",
-											Optional:    true,
-										},
-										"source": schema.SingleNestedAttribute{
-											Description: "Backing store source configuration.",
-											Optional:    true,
-											Attributes: map[string]schema.Attribute{
-												"pool": schema.StringAttribute{
-													Description: "Storage pool name for volume-based backing store. Use with 'volume'.",
-													Optional:    true,
-												},
-												"volume": schema.StringAttribute{
-													Description: "Volume name in the storage pool. Use with 'pool'.",
-													Optional:    true,
-												},
-												"file": schema.StringAttribute{
-													Description: "Path to backing store file. Mutually exclusive with pool/volume and block.",
-													Optional:    true,
-												},
-												"block": schema.StringAttribute{
-													Description: "Block device path. Mutually exclusive with pool/volume and file.",
-													Optional:    true,
-												},
-											},
-										},
-									},
 								},
 							},
 						},
@@ -898,106 +865,106 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 							},
 						},
 					},
-				"emulator": schema.StringAttribute{
-					Description: "Path to the emulator binary (e.g., /usr/bin/qemu-system-x86_64). Optional, libvirt chooses default if not specified.",
-					Optional:    true,
-				},
-				"consoles": schema.ListNestedAttribute{
-					Description: "Console devices for the domain.",
-					Optional:    true,
-					NestedObject: schema.NestedAttributeObject{
-						Attributes: map[string]schema.Attribute{
-							"type": schema.StringAttribute{
-								Description: "Console source type (pty, file, unix, tcp, etc.). Optional, defaults to pty.",
-								Optional:    true,
-							},
-							"source_path": schema.StringAttribute{
-								Description: "Source path for file or unix socket types. Optional.",
-								Optional:    true,
-							},
-							"target_type": schema.StringAttribute{
-								Description: "Target type (serial, virtio, xen, etc.). Optional.",
-								Optional:    true,
-							},
-							"target_port": schema.Int64Attribute{
-								Description: "Target port number. Optional.",
-								Optional:    true,
+					"emulator": schema.StringAttribute{
+						Description: "Path to the emulator binary (e.g., /usr/bin/qemu-system-x86_64). Optional, libvirt chooses default if not specified.",
+						Optional:    true,
+					},
+					"consoles": schema.ListNestedAttribute{
+						Description: "Console devices for the domain.",
+						Optional:    true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"type": schema.StringAttribute{
+									Description: "Console source type (pty, file, unix, tcp, etc.). Optional, defaults to pty.",
+									Optional:    true,
+								},
+								"source_path": schema.StringAttribute{
+									Description: "Source path for file or unix socket types. Optional.",
+									Optional:    true,
+								},
+								"target_type": schema.StringAttribute{
+									Description: "Target type (serial, virtio, xen, etc.). Optional.",
+									Optional:    true,
+								},
+								"target_port": schema.Int64Attribute{
+									Description: "Target port number. Optional.",
+									Optional:    true,
+								},
 							},
 						},
 					},
-				},
-				"serials": schema.ListNestedAttribute{
-					Description: "Serial devices for the domain.",
-					Optional:    true,
-					NestedObject: schema.NestedAttributeObject{
-						Attributes: map[string]schema.Attribute{
-							"type": schema.StringAttribute{
-								Description: "Serial source type (pty, file, unix, tcp, etc.). Optional, defaults to pty.",
-								Optional:    true,
-							},
-							"source_path": schema.StringAttribute{
-								Description: "Source path for file or unix socket types. Optional.",
-								Optional:    true,
-							},
-							"target_type": schema.StringAttribute{
-								Description: "Target type (isa-serial, usb-serial, pci-serial, etc.). Optional.",
-								Optional:    true,
-							},
-							"target_port": schema.Int64Attribute{
-								Description: "Target port number. Optional.",
-								Optional:    true,
-							},
-						},
-					},
-				},
-				"rngs": schema.ListNestedAttribute{
-					Description: "Random number generator devices for the domain.",
-					Optional:    true,
-					NestedObject: schema.NestedAttributeObject{
-						Attributes: map[string]schema.Attribute{
-							"model": schema.StringAttribute{
-								Description: "RNG device model (virtio, virtio-transitional, virtio-non-transitional). Defaults to virtio.",
-								Optional:    true,
-							},
-							"device": schema.StringAttribute{
-								Description: "Backend random device path (e.g., /dev/random, /dev/urandom, /dev/hwrng). Defaults to /dev/urandom.",
-								Optional:    true,
+					"serials": schema.ListNestedAttribute{
+						Description: "Serial devices for the domain.",
+						Optional:    true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"type": schema.StringAttribute{
+									Description: "Serial source type (pty, file, unix, tcp, etc.). Optional, defaults to pty.",
+									Optional:    true,
+								},
+								"source_path": schema.StringAttribute{
+									Description: "Source path for file or unix socket types. Optional.",
+									Optional:    true,
+								},
+								"target_type": schema.StringAttribute{
+									Description: "Target type (isa-serial, usb-serial, pci-serial, etc.). Optional.",
+									Optional:    true,
+								},
+								"target_port": schema.Int64Attribute{
+									Description: "Target port number. Optional.",
+									Optional:    true,
+								},
 							},
 						},
 					},
-				},
-				"tpms": schema.ListNestedAttribute{
-					Description: "TPM devices for the domain. Only one TPM device is supported per domain.",
-					Optional:    true,
-					NestedObject: schema.NestedAttributeObject{
-						Attributes: map[string]schema.Attribute{
-							"model": schema.StringAttribute{
-								Description: "TPM device model (e.g., 'tpm-tis', 'tpm-crb', 'tpm-spapr').",
-								Optional:    true,
-							},
-							"backend_type": schema.StringAttribute{
-								Description: "TPM backend type ('passthrough', 'emulator'). Defaults to 'emulator'.",
-								Optional:    true,
-							},
-							"backend_device_path": schema.StringAttribute{
-								Description: "Device path for passthrough backend (e.g., '/dev/tpm0'). Only used with backend_type='passthrough'.",
-								Optional:    true,
-							},
-							"backend_encryption_secret": schema.StringAttribute{
-								Description: "UUID of secret for encrypted state persistence. Only used with backend_type='emulator'.",
-								Optional:    true,
-							},
-							"backend_version": schema.StringAttribute{
-								Description: "TPM backend version (e.g., '2.0'). Only used with backend_type='emulator'.",
-								Optional:    true,
-							},
-							"backend_persistent_state": schema.BoolAttribute{
-								Description: "Whether TPM state should be persistent across VM restarts. Only used with backend_type='emulator'.",
-								Optional:    true,
+					"rngs": schema.ListNestedAttribute{
+						Description: "Random number generator devices for the domain.",
+						Optional:    true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"model": schema.StringAttribute{
+									Description: "RNG device model (virtio, virtio-transitional, virtio-non-transitional). Defaults to virtio.",
+									Optional:    true,
+								},
+								"device": schema.StringAttribute{
+									Description: "Backend random device path (e.g., /dev/random, /dev/urandom, /dev/hwrng). Defaults to /dev/urandom.",
+									Optional:    true,
+								},
 							},
 						},
 					},
-				},
+					"tpms": schema.ListNestedAttribute{
+						Description: "TPM devices for the domain. Only one TPM device is supported per domain.",
+						Optional:    true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"model": schema.StringAttribute{
+									Description: "TPM device model (e.g., 'tpm-tis', 'tpm-crb', 'tpm-spapr').",
+									Optional:    true,
+								},
+								"backend_type": schema.StringAttribute{
+									Description: "TPM backend type ('passthrough', 'emulator'). Defaults to 'emulator'.",
+									Optional:    true,
+								},
+								"backend_device_path": schema.StringAttribute{
+									Description: "Device path for passthrough backend (e.g., '/dev/tpm0'). Only used with backend_type='passthrough'.",
+									Optional:    true,
+								},
+								"backend_encryption_secret": schema.StringAttribute{
+									Description: "UUID of secret for encrypted state persistence. Only used with backend_type='emulator'.",
+									Optional:    true,
+								},
+								"backend_version": schema.StringAttribute{
+									Description: "TPM backend version (e.g., '2.0'). Only used with backend_type='emulator'.",
+									Optional:    true,
+								},
+								"backend_persistent_state": schema.BoolAttribute{
+									Description: "Whether TPM state should be persistent across VM restarts. Only used with backend_type='emulator'.",
+									Optional:    true,
+								},
+							},
+						},
+					},
 				},
 			},
 			"destroy": schema.SingleNestedAttribute{

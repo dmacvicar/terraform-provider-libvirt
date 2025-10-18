@@ -99,14 +99,9 @@ resource "libvirt_domain" "alpine" {
           pool   = libvirt_volume.alpine_disk.pool
           volume = libvirt_volume.alpine_disk.name
         }
-        target = "vda"
-        bus    = "virtio"
-        backing_store = {
-          format = "qcow2"
-          source = {
-            pool   = libvirt_volume.alpine_base.pool
-            volume = libvirt_volume.alpine_base.name
-          }
+        target = {
+          dev = "vda"
+          bus = "virtio"
         }
       },
       {
@@ -115,8 +110,10 @@ resource "libvirt_domain" "alpine" {
           pool   = libvirt_volume.alpine_seed_volume.pool
           volume = libvirt_volume.alpine_seed_volume.name
         }
-        target = "sda"
-        bus    = "sata"
+        target = {
+          dev = "sda"
+          bus = "sata"
+        }
       }
     ]
 

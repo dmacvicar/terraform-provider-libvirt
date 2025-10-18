@@ -468,6 +468,7 @@ This automatically removes all test resources (domains, volumes, networks, pools
 - Testing requires libvirt daemon - tests should be skippable in CI if needed
 - Libvirt normalizes values (e.g., "q35" → "pc-q35-10.1") - preserve user input to avoid diffs
 - **Use go-libvirt constants**: Never use magic numbers for libvirt enums - always use the proper constants from `golibvirt`
+- Domain disk `<backingStore>` entries are read-only for most hypervisors; configure copy-on-write layers on `libvirt_volume` resources instead of exposing disk-level backing store fields.
 
 ## Critical Pattern: Use libvirt Constants
 

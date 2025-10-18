@@ -1471,8 +1471,8 @@ func TestAccDomainResource_diskWWN(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.#", "1"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.source.pool", domainName),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.source.volume", volumeName),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target", "sda"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.bus", "scsi"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target.dev", "sda"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target.bus", "scsi"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.wwn", "5000c50015ea71ad"),
 				),
 			},
@@ -1517,9 +1517,11 @@ resource "libvirt_domain" "test" {
           pool   = libvirt_pool.test.name
           volume = libvirt_volume.test.name
         }
-        target = "sda"
-        bus    = "scsi"
-        wwn    = "5000c50015ea71ad"
+        target = {
+          dev = "sda"
+          bus = "scsi"
+        }
+        wwn = "5000c50015ea71ad"
       }
     ]
   }
@@ -1539,8 +1541,8 @@ func TestAccDomainResource_diskBlockDevice(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-blockdev"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.#", "1"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.source.block", "/dev/null"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target", "vda"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.bus", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target.dev", "vda"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target.bus", "virtio"),
 				),
 			},
 		},
@@ -1568,8 +1570,10 @@ resource "libvirt_domain" "test" {
         source = {
           block = "/dev/null"
         }
-        target = "vda"
-        bus    = "virtio"
+        target = {
+          dev = "vda"
+          bus = "virtio"
+        }
       }
     ]
   }

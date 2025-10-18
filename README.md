@@ -115,9 +115,13 @@ resource "libvirt_domain" "example" {
   devices = {
     disks = [
       {
-        source = "/var/lib/libvirt/images/disk.qcow2"
-        target = "vda"
-        bus    = "virtio"
+        source = {
+          file = "/var/lib/libvirt/images/disk.qcow2"
+        }
+        target = {
+          dev = "vda"
+          bus = "virtio"
+        }
       }
     ]
     interfaces = [
@@ -132,6 +136,11 @@ resource "libvirt_domain" "example" {
   }
 }
 ```
+
+In this mapping:
+- `devices.disks.source` is a nested object whose attributes (e.g., `file`, `pool`, `volume`, `block`) mirror the `<source>` element attributes in libvirt XML. Only one source variant may be provided at a time.
+- `devices.disks.target` is a nested object with `dev` and optional `bus`, matching `<target dev="..." bus="..."/>`.
+- Disk backing chains are configured on the storage volume (`libvirt_volume.backing_store`); libvirt ignores `<backingStore>` input on domains unless the hypervisor advertises the `backingStoreInput` capability.
 
 ### Handling Elements with Text Content and Attributes
 
@@ -397,7 +406,7 @@ This table shows implementation status and compatibility with the [original prov
 | Clock & timers | ✅ | ○ | Full support including nested catchup |
 | Power management | ✅ | ○ | suspend_to_mem, suspend_to_disk |
 | Disks (basic) | ✅ | ✅ | File-based disks with device, target, bus |
-| Disks (volume) | ✅ | ✅ | volume_id reference to libvirt_volume |
+| Disks (volume) | ✅ | ✅ | Nested `source` with pool/volume reference |
 | Disks (driver) | ○ | ⚠️ | cache, io, discard options |
 | Disks (URL) | ○ | ✅ | URL download support |
 | Disks (block) | ○ | ✅ | Block device passthrough |
@@ -427,10 +436,12 @@ This table shows implementation status and compatibility with the [original prov
 | Resource | ✅ | ✅ | Create and manage volumes |
 | Type | ✅ | ✅ | Volume type (file, block, dir, etc.) |
 | Format | ✅ | ✅ | qcow2, raw format support |
-| Backing volumes | ✅ | ✅ | backing_store for COW |
+| Backing volumes | ✅ | ✅ | `backing_store` applies when creating volumes |
 | Permissions | ✅ | ✅ | owner, group, mode, label |
 | URL download | ✅ | ✅ | Download via create.content.url (HTTPS + local files) |
 | XML XSLT | ○ | ✅ | XSLT transforms |
+
+> libvirt’s `<backingStore>` element on domain disks is informational unless the hypervisor advertises `backingStoreInput`. The provider therefore configures copy-on-write overlays only on `libvirt_volume` resources; domain-level `backing_store` inputs are intentionally not exposed.
 
 ### Pool Resource (libvirt_pool)
 

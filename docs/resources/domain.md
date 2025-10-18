@@ -36,9 +36,13 @@ resource "libvirt_domain" "example" {
   devices = {
     disks = [
       {
-        source = "/var/lib/libvirt/images/example.qcow2"
-        target = "vda"
-        bus    = "virtio"
+        source = {
+          file = "/var/lib/libvirt/images/example.qcow2"
+        }
+        target = {
+          dev = "vda"
+          bus = "virtio"
+        }
       }
     ]
     interfaces = [
@@ -262,16 +266,38 @@ Optional:
 
 Required:
 
-- `target` (String) Target device name (e.g., vda, sda, hda).
+- `target` (Attributes) Guest device target mapping. (see [below for nested schema](#nestedatt--devices--disks--target))
 
 Optional:
 
-- `block_device` (String) Block device path (e.g., /dev/sdb, /dev/nvme0n1). Mutually exclusive with source and volume_id.
-- `bus` (String) Bus type (virtio, scsi, ide, sata, usb).
 - `device` (String) Device type (disk, cdrom, floppy, lun).
-- `source` (String) Path to the disk image file. Mutually exclusive with volume_id and block_device.
-- `volume_id` (String) ID (key) of a libvirt_volume to use as the disk source. Mutually exclusive with source and block_device.
+- `source` (Attributes) Disk source configuration. (see [below for nested schema](#nestedatt--devices--disks--source))
 - `wwn` (String) World Wide Name identifier for the disk (typically for SCSI disks). If not specified for SCSI disks, one will be generated. Format: 16 hex digits.
+
+> The libvirt `<backingStore>` element is ignored unless the `backingStoreInput` feature is available. Configure copy-on-write overlays via `libvirt_volume.backing_store` instead.
+
+<a id="nestedatt--devices--disks--source"></a>
+### Nested Schema for `devices.disks.source`
+
+Optional:
+
+- `block` (String) Block device path (e.g., `/dev/sdb`). Mutually exclusive with other source attributes.
+- `file` (String) Path to a disk image file. Mutually exclusive with other source attributes.
+- `pool` (String) Storage pool name; must be set with `volume`.
+- `volume` (String) Volume name within the storage pool; requires `pool`.
+
+Exactly one source variant must be provided: either `block`, `file`, or the `pool`/`volume` pair.
+
+<a id="nestedatt--devices--disks--target"></a>
+### Nested Schema for `devices.disks.target`
+
+Required:
+
+- `dev` (String) Target device name (e.g., vda, sda, hda).
+
+Optional:
+
+- `bus` (String) Bus type (virtio, scsi, ide, sata, usb).
 
 
 <a id="nestedatt--devices--filesystems"></a>
