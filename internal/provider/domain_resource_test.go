@@ -983,7 +983,7 @@ resource "libvirt_domain" "test" {
 
 func TestAccDomainResource_directNetworkMacvtap(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-	PreCheck:                 func() { testAccPreCheck(t) },
+		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
@@ -1456,16 +1456,21 @@ resource "libvirt_domain" "test" {
 }
 
 func TestAccDomainResource_diskWWN(t *testing.T) {
+	const domainName = "test-domain-wwn"
+	const volumeName = domainName + ".qcow2"
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDomainResourceConfigDiskWWN("test-domain-wwn"),
+				Config: testAccDomainResourceConfigDiskWWN(domainName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-wwn"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", domainName),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.source.pool", domainName),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.source.volume", volumeName),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target", "sda"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.bus", "scsi"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.wwn", "5000c50015ea71ad"),
@@ -1508,10 +1513,13 @@ resource "libvirt_domain" "test" {
   devices = {
     disks = [
       {
-        volume_id = libvirt_volume.test.id
-        target    = "sda"
-        bus       = "scsi"
-        wwn       = "5000c50015ea71ad"
+        source = {
+          pool   = libvirt_pool.test.name
+          volume = libvirt_volume.test.name
+        }
+        target = "sda"
+        bus    = "scsi"
+        wwn    = "5000c50015ea71ad"
       }
     ]
   }
@@ -1530,7 +1538,7 @@ func TestAccDomainResource_diskBlockDevice(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-blockdev"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.#", "1"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.block_device", "/dev/null"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.source.block", "/dev/null"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target", "vda"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.bus", "virtio"),
 				),
@@ -1557,9 +1565,11 @@ resource "libvirt_domain" "test" {
   devices = {
     disks = [
       {
-        block_device = "/dev/null"
-        target       = "vda"
-        bus          = "virtio"
+        source = {
+          block = "/dev/null"
+        }
+        target = "vda"
+        bus    = "virtio"
       }
     ]
   }
