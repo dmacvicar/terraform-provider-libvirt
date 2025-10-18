@@ -22,6 +22,14 @@ const (
 	unitTiB = "TiB"
 )
 
+// diskSourceAttrTypes defines the attribute types for disk source
+var diskSourceAttrTypes = map[string]attr.Type{
+	"pool":   types.StringType,
+	"volume": types.StringType,
+	"file":   types.StringType,
+	"block":  types.StringType,
+}
+
 // normalizeXMLWhitespace normalizes whitespace in XML strings to avoid diffs
 // caused by libvirt's XML pretty-printing
 func normalizeXMLWhitespace(xml string) string {
@@ -260,6 +268,7 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 
 			// Create NVRAM if any NVRAM field is specified
 			if !nvramModel.Path.IsNull() && !nvramModel.Path.IsUnknown() ||
+				!nvramModel.Source.IsNull() && !nvramModel.Source.IsUnknown() ||
 				!nvramModel.Template.IsNull() && !nvramModel.Template.IsUnknown() ||
 				!nvramModel.Format.IsNull() && !nvramModel.Format.IsUnknown() ||
 				!nvramModel.TemplateFormat.IsNull() && !nvramModel.TemplateFormat.IsUnknown() {
@@ -269,6 +278,40 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 				// Set path if specified
 				if !nvramModel.Path.IsNull() && !nvramModel.Path.IsUnknown() {
 					nvram.NVRam = nvramModel.Path.ValueString()
+				}
+
+				// Handle source (for volume-based NVRAM)
+				if !nvramModel.Source.IsNull() && !nvramModel.Source.IsUnknown() {
+					var sourceModel DomainDiskSourceModel
+					diags := nvramModel.Source.As(ctx, &sourceModel, basetypes.ObjectAsOptions{})
+					if diags.HasError() {
+						return nil, fmt.Errorf("failed to extract nvram source: %v", diags.Errors())
+					}
+
+					// Create disk source based on what's specified
+					if !sourceModel.Pool.IsNull() && !sourceModel.Volume.IsNull() {
+						// Volume-based NVRAM
+						nvram.Source = &libvirtxml.DomainDiskSource{
+							Volume: &libvirtxml.DomainDiskSourceVolume{
+								Pool:   sourceModel.Pool.ValueString(),
+								Volume: sourceModel.Volume.ValueString(),
+							},
+						}
+					} else if !sourceModel.File.IsNull() {
+						// File-based NVRAM
+						nvram.Source = &libvirtxml.DomainDiskSource{
+							File: &libvirtxml.DomainDiskSourceFile{
+								File: sourceModel.File.ValueString(),
+							},
+						}
+					} else if !sourceModel.Block.IsNull() {
+						// Block device NVRAM
+						nvram.Source = &libvirtxml.DomainDiskSource{
+							Block: &libvirtxml.DomainDiskSourceBlock{
+								Dev: sourceModel.Block.ValueString(),
+							},
+						}
+					}
 				}
 
 				// Set template if specified
@@ -286,7 +329,7 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 					nvram.TemplateFormat = nvramModel.TemplateFormat.ValueString()
 				}
 
-	
+
 				os.NVRam = nvram
 			}
 		}
@@ -699,6 +742,66 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 			// Set WWN if specified
 			if !diskModel.WWN.IsNull() && !diskModel.WWN.IsUnknown() {
 				disk.WWN = diskModel.WWN.ValueString()
+			}
+
+			// Set backing store if specified
+			if !diskModel.BackingStore.IsNull() && !diskModel.BackingStore.IsUnknown() {
+				var backingStoreModel DomainDiskBackingStoreModel
+				diags := diskModel.BackingStore.As(ctx, &backingStoreModel, basetypes.ObjectAsOptions{})
+				if diags.HasError() {
+					return nil, fmt.Errorf("failed to extract backing_store: %v", diags.Errors())
+				}
+
+				backingStore := &libvirtxml.DomainDiskBackingStore{}
+
+				// Set index if specified
+				if !backingStoreModel.Index.IsNull() && !backingStoreModel.Index.IsUnknown() {
+					index := uint(backingStoreModel.Index.ValueInt64())
+					backingStore.Index = index
+				}
+
+				// Set format if specified
+				if !backingStoreModel.Format.IsNull() && !backingStoreModel.Format.IsUnknown() {
+					backingStore.Format = &libvirtxml.DomainDiskFormat{
+						Type: backingStoreModel.Format.ValueString(),
+					}
+				}
+
+				// Set source if specified
+				if !backingStoreModel.Source.IsNull() && !backingStoreModel.Source.IsUnknown() {
+					var sourceModel DomainDiskSourceModel
+					diags := backingStoreModel.Source.As(ctx, &sourceModel, basetypes.ObjectAsOptions{})
+					if diags.HasError() {
+						return nil, fmt.Errorf("failed to extract backing_store source: %v", diags.Errors())
+					}
+
+					// Create disk source based on what's specified
+					if !sourceModel.Pool.IsNull() && !sourceModel.Volume.IsNull() {
+						// Volume-based backing store
+						backingStore.Source = &libvirtxml.DomainDiskSource{
+							Volume: &libvirtxml.DomainDiskSourceVolume{
+								Pool:   sourceModel.Pool.ValueString(),
+								Volume: sourceModel.Volume.ValueString(),
+							},
+						}
+					} else if !sourceModel.File.IsNull() {
+						// File-based backing store
+						backingStore.Source = &libvirtxml.DomainDiskSource{
+							File: &libvirtxml.DomainDiskSourceFile{
+								File: sourceModel.File.ValueString(),
+							},
+						}
+					} else if !sourceModel.Block.IsNull() {
+						// Block device backing store
+						backingStore.Source = &libvirtxml.DomainDiskSource{
+							Block: &libvirtxml.DomainDiskSourceBlock{
+								Dev: sourceModel.Block.ValueString(),
+							},
+						}
+					}
+				}
+
+				disk.BackingStore = backingStore
 			}
 
 				domain.Devices.Disks = append(domain.Devices.Disks, disk)
@@ -1270,11 +1373,43 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 				return diags
 			}
 
-			nvramModel := DomainNVRAMModel{}
+			nvramModel := DomainNVRAMModel{
+				Path:           types.StringNull(),
+				Source:         types.ObjectNull(diskSourceAttrTypes),
+				Template:       types.StringNull(),
+				Format:         types.StringNull(),
+				TemplateFormat: types.StringNull(),
+			}
 
 			// Only set path if user specified it and we have NVRam from libvirt
 			if !origNVRAM.Path.IsNull() && !origNVRAM.Path.IsUnknown() && domain.OS.NVRam != nil && domain.OS.NVRam.NVRam != "" {
 				nvramModel.Path = types.StringValue(domain.OS.NVRam.NVRam)
+			}
+
+			// Handle source if user specified it
+			if !origNVRAM.Source.IsNull() && !origNVRAM.Source.IsUnknown() && domain.OS.NVRam != nil && domain.OS.NVRam.Source != nil {
+				sourceModel := DomainDiskSourceModel{
+					Pool:   types.StringNull(),
+					Volume: types.StringNull(),
+					File:   types.StringNull(),
+					Block:  types.StringNull(),
+				}
+
+				// Populate source model based on what's in the XML
+				if domain.OS.NVRam.Source.Volume != nil {
+					sourceModel.Pool = types.StringValue(domain.OS.NVRam.Source.Volume.Pool)
+					sourceModel.Volume = types.StringValue(domain.OS.NVRam.Source.Volume.Volume)
+				} else if domain.OS.NVRam.Source.File != nil && domain.OS.NVRam.Source.File.File != "" {
+					sourceModel.File = types.StringValue(domain.OS.NVRam.Source.File.File)
+				} else if domain.OS.NVRam.Source.Block != nil && domain.OS.NVRam.Source.Block.Dev != "" {
+					sourceModel.Block = types.StringValue(domain.OS.NVRam.Source.Block.Dev)
+				}
+
+				sourceObj, d := types.ObjectValueFrom(ctx, diskSourceAttrTypes, sourceModel)
+				diags.Append(d...)
+				if !diags.HasError() {
+					nvramModel.Source = sourceObj
+				}
 			}
 
 			// Only set template if user specified it and we have template from libvirt
@@ -1292,12 +1427,13 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 				nvramModel.TemplateFormat = types.StringValue(domain.OS.NVRam.TemplateFormat)
 			}
 
-		
-	
+
+
 			nvram, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
-				"path":           types.StringType,
-				"template":       types.StringType,
-				"format":         types.StringType,
+				"path":            types.StringType,
+				"source":          types.ObjectType{AttrTypes: diskSourceAttrTypes},
+				"template":        types.StringType,
+				"format":          types.StringType,
 				"template_format": types.StringType,
 			}, nvramModel)
 			diags.Append(d...)
@@ -1307,9 +1443,10 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			nvramObj = nvram
 		} else {
 			nvramObj = types.ObjectNull(map[string]attr.Type{
-				"path":           types.StringType,
-				"template":       types.StringType,
-				"format":         types.StringType,
+				"path":            types.StringType,
+				"source":          types.ObjectType{AttrTypes: diskSourceAttrTypes},
+				"template":        types.StringType,
+				"format":          types.StringType,
 				"template_format": types.StringType,
 			})
 		}
@@ -1330,9 +1467,10 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			"loader_type":     types.StringType,
 			"nvram":           types.ObjectType{
 				AttrTypes: map[string]attr.Type{
-					"path":           types.StringType,
-					"template":       types.StringType,
-					"format":         types.StringType,
+					"path":            types.StringType,
+					"source":          types.ObjectType{AttrTypes: diskSourceAttrTypes},
+					"template":        types.StringType,
+					"format":          types.StringType,
 					"template_format": types.StringType,
 				},
 			},
@@ -1749,7 +1887,9 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			for i := 0; i < len(origDisks) && i < len(domain.Devices.Disks); i++ {
 				disk := domain.Devices.Disks[i]
 				orig := origDisks[i]
-				diskModel := DomainDiskModel{}
+				diskModel := DomainDiskModel{
+					BackingStore: orig.BackingStore,
+				}
 
 				if !orig.Device.IsNull() && !orig.Device.IsUnknown() && disk.Device != "" {
 					diskModel.Device = types.StringValue(disk.Device)
@@ -1792,6 +1932,60 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 				// Set WWN if present
 				if !orig.WWN.IsNull() && !orig.WWN.IsUnknown() && disk.WWN != "" {
 					diskModel.WWN = types.StringValue(disk.WWN)
+				}
+
+				// Set backing store if user specified it and it exists
+				if !orig.BackingStore.IsNull() && !orig.BackingStore.IsUnknown() && disk.BackingStore != nil {
+					backingStoreModel := DomainDiskBackingStoreModel{
+						Index:  types.Int64Null(),
+						Format: types.StringNull(),
+						Source: types.ObjectNull(diskSourceAttrTypes),
+					}
+
+					// Set index if present
+					if disk.BackingStore.Index != 0 {
+						backingStoreModel.Index = types.Int64Value(int64(disk.BackingStore.Index))
+					}
+
+					// Set format if present
+					if disk.BackingStore.Format != nil && disk.BackingStore.Format.Type != "" {
+						backingStoreModel.Format = types.StringValue(disk.BackingStore.Format.Type)
+					}
+
+					// Set source if present
+					if disk.BackingStore.Source != nil {
+						sourceModel := DomainDiskSourceModel{
+							Pool:   types.StringNull(),
+							Volume: types.StringNull(),
+							File:   types.StringNull(),
+							Block:  types.StringNull(),
+						}
+
+						if disk.BackingStore.Source.Volume != nil {
+							sourceModel.Pool = types.StringValue(disk.BackingStore.Source.Volume.Pool)
+							sourceModel.Volume = types.StringValue(disk.BackingStore.Source.Volume.Volume)
+						} else if disk.BackingStore.Source.File != nil && disk.BackingStore.Source.File.File != "" {
+							sourceModel.File = types.StringValue(disk.BackingStore.Source.File.File)
+						} else if disk.BackingStore.Source.Block != nil && disk.BackingStore.Source.Block.Dev != "" {
+							sourceModel.Block = types.StringValue(disk.BackingStore.Source.Block.Dev)
+						}
+
+						sourceObj, d := types.ObjectValueFrom(ctx, diskSourceAttrTypes, sourceModel)
+						diags.Append(d...)
+						if !diags.HasError() {
+							backingStoreModel.Source = sourceObj
+						}
+					}
+
+					backingStoreObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+						"index":  types.Int64Type,
+						"format": types.StringType,
+						"source": types.ObjectType{AttrTypes: diskSourceAttrTypes},
+					}, backingStoreModel)
+					diags.Append(d...)
+					if !diags.HasError() {
+						diskModel.BackingStore = backingStoreObj
+					}
 				}
 
 				disks = append(disks, diskModel)
@@ -1992,16 +2186,20 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			AttrTypes: map[string]attr.Type{
 				"device": types.StringType,
 				"source": types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"pool":   types.StringType,
-						"volume": types.StringType,
-						"file":   types.StringType,
-						"block":  types.StringType,
-					},
+					AttrTypes: diskSourceAttrTypes,
 				},
 				"target": types.StringType,
 				"bus":    types.StringType,
 				"wwn":    types.StringType,
+				"backing_store": types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"index":  types.Int64Type,
+						"format": types.StringType,
+						"source": types.ObjectType{
+							AttrTypes: diskSourceAttrTypes,
+						},
+					},
+				},
 			},
 		}, disks)
 		diags.Append(d...)
@@ -2450,13 +2648,18 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			"disks": types.ListType{
 				ElemType: types.ObjectType{
 					AttrTypes: map[string]attr.Type{
-						"device":       types.StringType,
-						"source":       types.StringType,
-						"volume_id":    types.StringType,
-						"block_device": types.StringType,
-						"target":       types.StringType,
-						"bus":          types.StringType,
-						"wwn":          types.StringType,
+						"device": types.StringType,
+						"source": types.ObjectType{AttrTypes: diskSourceAttrTypes},
+						"target": types.StringType,
+						"bus":    types.StringType,
+						"wwn":    types.StringType,
+						"backing_store": types.ObjectType{
+							AttrTypes: map[string]attr.Type{
+								"index":  types.Int64Type,
+								"format": types.StringType,
+								"source": types.ObjectType{AttrTypes: diskSourceAttrTypes},
+							},
+						},
 					},
 				},
 			},

@@ -85,16 +85,10 @@ type DomainOSModel struct {
 // DomainNVRAMModel describes NVRAM configuration
 type DomainNVRAMModel struct {
 	Path           types.String `tfsdk:"path"`
+	Source         types.Object `tfsdk:"source"`
 	Template       types.String `tfsdk:"template"`
 	Format         types.String `tfsdk:"format"`
 	TemplateFormat types.String `tfsdk:"template_format"`
-}
-
-// DomainNVRAMSourceModel describes NVRAM source configuration
-type DomainNVRAMSourceModel struct {
-	File     types.String `tfsdk:"file"`
-	Block    types.String `tfsdk:"block"`
-	VolumeID types.String `tfsdk:"volume_id"`
 }
 
 // DomainCPUModel describes CPU configuration
@@ -143,11 +137,19 @@ type DomainPMModel struct {
 
 // DomainDiskModel describes a disk device
 type DomainDiskModel struct {
-	Device types.String              `tfsdk:"device"`
-	Source *DomainDiskSourceModel    `tfsdk:"source"`
-	Target types.String              `tfsdk:"target"`
-	Bus    types.String              `tfsdk:"bus"`
-	WWN    types.String              `tfsdk:"wwn"`
+	Device       types.String           `tfsdk:"device"`
+	Source       *DomainDiskSourceModel `tfsdk:"source"`
+	Target       types.String           `tfsdk:"target"`
+	Bus          types.String           `tfsdk:"bus"`
+	WWN          types.String           `tfsdk:"wwn"`
+	BackingStore types.Object           `tfsdk:"backing_store"`
+}
+
+// DomainDiskBackingStoreModel describes a disk backing store
+type DomainDiskBackingStoreModel struct {
+	Index  types.Int64  `tfsdk:"index"`
+	Format types.String `tfsdk:"format"`
+	Source types.Object `tfsdk:"source"`
 }
 
 // DomainDiskSourceModel describes the disk source
@@ -634,8 +636,30 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 						Optional:    true,
 						Attributes: map[string]schema.Attribute{
 							"path": schema.StringAttribute{
-								Description: "Path to the NVRAM file for the domain.",
+								Description: "Path to the NVRAM file for the domain. Mutually exclusive with source.",
 								Optional:    true,
+							},
+							"source": schema.SingleNestedAttribute{
+								Description: "NVRAM source configuration for volume-based NVRAM. Mutually exclusive with path.",
+								Optional:    true,
+								Attributes: map[string]schema.Attribute{
+									"pool": schema.StringAttribute{
+										Description: "Storage pool name for volume-based NVRAM. Use with 'volume'.",
+										Optional:    true,
+									},
+									"volume": schema.StringAttribute{
+										Description: "Volume name in the storage pool. Use with 'pool'.",
+										Optional:    true,
+									},
+									"file": schema.StringAttribute{
+										Description: "Path to NVRAM file. Mutually exclusive with pool/volume and block.",
+										Optional:    true,
+									},
+									"block": schema.StringAttribute{
+										Description: "Block device path. Mutually exclusive with pool/volume and file.",
+										Optional:    true,
+									},
+								},
 							},
 							"template": schema.StringAttribute{
 								Description: "Path to NVRAM template file for UEFI variable store. This template is copied to create the domain's NVRAM.",
@@ -700,6 +724,42 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 									Description: "World Wide Name identifier for the disk (typically for SCSI disks). If not specified for SCSI disks, one will be generated. Format: 16 hex digits.",
 									Optional:    true,
 									Computed:    true,
+								},
+								"backing_store": schema.SingleNestedAttribute{
+									Description: "Backing store configuration for the disk. Used for copy-on-write disks.",
+									Optional:    true,
+									Attributes: map[string]schema.Attribute{
+										"index": schema.Int64Attribute{
+											Description: "Backing store index. Optional.",
+											Optional:    true,
+										},
+										"format": schema.StringAttribute{
+											Description: "Format of the backing store (e.g., 'qcow2', 'raw').",
+											Optional:    true,
+										},
+										"source": schema.SingleNestedAttribute{
+											Description: "Backing store source configuration.",
+											Optional:    true,
+											Attributes: map[string]schema.Attribute{
+												"pool": schema.StringAttribute{
+													Description: "Storage pool name for volume-based backing store. Use with 'volume'.",
+													Optional:    true,
+												},
+												"volume": schema.StringAttribute{
+													Description: "Volume name in the storage pool. Use with 'pool'.",
+													Optional:    true,
+												},
+												"file": schema.StringAttribute{
+													Description: "Path to backing store file. Mutually exclusive with pool/volume and block.",
+													Optional:    true,
+												},
+												"block": schema.StringAttribute{
+													Description: "Block device path. Mutually exclusive with pool/volume and file.",
+													Optional:    true,
+												},
+											},
+										},
+									},
 								},
 							},
 						},
