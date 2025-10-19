@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -372,6 +373,12 @@ func (r *NetworkResource) Create(ctx context.Context, req resource.CreateRequest
 
 	// Start the network
 	if err := r.client.Libvirt().NetworkCreate(net); err != nil {
+		// Cleanup: undefine the network we just defined
+		if undefErr := r.client.Libvirt().NetworkUndefine(net); undefErr != nil {
+			tflog.Warn(ctx, "Failed to undefine network during cleanup", map[string]any{
+				"error": undefErr.Error(),
+			})
+		}
 		resp.Diagnostics.AddError(
 			"Network Start Failed",
 			fmt.Sprintf("Network defined but failed to start: %s", err),
@@ -386,6 +393,17 @@ func (r *NetworkResource) Create(ctx context.Context, req resource.CreateRequest
 
 	// Read full network details
 	if err := r.readNetwork(ctx, &model, uuidStr); err != nil {
+		// Cleanup: destroy and undefine the network we just created
+		if destroyErr := r.client.Libvirt().NetworkDestroy(net); destroyErr != nil {
+			tflog.Warn(ctx, "Failed to destroy network during cleanup", map[string]any{
+				"error": destroyErr.Error(),
+			})
+		}
+		if undefErr := r.client.Libvirt().NetworkUndefine(net); undefErr != nil {
+			tflog.Warn(ctx, "Failed to undefine network during cleanup", map[string]any{
+				"error": undefErr.Error(),
+			})
+		}
 		resp.Diagnostics.AddError(
 			"Network Read Failed",
 			fmt.Sprintf("Network created but failed to read back: %s", err),

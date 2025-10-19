@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // Ensure the implementation satisfies the expected interfaces
@@ -1116,6 +1117,12 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 	// Get the domain XML back to capture UUID and other computed fields
 	xmlDesc, err := r.client.Libvirt().DomainGetXMLDesc(domain, 0)
 	if err != nil {
+		// Cleanup: undefine the domain we just defined
+		if undefErr := r.client.Libvirt().DomainUndefine(domain); undefErr != nil {
+			tflog.Warn(ctx, "Failed to undefine domain during cleanup", map[string]any{
+				"error": undefErr.Error(),
+			})
+		}
 		resp.Diagnostics.AddError(
 			"Failed to Read Domain",
 			"Domain was created but failed to read back its configuration: "+err.Error(),
@@ -1126,6 +1133,12 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 	// Parse the returned XML
 	parsedDomain, err := libvirt.UnmarshalDomainXML(xmlDesc)
 	if err != nil {
+		// Cleanup: undefine the domain we just defined
+		if undefErr := r.client.Libvirt().DomainUndefine(domain); undefErr != nil {
+			tflog.Warn(ctx, "Failed to undefine domain during cleanup", map[string]any{
+				"error": undefErr.Error(),
+			})
+		}
 		resp.Diagnostics.AddError(
 			"Failed to Parse Domain XML",
 			"Failed to parse domain XML from libvirt: "+err.Error(),
@@ -1136,6 +1149,12 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 	// Update state with computed values
 	resp.Diagnostics.Append(xmlToDomainModel(ctx, parsedDomain, &plan)...)
 	if resp.Diagnostics.HasError() {
+		// Cleanup: undefine the domain we just defined
+		if undefErr := r.client.Libvirt().DomainUndefine(domain); undefErr != nil {
+			tflog.Warn(ctx, "Failed to undefine domain during cleanup", map[string]any{
+				"error": undefErr.Error(),
+			})
+		}
 		return
 	}
 
@@ -1174,6 +1193,12 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 		// Start the domain
 		_, err = r.client.Libvirt().DomainCreateWithFlags(domain, flags)
 		if err != nil {
+			// Cleanup: undefine the domain we just defined
+			if undefErr := r.client.Libvirt().DomainUndefine(domain); undefErr != nil {
+				tflog.Warn(ctx, "Failed to undefine domain during cleanup", map[string]any{
+					"error": undefErr.Error(),
+				})
+			}
 			resp.Diagnostics.AddError(
 				"Failed to Start Domain",
 				"Domain was defined but failed to start: "+err.Error(),
@@ -1190,6 +1215,19 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 		}
 		err = r.client.Libvirt().DomainSetAutostart(domain, autostart)
 		if err != nil {
+			// Cleanup: destroy if created, then undefine
+			if !plan.Running.IsNull() && plan.Running.ValueBool() {
+				if destroyErr := r.client.Libvirt().DomainDestroy(domain); destroyErr != nil {
+					tflog.Warn(ctx, "Failed to destroy domain during cleanup", map[string]any{
+						"error": destroyErr.Error(),
+					})
+				}
+			}
+			if undefErr := r.client.Libvirt().DomainUndefine(domain); undefErr != nil {
+				tflog.Warn(ctx, "Failed to undefine domain during cleanup", map[string]any{
+					"error": undefErr.Error(),
+				})
+			}
 			resp.Diagnostics.AddError(
 				"Failed to Set Autostart",
 				"Domain was created but failed to set autostart: "+err.Error(),

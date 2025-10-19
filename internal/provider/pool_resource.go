@@ -347,18 +347,39 @@ func (r *PoolResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// Build the pool (unless we're skipping)
+	poolBuilt := false
 	if !skipBuild {
 		if err := r.client.Libvirt().StoragePoolBuild(pool, 0); err != nil {
+			// Cleanup: undefine the pool we just defined
+			if undefErr := r.client.Libvirt().StoragePoolUndefine(pool); undefErr != nil {
+				tflog.Warn(ctx, "Failed to undefine pool during cleanup", map[string]any{
+					"error": undefErr.Error(),
+				})
+			}
 			resp.Diagnostics.AddError(
 				"Pool Build Failed",
 				fmt.Sprintf("Failed to build storage pool: %s", err),
 			)
 			return
 		}
+		poolBuilt = true
 	}
 
 	// Set autostart
 	if err := r.client.Libvirt().StoragePoolSetAutostart(pool, 1); err != nil {
+		// Cleanup: delete if built, then undefine
+		if poolBuilt {
+			if deleteErr := r.client.Libvirt().StoragePoolDelete(pool, 0); deleteErr != nil {
+				tflog.Warn(ctx, "Failed to delete pool during cleanup", map[string]any{
+					"error": deleteErr.Error(),
+				})
+			}
+		}
+		if undefErr := r.client.Libvirt().StoragePoolUndefine(pool); undefErr != nil {
+			tflog.Warn(ctx, "Failed to undefine pool during cleanup", map[string]any{
+				"error": undefErr.Error(),
+			})
+		}
 		resp.Diagnostics.AddError(
 			"Pool Autostart Failed",
 			fmt.Sprintf("Failed to set pool autostart: %s", err),
@@ -368,6 +389,19 @@ func (r *PoolResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	// Start the pool
 	if err := r.client.Libvirt().StoragePoolCreate(pool, 0); err != nil {
+		// Cleanup: delete if built, then undefine
+		if poolBuilt {
+			if deleteErr := r.client.Libvirt().StoragePoolDelete(pool, 0); deleteErr != nil {
+				tflog.Warn(ctx, "Failed to delete pool during cleanup", map[string]any{
+					"error": deleteErr.Error(),
+				})
+			}
+		}
+		if undefErr := r.client.Libvirt().StoragePoolUndefine(pool); undefErr != nil {
+			tflog.Warn(ctx, "Failed to undefine pool during cleanup", map[string]any{
+				"error": undefErr.Error(),
+			})
+		}
 		resp.Diagnostics.AddError(
 			"Pool Start Failed",
 			fmt.Sprintf("Failed to start storage pool: %s", err),
@@ -377,6 +411,24 @@ func (r *PoolResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	// Refresh to get current state
 	if err := r.client.Libvirt().StoragePoolRefresh(pool, 0); err != nil {
+		// Cleanup: destroy, delete if built, then undefine
+		if destroyErr := r.client.Libvirt().StoragePoolDestroy(pool); destroyErr != nil {
+			tflog.Warn(ctx, "Failed to destroy pool during cleanup", map[string]any{
+				"error": destroyErr.Error(),
+			})
+		}
+		if poolBuilt {
+			if deleteErr := r.client.Libvirt().StoragePoolDelete(pool, 0); deleteErr != nil {
+				tflog.Warn(ctx, "Failed to delete pool during cleanup", map[string]any{
+					"error": deleteErr.Error(),
+				})
+			}
+		}
+		if undefErr := r.client.Libvirt().StoragePoolUndefine(pool); undefErr != nil {
+			tflog.Warn(ctx, "Failed to undefine pool during cleanup", map[string]any{
+				"error": undefErr.Error(),
+			})
+		}
 		resp.Diagnostics.AddError(
 			"Pool Refresh Failed",
 			fmt.Sprintf("Failed to refresh storage pool: %s", err),
@@ -396,6 +448,24 @@ func (r *PoolResource) Create(ctx context.Context, req resource.CreateRequest, r
 	// Read back the full state
 	resp.Diagnostics.Append(r.readPool(ctx, &model, pool)...)
 	if resp.Diagnostics.HasError() {
+		// Cleanup: destroy, delete if built, then undefine
+		if destroyErr := r.client.Libvirt().StoragePoolDestroy(pool); destroyErr != nil {
+			tflog.Warn(ctx, "Failed to destroy pool during cleanup", map[string]any{
+				"error": destroyErr.Error(),
+			})
+		}
+		if poolBuilt {
+			if deleteErr := r.client.Libvirt().StoragePoolDelete(pool, 0); deleteErr != nil {
+				tflog.Warn(ctx, "Failed to delete pool during cleanup", map[string]any{
+					"error": deleteErr.Error(),
+				})
+			}
+		}
+		if undefErr := r.client.Libvirt().StoragePoolUndefine(pool); undefErr != nil {
+			tflog.Warn(ctx, "Failed to undefine pool during cleanup", map[string]any{
+				"error": undefErr.Error(),
+			})
+		}
 		return
 	}
 
