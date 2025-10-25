@@ -216,6 +216,11 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 			os.Type.Machine = osModel.Machine.ValueString()
 		}
 
+		// Firmware (efi/bios)
+		if !osModel.Firmware.IsNull() && !osModel.Firmware.IsUnknown() {
+			os.Firmware = osModel.Firmware.ValueString()
+		}
+
 		// Boot devices
 		if !osModel.BootDevices.IsNull() && !osModel.BootDevices.IsUnknown() {
 			var bootDevices []types.String
@@ -1289,14 +1294,27 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			osModel.KernelArgs = types.StringValue(domain.OS.Cmdline)
 		}
 
+		// Only set firmware if user specified it
+		if !origOS.Firmware.IsNull() && !origOS.Firmware.IsUnknown() && domain.OS.Firmware != "" {
+			osModel.Firmware = types.StringValue(domain.OS.Firmware)
+		}
+
 		if domain.OS.Loader != nil {
-			osModel.LoaderPath = types.StringValue(domain.OS.Loader.Path)
-			switch domain.OS.Loader.Readonly {
-			case "yes":
-				osModel.LoaderReadOnly = types.BoolValue(true)
-			case "no":
-				osModel.LoaderReadOnly = types.BoolValue(false)
+			// Only set loader_path if user originally specified it
+			if !origOS.LoaderPath.IsNull() && !origOS.LoaderPath.IsUnknown() && domain.OS.Loader.Path != "" {
+				osModel.LoaderPath = types.StringValue(domain.OS.Loader.Path)
 			}
+
+			// Only set loader_readonly if user originally specified it
+			if !origOS.LoaderReadOnly.IsNull() && !origOS.LoaderReadOnly.IsUnknown() {
+				switch domain.OS.Loader.Readonly {
+				case "yes":
+					osModel.LoaderReadOnly = types.BoolValue(true)
+				case "no":
+					osModel.LoaderReadOnly = types.BoolValue(false)
+				}
+			}
+
 			// Only set loader_type if user originally specified it
 			if !origOS.LoaderType.IsNull() && !origOS.LoaderType.IsUnknown() && domain.OS.Loader.Type != "" {
 				osModel.LoaderType = types.StringValue(domain.OS.Loader.Type)
