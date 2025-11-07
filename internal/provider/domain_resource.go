@@ -160,10 +160,11 @@ type DomainDiskTargetModel struct {
 
 // DomainInterfaceModel describes a network interface
 type DomainInterfaceModel struct {
-	Type   types.String                `tfsdk:"type"`
-	MAC    types.String                `tfsdk:"mac"`
-	Model  types.String                `tfsdk:"model"`
-	Source *DomainInterfaceSourceModel `tfsdk:"source"`
+	Type      types.String                `tfsdk:"type"`
+	MAC       types.String                `tfsdk:"mac"`
+	Model     types.String                `tfsdk:"model"`
+	Source    *DomainInterfaceSourceModel `tfsdk:"source"`
+	WaitForIP types.Object                `tfsdk:"wait_for_ip"`
 }
 
 // DomainInterfaceSourceModel describes the interface source
@@ -173,6 +174,12 @@ type DomainInterfaceSourceModel struct {
 	Bridge    types.String `tfsdk:"bridge"`
 	Dev       types.String `tfsdk:"dev"`
 	Mode      types.String `tfsdk:"mode"`
+}
+
+// DomainInterfaceWaitForIPModel describes wait_for_ip configuration
+type DomainInterfaceWaitForIPModel struct {
+	Timeout types.Int64  `tfsdk:"timeout"`
+	Source  types.String `tfsdk:"source"`
 }
 
 // DomainGraphicsModel describes a graphics device
@@ -775,6 +782,20 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 										},
 									},
 								},
+								"wait_for_ip": schema.SingleNestedAttribute{
+									Description: "Wait for IP address during domain creation. If specified, Terraform will poll for an IP address before considering creation complete. If timeout is reached without obtaining an IP, the domain will be destroyed and creation will fail.",
+									Optional:    true,
+									Attributes: map[string]schema.Attribute{
+										"timeout": schema.Int64Attribute{
+											Description: "Maximum time to wait for IP address in seconds. Default: 300 (5 minutes).",
+											Optional:    true,
+										},
+										"source": schema.StringAttribute{
+											Description: "Source to query for IP addresses: 'lease' (DHCP), 'agent' (qemu-guest-agent), or 'any' (try both). Default: 'any'.",
+											Optional:    true,
+										},
+									},
+								},
 							},
 						},
 					},
@@ -1205,6 +1226,81 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 			)
 			return
 		}
+
+		// Wait for IP if configured on any interface
+		if !plan.Devices.IsNull() && !plan.Devices.IsUnknown() {
+			var devicesModel DomainDevicesModel
+			resp.Diagnostics.Append(plan.Devices.As(ctx, &devicesModel, basetypes.ObjectAsOptions{})...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+
+			// Check if any interface has wait_for_ip configured
+			if !devicesModel.Interfaces.IsNull() && !devicesModel.Interfaces.IsUnknown() {
+				var interfaces []DomainInterfaceModel
+				resp.Diagnostics.Append(devicesModel.Interfaces.ElementsAs(ctx, &interfaces, false)...)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				// Collect all interfaces that need to wait for IP
+				for _, iface := range interfaces {
+					if !iface.WaitForIP.IsNull() && !iface.WaitForIP.IsUnknown() {
+						var waitForIPModel DomainInterfaceWaitForIPModel
+						resp.Diagnostics.Append(iface.WaitForIP.As(ctx, &waitForIPModel, basetypes.ObjectAsOptions{})...)
+						if resp.Diagnostics.HasError() {
+							return
+						}
+
+						timeout := int64(300) // Default 5 minutes
+						if !waitForIPModel.Timeout.IsNull() && !waitForIPModel.Timeout.IsUnknown() {
+							timeout = waitForIPModel.Timeout.ValueInt64()
+						}
+
+						source := "any"
+						if !waitForIPModel.Source.IsNull() && !waitForIPModel.Source.IsUnknown() {
+							source = waitForIPModel.Source.ValueString()
+						}
+
+						// Get MAC address if specified (to identify this specific interface)
+						mac := ""
+						if !iface.MAC.IsNull() && !iface.MAC.IsUnknown() {
+							mac = iface.MAC.ValueString()
+						}
+
+						// Wait for IP
+						tflog.Info(ctx, "Waiting for interface IP address", map[string]any{
+							"mac":     mac,
+							"timeout": timeout,
+							"source":  source,
+						})
+
+						if err := waitForInterfaceIP(ctx, r.client, domain, mac, timeout, source); err != nil {
+							// Cleanup: destroy and undefine the domain
+							if destroyErr := r.client.Libvirt().DomainDestroy(domain); destroyErr != nil {
+								tflog.Warn(ctx, "Failed to destroy domain during cleanup", map[string]any{
+									"error": destroyErr.Error(),
+								})
+							}
+							if undefErr := r.client.Libvirt().DomainUndefine(domain); undefErr != nil {
+								tflog.Warn(ctx, "Failed to undefine domain during cleanup", map[string]any{
+									"error": undefErr.Error(),
+								})
+							}
+							macInfo := ""
+							if mac != "" {
+								macInfo = fmt.Sprintf(" (MAC: %s)", mac)
+							}
+							resp.Diagnostics.AddError(
+								"Failed to Wait for IP Address",
+								fmt.Sprintf("Domain was created and started but failed to obtain an IP address%s: %s", macInfo, err),
+							)
+							return
+						}
+					}
+				}
+			}
+		}
 	}
 
 	// Set autostart if specified
@@ -1568,5 +1664,86 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 			"Failed to undefine domain: "+err.Error(),
 		)
 		return
+	}
+}
+
+// waitForInterfaceIP polls for IP addresses on a domain's interfaces
+// If mac is specified, waits for that specific interface to get an IP
+// If mac is empty, waits for any interface to get an IP
+// Returns error if timeout is reached without obtaining an IP
+func waitForInterfaceIP(ctx context.Context, client *libvirt.Client, domain golibvirt.Domain, mac string, timeout int64, sourceStr string) error {
+	if timeout == 0 {
+		timeout = 300 // Default 5 minutes
+	}
+	if sourceStr == "" {
+		sourceStr = "any"
+	}
+
+	// Determine source(s) to query
+	var sources []golibvirt.DomainInterfaceAddressesSource
+	switch sourceStr {
+	case "lease":
+		sources = []golibvirt.DomainInterfaceAddressesSource{golibvirt.DomainInterfaceAddressesSrcLease}
+	case "agent":
+		sources = []golibvirt.DomainInterfaceAddressesSource{golibvirt.DomainInterfaceAddressesSrcAgent}
+	case "any":
+		sources = []golibvirt.DomainInterfaceAddressesSource{
+			golibvirt.DomainInterfaceAddressesSrcLease,
+			golibvirt.DomainInterfaceAddressesSrcAgent,
+		}
+	default:
+		return fmt.Errorf("invalid source: %s (must be 'lease', 'agent', or 'any')", sourceStr)
+	}
+
+	// Poll for IP with timeout
+	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
+	pollInterval := 5 * time.Second
+
+	for {
+		// Try each source until we get an IP
+		for _, source := range sources {
+			ifaces, err := client.Libvirt().DomainInterfaceAddresses(domain, uint32(source), 0)
+			if err == nil && len(ifaces) > 0 {
+				// Check if we're looking for a specific MAC or any interface
+				if mac != "" {
+					// Look for specific interface by MAC
+					for _, iface := range ifaces {
+						// Check if this interface matches the MAC we're looking for
+						if len(iface.Hwaddr) > 0 && iface.Hwaddr[0] == mac {
+							if len(iface.Addrs) > 0 {
+								// Found the interface and it has an IP
+								return nil
+							}
+							// Found the interface but no IP yet, keep polling
+							break
+						}
+					}
+				} else {
+					// Wait for any interface to get an IP
+					for _, iface := range ifaces {
+						if len(iface.Addrs) > 0 {
+							// Got at least one IP address
+							return nil
+						}
+					}
+				}
+			}
+		}
+
+		// Check timeout
+		if time.Now().After(deadline) {
+			if mac != "" {
+				return fmt.Errorf("timeout waiting for IP address on interface %s after %d seconds", mac, timeout)
+			}
+			return fmt.Errorf("timeout waiting for IP address after %d seconds", timeout)
+		}
+
+		// Wait before next poll
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("context cancelled while waiting for IP")
+		case <-time.After(pollInterval):
+			// Continue polling
+		}
 	}
 }

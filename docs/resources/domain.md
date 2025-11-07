@@ -36,13 +36,9 @@ resource "libvirt_domain" "example" {
   devices = {
     disks = [
       {
-        source = {
-          file = "/var/lib/libvirt/images/example.qcow2"
-        }
-        target = {
-          dev = "vda"
-          bus = "virtio"
-        }
+        source = "/var/lib/libvirt/images/example.qcow2"
+        target = "vda"
+        bus    = "virtio"
       }
     ]
     interfaces = [
@@ -271,22 +267,8 @@ Required:
 Optional:
 
 - `device` (String) Device type (disk, cdrom, floppy, lun).
-- `source` (Attributes) Disk source configuration. (see [below for nested schema](#nestedatt--devices--disks--source))
+- `source` (Attributes) Disk source configuration. Specify one of: pool+volume for libvirt volumes, file for file paths, or block for block devices. (see [below for nested schema](#nestedatt--devices--disks--source))
 - `wwn` (String) World Wide Name identifier for the disk (typically for SCSI disks). If not specified for SCSI disks, one will be generated. Format: 16 hex digits.
-
-> The libvirt `<backingStore>` element is ignored unless the `backingStoreInput` feature is available. Configure copy-on-write overlays via `libvirt_volume.backing_store` instead.
-
-<a id="nestedatt--devices--disks--source"></a>
-### Nested Schema for `devices.disks.source`
-
-Optional:
-
-- `block` (String) Block device path (e.g., `/dev/sdb`). Mutually exclusive with other source attributes.
-- `file` (String) Path to a disk image file. Mutually exclusive with other source attributes.
-- `pool` (String) Storage pool name; must be set with `volume`.
-- `volume` (String) Volume name within the storage pool; requires `pool`.
-
-Exactly one source variant must be provided: either `block`, `file`, or the `pool`/`volume` pair.
 
 <a id="nestedatt--devices--disks--target"></a>
 ### Nested Schema for `devices.disks.target`
@@ -298,6 +280,18 @@ Required:
 Optional:
 
 - `bus` (String) Bus type (virtio, scsi, ide, sata, usb).
+
+
+<a id="nestedatt--devices--disks--source"></a>
+### Nested Schema for `devices.disks.source`
+
+Optional:
+
+- `block` (String) Block device path (e.g., /dev/sdb). Mutually exclusive with pool/volume and file.
+- `file` (String) Path to disk image file. Mutually exclusive with pool/volume and block.
+- `pool` (String) Storage pool name for volume-based disks. Use with 'volume'.
+- `volume` (String) Volume name in the storage pool. Use with 'pool'.
+
 
 
 <a id="nestedatt--devices--filesystems"></a>
@@ -358,6 +352,7 @@ Optional:
 - `mac` (String) MAC address for the interface.
 - `model` (String) Device model (virtio, e1000, rtl8139, etc.).
 - `source` (Attributes) Interface source configuration. (see [below for nested schema](#nestedatt--devices--interfaces--source))
+- `wait_for_ip` (Attributes) Wait for IP address during domain creation. If specified, Terraform will poll for an IP address before considering creation complete. If timeout is reached without obtaining an IP, the domain will be destroyed and creation will fail. (see [below for nested schema](#nestedatt--devices--interfaces--wait_for_ip))
 
 <a id="nestedatt--devices--interfaces--source"></a>
 ### Nested Schema for `devices.interfaces.source`
@@ -369,6 +364,15 @@ Optional:
 - `mode` (String) Direct mode (for type=direct). Options: bridge, vepa, private, passthrough.
 - `network` (String) Network name (for type=network).
 - `portgroup` (String) Port group name (for type=network).
+
+
+<a id="nestedatt--devices--interfaces--wait_for_ip"></a>
+### Nested Schema for `devices.interfaces.wait_for_ip`
+
+Optional:
+
+- `source` (String) Source to query for IP addresses: 'lease' (DHCP), 'agent' (qemu-guest-agent), or 'any' (try both). Default: 'any'.
+- `timeout` (Number) Maximum time to wait for IP address in seconds. Default: 300 (5 minutes).
 
 
 
@@ -465,9 +469,21 @@ Optional:
 Optional:
 
 - `format` (String) Format of the NVRAM file (e.g., 'raw', 'qcow2').
-- `path` (String) Path to the NVRAM file for the domain.
+- `path` (String) Path to the NVRAM file for the domain. Mutually exclusive with source.
+- `source` (Attributes) NVRAM source configuration for volume-based NVRAM. Mutually exclusive with path. (see [below for nested schema](#nestedatt--os--nvram--source))
 - `template` (String) Path to NVRAM template file for UEFI variable store. This template is copied to create the domain's NVRAM.
 - `template_format` (String) Format of the template file (e.g., 'raw', 'qcow2').
+
+<a id="nestedatt--os--nvram--source"></a>
+### Nested Schema for `os.nvram.source`
+
+Optional:
+
+- `block` (String) Block device path. Mutually exclusive with pool/volume and file.
+- `file` (String) Path to NVRAM file. Mutually exclusive with pool/volume and block.
+- `pool` (String) Storage pool name for volume-based NVRAM. Use with 'volume'.
+- `volume` (String) Volume name in the storage pool. Use with 'pool'.
+
 
 
 

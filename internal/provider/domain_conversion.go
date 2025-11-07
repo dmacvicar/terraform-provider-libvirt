@@ -1976,6 +1976,9 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 					ifaceModel.Source = sourceModel
 				}
 
+				// Preserve wait_for_ip from original (not part of libvirt XML)
+				ifaceModel.WaitForIP = origModel.WaitForIP
+
 				interfaces = append(interfaces, ifaceModel)
 			}
 		}
@@ -2124,6 +2127,12 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 						"bridge":    types.StringType,
 						"dev":       types.StringType,
 						"mode":      types.StringType,
+					},
+				},
+				"wait_for_ip": types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"timeout": types.Int64Type,
+						"source":  types.StringType,
 					},
 				},
 			},
@@ -2577,6 +2586,12 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 								"bridge":    types.StringType,
 								"dev":       types.StringType,
 								"mode":      types.StringType,
+							},
+						},
+						"wait_for_ip": types.ObjectType{
+							AttrTypes: map[string]attr.Type{
+								"timeout": types.Int64Type,
+								"source":  types.StringType,
 							},
 						},
 					},
