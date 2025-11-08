@@ -303,6 +303,62 @@ See the [examples](./examples) directory for more usage examples.
 
 ## Migration from Legacy Provider (v0.8.x)
 
+### Getting Domain IP Addresses
+
+The legacy provider exposed IP addresses directly on the domain resource via `network_interface.*.addresses`. The new provider uses a separate data source for querying IP addresses:
+
+**Legacy provider (v0.8.x):**
+```hcl
+resource "libvirt_domain" "example" {
+  # ... domain config ...
+}
+
+output "ip" {
+  value = libvirt_domain.example.network_interface[0].addresses[0]
+}
+```
+
+**New provider (v0.9+):**
+```hcl
+resource "libvirt_domain" "example" {
+  # ... domain config ...
+}
+
+data "libvirt_domain_interface_addresses" "example" {
+  domain = libvirt_domain.example.id
+  source = "lease"  # or "agent" or "any"
+}
+
+output "ip" {
+  value = data.libvirt_domain_interface_addresses.example.interfaces[0].addrs[0].addr
+}
+```
+
+Alternatively, use the `wait_for_ip` property on the domain's interface configuration to ensure the domain has an IP before creation completes:
+
+```hcl
+resource "libvirt_domain" "example" {
+  name   = "example-vm"
+  memory = 512
+  vcpu   = 1
+
+  devices = {
+    interfaces = [
+      {
+        type = "network"
+        source = {
+          network = "default"
+        }
+        wait_for_ip = {
+          timeout = 300  # seconds
+          source  = "lease"
+        }
+      }
+    ]
+  }
+}
+```
+
 ### Volume Source URLs
 
 If you're migrating from the legacy provider and used the `source` attribute on volumes to download cloud images, note that this feature is now available via the `create.content.url` block:
