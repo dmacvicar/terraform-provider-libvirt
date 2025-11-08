@@ -291,6 +291,7 @@ Check README.md for current implementation status and the roadmap. The README co
    - Example: `feat: add title and description fields`
    - Keep it simple - avoid verbose explanations
    - **DO NOT add promotional text, links, or "Generated with" messages**
+   - When referencing issues, use `Resolves: #xxx` format (with colon) following git conventions
 
 4. **Repeat for next field**
 
@@ -310,6 +311,9 @@ Commit 1: feat: add title and description fields
 Commit 2: feat: add lifecycle action fields
 Commit 3: feat: add iothreads field
 Commit 4: fix: preserve user input for optional fields with defaults
+Commit 5: feat: add input device support
+
+Resolves: #1148
 ```
 
 **Bad approach:**
