@@ -1151,6 +1151,122 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 				domain.Devices.TPMs = append(domain.Devices.TPMs, tpm)
 			}
 		}
+
+		// Process Inputs
+		if !devices.Inputs.IsNull() && !devices.Inputs.IsUnknown() {
+			var inputs []DomainInputModel
+			diags := devices.Inputs.ElementsAs(ctx, &inputs, false)
+			if diags.HasError() {
+				return nil, fmt.Errorf("failed to extract inputs: %v", diags.Errors())
+			}
+
+			for _, inputModel := range inputs {
+				input := libvirtxml.DomainInput{}
+
+				// Set type (required)
+				if !inputModel.Type.IsNull() && !inputModel.Type.IsUnknown() {
+					input.Type = inputModel.Type.ValueString()
+				}
+
+				// Set bus (optional)
+				if !inputModel.Bus.IsNull() && !inputModel.Bus.IsUnknown() {
+					input.Bus = inputModel.Bus.ValueString()
+				}
+
+				// Set model (optional)
+				if !inputModel.Model.IsNull() && !inputModel.Model.IsUnknown() {
+					input.Model = inputModel.Model.ValueString()
+				}
+
+				// Set driver (optional nested object)
+				if !inputModel.Driver.IsNull() && !inputModel.Driver.IsUnknown() {
+					var driver DomainInputDriverModel
+					diags := inputModel.Driver.As(ctx, &driver, basetypes.ObjectAsOptions{})
+					if diags.HasError() {
+						return nil, fmt.Errorf("failed to extract input driver: %v", diags.Errors())
+					}
+
+					inputDriver := &libvirtxml.DomainInputDriver{}
+
+					if !driver.IOMMU.IsNull() && !driver.IOMMU.IsUnknown() {
+						inputDriver.IOMMU = driver.IOMMU.ValueString()
+					}
+
+					if !driver.ATS.IsNull() && !driver.ATS.IsUnknown() {
+						inputDriver.ATS = driver.ATS.ValueString()
+					}
+
+					if !driver.Packed.IsNull() && !driver.Packed.IsUnknown() {
+						inputDriver.Packed = driver.Packed.ValueString()
+					}
+
+					if !driver.PagePerVQ.IsNull() && !driver.PagePerVQ.IsUnknown() {
+						inputDriver.PagePerVQ = driver.PagePerVQ.ValueString()
+					}
+
+					input.Driver = inputDriver
+				}
+
+				// Set source (optional nested object)
+				if !inputModel.Source.IsNull() && !inputModel.Source.IsUnknown() {
+					var source DomainInputSourceModel
+					diags := inputModel.Source.As(ctx, &source, basetypes.ObjectAsOptions{})
+					if diags.HasError() {
+						return nil, fmt.Errorf("failed to extract input source: %v", diags.Errors())
+					}
+
+					inputSource := &libvirtxml.DomainInputSource{}
+
+					// Handle passthrough variant
+					if !source.Passthrough.IsNull() && !source.Passthrough.IsUnknown() {
+						var passthrough DomainInputSourcePassthroughModel
+						diags := source.Passthrough.As(ctx, &passthrough, basetypes.ObjectAsOptions{})
+						if diags.HasError() {
+							return nil, fmt.Errorf("failed to extract input source passthrough: %v", diags.Errors())
+						}
+
+						if !passthrough.EVDev.IsNull() && !passthrough.EVDev.IsUnknown() {
+							inputSource.Passthrough = &libvirtxml.DomainInputSourcePassthrough{
+								EVDev: passthrough.EVDev.ValueString(),
+							}
+						}
+					}
+
+					// Handle evdev variant
+					if !source.EVDev.IsNull() && !source.EVDev.IsUnknown() {
+						var evdev DomainInputSourceEVDevModel
+						diags := source.EVDev.As(ctx, &evdev, basetypes.ObjectAsOptions{})
+						if diags.HasError() {
+							return nil, fmt.Errorf("failed to extract input source evdev: %v", diags.Errors())
+						}
+
+						inputSourceEVDev := &libvirtxml.DomainInputSourceEVDev{}
+
+						if !evdev.Dev.IsNull() && !evdev.Dev.IsUnknown() {
+							inputSourceEVDev.Dev = evdev.Dev.ValueString()
+						}
+
+						if !evdev.Grab.IsNull() && !evdev.Grab.IsUnknown() {
+							inputSourceEVDev.Grab = evdev.Grab.ValueString()
+						}
+
+						if !evdev.GrabToggle.IsNull() && !evdev.GrabToggle.IsUnknown() {
+							inputSourceEVDev.GrabToggle = evdev.GrabToggle.ValueString()
+						}
+
+						if !evdev.Repeat.IsNull() && !evdev.Repeat.IsUnknown() {
+							inputSourceEVDev.Repeat = evdev.Repeat.ValueString()
+						}
+
+						inputSource.EVDev = inputSourceEVDev
+					}
+
+					input.Source = inputSource
+				}
+
+				domain.Devices.Inputs = append(domain.Devices.Inputs, input)
+			}
+		}
 	}
 
 	return domain, nil
@@ -2568,6 +2684,216 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			}
 		}
 
+		// Process Inputs
+		inputsType := types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: map[string]attr.Type{
+					"type":  types.StringType,
+					"bus":   types.StringType,
+					"model": types.StringType,
+					"driver": types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"iommu":       types.StringType,
+							"ats":         types.StringType,
+							"packed":      types.StringType,
+							"page_per_vq": types.StringType,
+						},
+					},
+					"source": types.ObjectType{
+						AttrTypes: map[string]attr.Type{
+							"passthrough": types.ObjectType{
+								AttrTypes: map[string]attr.Type{
+									"evdev": types.StringType,
+								},
+							},
+							"evdev": types.ObjectType{
+								AttrTypes: map[string]attr.Type{
+									"dev":         types.StringType,
+									"grab":        types.StringType,
+									"grab_toggle": types.StringType,
+									"repeat":      types.StringType,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		inputsObjType, ok := inputsType.ElemType.(types.ObjectType)
+		if !ok {
+			diags.AddError("Type Error", "Expected inputsType.ElemType to be ObjectType")
+			return diags
+		}
+		inputsList := types.ListNull(inputsObjType)
+
+		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
+			var existingDevices DomainDevicesModel
+			diags.Append(model.Devices.As(ctx, &existingDevices, basetypes.ObjectAsOptions{})...)
+
+			if !existingDevices.Inputs.IsNull() && !existingDevices.Inputs.IsUnknown() && len(domain.Devices.Inputs) > 0 {
+				// Get the count of user-configured inputs
+				var userInputs []DomainInputModel
+				diags.Append(existingDevices.Inputs.ElementsAs(ctx, &userInputs, false)...)
+				userInputCount := len(userInputs)
+
+				// Only read back the number of inputs the user configured (libvirt adds defaults)
+				inputsToRead := domain.Devices.Inputs
+				if len(inputsToRead) > userInputCount {
+					inputsToRead = inputsToRead[:userInputCount]
+				}
+
+				inputs := make([]DomainInputModel, 0, len(inputsToRead))
+				for _, input := range inputsToRead {
+					inputModel := DomainInputModel{
+					Driver: types.ObjectNull(map[string]attr.Type{
+						"iommu":       types.StringType,
+						"ats":         types.StringType,
+						"packed":      types.StringType,
+						"page_per_vq": types.StringType,
+					}),
+					Source: types.ObjectNull(map[string]attr.Type{
+						"passthrough": types.ObjectType{
+							AttrTypes: map[string]attr.Type{
+								"evdev": types.StringType,
+							},
+						},
+						"evdev": types.ObjectType{
+							AttrTypes: map[string]attr.Type{
+								"dev":         types.StringType,
+								"grab":        types.StringType,
+								"grab_toggle": types.StringType,
+								"repeat":      types.StringType,
+							},
+						},
+					}),
+				}
+
+					if input.Type != "" {
+						inputModel.Type = types.StringValue(input.Type)
+					}
+
+					if input.Bus != "" {
+						inputModel.Bus = types.StringValue(input.Bus)
+					}
+
+					if input.Model != "" {
+						inputModel.Model = types.StringValue(input.Model)
+					}
+
+					// Process driver
+					if input.Driver != nil && (input.Driver.IOMMU != "" || input.Driver.ATS != "" || input.Driver.Packed != "" || input.Driver.PagePerVQ != "") {
+						driverModel := DomainInputDriverModel{}
+
+						if input.Driver.IOMMU != "" {
+							driverModel.IOMMU = types.StringValue(input.Driver.IOMMU)
+						}
+
+						if input.Driver.ATS != "" {
+							driverModel.ATS = types.StringValue(input.Driver.ATS)
+						}
+
+						if input.Driver.Packed != "" {
+							driverModel.Packed = types.StringValue(input.Driver.Packed)
+						}
+
+						if input.Driver.PagePerVQ != "" {
+							driverModel.PagePerVQ = types.StringValue(input.Driver.PagePerVQ)
+						}
+
+						driverObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+							"iommu":       types.StringType,
+							"ats":         types.StringType,
+							"packed":      types.StringType,
+							"page_per_vq": types.StringType,
+						}, driverModel)
+						diags.Append(d...)
+						if !diags.HasError() {
+							inputModel.Driver = driverObj
+						}
+					}
+
+					// Process source
+					if input.Source != nil && (input.Source.Passthrough != nil || input.Source.EVDev != nil) {
+						sourceModel := DomainInputSourceModel{}
+
+						if input.Source.Passthrough != nil {
+							passthroughModel := DomainInputSourcePassthroughModel{}
+							if input.Source.Passthrough.EVDev != "" {
+								passthroughModel.EVDev = types.StringValue(input.Source.Passthrough.EVDev)
+							}
+
+							passthroughObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+								"evdev": types.StringType,
+							}, passthroughModel)
+							diags.Append(d...)
+							if !diags.HasError() {
+								sourceModel.Passthrough = passthroughObj
+							}
+						}
+
+						if input.Source.EVDev != nil {
+							evdevModel := DomainInputSourceEVDevModel{}
+
+							if input.Source.EVDev.Dev != "" {
+								evdevModel.Dev = types.StringValue(input.Source.EVDev.Dev)
+							}
+
+							if input.Source.EVDev.Grab != "" {
+								evdevModel.Grab = types.StringValue(input.Source.EVDev.Grab)
+							}
+
+							if input.Source.EVDev.GrabToggle != "" {
+								evdevModel.GrabToggle = types.StringValue(input.Source.EVDev.GrabToggle)
+							}
+
+							if input.Source.EVDev.Repeat != "" {
+								evdevModel.Repeat = types.StringValue(input.Source.EVDev.Repeat)
+							}
+
+							evdevObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+								"dev":         types.StringType,
+								"grab":        types.StringType,
+								"grab_toggle": types.StringType,
+								"repeat":      types.StringType,
+							}, evdevModel)
+							diags.Append(d...)
+							if !diags.HasError() {
+								sourceModel.EVDev = evdevObj
+							}
+						}
+
+						sourceObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
+							"passthrough": types.ObjectType{
+								AttrTypes: map[string]attr.Type{
+									"evdev": types.StringType,
+								},
+							},
+							"evdev": types.ObjectType{
+								AttrTypes: map[string]attr.Type{
+									"dev":         types.StringType,
+									"grab":        types.StringType,
+									"grab_toggle": types.StringType,
+									"repeat":      types.StringType,
+								},
+							},
+						}, sourceModel)
+						diags.Append(d...)
+						if !diags.HasError() {
+							inputModel.Source = sourceObj
+						}
+					}
+
+					inputs = append(inputs, inputModel)
+				}
+
+				inputsList, d = types.ListValueFrom(ctx, inputsObjType, inputs)
+				diags.Append(d...)
+				if diags.HasError() {
+					return diags
+				}
+			}
+		}
+
 		newDevices := DomainDevicesModel{
 			Disks:       disksList,
 			Interfaces:  interfacesList,
@@ -2579,6 +2905,7 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 			Serials:     serialsList,
 			RNGs:        rngsList,
 			TPMs:        tpmsList,
+			Inputs:      inputsList,
 		}
 
 		// Create the devices object
@@ -2696,6 +3023,40 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 						"backend_encryption_secret": types.StringType,
 						"backend_version":           types.StringType,
 						"backend_persistent_state":  types.BoolType,
+					},
+				},
+			},
+			"inputs": types.ListType{
+				ElemType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"type":  types.StringType,
+						"bus":   types.StringType,
+						"model": types.StringType,
+						"driver": types.ObjectType{
+							AttrTypes: map[string]attr.Type{
+								"iommu":       types.StringType,
+								"ats":         types.StringType,
+								"packed":      types.StringType,
+								"page_per_vq": types.StringType,
+							},
+						},
+						"source": types.ObjectType{
+							AttrTypes: map[string]attr.Type{
+								"passthrough": types.ObjectType{
+									AttrTypes: map[string]attr.Type{
+										"evdev": types.StringType,
+									},
+								},
+								"evdev": types.ObjectType{
+									AttrTypes: map[string]attr.Type{
+										"dev":         types.StringType,
+										"grab":        types.StringType,
+										"grab_toggle": types.StringType,
+										"repeat":      types.StringType,
+									},
+								},
+							},
+						},
 					},
 				},
 			},

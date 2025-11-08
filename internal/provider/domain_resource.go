@@ -217,6 +217,7 @@ type DomainDevicesModel struct {
 	Serials     types.List   `tfsdk:"serials"`
 	RNGs        types.List   `tfsdk:"rngs"`
 	TPMs        types.List   `tfsdk:"tpms"`
+	Inputs      types.List   `tfsdk:"inputs"`
 }
 
 // DomainFilesystemModel describes a filesystem device
@@ -262,6 +263,42 @@ type DomainTPMModel struct {
 	BackendEncryptionSecret types.String `tfsdk:"backend_encryption_secret"`
 	BackendVersion          types.String `tfsdk:"backend_version"`
 	BackendPersistentState  types.Bool   `tfsdk:"backend_persistent_state"`
+}
+
+// DomainInputModel describes an input device
+type DomainInputModel struct {
+	Type   types.String `tfsdk:"type"`
+	Bus    types.String `tfsdk:"bus"`
+	Model  types.String `tfsdk:"model"`
+	Driver types.Object `tfsdk:"driver"`
+	Source types.Object `tfsdk:"source"`
+}
+
+// DomainInputDriverModel describes input device driver options
+type DomainInputDriverModel struct {
+	IOMMU     types.String `tfsdk:"iommu"`
+	ATS       types.String `tfsdk:"ats"`
+	Packed    types.String `tfsdk:"packed"`
+	PagePerVQ types.String `tfsdk:"page_per_vq"`
+}
+
+// DomainInputSourceModel describes input device source
+type DomainInputSourceModel struct {
+	Passthrough types.Object `tfsdk:"passthrough"`
+	EVDev       types.Object `tfsdk:"evdev"`
+}
+
+// DomainInputSourcePassthroughModel describes passthrough input source
+type DomainInputSourcePassthroughModel struct {
+	EVDev types.String `tfsdk:"evdev"`
+}
+
+// DomainInputSourceEVDevModel describes evdev input source
+type DomainInputSourceEVDevModel struct {
+	Dev        types.String `tfsdk:"dev"`
+	Grab       types.String `tfsdk:"grab"`
+	GrabToggle types.String `tfsdk:"grab_toggle"`
+	Repeat     types.String `tfsdk:"repeat"`
 }
 
 // DomainFeaturesModel describes VM features
@@ -983,6 +1020,86 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 								"backend_persistent_state": schema.BoolAttribute{
 									Description: "Whether TPM state should be persistent across VM restarts. Only used with backend_type='emulator'.",
 									Optional:    true,
+								},
+							},
+						},
+					},
+					"inputs": schema.ListNestedAttribute{
+						Description: "Input devices for the domain (keyboard, mouse, tablet, etc.).",
+						Optional:    true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"type": schema.StringAttribute{
+									Description: "Input device type ('tablet', 'mouse', 'keyboard', 'passthrough', 'evdev').",
+									Required:    true,
+								},
+								"bus": schema.StringAttribute{
+									Description: "Input device bus ('ps2', 'usb', 'xen', 'virtio'). Optional for tablet/mouse/keyboard, required for passthrough/evdev.",
+									Optional:    true,
+								},
+								"model": schema.StringAttribute{
+									Description: "Input device model ('virtio', 'virtio-transitional', 'virtio-non-transitional').",
+									Optional:    true,
+								},
+								"driver": schema.SingleNestedAttribute{
+									Description: "Virtio driver options for the input device.",
+									Optional:    true,
+									Attributes: map[string]schema.Attribute{
+										"iommu": schema.StringAttribute{
+											Description: "Enable IOMMU for the device ('on', 'off').",
+											Optional:    true,
+										},
+										"ats": schema.StringAttribute{
+											Description: "Enable ATS (Address Translation Services) ('on', 'off').",
+											Optional:    true,
+										},
+										"packed": schema.StringAttribute{
+											Description: "Enable packed virtqueue layout ('on', 'off').",
+											Optional:    true,
+										},
+										"page_per_vq": schema.StringAttribute{
+											Description: "Page per virtqueue setting ('on', 'off').",
+											Optional:    true,
+										},
+									},
+								},
+								"source": schema.SingleNestedAttribute{
+									Description: "Input source configuration. Required for passthrough and evdev types.",
+									Optional:    true,
+									Attributes: map[string]schema.Attribute{
+										"passthrough": schema.SingleNestedAttribute{
+											Description: "Passthrough input source configuration.",
+											Optional:    true,
+											Attributes: map[string]schema.Attribute{
+												"evdev": schema.StringAttribute{
+													Description: "Event device path for passthrough (e.g., '/dev/input/event0').",
+													Required:    true,
+												},
+											},
+										},
+										"evdev": schema.SingleNestedAttribute{
+											Description: "EVDev input source configuration.",
+											Optional:    true,
+											Attributes: map[string]schema.Attribute{
+												"dev": schema.StringAttribute{
+													Description: "Event device path (e.g., '/dev/input/event0').",
+													Required:    true,
+												},
+												"grab": schema.StringAttribute{
+													Description: "Grab mode ('all', or unspecified).",
+													Optional:    true,
+												},
+												"grab_toggle": schema.StringAttribute{
+													Description: "Key combination for grab toggle ('ctrl-ctrl', 'alt-alt', 'shift-shift', 'meta-meta', 'scrolllock', 'ctrl-scrolllock').",
+													Optional:    true,
+												},
+												"repeat": schema.StringAttribute{
+													Description: "Enable key repeat ('on', 'off').",
+													Optional:    true,
+												},
+											},
+										},
+									},
 								},
 							},
 						},

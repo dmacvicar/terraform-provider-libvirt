@@ -1668,3 +1668,54 @@ resource "libvirt_domain" "test" {
 }
 `, name)
 }
+
+func TestAccDomainResource_inputs(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigInputs("test-domain-inputs"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-inputs"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.inputs.0.type", "tablet"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.inputs.0.bus", "usb"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.inputs.1.type", "keyboard"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.inputs.1.bus", "virtio"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigInputs(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os = {
+    type    = "hvm"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  devices = {
+    inputs = [
+      {
+        type = "tablet"
+        bus  = "usb"
+      },
+      {
+        type = "keyboard"
+        bus  = "virtio"
+      }
+    ]
+  }
+}
+`, name)
+}
