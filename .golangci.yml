@@ -1,21 +1,6 @@
-version: 2
-
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-  govet:
-    enable-all: true
-  gocyclo:
-    min-complexity: 50  # Conversion functions can be complex
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-  misspell:
-    locale: US
+version: "2"
 
 linters:
-  disable-all: true
   enable:
     - errcheck       # Check for unchecked errors
     - govet          # Vet examines Go source code
@@ -24,34 +9,57 @@ linters:
     - unused         # Check for unused constants, variables, functions and types
     - misspell       # Check for misspelled English words
 
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    govet:
+      enable-all: true
+    gocyclo:
+      min-complexity: 50  # Conversion functions can be complex
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+    misspell:
+      locale: US
+
+  exclusions:
+    rules:
+      # Exclude some linters from running on test files
+      - path: _test\.go$
+        linters:
+          - gocyclo
+          - errcheck
+          - dupl
+          - gosec
+          - goconst
+      # Interface methods often have unused context parameters
+      - text: "unused-parameter.*ctx"
+        linters:
+          - revive
+      # Cyclomatic complexity is high for conversion functions
+      - text: "cyclomatic complexity.*domainModelToXML"
+        linters:
+          - gocyclo
+      # Ignore deliberate blank error assignments (cleanup code)
+      - text: "Error return value.*is not checked"
+        source: "_ = .*Close"
+      # Ignore shadow warnings for common variable names in error handling
+      - text: "shadow: declaration of \"err\""
+        linters:
+          - govet
+      # Ignore shadow warnings for diagnostic variable 'd'
+      - text: "shadow: declaration of \"d\""
+        linters:
+          - govet
+      # Ignore fieldalignment suggestions (micro-optimization)
+      - text: "fieldalignment:"
+        linters:
+          - govet
+
 issues:
-  exclude-rules:
-    # Exclude some linters from running on tests files
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - dupl
-        - gosec
-        - goconst
-    # Interface methods often have unused context parameters
-    - text: "unused-parameter.*ctx"
-      linters:
-        - revive
-    # Cyclomatic complexity is high for conversion functions
-    - text: "cyclomatic complexity.*domainModelToXML"
-      linters:
-        - gocyclo
-
-  # Maximum issues count per one linter
-  max-issues-per-linter: 0
-
   # Maximum count of issues with the same text
   max-same-issues: 0
 
 run:
   timeout: 5m
-  skip-dirs:
-    - vendor
-  skip-files:
-    - ".*\\.pb\\.go$"

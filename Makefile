@@ -36,6 +36,8 @@ sweep: ## Clean up leaked test resources from failed tests
 	@cd internal/provider && go test -sweep=$(shell if [ -n "$$LIBVIRT_TEST_URI" ]; then echo "$$LIBVIRT_TEST_URI"; else echo "qemu:///system"; fi) -timeout 10m .
 
 lint: ## Run golangci-lint
+	@echo "Verifying golangci-lint config..."
+	@golangci-lint config verify
 	@echo "Running golangci-lint..."
 	@golangci-lint run ./...
 
