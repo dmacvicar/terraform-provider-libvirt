@@ -32,7 +32,6 @@ jobs:
         with:
           version: v2.6.1
           only-new-issues: true
-          skip-config-verify: true
   build:
     name: Build
     runs-on: ${{ matrix.os }}
