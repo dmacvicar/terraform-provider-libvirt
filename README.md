@@ -2,14 +2,14 @@
 
 This provider allows managing libvirt resources (virtual machines, storage pools, networks) using Terraform. It communicates with libvirt using its API to define, configure, and manage virtualization resources.
 
-This is a complete rewrite of the [original provider](https://github.com/dmacvicar/terraform-provider-libvirt).
+This is a complete rewrite of the [legacy provider](https://github.com/dmacvicar/terraform-provider-libvirt). The legacy provider (v0.8.x and earlier) is maintained in the [v0.8 branch](https://github.com/dmacvicar/terraform-provider-libvirt/tree/v0.8). Starting from v0.9.0, all releases will be based on this new rewrite.
 
 ## Goals
 
-This rewrite improves upon the original provider in several ways:
+This rewrite improves upon the legacy provider in several ways:
 
 1. **API Fidelity** - Models the [libvirt XML schemas](https://libvirt.org/format.html) directly instead of abstracting them, giving users full access to libvirt features. Schema coverage is bounded by what [libvirtxml](https://pkg.go.dev/libvirt.org/go/libvirtxml) supports.
-2. **Current Framework** - Built with Terraform Plugin Framework, as the SDK v2 used in the original is deprecated
+2. **Current Framework** - Built with Terraform Plugin Framework, as the SDK v2 used in the legacy provider is deprecated
 3. **Best Practices** - Follows [HashiCorp's provider design principles](https://developer.hashicorp.com/terraform/plugin/best-practices/hashicorp-provider-design-principles)
 
 ## Design Principles
@@ -209,7 +209,7 @@ If the source always has the same pattern, it can be flattened to a simple attri
 
 - We don't distinguish between XML attributes and elements in HCL - both become HCL attributes
 - The same XML structure always maps to the same HCL structure
-- This consistent mapping enables automated migration from the old provider or from raw libvirt XML
+- This consistent mapping enables automated migration from the legacy provider or from raw libvirt XML
 - **Nested Attributes vs Blocks**: Following [HashiCorp's guidance](https://developer.hashicorp.com/terraform/plugin/framework/handling-data/blocks), new features use nested attributes (e.g., `devices = { ... }`) instead of blocks. Some existing features (`os`, `features`, `clock`, etc.) incorrectly use blocks and need conversion (see TODO.md).
 
 For detailed XML schemas, see the [libvirt domain format documentation](https://libvirt.org/formatdomain.html).
@@ -301,13 +301,13 @@ See [docs/transports.md](./docs/transports.md) for detailed transport configurat
 
 See the [examples](./examples) directory for more usage examples.
 
-## Migration from v1 (Old Provider)
+## Migration from Legacy Provider (v0.8.x)
 
 ### Volume Source URLs
 
-If you're migrating from the original provider and used the `source` attribute on volumes to download cloud images, note that this feature is now available via the `create.content.url` block:
+If you're migrating from the legacy provider and used the `source` attribute on volumes to download cloud images, note that this feature is now available via the `create.content.url` block:
 
-**Old provider (v1):**
+**Legacy provider (v0.8.x):**
 ```hcl
 resource "libvirt_volume" "ubuntu" {
   name   = "ubuntu.qcow2"
@@ -317,7 +317,7 @@ resource "libvirt_volume" "ubuntu" {
 }
 ```
 
-**New provider (v2):**
+**New provider (v0.9+):**
 ```hcl
 resource "libvirt_volume" "ubuntu" {
   name   = "ubuntu.qcow2"
@@ -334,8 +334,8 @@ resource "libvirt_volume" "ubuntu" {
 ```
 
 **Important notes:**
-1. **Format is required**: You must explicitly specify the `format` attribute (e.g., `"qcow2"`, `"raw"`). The old provider auto-detected format from file extension, but the new provider requires it.
-2. **Capacity is computed**: Like the old provider, `capacity` is automatically computed from the HTTP `Content-Length` header (or file size for local files). You don't need to specify it.
+1. **Format is required**: You must explicitly specify the `format` attribute (e.g., `"qcow2"`, `"raw"`). The legacy provider auto-detected format from file extension, but the new provider requires it.
+2. **Capacity is computed**: Like the legacy provider, `capacity` is automatically computed from the HTTP `Content-Length` header (or file size for local files). You don't need to specify it.
 3. **Local files supported**: You can use absolute paths or `file://` URIs for local files: `url = "/path/to/local.qcow2"` or `url = "file:///path/to/local.qcow2"`
 4. **Content-Length required**: For HTTPS URLs, the server must provide a `Content-Length` header. If it doesn't, volume creation will fail.
 
@@ -379,11 +379,11 @@ Run `make help` to see all targets.
 
 ## Current Status
 
-This table shows implementation status and compatibility with the [original provider](https://github.com/dmacvicar/terraform-provider-libvirt):
+This table shows implementation status and compatibility with the [legacy provider](https://github.com/dmacvicar/terraform-provider-libvirt/tree/v0.8) (v0.8.x):
 
 ### Provider Configuration
 
-| Feature | Status | Old Provider | Notes |
+| Feature | Status | Legacy Provider | Notes |
 |---------|--------|--------------|-------|
 | qemu:///system | ✅ | ✅ | Local system connection |
 | qemu:///session | ✅ | ✅ | Local user session connection |
@@ -394,7 +394,7 @@ This table shows implementation status and compatibility with the [original prov
 
 ### Domain Resource (libvirt_domain)
 
-| Feature Category | Status | Old Provider | Notes |
+| Feature Category | Status | Legacy Provider | Notes |
 |-----------------|--------|--------------|-------|
 | Basic config | ✅ | ✅ | name, memory, vcpu, type, description |
 | Metadata | ○ | ✅ | Custom metadata XML |
@@ -402,7 +402,7 @@ This table shows implementation status and compatibility with the [original prov
 | Kernel boot | ✅ | ✅ | kernel, initrd, cmdline |
 | CPU | ⚠️ | ⚠️ | Basic (mode) only; topology/features planned |
 | Memory | ⚠️ | ⚠️ | Basic only; hugepages planned |
-| Features | ✅ | ⚠️ | 20+ features; more than old provider |
+| Features | ✅ | ⚠️ | 20+ features; more than legacy provider |
 | Clock & timers | ✅ | ○ | Full support including nested catchup |
 | Power management | ✅ | ○ | suspend_to_mem, suspend_to_disk |
 | Disks (basic) | ✅ | ✅ | File-based disks with device, target, bus |
@@ -431,7 +431,7 @@ This table shows implementation status and compatibility with the [original prov
 
 ### Volume Resource (libvirt_volume)
 
-| Feature | Status | Old Provider | Notes |
+| Feature | Status | Legacy Provider | Notes |
 |---------|--------|--------------|-------|
 | Resource | ✅ | ✅ | Create and manage volumes |
 | Type | ✅ | ✅ | Volume type (file, block, dir, etc.) |
@@ -445,7 +445,7 @@ This table shows implementation status and compatibility with the [original prov
 
 ### Pool Resource (libvirt_pool)
 
-| Feature | Status | Old Provider | Notes |
+| Feature | Status | Legacy Provider | Notes |
 |---------|--------|--------------|-------|
 | Resource | ✅ | ✅ | Create and manage storage pools |
 | Pool types | ✅ | ✅ | dir (directory) type |
@@ -455,7 +455,7 @@ This table shows implementation status and compatibility with the [original prov
 
 ### Network Resource (libvirt_network)
 
-| Feature | Status | Old Provider | Notes |
+| Feature | Status | Legacy Provider | Notes |
 |---------|--------|--------------|-------|
 | Resource | ✅ | ✅ | Create and manage networks |
 | Network modes | ⚠️ | ✅ | nat and isolated (none) modes implemented |
@@ -468,7 +468,7 @@ This table shows implementation status and compatibility with the [original prov
 
 ### Data Sources
 
-| Feature | Status | Old Provider | Notes |
+| Feature | Status | Legacy Provider | Notes |
 |---------|--------|--------------|-------|
 | Node info | ○ | ✅ | Host system information (CPU, memory) |
 | Node devices | ○ | ✅ | Device enumeration by capability |
@@ -493,4 +493,4 @@ Duncan Mac-Vicar P.
 
 ## License
 
-Same as the original provider (Apache 2.0).
+Same as the legacy provider (Apache 2.0).
