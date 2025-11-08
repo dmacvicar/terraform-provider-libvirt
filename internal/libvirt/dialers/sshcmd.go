@@ -395,7 +395,9 @@ func (c *sshCmdConn) lastStderrLines() []string {
 		if el == nil {
 			return
 		}
-		lines = append(lines, el.(string))
+		if str, ok := el.(string); ok {
+			lines = append(lines, str)
+		}
 	})
 
 	return lines

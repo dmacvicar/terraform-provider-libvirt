@@ -1741,7 +1741,7 @@ func waitForInterfaceIP(ctx context.Context, client *libvirt.Client, domain goli
 		// Wait before next poll
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("context cancelled while waiting for IP")
+			return fmt.Errorf("context canceled while waiting for IP")
 		case <-time.After(pollInterval):
 			// Continue polling
 		}

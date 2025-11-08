@@ -432,8 +432,12 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		// The 0 flag means start at offset 0, uploadCapacity is the length
 		err = r.client.Libvirt().StorageVolUpload(volume, uploadStream.Reader, 0, uint64(uploadCapacity), 0)
 		if err != nil {
-			// Upload failed, try to clean up the volume
-			_ = r.client.Libvirt().StorageVolDelete(volume, 0)
+			// Upload failed, try to clean up the volume (ignore cleanup errors to preserve original error)
+			if delErr := r.client.Libvirt().StorageVolDelete(volume, 0); delErr != nil {
+				tflog.Warn(ctx, "Failed to delete volume during cleanup", map[string]any{
+					"error": delErr.Error(),
+				})
+			}
 			resp.Diagnostics.AddError(
 				"Volume Upload Failed",
 				fmt.Sprintf("Failed to upload content to volume: %s", err),

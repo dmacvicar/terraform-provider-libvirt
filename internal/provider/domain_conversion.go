@@ -2202,7 +2202,12 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 				},
 			},
 		}
-		filesystemsList := types.ListNull(filesystemsType.ElemType.(types.ObjectType))
+		filesystemsObjType, ok := filesystemsType.ElemType.(types.ObjectType)
+		if !ok {
+			diags.AddError("Type Error", "Expected filesystemsType.ElemType to be ObjectType")
+			return diags
+		}
+		filesystemsList := types.ListNull(filesystemsObjType)
 
 		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
 			var existingDevices DomainDevicesModel
@@ -2310,7 +2315,12 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 				},
 			},
 		}
-		consolesList := types.ListNull(consolesType.ElemType.(types.ObjectType))
+		consolesObjType, ok := consolesType.ElemType.(types.ObjectType)
+		if !ok {
+			diags.AddError("Type Error", "Expected consolesType.ElemType to be ObjectType")
+			return diags
+		}
+		consolesList := types.ListNull(consolesObjType)
 
 		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
 			var existingDevices DomainDevicesModel
@@ -2375,7 +2385,12 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 				},
 			},
 		}
-		serialsList := types.ListNull(serialsType.ElemType.(types.ObjectType))
+		serialsObjType, ok := serialsType.ElemType.(types.ObjectType)
+		if !ok {
+			diags.AddError("Type Error", "Expected serialsType.ElemType to be ObjectType")
+			return diags
+		}
+		serialsList := types.ListNull(serialsObjType)
 
 		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
 			var existingDevices DomainDevicesModel
@@ -2438,7 +2453,12 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 				},
 			},
 		}
-		rngsList := types.ListNull(rngsType.ElemType.(types.ObjectType))
+		rngsObjType, ok := rngsType.ElemType.(types.ObjectType)
+		if !ok {
+			diags.AddError("Type Error", "Expected rngsType.ElemType to be ObjectType")
+			return diags
+		}
+		rngsList := types.ListNull(rngsObjType)
 
 		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
 			var existingDevices DomainDevicesModel
@@ -2487,7 +2507,12 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 				},
 			},
 		}
-		tpmsList := types.ListNull(tpmsType.ElemType.(types.ObjectType))
+		tpmsObjType, ok := tpmsType.ElemType.(types.ObjectType)
+		if !ok {
+			diags.AddError("Type Error", "Expected tpmsType.ElemType to be ObjectType")
+			return diags
+		}
+		tpmsList := types.ListNull(tpmsObjType)
 
 		if !model.Devices.IsNull() && !model.Devices.IsUnknown() {
 			var existingDevices DomainDevicesModel
