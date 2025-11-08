@@ -1,4 +1,4 @@
-.PHONY: help build install test testacc sweep lint fmt clean
+.PHONY: help build install test testacc testacc-tofu sweep lint fmt clean
 
 # Default target
 .DEFAULT_GOAL := help
@@ -29,7 +29,10 @@ test: ## Run unit tests
 
 testacc: ## Run acceptance tests (requires running libvirt)
 	@echo "Running acceptance tests..."
-	@TF_ACC=1 go test -v -timeout 10m ./internal/provider
+	@TF_ACC=1 go test -count=1 -v -timeout 10m ./internal/provider
+
+testacc-tofu: ## Run acceptance tests with OpenTofu
+	@TF_ACC_TERRAFORM_PATH=$$(which tofu) TF_ACC_PROVIDER_NAMESPACE=dmacvicar TF_ACC_PROVIDER_HOST=registry.terraform.io $(MAKE) testacc
 
 sweep: ## Clean up leaked test resources from failed tests
 	@echo "Running test sweepers..."
