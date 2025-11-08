@@ -13,7 +13,7 @@ help: ## Display this help message
 	@echo "Terraform Provider Libvirt - Available targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-build: lint ## Build the provider binary
+build: ## Build the provider binary
 	@echo "Building terraform-provider-libvirt..."
 	@go build $(LDFLAGS) -o terraform-provider-libvirt
 
@@ -23,11 +23,11 @@ install: build ## Install the provider to local Terraform plugin directory
 	@cp terraform-provider-libvirt ~/.terraform.d/plugins/registry.terraform.io/dmacvicar/libvirt/$(VERSION)/linux_amd64/
 	@echo "Installed to ~/.terraform.d/plugins/registry.terraform.io/dmacvicar/libvirt/$(VERSION)/linux_amd64/"
 
-test: lint ## Run unit tests
+test: ## Run unit tests
 	@echo "Running unit tests..."
 	@go test ./... -v
 
-testacc: lint ## Run acceptance tests (requires running libvirt)
+testacc: ## Run acceptance tests (requires running libvirt)
 	@echo "Running acceptance tests..."
 	@TF_ACC=1 go test -v -timeout 10m ./internal/provider
 
