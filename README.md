@@ -2,7 +2,7 @@
 
 This provider allows managing libvirt resources (virtual machines, storage pools, networks) using Terraform. It communicates with libvirt using its API to define, configure, and manage virtualization resources.
 
-This is a complete rewrite of the [legacy provider](https://github.com/dmacvicar/terraform-provider-libvirt). The legacy provider (v0.8.x and earlier) is maintained in the [v0.8 branch](https://github.com/dmacvicar/terraform-provider-libvirt/tree/v0.8). Starting from v0.9.0, all releases will be based on this new rewrite.
+This is a complete rewrite of the legacy provider. The legacy provider (v0.8.x and earlier) is maintained in the [v0.8 branch](https://github.com/dmacvicar/terraform-provider-libvirt/tree/v0.8). Starting from v0.9.0, all releases will be based on this new rewrite.
 
 ## Goals
 
