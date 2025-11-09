@@ -60,3 +60,56 @@ jobs:
         with:
           name: terraform-provider-libvirt-${{ matrix.os }}
           path: ${{ github.workspace }}/terraform-provider-libvirt*
+
+  acceptance:
+    name: Acceptance Tests (${{ matrix.tf-binary }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tf-binary: [terraform, opentofu]
+        go-version: ["1.25.x"]
+    timeout-minutes: 30
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install libvirt and QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qemu-system-x86 \
+            libvirt-daemon-system \
+            libvirt-clients \
+            libvirt-dev
+
+      - name: Start libvirtd
+        run: |
+          sudo systemctl start libvirtd
+          sudo systemctl status libvirtd
+
+      - name: Install Terraform
+        if: matrix.tf-binary == 'terraform'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Install OpenTofu
+        if: matrix.tf-binary == 'opentofu'
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: latest
+
+      - name: Run Acceptance Tests
+        env:
+          TF_ACC: "1"
+          TF_PROVIDER_LIBVIRT_DOMAIN_TYPE: "qemu"
+          TF_ACC_PROVIDER_NAMESPACE: "dmacvicar"
+          TF_ACC_PROVIDER_HOST: "registry.terraform.io"
+          TF_ACC_TERRAFORM_PATH: ${{ matrix.tf-binary == 'opentofu' && 'tofu' || 'terraform' }}
+        run: make testacc
