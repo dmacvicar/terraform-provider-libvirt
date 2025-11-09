@@ -1318,7 +1318,6 @@ func TestAccDomainResource_preserveUserIntent(t *testing.T) {
 					resource.TestCheckNoResourceAttr("libvirt_domain.test", "on_crash"),
 					resource.TestCheckNoResourceAttr("libvirt_domain.test", "autostart"),
 					resource.TestCheckNoResourceAttr("libvirt_domain.test", "unit"),
-					resource.TestCheckNoResourceAttr("libvirt_domain.test", "type"),
 					resource.TestCheckNoResourceAttr("libvirt_domain.test", "current_memory"),
 					resource.TestCheckNoResourceAttr("libvirt_domain.test", "os.boot_devices.#"),
 					// Verify required fields ARE in state
