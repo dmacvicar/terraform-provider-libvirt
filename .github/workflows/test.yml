@@ -21,12 +21,12 @@ jobs:
       matrix:
         go-version: ["1.25.x"]
     steps:
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go-version }}
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
@@ -43,13 +43,13 @@ jobs:
           - {os: macos-latest, go: 1.25}
     timeout-minutes: 10
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
         id: go
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v4
       - name: Build
         run: |
           make build
@@ -71,14 +71,12 @@ jobs:
         go-version: ["1.25.x"]
     timeout-minutes: 30
     steps:
+      - name: Check out code
+        uses: actions/checkout@v4
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
-
-      - name: Check out code
-        uses: actions/checkout@v4
-
       - name: Install libvirt and QEMU
         run: |
           sudo apt-get update
