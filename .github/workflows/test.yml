@@ -88,10 +88,14 @@ jobs:
             libvirt-clients \
             libvirt-dev
 
-      - name: Start libvirtd
+      - name: Start libvirtd and configure permissions
         run: |
           sudo systemctl start libvirtd
           sudo systemctl status libvirtd
+          # Add runner to libvirt group
+          sudo usermod -a -G libvirt runner
+          # Change socket permissions to allow group access
+          sudo chmod 666 /var/run/libvirt/libvirt-sock
 
       - name: Install Terraform
         if: matrix.tf-binary == 'terraform'
