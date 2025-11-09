@@ -415,6 +415,8 @@ make test
 make testacc
 ```
 
+On Github, the tests use a hack we have in place to override the domain type (`TF_PROVIDER_LIBVIRT_DOMAIN_TYPE=qemu`), which allows to run acceptance tests without nested virtualization, but using the [tcg](https://www.qemu.org/docs/master/devel/index-tcg.html) accelerator instead of KVM.
+
 ### Code quality
 
 All code must pass linting before being committed:
