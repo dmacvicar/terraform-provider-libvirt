@@ -111,5 +111,12 @@ jobs:
           TF_PROVIDER_LIBVIRT_DOMAIN_TYPE: "qemu"
           TF_ACC_PROVIDER_NAMESPACE: "dmacvicar"
           TF_ACC_PROVIDER_HOST: "registry.terraform.io"
-          TF_ACC_TERRAFORM_PATH: ${{ matrix.tf-binary == 'opentofu' && 'tofu' || 'terraform' }}
-        run: make testacc
+        run: |
+          # Get absolute path to terraform/tofu binary
+          if [ "${{ matrix.tf-binary }}" = "opentofu" ]; then
+            export TF_ACC_TERRAFORM_PATH=$(which tofu)
+          else
+            export TF_ACC_TERRAFORM_PATH=$(which terraform)
+          fi
+          echo "Using Terraform CLI at: $TF_ACC_TERRAFORM_PATH"
+          make testacc
