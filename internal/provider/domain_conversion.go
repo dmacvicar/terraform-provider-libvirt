@@ -4,6 +4,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -81,10 +83,23 @@ func domainModelToXML(ctx context.Context, client *libvirt.Client, model *Domain
 	}
 
 	// Set domain type (default to kvm)
-	if model.Type.IsNull() || model.Type.IsUnknown() {
-		domain.Type = "kvm"
-	} else {
+	userSetType := !model.Type.IsNull() && !model.Type.IsUnknown()
+	if userSetType {
 		domain.Type = model.Type.ValueString()
+	}
+
+	// Override domain type if TF_PROVIDER_LIBVIRT_DOMAIN_TYPE is set
+	// This allows forcing TCG emulation (type=qemu) in environments without KVM support
+	// (e.g., GitHub Actions, containers). The override is transparent to Terraform.
+	if envType := os.Getenv("TF_PROVIDER_LIBVIRT_DOMAIN_TYPE"); envType != "" {
+		if userSetType && domain.Type != envType {
+			tflog.Warn(ctx, "Overriding explicitly configured domain type via TF_PROVIDER_LIBVIRT_DOMAIN_TYPE",
+				map[string]interface{}{
+					"configured_type": domain.Type,
+					"override_type":   envType,
+				})
+		}
+		domain.Type = envType
 	}
 
 	// Set UUID if provided
@@ -1277,10 +1292,15 @@ func xmlToDomainModel(ctx context.Context, domain *libvirtxml.Domain, model *Dom
 	var diags diag.Diagnostics
 	model.Name = types.StringValue(domain.Name)
 
-	// Only set type if user specified it
-	if !model.Type.IsNull() && !model.Type.IsUnknown() {
-		model.Type = types.StringValue(domain.Type)
+	// If override is active, keep the value from state instead
+	// This ensures state reflects user's config even when we sent something different to libvirt
+	if os.Getenv("TF_PROVIDER_LIBVIRT_DOMAIN_TYPE") == "" {
+		// No override - update from libvirt to detect drift
+		if !model.Type.IsNull() && !model.Type.IsUnknown() {
+			model.Type = types.StringValue(domain.Type)
+		}
 	}
+	// else: Override active - keep model.Type as-is (user's configured value from state)
 
 	if domain.UUID != "" {
 		model.UUID = types.StringValue(domain.UUID)
