@@ -191,6 +191,7 @@ resource "libvirt_domain" "test" {
   name   = "test-domain-integration"
   memory = 512
   vcpu   = 1
+  type   = "kvm"
 
   os = {
     type    = "hvm"

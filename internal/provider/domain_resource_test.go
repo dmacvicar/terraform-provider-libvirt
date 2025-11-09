@@ -1337,6 +1337,7 @@ resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
   vcpu   = 1
+  type   = "kvm"
 
   os = {
     type = "hvm"

@@ -403,7 +403,7 @@ providing fine-grained control over VM configuration.
 			},
 			"type": schema.StringAttribute{
 				Description: "Domain type (e.g., 'kvm', 'qemu').",
-				Optional:    true,
+				Required:    true,
 			},
 			"title": schema.StringAttribute{
 				Description: "Short description title for the domain.",
@@ -625,7 +625,7 @@ See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-doma
 			},
 			"os": schema.SingleNestedAttribute{
 				Description: "Operating system configuration for the domain.",
-				Optional:    true,
+				Required:    true,
 				Attributes: map[string]schema.Attribute{
 					"type": schema.StringAttribute{
 						Description: "OS type (e.g., 'hvm' for fully virtualized, 'linux' for paravirtualized).",
