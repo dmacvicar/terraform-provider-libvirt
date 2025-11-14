@@ -204,8 +204,10 @@ resource "libvirt_domain" "vm1" {
           pool   = libvirt_volume.vm1_disk.pool
           volume = libvirt_volume.vm1_disk.name
         }
-        target = "vda"
-        bus    = "virtio"
+        target = {
+          bus = "virtio"
+          dev = "vda"
+        }
       },
       # Cloud-init config disk (will be detected automatically)
       {
@@ -214,8 +216,10 @@ resource "libvirt_domain" "vm1" {
           pool   = libvirt_volume.vm1_cloudinit.pool
           volume = libvirt_volume.vm1_cloudinit.name
         }
-        target = "sda"
-        bus    = "sata"
+        target = {
+          bus = "sata"
+          dev = "sda"
+        }
       }
     ]
 
@@ -262,8 +266,10 @@ resource "libvirt_domain" "vm2" {
           pool   = libvirt_volume.vm2_disk.pool
           volume = libvirt_volume.vm2_disk.name
         }
-        target = "vda"
-        bus    = "virtio"
+        target = {
+          bus = "virtio"
+          dev = "vda"
+        }
       },
       {
         device = "cdrom"
@@ -271,8 +277,10 @@ resource "libvirt_domain" "vm2" {
           pool   = libvirt_volume.vm2_cloudinit.pool
           volume = libvirt_volume.vm2_cloudinit.name
         }
-        target = "sda"
-        bus    = "sata"
+        target = {
+          bus = "sata"
+          dev = "sda"
+        }
       }
     ]
 
