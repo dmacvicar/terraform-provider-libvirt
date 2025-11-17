@@ -27,6 +27,8 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Generate code
+        run: make generate
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
