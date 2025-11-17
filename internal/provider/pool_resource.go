@@ -5,17 +5,15 @@ import (
 	"fmt"
 
 	golibvirt "github.com/digitalocean/go-libvirt"
+	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/generated"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"libvirt.org/go/libvirtxml"
 )
@@ -29,42 +27,10 @@ type PoolResource struct {
 	client *libvirt.Client
 }
 
-// PoolResourceModel describes the resource data model
+// PoolResourceModel extends generated model with resource-specific ID field
 type PoolResourceModel struct {
-	ID         types.String `tfsdk:"id"`
-	Name       types.String `tfsdk:"name"`
-	Type       types.String `tfsdk:"type"`
-	UUID       types.String `tfsdk:"uuid"`
-	Capacity   types.Int64  `tfsdk:"capacity"`
-	Allocation types.Int64  `tfsdk:"allocation"`
-	Available  types.Int64  `tfsdk:"available"`
-	Target     types.Object `tfsdk:"target"`
-	Source     types.Object `tfsdk:"source"`
-}
-
-// PoolTargetModel describes the target block
-type PoolTargetModel struct {
-	Path        types.String `tfsdk:"path"`
-	Permissions types.Object `tfsdk:"permissions"`
-}
-
-// PoolPermissionsModel describes permissions for the pool directory
-type PoolPermissionsModel struct {
-	Owner types.String `tfsdk:"owner"`
-	Group types.String `tfsdk:"group"`
-	Mode  types.String `tfsdk:"mode"`
-	Label types.String `tfsdk:"label"`
-}
-
-// PoolSourceModel describes the source block
-type PoolSourceModel struct {
-	Name   types.String `tfsdk:"name"`
-	Device types.List   `tfsdk:"device"`
-}
-
-// PoolSourceDeviceModel describes a source device
-type PoolSourceDeviceModel struct {
-	Path types.String `tfsdk:"path"`
+	generated.StoragePoolModel
+	ID types.String `tfsdk:"id"` // Resource-specific ID
 }
 
 // NewPoolResource creates a new pool resource
@@ -79,119 +45,16 @@ func (r *PoolResource) Metadata(ctx context.Context, req resource.MetadataReques
 
 // Schema defines the resource schema
 func (r *PoolResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Description: "Manages a libvirt storage pool. Storage pools provide a unified way to manage storage for virtual machines.",
-		MarkdownDescription: `
-Manages a libvirt storage pool.
-
-Storage pools provide a common interface for managing storage that can be used by virtual machines.
-This resource supports directory-based and LVM-based storage pools.
-
-See the [libvirt storage pool documentation](https://libvirt.org/formatstorage.html) for more details.
-`,
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Description: "Pool UUID",
-				Computed:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"name": schema.StringAttribute{
-				Description: "Unique name of the storage pool",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"type": schema.StringAttribute{
-				Description: "Type of storage pool. Supported values: dir (directory-based), logical (LVM)",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"uuid": schema.StringAttribute{
-				Description: "UUID of the storage pool",
-				Computed:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"capacity": schema.Int64Attribute{
-				Description: "Total capacity of the storage pool in bytes",
-				Computed:    true,
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
-				},
-			},
-			"allocation": schema.Int64Attribute{
-				Description: "Currently allocated space in bytes",
-				Computed:    true,
-			},
-			"available": schema.Int64Attribute{
-				Description: "Available space in bytes",
-				Computed:    true,
-			},
-			"target": schema.SingleNestedAttribute{
-				Description: "Target path for the storage pool",
-				Required:    true,
-				Attributes: map[string]schema.Attribute{
-					"path": schema.StringAttribute{
-						Description: "Path where the storage pool is located on the host",
-						Required:    true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.RequiresReplace(),
-						},
-					},
-					"permissions": schema.SingleNestedAttribute{
-						Description: "Permissions for the pool directory",
-						Optional:    true,
-						Attributes: map[string]schema.Attribute{
-							"owner": schema.StringAttribute{
-								Description: "Numeric user ID for the pool directory owner",
-								Optional:    true,
-							},
-							"group": schema.StringAttribute{
-								Description: "Numeric group ID for the pool directory group",
-								Optional:    true,
-							},
-							"mode": schema.StringAttribute{
-								Description: "Octal permission mode for the pool directory (e.g., '0755')",
-								Optional:    true,
-							},
-							"label": schema.StringAttribute{
-								Description: "SELinux label for the pool directory",
-								Optional:    true,
-							},
-						},
-					},
-				},
-			},
-			"source": schema.SingleNestedAttribute{
-				Description: "Source configuration for the storage pool (required for logical pools)",
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"name": schema.StringAttribute{
-						Description: "Name of the source (e.g., volume group name for logical pools)",
-						Optional:    true,
-					},
-					"device": schema.ListNestedAttribute{
-						Description: "List of devices to use for the storage pool (e.g., physical volumes for logical pools)",
-						Optional:    true,
-						NestedObject: schema.NestedAttributeObject{
-							Attributes: map[string]schema.Attribute{
-								"path": schema.StringAttribute{
-									Description: "Path to the device",
-									Required:    true,
-								},
-							},
-						},
-					},
-				},
+	// Use generated schema with only ID field added
+	resp.Schema = generated.StoragePoolSchema(map[string]schema.Attribute{
+		"id": schema.StringAttribute{
+			Description: "Pool UUID (same as uuid)",
+			Computed:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
-	}
+	})
 }
 
 // Configure configures the resource
@@ -228,100 +91,23 @@ func (r *PoolResource) Create(ctx context.Context, req resource.CreateRequest, r
 		"type": poolType,
 	})
 
-	// Validate pool type
-	if poolType != "dir" && poolType != "logical" {
+	// Convert model to libvirt XML using generated conversion
+	poolDef, err := generated.StoragePoolToXML(ctx, &model.StoragePoolModel)
+	if err != nil {
 		resp.Diagnostics.AddError(
-			"Invalid Pool Type",
-			fmt.Sprintf("Pool type must be 'dir' or 'logical', got: %s", poolType),
+			"Model to XML Conversion Failed",
+			fmt.Sprintf("Failed to convert model to XML: %s", err),
 		)
 		return
 	}
 
-	// Convert model to libvirt XML
-	poolDef := &libvirtxml.StoragePool{
-		Type: poolType,
-		Name: poolName,
-	}
-
-	// Set target path
-	if !model.Target.IsNull() {
-		var target PoolTargetModel
-		diags := model.Target.As(ctx, &target, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		poolDef.Target = &libvirtxml.StoragePoolTarget{
-			Path: target.Path.ValueString(),
-		}
-
-		// Set target permissions if specified
-		if !target.Permissions.IsNull() && !target.Permissions.IsUnknown() {
-			var permissions PoolPermissionsModel
-			diags := target.Permissions.As(ctx, &permissions, basetypes.ObjectAsOptions{})
-			resp.Diagnostics.Append(diags...)
-			if resp.Diagnostics.HasError() {
-				return
-			}
-
-			poolDef.Target.Permissions = &libvirtxml.StoragePoolTargetPermissions{}
-
-			if !permissions.Owner.IsNull() && !permissions.Owner.IsUnknown() {
-				poolDef.Target.Permissions.Owner = permissions.Owner.ValueString()
-			}
-			if !permissions.Group.IsNull() && !permissions.Group.IsUnknown() {
-				poolDef.Target.Permissions.Group = permissions.Group.ValueString()
-			}
-			if !permissions.Mode.IsNull() && !permissions.Mode.IsUnknown() {
-				poolDef.Target.Permissions.Mode = permissions.Mode.ValueString()
-			}
-			if !permissions.Label.IsNull() && !permissions.Label.IsUnknown() {
-				poolDef.Target.Permissions.Label = permissions.Label.ValueString()
-			}
-		}
-	}
-
-	// Set source (for logical pools)
+	// Determine if we should skip the build step
+	// For logical pools without source devices, we assume the VG already exists
 	var skipBuild bool
-	if !model.Source.IsNull() {
-		var source PoolSourceModel
-		diags := model.Source.As(ctx, &source, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		poolDef.Source = &libvirtxml.StoragePoolSource{}
-
-		if !source.Name.IsNull() {
-			poolDef.Source.Name = source.Name.ValueString()
-		}
-
-		if !source.Device.IsNull() {
-			var devices []PoolSourceDeviceModel
-			diags := source.Device.ElementsAs(ctx, &devices, false)
-			resp.Diagnostics.Append(diags...)
-			if resp.Diagnostics.HasError() {
-				return
-			}
-
-			var libvirtDevices []libvirtxml.StoragePoolSourceDevice
-			for _, dev := range devices {
-				libvirtDevices = append(libvirtDevices, libvirtxml.StoragePoolSourceDevice{
-					Path: dev.Path.ValueString(),
-				})
-			}
-			poolDef.Source.Device = libvirtDevices
-		}
-
-		// If no devices specified for logical pool, skip build step
-		if len(poolDef.Source.Device) == 0 && poolType == "logical" {
+	if poolType == "logical" {
+		if poolDef.Source == nil || len(poolDef.Source.Device) == 0 {
 			skipBuild = true
 		}
-	} else if poolType == "logical" {
-		// Logical pool without source means existing VG
-		skipBuild = true
 	}
 
 	// Marshal to XML
@@ -445,8 +231,11 @@ func (r *PoolResource) Create(ctx context.Context, req resource.CreateRequest, r
 		"name": poolName,
 	})
 
+	// Save the plan for preserving user intent
+	planModel := model.StoragePoolModel
+
 	// Read back the full state
-	resp.Diagnostics.Append(r.readPool(ctx, &model, pool)...)
+	resp.Diagnostics.Append(r.readPoolWithPlan(ctx, &model, pool, &planModel)...)
 	if resp.Diagnostics.HasError() {
 		// Cleanup: destroy, delete if built, then undefine
 		if destroyErr := r.client.Libvirt().StoragePoolDestroy(pool); destroyErr != nil {
@@ -491,8 +280,8 @@ func (r *PoolResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		return
 	}
 
-	// Read the pool state
-	resp.Diagnostics.Append(r.readPool(ctx, &model, pool)...)
+	// Read the pool state (use current state as plan to preserve user intent)
+	resp.Diagnostics.Append(r.readPoolWithPlan(ctx, &model, pool, &model.StoragePoolModel)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -500,8 +289,9 @@ func (r *PoolResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
 }
 
-// readPool reads pool state from libvirt and populates the model
-func (r *PoolResource) readPool(ctx context.Context, model *PoolResourceModel, pool golibvirt.StoragePool) diag.Diagnostics {
+// readPoolWithPlan reads pool state from libvirt and populates the model
+// plan parameter is used to preserve user intent (only populate fields user specified)
+func (r *PoolResource) readPoolWithPlan(ctx context.Context, model *PoolResourceModel, pool golibvirt.StoragePool, plan *generated.StoragePoolModel) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	// Get pool XML
@@ -524,137 +314,18 @@ func (r *PoolResource) readPool(ctx context.Context, model *PoolResourceModel, p
 		return diags
 	}
 
-	// Get pool info for capacity/allocation/available
-	state, capacity, allocation, available, err := r.client.Libvirt().StoragePoolGetInfo(pool)
+	// Convert XML to model using generated conversion
+	poolModel, err := generated.StoragePoolFromXML(ctx, &poolDef, plan)
 	if err != nil {
 		diags.AddError(
-			"Failed to Get Pool Info",
-			fmt.Sprintf("Could not retrieve storage pool info: %s", err),
+			"XML to Model Conversion Failed",
+			fmt.Sprintf("Failed to convert XML to model: %s", err),
 		)
 		return diags
 	}
-	_ = state // Unused for now
 
-	// Update model
-	model.UUID = types.StringValue(poolDef.UUID)
-	model.Name = types.StringValue(poolDef.Name)
-	model.Type = types.StringValue(poolDef.Type)
-	model.Capacity = types.Int64Value(int64(capacity))
-	model.Allocation = types.Int64Value(int64(allocation))
-	model.Available = types.Int64Value(int64(available))
-
-	// Set target
-	if poolDef.Target != nil {
-		permissionsObjectType := types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"owner": types.StringType,
-				"group": types.StringType,
-				"mode":  types.StringType,
-				"label": types.StringType,
-			},
-		}
-
-		targetModel := PoolTargetModel{
-			Path:        types.StringValue(poolDef.Target.Path),
-			Permissions: types.ObjectNull(permissionsObjectType.AttrTypes),
-		}
-
-		// Set permissions if present and user specified them
-		if !model.Target.IsNull() && !model.Target.IsUnknown() {
-			var origTarget PoolTargetModel
-			d := model.Target.As(ctx, &origTarget, basetypes.ObjectAsOptions{})
-			diags.Append(d...)
-			if !diags.HasError() && !origTarget.Permissions.IsNull() && !origTarget.Permissions.IsUnknown() && poolDef.Target.Permissions != nil {
-				permissionsModel := PoolPermissionsModel{
-					Owner: types.StringNull(),
-					Group: types.StringNull(),
-					Mode:  types.StringNull(),
-					Label: types.StringNull(),
-				}
-
-				if poolDef.Target.Permissions.Owner != "" {
-					permissionsModel.Owner = types.StringValue(poolDef.Target.Permissions.Owner)
-				}
-				if poolDef.Target.Permissions.Group != "" {
-					permissionsModel.Group = types.StringValue(poolDef.Target.Permissions.Group)
-				}
-				if poolDef.Target.Permissions.Mode != "" {
-					permissionsModel.Mode = types.StringValue(poolDef.Target.Permissions.Mode)
-				}
-				if poolDef.Target.Permissions.Label != "" {
-					permissionsModel.Label = types.StringValue(poolDef.Target.Permissions.Label)
-				}
-
-				permissionsObj, d := types.ObjectValueFrom(ctx, permissionsObjectType.AttrTypes, permissionsModel)
-				diags.Append(d...)
-				if !diags.HasError() {
-					targetModel.Permissions = permissionsObj
-				}
-			}
-		}
-
-		targetObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
-			"path":        types.StringType,
-			"permissions": permissionsObjectType,
-		}, targetModel)
-		diags.Append(d...)
-		if diags.HasError() {
-			return diags
-		}
-		model.Target = targetObj
-	}
-
-	// Set source (if present and user-specified)
-	deviceObjectType := types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"path": types.StringType,
-		},
-	}
-	sourceAttrTypes := map[string]attr.Type{
-		"name":   types.StringType,
-		"device": types.ListType{ElemType: deviceObjectType},
-	}
-
-	if poolDef.Source != nil && !model.Source.IsNull() && !model.Source.IsUnknown() {
-
-		sourceModel := PoolSourceModel{
-			Name:   types.StringNull(),
-			Device: types.ListNull(deviceObjectType),
-		}
-
-		if poolDef.Source.Name != "" {
-			sourceModel.Name = types.StringValue(poolDef.Source.Name)
-		}
-
-		if len(poolDef.Source.Device) > 0 {
-			var devices []PoolSourceDeviceModel
-			for _, dev := range poolDef.Source.Device {
-				if dev.Path == "" {
-					continue
-				}
-				devices = append(devices, PoolSourceDeviceModel{
-					Path: types.StringValue(dev.Path),
-				})
-			}
-			if len(devices) > 0 {
-				deviceList, d := types.ListValueFrom(ctx, deviceObjectType, devices)
-				diags.Append(d...)
-				if diags.HasError() {
-					return diags
-				}
-				sourceModel.Device = deviceList
-			}
-		}
-
-		sourceObj, d := types.ObjectValueFrom(ctx, sourceAttrTypes, sourceModel)
-		diags.Append(d...)
-		if diags.HasError() {
-			return diags
-		}
-		model.Source = sourceObj
-	} else if !model.Source.IsNull() && !model.Source.IsUnknown() {
-		model.Source = types.ObjectNull(sourceAttrTypes)
-	}
+	// Update the embedded model
+	model.StoragePoolModel = *poolModel
 
 	return diags
 }

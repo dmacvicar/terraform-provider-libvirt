@@ -14,6 +14,17 @@ This rewrite improves upon the legacy provider in several ways:
 2. **Current Framework** - Built with Terraform Plugin Framework, as the SDK v2 used in the legacy provider is deprecated
 3. **Best Practices** - Follows [HashiCorp's provider design principles](https://developer.hashicorp.com/terraform/plugin/best-practices/hashicorp-provider-design-principles)
 
+## Supported Resources & XML Coverage
+
+| Resource | Status | XML Coverage |
+|----------|--------|--------------|
+| `libvirt_domain` | ✅ Supported | Full coverage of libvirtxml’s domain schema (devices, CPU, memory, features, RNG, TPM, etc.). |
+| `libvirt_network` | ✅ Supported | Full coverage of libvirtxml network schema (forwarding modes, bridge, DHCP, VLAN, virtual ports, etc.). |
+| `libvirt_pool` | ✅ Supported | Full coverage of libvirtxml storage pool schema (dir/logical/iscsi/etc.). |
+| `libvirt_volume` | ✅ Supported | Full coverage of libvirtxml storage volume schema (target, backing_store, encryption, timestamps). |
+
+Everything exposed in these resources maps directly to the corresponding libvirt XML; if libvirtxml adds new fields we regenerate and pick them up automatically. Additional libvirt resources (secrets, nodes, interfaces, etc.) will be added later following the same pattern—see TODO.md for the roadmap.
+
 ## Design Principles
 
 - **Schema Coverage**: We support all fields that `libvirt.org/go/libvirtxml` implements from the official libvirt schemas (located at `/usr/share/libvirt/schemas/`). If libvirtxml doesn't support a feature yet, neither do we - we don't create custom XML structs.
@@ -22,21 +33,7 @@ This rewrite improves upon the legacy provider in several ways:
 
 ## XML to HCL Mapping
 
-This provider maps libvirt's XML structure to Terraform's HCL configuration language using a consistent, predictable pattern:
-
-### Mapping Rules
-
-1. **XML Elements → HCL Blocks**
-   - Nested XML elements become nested HCL blocks
-   - Example: `<os>...</os>` → `os { ... }`
-
-2. **XML Attributes → HCL Attributes**
-   - Both XML element attributes and simple text content become HCL attributes
-   - Example: `<timer name="rtc" tickpolicy="catchup"/>` → `timer { name = "rtc"; tickpolicy = "catchup" }`
-
-3. **Repeated Elements → HCL Lists**
-   - Multiple XML elements of the same type become HCL block lists
-   - Example: Multiple `<timer>` elements → `timer { ... }` blocks (can be repeated)
+This provider maps libvirt's XML structure to Terraform's HCL configuration language using a consistent, predictable pattern: XML elements become nested attributes, attributes/text become scalar attributes, repeated elements become lists, and elements with chardata plus attributes flatten into sibling fields. The examples below show these rules in practice.
 
 ### Example Mapping
 
@@ -58,10 +55,11 @@ This provider maps libvirt's XML structure to Terraform's HCL configuration lang
 **Terraform HCL:**
 ```hcl
 resource "libvirt_domain" "example" {
-  name   = "example-vm"
-  type   = "kvm"
-  memory = 512  # MiB (unit fixed for simplicity)
-  vcpu   = 1
+  name        = "example-vm"
+  type        = "kvm"
+  memory      = 512        # Flattened from <memory unit='MiB'>512</memory>
+  memory_unit = "MiB"      # Optional, defaults based on libvirt
+  vcpu        = 1          # Flattened from <vcpu>1</vcpu>
 
   clock {
     offset = "utc"
@@ -84,6 +82,69 @@ resource "libvirt_domain" "example" {
   }
 }
 ```
+
+### Quick Mapping Patterns
+
+1. **Elements → Nested Attributes**
+
+```xml
+<clock><timer name="rtc"/></clock>
+```
+
+```hcl
+clock = { timers = [{ name = "rtc" }] }
+```
+
+2. **Value-with-Unit Flattening**
+
+```xml
+<memory unit='KiB'>524288</memory>
+```
+
+```hcl
+memory      = 524288
+memory_unit = "KiB"
+```
+
+   Leave the `_unit` attribute unset to let libvirt pick its default.
+
+3. **Boolean to Presence**
+
+```xml
+<acpi/>
+```
+
+```hcl
+features = { acpi = true }
+```
+
+These fields are presence-only: `false` (or `null`) omits the XML element entirely.
+
+4. **Type-Dependent Sources**
+
+```xml
+<source file="/var/lib/libvirt/images/disk.qcow2"/>
+```
+
+```hcl
+source = { file = "/var/lib/libvirt/images/disk.qcow2" }
+```
+
+Only set the branch you need (`file`, `block`, `volume = { ... }`, etc.).
+
+5. **Lists Map to Arrays**
+
+```xml
+<disk/><disk/><disk/>
+```
+
+```hcl
+disks = [{ ... }, { ... }, { ... }]
+```
+
+   Order matters: Terraform diffs trigger when you reorder array elements.
+
+> **Snake_case naming:** Every XML element/attribute name is converted to snake_case automatically (e.g., `accessmode` → `access_mode`, `portgroup` → `port_group`). Common acronyms stay intact (`MAC`, `UUID`, `VLAN`, etc.), so libvirt’s `MACAddress` becomes `mac_address`, not `m_a_c_address`.
 
 **Example with Devices (Disks and Network Interfaces):**
 
@@ -128,10 +189,13 @@ resource "libvirt_domain" "example" {
     ]
     interfaces = [
       {
-        type  = "network"
-        model = "virtio"
+        model = {
+          type = "virtio"
+        }
         source = {
-          network = "default"
+          network = {
+            network = "default"
+          }
         }
       }
     ]
@@ -198,12 +262,62 @@ When a source element has different attribute sets depending on a type, we use a
 ```hcl
 interface {
   type = "network"
-  source {
-    network   = "default"
-    portgroup = "web"
+  source = {
+    network = {
+      network   = "default"
+      portgroup = "web"
+    }
   }
 }
+
+#### Interface Schema Migration
+
+The legacy provider exposed network interfaces with flattened attributes such as:
+
+```hcl
+devices = {
+  interfaces = [{
+    type  = "network"
+    model = "virtio"
+    source = {
+      network = "default"
+    }
+  }]
+}
 ```
+
+This rewrite models the libvirt XML more faithfully. Each interface entry is now a nested object where `model`, `source`, and type-specific fields map directly to their XML counterparts:
+
+```hcl
+devices = {
+  interfaces = [
+    {
+      model = {
+        type = "virtio"
+      }
+      source = {
+        network = {
+          network = "default"
+        }
+      }
+      wait_for_ip = {
+        timeout = 300
+        source  = "lease"
+      }
+    },
+    {
+      source = {
+        direct = {
+          dev  = "eth0"
+          mode = "bridge"
+        }
+      }
+    }
+  ]
+}
+```
+
+Instead of a `type` attribute, the provider derives the interface type from the populated `source` variant (`network`, `direct`, `bridge`, etc.). This keeps the Terraform schema aligned with libvirtxml and unlocks all interface features (macvtap, passthrough, portgroups, wait_for_ip) without ad-hoc flattening.
 
 If the source always has the same pattern, it can be flattened to a simple attribute.
 
@@ -219,6 +333,32 @@ For detailed XML schemas, see the [libvirt domain format documentation](https://
 ## Development Approach
 
 Terraform providers are largely scaffolding and domain conversion (Terraform HCL ↔ Provider API). This project leverages AI agents to accelerate development while maintaining code quality through automated linting and testing.
+
+### Code Generation
+
+To reduce boilerplate and ensure consistency, this provider uses a code generation system that automatically produces:
+
+- **Terraform models** with proper `tfsdk` tags
+- **Plugin Framework schemas** with correct types and optionality
+- **XML conversion functions** implementing the "preserve user intent" pattern
+
+**Benefits:**
+- Reduces manual coding by ~80% for new fields
+- Ensures uniform implementation across resources
+- Automatically maintains 1:1 mapping with libvirtxml
+- Implements best practices consistently
+
+**Current Status:**
+- ✅ Core resources (`libvirt_domain`, `libvirt_volume`, `libvirt_network`, `libvirt_pool`) use 100% generated models, schemas, and conversions.
+- 🧩 In progress: documentation/validator generation, polishing remaining manual helpers (wait_for_ip overrides, provider-specific fields).
+- 📋 Next: leverage RelaxNG data for automatic validators/docs and extend generation to future resources (secrets, node devices, etc.).
+
+**Running the generator:**
+```bash
+go run ./internal/codegen
+```
+
+For detailed architecture, usage, and extension guide, see [`internal/codegen/README.md`](internal/codegen/README.md).
 
 ## Building from source
 
@@ -262,7 +402,7 @@ provider "libvirt" {
 resource "libvirt_domain" "example" {
   name   = "example-vm"
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
 
   os {
@@ -437,115 +577,23 @@ make fmt
 
 Run `make help` to see all targets.
 
-## Current Status
-
-This table shows implementation status and compatibility with the [legacy provider](https://github.com/dmacvicar/terraform-provider-libvirt/tree/v0.8) (v0.8.x):
-
-### Provider Configuration
-
-| Feature | Status | Legacy Provider | Notes |
-|---------|--------|--------------|-------|
-| qemu:///system | ✅ | ✅ | Local system connection |
-| qemu:///session | ✅ | ✅ | Local user session connection |
-| qemu+ssh:// | ✅ | ✅ | SSH transport (Go SSH library) |
-| qemu+sshcmd:// | ✅ | ✅ | SSH transport (native command) |
-| qemu+tcp:// | ✅ | ✅ | TCP transport |
-| qemu+tls:// | ✅ | ✅ | TLS transport |
-
-### Domain Resource (libvirt_domain)
-
-| Feature Category | Status | Legacy Provider | Notes |
-|-----------------|--------|--------------|-------|
-| Basic config | ✅ | ✅ | name, memory, vcpu, type, description |
-| Metadata | ○ | ✅ | Custom metadata XML |
-| OS & boot | ✅ | ✅ | type, arch, machine, firmware, boot devices |
-| Kernel boot | ✅ | ✅ | kernel, initrd, cmdline |
-| CPU | ⚠️ | ⚠️ | Basic (mode) only; topology/features planned |
-| Memory | ⚠️ | ⚠️ | Basic only; hugepages planned |
-| Features | ✅ | ⚠️ | 20+ features; more than legacy provider |
-| Clock & timers | ✅ | ○ | Full support including nested catchup |
-| Power management | ✅ | ○ | suspend_to_mem, suspend_to_disk |
-| Disks (basic) | ✅ | ✅ | File-based disks with device, target, bus |
-| Disks (volume) | ✅ | ✅ | Nested `source` with pool/volume reference |
-| Disks (driver) | ○ | ⚠️ | cache, io, discard options |
-| Disks (URL) | ○ | ✅ | URL download support |
-| Disks (block) | ○ | ✅ | Block device passthrough |
-| Disks (SCSI) | ○ | ✅ | SCSI bus, WWN identifier |
-| Network (basic) | ✅ | ✅ | network, bridge types |
-| Network (user) | ✅ | ✅ | User-mode networking |
-| Network (macvtap) | ○ | ✅ | macvtap, vepa, passthrough modes |
-| Network (wait_for_lease) | ○ | ✅ | Wait for DHCP lease |
-| Graphics | ✅ | ✅ | VNC/Spice display (autoport, listen, port) |
-| Video | ○ | ✅ | Video device (cirrus, etc.) |
-| Console/Serial | ○ | ✅ | Console and serial devices |
-| Filesystem (9p) | ○ | ✅ | Host directory sharing via virtio-9p |
-| TPM | ○ | ✅ | TPM device emulation |
-| NVRAM | ⚠️ | ✅ | Basic UEFI loader; template support planned |
-| State management | ✅ | ✅ | running attribute |
-| Autostart | ○ | ✅ | Start domain on host boot |
-| Cloud-init | ○ | ✅ | libvirt_cloudinit_disk resource |
-| CoreOS Ignition | ○ | ✅ | libvirt_ignition resource |
-| Combustion | ○ | ✅ | libvirt_combustion resource |
-| QEMU agent | ○ | ✅ | Integration with qemu-guest-agent |
-| XML XSLT | ○ | ✅ | XSLT transforms for custom XML |
-
-### Volume Resource (libvirt_volume)
-
-| Feature | Status | Legacy Provider | Notes |
-|---------|--------|--------------|-------|
-| Resource | ✅ | ✅ | Create and manage volumes |
-| Type | ✅ | ✅ | Volume type (file, block, dir, etc.) |
-| Format | ✅ | ✅ | qcow2, raw format support |
-| Backing volumes | ✅ | ✅ | `backing_store` applies when creating volumes |
-| Permissions | ✅ | ✅ | owner, group, mode, label |
-| URL download | ✅ | ✅ | Download via create.content.url (HTTPS + local files) |
-| XML XSLT | ○ | ✅ | XSLT transforms |
-
-> libvirt’s `<backingStore>` element on domain disks is informational unless the hypervisor advertises `backingStoreInput`. The provider therefore configures copy-on-write overlays only on `libvirt_volume` resources; domain-level `backing_store` inputs are intentionally not exposed.
-
-### Pool Resource (libvirt_pool)
-
-| Feature | Status | Legacy Provider | Notes |
-|---------|--------|--------------|-------|
-| Resource | ✅ | ✅ | Create and manage storage pools |
-| Pool types | ✅ | ✅ | dir (directory) type |
-| Target permissions | ✅ | ✅ | owner, group, mode, label |
-| Source | ✅ | ✅ | name, device (for LVM) |
-| Logical pools | ⚠️ | ✅ | Partial - needs testing |
-
-### Network Resource (libvirt_network)
-
-| Feature | Status | Legacy Provider | Notes |
-|---------|--------|--------------|-------|
-| Resource | ✅ | ✅ | Create and manage networks |
-| Network modes | ⚠️ | ✅ | nat and isolated (none) modes implemented |
-| IP addresses | ✅ | ✅ | CIDR configuration (e.g., 10.17.3.0/24) |
-| Autostart | ✅ | ✅ | Start network on host boot |
-| DHCP | ○ | ✅ | DHCP ranges and static hosts (deferred) |
-| DNS | ○ | ✅ | DNS hosts, forwarders, SRV records (deferred) |
-| Routes | ○ | ✅ | Static routes (deferred) |
-| Dnsmasq options | ○ | ✅ | Custom dnsmasq configuration (deferred) |
-
-### Data Sources
-
-| Feature | Status | Legacy Provider | Notes |
-|---------|--------|--------------|-------|
-| Node info | ○ | ✅ | Host system information (CPU, memory) |
-| Node devices | ○ | ✅ | Device enumeration by capability |
-| Node device info | ○ | ✅ | Detailed device information (PCI, USB, etc.) |
-| Network lookup | ○ | ✅ | Lookup existing networks (deferred) |
-| Network templates | ○ | ✅ | DNS/dnsmasq templates (deferred - use HCL instead) |
-
-**Legend:**
-- ✅ Fully implemented
-- ⚠️ Partially implemented
-- ○ Not yet implemented
-
-See [TODO.md](./TODO.md) for detailed implementation tracking
-
 ## Contributing
 
 This is early stage development. The focus is on getting core functionality working before accepting contributions.
+
+### Opening issues
+
+Issues should be open for clearly actionable bugs. For getting help on your stack not working, please [use the discussions first](https://github.com/dmacvicar/terraform-provider-libvirt/discussions/categories/q-a).
+
+### Pull Requests
+
+In general, you should not contribute significant features or code without a previous discussion and agreement with the maintainers. This involve transferring code maintenance burden to the maintainers and in general is not desired.
+
+### Use of AI
+
+The author uses AI for this project, but as the maintainer, he owns the outcome and consequences.
+
+If you contribute code or issues and used AI, you have to disclose it, including full details (tools, prompts).
 
 ## Author
 

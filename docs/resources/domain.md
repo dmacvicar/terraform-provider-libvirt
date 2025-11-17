@@ -22,14 +22,14 @@ providing fine-grained control over VM configuration.
 resource "libvirt_domain" "example" {
   name   = "example-vm"
   memory = 2048
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 2
   type   = "kvm"
 
   os {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
     boot_devices = ["hd", "network"]
   }
 
@@ -57,19 +57,19 @@ resource "libvirt_domain" "example" {
 resource "libvirt_domain" "uefi_example" {
   name   = "uefi-vm"
   memory = 4096
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 4
   type   = "kvm"
 
   os {
     type        = "hvm"
-    arch        = "x86_64"
-    machine     = "q35"
+    type_arch        = "x86_64"
+    type_machine     = "q35"
     firmware    = "efi"
-    loader_path = "/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd"
+    loader = "/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd"
     loader_readonly = true
     loader_type     = "pflash"
-    nvram = {
+    nv_ram = {
       path     = "/var/lib/libvirt/qemu/nvram/uefi-vm.fd"
       template = "/usr/share/edk2/x64/OVMF_VARS.4m.fd"
     }
@@ -81,13 +81,13 @@ resource "libvirt_domain" "uefi_example" {
 resource "libvirt_domain" "kernel_boot" {
   name   = "kernel-boot-vm"
   memory = 1024
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os {
     type        = "hvm"
-    arch        = "x86_64"
+    type_arch        = "x86_64"
     kernel      = "/boot/vmlinuz"
     initrd      = "/boot/initrd.img"
     kernel_args = "console=ttyS0 root=/dev/vda1"
@@ -451,31 +451,31 @@ Required:
 
 Optional:
 
-- `arch` (String) CPU architecture (e.g., 'x86_64', 'aarch64').
+- `type_arch` (String) CPU architecture (e.g., 'x86_64', 'aarch64').
 - `boot_devices` (List of String) Ordered list of boot devices (e.g., 'hd', 'network', 'cdrom'). If not specified, libvirt may add default boot devices.
 - `firmware` (String) Firmware type (e.g., 'efi', 'bios').
 - `initrd` (String) Path to initrd image for direct kernel boot.
 - `kernel` (String) Path to kernel image for direct kernel boot.
 - `kernel_args` (String) Kernel command line arguments.
-- `loader_path` (String) Path to UEFI firmware loader.
+- `loader` (String) Path to UEFI firmware loader.
 - `loader_readonly` (Boolean) Whether the UEFI firmware is read-only.
 - `loader_type` (String) Loader type ('rom' or 'pflash').
-- `machine` (String) Machine type (e.g., 'pc', 'q35'). Note: This value represents what you want, but libvirt may internally expand it to a versioned type.
-- `nvram` (Attributes) NVRAM configuration for UEFI. (see [below for nested schema](#nestedatt--os--nvram))
+- `type_machine` (String) Machine type (e.g., 'pc', 'q35'). Note: This value represents what you want, but libvirt may internally expand it to a versioned type.
+- `nv_ram` (Attributes) NVRAM configuration for UEFI. (see [below for nested schema](#nestedatt--os--nv_ram))
 
-<a id="nestedatt--os--nvram"></a>
-### Nested Schema for `os.nvram`
+<a id="nestedatt--os--nv_ram"></a>
+### Nested Schema for `os.nv_ram`
 
 Optional:
 
 - `format` (String) Format of the NVRAM file (e.g., 'raw', 'qcow2').
-- `path` (String) Path to the NVRAM file for the domain. Mutually exclusive with source.
-- `source` (Attributes) NVRAM source configuration for volume-based NVRAM. Mutually exclusive with path. (see [below for nested schema](#nestedatt--os--nvram--source))
+- `nv_ram` (String) Path to the NVRAM file for the domain. Mutually exclusive with source.
+- `source` (Attributes) NVRAM source configuration for volume-based NVRAM. Mutually exclusive with path. (see [below for nested schema](#nestedatt--os--nv_ram--source))
 - `template` (String) Path to NVRAM template file for UEFI variable store. This template is copied to create the domain's NVRAM.
 - `template_format` (String) Format of the template file (e.g., 'raw', 'qcow2').
 
-<a id="nestedatt--os--nvram--source"></a>
-### Nested Schema for `os.nvram.source`
+<a id="nestedatt--os--nv_ram--source"></a>
+### Nested Schema for `os.nv_ram.source`
 
 Optional:
 

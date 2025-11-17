@@ -1,5 +1,6 @@
 # Binaries
 terraform-provider-libvirt
+/codegen
 *.exe
 *.dll
 *.so
@@ -35,3 +36,9 @@ override.tf.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated code
+internal/generated/*.gen.go
+
+tmp
+tmp/

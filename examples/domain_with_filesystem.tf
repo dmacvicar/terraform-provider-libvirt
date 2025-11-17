@@ -13,29 +13,41 @@ provider "libvirt" {
 resource "libvirt_domain" "example_with_filesystem" {
   name   = "example-with-filesystem"
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
 
   os {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     # Share host directories with the guest using virtio-9p
     filesystems = [
       {
-        source     = "/home/user/shared"  # Host directory
-        target     = "shared"              # Mount tag (use to mount in guest)
-        accessmode = "mapped"              # Security mode
-        readonly   = true                  # Mount as read-only
+        source = {
+          mount = {
+            dir = "/home/user/shared"
+          }
+        }
+        target = {
+          dir = "shared"
+        }
+        access_mode = "mapped"
+        read_only   = true                  # Mount as read-only
       },
       {
-        source     = "/var/data"
-        target     = "data"
-        accessmode = "passthrough" # Better performance, less secure
-        readonly   = false
+        source = {
+          mount = {
+            dir = "/var/data"
+          }
+        }
+        target = {
+          dir = "data"
+        }
+        access_mode = "passthrough" # Better performance, less secure
+        read_only   = false
       }
     ]
   }

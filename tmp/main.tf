@@ -51,7 +51,6 @@ resource "libvirt_cloudinit_disk" "alpine_seed" {
 
     packages:
       - openssh-server
-
     timezone: UTC
   EOF
 
@@ -85,11 +84,16 @@ resource "libvirt_domain" "alpine" {
   name   = "alpine-vm"
   memory = 1048576
   vcpu   = 1
+  type   = "kvm"
 
   os = {
     type    = "hvm"
-    type_arch    = "x86_64"
-    type_machine = "q35"
+    arch    = "x86_64"
+    machine = "q35"
+  }
+
+  features = {
+    acpi = true
   }
 
   devices = {
@@ -111,7 +115,7 @@ resource "libvirt_domain" "alpine" {
           volume = libvirt_volume.alpine_seed_volume.name
         }
         target = {
-          dev = "sda"
+          dev = "sdb"
           bus = "sata"
         }
       }
@@ -120,9 +124,15 @@ resource "libvirt_domain" "alpine" {
     interfaces = [
       {
         type  = "network"
-        model = "virtio"
+        model = "virtio"  # e1000 is more compatible than virtio for Alpine
         source = {
           network = "default"
+        }
+        # TODO: wait_for_ip not implemented yet (Phase 2)
+        # This will wait during creation until the interface gets an IP
+        wait_for_ip = {
+          timeout = 300    # seconds, default 300
+          source  = "any"  # "lease" (DHCP), "agent" (qemu-guest-agent), or "any" (try both)
         }
       }
     ]
@@ -136,4 +146,34 @@ resource "libvirt_domain" "alpine" {
   }
 
   running = true
+}
+
+# Query the domain's interface addresses
+# This data source can be used at any time to retrieve current IP addresses
+# without blocking operations like Delete
+data "libvirt_domain_interface_addresses" "alpine" {
+  domain = libvirt_domain.alpine.name
+  source = "lease" # optional: "lease" (DHCP), "agent" (qemu-guest-agent), or "any"
+}
+
+# Output all interface information
+output "vm_interfaces" {
+  description = "All network interfaces with their IP addresses"
+  value       = data.libvirt_domain_interface_addresses.alpine.interfaces
+}
+
+# Output the first IP address found
+output "vm_ip" {
+  description = "First IP address of the VM"
+  value = length(data.libvirt_domain_interface_addresses.alpine.interfaces) > 0 && length(data.libvirt_domain_interface_addresses.alpine.interfaces[0].addrs) > 0 ? data.libvirt_domain_interface_addresses.alpine.interfaces[0].addrs[0].addr : "No IP address found"
+}
+
+# Output all IP addresses across all interfaces
+output "vm_all_ips" {
+  description = "All IP addresses across all interfaces"
+  value = flatten([
+    for iface in data.libvirt_domain_interface_addresses.alpine.interfaces : [
+      for addr in iface.addrs : addr.addr
+    ]
+  ])
 }

@@ -189,28 +189,23 @@ Example:
 
 **Key principle**: If libvirt XML has a container element (like `<devices>`), we must have a corresponding nested object in HCL.
 
-**Preserve User Intent Pattern**
+**Field Read Semantics**
 
-**Rule**: Only populate optional fields in state if the user explicitly specified them in their configuration.
+Terraform state reflects what the user cares about, not the entire API response.
 
-**Why**: Libvirt sets defaults for many optional fields. If we naively read all values back, Terraform detects drift between null (user didn't specify) and libvirt's default, causing unwanted plan diffs.
+**Computed** (not Optional) - Always read from API
+- Examples: `id`, `key`, `allocation`, `physical`
+- `model.Key = types.StringValue(xml.Key)`
 
-**Apply to**: Optional fields where libvirt provides defaults (on_poweroff, current_memory, boot_devices, autostart, unit, type, etc.)
+**Optional** (with or without Computed) - Only read if user specified
+- If user didn't specify, don't populate (libvirt defaults are irrelevant)
+- Examples: `on_poweroff`, `type`, `capacity` (when optional)
+- `if !plan.Field.IsNull() { model.Field = types.StringValue(xml.Field) }`
 
-**Don't apply to**: Required fields (name, memory) or purely computed fields (uuid, id)
+**Required** - Always read
+- User must specify, always in state
 
-Example:
-```go
-// ❌ WRONG
-if domain.OnPoweroff != "" {
-    model.OnPoweroff = types.StringValue(domain.OnPoweroff)
-}
-
-// ✅ CORRECT
-if !model.OnPoweroff.IsNull() && !model.OnPoweroff.IsUnknown() && domain.OnPoweroff != "" {
-    model.OnPoweroff = types.StringValue(domain.OnPoweroff)
-}
-```
+Key insight: The `Optional` flag means "only populate if user cares", regardless of whether it's also Computed.
 
 ## Project Structure
 

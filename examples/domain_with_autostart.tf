@@ -13,13 +13,13 @@ provider "libvirt" {
 resource "libvirt_domain" "example_with_autostart" {
   name      = "example-with-autostart"
   memory    = 512
-  unit      = "MiB"
+  memory_unit      = "MiB"
   vcpu      = 1
   autostart = true # Domain will automatically start on host boot
 
   os {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 }
