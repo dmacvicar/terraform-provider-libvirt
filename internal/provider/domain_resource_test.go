@@ -87,14 +87,13 @@ func TestAccDomainResource_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-basic"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "memory", "512"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "unit", "MiB"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "memory_unit", "MiB"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "vcpu", "1"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "type", "kvm"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "os.type", "hvm"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "os.arch", "x86_64"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "os.machine", "q35"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "os.type_arch", "x86_64"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "os.type_machine", "q35"),
 					resource.TestCheckResourceAttrSet("libvirt_domain.test", "uuid"),
-					resource.TestCheckResourceAttrSet("libvirt_domain.test", "id"),
 				),
 			},
 			// Update and Read testing
@@ -126,7 +125,7 @@ func TestAccDomainResource_uefi(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-uefi"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "os.firmware", "efi"),
-					resource.TestCheckResourceAttrSet("libvirt_domain.test", "os.loader_path"),
+					resource.TestCheckResourceAttrSet("libvirt_domain.test", "os.loader"),
 				),
 			},
 		},
@@ -139,14 +138,14 @@ func testAccDomainResourceConfigBasic(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 }
 `, name)
@@ -158,14 +157,14 @@ func testAccDomainResourceConfigBasicUpdated(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 1024
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 2
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 }
 `, name)
@@ -177,16 +176,16 @@ func testAccDomainResourceConfigUEFI(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 1024
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 2
   type   = "kvm"
 
   os = {
     type        = "hvm"
-    arch        = "x86_64"
-    machine     = "q35"
+    type_arch        = "x86_64"
+    type_machine     = "q35"
     firmware    = "efi"
-    loader_path = "/usr/share/edk2/x64/OVMF_CODE.fd"
+    loader = "/usr/share/edk2/x64/OVMF_CODE.fd"
   }
 }
 `, name)
@@ -202,7 +201,7 @@ func TestAccDomainResource_metadata(t *testing.T) {
 				Config: testAccDomainResourceConfigMetadata("test-domain-metadata"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-metadata"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "metadata", "<app1:test xmlns:app1=\"http://test.example.com/app1/\"><app1:foo>bar</app1:foo></app1:test>"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "metadata.xml", "<app1:test xmlns:app1=\"http://test.example.com/app1/\"><app1:foo>bar</app1:foo></app1:test>"),
 				),
 			},
 		},
@@ -215,15 +214,17 @@ func testAccDomainResourceConfigMetadata(name string) string {
 resource "libvirt_domain" "test" {
   name     = %[1]q
   memory   = 512
-  unit     = "MiB"
+  memory_unit     = "MiB"
   vcpu     = 1
   type     = "kvm"
-  metadata = "<app1:test xmlns:app1=\"http://test.example.com/app1/\"><app1:foo>bar</app1:foo></app1:test>"
+  metadata = {
+    xml = "<app1:test xmlns:app1=\"http://test.example.com/app1/\"><app1:foo>bar</app1:foo></app1:test>"
+  }
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 }
 `, name)
@@ -241,9 +242,9 @@ func TestAccDomainResource_features(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-features"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "features.pae", "true"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "features.acpi", "true"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "features.apic", "true"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "features.hap", "on"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "features.pmu", "off"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "features.apic.eoi", "on"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "features.hap.state", "on"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "features.pmu.state", "off"),
 				),
 			},
 		},
@@ -256,22 +257,28 @@ func testAccDomainResourceConfigFeatures(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   features = {
     pae  = true
     acpi = true
-    apic = true
-    hap  = "on"
-    pmu  = "off"
+    apic = {
+      eoi = "on"
+    }
+    hap = {
+      state = "on"
+    }
+    pmu = {
+      state = "off"
+    }
   }
 }
 `, name)
@@ -300,14 +307,14 @@ func testAccDomainResourceConfigCPU(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 2
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   cpu = {
@@ -340,14 +347,14 @@ func testAccDomainResourceConfigClock(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   clock = {
@@ -382,7 +389,7 @@ func testAccDomainResourceConfigLifecycle(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
@@ -392,8 +399,8 @@ resource "libvirt_domain" "test" {
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 }
 `, name)
@@ -459,9 +466,9 @@ func TestAccDomainResource_clockTimers(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.offset", "utc"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.#", "3"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.name", "rtc"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.tickpolicy", "catchup"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.tick_policy", "catchup"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.1.name", "pit"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.1.tickpolicy", "delay"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.1.tick_policy", "delay"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.2.name", "hpet"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.2.present", "no"),
 				),
@@ -476,14 +483,14 @@ func testAccDomainResourceConfigClockTimers(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   clock = {
@@ -492,11 +499,11 @@ resource "libvirt_domain" "test" {
     timer = [
       {
         name       = "rtc"
-        tickpolicy = "catchup"
+        tick_policy = "catchup"
       },
       {
         name       = "pit"
-        tickpolicy = "delay"
+        tick_policy = "delay"
       },
       {
         name    = "hpet"
@@ -519,10 +526,10 @@ func TestAccDomainResource_clockTimerCatchup(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-timer-catchup"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.name", "rtc"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.tickpolicy", "catchup"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.catchup.threshold", "123"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.catchup.slew", "120"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.catchup.limit", "10000"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.tick_policy", "catchup"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.catch_up.threshold", "123"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.catch_up.slew", "120"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "clock.timer.0.catch_up.limit", "10000"),
 				),
 			},
 		},
@@ -535,14 +542,14 @@ func testAccDomainResourceConfigClockTimerCatchup(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   clock = {
@@ -551,9 +558,9 @@ resource "libvirt_domain" "test" {
     timer = [
       {
         name       = "rtc"
-        tickpolicy = "catchup"
+        tick_policy = "catchup"
 
-        catchup = {
+        catch_up = {
           threshold = 123
           slew      = 120
           limit     = 10000
@@ -571,15 +578,15 @@ func testAccDomainResourceConfigRunning(name string) string {
 resource "libvirt_domain" "test" {
   name    = %[1]q
   memory  = 512
-  unit    = "MiB"
+  memory_unit    = "MiB"
   vcpu    = 1
   type    = "kvm"
   running = true
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 }
 `, name)
@@ -734,9 +741,77 @@ func TestAccDomainResource_network(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-network"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "network"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.network", "default"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model.type", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.network.network", "default"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model.type", "virtio"),
+				),
+			},
+		},
+	})
+}
+
+// TestAccDomainResource_bridgeNetworkInterface tests using a bridge from a
+// libvirt_network resource in a domain interface. According to libvirt RNG schema,
+// bridge-type interfaces only support 'bridge' attribute, not 'mode'.
+func TestAccDomainResource_bridgeNetworkInterface(t *testing.T) {
+	config := `
+resource "libvirt_network" "public_bridge" {
+  name = "public_bridge"
+
+  # Bridge mode network
+  forward = {
+    mode = "bridge"
+  }
+
+  # Bridge configuration
+  bridge = {
+    name = "virbr0"
+  }
+}
+
+resource "libvirt_domain" "worker_node" {
+  name   = "test-domain-bridge-network"
+  memory = 512
+  memory_unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os = {
+    type    = "hvm"
+    type_arch    = "x86_64"
+    type_machine = "q35"
+  }
+
+  devices = {
+    interfaces = [
+      {
+        model = {
+          type = "virtio"
+        }
+        # Bridge type interface with bridge attribute from network resource
+        source = {
+          bridge = {
+            bridge = libvirt_network.public_bridge.bridge.name
+          }
+        }
+      }
+    ]
+  }
+}
+`
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.worker_node", "name", "test-domain-bridge-network"),
+					resource.TestCheckResourceAttr("libvirt_domain.worker_node", "devices.interfaces.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.worker_node", "devices.interfaces.0.model.type", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.worker_node", "devices.interfaces.0.source.bridge.bridge", "virbr0"),
 				),
 			},
 		},
@@ -748,23 +823,26 @@ func testAccDomainResourceConfigNetwork(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     interfaces = [
       {
-        type  = "network"
-        model = "virtio"
+        model = {
+          type = "virtio"
+        }
         source = {
-          network = "default"
+          network = {
+            network = "default"
+          }
         }
       }
     ]
@@ -784,10 +862,9 @@ func TestAccDomainResource_directNetworkBridge(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-direct-bridge"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.mode", "bridge"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model.type", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.direct.dev", "eth0"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.direct.mode", "bridge"),
 				),
 			},
 		},
@@ -799,24 +876,27 @@ func testAccDomainResourceConfigDirectNetworkBridge(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     interfaces = [
       {
-        type  = "direct"
-        model = "virtio"
+        model = {
+          type = "virtio"
+        }
         source = {
-          dev  = "eth0"
-          mode = "bridge"
+          direct = {
+            dev  = "eth0"
+            mode = "bridge"
+          }
         }
       }
     ]
@@ -836,10 +916,9 @@ func TestAccDomainResource_directNetworkVEPA(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-direct-vepa"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.mode", "vepa"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model.type", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.direct.dev", "eth0"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.direct.mode", "vepa"),
 				),
 			},
 		},
@@ -851,24 +930,27 @@ func testAccDomainResourceConfigDirectNetworkVEPA(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     interfaces = [
       {
-        type  = "direct"
-        model = "virtio"
+        model = {
+          type = "virtio"
+        }
         source = {
-          dev  = "eth0"
-          mode = "vepa"
+          direct = {
+            dev  = "eth0"
+            mode = "vepa"
+          }
         }
       }
     ]
@@ -888,10 +970,9 @@ func TestAccDomainResource_directNetworkPrivate(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-direct-private"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.mode", "private"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model.type", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.direct.dev", "eth0"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.direct.mode", "private"),
 				),
 			},
 		},
@@ -903,24 +984,27 @@ func testAccDomainResourceConfigDirectNetworkPrivate(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     interfaces = [
       {
-        type  = "direct"
-        model = "virtio"
+        model = {
+          type = "virtio"
+        }
         source = {
-          dev  = "eth0"
-          mode = "private"
+          direct = {
+            dev  = "eth0"
+            mode = "private"
+          }
         }
       }
     ]
@@ -940,10 +1024,9 @@ func TestAccDomainResource_directNetworkPassthrough(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-direct-passthrough"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.mode", "passthrough"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model.type", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.direct.dev", "eth0"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.direct.mode", "passthrough"),
 				),
 			},
 		},
@@ -955,24 +1038,27 @@ func testAccDomainResourceConfigDirectNetworkPassthrough(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     interfaces = [
       {
-        type  = "direct"
-        model = "virtio"
+        model = {
+          type = "virtio"
+        }
         source = {
-          dev  = "eth0"
-          mode = "passthrough"
+          direct = {
+            dev  = "eth0"
+            mode = "passthrough"
+          }
         }
       }
     ]
@@ -992,10 +1078,9 @@ func TestAccDomainResource_directNetworkMacvtap(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-direct-macvtap"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.#", "1"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.type", "direct"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.dev", "eth0"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.mode", "bridge"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.model.type", "virtio"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.direct.dev", "eth0"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.source.direct.mode", "bridge"),
 				),
 			},
 		},
@@ -1007,24 +1092,27 @@ func testAccDomainResourceConfigDirectNetworkMacvtap(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     interfaces = [
       {
-        type  = "direct"
-        model = "virtio"
+        model = {
+          type = "virtio"
+        }
         source = {
-          dev  = "eth0"
-          mode = "bridge"
+          direct = {
+            dev  = "eth0"
+            mode = "bridge"
+          }
         }
       }
     ]
@@ -1043,7 +1131,8 @@ func TestAccDomainResource_graphics(t *testing.T) {
 				Config: testAccDomainResourceConfigGraphicsVNC("test-domain-graphics"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-graphics"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.graphics.vnc.autoport", "yes"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.graphics.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.graphics.0.vnc.auto_port", "true"),
 				),
 			},
 		},
@@ -1055,23 +1144,25 @@ func testAccDomainResourceConfigGraphicsVNC(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
-    graphics = {
-      vnc = {
-        autoport = "yes"
-        listen   = "0.0.0.0"
+    graphics = [
+      {
+        vnc = {
+          auto_port = true
+          listen    = "0.0.0.0"
+        }
       }
-    }
+    ]
   }
 }
 `, name)
@@ -1087,7 +1178,9 @@ func TestAccDomainResource_video(t *testing.T) {
 				Config: testAccDomainResourceConfigVideo("test-domain-video"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-video"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.video.type", "vga"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.videos.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.videos.0.model.type", "vga"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.videos.0.model.primary", "yes"),
 				),
 			},
 		},
@@ -1099,20 +1192,27 @@ func testAccDomainResourceConfigVideo(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
-    video = {
-      type = "vga"
-    }
+    videos = [
+      {
+        model = {
+          type    = "vga"
+          primary = "yes"
+          heads   = 1
+          vram    = 16384
+        }
+      }
+    ]
   }
 }
 `, name)
@@ -1140,14 +1240,14 @@ func testAccDomainResourceConfigEmulator(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
@@ -1168,7 +1268,7 @@ func TestAccDomainResource_console(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-console"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.#", "1"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.0.type", "pty"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.0.source.file.path", "/tmp/test-domain-console.log"),
 				),
 			},
 		},
@@ -1180,29 +1280,27 @@ func testAccDomainResourceConfigConsole(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     consoles = [
       {
-        type        = "pty"
-        target_type = "serial"
-        target_port = 0
-      }
-    ]
-    serials = [
-      {
-        type        = "pty"
-        target_type = "isa-serial"
-        target_port = 0
+        source = {
+          file = {
+            path = "/tmp/%[1]s.log"
+          }
+        }
+        target = {
+          type = "serial"
+        }
       }
     ]
   }
@@ -1250,15 +1348,15 @@ func testAccDomainResourceConfigAutostart(name string, autostart bool) string {
 resource "libvirt_domain" "test" {
   name      = %[1]q
   memory    = 512
-  unit      = "MiB"
+  memory_unit      = "MiB"
   vcpu      = 1
   type      = "kvm"
   autostart = %[2]t
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 }
 `, name, autostart)
@@ -1317,7 +1415,7 @@ func TestAccDomainResource_preserveUserIntent(t *testing.T) {
 					resource.TestCheckNoResourceAttr("libvirt_domain.test", "on_reboot"),
 					resource.TestCheckNoResourceAttr("libvirt_domain.test", "on_crash"),
 					resource.TestCheckNoResourceAttr("libvirt_domain.test", "autostart"),
-					resource.TestCheckNoResourceAttr("libvirt_domain.test", "unit"),
+					resource.TestCheckNoResourceAttr("libvirt_domain.test", "memory_unit"),
 					resource.TestCheckNoResourceAttr("libvirt_domain.test", "current_memory"),
 					resource.TestCheckNoResourceAttr("libvirt_domain.test", "os.boot_devices.#"),
 					// Verify required fields ARE in state
@@ -1360,14 +1458,14 @@ func TestAccDomainResource_filesystem(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-fs"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.#", "2"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.0.source", sharedDir),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.0.target", "shared"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.0.accessmode", "mapped"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.0.readonly", "true"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.1.source", dataDir),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.1.target", "data"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.1.accessmode", "passthrough"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.1.readonly", "false"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.0.source.mount.dir", sharedDir),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.0.target.dir", "shared"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.0.access_mode", "mapped"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.0.read_only", "true"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.1.source.mount.dir", dataDir),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.1.target.dir", "data"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.1.access_mode", "passthrough"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.filesystems.1.read_only", "false"),
 				),
 			},
 		},
@@ -1379,29 +1477,41 @@ func testAccDomainResourceConfigFilesystem(name, sharedDir, dataDir string) stri
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     filesystems = [
       {
-        source     = %[2]q
-        target     = "shared"
-        accessmode = "mapped"
-        readonly   = true
+        source = {
+          mount = {
+            dir = %[2]q
+          }
+        }
+        target = {
+          dir = "shared"
+        }
+        access_mode = "mapped"
+        read_only   = true
       },
       {
-        source     = %[3]q
-        target     = "data"
-        accessmode = "passthrough"
-        readonly   = false
+        source = {
+          mount = {
+            dir = %[3]q
+          }
+        }
+        target = {
+          dir = "data"
+        }
+        access_mode = "passthrough"
+        read_only   = false
       }
     ]
   }
@@ -1421,7 +1531,7 @@ func TestAccDomainResource_rng(t *testing.T) {
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-rng"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.rngs.#", "1"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.rngs.0.model", "virtio"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.rngs.0.device", "/dev/urandom"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.rngs.0.backend.random", "/dev/urandom"),
 				),
 			},
 		},
@@ -1433,21 +1543,23 @@ func testAccDomainResourceConfigRNG(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     rngs = [
       {
-        model  = "virtio"
-        device = "/dev/urandom"
+        model = "virtio"
+        backend = {
+          random = "/dev/urandom"
+        }
       }
     ]
   }
@@ -1469,8 +1581,8 @@ func TestAccDomainResource_diskWWN(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", domainName),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.#", "1"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.source.pool", domainName),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.source.volume", volumeName),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.source.volume.pool", domainName),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.source.volume.volume", volumeName),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target.dev", "sda"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target.bus", "scsi"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.wwn", "5000c50015ea71ad"),
@@ -1491,31 +1603,37 @@ resource "libvirt_pool" "test" {
 }
 
 resource "libvirt_volume" "test" {
-  name   = "%[1]s.qcow2"
-  pool   = libvirt_pool.test.name
-  format = "qcow2"
+  name     = "%[1]s.qcow2"
+  pool     = libvirt_pool.test.name
   capacity = 1073741824
+  target = {
+    format = {
+      type = "qcow2"
+    }
+  }
 }
 
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     disks = [
       {
         source = {
-          pool   = libvirt_pool.test.name
-          volume = libvirt_volume.test.name
+          volume = {
+            pool   = libvirt_pool.test.name
+            volume = libvirt_volume.test.name
+          }
         }
         target = {
           dev = "sda"
@@ -1540,7 +1658,7 @@ func TestAccDomainResource_diskBlockDevice(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-blockdev"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.#", "1"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.source.block", "/dev/null"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.source.block.dev", "/dev/null"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target.dev", "vda"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.disks.0.target.bus", "virtio"),
 				),
@@ -1554,21 +1672,23 @@ func testAccDomainResourceConfigDiskBlockDevice(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     disks = [
       {
         source = {
-          block = "/dev/null"
+          block = {
+            dev = "/dev/null"
+          }
         }
         target = {
           dev = "vda"
@@ -1590,8 +1710,8 @@ func TestAccDomainResource_nvramTemplate(t *testing.T) {
 			{
 				Config: testAccDomainResourceConfigNvramTemplate("test-domain-nvram-$(date +%s)"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("libvirt_domain.test", "os.nvram.path", "/tmp/test-domain-nvram-$(date +%s).fd"),
-					resource.TestCheckResourceAttr("libvirt_domain.test", "os.nvram.template", "/usr/share/edk2/x64/OVMF_VARS.4m.fd"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "os.nv_ram.nv_ram", "/tmp/test-domain-nvram-$(date +%s).fd"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "os.nv_ram.template", "/usr/share/edk2/x64/OVMF_VARS.4m.fd"),
 				),
 			},
 		},
@@ -1603,17 +1723,17 @@ func testAccDomainResourceConfigNvramTemplate(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type        = "hvm"
-    arch        = "x86_64"
-    machine     = "q35"
-    loader_path = "/usr/share/edk2/x64/OVMF_CODE.fd"
-    nvram = {
-      path     = "/tmp/%[1]s.fd"
+    type_arch        = "x86_64"
+    type_machine     = "q35"
+    loader = "/usr/share/edk2/x64/OVMF_CODE.fd"
+    nv_ram = {
+      nv_ram   = "/tmp/%[1]s.fd"
       template = "/usr/share/edk2/x64/OVMF_VARS.4m.fd"
     }
   }
@@ -1647,14 +1767,14 @@ func testAccDomainResourceConfigTPM(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
@@ -1694,14 +1814,14 @@ func testAccDomainResourceConfigInputs(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {

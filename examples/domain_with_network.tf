@@ -13,40 +13,47 @@ provider "libvirt" {
 resource "libvirt_domain" "example" {
   name   = "example-vm"
   memory = 2048
-  unit   = "MiB"
+  memory_unit   = "MiB"
   vcpu   = 2
   type   = "kvm"
 
   os {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {
     interfaces = [
       # Network interface connected to default network
       {
-        type  = "network"
-        model = "virtio"
+        model = {
+          type = "virtio"
+        }
         source = {
-          network = "default"
+          network = {
+            network = "default"
+          }
         }
       },
       # Additional network interface on a specific network
       {
-        type  = "network"
-        model = "virtio"
+        model = {
+          type = "virtio"
+        }
         source = {
-          network   = "custom-network"
-          portgroup = "web-servers"
+          network = {
+            network    = "custom-network"
+            port_group = "web-servers"
+          }
         }
       },
       # Bridge interface
       {
-        type = "bridge"
         source = {
-          bridge = "br0"
+          bridge = {
+            bridge = "br0"
+          }
         }
       }
     ]

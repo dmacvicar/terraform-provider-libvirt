@@ -1,4 +1,4 @@
-.PHONY: help build install test testacc testacc-tofu sweep lint fmt clean
+.PHONY: help build install test testacc testacc-tofu sweep lint fmt clean generate
 
 # Default target
 .DEFAULT_GOAL := help
@@ -13,7 +13,11 @@ help: ## Display this help message
 	@echo "Terraform Provider Libvirt - Available targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-build: ## Build the provider binary
+generate: ## Run code generation
+	@echo "Running code generator..."
+	@go run ./internal/codegen
+
+build: generate ## Build the provider binary
 	@echo "Building terraform-provider-libvirt..."
 	@go build $(LDFLAGS) -o terraform-provider-libvirt
 
@@ -23,11 +27,11 @@ install: build ## Install the provider to local Terraform plugin directory
 	@cp terraform-provider-libvirt ~/.terraform.d/plugins/registry.terraform.io/dmacvicar/libvirt/$(VERSION)/linux_amd64/
 	@echo "Installed to ~/.terraform.d/plugins/registry.terraform.io/dmacvicar/libvirt/$(VERSION)/linux_amd64/"
 
-test: ## Run unit tests
+test: generate ## Run unit tests
 	@echo "Running unit tests..."
 	@go test ./... -v
 
-testacc: ## Run acceptance tests (requires running libvirt)
+testacc: generate ## Run acceptance tests (requires running libvirt)
 	@echo "Running acceptance tests..."
 	@TF_ACC=1 go test -count=1 -v -timeout 10m ./internal/provider
 
@@ -38,7 +42,7 @@ sweep: ## Clean up leaked test resources from failed tests
 	@echo "Running test sweepers..."
 	@cd internal/provider && go test -sweep=$(shell if [ -n "$$LIBVIRT_TEST_URI" ]; then echo "$$LIBVIRT_TEST_URI"; else echo "qemu:///system"; fi) -timeout 10m .
 
-lint: ## Run golangci-lint
+lint: generate ## Run golangci-lint
 	@echo "Verifying golangci-lint config..."
 	@golangci-lint config verify
 	@echo "Running golangci-lint..."

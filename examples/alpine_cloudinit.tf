@@ -88,8 +88,8 @@ resource "libvirt_domain" "alpine" {
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {

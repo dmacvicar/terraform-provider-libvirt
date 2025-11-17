@@ -5,17 +5,15 @@ import (
 	"fmt"
 
 	golibvirt "github.com/digitalocean/go-libvirt"
+	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/generated"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"libvirt.org/go/libvirtxml"
@@ -30,20 +28,13 @@ type VolumeResource struct {
 	client *libvirt.Client
 }
 
-// VolumeResourceModel describes the resource data model
+// VolumeResourceModel extends generated model with resource-specific fields
 type VolumeResourceModel struct {
-	ID           types.String `tfsdk:"id"`
-	Name         types.String `tfsdk:"name"`
-	Pool         types.String `tfsdk:"pool"`
-	Type         types.String `tfsdk:"type"`
-	Key          types.String `tfsdk:"key"`
-	Capacity     types.Int64  `tfsdk:"capacity"`
-	Allocation   types.Int64  `tfsdk:"allocation"`
-	Path         types.String `tfsdk:"path"`
-	Format       types.String `tfsdk:"format"`
-	BackingStore types.Object `tfsdk:"backing_store"`
-	Permissions  types.Object `tfsdk:"permissions"`
-	Create       types.Object `tfsdk:"create"`
+	generated.StorageVolumeModel
+	ID     types.String `tfsdk:"id"`     // Resource-specific ID
+	Pool   types.String `tfsdk:"pool"`   // Provider-specific: which pool to create in
+	Path   types.String `tfsdk:"path"`   // Computed: convenience field mirroring target.path
+	Create types.Object `tfsdk:"create"` // Provider-specific: upload content on create
 }
 
 // VolumeCreateModel describes the create block for volume initialization
@@ -54,20 +45,6 @@ type VolumeCreateModel struct {
 // VolumeCreateContentModel describes the content block for uploading from URL
 type VolumeCreateContentModel struct {
 	URL types.String `tfsdk:"url"`
-}
-
-// VolumeBackingStoreModel describes the backing store block
-type VolumeBackingStoreModel struct {
-	Path   types.String `tfsdk:"path"`
-	Format types.String `tfsdk:"format"`
-}
-
-// VolumePermissionsModel describes permissions for the volume
-type VolumePermissionsModel struct {
-	Owner types.String `tfsdk:"owner"`
-	Group types.String `tfsdk:"group"`
-	Mode  types.String `tfsdk:"mode"`
-	Label types.String `tfsdk:"label"`
 }
 
 // NewVolumeResource creates a new volume resource
@@ -82,136 +59,68 @@ func (r *VolumeResource) Metadata(ctx context.Context, req resource.MetadataRequ
 
 // Schema defines the resource schema
 func (r *VolumeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Description: "Manages a libvirt storage volume. Volumes are stored in storage pools and can be attached to domains as disks.",
-		MarkdownDescription: `
-Manages a libvirt storage volume.
+	// Get base target schema from generated code
+	baseTargetAttr := mustSingleNestedAttribute(generated.StorageVolumeTargetSchemaAttribute(), "StorageVolumeTarget")
 
-Storage volumes are images (qcow2, raw, etc.) stored in a storage pool that can be attached to virtual machines.
+	// Override path to be Computed
+	targetAttrs := baseTargetAttr.Attributes
+	targetAttrs["path"] = schema.StringAttribute{
+		Description: "Volume path on the host filesystem",
+		Computed:    true,
+		PlanModifiers: []planmodifier.String{
+			stringplanmodifier.UseStateForUnknown(),
+		},
+	}
 
-See the [libvirt storage volume documentation](https://libvirt.org/formatstorage.html) for more details.
-`,
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Description: "Volume identifier (same as key)",
-				Computed:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+	// Use generated schema with provider-specific overrides
+	resp.Schema = generated.StorageVolumeSchema(map[string]schema.Attribute{
+		"id": schema.StringAttribute{
+			Description: "Volume identifier (same as key)",
+			Computed:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
 			},
-			"name": schema.StringAttribute{
-				Description: "Name of the storage volume",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+		},
+		"pool": schema.StringAttribute{
+			Description: "Name of the storage pool where the volume will be created",
+			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
 			},
-			"pool": schema.StringAttribute{
-				Description: "Name of the storage pool where the volume will be created",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+		},
+		"path": schema.StringAttribute{
+			Description: "Volume path on the host filesystem (same as target.path)",
+			Computed:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.UseStateForUnknown(),
 			},
-			"type": schema.StringAttribute{
-				Description: "Volume type (file, block, dir, network, netdir)",
-				Optional:    true,
-				Computed:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"key": schema.StringAttribute{
-				Description: "Unique key of the storage volume",
-				Computed:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"capacity": schema.Int64Attribute{
-				Description: "Volume capacity in bytes. Required for empty volumes, computed when using create.content",
-				Optional:    true,
-				Computed:    true,
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
-					int64planmodifier.UseStateForUnknown(),
-				},
-			},
-			"allocation": schema.Int64Attribute{
-				Description: "Currently allocated size in bytes",
-				Computed:    true,
-			},
-			"path": schema.StringAttribute{
-				Description: "Full path to the volume on the host",
-				Computed:    true,
-			},
-			"format": schema.StringAttribute{
-				Description: "Volume format (qcow2, raw, etc.)",
-				Optional:    true,
-				Computed:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"backing_store": schema.SingleNestedAttribute{
-				Description: "Backing store configuration for copy-on-write volumes",
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"path": schema.StringAttribute{
-						Description: "Path to the backing volume",
-						Required:    true,
-					},
-					"format": schema.StringAttribute{
-						Description: "Format of the backing volume",
-						Optional:    true,
-					},
-				},
-			},
-			"permissions": schema.SingleNestedAttribute{
-				Description: "Permissions for the volume file",
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"owner": schema.StringAttribute{
-						Description: "Numeric user ID for the volume file owner",
-						Optional:    true,
-					},
-					"group": schema.StringAttribute{
-						Description: "Numeric group ID for the volume file group",
-						Optional:    true,
-					},
-					"mode": schema.StringAttribute{
-						Description: "Octal permission mode for the volume file (e.g., '0644')",
-						Optional:    true,
-					},
-					"label": schema.StringAttribute{
-						Description: "SELinux label for the volume file",
-						Optional:    true,
-					},
-				},
-			},
-			"create": schema.SingleNestedAttribute{
-				Description: "Volume creation options for initializing volume content from external sources",
-				Optional:    true,
-				PlanModifiers: []planmodifier.Object{
-					objectplanmodifier.RequiresReplace(),
-				},
-				Attributes: map[string]schema.Attribute{
-					"content": schema.SingleNestedAttribute{
-						Description: "Upload content from a URL or local file",
-						Required:    true,
-						Attributes: map[string]schema.Attribute{
-							"url": schema.StringAttribute{
-								Description: "URL to download content from (supports https://, file://, or absolute paths)",
-								Required:    true,
-							},
+		},
+		"capacity": schema.Int64Attribute{
+			Description: "Volume capacity in bytes (required unless using create.content)",
+			Optional:    true,
+			Computed:    true,
+		},
+		"target": schema.SingleNestedAttribute{
+			Optional:   true,
+			Attributes: targetAttrs,
+		},
+		"create": schema.SingleNestedAttribute{
+			Description: "Volume creation options for initializing volume content from external sources",
+			Optional:    true,
+			Attributes: map[string]schema.Attribute{
+				"content": schema.SingleNestedAttribute{
+					Description: "Upload content from a URL or local file",
+					Required:    true,
+					Attributes: map[string]schema.Attribute{
+						"url": schema.StringAttribute{
+							Description: "URL to download content from",
+							Required:    true,
 						},
 					},
 				},
 			},
 		},
-	}
+	})
 }
 
 // Configure configures the resource
@@ -303,84 +212,31 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	// Determine capacity: from upload stream or from user-provided value
-	var capacity int64
+	var volumeCapacity int64
 	if uploadStream != nil {
-		capacity = uploadCapacity
+		volumeCapacity = uploadCapacity
+	} else if model.Capacity.IsNull() || model.Capacity.IsUnknown() {
+		resp.Diagnostics.AddError(
+			"Missing Capacity",
+			"Volume capacity is required when not uploading from a URL",
+		)
+		return
 	} else {
-		if model.Capacity.IsNull() || model.Capacity.IsUnknown() {
-			resp.Diagnostics.AddError(
-				"Missing Capacity",
-				"Volume capacity is required when not uploading from a URL",
-			)
-			return
-		}
-		capacity = model.Capacity.ValueInt64()
+		volumeCapacity = model.Capacity.ValueInt64()
 	}
 
-	// Build volume definition
-	volumeDef := &libvirtxml.StorageVolume{
-		Name: volumeName,
-		Capacity: &libvirtxml.StorageVolumeSize{
-			Value: uint64(capacity),
-		},
-		Target: &libvirtxml.StorageVolumeTarget{},
-	}
+	// Create a model for XML conversion with computed capacity
+	xmlModel := model.StorageVolumeModel
+	xmlModel.Capacity = types.Int64Value(volumeCapacity)
 
-	// Set type if specified
-	if !model.Type.IsNull() && !model.Type.IsUnknown() {
-		volumeDef.Type = model.Type.ValueString()
-	}
-
-	// Set format if specified
-	if !model.Format.IsNull() && !model.Format.IsUnknown() {
-		volumeDef.Target.Format = &libvirtxml.StorageVolumeTargetFormat{
-			Type: model.Format.ValueString(),
-		}
-	}
-
-	// Set backing store if specified
-	if !model.BackingStore.IsNull() {
-		var backingStore VolumeBackingStoreModel
-		diags := model.BackingStore.As(ctx, &backingStore, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		volumeDef.BackingStore = &libvirtxml.StorageVolumeBackingStore{
-			Path: backingStore.Path.ValueString(),
-		}
-
-		if !backingStore.Format.IsNull() {
-			volumeDef.BackingStore.Format = &libvirtxml.StorageVolumeTargetFormat{
-				Type: backingStore.Format.ValueString(),
-			}
-		}
-	}
-
-	// Set permissions if specified
-	if !model.Permissions.IsNull() && !model.Permissions.IsUnknown() {
-		var permissions VolumePermissionsModel
-		diags := model.Permissions.As(ctx, &permissions, basetypes.ObjectAsOptions{})
-		resp.Diagnostics.Append(diags...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		volumeDef.Target.Permissions = &libvirtxml.StorageVolumeTargetPermissions{}
-
-		if !permissions.Owner.IsNull() && !permissions.Owner.IsUnknown() {
-			volumeDef.Target.Permissions.Owner = permissions.Owner.ValueString()
-		}
-		if !permissions.Group.IsNull() && !permissions.Group.IsUnknown() {
-			volumeDef.Target.Permissions.Group = permissions.Group.ValueString()
-		}
-		if !permissions.Mode.IsNull() && !permissions.Mode.IsUnknown() {
-			volumeDef.Target.Permissions.Mode = permissions.Mode.ValueString()
-		}
-		if !permissions.Label.IsNull() && !permissions.Label.IsUnknown() {
-			volumeDef.Target.Permissions.Label = permissions.Label.ValueString()
-		}
+	// Convert model to libvirt XML using generated conversion
+	volumeDef, err := generated.StorageVolumeToXML(ctx, &xmlModel)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Model to XML Conversion Failed",
+			fmt.Sprintf("Failed to convert model to XML: %s", err),
+		)
+		return
 	}
 
 	// Marshal to XML
@@ -450,8 +306,11 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		})
 	}
 
+	// Save the plan for preserving user intent
+	planModel := model.StorageVolumeModel
+
 	// Read back the full state
-	resp.Diagnostics.Append(r.readVolume(ctx, &model, volume)...)
+	resp.Diagnostics.Append(r.readVolume(ctx, &model, volume, &planModel)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -478,8 +337,8 @@ func (r *VolumeResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	// Read the volume state
-	resp.Diagnostics.Append(r.readVolume(ctx, &model, volume)...)
+	// Read the volume state (use current state as plan to preserve user intent)
+	resp.Diagnostics.Append(r.readVolume(ctx, &model, volume, &model.StorageVolumeModel)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -488,7 +347,8 @@ func (r *VolumeResource) Read(ctx context.Context, req resource.ReadRequest, res
 }
 
 // readVolume reads volume state from libvirt and populates the model
-func (r *VolumeResource) readVolume(ctx context.Context, model *VolumeResourceModel, volume golibvirt.StorageVol) diag.Diagnostics {
+// plan parameter is used to preserve user intent (only populate fields user specified)
+func (r *VolumeResource) readVolume(ctx context.Context, model *VolumeResourceModel, volume golibvirt.StorageVol, plan *generated.StorageVolumeModel) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	// Get volume XML
@@ -511,92 +371,42 @@ func (r *VolumeResource) readVolume(ctx context.Context, model *VolumeResourceMo
 		return diags
 	}
 
-	// Get volume info for allocation
-	volType, capacity, allocation, err := r.client.Libvirt().StorageVolGetInfo(volume)
+	// Convert XML to model using generated conversion
+	volumeModel, err := generated.StorageVolumeFromXML(ctx, &volumeDef, plan)
 	if err != nil {
 		diags.AddError(
-			"Failed to Get Volume Info",
-			fmt.Sprintf("Could not retrieve storage volume info: %s", err),
+			"XML to Model Conversion Failed",
+			fmt.Sprintf("Failed to convert XML to model: %s", err),
 		)
 		return diags
 	}
-	_ = volType // Unused for now
 
-	// Update model
-	model.Name = types.StringValue(volumeDef.Name)
-	model.Key = types.StringValue(volumeDef.Key)
+	// Update the embedded model
+	model.StorageVolumeModel = *volumeModel
 
-	if volumeDef.Type != "" {
-		model.Type = types.StringValue(volumeDef.Type)
-	}
-
-	model.Capacity = types.Int64Value(int64(capacity))
-	model.Allocation = types.Int64Value(int64(allocation))
-
-	if volumeDef.Target != nil {
+	// Populate computed fields that generated conversion might skip
+	// target.path is Computed, always populate it
+	if volumeDef.Target != nil && volumeDef.Target.Path != "" {
+		// Populate top-level path for convenience
 		model.Path = types.StringValue(volumeDef.Target.Path)
 
-		if volumeDef.Target.Format != nil {
-			model.Format = types.StringValue(volumeDef.Target.Format.Type)
-		}
-	}
+		// Extract current target from the model (already properly converted)
+		if !model.Target.IsNull() {
+			var targetModel generated.StorageVolumeTargetModel
+			targetDiags := model.Target.As(ctx, &targetModel, basetypes.ObjectAsOptions{})
+			diags.Append(targetDiags...)
+			if !diags.HasError() {
+				// Update just the path field
+				targetModel.Path = types.StringValue(volumeDef.Target.Path)
 
-	// Set backing store if present
-	if volumeDef.BackingStore != nil {
-		backingStoreModel := VolumeBackingStoreModel{
-			Path: types.StringValue(volumeDef.BackingStore.Path),
+				// Write back
+				targetObj, objDiags := types.ObjectValueFrom(ctx, generated.StorageVolumeTargetAttributeTypes(), targetModel)
+				diags.Append(objDiags...)
+				if !diags.HasError() {
+					model.Target = targetObj
+				}
+			}
 		}
-
-		if volumeDef.BackingStore.Format != nil {
-			backingStoreModel.Format = types.StringValue(volumeDef.BackingStore.Format.Type)
-		} else {
-			backingStoreModel.Format = types.StringNull()
-		}
-
-		backingStoreObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
-			"path":   types.StringType,
-			"format": types.StringType,
-		}, backingStoreModel)
-		diags.Append(d...)
-		if diags.HasError() {
-			return diags
-		}
-		model.BackingStore = backingStoreObj
-	}
-
-	// Set permissions if present and user specified them
-	if !model.Permissions.IsNull() && !model.Permissions.IsUnknown() && volumeDef.Target != nil && volumeDef.Target.Permissions != nil {
-		permissionsModel := VolumePermissionsModel{
-			Owner: types.StringNull(),
-			Group: types.StringNull(),
-			Mode:  types.StringNull(),
-			Label: types.StringNull(),
-		}
-
-		if volumeDef.Target.Permissions.Owner != "" {
-			permissionsModel.Owner = types.StringValue(volumeDef.Target.Permissions.Owner)
-		}
-		if volumeDef.Target.Permissions.Group != "" {
-			permissionsModel.Group = types.StringValue(volumeDef.Target.Permissions.Group)
-		}
-		if volumeDef.Target.Permissions.Mode != "" {
-			permissionsModel.Mode = types.StringValue(volumeDef.Target.Permissions.Mode)
-		}
-		if volumeDef.Target.Permissions.Label != "" {
-			permissionsModel.Label = types.StringValue(volumeDef.Target.Permissions.Label)
-		}
-
-		permissionsObj, d := types.ObjectValueFrom(ctx, map[string]attr.Type{
-			"owner": types.StringType,
-			"group": types.StringType,
-			"mode":  types.StringType,
-			"label": types.StringType,
-		}, permissionsModel)
-		diags.Append(d...)
-		if diags.HasError() {
-			return diags
-		}
-		model.Permissions = permissionsObj
 	}
 
 	return diags

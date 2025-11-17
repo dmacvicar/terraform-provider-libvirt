@@ -191,8 +191,8 @@ resource "libvirt_domain" "vm1" {
   # Boot configuration
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   # Attached disks
@@ -255,8 +255,8 @@ resource "libvirt_domain" "vm2" {
 
   os = {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 
   devices = {

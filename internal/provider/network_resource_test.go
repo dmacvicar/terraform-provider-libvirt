@@ -84,13 +84,14 @@ func TestAccNetworkResource_basic(t *testing.T) {
 				Config: testAccNetworkResourceConfigBasic("test-network-basic"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network.test", "name", "test-network-basic"),
-					resource.TestCheckResourceAttr("libvirt_network.test", "mode", "nat"),
+					resource.TestCheckResourceAttr("libvirt_network.test", "forward.mode", "nat"),
 					resource.TestCheckResourceAttr("libvirt_network.test", "ips.#", "1"),
 					resource.TestCheckResourceAttr("libvirt_network.test", "ips.0.address", "10.17.3.1"),
 					resource.TestCheckResourceAttr("libvirt_network.test", "ips.0.netmask", "255.255.255.0"),
 					resource.TestCheckResourceAttrSet("libvirt_network.test", "uuid"),
 					resource.TestCheckResourceAttrSet("libvirt_network.test", "id"),
-					resource.TestCheckResourceAttrSet("libvirt_network.test", "bridge"),
+					// Note: bridge.name not checked because user didn't specify bridge in config
+					// Following field read semantics: Optional fields only populate if user specified
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -108,7 +109,6 @@ func TestAccNetworkResource_isolated(t *testing.T) {
 				Config: testAccNetworkResourceConfigIsolated("test-network-isolated"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_network.test", "name", "test-network-isolated"),
-					resource.TestCheckResourceAttr("libvirt_network.test", "mode", "none"),
 					resource.TestCheckResourceAttr("libvirt_network.test", "ips.#", "1"),
 					resource.TestCheckResourceAttr("libvirt_network.test", "ips.0.address", "192.168.100.1"),
 					resource.TestCheckResourceAttr("libvirt_network.test", "ips.0.netmask", "255.255.255.0"),
@@ -122,8 +122,11 @@ func testAccNetworkResourceConfigBasic(name string) string {
 	return fmt.Sprintf(`
 resource "libvirt_network" "test" {
   name      = %[1]q
-  mode      = "nat"
   autostart = false
+
+  forward = {
+    mode = "nat"
+  }
 
   ips = [
     {
@@ -139,7 +142,8 @@ func testAccNetworkResourceConfigIsolated(name string) string {
 	return fmt.Sprintf(`
 resource "libvirt_network" "test" {
   name = %[1]q
-  mode = "none"
+
+  # No forward block = isolated network
 
   ips = [
     {

@@ -15,12 +15,12 @@ resource "libvirt_domain" "example_with_metadata" {
   title       = "Example Domain"
   description = "This is an example domain with title and description metadata"
   memory      = 512
-  unit        = "MiB"
+  memory_unit        = "MiB"
   vcpu        = 1
 
   os {
     type    = "hvm"
-    arch    = "x86_64"
-    machine = "q35"
+    type_arch    = "x86_64"
+    type_machine = "q35"
   }
 }
