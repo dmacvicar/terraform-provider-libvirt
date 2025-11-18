@@ -242,7 +242,7 @@ func stripWaitForIP(ctx context.Context, devices types.Object) (types.Object, []
 			var mac string
 			if ok {
 				var macModel generated.DomainInterfaceMACModel
-				if macObj, ok := macValue.(basetypes.ObjectValue); ok {
+				if macObj, ok := macValue.(basetypes.ObjectValue); ok && !macObj.IsNull() && !macObj.IsUnknown() {
 					diags := macObj.As(ctx, &macModel, basetypes.ObjectAsOptions{})
 					if diags.HasError() {
 						return types.ObjectNull(generated.DomainDeviceListAttributeTypes()), nil, nil, diags
@@ -327,10 +327,17 @@ func applyWaitForIPValues(ctx context.Context, devices types.Object, waitValues 
 				diag.NewErrorDiagnostic("Invalid interface value", "Expected interface entry to be an object."),
 			}
 		}
+
+		// Convert interface attributes to ensure proper typing
+		// We need to reconstruct the object with the new type that includes wait_for_ip
 		ifaceAttrs := ifaceObj.Attributes()
-		newIfaceAttrs := make(map[string]attr.Value, len(ifaceAttrs)+1)
-		for k, v := range ifaceAttrs {
-			newIfaceAttrs[k] = v
+		newIfaceAttrs := make(map[string]attr.Value, len(generated.DomainInterfaceAttributeTypes())+1)
+
+		// Copy all base attributes - they should all be present from FromXML
+		for attrName := range generated.DomainInterfaceAttributeTypes() {
+			if val, exists := ifaceAttrs[attrName]; exists {
+				newIfaceAttrs[attrName] = val
+			}
 		}
 
 		var waitVal attr.Value
