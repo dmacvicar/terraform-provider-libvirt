@@ -974,7 +974,10 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	}
 
 	// Undefine the domain
-	err = r.client.Libvirt().DomainUndefine(domain)
+	// Use DomainUndefineNvram flag to also remove NVRAM files when present (UEFI)
+	// Use DomainUndefineTpm flag to also remove TPM state when present
+	flags := golibvirt.DomainUndefineNvram | golibvirt.DomainUndefineTpm
+	err = r.client.Libvirt().DomainUndefineFlags(domain, flags)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to Undefine Domain",
