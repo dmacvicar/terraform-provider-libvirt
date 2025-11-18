@@ -101,9 +101,14 @@ func newGoSSHDialer(parsedURI *url.URL) (Dialer, error) {
 		return nil, fmt.Errorf("SSH transport requires a hostname")
 	}
 
+	currUser, err := user.Current()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current user: %w", err)
+	}
+
 	query := parsedURI.Query()
 	opts := []dialers.SSHOption{
-		dialers.WithSystemSSHDefaults(nil), // Use system defaults
+		dialers.WithSystemSSHDefaults(currUser), // Use system defaults
 	}
 
 	// Port
