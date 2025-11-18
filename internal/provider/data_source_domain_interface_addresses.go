@@ -130,6 +130,24 @@ func (d *DomainInterfaceAddressesDataSource) Configure(ctx context.Context, req 
 	d.client = client
 }
 
+// lookupDomain looks up a domain by UUID or name.
+// Tries UUID first (since it has a specific format), then falls back to name.
+func (d *DomainInterfaceAddressesDataSource) lookupDomain(nameOrUUID string) (golibvirt.Domain, error) {
+	// Try UUID first
+	domain, err := d.client.LookupDomainByUUID(nameOrUUID)
+	if err == nil {
+		return domain, nil
+	}
+
+	// Fall back to name lookup
+	domain, err = d.client.Libvirt().DomainLookupByName(nameOrUUID)
+	if err != nil {
+		return golibvirt.Domain{}, fmt.Errorf("domain not found by UUID or name '%s': %w", nameOrUUID, err)
+	}
+
+	return domain, nil
+}
+
 func (d *DomainInterfaceAddressesDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config DomainInterfaceAddressesDataSourceModel
 
@@ -138,13 +156,13 @@ func (d *DomainInterfaceAddressesDataSource) Read(ctx context.Context, req datas
 		return
 	}
 
-	// Lookup domain by name
-	domainName := config.Domain.ValueString()
-	domain, err := d.client.Libvirt().DomainLookupByName(domainName)
+	// Lookup domain by UUID or name
+	domainIdentifier := config.Domain.ValueString()
+	domain, err := d.lookupDomain(domainIdentifier)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Domain Not Found",
-			fmt.Sprintf("Unable to find domain '%s': %s", domainName, err),
+			fmt.Sprintf("Unable to find domain '%s': %s", domainIdentifier, err),
 		)
 		return
 	}
@@ -192,7 +210,7 @@ func (d *DomainInterfaceAddressesDataSource) Read(ctx context.Context, req datas
 				"- Domain has not obtained an IP address yet\n"+
 				"- DHCP is not configured (for source='lease')\n"+
 				"- QEMU guest agent is not running (for source='agent')",
-				domainName, lastErr),
+				domainIdentifier, lastErr),
 		)
 	}
 
