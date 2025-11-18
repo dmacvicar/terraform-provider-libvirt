@@ -45,8 +45,6 @@ func run() error {
 	allStructs := make(map[string]*generator.StructIR)
 
 	for _, resource := range resources {
-		fmt.Printf("Analyzing %s...\n", resource.Name)
-
 		// Analyze the struct
 		rootIR, err := reflector.ReflectStruct(resource.Type)
 		if err != nil {
@@ -79,11 +77,10 @@ func run() error {
 		totalFields += len(s.Fields)
 		if s.IsTopLevel {
 			topLevelCount++
-			fmt.Printf("  Top-level: %s\n", s.Name)
 		}
 	}
 
-	fmt.Printf("\nGenerating code for %d unique structs (%d top-level, %d total fields)...\n", len(structs), topLevelCount, totalFields)
+	// Silently generate code
 
 	// Generate one file per struct
 	for _, s := range structs {
@@ -102,8 +99,7 @@ func run() error {
 		}
 	}
 
-	fmt.Println("\nCode generation completed successfully!")
-	fmt.Printf("Generated %d structs in %s/\n", len(structs), outputDir)
+	fmt.Printf("Generated %d structs (%d top-level, %d total fields) in %s/\n", len(structs), topLevelCount, totalFields, outputDir)
 
 	return nil
 }
@@ -125,7 +121,6 @@ func generateModel(structs []*generator.StructIR, outputDir, resourceName string
 		return fmt.Errorf("writing model file: %w", err)
 	}
 
-	fmt.Printf("  Generated: %s\n", outputPath)
 	return nil
 }
 
@@ -146,7 +141,6 @@ func generateSchema(structs []*generator.StructIR, outputDir, resourceName strin
 		return fmt.Errorf("writing schema file: %w", err)
 	}
 
-	fmt.Printf("  Generated: %s\n", outputPath)
 	return nil
 }
 
@@ -167,7 +161,6 @@ func generateConvert(structs []*generator.StructIR, outputDir, resourceName stri
 		return fmt.Errorf("writing convert file: %w", err)
 	}
 
-	fmt.Printf("  Generated: %s\n", outputPath)
 	return nil
 }
 

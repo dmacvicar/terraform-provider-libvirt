@@ -40,18 +40,12 @@ func NewSchemaGeneratorFromString(templateContent string) (*SchemaGenerator, err
 func (g *SchemaGenerator) Generate(structs []*StructIR) (string, error) {
 	var buf bytes.Buffer
 
-	fmt.Printf("  Generating schema for %d structs...\n", len(structs))
-
 	data := map[string]interface{}{
 		"Structs": structs,
 	}
-
-	fmt.Printf("  Executing template...\n")
 	if err := g.template.Execute(&buf, data); err != nil {
 		return "", fmt.Errorf("executing template: %w", err)
 	}
-
-	fmt.Printf("  Template executed, formatting...\n")
 
 	// Format the generated code
 	formatted, err := format.Source(buf.Bytes())
