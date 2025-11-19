@@ -1,0 +1,16 @@
+entries:
+  - path: storage_volume
+    description: Storage volume within a storage pool
+    reference: https://libvirt.org/formatstorage.html#storage-volume-xml
+
+  - path: storage_volume.capacity
+    description: Storage volume capacity
+    reference: https://libvirt.org/formatstorage.html#storage-volume-general-metadata
+
+  - path: storage_volume.target
+    description: Target format and permissions for the volume
+    reference: https://libvirt.org/formatstorage.html#storage-volume-target-elements
+
+  - path: storage_volume.backing_store
+    description: Backing store configuration for copy-on-write volumes
+    reference: https://libvirt.org/formatstorage.html#backing-store-elements

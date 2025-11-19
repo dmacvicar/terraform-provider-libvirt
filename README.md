@@ -360,6 +360,45 @@ go run ./internal/codegen
 
 For detailed architecture, usage, and extension guide, see [`internal/codegen/README.md`](internal/codegen/README.md).
 
+#### Documentation Generation Pipeline
+
+The schema documentation follows this pipeline:
+
+```
+YAML config files    →    Code Generator    →    Generated schemas    →    Provider docs
+(domain.yaml, etc)        (reads YAML)           (with descriptions)        (tfplugindocs)
+       ↓                        ↓                         ↓                        ↓
+internal/codegen/         go run ./internal/      internal/generated/        docs/
+docs/*.yaml               codegen                 *.gen.go                   resources/*.md
+```
+
+**YAML Documentation Registry (manually maintained)**
+- Brief one-line descriptions for schema fields
+- Located in `internal/codegen/docs/*.yaml`
+- Format: `path`, `description`, `reference` (libvirt.org URL)
+- Maintained manually (one-time setup, then incremental updates)
+
+**Code Generation**
+- Code generator reads YAML docs via `docregistry`
+- Applies descriptions to generated schemas
+- Run: `go run ./internal/codegen` or `make generate`
+
+**Provider Documentation**
+- Terraform Plugin Docs (`tfplugindocs`) generates final docs
+- Combines generated schemas + manually written guides
+- Run: `make docs`
+
+**Updating Documentation:**
+```bash
+# Edit YAML documentation files
+vim internal/codegen/docs/domain.yaml
+
+# Regenerate code with updated descriptions
+make generate
+```
+
+The YAML documentation files are intentionally brief (one-liners) and maintained manually, as upstream libvirt docs don't cover every field.
+
 ## Building from source
 
 ```bash

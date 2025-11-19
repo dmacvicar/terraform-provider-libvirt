@@ -1,0 +1,100 @@
+entries:
+  - path: domain
+    description: Root element for all virtual machines
+    reference: https://libvirt.org/formatdomain.html#element-and-attribute-overview
+
+  - path: domain.memory
+    description: Maximum memory allocation for the guest at boot time
+    reference: https://libvirt.org/formatdomain.html#memory-allocation
+
+  - path: domain.os
+    description: Operating system boot configuration
+    reference: https://libvirt.org/formatdomain.html#operating-system-booting
+
+  - path: domain.cpu
+    description: CPU allocation and topology configuration
+    reference: https://libvirt.org/formatdomain.html#cpu-allocation
+
+  - path: domain.features
+    description: Hypervisor features that can be toggled on/off
+    reference: https://libvirt.org/formatdomain.html#hypervisor-features
+
+  - path: domain.devices
+    description: Devices provided to the guest domain
+    reference: https://libvirt.org/formatdomain.html#devices
+
+  - path: domain.devices.disks
+    description: Disk devices (floppy, hard disk, CD-ROM, paravirtualized)
+    reference: https://libvirt.org/formatdomain.html#hard-drives-floppy-disks-cdroms
+
+  - path: domain.devices.interfaces
+    description: Network interface configuration
+    reference: https://libvirt.org/formatdomain.html#network-interfaces
+
+  - path: domain.devices.graphics
+    description: Graphical framebuffer devices for guest interaction
+    reference: https://libvirt.org/formatdomain.html#graphical-framebuffers
+
+  - path: domain.devices.controllers
+    description: Virtual device bus controllers
+    reference: https://libvirt.org/formatdomain.html#controllers
+
+  - path: domain.devices.filesystems
+    description: Host directories accessible from the guest
+    reference: https://libvirt.org/formatdomain.html#filesystems
+
+  - path: domain.devices.serials
+    description: Serial port devices
+    reference: https://libvirt.org/formatdomain.html#serial-port
+
+  - path: domain.devices.consoles
+    description: Interactive serial console devices
+    reference: https://libvirt.org/formatdomain.html#console
+
+  - path: domain.devices.channels
+    description: Private communication channels between host and guest
+    reference: https://libvirt.org/formatdomain.html#channel
+
+  - path: domain.devices.inputs
+    description: Input devices (mouse, keyboard, tablet)
+    reference: https://libvirt.org/formatdomain.html#input-devices
+
+  - path: domain.devices.watchdogs
+    description: Watchdog devices for guest monitoring
+    reference: https://libvirt.org/formatdomain.html#watchdog-devices
+
+  - path: domain.devices.rngs
+    description: Random number generator devices
+    reference: https://libvirt.org/formatdomain.html#random-number-generator-device
+
+  - path: domain.devices.tpms
+    description: TPM (Trusted Platform Module) devices
+    reference: https://libvirt.org/formatdomain.html#tpm-device
+
+  - path: domain.devices.mem_balloon
+    description: Memory balloon device for dynamic memory adjustment
+    reference: https://libvirt.org/formatdomain.html#memory-balloon-device
+
+  - path: domain.devices.videos
+    description: Video display devices
+    reference: https://libvirt.org/formatdomain.html#video-devices
+
+  - path: domain.devices.sounds
+    description: Sound card devices
+    reference: https://libvirt.org/formatdomain.html#sound-devices
+
+  - path: domain.devices.redir_devs
+    description: USB redirection devices
+    reference: https://libvirt.org/formatdomain.html#redirected-devices
+
+  - path: domain.devices.redir_filters
+    description: USB redirection filters
+    reference: https://libvirt.org/formatdomain.html#redirected-devices
+
+  - path: domain.devices.smartcards
+    description: Smartcard devices
+    reference: https://libvirt.org/formatdomain.html#smartcard-devices
+
+  - path: domain.devices.panics
+    description: Panic notification devices
+    reference: https://libvirt.org/formatdomain.html#panic-device

@@ -1,0 +1,12 @@
+entries:
+  - path: storage_pool
+    description: Storage pool for managing storage volumes
+    reference: https://libvirt.org/formatstorage.html#storage-pool-xml
+
+  - path: storage_pool.source
+    description: Source location for the storage pool
+    reference: https://libvirt.org/formatstorage.html#source-elements
+
+  - path: storage_pool.target
+    description: Target path and permissions for the storage pool
+    reference: https://libvirt.org/formatstorage.html#storage-pool-target-elements

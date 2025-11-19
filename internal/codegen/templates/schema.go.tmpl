@@ -32,7 +32,10 @@ var (
 func {{ $struct.Name }}SchemaAttribute() schema.Attribute {
 	return schema.SingleNestedAttribute{
 		{{- if $struct.Description }}
-		Description: "{{ $struct.Description }}",
+		Description: {{ printf "%q" $struct.Description }},
+		{{- end }}
+		{{- if $struct.MarkdownDescription }}
+		MarkdownDescription: {{ printf "%q" $struct.MarkdownDescription }},
 		{{- end }}
 		Optional: true,
 		Attributes: map[string]schema.Attribute{
@@ -83,7 +86,10 @@ func {{ $struct.Name }}Schema(overrides map[string]schema.Attribute) schema.Sche
 
 	return schema.Schema{
 		{{- if $struct.Description }}
-		Description: "{{ $struct.Description }}",
+		Description: {{ printf "%q" $struct.Description }},
+		{{- end }}
+		{{- if $struct.MarkdownDescription }}
+		MarkdownDescription: {{ printf "%q" $struct.MarkdownDescription }},
 		{{- end }}
 		Attributes: attrs,
 	}
@@ -95,7 +101,10 @@ func {{ $struct.Name }}Schema(overrides map[string]schema.Attribute) schema.Sche
 {{- if and .IsList .IsNested }}
 schema.ListNestedAttribute{
 	{{- if .Description }}
-	Description: "{{ .Description }}",
+	Description: {{ printf "%q" .Description }},
+	{{- end }}
+	{{- if .MarkdownDescription }}
+	MarkdownDescription: {{ printf "%q" .MarkdownDescription }},
 	{{- end }}
 	{{- if .IsRequired }}
 	Required: true,
@@ -113,7 +122,10 @@ schema.ListNestedAttribute{
 {{- else if .IsList }}
 schema.ListAttribute{
 	{{- if .Description }}
-	Description: "{{ .Description }}",
+	Description: {{ printf "%q" .Description }},
+	{{- end }}
+	{{- if .MarkdownDescription }}
+	MarkdownDescription: {{ printf "%q" .MarkdownDescription }},
 	{{- end }}
 	{{- if .IsRequired }}
 	Required: true,
@@ -127,7 +139,10 @@ schema.ListAttribute{
 {{- else }}
 {{ .SchemaType }}{
 	{{- if .Description }}
-	Description: "{{ .Description }}",
+	Description: {{ printf "%q" .Description }},
+	{{- end }}
+	{{- if .MarkdownDescription }}
+	MarkdownDescription: {{ printf "%q" .MarkdownDescription }},
 	{{- end }}
 	{{- if .IsRequired }}
 	Required: true,

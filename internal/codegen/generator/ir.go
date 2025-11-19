@@ -16,6 +16,9 @@ type StructIR struct {
 	// Description from RNG or comments
 	Description string
 
+	// MarkdownDescription holds markdown-formatted docs for schema output
+	MarkdownDescription string
+
 	// IsTopLevel indicates this is a top-level resource (Domain, Network, etc.)
 	IsTopLevel bool
 
@@ -35,7 +38,8 @@ type StructIR struct {
 // ValueWithUnitPattern represents a struct with chardata value + attributes.
 // Pattern: Value INSIDE element, ALL other fields are attributes → FLATTEN
 // Examples: <memory unit='KiB'>524288</memory> → memory, memory_unit
-//           <vcpu placement='static' cpuset='1-4'>2</vcpu> → vcpu, vcpu_placement, vcpu_cpuset
+//
+//	<vcpu placement='static' cpuset='1-4'>2</vcpu> → vcpu, vcpu_placement, vcpu_cpuset
 type ValueWithUnitPattern struct {
 	// ValueFieldName is the field with xml:",chardata" (e.g., "Value")
 	ValueFieldName string
@@ -118,6 +122,9 @@ type FieldIR struct {
 
 	// Description from RNG or comments
 	Description string
+
+	// MarkdownDescription holds markdown-formatted docs for schema output
+	MarkdownDescription string
 
 	// ValidValues are the allowed values from RNG choice elements
 	ValidValues []string

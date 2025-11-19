@@ -1,0 +1,20 @@
+entries:
+  - path: network
+    description: Virtual network configuration
+    reference: https://libvirt.org/formatnetwork.html#element-and-attribute-overview
+
+  - path: network.bridge
+    description: Network bridge configuration
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+
+  - path: network.forward
+    description: Network forwarding mode configuration
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+
+  - path: network.ips
+    description: IP address configuration for the network
+    reference: https://libvirt.org/formatnetwork.html#addressing
+
+  - path: network.dns
+    description: DNS configuration for the network
+    reference: https://libvirt.org/formatnetwork.html#addressing

@@ -75,3 +75,4 @@ docs: ## Generate provider documentation
 	@go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest
 	@echo "Generating documentation..."
 	@PATH="$(PATH):$(shell go env GOPATH)/bin" tfplugindocs generate
+

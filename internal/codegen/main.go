@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 
+	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/codegen/docregistry"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/codegen/generator"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/codegen/parser"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/util/stringutil"
@@ -44,6 +45,12 @@ func run() error {
 	// Collect all structs from all resources (deduplicated)
 	allStructs := make(map[string]*generator.StructIR)
 
+	type resourceIR struct {
+		Name string
+		Root *generator.StructIR
+	}
+	var resourceIRs []resourceIR
+
 	for _, resource := range resources {
 		// Analyze the struct
 		rootIR, err := reflector.ReflectStruct(resource.Type)
@@ -66,6 +73,16 @@ func run() error {
 				existing.IsTopLevel = true
 			}
 		}
+		resourceIRs = append(resourceIRs, resourceIR{Name: resource.Name, Root: rootIR})
+	}
+
+	// Load documentation registry and apply descriptions before rendering templates
+	docReg, err := docregistry.Load("internal/codegen/docs")
+	if err != nil {
+		return fmt.Errorf("loading schema docs: %w", err)
+	}
+	for _, res := range resourceIRs {
+		docReg.Apply(stringutil.SnakeCase(res.Name), res.Root)
 	}
 
 	// Convert map to slice
