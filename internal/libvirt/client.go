@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"net/url"
 
 	"github.com/digitalocean/go-libvirt"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt/dialers"
@@ -20,12 +21,17 @@ type Client struct {
 
 // NewClient creates a new libvirt client from a connection URI
 func NewClient(ctx context.Context, uri string) (*Client, error) {
+	parsedURI, err := url.Parse(uri)
+	if err != nil {
+		return nil, fmt.Errorf("invalid libvirt URI: %w", err)
+	}
+
 	tflog.Debug(ctx, "Creating new libvirt client", map[string]any{
 		"uri": uri,
 	})
 
 	// Create the appropriate dialer based on the URI
-	dialer, err := dialers.NewDialerFromURI(uri)
+	dialer, err := dialers.NewDialerFromURI(parsedURI)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dialer: %w", err)
 	}
@@ -40,10 +46,16 @@ func NewClient(ctx context.Context, uri string) (*Client, error) {
 		return nil, fmt.Errorf("failed to dial libvirt: %w", err)
 	}
 
+	internalURI := url.URL{
+		Path: parsedURI.Path,
+		Scheme: strings.Split(parsedURI.Scheme, "+")[0],
+	}
+	tflog.Debug(ctx, "", map[string]any{"internalURI": internalURI.String()})
+
 	// Create libvirt client
 	//nolint:staticcheck // NewWithDialer is too complex for our use case
 	l := libvirt.New(conn)
-	if err := l.Connect(); err != nil {
+	if err := l.ConnectToURI(libvirt.ConnectURI(internalURI.String())); err != nil {
 		_ = conn.Close()
 		return nil, fmt.Errorf("failed to connect to libvirt: %w", err)
 	}
