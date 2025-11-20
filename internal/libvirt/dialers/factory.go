@@ -18,16 +18,11 @@ const (
 // NewDialerFromURI creates the appropriate Dialer based on the libvirt URI.
 // It uses upstream go-libvirt dialers for most transports and custom dialers
 // for special cases like SSHCmd.
-func NewDialerFromURI(uriStr string) (Dialer, error) {
-	parsedURI, err := url.Parse(uriStr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid libvirt URI: %w", err)
-	}
-
+func NewDialerFromURI(uri *url.URL) (Dialer, error) {
 	// Parse the scheme to extract driver and transport
 	// Format: driver[+transport]://[host]/path
 	// Examples: qemu:///system, qemu+ssh://host/system, qemu+sshcmd://host/system
-	schemeParts := strings.Split(parsedURI.Scheme, "+")
+	schemeParts := strings.Split(uri.Scheme, "+")
 	driver := schemeParts[0]
 	transport := ""
 	if len(schemeParts) > 1 {
@@ -43,27 +38,27 @@ func NewDialerFromURI(uriStr string) (Dialer, error) {
 	}
 
 	// Local connection (no transport specified and no host)
-	if transport == "" && parsedURI.Host == "" {
-		return newLocalDialer(parsedURI)
+	if transport == "" && uri.Host == "" {
+		return newLocalDialer(uri)
 	}
 
 	// Remote connections
 	switch transport {
 	case "ssh":
 		// Use Go SSH library (upstream dialer)
-		return newGoSSHDialer(parsedURI)
+		return newGoSSHDialer(uri)
 	case "sshcmd":
 		// Use native SSH command (custom dialer)
-		return NewSSHCmd(parsedURI), nil
+		return NewSSHCmd(uri), nil
 	case "tcp":
 		// Plain TCP connection (upstream dialer)
-		return newRemoteDialer(parsedURI)
+		return newRemoteDialer(uri)
 	case "tls":
 		// TLS connection (upstream dialer)
-		return newTLSDialer(parsedURI)
+		return newTLSDialer(uri)
 	case "":
 		// No transport but has host - assume SSH
-		return newGoSSHDialer(parsedURI)
+		return newGoSSHDialer(uri)
 	default:
 		return nil, fmt.Errorf("unsupported transport: %s", transport)
 	}
