@@ -85,6 +85,17 @@ func (r *LibvirtXMLReflector) ReflectStruct(structType reflect.Type) (*generator
 			continue
 		}
 
+		if field.Anonymous {
+			if field.Type.Kind() == reflect.Struct {
+				embeddedIR, err := r.ReflectStruct(field.Type)
+				if err != nil {
+					return nil, fmt.Errorf("analyzing embedded struct %s: %w", field.Type.Name(), err)
+				}
+				ir.Fields = append(ir.Fields, embeddedIR.Fields...)
+			}
+			continue
+		}
+
 		fieldIR, err := r.analyzeField(typeName, field)
 		if err != nil {
 			return nil, fmt.Errorf("analyzing field %s: %w", field.Name, err)
@@ -245,11 +256,6 @@ func (r *LibvirtXMLReflector) applyFieldPatterns(structName string, fields []*ge
 func (r *LibvirtXMLReflector) analyzeField(structName string, field reflect.StructField) (*generator.FieldIR, error) {
 	// Skip XMLName fields (used by encoding/xml)
 	if field.Name == "XMLName" {
-		return nil, nil
-	}
-
-	// Skip embedded/anonymous fields
-	if field.Anonymous {
 		return nil, nil
 	}
 
