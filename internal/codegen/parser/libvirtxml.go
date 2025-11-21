@@ -255,8 +255,25 @@ func (r *LibvirtXMLReflector) analyzeField(structName string, field reflect.Stru
 
 	xmlTag := field.Tag.Get("xml")
 	if xmlTag == "" {
-		// Skip fields without XML tags
-		return nil, nil
+		// Handle hypervisor-specific fields that are missing XML tags.
+		hypervisorPrefixes := []string{"QEMU", "LXC", "BHyve", "VMWare", "Xen"}
+		var guessedTag string
+
+		for _, prefix := range hypervisorPrefixes {
+			if strings.HasPrefix(field.Name, prefix) {
+				namespace := strings.ToLower(prefix)
+				element := strings.ToLower(strings.TrimPrefix(field.Name, prefix))
+				guessedTag = fmt.Sprintf("%s:%s,omitempty", namespace, element)
+				break
+			}
+		}
+
+		if guessedTag != "" {
+			xmlTag = guessedTag
+		} else {
+			// If it's not a known hypervisor field, skip it as before.
+			return nil, nil
+		}
 	}
 
 	isDashTag := xmlTag == "-"
