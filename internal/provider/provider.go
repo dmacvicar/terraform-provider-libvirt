@@ -23,7 +23,8 @@ type LibvirtProvider struct {
 
 // LibvirtProviderModel describes the provider data model
 type LibvirtProviderModel struct {
-	URI types.String `tfsdk:"uri"`
+	URI              types.String `tfsdk:"uri"`
+	UndefineOnUpdate types.Bool   `tfsdk:"undefine_on_update"`
 }
 
 // New creates a new provider instance
@@ -59,6 +60,10 @@ providing fine-grained control over all libvirt features.
 				MarkdownDescription: "Libvirt connection URI. Defaults to `qemu:///system` if not specified. " +
 					"See [libvirt URI documentation](https://libvirt.org/uri.html) for details.",
 				Optional: true,
+			},
+			"undefine_on_update": schema.BoolAttribute{
+				Description: "When true, the provider will undefine the domain on update. When false it will attempt to update the domain in place. ",
+				Optional:    true,
 			},
 		},
 	}
@@ -102,6 +107,13 @@ func (p *LibvirtProvider) Configure(ctx context.Context, req provider.ConfigureR
 		)
 		return
 	}
+
+	// Default to true for backward compatibility
+	undefineOnUpdate := true
+	if !config.UndefineOnUpdate.IsNull() && !config.UndefineOnUpdate.IsUnknown() {
+		undefineOnUpdate = config.UndefineOnUpdate.ValueBool()
+	}
+	client.UndefineOnUpdate = undefineOnUpdate
 
 	// Verify the connection works
 	if err := client.Ping(ctx); err != nil {
