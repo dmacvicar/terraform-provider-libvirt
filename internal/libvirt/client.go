@@ -14,8 +14,9 @@ import (
 
 // Client wraps the libvirt connection and provides helper methods
 type Client struct {
-	conn *libvirt.Libvirt
-	uri  string
+	conn             *libvirt.Libvirt
+	uri              string
+	UndefineOnUpdate bool
 }
 
 // NewClient creates a new libvirt client from a connection URI
@@ -74,6 +75,10 @@ func (c *Client) Libvirt() *libvirt.Libvirt {
 // URI returns the connection URI
 func (c *Client) URI() string {
 	return c.uri
+}
+
+func (c *Client) IsUndefineOnUpdate() bool {
+	return c.UndefineOnUpdate
 }
 
 // Ping verifies the connection is still alive

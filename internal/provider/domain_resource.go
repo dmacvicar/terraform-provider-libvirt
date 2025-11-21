@@ -822,12 +822,14 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	if err := r.client.Libvirt().DomainUndefine(existingDomain); err != nil {
-		resp.Diagnostics.AddError(
-			"Domain Undefine Failed",
-			"Failed to undefine existing domain: "+err.Error(),
-		)
-		return
+	if r.client.IsUndefineOnUpdate() {
+		if err := r.client.Libvirt().DomainUndefine(existingDomain); err != nil {
+			resp.Diagnostics.AddError(
+				"Domain Undefine Failed",
+				"Failed to undefine existing domain: "+err.Error(),
+			)
+			return
+		}
 	}
 
 	newDomain, err := r.client.Libvirt().DomainDefineXML(xmlString)
