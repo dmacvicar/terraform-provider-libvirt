@@ -822,7 +822,8 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	if err := r.client.Libvirt().DomainUndefine(existingDomain); err != nil {
+	flags := golibvirt.DomainUndefineKeepNvram | golibvirt.DomainUndefineKeepTpm
+	if err := r.client.Libvirt().DomainUndefineFlags(existingDomain, flags); err != nil {
 		resp.Diagnostics.AddError(
 			"Domain Undefine Failed",
 			"Failed to undefine existing domain: "+err.Error(),
