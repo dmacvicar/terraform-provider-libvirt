@@ -16,8 +16,8 @@ resource "libvirt_domain" "example_with_filesystem" {
   memory_unit   = "MiB"
   vcpu   = 1
 
-  os {
-    type    = "hvm"
+  os = {
+    type         = "hvm"
     type_arch    = "x86_64"
     type_machine = "q35"
   }

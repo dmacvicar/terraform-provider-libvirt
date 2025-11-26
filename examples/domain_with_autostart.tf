@@ -17,8 +17,8 @@ resource "libvirt_domain" "example_with_autostart" {
   vcpu      = 1
   autostart = true # Domain will automatically start on host boot
 
-  os {
-    type    = "hvm"
+  os = {
+    type         = "hvm"
     type_arch    = "x86_64"
     type_machine = "q35"
   }

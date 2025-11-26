@@ -17,8 +17,8 @@ resource "libvirt_domain" "example" {
   vcpu   = 2
   type   = "kvm"
 
-  os {
-    type    = "hvm"
+  os = {
+    type         = "hvm"
     type_arch    = "x86_64"
     type_machine = "q35"
   }

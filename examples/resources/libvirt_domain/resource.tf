@@ -6,8 +6,8 @@ resource "libvirt_domain" "example" {
   vcpu   = 2
   type   = "kvm"
 
-  os {
-    type    = "hvm"
+  os = {
+    type         = "hvm"
     type_arch    = "x86_64"
     type_machine = "q35"
     boot_devices = ["hd", "network"]
@@ -50,19 +50,19 @@ resource "libvirt_domain" "uefi_example" {
   vcpu   = 4
   type   = "kvm"
 
-  os {
-    type        = "hvm"
+  os = {
+    type             = "hvm"
     type_arch        = "x86_64"
     type_machine     = "q35"
-    firmware    = "efi"
-    loader = "/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd"
-    loader_readonly = true
-    loader_type     = "pflash"
+    firmware         = "efi"
+    loader           = "/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd"
+    loader_readonly  = true
+    loader_type      = "pflash"
     nv_ram = {
       nv_ram   = "/var/lib/libvirt/qemu/nvram/uefi-vm.fd"
       template = "/usr/share/edk2/x64/OVMF_VARS.4m.fd"
     }
-    boot_devices    = ["hd"]
+    boot_devices     = ["hd"]
   }
 }
 
@@ -74,11 +74,11 @@ resource "libvirt_domain" "kernel_boot" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
-    type        = "hvm"
-    type_arch        = "x86_64"
-    kernel      = "/boot/vmlinuz"
-    initrd      = "/boot/initrd.img"
-    kernel_args = "console=ttyS0 root=/dev/vda1"
+  os = {
+    type         = "hvm"
+    type_arch    = "x86_64"
+    kernel       = "/boot/vmlinuz"
+    initrd       = "/boot/initrd.img"
+    kernel_args  = "console=ttyS0 root=/dev/vda1"
   }
 }
