@@ -1,5 +1,8 @@
 # Binaries
 terraform-provider-libvirt
+docgen
+docindex
+
 /codegen
 *.exe
 *.dll
@@ -42,3 +45,5 @@ internal/generated/*.gen.go
 
 tmp
 tmp/
+/internal/codegen/docs/prompts/
+/internal/codegen/docs/.*.json
