@@ -29,8 +29,8 @@ func GeneratePrompt(batch Batch, index docindex.Index) string {
 			if section.URL != "" {
 				prompt.WriteString(fmt.Sprintf("URL: <%s>\n", section.URL))
 			}
-			if len(section.Elements) > 0 {
-				prompt.WriteString(fmt.Sprintf("Keywords: %s\n", strings.Join(section.Elements, ", ")))
+			if len(section.Keywords) > 0 {
+				prompt.WriteString(fmt.Sprintf("Keywords: %s\n", strings.Join(section.Keywords, ", ")))
 			}
 			if section.Preview != "" {
 				// Limit preview to first 500 chars to keep prompt manageable
