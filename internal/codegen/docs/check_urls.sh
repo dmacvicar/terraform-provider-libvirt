@@ -8,23 +8,25 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
-# Collect unique URLs from YAML files (reference fields only)
+# Collect unique URLs from YAML files (reference fields only), forgiving malformed YAML
 readarray -t URLS < <(python3 - <<'PY'
-import json
 import pathlib
-import sys
-import yaml
+import re
 
 docs_dir = pathlib.Path(__file__).resolve().parent
 seen = set()
+ref_re = re.compile(r'^\s*reference:\s*("?)([^"#\s][^"]*?)\1\s*$')
+
 for path in docs_dir.glob("*.yaml"):
-    with path.open() as f:
-        data = yaml.safe_load(f) or {}
-    for entry in data.get("entries", []):
-        ref = (entry or {}).get("reference", "") or ""
-        ref = ref.strip()
-        if ref:
-            seen.add(ref)
+    try:
+        for line in path.read_text().splitlines():
+            m = ref_re.match(line)
+            if m:
+                ref = m.group(2).strip()
+                if ref:
+                    seen.add(ref)
+    except Exception as exc:
+        print(f"Skipping {path} due to error: {exc}", file=sys.stderr)
 
 for url in sorted(seen):
     print(url)
