@@ -44,11 +44,13 @@ func run() error {
 		if err != nil {
 			return fmt.Errorf("opening %s: %w", path, err)
 		}
-
 		fileIndex, err := docindex.ParseHTML(f, baseURL)
-		f.Close()
+		closeErr := f.Close()
 		if err != nil {
 			return fmt.Errorf("parsing %s: %w", filename, err)
+		}
+		if closeErr != nil {
+			return fmt.Errorf("closing %s: %w", filename, closeErr)
 		}
 
 		index[filename] = fileIndex
