@@ -153,3 +153,12 @@ func (r *Registry) Paths() []string {
 	sort.Strings(paths)
 	return paths
 }
+
+// EntryForPath returns an entry and presence flag for a given path.
+func (r *Registry) EntryForPath(path string) (Entry, bool) {
+	if r == nil {
+		return Entry{}, false
+	}
+	entry, ok := r.entries[path]
+	return entry, ok
+}
