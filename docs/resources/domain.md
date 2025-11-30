@@ -27,7 +27,7 @@ resource "libvirt_domain" "example" {
   type   = "kvm"
 
   os = {
-    type    = "hvm"
+    type         = "hvm"
     type_arch    = "x86_64"
     type_machine = "q35"
     boot_devices = ["hd", "network"]
@@ -36,17 +36,26 @@ resource "libvirt_domain" "example" {
   devices = {
     disks = [
       {
-        source = "/var/lib/libvirt/images/example.qcow2"
-        target = "vda"
-        bus    = "virtio"
+        source = {
+          file = {
+            file = "/var/lib/libvirt/images/example.qcow2"
+          }
+        }
+        target = {
+          dev = "vda"
+          bus = "virtio"
+        }
       }
     ]
     interfaces = [
       {
-        type  = "network"
-        model = "virtio"
+        model = {
+          type = "virtio"
+        }
         source = {
-          network = "default"
+          network = {
+            network = "default"
+          }
         }
       }
     ]
@@ -61,19 +70,19 @@ resource "libvirt_domain" "uefi_example" {
   vcpu   = 4
   type   = "kvm"
 
-  os {
-    type        = "hvm"
+  os = {
+    type             = "hvm"
     type_arch        = "x86_64"
     type_machine     = "q35"
-    firmware    = "efi"
-    loader = "/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd"
-    loader_readonly = true
-    loader_type     = "pflash"
+    firmware         = "efi"
+    loader           = "/usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd"
+    loader_readonly  = true
+    loader_type      = "pflash"
     nv_ram = {
-      path     = "/var/lib/libvirt/qemu/nvram/uefi-vm.fd"
+      nv_ram   = "/var/lib/libvirt/qemu/nvram/uefi-vm.fd"
       template = "/usr/share/edk2/x64/OVMF_VARS.4m.fd"
     }
-    boot_devices    = ["hd"]
+    boot_devices     = ["hd"]
   }
 }
 
@@ -85,12 +94,12 @@ resource "libvirt_domain" "kernel_boot" {
   vcpu   = 1
   type   = "kvm"
 
-  os {
-    type        = "hvm"
-    type_arch        = "x86_64"
-    kernel      = "/boot/vmlinuz"
-    initrd      = "/boot/initrd.img"
-    kernel_args = "console=ttyS0 root=/dev/vda1"
+  os = {
+    type         = "hvm"
+    type_arch    = "x86_64"
+    kernel       = "/boot/vmlinuz"
+    initrd       = "/boot/initrd.img"
+    kernel_args  = "console=ttyS0 root=/dev/vda1"
   }
 }
 ```
@@ -100,96 +109,129 @@ resource "libvirt_domain" "kernel_boot" {
 
 ### Required
 
-- `memory` (Number) Maximum memory allocation in the specified unit. Default unit is KiB.
-- `name` (String) Domain name. Must be unique on the host.
-- `vcpu` (Number) Number of virtual CPUs.
+- `name` (String) Configures the name of the domain, which should be unique within the host environment.
+- `type` (String) Sets the type of domain, specifying which hypervisor is to be used for running the virtual machine.
 
 ### Optional
 
 - `autostart` (Boolean) Whether the domain should be started automatically when the host boots.
-- `bootloader` (String) Bootloader path for paravirtualized guests (Xen).
-- `bootloader_args` (String) Arguments to pass to bootloader.
-- `clock` (Attributes) Clock configuration for the domain. (see [below for nested schema](#nestedatt--clock))
-- `cpu` (Attributes) CPU configuration for the domain. (see [below for nested schema](#nestedatt--cpu))
-- `create` (Attributes) Domain start flags corresponding to virDomainCreateFlags. Only used when running=true.
+- `block_io_tune` (Attributes) Configures block I/O tuning parameters for the domain, allowing control over I/O performance settings. (see [below for nested schema](#nestedatt--block_io_tune))
+- `bootloader` (String) Specifies the bootloader that the domain uses to boot the operating system.
+- `bootloader_args` (String) Defines arguments passed to the bootloader during the boot process.
+- `clock` (Attributes) Configures the timing settings for the domain's virtual clock. (see [below for nested schema](#nestedatt--clock))
+- `cpu` (Attributes) CPU allocation and topology configuration (see [below for nested schema](#nestedatt--cpu))
+- `cpu_tune` (Attributes) Configures CPU tuning options that affect performance management for the domain. (see [below for nested schema](#nestedatt--cpu_tune))
+- `create` (Attributes) Start behavior flags passed to libvirt when running is true. (see [below for nested schema](#nestedatt--create))
+- `current_memory` (Number) Specifies the current amount of memory assigned to the domain, impacting its operational capacity and performance.
+- `current_memory_unit` (String) Defines the unit of measurement for the current memory assigned to the domain, ensuring clarity in memory specifications.
+- `default_io_thread` (Attributes) Sets the default IO thread configuration for the domain, facilitating efficient management of IO operations. (see [below for nested schema](#nestedatt--default_io_thread))
+- `description` (String) Provides a human-readable description of the domain, assisting in the identification and documentation of domain settings.
+- `destroy` (Attributes) Destroy behavior when Terraform removes the domain. (see [below for nested schema](#nestedatt--destroy))
+- `devices` (Attributes) Devices provided to the guest domain (see [below for nested schema](#nestedatt--devices))
+- `features` (Attributes) Hypervisor features that can be toggled on/off (see [below for nested schema](#nestedatt--features))
+- `gen_id` (String) Holds the generation ID for the domain, used to track configuration changes and provide uniqueness.
+- `hwuuid` (String) Sets a unique identifier for the hardware of the domain, allowing system management tools to refer to it distinctly.
+- `id_map` (Attributes) Configures the mapping of user IDs for the domain, allowing control over user permissions and access. (see [below for nested schema](#nestedatt--id_map))
+- `io_thread_i_ds` (Attributes) Configures the identification of I/O threads used by the domain. (see [below for nested schema](#nestedatt--io_thread_i_ds))
+- `io_threads` (Number) Sets the number of I/O threads allocated to the domain for processing.
+- `key_wrap` (Attributes) Configures key wrapping for cryptographic operations in the domain. (see [below for nested schema](#nestedatt--key_wrap))
+- `launch_security` (Attributes) Configures launch security features for the domain to protect sensitive information. (see [below for nested schema](#nestedatt--launch_security))
+- `maximum_memory` (Number) Configures the maximum memory allocation for the domain at boot time.
+- `maximum_memory_slots` (Number) Configures the total number of memory slots that can be used in the domain.
+- `maximum_memory_unit` (String) Sets the unit for maximum memory allocation in the domain configuration.
+- `memory` (Number) Maximum memory allocation for the guest at boot time
 
-See [libvirt domain documentation](https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainCreateFlags). (see [below for nested schema](#nestedatt--create))
-- `current_memory` (Number) Actual memory allocation at boot time. If not set, defaults to memory value.
-- `description` (String) Human-readable description of the domain.
-- `destroy` (Attributes) Domain shutdown behavior. Controls how the domain is stopped when running changes from true to false or when the resource is destroyed. (see [below for nested schema](#nestedatt--destroy))
-- `devices` (Attributes) Devices attached to the domain (disks, network interfaces, etc.). (see [below for nested schema](#nestedatt--devices))
-- `features` (Attributes) Hypervisor features to enable. (see [below for nested schema](#nestedatt--features))
-- `hwuuid` (String) Hardware UUID for the domain.
-- `iothreads` (Number) Number of I/O threads for virtio disks.
-- `max_memory` (Number) Maximum memory for hotplug. Must be >= memory.
-- `max_memory_slots` (Number) Number of slots for memory hotplug. Required when max_memory is set.
-- `metadata` (String) Custom metadata XML for the domain.
-
-This allows applications to store custom information within the domain's XML configuration.
-
-**Requirements:**
-- Must be valid XML
-- Must use custom namespaces (e.g., `xmlns:app1="http://app1.org/app1/"`)
-- Only one top-level element per namespace
-
-**Example:**
-```xml
-<app1:foo xmlns:app1="http://app1.org/app1/">
-  <app1:bar>some content</app1:bar>
-</app1:foo>
-```
-
-See [libvirt metadata documentation](https://libvirt.org/formatdomain.html#metadata) for more details.
-- `on_crash` (String) Action to take when guest crashes (destroy, restart, preserve, rename-restart, coredump-destroy, coredump-restart).
-- `on_poweroff` (String) Action to take when guest requests poweroff (destroy, restart, preserve, rename-restart).
-- `on_reboot` (String) Action to take when guest requests reboot (destroy, restart, preserve, rename-restart).
-- `os` (Attributes) Operating system configuration for the domain. (see [below for nested schema](#nestedatt--os))
-- `pm` (Attributes) Power management configuration for the domain. (see [below for nested schema](#nestedatt--pm))
-- `running` (Boolean) Whether the domain should be running. If true, the domain will be started after creation. If false or unset, the domain will only be defined but not started.
-- `title` (String) Short description title for the domain.
-- `type` (String) Domain type (e.g., 'kvm', 'qemu').
-- `unit` (String) Memory unit (KiB, MiB, GiB, TiB).
-- `uuid` (String) Domain UUID. If not specified, one will be generated.
+See: <https://libvirt.org/formatdomain.html#memory-allocation>
+- `memory_backing` (Attributes) Sets the memory backing options that influence how memory is allocated and managed for the domain. (see [below for nested schema](#nestedatt--memory_backing))
+- `memory_dump_core` (String) Configures the settings related to memory core dumping during failures or crashes.
+- `memory_tune` (Attributes) Provides settings for tuning memory parameters dynamically, influencing the domain's memory usage characteristics. (see [below for nested schema](#nestedatt--memory_tune))
+- `memory_unit` (String) Sets the unit for memory allocation, determining how memory values are interpreted.
+- `metadata` (Attributes) Provides metadata for the domain configuration, which can include additional descriptive information. (see [below for nested schema](#nestedatt--metadata))
+- `numa_tune` (Attributes) Provides settings for NUMA node tuning, allowing for control over memory allocation across NUMA nodes. (see [below for nested schema](#nestedatt--numa_tune))
+- `on_crash` (String) Configures the behavior of the domain in the event of a crash, determining the recovery actions taken.
+- `on_poweroff` (String) Specifies the action to be taken when the domain is powered off, controlling its shutdown behavior.
+- `on_reboot` (String) Sets the action for when the domain is rebooted, determining how the restart is handled.
+- `os` (Attributes) Operating system boot configuration (see [below for nested schema](#nestedatt--os))
+- `perf` (Attributes) Configures the performance monitoring options for the domain. (see [below for nested schema](#nestedatt--perf))
+- `pm` (Attributes) Configures power management settings for the domain. (see [below for nested schema](#nestedatt--pm))
+- `resource` (Attributes) Configures the resource management settings for the domain. (see [below for nested schema](#nestedatt--resource))
+- `running` (Boolean) Whether the domain should be started after creation.
+- `sec_label` (Attributes List) Configures the security label settings for the domain. (see [below for nested schema](#nestedatt--sec_label))
+- `sys_info` (Attributes List) Configures system information settings for the domain. (see [below for nested schema](#nestedatt--sys_info))
+- `throttle_groups` (Attributes) Configures throttle groups for resource management in the domain. (see [below for nested schema](#nestedatt--throttle_groups))
+- `title` (String) Configures the title of the domain, providing a human-readable name for the virtual machine.
+- `vcpu` (Number) Configures the number of virtual CPUs allocated for the domain, determining the VM's processing capability.
+- `vcpu_cpuset` (String) Specifies the CPU set available for the virtual CPUs, controlling which physical CPUs can be utilized.
+- `vcpu_current` (Number) Sets the number of currently active virtual CPUs for the domain, reflecting its current processing resources.
+- `vcpu_placement` (String) Configures the placement strategy for virtual CPUs, determining how the guest CPUs are distributed across physical cores.
+- `vcpus` (Attributes) Defines the configuration for the virtual CPUs within the domain, allowing for flexible CPU management. (see [below for nested schema](#nestedatt--vcpus))
 
 ### Read-Only
 
-- `id` (String) Domain identifier (UUID)
+- `id` (Number) Specifies the domain's unique ID, which helps manage and identify different running domains.
+- `uuid` (String) Helper for uniquely identifying the domain instance, ensuring that each virtual machine can be individually referenced.
+
+<a id="nestedatt--block_io_tune"></a>
+### Nested Schema for `block_io_tune`
+
+Optional:
+
+- `device` (Attributes List) Defines specific device settings for block I/O tuning, enabling per-device performance modifications. (see [below for nested schema](#nestedatt--block_io_tune--device))
+- `weight` (Number) Configures the overall weight for the block I/O tuning, affecting the global I/O scheduling policy.
+
+<a id="nestedatt--block_io_tune--device"></a>
+### Nested Schema for `block_io_tune.device`
+
+Required:
+
+- `path` (String) Specifies the path of the block device to which the tuning parameters apply.
+
+Optional:
+
+- `read_bytes_sec` (Number) Sets the maximum number of bytes per second that can be read from the device.
+- `read_iops_sec` (Number) Sets the maximum number of read I/O operations per second that can be performed on the device.
+- `weight` (Number) Configures the relative weight of the device, influencing scheduling priority during I/O operations.
+- `write_bytes_sec` (Number) Sets the maximum number of bytes per second that can be written to the device.
+- `write_iops_sec` (Number) Sets the maximum number of write I/O operations per second that can be performed on the device.
+
+
 
 <a id="nestedatt--clock"></a>
 ### Nested Schema for `clock`
 
 Optional:
 
-- `adjustment` (String) Clock adjustment in seconds.
-- `basis` (String) Clock basis (utc, localtime).
-- `offset` (String) Clock offset (utc, localtime, timezone, variable).
-- `timer` (Attributes List) Timer devices for the guest clock. (see [below for nested schema](#nestedatt--clock--timer))
-- `timezone` (String) Timezone name when offset is 'timezone'.
+- `adjustment` (String) Sets the amount by which the guest's clock is adjusted during timekeeping.
+- `basis` (String) Specifies the basis for the clock adjustments, usually defining a time reference.
+- `offset` (String) Configures an offset to the guest's clock time, allowing for time synchronization.
+- `start` (Number) Determines when the clock starts, affecting how time is counted in the guest.
+- `time_zone` (String) Sets the time zone for the guest clock, influencing the display of local time.
+- `timer` (Attributes List) Configures timer settings that manage clock updates and adjustments. (see [below for nested schema](#nestedatt--clock--timer))
 
 <a id="nestedatt--clock--timer"></a>
 ### Nested Schema for `clock.timer`
 
 Required:
 
-- `name` (String) Timer name (platform, pit, rtc, hpet, tsc, kvmclock, hypervclock, armvtimer).
+- `name` (String) Sets a name for the timer used in the domain, which can be for identification purposes.
 
 Optional:
 
-- `catchup` (Attributes) Timer catchup configuration. (see [below for nested schema](#nestedatt--clock--timer--catchup))
-- `frequency` (Number) Timer frequency in Hz.
-- `mode` (String) Timer mode (auto, native, emulate, paravirt, smpsafe).
-- `present` (String) Whether timer is present (yes, no).
-- `tickpolicy` (String) Tick policy (delay, catchup, merge, discard).
-- `track` (String) Track source (guest, wall).
+- `catch_up` (Attributes) Sets parameters for catching up time when the guest clock falls behind. (see [below for nested schema](#nestedatt--clock--timer--catch_up))
+- `frequency` (Number) Configures the frequency of timer interrupts for managing clock updates.
+- `mode` (String) Specifies the operational mode of the timer, affecting how it functions in the domain.
+- `present` (String) Indicates the presence of a timer in the domain configuration.
+- `tick_policy` (String) Configures the tick policy for the timer, influencing how timekeeping events are managed.
+- `track` (String) Specifies whether to track the timer's state, affecting timed operations.
 
-<a id="nestedatt--clock--timer--catchup"></a>
-### Nested Schema for `clock.timer.catchup`
+<a id="nestedatt--clock--timer--catch_up"></a>
+### Nested Schema for `clock.timer.catch_up`
 
 Optional:
 
-- `limit` (Number) Limit in nanoseconds.
-- `slew` (Number) Slew in nanoseconds.
-- `threshold` (Number) Threshold in nanoseconds.
+- `limit` (Number) Specifies the limit for how much time the guest clock can catch up in one adjustment.
+- `slew` (Number) Sets the rate at which the clock can be adjusted to catch up lost time.
+- `threshold` (Number) Defines the time difference threshold at which catch-up adjustments are triggered.
 
 
 
@@ -199,13 +241,346 @@ Optional:
 
 Optional:
 
-- `check` (String) CPU check policy (none, partial, full).
-- `deprecated_features` (String) How to handle deprecated features (allow, forbid).
-- `match` (String) CPU match policy (exact, minimum, strict).
-- `migratable` (String) Whether the CPU is migratable (on, off).
-- `mode` (String) CPU mode (host-model, host-passthrough, custom).
-- `model` (String) CPU model name.
-- `vendor` (String) CPU vendor.
+- `cache` (Attributes) Sets caching parameters for the domain's CPU, affecting performance characteristics. (see [below for nested schema](#nestedatt--cpu--cache))
+- `check` (String) Indicates whether to perform additional checks on the CPU model and features.
+- `deprecated_features` (String) Lists deprecated CPU features that should not be used in the domain configuration.
+- `features` (Attributes List) Defines specific CPU features that can be enabled or disabled for the domain. (see [below for nested schema](#nestedatt--cpu--features))
+- `match` (String) Configures CPU model matching options to optimize performance and compatibility.
+- `max_phys_addr` (Attributes) Specifies the maximum physical address space size accessible to the domain. (see [below for nested schema](#nestedatt--cpu--max_phys_addr))
+- `migratable` (Boolean) Configures whether the CPU settings can be changed while the domain is running.
+- `mode` (String) Defines the operational mode for the CPU configuration, affecting virtualization behavior.
+- `model` (String) Specifies the CPU model used by the domain, influencing its performance characteristics.
+- `model_fallback` (String) Sets the CPU model fallback configurations in case the specified model is unavailable.
+- `model_vendor_id` (String) Determines the vendor ID for the CPU model, affecting compatibility.
+- `numa` (Attributes) Configures NUMA (Non-Uniform Memory Access) settings for balancing memory allocation. (see [below for nested schema](#nestedatt--cpu--numa))
+- `topology` (Attributes) Configures the CPU topology for the domain, specifying the physical arrangement of CPUs. (see [below for nested schema](#nestedatt--cpu--topology))
+- `vendor` (String) Specifies the vendor name of the CPU model being used for the domain.
+
+<a id="nestedatt--cpu--cache"></a>
+### Nested Schema for `cpu.cache`
+
+Required:
+
+- `mode` (String) Determines the mode of operation for CPU caches, affecting how data is stored and retrieved.
+
+Optional:
+
+- `level` (Number) Specifies the cache level for CPU configurations, such as L1, L2, or L3.
+
+
+<a id="nestedatt--cpu--features"></a>
+### Nested Schema for `cpu.features`
+
+Optional:
+
+- `name` (String) Specifies the name of a CPU feature that is being configured or controlled.
+- `policy` (String) Sets the policy for how the specified CPU feature is utilized in the domain.
+
+
+<a id="nestedatt--cpu--max_phys_addr"></a>
+### Nested Schema for `cpu.max_phys_addr`
+
+Required:
+
+- `mode` (String) Specifies the addressing mode that applies to the maximum physical address.
+
+Optional:
+
+- `bits` (Number) Defines the number of bits that represent the maximum physical address.
+- `limit` (Number) Sets an upper limit on the maximum physical address that can be used by the domain.
+
+
+<a id="nestedatt--cpu--numa"></a>
+### Nested Schema for `cpu.numa`
+
+Optional:
+
+- `cell` (Attributes List) Defines specific CPU NUMA cell properties, allowing for fine-tuning of resources. (see [below for nested schema](#nestedatt--cpu--numa--cell))
+- `interconnects` (Attributes) Defines the interconnects between NUMA nodes, configuring how they communicate. (see [below for nested schema](#nestedatt--cpu--numa--interconnects))
+
+<a id="nestedatt--cpu--numa--cell"></a>
+### Nested Schema for `cpu.numa.cell`
+
+Required:
+
+- `memory` (Number) Specifies the total allocated memory for the NUMA cell, influencing resource management.
+
+Optional:
+
+- `caches` (Attributes List) Configures cache settings for each NUMA cell, affecting memory access performance. (see [below for nested schema](#nestedatt--cpu--numa--cell--caches))
+- `cpus` (String) Specifies the CPUs assigned to the NUMA cell, mapping physical resources to the virtual domain.
+- `discard` (String) Indicates whether memory allocations in this NUMA cell can be discarded or reclaimed.
+- `distances` (Attributes) Outlines the distance metrics between CPUs in the NUMA cell and other cells, affecting performance. (see [below for nested schema](#nestedatt--cpu--numa--cell--distances))
+- `mem_access` (String) Configures the memory access attributes related to the NUMA cell, defining access strategies.
+- `unit` (String) Sets the unit of measure used for memory associated with the NUMA cell.
+
+Read-Only:
+
+- `id` (Number) Identifies the unique ID for the NUMA cell, helping manage resource allocation.
+
+<a id="nestedatt--cpu--numa--cell--caches"></a>
+### Nested Schema for `cpu.numa.cell.caches`
+
+Required:
+
+- `associativity` (String) Configures the number of ways in which cache lines can be mapped into the cache.
+- `level` (Number) Sets the cache level in the cache hierarchy, indicating whether it is L1, L2, L3, etc.
+- `policy` (String) Specifies the cache management policy that dictates how cache entries are allocated and evicted.
+
+Optional:
+
+- `line` (Attributes) Specifies the cache line size which dictates how much data is fetched from memory in one cache transaction. (see [below for nested schema](#nestedatt--cpu--numa--cell--caches--line))
+- `size` (Attributes) Configures the total size of the cache, determining its capacity for storing cache lines. (see [below for nested schema](#nestedatt--cpu--numa--cell--caches--size))
+
+<a id="nestedatt--cpu--numa--cell--caches--line"></a>
+### Nested Schema for `cpu.numa.cell.caches.line`
+
+Required:
+
+- `unit` (String) Defines the unit of measurement for the cache line size, such as bytes or kilobytes.
+- `value` (String) Sets the actual value for the cache line size as defined by the line unit.
+
+
+<a id="nestedatt--cpu--numa--cell--caches--size"></a>
+### Nested Schema for `cpu.numa.cell.caches.size`
+
+Required:
+
+- `unit` (String) Indicates the unit of measurement for the cache size, such as bytes or megabytes.
+- `value` (String) Sets the actual value for the cache size as defined by the size unit.
+
+
+
+<a id="nestedatt--cpu--numa--cell--distances"></a>
+### Nested Schema for `cpu.numa.cell.distances`
+
+Optional:
+
+- `siblings` (Attributes List) Describes the sibling CPUs within the NUMA cell, defining distance metrics for optimized access. (see [below for nested schema](#nestedatt--cpu--numa--cell--distances--siblings))
+
+<a id="nestedatt--cpu--numa--cell--distances--siblings"></a>
+### Nested Schema for `cpu.numa.cell.distances.siblings`
+
+Required:
+
+- `value` (Number) Specifies the value for the distance metric of sibling CPUs within the NUMA cell.
+
+Read-Only:
+
+- `id` (Number) Sets the identifier for the sibling CPU, accommodating specific access configurations.
+
+
+
+
+<a id="nestedatt--cpu--numa--interconnects"></a>
+### Nested Schema for `cpu.numa.interconnects`
+
+Optional:
+
+- `bandwidths` (Attributes List) Configures the bandwidth characteristics for the interconnects among the NUMA nodes. (see [below for nested schema](#nestedatt--cpu--numa--interconnects--bandwidths))
+- `latencies` (Attributes List) Specifies the latency measures associated with the interconnections between NUMA nodes. (see [below for nested schema](#nestedatt--cpu--numa--interconnects--latencies))
+
+<a id="nestedatt--cpu--numa--interconnects--bandwidths"></a>
+### Nested Schema for `cpu.numa.interconnects.bandwidths`
+
+Required:
+
+- `initiator` (Number) Defines the initiator's bandwidth constraints for interconnecting NUMA cells.
+- `target` (Number) Configures the target's bandwidth limitations for interconnecting NUMA nodes.
+- `type` (String) Indicates the type of bandwidth established for interconnecting communication.
+- `unit` (String) Sets the unit of measurement for the specified bandwidth in the NUMA interconnection.
+- `value` (Number) Establishes the actual bandwidth value for interconnects between NUMA nodes, defined by the unit.
+
+Optional:
+
+- `cache` (Number) Specifies the bandwidth allocation for cache-specific interconnects between NUMA nodes.
+
+
+<a id="nestedatt--cpu--numa--interconnects--latencies"></a>
+### Nested Schema for `cpu.numa.interconnects.latencies`
+
+Required:
+
+- `initiator` (Number) Configures the latency attributes for the initiator in NUMA interconnections.
+- `target` (Number) Defines the latency settings for the target in interconnects between NUMA cells.
+- `type` (String) Indicates the type of latency being configured for NUMA interconnections.
+- `value` (Number) Sets the actual latency value for NUMA interconnecting communication, defined by the type.
+
+Optional:
+
+- `cache` (Number) Sets latency configurations specifically related to cache interconnections in the NUMA setup.
+
+
+
+
+<a id="nestedatt--cpu--topology"></a>
+### Nested Schema for `cpu.topology`
+
+Optional:
+
+- `clusters` (Number) Sets the number of CPU clusters configured within the domain.
+- `cores` (Number) Configures the number of cores allocated to each CPU within the domain topology.
+- `dies` (Number) Specifies the number of dies configured for the CPUs within the domain topology.
+- `sockets` (Number) Configures the number of CPU sockets defined in the domain's CPU topology.
+- `threads` (Number) Sets the number of threads associated with each core in the CPU topology.
+
+
+
+<a id="nestedatt--cpu_tune"></a>
+### Nested Schema for `cpu_tune`
+
+Optional:
+
+- `cache_tune` (Attributes List) Specifies tuning parameters for cache optimization associated with the domain's CPU. (see [below for nested schema](#nestedatt--cpu_tune--cache_tune))
+- `emulator_period` (Number) Specifies the time period for scheduling emulator activities, influencing CPU allocation for the emulator's tasks.
+- `emulator_pin` (Attributes) Enables or disables the pinning of the emulator to specific CPUs, which can enhance performance by reducing context switching. (see [below for nested schema](#nestedatt--cpu_tune--emulator_pin))
+- `emulator_quota` (Number) Defines the allowed CPU time for the emulator, which can help in managing the performance of virtual machines.
+- `emulator_sched` (Attributes) Configures the scheduling algorithm for the emulator, impacting how CPU resources are allocated during execution. (see [below for nested schema](#nestedatt--cpu_tune--emulator_sched))
+- `global_period` (Number) Configures the global scheduling period for all CPUs, influencing the overall allocation of CPU time across the system.
+- `global_quota` (Number) Sets the total CPU time available across all virtual CPUs, which can regulate resource usage for the domain.
+- `io_thread_period` (Number) Defines the scheduling period for IO threads, controlling the timing and frequency of IO operations on virtual devices.
+- `io_thread_pin` (Attributes List) Enables pinning of IO threads to specific CPUs, improving the performance of virtual block devices by reducing overhead. (see [below for nested schema](#nestedatt--cpu_tune--io_thread_pin))
+- `io_thread_quota` (Number) Sets the allowed CPU time for IO threads, controlling their resource consumption during operation.
+- `io_thread_sched` (Attributes List) Configures the scheduling parameters for IO threads, determining how they interact with CPU resources over time. (see [below for nested schema](#nestedatt--cpu_tune--io_thread_sched))
+- `memory_tune` (Attributes List) Enables memory tuning parameters that control how memory resources are allocated and managed for the domain. (see [below for nested schema](#nestedatt--cpu_tune--memory_tune))
+- `period` (Number) Defines the scheduling period for the domain's CPUs, determining the frequency of CPU resource allocation.
+- `quota` (Number) Sets the maximum CPU time allocation for the domain, controlling how much CPU resource the domain can utilize.
+- `shares` (Number) Configures the relative weight of CPU resources assigned to the domain, influencing its priority in CPU scheduling.
+- `vcpu_pin` (Attributes List) Enables pinning configurations for virtual CPUs, enhancing performance by binding specific virtual CPUs to physical cores. (see [below for nested schema](#nestedatt--cpu_tune--vcpu_pin))
+- `vcpu_sched` (Attributes List) Configures the scheduling parameters for virtual CPUs, impacting how CPU resources are allocated during execution. (see [below for nested schema](#nestedatt--cpu_tune--vcpu_sched))
+
+<a id="nestedatt--cpu_tune--cache_tune"></a>
+### Nested Schema for `cpu_tune.cache_tune`
+
+Optional:
+
+- `cache` (Attributes List) Configures the cache-related tuning parameters for the domain's CPU. (see [below for nested schema](#nestedatt--cpu_tune--cache_tune--cache))
+- `monitor` (Attributes List) Specifies monitoring options for observing the effectiveness of cache tuning. (see [below for nested schema](#nestedatt--cpu_tune--cache_tune--monitor))
+- `vcpus` (String) Configures the virtual CPUs associated with cache tuning, determining which CPUs are affected by the cache settings.
+
+Read-Only:
+
+- `id` (String) Sets the identifier for the overall cache tuning configuration related to the CPUs.
+
+<a id="nestedatt--cpu_tune--cache_tune--cache"></a>
+### Nested Schema for `cpu_tune.cache_tune.cache`
+
+Required:
+
+- `level` (Number) Specifies the level of cache tuning being configured within the CPU tuning settings.
+- `size` (Number) Configures the size of the cache allocated in the CPU tuning parameters.
+- `type` (String) Sets the type of cache being configured in the domain's CPU tuning settings.
+- `unit` (String) Specifies the unit of measurement for the configured cache size in CPU tuning.
+
+Read-Only:
+
+- `id` (Number) Sets the identifier for the cache tuning configuration related to the CPUs.
+
+
+<a id="nestedatt--cpu_tune--cache_tune--monitor"></a>
+### Nested Schema for `cpu_tune.cache_tune.monitor`
+
+Optional:
+
+- `level` (Number) Configures the monitoring level for cache tuning, controlling the granularity of the monitored cache behavior.
+- `vcpus` (String) Sets the number of virtual CPUs to monitor for cache tuning, allowing targeted performance observations.
+
+
+
+<a id="nestedatt--cpu_tune--emulator_pin"></a>
+### Nested Schema for `cpu_tune.emulator_pin`
+
+Required:
+
+- `cpu_set` (String) Sets which CPUs the emulator can be pinned to, allowing for controlled CPU allocation and enhanced performance.
+
+
+<a id="nestedatt--cpu_tune--emulator_sched"></a>
+### Nested Schema for `cpu_tune.emulator_sched`
+
+Optional:
+
+- `priority` (Number) Sets the priority level for the emulator's scheduling, influencing its responsiveness relative to other processes.
+- `scheduler` (String) Specifies the scheduler type for the emulator, determining how tasks are scheduled and executed on CPUs.
+
+
+<a id="nestedatt--cpu_tune--io_thread_pin"></a>
+### Nested Schema for `cpu_tune.io_thread_pin`
+
+Required:
+
+- `cpu_set` (String) Specifies which CPUs IO threads can be pinned to, allowing for optimized resource allocation in IO operations.
+- `io_thread` (Number) Identifies the specific IO thread that can be pinned to designated CPUs, impacting data processing efficiency.
+
+
+<a id="nestedatt--cpu_tune--io_thread_sched"></a>
+### Nested Schema for `cpu_tune.io_thread_sched`
+
+Required:
+
+- `io_threads` (String) Specifies the number of IO threads to schedule, influencing concurrent IO operations for the domain's workloads.
+
+Optional:
+
+- `priority` (Number) Sets the priority for IO thread scheduling, affecting their processing precedence relative to other tasks.
+- `scheduler` (String) Configures the specific scheduler type for IO threads, impacting how resources are allocated and handled.
+
+
+<a id="nestedatt--cpu_tune--memory_tune"></a>
+### Nested Schema for `cpu_tune.memory_tune`
+
+Required:
+
+- `vcpus` (String) Configures the virtual CPUs associated with memory tuning, indicating which CPUs' memory performance should be adjusted.
+
+Optional:
+
+- `monitor` (Attributes List) Configures monitoring options for memory tuning, allowing observation of memory usage trends and patterns. (see [below for nested schema](#nestedatt--cpu_tune--memory_tune--monitor))
+- `nodes` (Attributes List) Configures specific nodes for memory tuning, allowing targeted adjustments to the memory configuration. (see [below for nested schema](#nestedatt--cpu_tune--memory_tune--nodes))
+
+<a id="nestedatt--cpu_tune--memory_tune--monitor"></a>
+### Nested Schema for `cpu_tune.memory_tune.monitor`
+
+Optional:
+
+- `level` (Number) Sets the monitoring level for memory tuning, which determines how detailed the monitoring information is.
+- `vcpus` (String) Specifies the number of virtual CPUs to monitor in the context of memory tuning, focusing resource analysis.
+
+
+<a id="nestedatt--cpu_tune--memory_tune--nodes"></a>
+### Nested Schema for `cpu_tune.memory_tune.nodes`
+
+Required:
+
+- `bandwidth` (Number) Sets the bandwidth limit for a specific memory tuning node, affecting memory access speed and performance.
+
+Read-Only:
+
+- `id` (Number) Identifies the specific tuning node for memory adjustments, linking it to allocated memory resources.
+
+
+
+<a id="nestedatt--cpu_tune--vcpu_pin"></a>
+### Nested Schema for `cpu_tune.vcpu_pin`
+
+Required:
+
+- `cpu_set` (String) Specifies the CPU set for pinning virtual CPUs, controlling their execution placement on physical processors.
+- `vcpu` (Number) Identifies which virtual CPU is configured for pinning, allowing precise resource allocation and scheduling.
+
+
+<a id="nestedatt--cpu_tune--vcpu_sched"></a>
+### Nested Schema for `cpu_tune.vcpu_sched`
+
+Required:
+
+- `vcpus` (String) Configures the specific virtual CPUs affected by the scheduling policies, influencing performance and resource use.
+
+Optional:
+
+- `priority` (Number) Sets the priority for virtual CPU scheduling, affecting execution order between competing CPU tasks.
+- `scheduler` (String) Specifies the type of scheduler for virtual CPUs, determining how they share and compete for CPU resources.
+
 
 
 <a id="nestedatt--create"></a>
@@ -213,12 +588,21 @@ Optional:
 
 Optional:
 
-- `autodestroy` (Boolean) Automatically destroy domain when connection closes (VIR_DOMAIN_START_AUTODESTROY).
-- `bypass_cache` (Boolean) Avoid filesystem cache pollution (VIR_DOMAIN_START_BYPASS_CACHE).
-- `force_boot` (Boolean) Boot domain, discarding any managed save state (VIR_DOMAIN_START_FORCE_BOOT).
-- `paused` (Boolean) Launch domain in paused state (VIR_DOMAIN_START_PAUSED).
-- `reset_nvram` (Boolean) Re-initialize NVRAM from template (VIR_DOMAIN_START_RESET_NVRAM).
-- `validate` (Boolean) Validate XML document against schema (VIR_DOMAIN_START_VALIDATE).
+- `autodestroy` (Boolean)
+- `bypass_cache` (Boolean)
+- `force_boot` (Boolean)
+- `paused` (Boolean)
+- `reset_nvram` (Boolean)
+- `validate` (Boolean)
+
+
+<a id="nestedatt--default_io_thread"></a>
+### Nested Schema for `default_io_thread`
+
+Optional:
+
+- `pool_max` (Number) Configures the maximum number of threads in the default IO thread pool, allowing for scalable IO resource handling.
+- `pool_min` (Number) Sets the minimum number of threads in the default IO thread pool, ensuring baseline IO resource allocation.
 
 
 <a id="nestedatt--destroy"></a>
@@ -226,8 +610,8 @@ Optional:
 
 Optional:
 
-- `graceful` (Boolean) Attempt graceful shutdown before forcing. Defaults to true.
-- `timeout` (Number) Timeout in seconds to wait for graceful shutdown before forcing. Defaults to 300.
+- `graceful` (Boolean)
+- `timeout` (Number)
 
 
 <a id="nestedatt--devices"></a>
@@ -235,51 +619,4011 @@ Optional:
 
 Optional:
 
-- `consoles` (Attributes List) Console devices for the domain. (see [below for nested schema](#nestedatt--devices--consoles))
-- `disks` (Attributes List) Disk devices attached to the domain. (see [below for nested schema](#nestedatt--devices--disks))
-- `emulator` (String) Path to the emulator binary (e.g., /usr/bin/qemu-system-x86_64). Optional, libvirt chooses default if not specified.
-- `filesystems` (Attributes List) Filesystem devices for sharing host directories with the guest (virtio-9p). (see [below for nested schema](#nestedatt--devices--filesystems))
-- `graphics` (Attributes) Graphics device for the domain (VNC or Spice). Only one type can be specified. (see [below for nested schema](#nestedatt--devices--graphics))
-- `interfaces` (Attributes List) Network interfaces attached to the domain. (see [below for nested schema](#nestedatt--devices--interfaces))
-- `rngs` (Attributes List) Random number generator devices for the domain. (see [below for nested schema](#nestedatt--devices--rngs))
-- `serials` (Attributes List) Serial devices for the domain. (see [below for nested schema](#nestedatt--devices--serials))
-- `tpms` (Attributes List) TPM devices for the domain. Only one TPM device is supported per domain. (see [below for nested schema](#nestedatt--devices--tpms))
-- `video` (Attributes) Video device for the domain. (see [below for nested schema](#nestedatt--devices--video))
+- `audios` (Attributes List) Specifies the audio devices allocated to the domain, supporting audio input and output functionality within the VM. (see [below for nested schema](#nestedatt--devices--audios))
+- `channels` (Attributes List) Private communication channels between host and guest
+
+See: <https://libvirt.org/formatdomain.html#channel> (see [below for nested schema](#nestedatt--devices--channels))
+- `consoles` (Attributes List) Interactive serial console devices
+
+See: <https://libvirt.org/formatdomain.html#console> (see [below for nested schema](#nestedatt--devices--consoles))
+- `controllers` (Attributes List) Virtual device bus controllers
+
+See: <https://libvirt.org/formatdomain.html#controllers> (see [below for nested schema](#nestedatt--devices--controllers))
+- `crypto` (Attributes List) Configures settings related to the crypto device within the domain. (see [below for nested schema](#nestedatt--devices--crypto))
+- `disks` (Attributes List) Disk devices (floppy, hard disk, CD-ROM, paravirtualized)
+
+See: <https://libvirt.org/formatdomain.html#hard-drives-floppy-disks-cdroms> (see [below for nested schema](#nestedatt--devices--disks))
+- `emulator` (String) Specifies the emulator binary to be used for the guest domain's emulation.
+- `filesystems` (Attributes List) Host directories accessible from the guest
+
+See: <https://libvirt.org/formatdomain.html#filesystems> (see [below for nested schema](#nestedatt--devices--filesystems))
+- `graphics` (Attributes List) Graphical framebuffer devices for guest interaction
+
+See: <https://libvirt.org/formatdomain.html#graphical-framebuffers> (see [below for nested schema](#nestedatt--devices--graphics))
+- `hostdevs` (Attributes List) Defines the list of host devices that are passed through to the virtual machine. (see [below for nested schema](#nestedatt--devices--hostdevs))
+- `hubs` (Attributes List) Configures hub devices that manage connections for other devices. (see [below for nested schema](#nestedatt--devices--hubs))
+- `inputs` (Attributes List) Input devices (mouse, keyboard, tablet)
+
+See: <https://libvirt.org/formatdomain.html#input-devices> (see [below for nested schema](#nestedatt--devices--inputs))
+- `interfaces` (Attributes List) Network interface configuration
+
+See: <https://libvirt.org/formatdomain.html#network-interfaces> (see [below for nested schema](#nestedatt--devices--interfaces))
+- `iommu` (Attributes) Configures IOMMU settings for the virtual devices. (see [below for nested schema](#nestedatt--devices--iommu))
+- `leases` (Attributes List) Represents the lease configuration for devices, allowing management of device allocate and release. (see [below for nested schema](#nestedatt--devices--leases))
+- `mem_balloon` (Attributes) Memory balloon device for dynamic memory adjustment (see [below for nested schema](#nestedatt--devices--mem_balloon))
+- `memorydevs` (Attributes List) Configures memory devices to extend the memory capacity of the guest domain. (see [below for nested schema](#nestedatt--devices--memorydevs))
+- `nvram` (Attributes) Represents the NVRAM device configuration for the virtual machine. (see [below for nested schema](#nestedatt--devices--nvram))
+- `panics` (Attributes List) Panic notification devices
+
+See: <https://libvirt.org/formatdomain.html#panic-device> (see [below for nested schema](#nestedatt--devices--panics))
+- `parallels` (Attributes List) Represents the parallel device configurations for the virtual machine. (see [below for nested schema](#nestedatt--devices--parallels))
+- `pstore` (Attributes) Configures a persistent storage device for logging critical states and errors during guest operation. (see [below for nested schema](#nestedatt--devices--pstore))
+- `redir_devs` (Attributes List) USB redirection devices
+
+See: <https://libvirt.org/formatdomain.html#redirected-devices> (see [below for nested schema](#nestedatt--devices--redir_devs))
+- `redir_filters` (Attributes List) USB redirection filters
+
+See: <https://libvirt.org/formatdomain.html#redirected-devices> (see [below for nested schema](#nestedatt--devices--redir_filters))
+- `rngs` (Attributes List) Random number generator devices
+
+See: <https://libvirt.org/formatdomain.html#random-number-generator-device> (see [below for nested schema](#nestedatt--devices--rngs))
+- `serials` (Attributes List) Serial port devices
+
+See: <https://libvirt.org/formatdomain.html#serial-port> (see [below for nested schema](#nestedatt--devices--serials))
+- `shmems` (Attributes List) Configures shared memory devices to facilitate inter-VM communication. (see [below for nested schema](#nestedatt--devices--shmems))
+- `smartcards` (Attributes List) Smartcard devices
+
+See: <https://libvirt.org/formatdomain.html#smartcard-devices> (see [below for nested schema](#nestedatt--devices--smartcards))
+- `sounds` (Attributes List) Sound card devices
+
+See: <https://libvirt.org/formatdomain.html#sound-devices> (see [below for nested schema](#nestedatt--devices--sounds))
+- `tpms` (Attributes List) TPM (Trusted Platform Module) devices
+
+See: <https://libvirt.org/formatdomain.html#tpm-device> (see [below for nested schema](#nestedatt--devices--tpms))
+- `videos` (Attributes List) Video display devices
+
+See: <https://libvirt.org/formatdomain.html#video-devices> (see [below for nested schema](#nestedatt--devices--videos))
+- `vsock` (Attributes) Configures the virtual socket (vsock) device for inter-VM communication. (see [below for nested schema](#nestedatt--devices--vsock))
+- `watchdogs` (Attributes List) Watchdog devices for guest monitoring
+
+See: <https://libvirt.org/formatdomain.html#watchdog-devices> (see [below for nested schema](#nestedatt--devices--watchdogs))
+
+<a id="nestedatt--devices--audios"></a>
+### Nested Schema for `devices.audios`
+
+Optional:
+
+- `alsa` (Attributes) Configures ALSA audio settings for the domain, enabling audio playback and recording using the ALSA framework. (see [below for nested schema](#nestedatt--devices--audios--alsa))
+- `core_audio` (Attributes) Configures the CoreAudio audio device for the guest. (see [below for nested schema](#nestedatt--devices--audios--core_audio))
+- `dbus` (Attributes) Configures the D-Bus audio device for the guest. (see [below for nested schema](#nestedatt--devices--audios--dbus))
+- `file` (Attributes) Configures the file-based audio device for the guest. (see [below for nested schema](#nestedatt--devices--audios--file))
+- `jack` (Attributes) Configures the Jack audio device for the guest. (see [below for nested schema](#nestedatt--devices--audios--jack))
+- `none` (Attributes) Configures the None audio device for the guest. (see [below for nested schema](#nestedatt--devices--audios--none))
+- `oss` (Attributes) Configures the OSS audio device for the guest. (see [below for nested schema](#nestedatt--devices--audios--oss))
+- `pipe_wire` (Attributes) Configures the PipeWire audio device for the guest. (see [below for nested schema](#nestedatt--devices--audios--pipe_wire))
+- `pulse_audio` (Attributes) Configures the PulseAudio audio backend for the virtual machine. (see [below for nested schema](#nestedatt--devices--audios--pulse_audio))
+- `sdl` (Attributes) Configures the SDL audio backend for the virtual machine. (see [below for nested schema](#nestedatt--devices--audios--sdl))
+- `spice` (Attributes) Configures the SPICE audio backend for the virtual machine. (see [below for nested schema](#nestedatt--devices--audios--spice))
+- `timer_period` (Number) Sets the timer period for the audio devices in the configuration.
+
+Read-Only:
+
+- `id` (Number) Assigns a unique identifier to the audio device.
+
+<a id="nestedatt--devices--audios--alsa"></a>
+### Nested Schema for `devices.audios.alsa`
+
+Optional:
+
+- `input` (Attributes) Configures the output settings for the ALSA audio device. (see [below for nested schema](#nestedatt--devices--audios--alsa--input))
+- `output` (Attributes) Configures the output settings for the ALSA audio device. (see [below for nested schema](#nestedatt--devices--audios--alsa--output))
+
+<a id="nestedatt--devices--audios--alsa--input"></a>
+### Nested Schema for `devices.audios.alsa.input`
+
+Optional:
+
+- `dev` (String) Sets the device node for the ALSA audio output.
+
+
+<a id="nestedatt--devices--audios--alsa--output"></a>
+### Nested Schema for `devices.audios.alsa.output`
+
+Optional:
+
+- `dev` (String) Sets the device node for the ALSA audio output.
+
+
+
+<a id="nestedatt--devices--audios--core_audio"></a>
+### Nested Schema for `devices.audios.core_audio`
+
+Optional:
+
+- `input` (Attributes) Configures the output settings for the CoreAudio audio device. (see [below for nested schema](#nestedatt--devices--audios--core_audio--input))
+- `output` (Attributes) Configures the output settings for the CoreAudio audio device. (see [below for nested schema](#nestedatt--devices--audios--core_audio--output))
+
+<a id="nestedatt--devices--audios--core_audio--input"></a>
+### Nested Schema for `devices.audios.core_audio.input`
+
+Optional:
+
+- `buffer_count` (Number) Sets the number of output buffers for the CoreAudio audio device.
+
+
+<a id="nestedatt--devices--audios--core_audio--output"></a>
+### Nested Schema for `devices.audios.core_audio.output`
+
+Optional:
+
+- `buffer_count` (Number) Sets the number of output buffers for the CoreAudio audio device.
+
+
+
+<a id="nestedatt--devices--audios--dbus"></a>
+### Nested Schema for `devices.audios.dbus`
+
+Optional:
+
+- `input` (Attributes) Configures the output settings for the D-Bus audio device. (see [below for nested schema](#nestedatt--devices--audios--dbus--input))
+- `output` (Attributes) Configures the output settings for the D-Bus audio device. (see [below for nested schema](#nestedatt--devices--audios--dbus--output))
+
+<a id="nestedatt--devices--audios--dbus--input"></a>
+### Nested Schema for `devices.audios.dbus.input`
+
+
+<a id="nestedatt--devices--audios--dbus--output"></a>
+### Nested Schema for `devices.audios.dbus.output`
+
+
+
+<a id="nestedatt--devices--audios--file"></a>
+### Nested Schema for `devices.audios.file`
+
+Optional:
+
+- `input` (Attributes) Configures the output settings for the file-based audio device. (see [below for nested schema](#nestedatt--devices--audios--file--input))
+- `output` (Attributes) Configures the output settings for the file-based audio device. (see [below for nested schema](#nestedatt--devices--audios--file--output))
+- `path` (String) Sets the file path for the file-based audio device.
+
+<a id="nestedatt--devices--audios--file--input"></a>
+### Nested Schema for `devices.audios.file.input`
+
+
+<a id="nestedatt--devices--audios--file--output"></a>
+### Nested Schema for `devices.audios.file.output`
+
+
+
+<a id="nestedatt--devices--audios--jack"></a>
+### Nested Schema for `devices.audios.jack`
+
+Optional:
+
+- `input` (Attributes) Configures the output settings for the Jack audio device. (see [below for nested schema](#nestedatt--devices--audios--jack--input))
+- `output` (Attributes) Configures the output settings for the Jack audio device. (see [below for nested schema](#nestedatt--devices--audios--jack--output))
+
+<a id="nestedatt--devices--audios--jack--input"></a>
+### Nested Schema for `devices.audios.jack.input`
+
+Optional:
+
+- `client_name` (String) Sets the client name for the Jack audio output.
+- `connect_ports` (String) Specifies the connection ports for the Jack audio output.
+- `exact_name` (String) Sets the exact client name for the Jack audio output.
+- `server_name` (String) Sets the server name for the Jack audio output.
+
+
+<a id="nestedatt--devices--audios--jack--output"></a>
+### Nested Schema for `devices.audios.jack.output`
+
+Optional:
+
+- `client_name` (String) Sets the client name for the Jack audio output.
+- `connect_ports` (String) Specifies the connection ports for the Jack audio output.
+- `exact_name` (String) Sets the exact client name for the Jack audio output.
+- `server_name` (String) Sets the server name for the Jack audio output.
+
+
+
+<a id="nestedatt--devices--audios--none"></a>
+### Nested Schema for `devices.audios.none`
+
+Optional:
+
+- `input` (Attributes) Configures the output settings for the None audio device. (see [below for nested schema](#nestedatt--devices--audios--none--input))
+- `output` (Attributes) Configures the output settings for the None audio device. (see [below for nested schema](#nestedatt--devices--audios--none--output))
+
+<a id="nestedatt--devices--audios--none--input"></a>
+### Nested Schema for `devices.audios.none.input`
+
+
+<a id="nestedatt--devices--audios--none--output"></a>
+### Nested Schema for `devices.audios.none.output`
+
+
+
+<a id="nestedatt--devices--audios--oss"></a>
+### Nested Schema for `devices.audios.oss`
+
+Optional:
+
+- `dsp_policy` (Number) Sets the DSP policy for the OSS audio device.
+- `exclusive` (String) Configures the exclusivity for the OSS audio device.
+- `input` (Attributes) Configures the output settings for the OSS audio device. (see [below for nested schema](#nestedatt--devices--audios--oss--input))
+- `output` (Attributes) Configures the output settings for the OSS audio device. (see [below for nested schema](#nestedatt--devices--audios--oss--output))
+- `try_m_map` (String) Enables or disables mmap for the OSS audio device.
+
+<a id="nestedatt--devices--audios--oss--input"></a>
+### Nested Schema for `devices.audios.oss.input`
+
+Optional:
+
+- `buffer_count` (Number) Sets the number of output buffers for the OSS audio device.
+- `dev` (String) Sets the device node for the OSS audio output.
+- `try_poll` (String) Configures polling for the OSS audio output.
+
+
+<a id="nestedatt--devices--audios--oss--output"></a>
+### Nested Schema for `devices.audios.oss.output`
+
+Optional:
+
+- `buffer_count` (Number) Sets the number of output buffers for the OSS audio device.
+- `dev` (String) Sets the device node for the OSS audio output.
+- `try_poll` (String) Configures polling for the OSS audio output.
+
+
+
+<a id="nestedatt--devices--audios--pipe_wire"></a>
+### Nested Schema for `devices.audios.pipe_wire`
+
+Optional:
+
+- `input` (Attributes) Configures the output settings for the PipeWire audio device. (see [below for nested schema](#nestedatt--devices--audios--pipe_wire--input))
+- `output` (Attributes) Configures the output settings for the PipeWire audio device. (see [below for nested schema](#nestedatt--devices--audios--pipe_wire--output))
+- `runtime_dir` (String) Sets the runtime directory for the PipeWire audio system integration.
+
+<a id="nestedatt--devices--audios--pipe_wire--input"></a>
+### Nested Schema for `devices.audios.pipe_wire.input`
+
+Optional:
+
+- `latency` (Number) Sets the output latency for the PipeWire audio device.
+- `name` (String) Sets the name for the PipeWire audio output.
+- `stream_name` (String) Sets the stream name for the PipeWire audio output.
+
+
+<a id="nestedatt--devices--audios--pipe_wire--output"></a>
+### Nested Schema for `devices.audios.pipe_wire.output`
+
+Optional:
+
+- `latency` (Number) Sets the output latency for the PipeWire audio device.
+- `name` (String) Sets the name for the PipeWire audio output.
+- `stream_name` (String) Sets the stream name for the PipeWire audio output.
+
+
+
+<a id="nestedatt--devices--audios--pulse_audio"></a>
+### Nested Schema for `devices.audios.pulse_audio`
+
+Optional:
+
+- `input` (Attributes) Configures the output settings for the PipeWire audio device. (see [below for nested schema](#nestedatt--devices--audios--pulse_audio--input))
+- `output` (Attributes) Configures the output settings for the PipeWire audio device. (see [below for nested schema](#nestedatt--devices--audios--pulse_audio--output))
+- `server_name` (String) Specifies the server name for the PulseAudio audio backend configuration.
+
+<a id="nestedatt--devices--audios--pulse_audio--input"></a>
+### Nested Schema for `devices.audios.pulse_audio.input`
+
+Optional:
+
+- `latency` (Number) Sets the output latency for the PipeWire audio device.
+- `name` (String) Sets the name for the PipeWire audio output.
+- `stream_name` (String) Sets the stream name for the PipeWire audio output.
+
+
+<a id="nestedatt--devices--audios--pulse_audio--output"></a>
+### Nested Schema for `devices.audios.pulse_audio.output`
+
+Optional:
+
+- `latency` (Number) Sets the output latency for the PipeWire audio device.
+- `name` (String) Sets the name for the PipeWire audio output.
+- `stream_name` (String) Sets the stream name for the PipeWire audio output.
+
+
+
+<a id="nestedatt--devices--audios--sdl"></a>
+### Nested Schema for `devices.audios.sdl`
+
+Optional:
+
+- `driver` (String) Sets the driver for the SDL audio backend configuration.
+- `input` (Attributes) Specifies the output settings for the SDL audio backend. (see [below for nested schema](#nestedatt--devices--audios--sdl--input))
+- `output` (Attributes) Specifies the output settings for the SDL audio backend. (see [below for nested schema](#nestedatt--devices--audios--sdl--output))
+
+<a id="nestedatt--devices--audios--sdl--input"></a>
+### Nested Schema for `devices.audios.sdl.input`
+
+Optional:
+
+- `buffer_count` (Number) Defines the number of output buffers in the SDL audio configuration.
+
+
+<a id="nestedatt--devices--audios--sdl--output"></a>
+### Nested Schema for `devices.audios.sdl.output`
+
+Optional:
+
+- `buffer_count` (Number) Defines the number of output buffers in the SDL audio configuration.
+
+
+
+<a id="nestedatt--devices--audios--spice"></a>
+### Nested Schema for `devices.audios.spice`
+
+Optional:
+
+- `input` (Attributes) Specifies the output settings for the SPICE audio backend. (see [below for nested schema](#nestedatt--devices--audios--spice--input))
+- `output` (Attributes) Specifies the output settings for the SPICE audio backend. (see [below for nested schema](#nestedatt--devices--audios--spice--output))
+
+<a id="nestedatt--devices--audios--spice--input"></a>
+### Nested Schema for `devices.audios.spice.input`
+
+
+<a id="nestedatt--devices--audios--spice--output"></a>
+### Nested Schema for `devices.audios.spice.output`
+
+
+
+
+<a id="nestedatt--devices--channels"></a>
+### Nested Schema for `devices.channels`
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--channels--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--channels--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--channels--alias))
+- `log` (Attributes) Specifies the logging options for the channel configuration. (see [below for nested schema](#nestedatt--devices--channels--log))
+- `protocol` (Attributes) Sets the protocol type for the EGD backend. (see [below for nested schema](#nestedatt--devices--channels--protocol))
+- `source` (Attributes) Defines the source settings for the EGD backend. (see [below for nested schema](#nestedatt--devices--channels--source))
+- `target` (Attributes) This field defines the target configuration for the virtual channel. (see [below for nested schema](#nestedatt--devices--channels--target))
+
+<a id="nestedatt--devices--channels--acpi"></a>
+### Nested Schema for `devices.channels.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--channels--address"></a>
+### Nested Schema for `devices.channels.address`
+
+
+<a id="nestedatt--devices--channels--alias"></a>
+### Nested Schema for `devices.channels.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--channels--log"></a>
+### Nested Schema for `devices.channels.log`
+
+Required:
+
+- `file` (String) Defines the file path where channel logs will be written.
+
+Optional:
+
+- `append` (String) Indicates whether to append log data to the existing log file.
+
+
+<a id="nestedatt--devices--channels--protocol"></a>
+### Nested Schema for `devices.channels.protocol`
+
+Required:
+
+- `type` (String) Specifies the type of protocol used for the EGD source backend.
+
+
+<a id="nestedatt--devices--channels--source"></a>
+### Nested Schema for `devices.channels.source`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--channels--source--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--channels--source--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--channels--source--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--channels--source--nmdm))
+- `null` (Boolean) Configures a null source for the EGD backend.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--channels--source--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--channels--source--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--channels--source--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--channels--source--spice_port))
+- `spice_vmc` (Boolean) Configures the SPICE VMC settings for the random number generator backend.
+- `std_io` (Boolean) Configures standard input/output settings for the random number generator backend.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--channels--source--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--channels--source--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--channels--source--unix))
+- `vc` (Boolean) Configures settings for the virtual console connection in the random number generator backend.
+
+<a id="nestedatt--devices--channels--source--dbus"></a>
+### Nested Schema for `devices.channels.source.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--channels--source--dev"></a>
+### Nested Schema for `devices.channels.source.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--channels--source--dev--sec_label))
+
+<a id="nestedatt--devices--channels--source--dev--sec_label"></a>
+### Nested Schema for `devices.channels.source.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--channels--source--file"></a>
+### Nested Schema for `devices.channels.source.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--channels--source--file--sec_label))
+
+<a id="nestedatt--devices--channels--source--file--sec_label"></a>
+### Nested Schema for `devices.channels.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--channels--source--nmdm"></a>
+### Nested Schema for `devices.channels.source.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--channels--source--pipe"></a>
+### Nested Schema for `devices.channels.source.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--channels--source--pipe--sec_label))
+
+<a id="nestedatt--devices--channels--source--pipe--sec_label"></a>
+### Nested Schema for `devices.channels.source.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--channels--source--pty"></a>
+### Nested Schema for `devices.channels.source.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--channels--source--pty--sec_label))
+
+<a id="nestedatt--devices--channels--source--pty--sec_label"></a>
+### Nested Schema for `devices.channels.source.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--channels--source--qemuvd_agent"></a>
+### Nested Schema for `devices.channels.source.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--channels--source--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--channels--source--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--channels--source--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.channels.source.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--channels--source--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.channels.source.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--channels--source--spice_port"></a>
+### Nested Schema for `devices.channels.source.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--channels--source--tcp"></a>
+### Nested Schema for `devices.channels.source.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--channels--source--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--channels--source--tcp--reconnect"></a>
+### Nested Schema for `devices.channels.source.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--channels--source--udp"></a>
+### Nested Schema for `devices.channels.source.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--channels--source--unix"></a>
+### Nested Schema for `devices.channels.source.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--channels--source--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--channels--source--unix--sec_label))
+
+<a id="nestedatt--devices--channels--source--unix--reconnect"></a>
+### Nested Schema for `devices.channels.source.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--channels--source--unix--sec_label"></a>
+### Nested Schema for `devices.channels.source.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+<a id="nestedatt--devices--channels--target"></a>
+### Nested Schema for `devices.channels.target`
+
+Optional:
+
+- `guest_fwd` (Attributes) This field configures the guest forwarding settings for the channel target. (see [below for nested schema](#nestedatt--devices--channels--target--guest_fwd))
+- `virt_io` (Attributes) This field defines the target configuration for the VirtIO channel. (see [below for nested schema](#nestedatt--devices--channels--target--virt_io))
+- `xen` (Attributes) This field specifies the channel target configuration for Xen. (see [below for nested schema](#nestedatt--devices--channels--target--xen))
+
+<a id="nestedatt--devices--channels--target--guest_fwd"></a>
+### Nested Schema for `devices.channels.target.guest_fwd`
+
+Optional:
+
+- `address` (String) This field specifies the address to which the guest forwarding will connect.
+- `port` (String) This field sets the port number for the guest forwarding connection.
+
+
+<a id="nestedatt--devices--channels--target--virt_io"></a>
+### Nested Schema for `devices.channels.target.virt_io`
+
+Optional:
+
+- `name` (String) This field configures the name of the VirtIO channel target.
+- `state` (String) This field sets the state of the VirtIO channel target, indicating if it is enabled or disabled.
+
+
+<a id="nestedatt--devices--channels--target--xen"></a>
+### Nested Schema for `devices.channels.target.xen`
+
+Optional:
+
+- `name` (String) This field sets the name for the Xen channel target.
+- `state` (String) This field configures the state of the Xen channel target.
+
+
+
 
 <a id="nestedatt--devices--consoles"></a>
 ### Nested Schema for `devices.consoles`
 
 Optional:
 
-- `source_path` (String) Source path for file or unix socket types. Optional.
-- `target_port` (Number) Target port number. Optional.
-- `target_type` (String) Target type (serial, virtio, xen, etc.). Optional.
-- `type` (String) Console source type (pty, file, unix, tcp, etc.). Optional, defaults to pty.
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--consoles--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--consoles--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--consoles--alias))
+- `log` (Attributes) Specifies the logging options for the channel configuration. (see [below for nested schema](#nestedatt--devices--consoles--log))
+- `protocol` (Attributes) Sets the protocol type for the EGD backend. (see [below for nested schema](#nestedatt--devices--consoles--protocol))
+- `source` (Attributes) Defines the source settings for the EGD backend. (see [below for nested schema](#nestedatt--devices--consoles--source))
+- `target` (Attributes) Defines the target configuration for the console output. (see [below for nested schema](#nestedatt--devices--consoles--target))
+- `tty` (String) Defines the TTY settings for the console configuration.
+
+<a id="nestedatt--devices--consoles--acpi"></a>
+### Nested Schema for `devices.consoles.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--consoles--address"></a>
+### Nested Schema for `devices.consoles.address`
+
+
+<a id="nestedatt--devices--consoles--alias"></a>
+### Nested Schema for `devices.consoles.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--consoles--log"></a>
+### Nested Schema for `devices.consoles.log`
+
+Required:
+
+- `file` (String) Defines the file path where channel logs will be written.
+
+Optional:
+
+- `append` (String) Indicates whether to append log data to the existing log file.
+
+
+<a id="nestedatt--devices--consoles--protocol"></a>
+### Nested Schema for `devices.consoles.protocol`
+
+Required:
+
+- `type` (String) Specifies the type of protocol used for the EGD source backend.
+
+
+<a id="nestedatt--devices--consoles--source"></a>
+### Nested Schema for `devices.consoles.source`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--consoles--source--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--consoles--source--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--consoles--source--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--consoles--source--nmdm))
+- `null` (Boolean) Configures a null source for the EGD backend.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--consoles--source--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--consoles--source--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--consoles--source--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--consoles--source--spice_port))
+- `spice_vmc` (Boolean) Configures the SPICE VMC settings for the random number generator backend.
+- `std_io` (Boolean) Configures standard input/output settings for the random number generator backend.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--consoles--source--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--consoles--source--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--consoles--source--unix))
+- `vc` (Boolean) Configures settings for the virtual console connection in the random number generator backend.
+
+<a id="nestedatt--devices--consoles--source--dbus"></a>
+### Nested Schema for `devices.consoles.source.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--consoles--source--dev"></a>
+### Nested Schema for `devices.consoles.source.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--consoles--source--dev--sec_label))
+
+<a id="nestedatt--devices--consoles--source--dev--sec_label"></a>
+### Nested Schema for `devices.consoles.source.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--consoles--source--file"></a>
+### Nested Schema for `devices.consoles.source.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--consoles--source--file--sec_label))
+
+<a id="nestedatt--devices--consoles--source--file--sec_label"></a>
+### Nested Schema for `devices.consoles.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--consoles--source--nmdm"></a>
+### Nested Schema for `devices.consoles.source.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--consoles--source--pipe"></a>
+### Nested Schema for `devices.consoles.source.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--consoles--source--pipe--sec_label))
+
+<a id="nestedatt--devices--consoles--source--pipe--sec_label"></a>
+### Nested Schema for `devices.consoles.source.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--consoles--source--pty"></a>
+### Nested Schema for `devices.consoles.source.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--consoles--source--pty--sec_label))
+
+<a id="nestedatt--devices--consoles--source--pty--sec_label"></a>
+### Nested Schema for `devices.consoles.source.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--consoles--source--qemuvd_agent"></a>
+### Nested Schema for `devices.consoles.source.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--consoles--source--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--consoles--source--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--consoles--source--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.consoles.source.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--consoles--source--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.consoles.source.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--consoles--source--spice_port"></a>
+### Nested Schema for `devices.consoles.source.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--consoles--source--tcp"></a>
+### Nested Schema for `devices.consoles.source.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--consoles--source--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--consoles--source--tcp--reconnect"></a>
+### Nested Schema for `devices.consoles.source.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--consoles--source--udp"></a>
+### Nested Schema for `devices.consoles.source.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--consoles--source--unix"></a>
+### Nested Schema for `devices.consoles.source.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--consoles--source--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--consoles--source--unix--sec_label))
+
+<a id="nestedatt--devices--consoles--source--unix--reconnect"></a>
+### Nested Schema for `devices.consoles.source.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--consoles--source--unix--sec_label"></a>
+### Nested Schema for `devices.consoles.source.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+<a id="nestedatt--devices--consoles--target"></a>
+### Nested Schema for `devices.consoles.target`
+
+Optional:
+
+- `port` (Number) Sets the port number used for the console target.
+- `type` (String) Specifies the type of the console target.
+
+
+
+<a id="nestedatt--devices--controllers"></a>
+### Nested Schema for `devices.controllers`
+
+Required:
+
+- `type` (String) Defines the type of the controller device being configured.
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--controllers--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--controllers--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--controllers--alias))
+- `driver` (Attributes) Configures the driver for the controller device being used. (see [below for nested schema](#nestedatt--devices--controllers--driver))
+- `index` (Number) Defines the index position of the controller within the devices list.
+- `model` (String) Specifies the model type for the controller device.
+- `nvme` (Attributes) Configures NVMe-specific settings for the controller, if applicable. (see [below for nested schema](#nestedatt--devices--controllers--nvme))
+- `pci` (Attributes) Configures settings related to the PCI controller device. (see [below for nested schema](#nestedatt--devices--controllers--pci))
+- `usb` (Attributes) Configures settings specific to the USB controller device. (see [below for nested schema](#nestedatt--devices--controllers--usb))
+- `virt_io_serial` (Attributes) Configures settings related to the VirtIO serial controller device. (see [below for nested schema](#nestedatt--devices--controllers--virt_io_serial))
+- `xen_bus` (Attributes) Configures settings related to the Xen bus controller device. (see [below for nested schema](#nestedatt--devices--controllers--xen_bus))
+
+<a id="nestedatt--devices--controllers--acpi"></a>
+### Nested Schema for `devices.controllers.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--controllers--address"></a>
+### Nested Schema for `devices.controllers.address`
+
+
+<a id="nestedatt--devices--controllers--alias"></a>
+### Nested Schema for `devices.controllers.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--controllers--driver"></a>
+### Nested Schema for `devices.controllers.driver`
+
+Optional:
+
+- `ats` (String) Enables or disables the Address Translation Services for the controller driver.
+- `cmd_per_lun` (Number) Sets the number of commands that can be issued per Logical Unit Number (LUN) by the controller driver.
+- `io_event_fd` (String) Configures the I/O event file descriptor settings for the controller driver, optimizing event handling.
+- `io_thread` (Number) Specifies the I/O thread associated with the controller driver to improve efficiency.
+- `io_threads` (Attributes) Allows the definition of multiple I/O threads for the controller driver. (see [below for nested schema](#nestedatt--devices--controllers--driver--io_threads))
+- `iommu` (String) Enables or disables the I/O Memory Management Unit (IOMMU) for the controller driver.
+- `max_sectors` (Number) Configures the maximum number of sectors that can be processed at once by the controller driver.
+- `packed` (String) Enables or disables the packing of requests for the controller driver to improve efficiency.
+- `page_per_vq` (String) Configures whether to allocate a separate page for each Virtqueue (VQ) in the controller driver.
+- `queues` (Number) Sets the number of queues that can be used by the controller driver.
+
+<a id="nestedatt--devices--controllers--driver--io_threads"></a>
+### Nested Schema for `devices.controllers.driver.io_threads`
+
+Optional:
+
+- `io_thread` (Attributes List) Configures details for a specific I/O thread associated with the controller driver. (see [below for nested schema](#nestedatt--devices--controllers--driver--io_threads--io_thread))
+
+<a id="nestedatt--devices--controllers--driver--io_threads--io_thread"></a>
+### Nested Schema for `devices.controllers.driver.io_threads.io_thread`
+
+Optional:
+
+- `queues` (Attributes List) Sets the configuration for I/O queues associated with the specific I/O thread of the controller driver. (see [below for nested schema](#nestedatt--devices--controllers--driver--io_threads--io_thread--queues))
+
+Read-Only:
+
+- `id` (Number) Assigns a unique identifier to the I/O thread for the controller driver.
+
+<a id="nestedatt--devices--controllers--driver--io_threads--io_thread--queues"></a>
+### Nested Schema for `devices.controllers.driver.io_threads.io_thread.queues`
+
+Read-Only:
+
+- `id` (Number) Assigns a unique identifier to the queue associated with the specific I/O thread of the controller driver.
+
+
+
+
+
+<a id="nestedatt--devices--controllers--nvme"></a>
+### Nested Schema for `devices.controllers.nvme`
+
+Optional:
+
+- `serial` (String) Sets the serial number for the NVMe controller device.
+
+
+<a id="nestedatt--devices--controllers--pci"></a>
+### Nested Schema for `devices.controllers.pci`
+
+Optional:
+
+- `hole64` (Number) Indicates whether the PCI controller device supports a 64-bit hole for PCI address space.
+- `hole64_unit` (String) Specifies the unit for the 64-bit hole in the PCI address space for the device.
+- `model` (Attributes) Configures the model for the PCI controller device. (see [below for nested schema](#nestedatt--devices--controllers--pci--model))
+- `target` (Attributes) Sets the target configuration for the PCI controller device. (see [below for nested schema](#nestedatt--devices--controllers--pci--target))
+
+<a id="nestedatt--devices--controllers--pci--model"></a>
+### Nested Schema for `devices.controllers.pci.model`
+
+Required:
+
+- `name` (String) Specifies the name of the PCI model being used.
+
+
+<a id="nestedatt--devices--controllers--pci--target"></a>
+### Nested Schema for `devices.controllers.pci.target`
+
+
+
+<a id="nestedatt--devices--controllers--usb"></a>
+### Nested Schema for `devices.controllers.usb`
+
+Optional:
+
+- `master` (Attributes) Specifies the master configuration for the USB controller device. (see [below for nested schema](#nestedatt--devices--controllers--usb--master))
+- `port` (Number) Configures the number of ports available on the USB controller device.
+
+<a id="nestedatt--devices--controllers--usb--master"></a>
+### Nested Schema for `devices.controllers.usb.master`
+
+Required:
+
+- `start_port` (Number) Sets the starting port number for the master USB controller device configuration.
+
+
+
+<a id="nestedatt--devices--controllers--virt_io_serial"></a>
+### Nested Schema for `devices.controllers.virt_io_serial`
+
+Optional:
+
+- `ports` (Number) Specifies the number of ports available on the VirtIO serial controller device.
+- `vectors` (Number) Sets the number of vectors allocated for the VirtIO serial controller device.
+
+
+<a id="nestedatt--devices--controllers--xen_bus"></a>
+### Nested Schema for `devices.controllers.xen_bus`
+
+Optional:
+
+- `max_event_channels` (Number) Sets the maximum number of event channels supported by the Xen bus controller device.
+- `max_grant_frames` (Number) Configures the maximum number of grant frames allowed for the Xen bus controller device.
+
+
+
+<a id="nestedatt--devices--crypto"></a>
+### Nested Schema for `devices.crypto`
+
+Optional:
+
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--crypto--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--crypto--alias))
+- `backend` (Attributes) Sets the backend configuration for the crypto device. (see [below for nested schema](#nestedatt--devices--crypto--backend))
+- `model` (String) Specifies the model type for the crypto device.
+- `type` (String) Sets the type attribute for the crypto device.
+
+<a id="nestedatt--devices--crypto--address"></a>
+### Nested Schema for `devices.crypto.address`
+
+
+<a id="nestedatt--devices--crypto--alias"></a>
+### Nested Schema for `devices.crypto.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--crypto--backend"></a>
+### Nested Schema for `devices.crypto.backend`
+
+Optional:
+
+- `built_in` (Boolean) Configures the built-in backend type for the crypto device.
+- `lkcf` (Boolean) Configures the LKCF backend option for the crypto device.
+- `queues` (Number) Sets the number of queues available in the backend for the crypto device.
+
 
 
 <a id="nestedatt--devices--disks"></a>
 ### Nested Schema for `devices.disks`
 
-Required:
+Optional:
 
-- `target` (Attributes) Guest device target mapping. (see [below for nested schema](#nestedatt--devices--disks--target))
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--disks--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--disks--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--disks--alias))
+- `auth` (Attributes) Configures authentication settings for the iSCSI source. (see [below for nested schema](#nestedatt--devices--disks--auth))
+- `backend_domain` (Attributes) Specifies the backend domain associated with the interface, allowing for advanced network configurations. (see [below for nested schema](#nestedatt--devices--disks--backend_domain))
+- `backing_store` (Attributes) Specifies the backing store settings for the mirrored disk, determining its source and configuration. (see [below for nested schema](#nestedatt--devices--disks--backing_store))
+- `block_io` (Attributes) Configures block I/O settings for the disk. (see [below for nested schema](#nestedatt--devices--disks--block_io))
+- `boot` (Attributes) Configures the boot settings for the redirected device, controlling its initialization at domain startup. (see [below for nested schema](#nestedatt--devices--disks--boot))
+- `device` (String) Specifies the device identifier for the disk.
+- `driver` (Attributes) Configures the driver settings for the disk device. (see [below for nested schema](#nestedatt--devices--disks--driver))
+- `encryption` (Attributes) Configures encryption settings for the disk, enhancing data security. (see [below for nested schema](#nestedatt--devices--disks--encryption))
+- `geometry` (Attributes) Configures the geometry of the disk, including parameters that define its layout and structure. (see [below for nested schema](#nestedatt--devices--disks--geometry))
+- `io_tune` (Attributes) Provides I/O tuning settings for the disk, allowing various performance optimizations based on workload. (see [below for nested schema](#nestedatt--devices--disks--io_tune))
+- `mirror` (Attributes) Configures the disk as a mirror, providing redundancy and improved data integrity through synchronization. (see [below for nested schema](#nestedatt--devices--disks--mirror))
+- `model` (String) Configures the model type for the disk device in the VM.
+- `product` (String) Specifies the product name of the disk device presented to the guest.
+- `raw_io` (String) Enables or disables raw I/O operations for the disk device.
+- `read_only` (Boolean) Configures the read-only state for the disk, preventing write operations.
+- `serial` (String) Sets the serial number for the disk device, making it identifiable.
+- `sgio` (String) Configures SGIO (SCSI Generic I/O) for the disk, affecting how I/O requests are processed.
+- `shareable` (Boolean) Specifies whether the disk can be shared among multiple guests.
+- `snapshot` (String) Indicates whether the disk is a snapshot of another disk image.
+- `source` (Attributes) Specifies the source of the backing store, determining its origin and how it is accessed. (see [below for nested schema](#nestedatt--devices--disks--source))
+- `target` (Attributes) Configures the target settings for the disk device. (see [below for nested schema](#nestedatt--devices--disks--target))
+- `throttle_filters` (Attributes) Manages the throttle filters applied to the disk device for I/O regulation. (see [below for nested schema](#nestedatt--devices--disks--throttle_filters))
+- `transient` (Attributes) Controls whether the disk device is defined as a transient resource. (see [below for nested schema](#nestedatt--devices--disks--transient))
+- `vendor` (String) Specifies the vendor name associated with the disk device.
+- `wwn` (String) Configures the World Wide Name (WWN) for the disk device to uniquely identify it.
+
+<a id="nestedatt--devices--disks--acpi"></a>
+### Nested Schema for `devices.disks.acpi`
 
 Optional:
 
-- `device` (String) Device type (disk, cdrom, floppy, lun).
-- `source` (Attributes) Disk source configuration. Specify one of: pool+volume for libvirt volumes, file for file paths, or block for block devices. (see [below for nested schema](#nestedatt--devices--disks--source))
-- `wwn` (String) World Wide Name identifier for the disk (typically for SCSI disks). If not specified for SCSI disks, one will be generated. Format: 16 hex digits.
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
 
-<a id="nestedatt--devices--disks--target"></a>
-### Nested Schema for `devices.disks.target`
+
+<a id="nestedatt--devices--disks--address"></a>
+### Nested Schema for `devices.disks.address`
+
+
+<a id="nestedatt--devices--disks--alias"></a>
+### Nested Schema for `devices.disks.alias`
 
 Required:
 
-- `dev` (String) Target device name (e.g., vda, sda, hda).
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--disks--auth"></a>
+### Nested Schema for `devices.disks.auth`
 
 Optional:
 
-- `bus` (String) Bus type (virtio, scsi, ide, sata, usb).
+- `secret` (Attributes) Specifies the secret used for authenticating the iSCSI connection. (see [below for nested schema](#nestedatt--devices--disks--auth--secret))
+- `username` (String) Sets the username for iSCSI authentication.
+
+<a id="nestedatt--devices--disks--auth--secret"></a>
+### Nested Schema for `devices.disks.auth.secret`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--devices--disks--backend_domain"></a>
+### Nested Schema for `devices.disks.backend_domain`
+
+Required:
+
+- `name` (String) Sets the name of the backend domain associated with the interface, which links the interface to a specific backend configuration.
+
+
+<a id="nestedatt--devices--disks--backing_store"></a>
+### Nested Schema for `devices.disks.backing_store`
+
+Optional:
+
+- `format` (Attributes) Defines the format of the data store used in the backing store source configuration. (see [below for nested schema](#nestedatt--devices--disks--backing_store--format))
+- `index` (Number) Sets the index for the backing store in relation to other backing stores, managing their order and priority.
+- `source` (Attributes) Specifies the source of the backing store, determining its origin and how it is accessed. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source))
+
+<a id="nestedatt--devices--disks--backing_store--format"></a>
+### Nested Schema for `devices.disks.backing_store.format`
+
+Required:
+
+- `type` (String) Specifies the type of the data store format being used in the backing store source.
+
+Optional:
+
+- `metadata_cache` (Attributes) Configures the metadata cache settings for the data store format within the backing store source. (see [below for nested schema](#nestedatt--devices--disks--backing_store--format--metadata_cache))
+
+<a id="nestedatt--devices--disks--backing_store--format--metadata_cache"></a>
+### Nested Schema for `devices.disks.backing_store.format.metadata_cache`
+
+Optional:
+
+- `max_size` (Attributes) Sets the maximum size for the metadata cache in the data store format configuration. (see [below for nested schema](#nestedatt--devices--disks--backing_store--format--metadata_cache--max_size))
+
+<a id="nestedatt--devices--disks--backing_store--format--metadata_cache--max_size"></a>
+### Nested Schema for `devices.disks.backing_store.format.metadata_cache.max_size`
+
+Required:
+
+- `value` (Number) Sets the value for the maximum size of the metadata cache in the data store format configuration.
+
+Optional:
+
+- `unit` (String) Specifies the unit for the maximum size of the metadata cache in the data store format.
+
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source"></a>
+### Nested Schema for `devices.disks.backing_store.source`
+
+Optional:
+
+- `block` (Attributes) Configures the source block for the backing store, indicating its role within the mirroring setup. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--block))
+- `cookies` (Attributes) Configures settings related to cookie management for the backing store source. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--cookies))
+- `data_store` (Attributes) Configures the data store for the backing store, specifying the storage location. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--data_store))
+- `dir` (Attributes) Configures the directory for the backing store source, indicating its physical location. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--dir))
+- `encryption` (Attributes) Configures encryption settings for the disk, enhancing data security. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--encryption))
+- `file` (Attributes) Configures file-specific settings for the backing store source, managing its file access. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--file))
+- `index` (Number) Configures the index for the backing store source configuration, indicating its order.
+- `network` (Attributes) Configures network-specific settings for the backing store source, facilitating network access. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--network))
+- `nvme` (Attributes) Configures NVMe settings for accessing network storage, enabling optimized performance. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--nvme))
+- `readahead` (Attributes) Sets the readahead configuration, optimizing I/O performance for network block devices. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--readahead))
+- `reservations` (Attributes) Defines reservations settings for network storage sources, enabling resource management. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations))
+- `slices` (Attributes) Configures slices for the mirror source device. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--slices))
+- `ssl` (Attributes) Configures SSL settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--ssl))
+- `startup_policy` (String) Sets the startup policy for the backing store source in disk mirroring.
+- `timeout` (Attributes) Configures the timeout settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--timeout))
+- `vhost_user` (Attributes) Configures VHostUser settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user))
+- `vhost_vdpa` (Attributes) Configures the VHostVDPA settings for the source backing store. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_vdpa))
+- `volume` (Attributes) Configures the source volume settings for the mirror backing store. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--volume))
+
+<a id="nestedatt--devices--disks--backing_store--source--block"></a>
+### Nested Schema for `devices.disks.backing_store.source.block`
+
+Optional:
+
+- `dev` (String) Sets the device path for the block source of the backing store, defining the physical location of the data.
+- `sec_label` (Attributes List) Specifies security label settings for the block source in the backing store, managing access controls. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--block--sec_label))
+
+<a id="nestedatt--devices--disks--backing_store--source--block--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.block.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--cookies"></a>
+### Nested Schema for `devices.disks.backing_store.source.cookies`
+
+Optional:
+
+- `cookies` (Attributes List) Configures cookies for the backing store source, allowing additional parameters for storage. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--cookies--cookies))
+
+<a id="nestedatt--devices--disks--backing_store--source--cookies--cookies"></a>
+### Nested Schema for `devices.disks.backing_store.source.cookies.cookies`
+
+Required:
+
+- `name` (String) Sets the name of the cookie for use in the backing store source configuration.
+- `value` (String) Sets the value associated with the cookie defined in the backing store source.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--data_store"></a>
+### Nested Schema for `devices.disks.backing_store.source.data_store`
+
+Optional:
+
+- `format` (Attributes) Defines the format of the data store used in the backing store source configuration. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--data_store--format))
+
+<a id="nestedatt--devices--disks--backing_store--source--data_store--format"></a>
+### Nested Schema for `devices.disks.backing_store.source.data_store.format`
+
+Required:
+
+- `type` (String) Specifies the type of the data store format being used in the backing store source.
+
+Optional:
+
+- `metadata_cache` (Attributes) Configures the metadata cache settings for the data store format within the backing store source. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--data_store--format--metadata_cache))
+
+<a id="nestedatt--devices--disks--backing_store--source--data_store--format--metadata_cache"></a>
+### Nested Schema for `devices.disks.backing_store.source.data_store.format.metadata_cache`
+
+Optional:
+
+- `max_size` (Attributes) Sets the maximum size for the metadata cache in the data store format configuration. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--data_store--format--metadata_cache--max_size))
+
+<a id="nestedatt--devices--disks--backing_store--source--data_store--format--metadata_cache--max_size"></a>
+### Nested Schema for `devices.disks.backing_store.source.data_store.format.metadata_cache.max_size`
+
+Required:
+
+- `value` (Number) Sets the value for the maximum size of the metadata cache in the data store format configuration.
+
+Optional:
+
+- `unit` (String) Specifies the unit for the maximum size of the metadata cache in the data store format.
+
+
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--dir"></a>
+### Nested Schema for `devices.disks.backing_store.source.dir`
+
+Optional:
+
+- `dir` (String) Defines the specific directory path for the backing store source configuration.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--encryption"></a>
+### Nested Schema for `devices.disks.backing_store.source.encryption`
+
+Optional:
+
+- `engine` (String) Specifies the encryption engine utilized for encrypting the disk.
+- `format` (String) Configures the format of the encrypted disk storage, determining how the data is stored and accessed.
+- `secrets` (Attributes List) Specifies the secrets used for encryption, which can include various elements needed for accessing encrypted data. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--encryption--secrets))
+
+<a id="nestedatt--devices--disks--backing_store--source--encryption--secrets"></a>
+### Nested Schema for `devices.disks.backing_store.source.encryption.secrets`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--file"></a>
+### Nested Schema for `devices.disks.backing_store.source.file`
+
+Optional:
+
+- `fd_group` (String) Sets the file descriptor group for the file specified in the backing store source.
+- `file` (String) Specifies the actual file referenced in the backing store source configuration.
+- `sec_label` (Attributes List) Configures the security label associated with the file in the backing store source. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--file--sec_label))
+
+<a id="nestedatt--devices--disks--backing_store--source--file--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--network"></a>
+### Nested Schema for `devices.disks.backing_store.source.network`
+
+Optional:
+
+- `auth` (Attributes) Configures authentication settings for the iSCSI source. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--network--auth))
+- `config` (Attributes) Defines configuration settings for the network in the backing store source. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--network--config))
+- `hosts` (Attributes List) Configures the hosts within the network settings of the backing store source. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--network--hosts))
+- `identity` (Attributes) Sets the identity parameters for the network connection in the backing store source. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--network--identity))
+- `initiator` (Attributes) Sets the initiator for the network connection in the backing store source configuration. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--network--initiator))
+- `known_hosts` (Attributes) Configures the known hosts used for authenticated connections in network storage operations. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--network--known_hosts))
+- `name` (String) Sets a name for the network block device, facilitating easier identification.
+- `protocol` (String) Configures the protocol used for network storage access, such as iSCSI or NBD.
+- `query` (String) Controls query parameters that may influence the network connection establishment.
+- `reconnect` (Attributes) Configures reconnect behavior for network storage connections, enhancing robustness in case of interruptions. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--network--reconnect))
+- `snapshot` (Attributes) Enables snapshot capabilities for the network storage source, allowing for point-in-time volumes. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--network--snapshot))
+- `tls` (String) Controls whether TLS is used for secure connections to the network storage.
+- `tls_hostname` (String) Sets the expected hostname for the TLS certificate validation during secure network access.
+
+<a id="nestedatt--devices--disks--backing_store--source--network--auth"></a>
+### Nested Schema for `devices.disks.backing_store.source.network.auth`
+
+Optional:
+
+- `secret` (Attributes) Specifies the secret used for authenticating the iSCSI connection. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--network--auth--secret))
+- `username` (String) Sets the username for iSCSI authentication.
+
+<a id="nestedatt--devices--disks--backing_store--source--network--auth--secret"></a>
+### Nested Schema for `devices.disks.backing_store.source.network.auth.secret`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--network--config"></a>
+### Nested Schema for `devices.disks.backing_store.source.network.config`
+
+Required:
+
+- `file` (String) Specifies a file for loading additional network configuration in the backing store source.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--network--hosts"></a>
+### Nested Schema for `devices.disks.backing_store.source.network.hosts`
+
+Optional:
+
+- `name` (String) Defines the name of the iSCSI host for the source configuration.
+- `port` (String) Specifies the port number for the iSCSI host connection.
+- `socket` (String) Sets the socket configuration for the iSCSI host connection.
+- `transport` (String) Specifies the transport method used for the iSCSI host connection.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--network--identity"></a>
+### Nested Schema for `devices.disks.backing_store.source.network.identity`
+
+Optional:
+
+- `agent_sock` (String) Configures the agent socket for network identity in the backing store source.
+- `group` (String) Sets the group identifier for network identity in the backing store source.
+- `keyfile` (String) Defines the key file used for network identity in the backing store source configuration.
+- `user` (String) Configures the user associated with the network identity in the backing store source.
+- `user_name` (String) Sets the user name for network identity in the backing store source configuration.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--network--initiator"></a>
+### Nested Schema for `devices.disks.backing_store.source.network.initiator`
+
+Optional:
+
+- `iqn` (Attributes) Configures the iSCSI qualified name (IQN) used for the initiator in network block device configurations. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--network--initiator--iqn))
+
+<a id="nestedatt--devices--disks--backing_store--source--network--initiator--iqn"></a>
+### Nested Schema for `devices.disks.backing_store.source.network.initiator.iqn`
+
+Optional:
+
+- `name` (String) Sets a name attribute for the iSCSI initiator's IQN for identification purposes.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--network--known_hosts"></a>
+### Nested Schema for `devices.disks.backing_store.source.network.known_hosts`
+
+Required:
+
+- `path` (String) Specifies the path to the file containing known hosts for the network storage.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--network--reconnect"></a>
+### Nested Schema for `devices.disks.backing_store.source.network.reconnect`
+
+Required:
+
+- `delay` (String) Sets the delay duration before attempting to reconnect to a network storage source after a failure.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--network--snapshot"></a>
+### Nested Schema for `devices.disks.backing_store.source.network.snapshot`
+
+Required:
+
+- `name` (String) Configures the name attribute for the snapshot used in network storage operations.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--nvme"></a>
+### Nested Schema for `devices.disks.backing_store.source.nvme`
+
+
+<a id="nestedatt--devices--disks--backing_store--source--readahead"></a>
+### Nested Schema for `devices.disks.backing_store.source.readahead`
+
+Required:
+
+- `size` (String) Configures the size of data that should be prefetched when reading from the network block device.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations`
+
+Optional:
+
+- `enabled` (String) Controls whether reservations are enabled for the network storage source.
+- `managed` (Boolean) Specifies if the reservations are managed by a higher-level resource management layer.
+- `source` (Attributes) Configures the source from which reservations are allocated for network storage. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source))
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--nmdm))
+- `null` (Boolean) Configures settings for a null device used in reservations for storage.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--spice_port))
+- `spice_vmc` (Boolean) Configures settings for the SPICE VMC used in reservations related to disk mirroring.
+- `std_io` (Boolean) Manages standard I/O settings for the reservations in disk mirroring.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--unix))
+- `vc` (Boolean) Configures settings for the VC source in the backing store for disk mirroring reservations.
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--dbus"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--dev"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--dev--sec_label))
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--dev--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--file"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--file--sec_label))
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--file--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--nmdm"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--pipe"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--pipe--sec_label))
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--pipe--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--pty"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--pty--sec_label))
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--pty--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--qemuvd_agent"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--spice_port"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--tcp"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--tcp--reconnect"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--udp"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--unix"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--reservations--source--unix--sec_label))
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--unix--reconnect"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--reservations--source--unix--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.reservations.source.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--slices"></a>
+### Nested Schema for `devices.disks.backing_store.source.slices`
+
+Optional:
+
+- `slices` (Attributes List) Specifies individual slice configurations within the mirror source. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--slices--slices))
+
+<a id="nestedatt--devices--disks--backing_store--source--slices--slices"></a>
+### Nested Schema for `devices.disks.backing_store.source.slices.slices`
+
+Required:
+
+- `offset` (Number) Sets the offset for the specific slice in the mirror source configuration.
+- `size` (Number) Configures the size of the slice in the mirror source.
+- `type` (String) Specifies the type of the slice in the mirror source configuration.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--ssl"></a>
+### Nested Schema for `devices.disks.backing_store.source.ssl`
+
+Required:
+
+- `verify` (String) Specifies the verification level of the SSL connections for the backing store.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--timeout"></a>
+### Nested Schema for `devices.disks.backing_store.source.timeout`
+
+Required:
+
+- `seconds` (String) Specifies the duration in seconds for the timeout configuration in disk mirroring.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--nmdm))
+- `null` (Boolean) Configures a null device type in the VHostUser source configuration for the mirrored disk.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--spice_port))
+- `spice_vmc` (Boolean) Configures the Spice VMC settings in the VHostUser source configuration for the mirrored disk.
+- `std_io` (Boolean) Configures standard I/O settings for the VHostUser interface associated with the mirrored disk.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--unix))
+- `vc` (Boolean) Configures the VHostUser virtual channel settings for the source backing store.
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--dbus"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--dev"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--dev--sec_label))
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--dev--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--file"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--file--sec_label))
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--file--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--nmdm"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--pipe"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--pipe--sec_label))
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--pipe--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--pty"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--pty--sec_label))
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--pty--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--qemuvd_agent"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--spice_port"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--tcp"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--tcp--reconnect"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--udp"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--unix"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--vhost_user--unix--sec_label))
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--unix--reconnect"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_user--unix--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_user.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+<a id="nestedatt--devices--disks--backing_store--source--vhost_vdpa"></a>
+### Nested Schema for `devices.disks.backing_store.source.vhost_vdpa`
+
+Required:
+
+- `dev` (String) Specifies the device to be used for the VHostVDPA source in the backing store.
+
+
+<a id="nestedatt--devices--disks--backing_store--source--volume"></a>
+### Nested Schema for `devices.disks.backing_store.source.volume`
+
+Optional:
+
+- `mode` (String) Sets the mode for the volume source in the backing store configuration.
+- `pool` (String) Specifies the pool from which the volume source is derived in the backing store.
+- `sec_label` (Attributes List) Configures the security label settings for the volume in the backing store. (see [below for nested schema](#nestedatt--devices--disks--backing_store--source--volume--sec_label))
+- `volume` (String) Provides the volume definition used as the backing store source.
+
+<a id="nestedatt--devices--disks--backing_store--source--volume--sec_label"></a>
+### Nested Schema for `devices.disks.backing_store.source.volume.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+
+<a id="nestedatt--devices--disks--block_io"></a>
+### Nested Schema for `devices.disks.block_io`
+
+Optional:
+
+- `discard_granularity` (Number) Sets the granularity for discard operations performed by the disk.
+- `logical_block_size` (Number) Specifies the logical block size of the disk, affecting read/write operations.
+- `physical_block_size` (Number) Configures the physical block size of the disk.
+
+
+<a id="nestedatt--devices--disks--boot"></a>
+### Nested Schema for `devices.disks.boot`
+
+Required:
+
+- `order` (Number) Specifies the boot order for the redirected device, controlling the sequence of device initialization.
+
+Optional:
+
+- `load_parm` (String) Sets the load parameter for the booting process of the redirected device, influencing how it is activated.
+
+
+<a id="nestedatt--devices--disks--driver"></a>
+### Nested Schema for `devices.disks.driver`
+
+Optional:
+
+- `ats` (String) Controls the Address Translation Services (ATS) for this disk device.
+- `cache` (String) Sets the caching mode for the disk, affecting performance characteristics.
+- `copy_on_read` (String) Configures whether copy-on-read functionality is enabled for the disk.
+- `detect_zeros` (String) Determines if zero-detect features are enabled for the disk's driver.
+- `discard` (String) Controls the handling of discard operations by the disk driver.
+- `discard_no_unref` (String) Indicates whether unreferenced blocks should be discarded.
+- `error_policy` (String) Configures the policy for handling errors reported by the disk driver.
+- `event_idx` (String) Sets the event index for the disk driver, which can be used in event handling.
+- `io` (String) Configures the I/O threading model for the disk driver to optimize performance.
+- `io_event_fd` (String) Sets the I/O event file descriptor for monitoring I/O operations on the disk.
+- `io_thread` (Number) Specifies the I/O thread configuration for the disk driver.
+- `io_threads` (Attributes) Configures the number of I/O threads used for this disk. (see [below for nested schema](#nestedatt--devices--disks--driver--io_threads))
+- `iommu` (String) Configures IOMMU support for the disk driver, affecting memory management.
+- `metadata_cache` (Attributes) Configures the metadata cache settings for the data store format within the backing store source. (see [below for nested schema](#nestedatt--devices--disks--driver--metadata_cache))
+- `name` (String) Sets the name of the driver used for the disk device.
+- `packed` (String) Configures whether the disk driver is packed, impacting performance and resource usage.
+- `page_per_vq` (String) Controls whether a page per virtqueue is used in the driver configuration.
+- `queue_size` (Number) Sets the size of the I/O queue for the disk driver.
+- `queues` (Number) Configures the number of queues for the disk driver, enhancing parallel processing.
+- `rerror_policy` (String) Sets the policy for handling read errors encountered by the disk driver.
+- `type` (String) Configures the driver type to control how the disk interfaces with the system.
+
+<a id="nestedatt--devices--disks--driver--io_threads"></a>
+### Nested Schema for `devices.disks.driver.io_threads`
+
+Optional:
+
+- `io_thread` (Attributes List) Defines individual I/O thread settings for the disk. (see [below for nested schema](#nestedatt--devices--disks--driver--io_threads--io_thread))
+
+<a id="nestedatt--devices--disks--driver--io_threads--io_thread"></a>
+### Nested Schema for `devices.disks.driver.io_threads.io_thread`
+
+Optional:
+
+- `queues` (Attributes List) Sets the queues for the I/O thread to manage I/O requests. (see [below for nested schema](#nestedatt--devices--disks--driver--io_threads--io_thread--queues))
+
+Read-Only:
+
+- `id` (Number) Specifies the identifier for the I/O thread configuration.
+
+<a id="nestedatt--devices--disks--driver--io_threads--io_thread--queues"></a>
+### Nested Schema for `devices.disks.driver.io_threads.io_thread.queues`
+
+Read-Only:
+
+- `id` (Number) Determines the identifier for the I/O queue associated with the thread.
+
+
+
+
+<a id="nestedatt--devices--disks--driver--metadata_cache"></a>
+### Nested Schema for `devices.disks.driver.metadata_cache`
+
+Optional:
+
+- `max_size` (Attributes) Sets the maximum size for the metadata cache in the data store format configuration. (see [below for nested schema](#nestedatt--devices--disks--driver--metadata_cache--max_size))
+
+<a id="nestedatt--devices--disks--driver--metadata_cache--max_size"></a>
+### Nested Schema for `devices.disks.driver.metadata_cache.max_size`
+
+Required:
+
+- `value` (Number) Sets the value for the maximum size of the metadata cache in the data store format configuration.
+
+Optional:
+
+- `unit` (String) Specifies the unit for the maximum size of the metadata cache in the data store format.
+
+
+
+
+<a id="nestedatt--devices--disks--encryption"></a>
+### Nested Schema for `devices.disks.encryption`
+
+Optional:
+
+- `engine` (String) Specifies the encryption engine utilized for encrypting the disk.
+- `format` (String) Configures the format of the encrypted disk storage, determining how the data is stored and accessed.
+- `secrets` (Attributes List) Specifies the secrets used for encryption, which can include various elements needed for accessing encrypted data. (see [below for nested schema](#nestedatt--devices--disks--encryption--secrets))
+
+<a id="nestedatt--devices--disks--encryption--secrets"></a>
+### Nested Schema for `devices.disks.encryption.secrets`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--devices--disks--geometry"></a>
+### Nested Schema for `devices.disks.geometry`
+
+Required:
+
+- `cylinders` (Number) Specifies the number of cylinders in the disk geometry, affecting how the disk's storage is organized.
+- `headers` (Number) Sets the number of headers in the disk geometry, impacting data accessibility and organization.
+- `sectors` (Number) Configures the number of sectors per track in the disk's geometry, influencing data density and performance.
+
+Optional:
+
+- `trans` (String) Indicates the type of translation used for the disk geometry, affecting how it maps its virtual space to physical storage.
+
+
+<a id="nestedatt--devices--disks--io_tune"></a>
+### Nested Schema for `devices.disks.io_tune`
+
+Optional:
+
+- `group_name` (String) Specifies the name of the group for tuning parameters, organizing settings related to disk I/O performance.
+- `read_bytes_sec` (Number) Sets the maximum number of read bytes per second for the disk, regulating its data throughput.
+- `read_bytes_sec_max` (Number) Configures the maximum read bytes per second limit, further controlling the disk's data transfer rate.
+- `read_bytes_sec_max_length` (Number) Defines the length of maximum read bytes per second setting, detailing how long this limit is effective.
+- `read_iops_sec` (Number) Specifies the maximum number of read I/O operations per second for the disk, controlling its responsiveness.
+- `read_iops_sec_max` (Number) Sets the upper limit for read IOPS on the disk, refining its input/output performance.
+- `read_iops_sec_max_length` (Number) Configures the effective duration for the maximum read IOPS limit.
+- `size_iops_sec` (Number) Defines the size-related performance in IOPS for the disk, optimizing access based on data size.
+- `total_bytes_sec` (Number) Sets the overall maximum bytes transfer rate for all operations on the disk.
+- `total_bytes_sec_max` (Number) Specifies the maximum limit on total bytes per second across all I/O operations for the disk.
+- `total_bytes_sec_max_length` (Number) Describes the duration that the maximum total bytes per second setting is enforced on the disk.
+- `total_iops_sec` (Number) Configures the overall maximum IOPS for the disk, controlling the number of operations performed over time.
+- `total_iops_sec_max` (Number) Sets the maximum IOPS limit for all operations handled by the disk.
+- `total_iops_sec_max_length` (Number) Defines how long the total IOPS limit is maintained during operations on the disk.
+- `write_bytes_sec` (Number) Configures the maximum number of bytes written per second for the disk, managing data output rates.
+- `write_bytes_sec_max` (Number) Sets the maximum write bytes per second limit, controlling the disk's writing capability.
+- `write_bytes_sec_max_length` (Number) Specifies the effective length for the maximum write bytes per second setting.
+- `write_iops_sec` (Number) Defines the maximum number of write I/O operations per second for the disk, influencing its performance.
+- `write_iops_sec_max` (Number) Sets the upper limit for write IOPS on the disk, adjusting its output operations.
+- `write_iops_sec_max_length` (Number) Configures the effective duration for the maximum write IOPS limit.
+
+
+<a id="nestedatt--devices--disks--mirror"></a>
+### Nested Schema for `devices.disks.mirror`
+
+Optional:
+
+- `backing_store` (Attributes) Specifies the backing store settings for the mirrored disk, determining its source and configuration. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store))
+- `format` (Attributes) Defines the format of the data store used in the backing store source configuration. (see [below for nested schema](#nestedatt--devices--disks--mirror--format))
+- `job` (String) Configures the job identifier associated with the disk mirror operation.
+- `ready` (String) Indicates whether the disk mirror is ready for use.
+- `source` (Attributes) Specifies the source of the backing store, determining its origin and how it is accessed. (see [below for nested schema](#nestedatt--devices--disks--mirror--source))
+
+<a id="nestedatt--devices--disks--mirror--backing_store"></a>
+### Nested Schema for `devices.disks.mirror.backing_store`
+
+Optional:
+
+- `format` (Attributes) Defines the format of the data store used in the backing store source configuration. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--format))
+- `index` (Number) Sets the index for the backing store in relation to other backing stores, managing their order and priority.
+- `source` (Attributes) Specifies the source of the backing store, determining its origin and how it is accessed. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--format"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.format`
+
+Required:
+
+- `type` (String) Specifies the type of the data store format being used in the backing store source.
+
+Optional:
+
+- `metadata_cache` (Attributes) Configures the metadata cache settings for the data store format within the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--format--metadata_cache))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--format--metadata_cache"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.format.metadata_cache`
+
+Optional:
+
+- `max_size` (Attributes) Sets the maximum size for the metadata cache in the data store format configuration. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--format--metadata_cache--max_size))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--format--metadata_cache--max_size"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.format.metadata_cache.max_size`
+
+Required:
+
+- `value` (Number) Sets the value for the maximum size of the metadata cache in the data store format configuration.
+
+Optional:
+
+- `unit` (String) Specifies the unit for the maximum size of the metadata cache in the data store format.
+
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source`
+
+Optional:
+
+- `block` (Attributes) Configures the source block for the backing store, indicating its role within the mirroring setup. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--block))
+- `cookies` (Attributes) Configures settings related to cookie management for the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--cookies))
+- `data_store` (Attributes) Configures the data store for the backing store, specifying the storage location. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--data_store))
+- `dir` (Attributes) Configures the directory for the backing store source, indicating its physical location. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--dir))
+- `encryption` (Attributes) Configures encryption settings for the disk, enhancing data security. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--encryption))
+- `file` (Attributes) Configures file-specific settings for the backing store source, managing its file access. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--file))
+- `index` (Number) Configures the index for the backing store source configuration, indicating its order.
+- `network` (Attributes) Configures network-specific settings for the backing store source, facilitating network access. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--network))
+- `nvme` (Attributes) Configures NVMe settings for accessing network storage, enabling optimized performance. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--nvme))
+- `readahead` (Attributes) Sets the readahead configuration, optimizing I/O performance for network block devices. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--readahead))
+- `reservations` (Attributes) Defines reservations settings for network storage sources, enabling resource management. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations))
+- `slices` (Attributes) Configures slices for the mirror source device. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--slices))
+- `ssl` (Attributes) Configures SSL settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--ssl))
+- `startup_policy` (String) Sets the startup policy for the backing store source in disk mirroring.
+- `timeout` (Attributes) Configures the timeout settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--timeout))
+- `vhost_user` (Attributes) Configures VHostUser settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user))
+- `vhost_vdpa` (Attributes) Configures the VHostVDPA settings for the source backing store. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_vdpa))
+- `volume` (Attributes) Configures the source volume settings for the mirror backing store. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--volume))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--block"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.block`
+
+Optional:
+
+- `dev` (String) Sets the device path for the block source of the backing store, defining the physical location of the data.
+- `sec_label` (Attributes List) Specifies security label settings for the block source in the backing store, managing access controls. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--block--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--block--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.block.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--cookies"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.cookies`
+
+Optional:
+
+- `cookies` (Attributes List) Configures cookies for the backing store source, allowing additional parameters for storage. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--cookies--cookies))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--cookies--cookies"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.cookies.cookies`
+
+Required:
+
+- `name` (String) Sets the name of the cookie for use in the backing store source configuration.
+- `value` (String) Sets the value associated with the cookie defined in the backing store source.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--data_store"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.data_store`
+
+Optional:
+
+- `format` (Attributes) Defines the format of the data store used in the backing store source configuration. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--data_store--format))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--data_store--format"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.data_store.format`
+
+Required:
+
+- `type` (String) Specifies the type of the data store format being used in the backing store source.
+
+Optional:
+
+- `metadata_cache` (Attributes) Configures the metadata cache settings for the data store format within the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--data_store--format--metadata_cache))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--data_store--format--metadata_cache"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.data_store.format.metadata_cache`
+
+Optional:
+
+- `max_size` (Attributes) Sets the maximum size for the metadata cache in the data store format configuration. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--data_store--format--metadata_cache--max_size))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--data_store--format--metadata_cache--max_size"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.data_store.format.metadata_cache.max_size`
+
+Required:
+
+- `value` (Number) Sets the value for the maximum size of the metadata cache in the data store format configuration.
+
+Optional:
+
+- `unit` (String) Specifies the unit for the maximum size of the metadata cache in the data store format.
+
+
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--dir"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.dir`
+
+Optional:
+
+- `dir` (String) Defines the specific directory path for the backing store source configuration.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--encryption"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.encryption`
+
+Optional:
+
+- `engine` (String) Specifies the encryption engine utilized for encrypting the disk.
+- `format` (String) Configures the format of the encrypted disk storage, determining how the data is stored and accessed.
+- `secrets` (Attributes List) Specifies the secrets used for encryption, which can include various elements needed for accessing encrypted data. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--encryption--secrets))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--encryption--secrets"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.encryption.secrets`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--file"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.file`
+
+Optional:
+
+- `fd_group` (String) Sets the file descriptor group for the file specified in the backing store source.
+- `file` (String) Specifies the actual file referenced in the backing store source configuration.
+- `sec_label` (Attributes List) Configures the security label associated with the file in the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--file--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--file--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--network"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.network`
+
+Optional:
+
+- `auth` (Attributes) Configures authentication settings for the iSCSI source. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--network--auth))
+- `config` (Attributes) Defines configuration settings for the network in the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--network--config))
+- `hosts` (Attributes List) Configures the hosts within the network settings of the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--network--hosts))
+- `identity` (Attributes) Sets the identity parameters for the network connection in the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--network--identity))
+- `initiator` (Attributes) Sets the initiator for the network connection in the backing store source configuration. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--network--initiator))
+- `known_hosts` (Attributes) Configures the known hosts used for authenticated connections in network storage operations. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--network--known_hosts))
+- `name` (String) Sets a name for the network block device, facilitating easier identification.
+- `protocol` (String) Configures the protocol used for network storage access, such as iSCSI or NBD.
+- `query` (String) Controls query parameters that may influence the network connection establishment.
+- `reconnect` (Attributes) Configures reconnect behavior for network storage connections, enhancing robustness in case of interruptions. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--network--reconnect))
+- `snapshot` (Attributes) Enables snapshot capabilities for the network storage source, allowing for point-in-time volumes. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--network--snapshot))
+- `tls` (String) Controls whether TLS is used for secure connections to the network storage.
+- `tls_hostname` (String) Sets the expected hostname for the TLS certificate validation during secure network access.
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--network--auth"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.network.auth`
+
+Optional:
+
+- `secret` (Attributes) Specifies the secret used for authenticating the iSCSI connection. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--network--auth--secret))
+- `username` (String) Sets the username for iSCSI authentication.
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--network--auth--secret"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.network.auth.secret`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--network--config"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.network.config`
+
+Required:
+
+- `file` (String) Specifies a file for loading additional network configuration in the backing store source.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--network--hosts"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.network.hosts`
+
+Optional:
+
+- `name` (String) Defines the name of the iSCSI host for the source configuration.
+- `port` (String) Specifies the port number for the iSCSI host connection.
+- `socket` (String) Sets the socket configuration for the iSCSI host connection.
+- `transport` (String) Specifies the transport method used for the iSCSI host connection.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--network--identity"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.network.identity`
+
+Optional:
+
+- `agent_sock` (String) Configures the agent socket for network identity in the backing store source.
+- `group` (String) Sets the group identifier for network identity in the backing store source.
+- `keyfile` (String) Defines the key file used for network identity in the backing store source configuration.
+- `user` (String) Configures the user associated with the network identity in the backing store source.
+- `user_name` (String) Sets the user name for network identity in the backing store source configuration.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--network--initiator"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.network.initiator`
+
+Optional:
+
+- `iqn` (Attributes) Configures the iSCSI qualified name (IQN) used for the initiator in network block device configurations. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--network--initiator--iqn))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--network--initiator--iqn"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.network.initiator.iqn`
+
+Optional:
+
+- `name` (String) Sets a name attribute for the iSCSI initiator's IQN for identification purposes.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--network--known_hosts"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.network.known_hosts`
+
+Required:
+
+- `path` (String) Specifies the path to the file containing known hosts for the network storage.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--network--reconnect"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.network.reconnect`
+
+Required:
+
+- `delay` (String) Sets the delay duration before attempting to reconnect to a network storage source after a failure.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--network--snapshot"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.network.snapshot`
+
+Required:
+
+- `name` (String) Configures the name attribute for the snapshot used in network storage operations.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--nvme"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.nvme`
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--readahead"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.readahead`
+
+Required:
+
+- `size` (String) Configures the size of data that should be prefetched when reading from the network block device.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations`
+
+Optional:
+
+- `enabled` (String) Controls whether reservations are enabled for the network storage source.
+- `managed` (Boolean) Specifies if the reservations are managed by a higher-level resource management layer.
+- `source` (Attributes) Configures the source from which reservations are allocated for network storage. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--nmdm))
+- `null` (Boolean) Configures settings for a null device used in reservations for storage.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--spice_port))
+- `spice_vmc` (Boolean) Configures settings for the SPICE VMC used in reservations related to disk mirroring.
+- `std_io` (Boolean) Manages standard I/O settings for the reservations in disk mirroring.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--unix))
+- `vc` (Boolean) Configures settings for the VC source in the backing store for disk mirroring reservations.
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--dbus"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--dev"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--dev--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--dev--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--file"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--file--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--file--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--nmdm"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--pipe"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--pipe--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--pipe--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--pty"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--pty--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--pty--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--qemuvd_agent"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--spice_port"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--tcp"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--tcp--reconnect"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--udp"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--unix"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--reservations--source--unix--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--unix--reconnect"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--reservations--source--unix--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.reservations.source.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--slices"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.slices`
+
+Optional:
+
+- `slices` (Attributes List) Specifies individual slice configurations within the mirror source. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--slices--slices))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--slices--slices"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.slices.slices`
+
+Required:
+
+- `offset` (Number) Sets the offset for the specific slice in the mirror source configuration.
+- `size` (Number) Configures the size of the slice in the mirror source.
+- `type` (String) Specifies the type of the slice in the mirror source configuration.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--ssl"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.ssl`
+
+Required:
+
+- `verify` (String) Specifies the verification level of the SSL connections for the backing store.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--timeout"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.timeout`
+
+Required:
+
+- `seconds` (String) Specifies the duration in seconds for the timeout configuration in disk mirroring.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--nmdm))
+- `null` (Boolean) Configures a null device type in the VHostUser source configuration for the mirrored disk.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--spice_port))
+- `spice_vmc` (Boolean) Configures the Spice VMC settings in the VHostUser source configuration for the mirrored disk.
+- `std_io` (Boolean) Configures standard I/O settings for the VHostUser interface associated with the mirrored disk.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--unix))
+- `vc` (Boolean) Configures the VHostUser virtual channel settings for the source backing store.
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--dbus"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--dev"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--dev--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--dev--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--file"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--file--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--file--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--nmdm"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--pipe"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--pipe--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--pipe--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--pty"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--pty--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--pty--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--qemuvd_agent"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--spice_port"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--tcp"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--tcp--reconnect"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--udp"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--unix"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--vhost_user--unix--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--unix--reconnect"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_user--unix--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_user.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--vhost_vdpa"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.vhost_vdpa`
+
+Required:
+
+- `dev` (String) Specifies the device to be used for the VHostVDPA source in the backing store.
+
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--volume"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.volume`
+
+Optional:
+
+- `mode` (String) Sets the mode for the volume source in the backing store configuration.
+- `pool` (String) Specifies the pool from which the volume source is derived in the backing store.
+- `sec_label` (Attributes List) Configures the security label settings for the volume in the backing store. (see [below for nested schema](#nestedatt--devices--disks--mirror--backing_store--source--volume--sec_label))
+- `volume` (String) Provides the volume definition used as the backing store source.
+
+<a id="nestedatt--devices--disks--mirror--backing_store--source--volume--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.backing_store.source.volume.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+
+<a id="nestedatt--devices--disks--mirror--format"></a>
+### Nested Schema for `devices.disks.mirror.format`
+
+Required:
+
+- `type` (String) Specifies the type of the data store format being used in the backing store source.
+
+Optional:
+
+- `metadata_cache` (Attributes) Configures the metadata cache settings for the data store format within the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--format--metadata_cache))
+
+<a id="nestedatt--devices--disks--mirror--format--metadata_cache"></a>
+### Nested Schema for `devices.disks.mirror.format.metadata_cache`
+
+Optional:
+
+- `max_size` (Attributes) Sets the maximum size for the metadata cache in the data store format configuration. (see [below for nested schema](#nestedatt--devices--disks--mirror--format--metadata_cache--max_size))
+
+<a id="nestedatt--devices--disks--mirror--format--metadata_cache--max_size"></a>
+### Nested Schema for `devices.disks.mirror.format.metadata_cache.max_size`
+
+Required:
+
+- `value` (Number) Sets the value for the maximum size of the metadata cache in the data store format configuration.
+
+Optional:
+
+- `unit` (String) Specifies the unit for the maximum size of the metadata cache in the data store format.
+
+
+
+
+<a id="nestedatt--devices--disks--mirror--source"></a>
+### Nested Schema for `devices.disks.mirror.source`
+
+Optional:
+
+- `block` (Attributes) Configures the source block for the backing store, indicating its role within the mirroring setup. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--block))
+- `cookies` (Attributes) Configures settings related to cookie management for the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--cookies))
+- `data_store` (Attributes) Configures the data store for the backing store, specifying the storage location. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--data_store))
+- `dir` (Attributes) Configures the directory for the backing store source, indicating its physical location. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--dir))
+- `encryption` (Attributes) Configures encryption settings for the disk, enhancing data security. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--encryption))
+- `file` (Attributes) Configures file-specific settings for the backing store source, managing its file access. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--file))
+- `index` (Number) Configures the index for the backing store source configuration, indicating its order.
+- `network` (Attributes) Configures network-specific settings for the backing store source, facilitating network access. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--network))
+- `nvme` (Attributes) Configures NVMe settings for accessing network storage, enabling optimized performance. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--nvme))
+- `readahead` (Attributes) Sets the readahead configuration, optimizing I/O performance for network block devices. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--readahead))
+- `reservations` (Attributes) Defines reservations settings for network storage sources, enabling resource management. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations))
+- `slices` (Attributes) Configures slices for the mirror source device. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--slices))
+- `ssl` (Attributes) Configures SSL settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--ssl))
+- `startup_policy` (String) Sets the startup policy for the backing store source in disk mirroring.
+- `timeout` (Attributes) Configures the timeout settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--timeout))
+- `vhost_user` (Attributes) Configures VHostUser settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user))
+- `vhost_vdpa` (Attributes) Configures the VHostVDPA settings for the source backing store. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_vdpa))
+- `volume` (Attributes) Configures the source volume settings for the mirror backing store. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--volume))
+
+<a id="nestedatt--devices--disks--mirror--source--block"></a>
+### Nested Schema for `devices.disks.mirror.source.block`
+
+Optional:
+
+- `dev` (String) Sets the device path for the block source of the backing store, defining the physical location of the data.
+- `sec_label` (Attributes List) Specifies security label settings for the block source in the backing store, managing access controls. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--block--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--source--block--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.block.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--cookies"></a>
+### Nested Schema for `devices.disks.mirror.source.cookies`
+
+Optional:
+
+- `cookies` (Attributes List) Configures cookies for the backing store source, allowing additional parameters for storage. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--cookies--cookies))
+
+<a id="nestedatt--devices--disks--mirror--source--cookies--cookies"></a>
+### Nested Schema for `devices.disks.mirror.source.cookies.cookies`
+
+Required:
+
+- `name` (String) Sets the name of the cookie for use in the backing store source configuration.
+- `value` (String) Sets the value associated with the cookie defined in the backing store source.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--data_store"></a>
+### Nested Schema for `devices.disks.mirror.source.data_store`
+
+Optional:
+
+- `format` (Attributes) Defines the format of the data store used in the backing store source configuration. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--data_store--format))
+
+<a id="nestedatt--devices--disks--mirror--source--data_store--format"></a>
+### Nested Schema for `devices.disks.mirror.source.data_store.format`
+
+Required:
+
+- `type` (String) Specifies the type of the data store format being used in the backing store source.
+
+Optional:
+
+- `metadata_cache` (Attributes) Configures the metadata cache settings for the data store format within the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--data_store--format--metadata_cache))
+
+<a id="nestedatt--devices--disks--mirror--source--data_store--format--metadata_cache"></a>
+### Nested Schema for `devices.disks.mirror.source.data_store.format.metadata_cache`
+
+Optional:
+
+- `max_size` (Attributes) Sets the maximum size for the metadata cache in the data store format configuration. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--data_store--format--metadata_cache--max_size))
+
+<a id="nestedatt--devices--disks--mirror--source--data_store--format--metadata_cache--max_size"></a>
+### Nested Schema for `devices.disks.mirror.source.data_store.format.metadata_cache.max_size`
+
+Required:
+
+- `value` (Number) Sets the value for the maximum size of the metadata cache in the data store format configuration.
+
+Optional:
+
+- `unit` (String) Specifies the unit for the maximum size of the metadata cache in the data store format.
+
+
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--dir"></a>
+### Nested Schema for `devices.disks.mirror.source.dir`
+
+Optional:
+
+- `dir` (String) Defines the specific directory path for the backing store source configuration.
+
+
+<a id="nestedatt--devices--disks--mirror--source--encryption"></a>
+### Nested Schema for `devices.disks.mirror.source.encryption`
+
+Optional:
+
+- `engine` (String) Specifies the encryption engine utilized for encrypting the disk.
+- `format` (String) Configures the format of the encrypted disk storage, determining how the data is stored and accessed.
+- `secrets` (Attributes List) Specifies the secrets used for encryption, which can include various elements needed for accessing encrypted data. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--encryption--secrets))
+
+<a id="nestedatt--devices--disks--mirror--source--encryption--secrets"></a>
+### Nested Schema for `devices.disks.mirror.source.encryption.secrets`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--file"></a>
+### Nested Schema for `devices.disks.mirror.source.file`
+
+Optional:
+
+- `fd_group` (String) Sets the file descriptor group for the file specified in the backing store source.
+- `file` (String) Specifies the actual file referenced in the backing store source configuration.
+- `sec_label` (Attributes List) Configures the security label associated with the file in the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--file--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--source--file--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--network"></a>
+### Nested Schema for `devices.disks.mirror.source.network`
+
+Optional:
+
+- `auth` (Attributes) Configures authentication settings for the iSCSI source. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--network--auth))
+- `config` (Attributes) Defines configuration settings for the network in the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--network--config))
+- `hosts` (Attributes List) Configures the hosts within the network settings of the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--network--hosts))
+- `identity` (Attributes) Sets the identity parameters for the network connection in the backing store source. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--network--identity))
+- `initiator` (Attributes) Sets the initiator for the network connection in the backing store source configuration. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--network--initiator))
+- `known_hosts` (Attributes) Configures the known hosts used for authenticated connections in network storage operations. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--network--known_hosts))
+- `name` (String) Sets a name for the network block device, facilitating easier identification.
+- `protocol` (String) Configures the protocol used for network storage access, such as iSCSI or NBD.
+- `query` (String) Controls query parameters that may influence the network connection establishment.
+- `reconnect` (Attributes) Configures reconnect behavior for network storage connections, enhancing robustness in case of interruptions. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--network--reconnect))
+- `snapshot` (Attributes) Enables snapshot capabilities for the network storage source, allowing for point-in-time volumes. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--network--snapshot))
+- `tls` (String) Controls whether TLS is used for secure connections to the network storage.
+- `tls_hostname` (String) Sets the expected hostname for the TLS certificate validation during secure network access.
+
+<a id="nestedatt--devices--disks--mirror--source--network--auth"></a>
+### Nested Schema for `devices.disks.mirror.source.network.auth`
+
+Optional:
+
+- `secret` (Attributes) Specifies the secret used for authenticating the iSCSI connection. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--network--auth--secret))
+- `username` (String) Sets the username for iSCSI authentication.
+
+<a id="nestedatt--devices--disks--mirror--source--network--auth--secret"></a>
+### Nested Schema for `devices.disks.mirror.source.network.auth.secret`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--network--config"></a>
+### Nested Schema for `devices.disks.mirror.source.network.config`
+
+Required:
+
+- `file` (String) Specifies a file for loading additional network configuration in the backing store source.
+
+
+<a id="nestedatt--devices--disks--mirror--source--network--hosts"></a>
+### Nested Schema for `devices.disks.mirror.source.network.hosts`
+
+Optional:
+
+- `name` (String) Defines the name of the iSCSI host for the source configuration.
+- `port` (String) Specifies the port number for the iSCSI host connection.
+- `socket` (String) Sets the socket configuration for the iSCSI host connection.
+- `transport` (String) Specifies the transport method used for the iSCSI host connection.
+
+
+<a id="nestedatt--devices--disks--mirror--source--network--identity"></a>
+### Nested Schema for `devices.disks.mirror.source.network.identity`
+
+Optional:
+
+- `agent_sock` (String) Configures the agent socket for network identity in the backing store source.
+- `group` (String) Sets the group identifier for network identity in the backing store source.
+- `keyfile` (String) Defines the key file used for network identity in the backing store source configuration.
+- `user` (String) Configures the user associated with the network identity in the backing store source.
+- `user_name` (String) Sets the user name for network identity in the backing store source configuration.
+
+
+<a id="nestedatt--devices--disks--mirror--source--network--initiator"></a>
+### Nested Schema for `devices.disks.mirror.source.network.initiator`
+
+Optional:
+
+- `iqn` (Attributes) Configures the iSCSI qualified name (IQN) used for the initiator in network block device configurations. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--network--initiator--iqn))
+
+<a id="nestedatt--devices--disks--mirror--source--network--initiator--iqn"></a>
+### Nested Schema for `devices.disks.mirror.source.network.initiator.iqn`
+
+Optional:
+
+- `name` (String) Sets a name attribute for the iSCSI initiator's IQN for identification purposes.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--network--known_hosts"></a>
+### Nested Schema for `devices.disks.mirror.source.network.known_hosts`
+
+Required:
+
+- `path` (String) Specifies the path to the file containing known hosts for the network storage.
+
+
+<a id="nestedatt--devices--disks--mirror--source--network--reconnect"></a>
+### Nested Schema for `devices.disks.mirror.source.network.reconnect`
+
+Required:
+
+- `delay` (String) Sets the delay duration before attempting to reconnect to a network storage source after a failure.
+
+
+<a id="nestedatt--devices--disks--mirror--source--network--snapshot"></a>
+### Nested Schema for `devices.disks.mirror.source.network.snapshot`
+
+Required:
+
+- `name` (String) Configures the name attribute for the snapshot used in network storage operations.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--nvme"></a>
+### Nested Schema for `devices.disks.mirror.source.nvme`
+
+
+<a id="nestedatt--devices--disks--mirror--source--readahead"></a>
+### Nested Schema for `devices.disks.mirror.source.readahead`
+
+Required:
+
+- `size` (String) Configures the size of data that should be prefetched when reading from the network block device.
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations`
+
+Optional:
+
+- `enabled` (String) Controls whether reservations are enabled for the network storage source.
+- `managed` (Boolean) Specifies if the reservations are managed by a higher-level resource management layer.
+- `source` (Attributes) Configures the source from which reservations are allocated for network storage. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source))
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--nmdm))
+- `null` (Boolean) Configures settings for a null device used in reservations for storage.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--spice_port))
+- `spice_vmc` (Boolean) Configures settings for the SPICE VMC used in reservations related to disk mirroring.
+- `std_io` (Boolean) Manages standard I/O settings for the reservations in disk mirroring.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--unix))
+- `vc` (Boolean) Configures settings for the VC source in the backing store for disk mirroring reservations.
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--dbus"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--dev"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--dev--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--dev--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--file"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--file--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--file--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--nmdm"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--pipe"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--pipe--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--pipe--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--pty"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--pty--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--pty--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--qemuvd_agent"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--spice_port"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--tcp"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--tcp--reconnect"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--udp"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--unix"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--reservations--source--unix--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--unix--reconnect"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--disks--mirror--source--reservations--source--unix--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.reservations.source.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--slices"></a>
+### Nested Schema for `devices.disks.mirror.source.slices`
+
+Optional:
+
+- `slices` (Attributes List) Specifies individual slice configurations within the mirror source. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--slices--slices))
+
+<a id="nestedatt--devices--disks--mirror--source--slices--slices"></a>
+### Nested Schema for `devices.disks.mirror.source.slices.slices`
+
+Required:
+
+- `offset` (Number) Sets the offset for the specific slice in the mirror source configuration.
+- `size` (Number) Configures the size of the slice in the mirror source.
+- `type` (String) Specifies the type of the slice in the mirror source configuration.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--ssl"></a>
+### Nested Schema for `devices.disks.mirror.source.ssl`
+
+Required:
+
+- `verify` (String) Specifies the verification level of the SSL connections for the backing store.
+
+
+<a id="nestedatt--devices--disks--mirror--source--timeout"></a>
+### Nested Schema for `devices.disks.mirror.source.timeout`
+
+Required:
+
+- `seconds` (String) Specifies the duration in seconds for the timeout configuration in disk mirroring.
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--nmdm))
+- `null` (Boolean) Configures a null device type in the VHostUser source configuration for the mirrored disk.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--spice_port))
+- `spice_vmc` (Boolean) Configures the Spice VMC settings in the VHostUser source configuration for the mirrored disk.
+- `std_io` (Boolean) Configures standard I/O settings for the VHostUser interface associated with the mirrored disk.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--unix))
+- `vc` (Boolean) Configures the VHostUser virtual channel settings for the source backing store.
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--dbus"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--dev"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--dev--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--dev--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--file"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--file--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--file--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--nmdm"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--pipe"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--pipe--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--pipe--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--pty"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--pty--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--pty--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--qemuvd_agent"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--spice_port"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--tcp"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--tcp--reconnect"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--udp"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--unix"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--vhost_user--unix--sec_label))
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--unix--reconnect"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_user--unix--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_user.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+<a id="nestedatt--devices--disks--mirror--source--vhost_vdpa"></a>
+### Nested Schema for `devices.disks.mirror.source.vhost_vdpa`
+
+Required:
+
+- `dev` (String) Specifies the device to be used for the VHostVDPA source in the backing store.
+
+
+<a id="nestedatt--devices--disks--mirror--source--volume"></a>
+### Nested Schema for `devices.disks.mirror.source.volume`
+
+Optional:
+
+- `mode` (String) Sets the mode for the volume source in the backing store configuration.
+- `pool` (String) Specifies the pool from which the volume source is derived in the backing store.
+- `sec_label` (Attributes List) Configures the security label settings for the volume in the backing store. (see [below for nested schema](#nestedatt--devices--disks--mirror--source--volume--sec_label))
+- `volume` (String) Provides the volume definition used as the backing store source.
+
+<a id="nestedatt--devices--disks--mirror--source--volume--sec_label"></a>
+### Nested Schema for `devices.disks.mirror.source.volume.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
 
 
 <a id="nestedatt--devices--disks--source"></a>
@@ -287,25 +4631,1099 @@ Optional:
 
 Optional:
 
-- `block` (String) Block device path (e.g., /dev/sdb). Mutually exclusive with pool/volume and file.
-- `file` (String) Path to disk image file. Mutually exclusive with pool/volume and block.
-- `pool` (String) Storage pool name for volume-based disks. Use with 'volume'.
-- `volume` (String) Volume name in the storage pool. Use with 'pool'.
+- `block` (Attributes) Configures the source block for the backing store, indicating its role within the mirroring setup. (see [below for nested schema](#nestedatt--devices--disks--source--block))
+- `cookies` (Attributes) Configures settings related to cookie management for the backing store source. (see [below for nested schema](#nestedatt--devices--disks--source--cookies))
+- `data_store` (Attributes) Configures the data store for the backing store, specifying the storage location. (see [below for nested schema](#nestedatt--devices--disks--source--data_store))
+- `dir` (Attributes) Configures the directory for the backing store source, indicating its physical location. (see [below for nested schema](#nestedatt--devices--disks--source--dir))
+- `encryption` (Attributes) Configures encryption settings for the disk, enhancing data security. (see [below for nested schema](#nestedatt--devices--disks--source--encryption))
+- `file` (Attributes) Configures file-specific settings for the backing store source, managing its file access. (see [below for nested schema](#nestedatt--devices--disks--source--file))
+- `index` (Number) Configures the index for the backing store source configuration, indicating its order.
+- `network` (Attributes) Configures network-specific settings for the backing store source, facilitating network access. (see [below for nested schema](#nestedatt--devices--disks--source--network))
+- `nvme` (Attributes) Configures NVMe settings for accessing network storage, enabling optimized performance. (see [below for nested schema](#nestedatt--devices--disks--source--nvme))
+- `readahead` (Attributes) Sets the readahead configuration, optimizing I/O performance for network block devices. (see [below for nested schema](#nestedatt--devices--disks--source--readahead))
+- `reservations` (Attributes) Defines reservations settings for network storage sources, enabling resource management. (see [below for nested schema](#nestedatt--devices--disks--source--reservations))
+- `slices` (Attributes) Configures slices for the mirror source device. (see [below for nested schema](#nestedatt--devices--disks--source--slices))
+- `ssl` (Attributes) Configures SSL settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--devices--disks--source--ssl))
+- `startup_policy` (String) Sets the startup policy for the backing store source in disk mirroring.
+- `timeout` (Attributes) Configures the timeout settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--devices--disks--source--timeout))
+- `vhost_user` (Attributes) Configures VHostUser settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user))
+- `vhost_vdpa` (Attributes) Configures the VHostVDPA settings for the source backing store. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_vdpa))
+- `volume` (Attributes) Configures the source volume settings for the mirror backing store. (see [below for nested schema](#nestedatt--devices--disks--source--volume))
+
+<a id="nestedatt--devices--disks--source--block"></a>
+### Nested Schema for `devices.disks.source.block`
+
+Optional:
+
+- `dev` (String) Sets the device path for the block source of the backing store, defining the physical location of the data.
+- `sec_label` (Attributes List) Specifies security label settings for the block source in the backing store, managing access controls. (see [below for nested schema](#nestedatt--devices--disks--source--block--sec_label))
+
+<a id="nestedatt--devices--disks--source--block--sec_label"></a>
+### Nested Schema for `devices.disks.source.block.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--source--cookies"></a>
+### Nested Schema for `devices.disks.source.cookies`
+
+Optional:
+
+- `cookies` (Attributes List) Configures cookies for the backing store source, allowing additional parameters for storage. (see [below for nested schema](#nestedatt--devices--disks--source--cookies--cookies))
+
+<a id="nestedatt--devices--disks--source--cookies--cookies"></a>
+### Nested Schema for `devices.disks.source.cookies.cookies`
+
+Required:
+
+- `name` (String) Sets the name of the cookie for use in the backing store source configuration.
+- `value` (String) Sets the value associated with the cookie defined in the backing store source.
+
+
+
+<a id="nestedatt--devices--disks--source--data_store"></a>
+### Nested Schema for `devices.disks.source.data_store`
+
+Optional:
+
+- `format` (Attributes) Defines the format of the data store used in the backing store source configuration. (see [below for nested schema](#nestedatt--devices--disks--source--data_store--format))
+
+<a id="nestedatt--devices--disks--source--data_store--format"></a>
+### Nested Schema for `devices.disks.source.data_store.format`
+
+Required:
+
+- `type` (String) Specifies the type of the data store format being used in the backing store source.
+
+Optional:
+
+- `metadata_cache` (Attributes) Configures the metadata cache settings for the data store format within the backing store source. (see [below for nested schema](#nestedatt--devices--disks--source--data_store--format--metadata_cache))
+
+<a id="nestedatt--devices--disks--source--data_store--format--metadata_cache"></a>
+### Nested Schema for `devices.disks.source.data_store.format.metadata_cache`
+
+Optional:
+
+- `max_size` (Attributes) Sets the maximum size for the metadata cache in the data store format configuration. (see [below for nested schema](#nestedatt--devices--disks--source--data_store--format--metadata_cache--max_size))
+
+<a id="nestedatt--devices--disks--source--data_store--format--metadata_cache--max_size"></a>
+### Nested Schema for `devices.disks.source.data_store.format.metadata_cache.max_size`
+
+Required:
+
+- `value` (Number) Sets the value for the maximum size of the metadata cache in the data store format configuration.
+
+Optional:
+
+- `unit` (String) Specifies the unit for the maximum size of the metadata cache in the data store format.
+
+
+
+
+
+<a id="nestedatt--devices--disks--source--dir"></a>
+### Nested Schema for `devices.disks.source.dir`
+
+Optional:
+
+- `dir` (String) Defines the specific directory path for the backing store source configuration.
+
+
+<a id="nestedatt--devices--disks--source--encryption"></a>
+### Nested Schema for `devices.disks.source.encryption`
+
+Optional:
+
+- `engine` (String) Specifies the encryption engine utilized for encrypting the disk.
+- `format` (String) Configures the format of the encrypted disk storage, determining how the data is stored and accessed.
+- `secrets` (Attributes List) Specifies the secrets used for encryption, which can include various elements needed for accessing encrypted data. (see [below for nested schema](#nestedatt--devices--disks--source--encryption--secrets))
+
+<a id="nestedatt--devices--disks--source--encryption--secrets"></a>
+### Nested Schema for `devices.disks.source.encryption.secrets`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--devices--disks--source--file"></a>
+### Nested Schema for `devices.disks.source.file`
+
+Optional:
+
+- `fd_group` (String) Sets the file descriptor group for the file specified in the backing store source.
+- `file` (String) Specifies the actual file referenced in the backing store source configuration.
+- `sec_label` (Attributes List) Configures the security label associated with the file in the backing store source. (see [below for nested schema](#nestedatt--devices--disks--source--file--sec_label))
+
+<a id="nestedatt--devices--disks--source--file--sec_label"></a>
+### Nested Schema for `devices.disks.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--source--network"></a>
+### Nested Schema for `devices.disks.source.network`
+
+Optional:
+
+- `auth` (Attributes) Configures authentication settings for the iSCSI source. (see [below for nested schema](#nestedatt--devices--disks--source--network--auth))
+- `config` (Attributes) Defines configuration settings for the network in the backing store source. (see [below for nested schema](#nestedatt--devices--disks--source--network--config))
+- `hosts` (Attributes List) Configures the hosts within the network settings of the backing store source. (see [below for nested schema](#nestedatt--devices--disks--source--network--hosts))
+- `identity` (Attributes) Sets the identity parameters for the network connection in the backing store source. (see [below for nested schema](#nestedatt--devices--disks--source--network--identity))
+- `initiator` (Attributes) Sets the initiator for the network connection in the backing store source configuration. (see [below for nested schema](#nestedatt--devices--disks--source--network--initiator))
+- `known_hosts` (Attributes) Configures the known hosts used for authenticated connections in network storage operations. (see [below for nested schema](#nestedatt--devices--disks--source--network--known_hosts))
+- `name` (String) Sets a name for the network block device, facilitating easier identification.
+- `protocol` (String) Configures the protocol used for network storage access, such as iSCSI or NBD.
+- `query` (String) Controls query parameters that may influence the network connection establishment.
+- `reconnect` (Attributes) Configures reconnect behavior for network storage connections, enhancing robustness in case of interruptions. (see [below for nested schema](#nestedatt--devices--disks--source--network--reconnect))
+- `snapshot` (Attributes) Enables snapshot capabilities for the network storage source, allowing for point-in-time volumes. (see [below for nested schema](#nestedatt--devices--disks--source--network--snapshot))
+- `tls` (String) Controls whether TLS is used for secure connections to the network storage.
+- `tls_hostname` (String) Sets the expected hostname for the TLS certificate validation during secure network access.
+
+<a id="nestedatt--devices--disks--source--network--auth"></a>
+### Nested Schema for `devices.disks.source.network.auth`
+
+Optional:
+
+- `secret` (Attributes) Specifies the secret used for authenticating the iSCSI connection. (see [below for nested schema](#nestedatt--devices--disks--source--network--auth--secret))
+- `username` (String) Sets the username for iSCSI authentication.
+
+<a id="nestedatt--devices--disks--source--network--auth--secret"></a>
+### Nested Schema for `devices.disks.source.network.auth.secret`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--devices--disks--source--network--config"></a>
+### Nested Schema for `devices.disks.source.network.config`
+
+Required:
+
+- `file` (String) Specifies a file for loading additional network configuration in the backing store source.
+
+
+<a id="nestedatt--devices--disks--source--network--hosts"></a>
+### Nested Schema for `devices.disks.source.network.hosts`
+
+Optional:
+
+- `name` (String) Defines the name of the iSCSI host for the source configuration.
+- `port` (String) Specifies the port number for the iSCSI host connection.
+- `socket` (String) Sets the socket configuration for the iSCSI host connection.
+- `transport` (String) Specifies the transport method used for the iSCSI host connection.
+
+
+<a id="nestedatt--devices--disks--source--network--identity"></a>
+### Nested Schema for `devices.disks.source.network.identity`
+
+Optional:
+
+- `agent_sock` (String) Configures the agent socket for network identity in the backing store source.
+- `group` (String) Sets the group identifier for network identity in the backing store source.
+- `keyfile` (String) Defines the key file used for network identity in the backing store source configuration.
+- `user` (String) Configures the user associated with the network identity in the backing store source.
+- `user_name` (String) Sets the user name for network identity in the backing store source configuration.
+
+
+<a id="nestedatt--devices--disks--source--network--initiator"></a>
+### Nested Schema for `devices.disks.source.network.initiator`
+
+Optional:
+
+- `iqn` (Attributes) Configures the iSCSI qualified name (IQN) used for the initiator in network block device configurations. (see [below for nested schema](#nestedatt--devices--disks--source--network--initiator--iqn))
+
+<a id="nestedatt--devices--disks--source--network--initiator--iqn"></a>
+### Nested Schema for `devices.disks.source.network.initiator.iqn`
+
+Optional:
+
+- `name` (String) Sets a name attribute for the iSCSI initiator's IQN for identification purposes.
+
+
+
+<a id="nestedatt--devices--disks--source--network--known_hosts"></a>
+### Nested Schema for `devices.disks.source.network.known_hosts`
+
+Required:
+
+- `path` (String) Specifies the path to the file containing known hosts for the network storage.
+
+
+<a id="nestedatt--devices--disks--source--network--reconnect"></a>
+### Nested Schema for `devices.disks.source.network.reconnect`
+
+Required:
+
+- `delay` (String) Sets the delay duration before attempting to reconnect to a network storage source after a failure.
+
+
+<a id="nestedatt--devices--disks--source--network--snapshot"></a>
+### Nested Schema for `devices.disks.source.network.snapshot`
+
+Required:
+
+- `name` (String) Configures the name attribute for the snapshot used in network storage operations.
+
+
+
+<a id="nestedatt--devices--disks--source--nvme"></a>
+### Nested Schema for `devices.disks.source.nvme`
+
+
+<a id="nestedatt--devices--disks--source--readahead"></a>
+### Nested Schema for `devices.disks.source.readahead`
+
+Required:
+
+- `size` (String) Configures the size of data that should be prefetched when reading from the network block device.
+
+
+<a id="nestedatt--devices--disks--source--reservations"></a>
+### Nested Schema for `devices.disks.source.reservations`
+
+Optional:
+
+- `enabled` (String) Controls whether reservations are enabled for the network storage source.
+- `managed` (Boolean) Specifies if the reservations are managed by a higher-level resource management layer.
+- `source` (Attributes) Configures the source from which reservations are allocated for network storage. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source))
+
+<a id="nestedatt--devices--disks--source--reservations--source"></a>
+### Nested Schema for `devices.disks.source.reservations.source`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--nmdm))
+- `null` (Boolean) Configures settings for a null device used in reservations for storage.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--spice_port))
+- `spice_vmc` (Boolean) Configures settings for the SPICE VMC used in reservations related to disk mirroring.
+- `std_io` (Boolean) Manages standard I/O settings for the reservations in disk mirroring.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--unix))
+- `vc` (Boolean) Configures settings for the VC source in the backing store for disk mirroring reservations.
+
+<a id="nestedatt--devices--disks--source--reservations--source--dbus"></a>
+### Nested Schema for `devices.disks.source.reservations.source.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--disks--source--reservations--source--dev"></a>
+### Nested Schema for `devices.disks.source.reservations.source.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--dev--sec_label))
+
+<a id="nestedatt--devices--disks--source--reservations--source--dev--sec_label"></a>
+### Nested Schema for `devices.disks.source.reservations.source.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--source--reservations--source--file"></a>
+### Nested Schema for `devices.disks.source.reservations.source.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--file--sec_label))
+
+<a id="nestedatt--devices--disks--source--reservations--source--file--sec_label"></a>
+### Nested Schema for `devices.disks.source.reservations.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--source--reservations--source--nmdm"></a>
+### Nested Schema for `devices.disks.source.reservations.source.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--disks--source--reservations--source--pipe"></a>
+### Nested Schema for `devices.disks.source.reservations.source.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--pipe--sec_label))
+
+<a id="nestedatt--devices--disks--source--reservations--source--pipe--sec_label"></a>
+### Nested Schema for `devices.disks.source.reservations.source.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--source--reservations--source--pty"></a>
+### Nested Schema for `devices.disks.source.reservations.source.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--pty--sec_label))
+
+<a id="nestedatt--devices--disks--source--reservations--source--pty--sec_label"></a>
+### Nested Schema for `devices.disks.source.reservations.source.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--source--reservations--source--qemuvd_agent"></a>
+### Nested Schema for `devices.disks.source.reservations.source.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--disks--source--reservations--source--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.disks.source.reservations.source.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--disks--source--reservations--source--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.disks.source.reservations.source.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--disks--source--reservations--source--spice_port"></a>
+### Nested Schema for `devices.disks.source.reservations.source.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--disks--source--reservations--source--tcp"></a>
+### Nested Schema for `devices.disks.source.reservations.source.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--disks--source--reservations--source--tcp--reconnect"></a>
+### Nested Schema for `devices.disks.source.reservations.source.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--disks--source--reservations--source--udp"></a>
+### Nested Schema for `devices.disks.source.reservations.source.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--disks--source--reservations--source--unix"></a>
+### Nested Schema for `devices.disks.source.reservations.source.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--disks--source--reservations--source--unix--sec_label))
+
+<a id="nestedatt--devices--disks--source--reservations--source--unix--reconnect"></a>
+### Nested Schema for `devices.disks.source.reservations.source.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--disks--source--reservations--source--unix--sec_label"></a>
+### Nested Schema for `devices.disks.source.reservations.source.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+
+<a id="nestedatt--devices--disks--source--slices"></a>
+### Nested Schema for `devices.disks.source.slices`
+
+Optional:
+
+- `slices` (Attributes List) Specifies individual slice configurations within the mirror source. (see [below for nested schema](#nestedatt--devices--disks--source--slices--slices))
+
+<a id="nestedatt--devices--disks--source--slices--slices"></a>
+### Nested Schema for `devices.disks.source.slices.slices`
+
+Required:
+
+- `offset` (Number) Sets the offset for the specific slice in the mirror source configuration.
+- `size` (Number) Configures the size of the slice in the mirror source.
+- `type` (String) Specifies the type of the slice in the mirror source configuration.
+
+
+
+<a id="nestedatt--devices--disks--source--ssl"></a>
+### Nested Schema for `devices.disks.source.ssl`
+
+Required:
+
+- `verify` (String) Specifies the verification level of the SSL connections for the backing store.
+
+
+<a id="nestedatt--devices--disks--source--timeout"></a>
+### Nested Schema for `devices.disks.source.timeout`
+
+Required:
+
+- `seconds` (String) Specifies the duration in seconds for the timeout configuration in disk mirroring.
+
+
+<a id="nestedatt--devices--disks--source--vhost_user"></a>
+### Nested Schema for `devices.disks.source.vhost_user`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--nmdm))
+- `null` (Boolean) Configures a null device type in the VHostUser source configuration for the mirrored disk.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--spice_port))
+- `spice_vmc` (Boolean) Configures the Spice VMC settings in the VHostUser source configuration for the mirrored disk.
+- `std_io` (Boolean) Configures standard I/O settings for the VHostUser interface associated with the mirrored disk.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--unix))
+- `vc` (Boolean) Configures the VHostUser virtual channel settings for the source backing store.
+
+<a id="nestedatt--devices--disks--source--vhost_user--dbus"></a>
+### Nested Schema for `devices.disks.source.vhost_user.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--disks--source--vhost_user--dev"></a>
+### Nested Schema for `devices.disks.source.vhost_user.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--dev--sec_label))
+
+<a id="nestedatt--devices--disks--source--vhost_user--dev--sec_label"></a>
+### Nested Schema for `devices.disks.source.vhost_user.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--source--vhost_user--file"></a>
+### Nested Schema for `devices.disks.source.vhost_user.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--file--sec_label))
+
+<a id="nestedatt--devices--disks--source--vhost_user--file--sec_label"></a>
+### Nested Schema for `devices.disks.source.vhost_user.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--source--vhost_user--nmdm"></a>
+### Nested Schema for `devices.disks.source.vhost_user.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--disks--source--vhost_user--pipe"></a>
+### Nested Schema for `devices.disks.source.vhost_user.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--pipe--sec_label))
+
+<a id="nestedatt--devices--disks--source--vhost_user--pipe--sec_label"></a>
+### Nested Schema for `devices.disks.source.vhost_user.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--source--vhost_user--pty"></a>
+### Nested Schema for `devices.disks.source.vhost_user.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--pty--sec_label))
+
+<a id="nestedatt--devices--disks--source--vhost_user--pty--sec_label"></a>
+### Nested Schema for `devices.disks.source.vhost_user.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--disks--source--vhost_user--qemuvd_agent"></a>
+### Nested Schema for `devices.disks.source.vhost_user.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--disks--source--vhost_user--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.disks.source.vhost_user.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--disks--source--vhost_user--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.disks.source.vhost_user.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--disks--source--vhost_user--spice_port"></a>
+### Nested Schema for `devices.disks.source.vhost_user.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--disks--source--vhost_user--tcp"></a>
+### Nested Schema for `devices.disks.source.vhost_user.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--disks--source--vhost_user--tcp--reconnect"></a>
+### Nested Schema for `devices.disks.source.vhost_user.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--disks--source--vhost_user--udp"></a>
+### Nested Schema for `devices.disks.source.vhost_user.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--disks--source--vhost_user--unix"></a>
+### Nested Schema for `devices.disks.source.vhost_user.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--disks--source--vhost_user--unix--sec_label))
+
+<a id="nestedatt--devices--disks--source--vhost_user--unix--reconnect"></a>
+### Nested Schema for `devices.disks.source.vhost_user.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--disks--source--vhost_user--unix--sec_label"></a>
+### Nested Schema for `devices.disks.source.vhost_user.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+<a id="nestedatt--devices--disks--source--vhost_vdpa"></a>
+### Nested Schema for `devices.disks.source.vhost_vdpa`
+
+Required:
+
+- `dev` (String) Specifies the device to be used for the VHostVDPA source in the backing store.
+
+
+<a id="nestedatt--devices--disks--source--volume"></a>
+### Nested Schema for `devices.disks.source.volume`
+
+Optional:
+
+- `mode` (String) Sets the mode for the volume source in the backing store configuration.
+- `pool` (String) Specifies the pool from which the volume source is derived in the backing store.
+- `sec_label` (Attributes List) Configures the security label settings for the volume in the backing store. (see [below for nested schema](#nestedatt--devices--disks--source--volume--sec_label))
+- `volume` (String) Provides the volume definition used as the backing store source.
+
+<a id="nestedatt--devices--disks--source--volume--sec_label"></a>
+### Nested Schema for `devices.disks.source.volume.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+<a id="nestedatt--devices--disks--target"></a>
+### Nested Schema for `devices.disks.target`
+
+Optional:
+
+- `bus` (String) Sets the bus type for the disk device target, determining how it connects to the guest.
+- `dev` (String) Specifies the target device name for the disk device within the guest.
+- `removable` (String) Indicates whether the disk device is removable within the guest.
+- `rotation_rate` (Number) Sets the rotational speed for the disk device, affecting its performance characteristics.
+- `tray` (String) Configures the tray setting for the disk device, indicating whether the tray is open or closed.
+
+
+<a id="nestedatt--devices--disks--throttle_filters"></a>
+### Nested Schema for `devices.disks.throttle_filters`
+
+Optional:
+
+- `throttle_filter` (Attributes List) Specifies individual throttle filter settings for the disk device. (see [below for nested schema](#nestedatt--devices--disks--throttle_filters--throttle_filter))
+
+<a id="nestedatt--devices--disks--throttle_filters--throttle_filter"></a>
+### Nested Schema for `devices.disks.throttle_filters.throttle_filter`
+
+Required:
+
+- `group` (String) Sets the group name for the throttle filter applied to the disk device.
+
+
+
+<a id="nestedatt--devices--disks--transient"></a>
+### Nested Schema for `devices.disks.transient`
+
+Optional:
+
+- `share_backing` (String) Indicates if the transient disk device shares backing storage with other devices.
 
 
 
 <a id="nestedatt--devices--filesystems"></a>
 ### Nested Schema for `devices.filesystems`
 
-Required:
+Optional:
 
-- `source` (String) Host directory path to share.
-- `target` (String) Mount tag visible in the guest (used to mount the filesystem).
+- `access_mode` (String) Sets the access mode for filesystem devices, controlling permissions.
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--filesystems--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--filesystems--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--filesystems--alias))
+- `binary` (Attributes) Configures binary options for the filesystem device, including cache settings. (see [below for nested schema](#nestedatt--devices--filesystems--binary))
+- `boot` (Attributes) Configures the boot settings for the redirected device, controlling its initialization at domain startup. (see [below for nested schema](#nestedatt--devices--filesystems--boot))
+- `dmode` (String) Configures the directory mode for the filesystem.
+- `driver` (Attributes) Specifies the driver used for the filesystem. (see [below for nested schema](#nestedatt--devices--filesystems--driver))
+- `fmode` (String) Configures the file mode for the filesystem.
+- `id_map` (Attributes) Sets up ID mapping for the filesystem to control access permissions. (see [below for nested schema](#nestedatt--devices--filesystems--id_map))
+- `model` (String) Sets the emulated model for the filesystem.
+- `multi_devs` (String) Configures whether multiple devices can be attached to the filesystem.
+- `read_only` (Boolean) Specifies if the filesystem is read-only.
+- `source` (Attributes) Defines the source for the filesystem. (see [below for nested schema](#nestedatt--devices--filesystems--source))
+- `space_hard_limit` (Number) Configures the hard limit on the space allocated for the filesystem.
+- `space_hard_limit_unit` (String) Sets the unit of measure for the hard limit space allocation for the filesystem.
+- `space_soft_limit` (Number) Configures the soft limit on the space allocated for the filesystem.
+- `space_soft_limit_unit` (String) Sets the unit of measure for the soft limit space allocation for the filesystem.
+- `target` (Attributes) Specifies the target element defining where the filesystem is mounted in the guest. (see [below for nested schema](#nestedatt--devices--filesystems--target))
+
+<a id="nestedatt--devices--filesystems--acpi"></a>
+### Nested Schema for `devices.filesystems.acpi`
 
 Optional:
 
-- `accessmode` (String) Access mode (mapped, passthrough, squash). Defaults to mapped.
-- `readonly` (Boolean) Whether the filesystem should be mounted read-only in the guest. Defaults to true.
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--filesystems--address"></a>
+### Nested Schema for `devices.filesystems.address`
+
+
+<a id="nestedatt--devices--filesystems--alias"></a>
+### Nested Schema for `devices.filesystems.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--filesystems--binary"></a>
+### Nested Schema for `devices.filesystems.binary`
+
+Optional:
+
+- `cache` (Attributes) Manages cache settings for the binary filesystem device. (see [below for nested schema](#nestedatt--devices--filesystems--binary--cache))
+- `lock` (Attributes) Specifies the locking behavior for the binary filesystem device. (see [below for nested schema](#nestedatt--devices--filesystems--binary--lock))
+- `open_files` (Attributes) Sets the maximum number of open files for the binary filesystem. (see [below for nested schema](#nestedatt--devices--filesystems--binary--open_files))
+- `path` (String) Specifies the file path for the binary filesystem.
+- `sandbox` (Attributes) Controls whether the binary filesystem operates in sandbox mode. (see [below for nested schema](#nestedatt--devices--filesystems--binary--sandbox))
+- `thread_pool` (Attributes) Configures the usage of a thread pool for handling operations in the binary filesystem. (see [below for nested schema](#nestedatt--devices--filesystems--binary--thread_pool))
+- `xattr` (String) Configures extended attributes for the binary filesystem.
+
+<a id="nestedatt--devices--filesystems--binary--cache"></a>
+### Nested Schema for `devices.filesystems.binary.cache`
+
+Required:
+
+- `mode` (String) Sets the mode for the cache used by the binary filesystem device.
+
+
+<a id="nestedatt--devices--filesystems--binary--lock"></a>
+### Nested Schema for `devices.filesystems.binary.lock`
+
+Optional:
+
+- `flock` (String) Controls flocking for the binary filesystem device's lock settings.
+- `posix` (String) Configures whether the lock for the binary filesystem is POSIX compliant.
+
+
+<a id="nestedatt--devices--filesystems--binary--open_files"></a>
+### Nested Schema for `devices.filesystems.binary.open_files`
+
+Required:
+
+- `max` (Number) Defines the upper limit for the number of open files in the binary filesystem.
+
+
+<a id="nestedatt--devices--filesystems--binary--sandbox"></a>
+### Nested Schema for `devices.filesystems.binary.sandbox`
+
+Required:
+
+- `mode` (String) Sets the mode for the sandbox environment of the binary filesystem.
+
+
+<a id="nestedatt--devices--filesystems--binary--thread_pool"></a>
+### Nested Schema for `devices.filesystems.binary.thread_pool`
+
+Optional:
+
+- `size` (Number) Specifies the number of threads in the thread pool for the binary filesystem.
+
+
+
+<a id="nestedatt--devices--filesystems--boot"></a>
+### Nested Schema for `devices.filesystems.boot`
+
+Required:
+
+- `order` (Number) Specifies the boot order for the redirected device, controlling the sequence of device initialization.
+
+Optional:
+
+- `load_parm` (String) Sets the load parameter for the booting process of the redirected device, influencing how it is activated.
+
+
+<a id="nestedatt--devices--filesystems--driver"></a>
+### Nested Schema for `devices.filesystems.driver`
+
+Optional:
+
+- `ats` (String) Enables or disables Address Translation Services (ATS) for the filesystem driver.
+- `format` (String) Sets the format type for the filesystem handled by the driver.
+- `iommu` (String) Indicates whether the I/O Memory Management Unit (IOMMU) is enabled for the filesystem driver.
+- `name` (String) Configures the name of the driver for the filesystem.
+- `packed` (String) Determines whether the filesystem driver uses packed operations.
+- `page_per_vq` (String) Enables page per virtqueue settings for the filesystem driver.
+- `queue` (Number) Configures the queue settings for the filesystem driver.
+- `type` (String) Specifies the type of the filesystem driver being used.
+- `wr_policy` (String) Sets the write policy for the filesystem driver.
+
+
+<a id="nestedatt--devices--filesystems--id_map"></a>
+### Nested Schema for `devices.filesystems.id_map`
+
+Optional:
+
+- `gid` (Attributes List) Configures group ID mapping for the filesystem. (see [below for nested schema](#nestedatt--devices--filesystems--id_map--gid))
+- `uid` (Attributes List) Configures user ID mapping for the filesystem. (see [below for nested schema](#nestedatt--devices--filesystems--id_map--uid))
+
+<a id="nestedatt--devices--filesystems--id_map--gid"></a>
+### Nested Schema for `devices.filesystems.id_map.gid`
+
+Required:
+
+- `count` (Number) Specifies the number of group IDs to be mapped in the filesystem.
+- `start` (Number) Sets the starting group ID for mapping in the filesystem.
+- `target` (Number) Defines the target group ID for the mapping in the filesystem.
+
+
+<a id="nestedatt--devices--filesystems--id_map--uid"></a>
+### Nested Schema for `devices.filesystems.id_map.uid`
+
+Required:
+
+- `count` (Number) Specifies the number of group IDs to be mapped in the filesystem.
+- `start` (Number) Sets the starting group ID for mapping in the filesystem.
+- `target` (Number) Defines the target group ID for the mapping in the filesystem.
+
+
+
+<a id="nestedatt--devices--filesystems--source"></a>
+### Nested Schema for `devices.filesystems.source`
+
+Optional:
+
+- `bind` (Attributes) Configures the binding source for the filesystem. (see [below for nested schema](#nestedatt--devices--filesystems--source--bind))
+- `block` (Attributes) Specifies a block device as the source for the filesystem. (see [below for nested schema](#nestedatt--devices--filesystems--source--block))
+- `file` (Attributes) Defines a file as the source for the filesystem. (see [below for nested schema](#nestedatt--devices--filesystems--source--file))
+- `mount` (Attributes) Configures a mount point for the filesystem source. (see [below for nested schema](#nestedatt--devices--filesystems--source--mount))
+- `ram` (Attributes) Configures a RAM source for the filesystem. (see [below for nested schema](#nestedatt--devices--filesystems--source--ram))
+- `template` (Attributes) Configures the template source for the filesystem. (see [below for nested schema](#nestedatt--devices--filesystems--source--template))
+- `volume` (Attributes) Sets the volume element that specifies the source volume for the filesystem. (see [below for nested schema](#nestedatt--devices--filesystems--source--volume))
+
+<a id="nestedatt--devices--filesystems--source--bind"></a>
+### Nested Schema for `devices.filesystems.source.bind`
+
+Required:
+
+- `dir` (String) Sets the directory from which the filesystem is bound.
+
+
+<a id="nestedatt--devices--filesystems--source--block"></a>
+### Nested Schema for `devices.filesystems.source.block`
+
+Required:
+
+- `dev` (String) Sets the block device path for the filesystem source.
+
+
+<a id="nestedatt--devices--filesystems--source--file"></a>
+### Nested Schema for `devices.filesystems.source.file`
+
+Required:
+
+- `file` (String) Specifies the file path for the filesystem source.
+
+
+<a id="nestedatt--devices--filesystems--source--mount"></a>
+### Nested Schema for `devices.filesystems.source.mount`
+
+Optional:
+
+- `dir` (String) Sets the directory used as the mount point for the filesystem source.
+- `socket` (String) Indicates if the mount point is a socket.
+
+
+<a id="nestedatt--devices--filesystems--source--ram"></a>
+### Nested Schema for `devices.filesystems.source.ram`
+
+Required:
+
+- `usage` (Number) Specifies the usage type for the RAM source of the filesystem.
+
+Optional:
+
+- `units` (String) Defines the units for the RAM source of the filesystem.
+
+
+<a id="nestedatt--devices--filesystems--source--template"></a>
+### Nested Schema for `devices.filesystems.source.template`
+
+Required:
+
+- `name` (String) Configures the name of the template source for the filesystem.
+
+
+<a id="nestedatt--devices--filesystems--source--volume"></a>
+### Nested Schema for `devices.filesystems.source.volume`
+
+Required:
+
+- `pool` (String) Defines the pool from which the volume of the filesystem is sourced.
+- `volume` (String) Indicates the specific volume name sourced for the filesystem.
+
+
+
+<a id="nestedatt--devices--filesystems--target"></a>
+### Nested Schema for `devices.filesystems.target`
+
+Required:
+
+- `dir` (String) Configures the directory path for the target where the filesystem is mounted.
+
 
 
 <a id="nestedatt--devices--graphics"></a>
@@ -313,18 +5731,278 @@ Optional:
 
 Optional:
 
-- `spice` (Attributes) Spice graphics configuration. Mutually exclusive with vnc. (see [below for nested schema](#nestedatt--devices--graphics--spice))
-- `vnc` (Attributes) VNC graphics configuration. Mutually exclusive with spice. (see [below for nested schema](#nestedatt--devices--graphics--vnc))
+- `audio` (Attributes) Configures the audio settings for the graphics device in the guest. (see [below for nested schema](#nestedatt--devices--graphics--audio))
+- `dbus` (Attributes) Specifies the D-Bus settings for inter-process communication for the graphics display. (see [below for nested schema](#nestedatt--devices--graphics--dbus))
+- `desktop` (Attributes) Configures the desktop environment settings for the graphics display. (see [below for nested schema](#nestedatt--devices--graphics--desktop))
+- `egl_headless` (Attributes) Configures headless EGL graphics settings for the domain. (see [below for nested schema](#nestedatt--devices--graphics--egl_headless))
+- `rdp` (Attributes) Configures the RDP settings for remote desktop access to the graphics device. (see [below for nested schema](#nestedatt--devices--graphics--rdp))
+- `sdl` (Attributes) Configures the SDL display settings for graphics output. (see [below for nested schema](#nestedatt--devices--graphics--sdl))
+- `spice` (Attributes) Configures the SPICE settings for graphical interaction with the guest. (see [below for nested schema](#nestedatt--devices--graphics--spice))
+- `vnc` (Attributes) Configures the VNC graphical interface settings for the virtual machine. (see [below for nested schema](#nestedatt--devices--graphics--vnc))
+
+<a id="nestedatt--devices--graphics--audio"></a>
+### Nested Schema for `devices.graphics.audio`
+
+Read-Only:
+
+- `id` (Number) Defines a unique identifier for the audio configuration of the graphics device.
+
+
+<a id="nestedatt--devices--graphics--dbus"></a>
+### Nested Schema for `devices.graphics.dbus`
+
+Optional:
+
+- `address` (String) Configures the address for the D-Bus connection in the graphics configuration.
+- `gl` (Attributes) Sets the OpenGL settings for the D-Bus graphics configuration. (see [below for nested schema](#nestedatt--devices--graphics--dbus--gl))
+- `p2p` (String) Enables or disables peer-to-peer memory access in D-Bus for graphics.
+
+<a id="nestedatt--devices--graphics--dbus--gl"></a>
+### Nested Schema for `devices.graphics.dbus.gl`
+
+Optional:
+
+- `enable` (String) Configures whether OpenGL support is enabled in the D-Bus graphics settings.
+- `render_node` (String) Sets the render node for OpenGL in the D-Bus graphics configuration.
+
+
+
+<a id="nestedatt--devices--graphics--desktop"></a>
+### Nested Schema for `devices.graphics.desktop`
+
+Optional:
+
+- `display` (String) Sets the display option for the desktop graphics configuration.
+- `full_screen` (String) Configures the fullscreen setting for the desktop graphics display.
+
+
+<a id="nestedatt--devices--graphics--egl_headless"></a>
+### Nested Schema for `devices.graphics.egl_headless`
+
+Optional:
+
+- `gl` (Attributes) Sets OpenGL configuration options for the headless EGL graphics display. (see [below for nested schema](#nestedatt--devices--graphics--egl_headless--gl))
+
+<a id="nestedatt--devices--graphics--egl_headless--gl"></a>
+### Nested Schema for `devices.graphics.egl_headless.gl`
+
+Optional:
+
+- `render_node` (String) Specifies the render node for the headless EGL graphics OpenGL settings.
+
+
+
+<a id="nestedatt--devices--graphics--rdp"></a>
+### Nested Schema for `devices.graphics.rdp`
+
+Optional:
+
+- `auto_port` (Boolean) Enables automatic port assignment for the RDP connection.
+- `listen` (String) Configures the listening parameters for the RDP graphics connection.
+- `listeners` (Attributes List) Sets the configuration for RDP listeners that accept incoming connections. (see [below for nested schema](#nestedatt--devices--graphics--rdp--listeners))
+- `multi_user` (String) Configures whether multi-user access is allowed on the RDP connection.
+- `passwd` (String) Sets the password required for RDP access to the graphics console.
+- `port` (Number) Configures the port for the RDP connection to the virtual machine's graphics.
+- `replace_user` (String) Determines if the default RDP user should be replaced with a specified one.
+- `username` (String) Sets the username for RDP authentication on the graphics connection.
+
+<a id="nestedatt--devices--graphics--rdp--listeners"></a>
+### Nested Schema for `devices.graphics.rdp.listeners`
+
+Optional:
+
+- `address` (Attributes) Specifies the address settings for the Spice listener. (see [below for nested schema](#nestedatt--devices--graphics--rdp--listeners--address))
+- `network` (Attributes) Defines network listener settings for the Spice channel, focusing on network-based connections. (see [below for nested schema](#nestedatt--devices--graphics--rdp--listeners--network))
+- `socket` (Attributes) Configures socket listener settings for the Spice channel, enabling socket-based connections. (see [below for nested schema](#nestedatt--devices--graphics--rdp--listeners--socket))
+
+<a id="nestedatt--devices--graphics--rdp--listeners--address"></a>
+### Nested Schema for `devices.graphics.rdp.listeners.address`
+
+Optional:
+
+- `address` (String) Sets the actual network address where the Spice listener will accept connections.
+
+
+<a id="nestedatt--devices--graphics--rdp--listeners--network"></a>
+### Nested Schema for `devices.graphics.rdp.listeners.network`
+
+Optional:
+
+- `address` (String) Sets the network address for the Spice network listener.
+- `network` (String) Specifies the network to which the Spice listener belongs.
+
+
+<a id="nestedatt--devices--graphics--rdp--listeners--socket"></a>
+### Nested Schema for `devices.graphics.rdp.listeners.socket`
+
+Optional:
+
+- `socket` (String) Defines the socket's attributes for listener configurations in the Spice protocol.
+
+
+
+
+<a id="nestedatt--devices--graphics--sdl"></a>
+### Nested Schema for `devices.graphics.sdl`
+
+Optional:
+
+- `display` (String) Sets the display attribute for SDL graphics configuration.
+- `full_screen` (String) Configures whether the SDL graphics output should launch in fullscreen mode.
+- `gl` (Attributes) Sets the OpenGL settings specific to the SDL graphics configuration. (see [below for nested schema](#nestedatt--devices--graphics--sdl--gl))
+- `xauth` (String) Configures X authentication for the SDL graphics display.
+
+<a id="nestedatt--devices--graphics--sdl--gl"></a>
+### Nested Schema for `devices.graphics.sdl.gl`
+
+Optional:
+
+- `enable` (String) Configures whether OpenGL support is enabled in SDL graphics settings.
+
+
 
 <a id="nestedatt--devices--graphics--spice"></a>
 ### Nested Schema for `devices.graphics.spice`
 
 Optional:
 
-- `autoport` (String) Auto-allocate port (yes/no). Optional.
-- `listen` (String) Listen address for Spice server. Optional.
-- `port` (Number) TCP port for Spice server. Use -1 for auto. Optional.
-- `tlsport` (Number) TLS port for Spice server. Optional.
+- `auto_port` (Boolean) Enables automatic port assignment for SPICE connections.
+- `channel` (Attributes List) Configures the SPICE channels used for the graphics connection. (see [below for nested schema](#nestedatt--devices--graphics--spice--channel))
+- `clip_board` (Attributes) Enables or disables clipboard sharing between the guest and host through the Spice protocol. (see [below for nested schema](#nestedatt--devices--graphics--spice--clip_board))
+- `connected` (String) Indicates whether the Spice graphical interface is currently connected to the client.
+- `default_mode` (String) Sets the default graphical mode for the Spice display, defining initial display settings.
+- `file_transfer` (Attributes) Configures file transfer capabilities over the Spice connection. (see [below for nested schema](#nestedatt--devices--graphics--spice--file_transfer))
+- `gl` (Attributes) Configures settings for OpenGL rendering within the Spice graphical interface. (see [below for nested schema](#nestedatt--devices--graphics--spice--gl))
+- `image` (Attributes) Configures graphical image settings for the Spice connection. (see [below for nested schema](#nestedatt--devices--graphics--spice--image))
+- `jpeg` (Attributes) Configures JPEG image settings for the Spice graphical output. (see [below for nested schema](#nestedatt--devices--graphics--spice--jpeg))
+- `keymap` (String) Specifies the keymap used for the keyboard input in the Spice session.
+- `listen` (String) Configures the listening criteria for the Spice server, determining how it accepts connections.
+- `listeners` (Attributes List) Defines listeners for the Spice channel, which are used for handling incoming connections. (see [below for nested schema](#nestedatt--devices--graphics--spice--listeners))
+- `mouse` (Attributes) Configures mouse settings for the Spice graphical interface, managing input behavior. (see [below for nested schema](#nestedatt--devices--graphics--spice--mouse))
+- `passwd` (String) Specifies a password required for authentication when connecting to the Spice server.
+- `passwd_valid_to` (String) Defines the expiration time for the Spice password, indicating when it becomes invalid.
+- `playback` (Attributes) Configures playback settings for multimedia content within the Spice graphical session. (see [below for nested schema](#nestedatt--devices--graphics--spice--playback))
+- `port` (Number) Specifies the port number used by the Spice server for connections.
+- `streaming` (Attributes) Configures streaming options for live content delivery through the Spice connection. (see [below for nested schema](#nestedatt--devices--graphics--spice--streaming))
+- `tls_port` (Number) Specifies the port number for TLS connections in the Spice protocol to enhance security.
+- `zlib` (Attributes) Configures settings for zlib compression within the Spice graphical environment. (see [below for nested schema](#nestedatt--devices--graphics--spice--zlib))
+
+<a id="nestedatt--devices--graphics--spice--channel"></a>
+### Nested Schema for `devices.graphics.spice.channel`
+
+Required:
+
+- `mode` (String) Configures the mode of the Spice channel, allowing control over the type of communication used.
+- `name` (String) Sets the name for the Spice channel, which identifies the channel in the configuration.
+
+
+<a id="nestedatt--devices--graphics--spice--clip_board"></a>
+### Nested Schema for `devices.graphics.spice.clip_board`
+
+Required:
+
+- `copy_paste` (String) Determines whether the copy-paste functionality is enabled for the Spice clipboard.
+
+
+<a id="nestedatt--devices--graphics--spice--file_transfer"></a>
+### Nested Schema for `devices.graphics.spice.file_transfer`
+
+Required:
+
+- `enable` (String) Enables or disables file transfer functionality for the Spice connection.
+
+
+<a id="nestedatt--devices--graphics--spice--gl"></a>
+### Nested Schema for `devices.graphics.spice.gl`
+
+Optional:
+
+- `enable` (String) Enables or disables OpenGL support for graphical rendering in the Spice channel.
+- `render_node` (String) Specifies the render node to be used for OpenGL rendering in the Spice graphical environment.
+
+
+<a id="nestedatt--devices--graphics--spice--image"></a>
+### Nested Schema for `devices.graphics.spice.image`
+
+Required:
+
+- `compression` (String) Sets the compression method for graphical images transmitted over the Spice connection.
+
+
+<a id="nestedatt--devices--graphics--spice--jpeg"></a>
+### Nested Schema for `devices.graphics.spice.jpeg`
+
+Required:
+
+- `compression` (String) Sets the JPEG compression quality for images sent via the Spice protocol.
+
+
+<a id="nestedatt--devices--graphics--spice--listeners"></a>
+### Nested Schema for `devices.graphics.spice.listeners`
+
+Optional:
+
+- `address` (Attributes) Specifies the address settings for the Spice listener. (see [below for nested schema](#nestedatt--devices--graphics--spice--listeners--address))
+- `network` (Attributes) Defines network listener settings for the Spice channel, focusing on network-based connections. (see [below for nested schema](#nestedatt--devices--graphics--spice--listeners--network))
+- `socket` (Attributes) Configures socket listener settings for the Spice channel, enabling socket-based connections. (see [below for nested schema](#nestedatt--devices--graphics--spice--listeners--socket))
+
+<a id="nestedatt--devices--graphics--spice--listeners--address"></a>
+### Nested Schema for `devices.graphics.spice.listeners.address`
+
+Optional:
+
+- `address` (String) Sets the actual network address where the Spice listener will accept connections.
+
+
+<a id="nestedatt--devices--graphics--spice--listeners--network"></a>
+### Nested Schema for `devices.graphics.spice.listeners.network`
+
+Optional:
+
+- `address` (String) Sets the network address for the Spice network listener.
+- `network` (String) Specifies the network to which the Spice listener belongs.
+
+
+<a id="nestedatt--devices--graphics--spice--listeners--socket"></a>
+### Nested Schema for `devices.graphics.spice.listeners.socket`
+
+Optional:
+
+- `socket` (String) Defines the socket's attributes for listener configurations in the Spice protocol.
+
+
+
+<a id="nestedatt--devices--graphics--spice--mouse"></a>
+### Nested Schema for `devices.graphics.spice.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for mouse input handling within the Spice graphical environment.
+
+
+<a id="nestedatt--devices--graphics--spice--playback"></a>
+### Nested Schema for `devices.graphics.spice.playback`
+
+Required:
+
+- `compression` (String) Sets compression options for audio and video playback over the Spice connection.
+
+
+<a id="nestedatt--devices--graphics--spice--streaming"></a>
+### Nested Schema for `devices.graphics.spice.streaming`
+
+Required:
+
+- `mode` (String) Sets the operational mode for streaming data in the Spice graphical session.
+
+
+<a id="nestedatt--devices--graphics--spice--zlib"></a>
+### Nested Schema for `devices.graphics.spice.zlib`
+
+Required:
+
+- `compression` (String) Sets the compression level used for zlib in the Spice protocol.
+
 
 
 <a id="nestedatt--devices--graphics--vnc"></a>
@@ -332,38 +6010,1567 @@ Optional:
 
 Optional:
 
-- `autoport` (String) Auto-allocate port (yes/no). Optional.
-- `listen` (String) Listen address for VNC server. Optional.
-- `port` (Number) TCP port for VNC server. Use -1 for auto. Optional.
-- `socket` (String) UNIX socket path for VNC server. Optional.
-- `websocket` (Number) WebSocket port for VNC. Optional.
+- `auto_port` (Boolean) Enables automatic port selection for the VNC server, allowing flexibility for connections.
+- `connected` (String) Indicates whether the VNC graphical interface is currently connected to the client.
+- `keymap` (String) Specifies the keymap for the keyboard input within the VNC session.
+- `listen` (String) Configures the listening options for the VNC server to accept connections.
+- `listeners` (Attributes List) Defines listener settings for the VNC protocol, managing incoming connection handling. (see [below for nested schema](#nestedatt--devices--graphics--vnc--listeners))
+- `passwd` (String) Configures the password required to access the VNC server of the virtual machine.
+- `passwd_valid_to` (String) Sets the expiration timestamp for the VNC password, after which the password will no longer be valid.
+- `port` (Number) Indicates the port on which the VNC server listens for incoming connections.
+- `power_control` (String) Controls the power management behavior for the VNC session, allowing it to manage guest power states.
+- `share_policy` (String) Sets the share policy for the VNC server, determining how multiple connections are handled.
+- `socket` (String) Configures the path of the Unix socket for VNC connections, allowing for secured access.
+- `web_socket` (Number) Enables websocket connections to the VNC server, allowing for browser-based access.
+
+<a id="nestedatt--devices--graphics--vnc--listeners"></a>
+### Nested Schema for `devices.graphics.vnc.listeners`
+
+Optional:
+
+- `address` (Attributes) Specifies the address settings for the Spice listener. (see [below for nested schema](#nestedatt--devices--graphics--vnc--listeners--address))
+- `network` (Attributes) Defines network listener settings for the Spice channel, focusing on network-based connections. (see [below for nested schema](#nestedatt--devices--graphics--vnc--listeners--network))
+- `socket` (Attributes) Configures socket listener settings for the Spice channel, enabling socket-based connections. (see [below for nested schema](#nestedatt--devices--graphics--vnc--listeners--socket))
+
+<a id="nestedatt--devices--graphics--vnc--listeners--address"></a>
+### Nested Schema for `devices.graphics.vnc.listeners.address`
+
+Optional:
+
+- `address` (String) Sets the actual network address where the Spice listener will accept connections.
+
+
+<a id="nestedatt--devices--graphics--vnc--listeners--network"></a>
+### Nested Schema for `devices.graphics.vnc.listeners.network`
+
+Optional:
+
+- `address` (String) Sets the network address for the Spice network listener.
+- `network` (String) Specifies the network to which the Spice listener belongs.
+
+
+<a id="nestedatt--devices--graphics--vnc--listeners--socket"></a>
+### Nested Schema for `devices.graphics.vnc.listeners.socket`
+
+Optional:
+
+- `socket` (String) Defines the socket's attributes for listener configurations in the Spice protocol.
+
+
+
+
+
+<a id="nestedatt--devices--hostdevs"></a>
+### Nested Schema for `devices.hostdevs`
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--hostdevs--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--hostdevs--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--hostdevs--alias))
+- `boot` (Attributes) Configures the boot settings for the redirected device, controlling its initialization at domain startup. (see [below for nested schema](#nestedatt--devices--hostdevs--boot))
+- `caps_misc` (Attributes) Lists the miscellaneous capabilities for the host device, providing extended features available to it. (see [below for nested schema](#nestedatt--devices--hostdevs--caps_misc))
+- `caps_net` (Attributes) Enumerates the network capabilities available to the host device, detailing its network support. (see [below for nested schema](#nestedatt--devices--hostdevs--caps_net))
+- `caps_storage` (Attributes) Enumerates the storage capabilities of the host device, detailing its storage configuration. (see [below for nested schema](#nestedatt--devices--hostdevs--caps_storage))
+- `managed` (Boolean) Indicates whether the host device is managed by the hypervisor or managed externally.
+- `rom` (Attributes) Defines the ROM configuration for the host device, allowing for BIOS settings and options. (see [below for nested schema](#nestedatt--devices--hostdevs--rom))
+- `subsys_m_dev` (Attributes) Configures the multimedia device for the host device, including device attributes and settings. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_m_dev))
+- `subsys_pci` (Attributes) Configures the PCI subsystem settings for the host device, detailing PCI attributes. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_pci))
+- `subsys_scsi` (Attributes) Configures SCSI parameters for the host device passed through to the VM. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi))
+- `subsys_scsi_host` (Attributes) Configures SCSI host device parameters for the host device passed through to the VM. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi_host))
+- `subsys_usb` (Attributes) Configures a USB subsystem device to be utilized by the virtual machine. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_usb))
+
+<a id="nestedatt--devices--hostdevs--acpi"></a>
+### Nested Schema for `devices.hostdevs.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--hostdevs--address"></a>
+### Nested Schema for `devices.hostdevs.address`
+
+
+<a id="nestedatt--devices--hostdevs--alias"></a>
+### Nested Schema for `devices.hostdevs.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--hostdevs--boot"></a>
+### Nested Schema for `devices.hostdevs.boot`
+
+Required:
+
+- `order` (Number) Specifies the boot order for the redirected device, controlling the sequence of device initialization.
+
+Optional:
+
+- `load_parm` (String) Sets the load parameter for the booting process of the redirected device, influencing how it is activated.
+
+
+<a id="nestedatt--devices--hostdevs--caps_misc"></a>
+### Nested Schema for `devices.hostdevs.caps_misc`
+
+Optional:
+
+- `source` (Attributes) Specifies the source attributes for the miscellaneous capabilities of the host device. (see [below for nested schema](#nestedatt--devices--hostdevs--caps_misc--source))
+
+<a id="nestedatt--devices--hostdevs--caps_misc--source"></a>
+### Nested Schema for `devices.hostdevs.caps_misc.source`
+
+Required:
+
+- `char` (String) Defines character-specific attributes for the source of the miscellaneous capabilities.
+
+
+
+<a id="nestedatt--devices--hostdevs--caps_net"></a>
+### Nested Schema for `devices.hostdevs.caps_net`
+
+Optional:
+
+- `ip` (Attributes List) Configures the IP attributes for the host device's network capabilities, including address settings. (see [below for nested schema](#nestedatt--devices--hostdevs--caps_net--ip))
+- `route` (Attributes List) Outlines the routing capabilities associated with the host device's network configuration. (see [below for nested schema](#nestedatt--devices--hostdevs--caps_net--route))
+- `source` (Attributes) Indicates the source parameters related to the host device's network capabilities. (see [below for nested schema](#nestedatt--devices--hostdevs--caps_net--source))
+
+<a id="nestedatt--devices--hostdevs--caps_net--ip"></a>
+### Nested Schema for `devices.hostdevs.caps_net.ip`
+
+Optional:
+
+- `address` (String) Sets the specific IP address assigned to the host device within the network configuration.
+- `family` (String) Defines the address family (IPv4 or IPv6) for the IP configuration of the host device.
+- `prefix` (Number) Specifies the prefix length for the IP address of the host device, determining the subnet.
+
+
+<a id="nestedatt--devices--hostdevs--caps_net--route"></a>
+### Nested Schema for `devices.hostdevs.caps_net.route`
+
+Optional:
+
+- `address` (String) Sets the destination address for the routing configuration of the host device.
+- `family` (String) Specifies the address family for the routing capabilities (IPv4 or IPv6) of the host device.
+- `gateway` (String) Configures the gateway address for the routing capability associated with the host device.
+
+
+<a id="nestedatt--devices--hostdevs--caps_net--source"></a>
+### Nested Schema for `devices.hostdevs.caps_net.source`
+
+Required:
+
+- `interface` (String) Specifies the network interface to which the host device is associated.
+
+
+
+<a id="nestedatt--devices--hostdevs--caps_storage"></a>
+### Nested Schema for `devices.hostdevs.caps_storage`
+
+Optional:
+
+- `source` (Attributes) Sets the source attributes for the host device's storage capabilities. (see [below for nested schema](#nestedatt--devices--hostdevs--caps_storage--source))
+
+<a id="nestedatt--devices--hostdevs--caps_storage--source"></a>
+### Nested Schema for `devices.hostdevs.caps_storage.source`
+
+Required:
+
+- `block` (String) Configures the block storage specific attributes for the host device's storage capabilities.
+
+
+
+<a id="nestedatt--devices--hostdevs--rom"></a>
+### Nested Schema for `devices.hostdevs.rom`
+
+Optional:
+
+- `bar` (String) Configures the BAR settings for the ROM attribute of the host device.
+- `enabled` (String) Sets whether the ROM of the host device is enabled or disabled.
+- `file` (String) Specifies the path to the ROM file used by the host device for initialization.
+
+
+<a id="nestedatt--devices--hostdevs--subsys_m_dev"></a>
+### Nested Schema for `devices.hostdevs.subsys_m_dev`
+
+Optional:
+
+- `display` (String) Sets the display attributes for the multimedia subsystem device.
+- `model` (String) Specifies the model of the multimedia subsystem device being used by the host device.
+- `ram_fb` (String) Configures the video memory settings for the multimedia subsystem device.
+- `source` (Attributes) Defines the source attributes for the multimedia subsystem device. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_m_dev--source))
+
+<a id="nestedatt--devices--hostdevs--subsys_m_dev--source"></a>
+### Nested Schema for `devices.hostdevs.subsys_m_dev.source`
+
+Optional:
+
+- `address` (Attributes) Sets the address for the source of the multimedia subsystem device. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_m_dev--source--address))
+
+<a id="nestedatt--devices--hostdevs--subsys_m_dev--source--address"></a>
+### Nested Schema for `devices.hostdevs.subsys_m_dev.source.address`
+
+Read-Only:
+
+- `uuid` (String) Configures the UUID for the address of the multimedia subsystem device source.
+
+
+
+
+<a id="nestedatt--devices--hostdevs--subsys_pci"></a>
+### Nested Schema for `devices.hostdevs.subsys_pci`
+
+Optional:
+
+- `display` (String) Sets the display attributes for the PCI subsystem device.
+- `driver` (Attributes) Defines the driver configuration for the PCI subsystem device. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_pci--driver))
+- `ram_fb` (String) Configures the use of framebuffer memory for the PCI device.
+- `source` (Attributes) Specifies the source configuration for the PCI device being passed through. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_pci--source))
+- `teaming` (Attributes) Configures the teaming settings for the PCI device. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_pci--teaming))
+
+<a id="nestedatt--devices--hostdevs--subsys_pci--driver"></a>
+### Nested Schema for `devices.hostdevs.subsys_pci.driver`
+
+Optional:
+
+- `model` (String) Specifies the model of the driver being used for the PCI subsystem device.
+- `name` (String) Sets the name of the driver associated with the PCI subsystem device.
+
+
+<a id="nestedatt--devices--hostdevs--subsys_pci--source"></a>
+### Nested Schema for `devices.hostdevs.subsys_pci.source`
+
+Optional:
+
+- `address` (Attributes) Defines the address settings for the PCI device source. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_pci--source--address))
+- `write_filtering` (String) Controls whether write filtering is enabled for the PCI device source.
+
+<a id="nestedatt--devices--hostdevs--subsys_pci--source--address"></a>
+### Nested Schema for `devices.hostdevs.subsys_pci.source.address`
+
+Optional:
+
+- `bus` (Number) Sets the bus number for the PCI device's address.
+- `domain` (Number) Specifies the domain number for the PCI device's address.
+- `function` (Number) Defines the function number of the PCI device's address.
+- `multi_function` (String) Indicates whether multi-function capability is enabled for the PCI device.
+- `slot` (Number) Specifies the slot number in the PCI bus for the device.
+- `zpci` (Attributes) Configures the settings specific to zPCI addressing for the PCI device. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_pci--source--address--zpci))
+
+<a id="nestedatt--devices--hostdevs--subsys_pci--source--address--zpci"></a>
+### Nested Schema for `devices.hostdevs.subsys_pci.source.address.zpci`
+
+Optional:
+
+- `fid` (Number) Sets the function identifier for the zPCI device's address.
+- `uid` (Number) Defines the unique identifier for the zPCI address of the device.
+
+
+
+
+<a id="nestedatt--devices--hostdevs--subsys_pci--teaming"></a>
+### Nested Schema for `devices.hostdevs.subsys_pci.teaming`
+
+Required:
+
+- `type` (String) Defines the type of teaming used for the PCI device.
+
+Optional:
+
+- `persistent` (String) Specifies if the teaming configuration is persistent across reboots.
+
+
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi`
+
+Optional:
+
+- `raw_io` (String) Indicates whether raw I/O access is enabled for the SCSI device.
+- `read_only` (Boolean) Specifies if the SCSI device is set to read-only mode.
+- `sgio` (String) Controls whether SCSI generic I/O is enabled for the device.
+- `shareable` (Boolean) Indicates if the SCSI device can be shared among different guests.
+- `source` (Attributes) Specifies the source configuration for the SCSI device being passed through. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi--source))
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi--source"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi.source`
+
+Optional:
+
+- `host` (Attributes) Configures the host settings for the SCSI device source. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi--source--host))
+- `iscsi` (Attributes) Defines the iSCSI source parameters for the SCSI device. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi--source--iscsi))
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi--source--host"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi.source.host`
+
+Optional:
+
+- `adapter` (Attributes) Defines the adapter settings for the SCSI host source. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi--source--host--adapter))
+- `address` (Attributes) Specifies the address settings for the SCSI host source. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi--source--host--address))
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi--source--host--adapter"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi.source.host.adapter`
+
+Required:
+
+- `name` (String) Sets the name of the SCSI host adapter for the device source.
+
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi--source--host--address"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi.source.host.address`
+
+Optional:
+
+- `bus` (Number) Configures the bus number for the SCSI host address.
+- `controller` (Number) Defines the SCSI controller number for the device's address.
+- `target` (Number) Specifies the target ID for the SCSI device's address.
+- `unit` (Number) Indicates the unit number in the SCSI address for the device.
+
+
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi--source--iscsi"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi.source.iscsi`
+
+Required:
+
+- `name` (String) Specifies the name for the iSCSI source configuration.
+
+Optional:
+
+- `auth` (Attributes) Configures authentication settings for the iSCSI source. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi--source--iscsi--auth))
+- `host` (Attributes List) Configures the iSCSI host settings for the device source. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi--source--iscsi--host))
+- `initiator` (Attributes) Configures the iSCSI initiator settings for the device source. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi--source--iscsi--initiator))
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi--source--iscsi--auth"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi.source.iscsi.auth`
+
+Optional:
+
+- `secret` (Attributes) Specifies the secret used for authenticating the iSCSI connection. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi--source--iscsi--auth--secret))
+- `username` (String) Sets the username for iSCSI authentication.
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi--source--iscsi--auth--secret"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi.source.iscsi.auth.secret`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi--source--iscsi--host"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi.source.iscsi.host`
+
+Optional:
+
+- `name` (String) Defines the name of the iSCSI host for the source configuration.
+- `port` (String) Specifies the port number for the iSCSI host connection.
+- `socket` (String) Sets the socket configuration for the iSCSI host connection.
+- `transport` (String) Specifies the transport method used for the iSCSI host connection.
+
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi--source--iscsi--initiator"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi.source.iscsi.initiator`
+
+Optional:
+
+- `iqn` (Attributes) Defines the IQN (iSCSI Qualified Name) for the iSCSI initiator. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi--source--iscsi--initiator--iqn))
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi--source--iscsi--initiator--iqn"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi.source.iscsi.initiator.iqn`
+
+Required:
+
+- `name` (String) Sets the name for the iSCSI initiator's IQN.
+
+
+
+
+
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi_host"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi_host`
+
+Optional:
+
+- `model` (String) Sets the model attribute for the SCSI host device.
+- `source` (Attributes) Specifies the source configuration for the SCSI host device. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_scsi_host--source))
+
+<a id="nestedatt--devices--hostdevs--subsys_scsi_host--source"></a>
+### Nested Schema for `devices.hostdevs.subsys_scsi_host.source`
+
+Optional:
+
+- `protocol` (String) Defines the protocol type for the SCSI host source.
+- `wwpn` (String) Specifies the World Wide Port Name (WWPN) for the SCSI host source.
+
+
+
+<a id="nestedatt--devices--hostdevs--subsys_usb"></a>
+### Nested Schema for `devices.hostdevs.subsys_usb`
+
+Optional:
+
+- `source` (Attributes) Specifies the source attributes for the USB subsystem device, detailing its origin. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_usb--source))
+
+<a id="nestedatt--devices--hostdevs--subsys_usb--source"></a>
+### Nested Schema for `devices.hostdevs.subsys_usb.source`
+
+Optional:
+
+- `address` (Attributes) Defines the address configuration for the USB subsystem source. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_usb--source--address))
+- `guest_reset` (String) Controls whether the guest can reset the USB device.
+- `product` (Attributes) Identifies the vendor of the USB device. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_usb--source--product))
+- `start_up_policy` (String) Configures the startup policy for the USB subsystem device.
+- `vendor` (Attributes) Identifies the vendor of the USB device. (see [below for nested schema](#nestedatt--devices--hostdevs--subsys_usb--source--vendor))
+
+<a id="nestedatt--devices--hostdevs--subsys_usb--source--address"></a>
+### Nested Schema for `devices.hostdevs.subsys_usb.source.address`
+
+Optional:
+
+- `bus` (Number) Sets the bus identifier where the USB device resides.
+- `device` (Number) Specifies the device identifier corresponding to the USB device.
+- `port` (String) Indicates the port number for the USB device connection.
+
+
+<a id="nestedatt--devices--hostdevs--subsys_usb--source--product"></a>
+### Nested Schema for `devices.hostdevs.subsys_usb.source.product`
+
+Read-Only:
+
+- `id` (String) Specifies the unique identifier for the vendor of the USB device.
+
+
+<a id="nestedatt--devices--hostdevs--subsys_usb--source--vendor"></a>
+### Nested Schema for `devices.hostdevs.subsys_usb.source.vendor`
+
+Read-Only:
+
+- `id` (String) Specifies the unique identifier for the vendor of the USB device.
+
+
+
+
+
+<a id="nestedatt--devices--hubs"></a>
+### Nested Schema for `devices.hubs`
+
+Required:
+
+- `type` (String) Indicates the type of hub device being configured.
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--hubs--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--hubs--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--hubs--alias))
+
+<a id="nestedatt--devices--hubs--acpi"></a>
+### Nested Schema for `devices.hubs.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--hubs--address"></a>
+### Nested Schema for `devices.hubs.address`
+
+
+<a id="nestedatt--devices--hubs--alias"></a>
+### Nested Schema for `devices.hubs.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+
+<a id="nestedatt--devices--inputs"></a>
+### Nested Schema for `devices.inputs`
+
+Required:
+
+- `type` (String) Indicates the type of input device being configured.
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--inputs--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--inputs--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--inputs--alias))
+- `bus` (String) Indicates the bus type for the input device configuration.
+- `driver` (Attributes) Configures the driver associated with the input device. (see [below for nested schema](#nestedatt--devices--inputs--driver))
+- `model` (String) Specifies the model type for the input device.
+- `source` (Attributes) Defines the source configuration for the input device. (see [below for nested schema](#nestedatt--devices--inputs--source))
+
+<a id="nestedatt--devices--inputs--acpi"></a>
+### Nested Schema for `devices.inputs.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--inputs--address"></a>
+### Nested Schema for `devices.inputs.address`
+
+
+<a id="nestedatt--devices--inputs--alias"></a>
+### Nested Schema for `devices.inputs.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--inputs--driver"></a>
+### Nested Schema for `devices.inputs.driver`
+
+Optional:
+
+- `ats` (String) Controls the Address Translation Services (ATS) feature for the input device driver.
+- `iommu` (String) Enables or disables the IOMMU feature for the input device driver.
+- `packed` (String) Configures whether the input device driver uses packed ring.
+- `page_per_vq` (String) Sets the page per virtual queue option for the input device driver.
+
+
+<a id="nestedatt--devices--inputs--source"></a>
+### Nested Schema for `devices.inputs.source`
+
+Optional:
+
+- `ev_dev` (Attributes) Configures an event device as the source for the input device. (see [below for nested schema](#nestedatt--devices--inputs--source--ev_dev))
+- `passthrough` (Attributes) Enables passthrough mode for the input device source configuration. (see [below for nested schema](#nestedatt--devices--inputs--source--passthrough))
+
+<a id="nestedatt--devices--inputs--source--ev_dev"></a>
+### Nested Schema for `devices.inputs.source.ev_dev`
+
+Required:
+
+- `dev` (String) Specifies the device file for the event device source.
+
+Optional:
+
+- `grab` (String) Controls whether the input device source should grab input focus.
+- `grab_toggle` (String) Configures grab toggle settings for the event device source.
+- `repeat` (String) Sets repeat settings for events from the input device source.
+
+
+<a id="nestedatt--devices--inputs--source--passthrough"></a>
+### Nested Schema for `devices.inputs.source.passthrough`
+
+Required:
+
+- `ev_dev` (String) Specifies the event device used in passthrough mode for the input device.
+
 
 
 
 <a id="nestedatt--devices--interfaces"></a>
 ### Nested Schema for `devices.interfaces`
 
-Required:
+Optional:
 
-- `type` (String) Interface type (network, bridge, user, direct, etc.).
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--interfaces--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--interfaces--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--interfaces--alias))
+- `backend` (Attributes) Configures the backend settings for the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--backend))
+- `backend_domain` (Attributes) Specifies the backend domain associated with the interface, allowing for advanced network configurations. (see [below for nested schema](#nestedatt--devices--interfaces--backend_domain))
+- `bandwidth` (Attributes) Configures bandwidth parameters for the interface, controlling the traffic shaping and quality of service settings. (see [below for nested schema](#nestedatt--devices--interfaces--bandwidth))
+- `boot` (Attributes) Configures the boot settings for the redirected device, controlling its initialization at domain startup. (see [below for nested schema](#nestedatt--devices--interfaces--boot))
+- `coalesce` (Attributes) Configures coalescing settings for the interface, optimizing the processing of network packets to reduce overhead and improve performance. (see [below for nested schema](#nestedatt--devices--interfaces--coalesce))
+- `down_script` (Attributes) Specifies a script to be executed when the interface is taken down, allowing for custom cleanup or configuration actions. (see [below for nested schema](#nestedatt--devices--interfaces--down_script))
+- `driver` (Attributes) Configures parameters for the interface driver, which manages the interaction between the virtual network interface and the guest OS. (see [below for nested schema](#nestedatt--devices--interfaces--driver))
+- `filter_ref` (Attributes) Specifies a reference to a filter associated with the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--filter_ref))
+- `guest` (Attributes) Configures guest settings related to the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--guest))
+- `ip` (Attributes List) Configures the IP settings for the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--ip))
+- `link` (Attributes) Defines settings related to the link state of the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--link))
+- `mac` (Attributes) Sets the MAC address for the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--mac))
+- `managed` (Boolean) Indicates whether the interface is managed by libvirt.
+- `model` (Attributes) Configures the model type of the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--model))
+- `mtu` (Attributes) Configures the maximum transmission unit size for the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--mtu))
+- `port_forward` (Attributes List) Configures port forwarding settings for the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--port_forward))
+- `port_options` (Attributes) Configures additional options for network interface ports. (see [below for nested schema](#nestedatt--devices--interfaces--port_options))
+- `rom` (Attributes) Defines the ROM configuration for the host device, allowing for BIOS settings and options. (see [below for nested schema](#nestedatt--devices--interfaces--rom))
+- `route` (Attributes List) Configures routing settings for the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--route))
+- `script` (Attributes) Specifies a script to be executed when the interface is taken down, allowing for custom cleanup or configuration actions. (see [below for nested schema](#nestedatt--devices--interfaces--script))
+- `source` (Attributes) Configures the source of the network interface, specifying how the interface connects to the network. (see [below for nested schema](#nestedatt--devices--interfaces--source))
+- `target` (Attributes) Defines the target interface configuration for the virtual interface. (see [below for nested schema](#nestedatt--devices--interfaces--target))
+- `teaming` (Attributes) Configures the teaming settings for the PCI device. (see [below for nested schema](#nestedatt--devices--interfaces--teaming))
+- `trust_guest_rx_filters` (String) Configures whether to trust guest receive filters on the virtual interface.
+- `tune` (Attributes) Provides tuning options for the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--tune))
+- `virtual_port` (Attributes) Configures the parameters for the virtual port associated with the interface. (see [below for nested schema](#nestedatt--devices--interfaces--virtual_port))
+- `vlan` (Attributes) Configures VLAN settings for the virtual network interface. (see [below for nested schema](#nestedatt--devices--interfaces--vlan))
+- `wait_for_ip` (Attributes) Wait for IP address during domain creation. If specified, Terraform will wait until the interface receives an IP. (see [below for nested schema](#nestedatt--devices--interfaces--wait_for_ip))
+
+<a id="nestedatt--devices--interfaces--acpi"></a>
+### Nested Schema for `devices.interfaces.acpi`
 
 Optional:
 
-- `mac` (String) MAC address for the interface.
-- `model` (String) Device model (virtio, e1000, rtl8139, etc.).
-- `source` (Attributes) Interface source configuration. (see [below for nested schema](#nestedatt--devices--interfaces--source))
-- `wait_for_ip` (Attributes) Wait for IP address during domain creation. If specified, Terraform will poll for an IP address before considering creation complete. If timeout is reached without obtaining an IP, the domain will be destroyed and creation will fail. (see [below for nested schema](#nestedatt--devices--interfaces--wait_for_ip))
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--interfaces--address"></a>
+### Nested Schema for `devices.interfaces.address`
+
+
+<a id="nestedatt--devices--interfaces--alias"></a>
+### Nested Schema for `devices.interfaces.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--interfaces--backend"></a>
+### Nested Schema for `devices.interfaces.backend`
+
+Optional:
+
+- `log_file` (String) Specifies the log file location for the network interface backend.
+- `tap` (String) Controls whether the backend uses a tap device.
+- `type` (String) Configures the type of backend for the interface, specifying how the interface connects to the underlying hardware.
+- `vhost` (String) Controls whether the vhost user mode is enabled for the interface, optimizing network performance by using shared memory.
+
+
+<a id="nestedatt--devices--interfaces--backend_domain"></a>
+### Nested Schema for `devices.interfaces.backend_domain`
+
+Required:
+
+- `name` (String) Sets the name of the backend domain associated with the interface, which links the interface to a specific backend configuration.
+
+
+<a id="nestedatt--devices--interfaces--bandwidth"></a>
+### Nested Schema for `devices.interfaces.bandwidth`
+
+Optional:
+
+- `inbound` (Attributes) Defines outbound bandwidth settings for the interface, managing traffic shaping and quality of service for outgoing traffic. (see [below for nested schema](#nestedatt--devices--interfaces--bandwidth--inbound))
+- `outbound` (Attributes) Defines outbound bandwidth settings for the interface, managing traffic shaping and quality of service for outgoing traffic. (see [below for nested schema](#nestedatt--devices--interfaces--bandwidth--outbound))
+
+<a id="nestedatt--devices--interfaces--bandwidth--inbound"></a>
+### Nested Schema for `devices.interfaces.bandwidth.inbound`
+
+Optional:
+
+- `average` (Number) Sets the average outbound bandwidth limit for the interface, controlling the typical amount of outgoing traffic.
+- `burst` (Number) Configures the maximum burst outbound bandwidth for the interface, allowing for temporary spikes in outgoing traffic.
+- `floor` (Number) Establishes the minimum outbound bandwidth guarantee for the interface, ensuring a baseline level of outgoing traffic availability.
+- `peak` (Number) Sets the peak outbound bandwidth limit for the interface, defining the absolute maximum capacity for outgoing traffic.
+
+
+<a id="nestedatt--devices--interfaces--bandwidth--outbound"></a>
+### Nested Schema for `devices.interfaces.bandwidth.outbound`
+
+Optional:
+
+- `average` (Number) Sets the average outbound bandwidth limit for the interface, controlling the typical amount of outgoing traffic.
+- `burst` (Number) Configures the maximum burst outbound bandwidth for the interface, allowing for temporary spikes in outgoing traffic.
+- `floor` (Number) Establishes the minimum outbound bandwidth guarantee for the interface, ensuring a baseline level of outgoing traffic availability.
+- `peak` (Number) Sets the peak outbound bandwidth limit for the interface, defining the absolute maximum capacity for outgoing traffic.
+
+
+
+<a id="nestedatt--devices--interfaces--boot"></a>
+### Nested Schema for `devices.interfaces.boot`
+
+Required:
+
+- `order` (Number) Specifies the boot order for the redirected device, controlling the sequence of device initialization.
+
+Optional:
+
+- `load_parm` (String) Sets the load parameter for the booting process of the redirected device, influencing how it is activated.
+
+
+<a id="nestedatt--devices--interfaces--coalesce"></a>
+### Nested Schema for `devices.interfaces.coalesce`
+
+Optional:
+
+- `rx` (Attributes) Controls the coalescing settings specifically for received network packets at the interface. (see [below for nested schema](#nestedatt--devices--interfaces--coalesce--rx))
+
+<a id="nestedatt--devices--interfaces--coalesce--rx"></a>
+### Nested Schema for `devices.interfaces.coalesce.rx`
+
+Optional:
+
+- `frames` (Attributes) Configures frame settings for received packets in coalescing, impacting how received packets are grouped for processing. (see [below for nested schema](#nestedatt--devices--interfaces--coalesce--rx--frames))
+
+<a id="nestedatt--devices--interfaces--coalesce--rx--frames"></a>
+### Nested Schema for `devices.interfaces.coalesce.rx.frames`
+
+Optional:
+
+- `max` (Number) Sets the maximum number of frames that can be coalesced for received packets, influencing performance characteristics.
+
+
+
+
+<a id="nestedatt--devices--interfaces--down_script"></a>
+### Nested Schema for `devices.interfaces.down_script`
+
+Required:
+
+- `path` (String) Defines the path to the down script that will be executed when the interface is brought down.
+
+
+<a id="nestedatt--devices--interfaces--driver"></a>
+### Nested Schema for `devices.interfaces.driver`
+
+Optional:
+
+- `ats` (String) Enables or disables Address Translation Services (ATS) for the interface driver, affecting how the interface processes addresses.
+- `event_idx` (String) Controls the event index for the interface driver, which can influence how events are processed and reported.
+- `guest` (Attributes) Sets parameters specific to the guest OS for interface driver configuration, allowing for optimizations tailored to the guest environment. (see [below for nested schema](#nestedatt--devices--interfaces--driver--guest))
+- `host` (Attributes) Configures parameters specific to the host for interface driver settings, influencing how the host interacts with the interface. (see [below for nested schema](#nestedatt--devices--interfaces--driver--host))
+- `io_event_fd` (String) Configures the use of I/O event file descriptors for the interface driver, impacting how I/O operations are managed.
+- `iommu` (String) Enables or disables Input/Output Memory Management Unit (IOMMU) support for the interface driver, which affects memory management for I/O operations.
+- `name` (String) Specifies the name of the driver associated with the interface, allowing for custom driver configurations.
+- `packed` (String) Configures whether packed ring support is enabled or disabled for the driver, impacting how packet data is managed.
+- `page_per_vq` (String) Enables or disables the page per virtual queue feature for the driver, influencing memory management for packet queues.
+- `queues` (Number) Sets the number of queues for the driver, which can enhance performance by distributing traffic across multiple processing paths.
+- `rss` (String) Enables or disables Receive Side Scaling (RSS) for the driver, allowing for better distribution of incoming traffic across CPUs.
+- `rss_hash_report` (String) Controls whether RSS hash reporting is enabled for the driver, influencing how hash values for packet routing are handled.
+- `rx_queue_size` (Number) Configures the size of the receive queue for the driver, impacting how packets are buffered during reception.
+- `tx_mode` (String) Configures the transmission mode for the network interface driver.
+- `tx_queue_size` (Number) Sets the size of the transmit queue for the network interface driver.
+
+<a id="nestedatt--devices--interfaces--driver--guest"></a>
+### Nested Schema for `devices.interfaces.driver.guest`
+
+Optional:
+
+- `csum` (String) Enables or disables checksum offloading for the guest driver, optimizing how checksums are handled for network traffic.
+- `ecn` (String) Configures Explicit Congestion Notification (ECN) support for the guest driver, influencing traffic management strategies.
+- `tso4` (String) Controls TCP Segmentation Offloading (TSO) for IPv4 in the guest driver, enhancing network performance by offloading packet segmentation.
+- `tso6` (String) Controls TCP Segmentation Offloading (TSO) for IPv6 in the guest driver, enhancing network performance by offloading packet segmentation.
+- `ufo` (String) Enables or disables UDP Fragmentation Offloading (UFO) for the guest driver, optimizing the handling of UDP packets.
+
+
+<a id="nestedatt--devices--interfaces--driver--host"></a>
+### Nested Schema for `devices.interfaces.driver.host`
+
+Optional:
+
+- `csum` (String) Enables or disables checksum offloading for the host driver, optimizing how checksums are handled for network traffic on the host.
+- `ecn` (String) Configures Explicit Congestion Notification (ECN) support for the host driver, influencing traffic management strategies at the host level.
+- `gso` (String) Enables or disables Generic Segmentation Offloading (GSO) for the host driver, improving performance by offloading packet segmentation.
+- `mrg_rx_buf` (String) Controls the usage of merged receive buffers for the host driver, optimizing how incoming packets are processed.
+- `tso4` (String) Controls TCP Segmentation Offloading (TSO) for IPv4 in the host driver, enhancing network performance by offloading packet segmentation.
+- `tso6` (String) Controls TCP Segmentation Offloading (TSO) for IPv6 in the host driver, enhancing network performance by offloading packet segmentation.
+- `ufo` (String) Enables or disables UDP Fragmentation Offloading (UFO) for the host driver, optimizing the handling of UDP packets.
+
+
+
+<a id="nestedatt--devices--interfaces--filter_ref"></a>
+### Nested Schema for `devices.interfaces.filter_ref`
+
+Required:
+
+- `filter` (String) Defines the specific filter to apply to the network interface.
+
+Optional:
+
+- `parameters` (Attributes List) Configures parameters for the referenced filter. (see [below for nested schema](#nestedatt--devices--interfaces--filter_ref--parameters))
+
+<a id="nestedatt--devices--interfaces--filter_ref--parameters"></a>
+### Nested Schema for `devices.interfaces.filter_ref.parameters`
+
+Required:
+
+- `name` (String) Sets the name of the filter parameter.
+- `value` (String) Specifies the value associated with the filter parameter.
+
+
+
+<a id="nestedatt--devices--interfaces--guest"></a>
+### Nested Schema for `devices.interfaces.guest`
+
+Optional:
+
+- `actual` (String) Indicates the actual guest device identifier.
+- `dev` (String) Sets the device identifier for the guest network interface.
+
+
+<a id="nestedatt--devices--interfaces--ip"></a>
+### Nested Schema for `devices.interfaces.ip`
+
+Required:
+
+- `address` (String) Specifies the IP address assigned to the interface.
+
+Optional:
+
+- `family` (String) Defines the address family (IPv4 or IPv6) for the interface's IP configuration.
+- `peer` (String) Sets the peer IP address for communication over the interface.
+- `prefix` (Number) Configures the prefix length for the IP address subnet.
+
+
+<a id="nestedatt--devices--interfaces--link"></a>
+### Nested Schema for `devices.interfaces.link`
+
+Required:
+
+- `state` (String) Configures the operational state of the network link (up or down).
+
+
+<a id="nestedatt--devices--interfaces--mac"></a>
+### Nested Schema for `devices.interfaces.mac`
+
+Required:
+
+- `address` (String) Specifies the specific MAC address assigned to the network interface.
+
+Optional:
+
+- `check` (String) Determines whether to validate the MAC address format.
+- `type` (String) Configures the type of MAC address assignment (static or dynamic).
+
+
+<a id="nestedatt--devices--interfaces--model"></a>
+### Nested Schema for `devices.interfaces.model`
+
+Required:
+
+- `type` (String) Sets the specific type of the network interface model.
+
+
+<a id="nestedatt--devices--interfaces--mtu"></a>
+### Nested Schema for `devices.interfaces.mtu`
+
+Required:
+
+- `size` (Number) Sets the specific MTU size for network communication.
+
+
+<a id="nestedatt--devices--interfaces--port_forward"></a>
+### Nested Schema for `devices.interfaces.port_forward`
+
+Required:
+
+- `proto` (String) Configures the protocol used for port forwarding (e.g., TCP or UDP).
+
+Optional:
+
+- `address` (String) Specifies the address to which packets are forwarded.
+- `dev` (String) Sets the device associated with the port forwarding configuration.
+- `ranges` (Attributes List) Defines the range of ports to be forwarded. (see [below for nested schema](#nestedatt--devices--interfaces--port_forward--ranges))
+
+<a id="nestedatt--devices--interfaces--port_forward--ranges"></a>
+### Nested Schema for `devices.interfaces.port_forward.ranges`
+
+Required:
+
+- `start` (Number) Sets the starting port number for the forwarding range.
+
+Optional:
+
+- `end` (Number) Specifies the ending port number in the forwarded range.
+- `exclude` (String) Identifies any excluded ports from the forwarding range.
+- `to` (Number) Specifies the target port to which traffic is forwarded.
+
+
+
+<a id="nestedatt--devices--interfaces--port_options"></a>
+### Nested Schema for `devices.interfaces.port_options`
+
+Optional:
+
+- `isolated` (String) Sets whether the network port's traffic is isolated from others.
+
+
+<a id="nestedatt--devices--interfaces--rom"></a>
+### Nested Schema for `devices.interfaces.rom`
+
+Optional:
+
+- `bar` (String) Configures the BAR settings for the ROM attribute of the host device.
+- `enabled` (String) Sets whether the ROM of the host device is enabled or disabled.
+- `file` (String) Specifies the path to the ROM file used by the host device for initialization.
+
+
+<a id="nestedatt--devices--interfaces--route"></a>
+### Nested Schema for `devices.interfaces.route`
+
+Required:
+
+- `address` (String) Specifies the route destination address.
+- `gateway` (String) Sets the gateway address for the route.
+
+Optional:
+
+- `family` (String) Defines the address family for the routing configuration.
+- `metric` (Number) Configures the routing metric for determining the best route.
+- `netmask` (String) Specifies the netmask for the route configuration.
+- `prefix` (Number) Sets the prefix length for the route configuration.
+
+
+<a id="nestedatt--devices--interfaces--script"></a>
+### Nested Schema for `devices.interfaces.script`
+
+Required:
+
+- `path` (String) Defines the path to the down script that will be executed when the interface is brought down.
+
 
 <a id="nestedatt--devices--interfaces--source"></a>
 ### Nested Schema for `devices.interfaces.source`
 
 Optional:
 
-- `bridge` (String) Bridge name (for type=bridge).
-- `dev` (String) Device name (for type=user or type=direct).
-- `mode` (String) Direct mode (for type=direct). Options: bridge, vepa, private, passthrough.
-- `network` (String) Network name (for type=network).
-- `portgroup` (String) Port group name (for type=network).
+- `bridge` (Attributes) Sets the bridge configuration for the network interface, allowing the interface to connect via a bridge. (see [below for nested schema](#nestedatt--devices--interfaces--source--bridge))
+- `client` (Attributes) Configures the client source for the network interface, typically used for user-mode networking. (see [below for nested schema](#nestedatt--devices--interfaces--source--client))
+- `direct` (Attributes) Configures settings for direct attachment to a physical interface for the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--source--direct))
+- `ethernet` (Attributes) Configures Ethernet settings for the network interface, allowing for low-level network configurations. (see [below for nested schema](#nestedatt--devices--interfaces--source--ethernet))
+- `hostdev` (Attributes) Configures the settings for a host device used in the network interface configuration. (see [below for nested schema](#nestedatt--devices--interfaces--source--hostdev))
+- `internal` (Attributes) Configures the internal settings for the network interface, typically for non-connected setups. (see [below for nested schema](#nestedatt--devices--interfaces--source--internal))
+- `mcast` (Attributes) Configures the multicast settings for the network interface, enabling multicast communication. (see [below for nested schema](#nestedatt--devices--interfaces--source--mcast))
+- `network` (Attributes) Specifies network settings for the interface, configuring its connection to a given network. (see [below for nested schema](#nestedatt--devices--interfaces--source--network))
+- `null` (Boolean) Specifies that the network interface does not connect to any active source, effectively disabling it.
+- `server` (Attributes) Configures source settings to connect the network interface to a specific server. (see [below for nested schema](#nestedatt--devices--interfaces--source--server))
+- `udp` (Attributes) Configures UDP settings for the network interface, allowing for UDP-based communications. (see [below for nested schema](#nestedatt--devices--interfaces--source--udp))
+- `user` (Attributes) Configures user-based settings for the network interface, allowing for user management of the connection. (see [below for nested schema](#nestedatt--devices--interfaces--source--user))
+- `vdpa` (Attributes) Configures settings for using a vDPA network device with the interface, enabling specialized network performance. (see [below for nested schema](#nestedatt--devices--interfaces--source--vdpa))
+- `vds` (Attributes) Configures settings for using a vDS network source with the interface, supporting advanced network features. (see [below for nested schema](#nestedatt--devices--interfaces--source--vds))
+- `vhost_user` (Attributes) Sets configurations for using vhost-user to connect the network interface to a user space application. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user))
+
+<a id="nestedatt--devices--interfaces--source--bridge"></a>
+### Nested Schema for `devices.interfaces.source.bridge`
+
+Required:
+
+- `bridge` (String) Defines the name of the bridge device used by the network interface.
+
+
+<a id="nestedatt--devices--interfaces--source--client"></a>
+### Nested Schema for `devices.interfaces.source.client`
+
+Optional:
+
+- `address` (String) Specifies the address of the client for the network interface.
+- `local` (Attributes) Controls local UDP settings for the network interface, managing configurations for local UDP traffic. (see [below for nested schema](#nestedatt--devices--interfaces--source--client--local))
+- `port` (Number) Specifies the port for the client source of the network interface.
+
+<a id="nestedatt--devices--interfaces--source--client--local"></a>
+### Nested Schema for `devices.interfaces.source.client.local`
+
+Optional:
+
+- `address` (String) Specifies the local address for UDP communications on the network interface.
+- `port` (Number) Sets the local port number for UDP traffic on the network interface.
+
+
+
+<a id="nestedatt--devices--interfaces--source--direct"></a>
+### Nested Schema for `devices.interfaces.source.direct`
+
+Optional:
+
+- `dev` (String) Defines the physical device name for the direct attachment of the network interface.
+- `mode` (String) Sets the mode for the direct connection of the network interface, specifying how it interacts with the host.
+
+
+<a id="nestedatt--devices--interfaces--source--ethernet"></a>
+### Nested Schema for `devices.interfaces.source.ethernet`
+
+Optional:
+
+- `ip` (Attributes List) Configures the IP settings associated with the Ethernet source of the network interface. (see [below for nested schema](#nestedatt--devices--interfaces--source--ethernet--ip))
+- `route` (Attributes List) Configures routing settings for the Ethernet interface, defining how network traffic is managed. (see [below for nested schema](#nestedatt--devices--interfaces--source--ethernet--route))
+
+<a id="nestedatt--devices--interfaces--source--ethernet--ip"></a>
+### Nested Schema for `devices.interfaces.source.ethernet.ip`
+
+Required:
+
+- `address` (String) Specifies the IP address assigned to the interface.
+
+Optional:
+
+- `family` (String) Defines the address family (IPv4 or IPv6) for the interface's IP configuration.
+- `peer` (String) Sets the peer IP address for communication over the interface.
+- `prefix` (Number) Configures the prefix length for the IP address subnet.
+
+
+<a id="nestedatt--devices--interfaces--source--ethernet--route"></a>
+### Nested Schema for `devices.interfaces.source.ethernet.route`
+
+Required:
+
+- `address` (String) Specifies the route destination address.
+- `gateway` (String) Sets the gateway address for the route.
+
+Optional:
+
+- `family` (String) Defines the address family for the routing configuration.
+- `metric` (Number) Configures the routing metric for determining the best route.
+- `netmask` (String) Specifies the netmask for the route configuration.
+- `prefix` (Number) Sets the prefix length for the route configuration.
+
+
+
+<a id="nestedatt--devices--interfaces--source--hostdev"></a>
+### Nested Schema for `devices.interfaces.source.hostdev`
+
+Optional:
+
+- `pci` (Attributes) Specifies the source configuration for the PCI device being passed through. (see [below for nested schema](#nestedatt--devices--interfaces--source--hostdev--pci))
+- `usb` (Attributes) Specifies the source attributes for the USB subsystem device, detailing its origin. (see [below for nested schema](#nestedatt--devices--interfaces--source--hostdev--usb))
+
+<a id="nestedatt--devices--interfaces--source--hostdev--pci"></a>
+### Nested Schema for `devices.interfaces.source.hostdev.pci`
+
+Optional:
+
+- `address` (Attributes) Defines the address settings for the PCI device source. (see [below for nested schema](#nestedatt--devices--interfaces--source--hostdev--pci--address))
+- `write_filtering` (String) Controls whether write filtering is enabled for the PCI device source.
+
+<a id="nestedatt--devices--interfaces--source--hostdev--pci--address"></a>
+### Nested Schema for `devices.interfaces.source.hostdev.pci.address`
+
+Optional:
+
+- `bus` (Number) Sets the bus number for the PCI device's address.
+- `domain` (Number) Specifies the domain number for the PCI device's address.
+- `function` (Number) Defines the function number of the PCI device's address.
+- `multi_function` (String) Indicates whether multi-function capability is enabled for the PCI device.
+- `slot` (Number) Specifies the slot number in the PCI bus for the device.
+- `zpci` (Attributes) Configures the settings specific to zPCI addressing for the PCI device. (see [below for nested schema](#nestedatt--devices--interfaces--source--hostdev--pci--address--zpci))
+
+<a id="nestedatt--devices--interfaces--source--hostdev--pci--address--zpci"></a>
+### Nested Schema for `devices.interfaces.source.hostdev.pci.address.zpci`
+
+Optional:
+
+- `fid` (Number) Sets the function identifier for the zPCI device's address.
+- `uid` (Number) Defines the unique identifier for the zPCI address of the device.
+
+
+
+
+<a id="nestedatt--devices--interfaces--source--hostdev--usb"></a>
+### Nested Schema for `devices.interfaces.source.hostdev.usb`
+
+Optional:
+
+- `address` (Attributes) Defines the address configuration for the USB subsystem source. (see [below for nested schema](#nestedatt--devices--interfaces--source--hostdev--usb--address))
+- `guest_reset` (String) Controls whether the guest can reset the USB device.
+- `product` (Attributes) Identifies the vendor of the USB device. (see [below for nested schema](#nestedatt--devices--interfaces--source--hostdev--usb--product))
+- `start_up_policy` (String) Configures the startup policy for the USB subsystem device.
+- `vendor` (Attributes) Identifies the vendor of the USB device. (see [below for nested schema](#nestedatt--devices--interfaces--source--hostdev--usb--vendor))
+
+<a id="nestedatt--devices--interfaces--source--hostdev--usb--address"></a>
+### Nested Schema for `devices.interfaces.source.hostdev.usb.address`
+
+Optional:
+
+- `bus` (Number) Sets the bus identifier where the USB device resides.
+- `device` (Number) Specifies the device identifier corresponding to the USB device.
+- `port` (String) Indicates the port number for the USB device connection.
+
+
+<a id="nestedatt--devices--interfaces--source--hostdev--usb--product"></a>
+### Nested Schema for `devices.interfaces.source.hostdev.usb.product`
+
+Read-Only:
+
+- `id` (String) Specifies the unique identifier for the vendor of the USB device.
+
+
+<a id="nestedatt--devices--interfaces--source--hostdev--usb--vendor"></a>
+### Nested Schema for `devices.interfaces.source.hostdev.usb.vendor`
+
+Read-Only:
+
+- `id` (String) Specifies the unique identifier for the vendor of the USB device.
+
+
+
+
+<a id="nestedatt--devices--interfaces--source--internal"></a>
+### Nested Schema for `devices.interfaces.source.internal`
+
+Optional:
+
+- `name` (String) Sets the name of the internal network interface.
+
+
+<a id="nestedatt--devices--interfaces--source--mcast"></a>
+### Nested Schema for `devices.interfaces.source.mcast`
+
+Optional:
+
+- `address` (String) Sets the multicast address for the network interface, defining the destination address for multicast packets.
+- `local` (Attributes) Controls local UDP settings for the network interface, managing configurations for local UDP traffic. (see [below for nested schema](#nestedatt--devices--interfaces--source--mcast--local))
+- `port` (Number) Sets the multicast port number for the network interface, determining where multicast packets are sent and received.
+
+<a id="nestedatt--devices--interfaces--source--mcast--local"></a>
+### Nested Schema for `devices.interfaces.source.mcast.local`
+
+Optional:
+
+- `address` (String) Specifies the local address for UDP communications on the network interface.
+- `port` (Number) Sets the local port number for UDP traffic on the network interface.
+
+
+
+<a id="nestedatt--devices--interfaces--source--network"></a>
+### Nested Schema for `devices.interfaces.source.network`
+
+Optional:
+
+- `bridge` (String) Defines the bridge device that connects the network interface to the host's network.
+- `network` (String) Sets the name of the virtual network to which the network interface connects.
+- `port_group` (String) Configures the port group for the network interface, categorizing it within network management frameworks.
+- `port_id` (String) Defines the identifier for the port within the network configuration, aiding in managing network traffic.
+
+
+<a id="nestedatt--devices--interfaces--source--server"></a>
+### Nested Schema for `devices.interfaces.source.server`
+
+Optional:
+
+- `address` (String) Sets the address of the server that the network interface will connect to.
+- `local` (Attributes) Controls local UDP settings for the network interface, managing configurations for local UDP traffic. (see [below for nested schema](#nestedatt--devices--interfaces--source--server--local))
+- `port` (Number) Sets the port number used by the network interface to connect to the specified server.
+
+<a id="nestedatt--devices--interfaces--source--server--local"></a>
+### Nested Schema for `devices.interfaces.source.server.local`
+
+Optional:
+
+- `address` (String) Specifies the local address for UDP communications on the network interface.
+- `port` (Number) Sets the local port number for UDP traffic on the network interface.
+
+
+
+<a id="nestedatt--devices--interfaces--source--udp"></a>
+### Nested Schema for `devices.interfaces.source.udp`
+
+Optional:
+
+- `address` (String) Defines the UDP address for the network interface, specifying where UDP packets are sent or received.
+- `local` (Attributes) Controls local UDP settings for the network interface, managing configurations for local UDP traffic. (see [below for nested schema](#nestedatt--devices--interfaces--source--udp--local))
+- `port` (Number) Defines the UDP port number for the network interface, determining the endpoint for UDP communications.
+
+<a id="nestedatt--devices--interfaces--source--udp--local"></a>
+### Nested Schema for `devices.interfaces.source.udp.local`
+
+Optional:
+
+- `address` (String) Specifies the local address for UDP communications on the network interface.
+- `port` (Number) Sets the local port number for UDP traffic on the network interface.
+
+
+
+<a id="nestedatt--devices--interfaces--source--user"></a>
+### Nested Schema for `devices.interfaces.source.user`
+
+Optional:
+
+- `dev` (String) Sets the device identifier for the user-managed network connection.
+
+
+<a id="nestedatt--devices--interfaces--source--vdpa"></a>
+### Nested Schema for `devices.interfaces.source.vdpa`
+
+Optional:
+
+- `device` (String) Defines the specific vDPA device used for the network interface, facilitating optimized data paths.
+
+
+<a id="nestedatt--devices--interfaces--source--vds"></a>
+### Nested Schema for `devices.interfaces.source.vds`
+
+Required:
+
+- `switch_id` (String) Configures the switch ID for the vDS associated with the network interface.
+
+Optional:
+
+- `connection_id` (Number) Sets the connection identifier for connecting the network interface to the vDS.
+- `port_group_id` (String) Defines the port group identifier for the vDS used by the network interface.
+- `port_id` (Number) Specifies the port ID within the vDS configuration for the network interface.
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user`
+
+Required:
+
+- `dev` (String) Indicates the device name for the VHostUser interface.
+
+Optional:
+
+- `chardev` (Attributes) Defines the source settings for the EGD backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev))
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--nmdm))
+- `null` (Boolean) Configures a null source for the EGD backend.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--spice_port))
+- `spice_vmc` (Boolean) Configures the SPICE VMC settings for the random number generator backend.
+- `std_io` (Boolean) Configures standard input/output settings for the random number generator backend.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--unix))
+- `vc` (Boolean) Configures settings for the virtual console connection in the random number generator backend.
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--dbus"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--dev"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--dev--sec_label))
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--dev--sec_label"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--file"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--file--sec_label))
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--file--sec_label"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--nmdm"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--pipe"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--pipe--sec_label))
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--pipe--sec_label"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--pty"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--pty--sec_label))
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--pty--sec_label"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--qemuvd_agent"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--spice_port"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--tcp"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--tcp--reconnect"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--udp"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--unix"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--interfaces--source--vhost_user--chardev--unix--sec_label))
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--unix--reconnect"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--interfaces--source--vhost_user--chardev--unix--sec_label"></a>
+### Nested Schema for `devices.interfaces.source.vhost_user.chardev.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+
+
+<a id="nestedatt--devices--interfaces--target"></a>
+### Nested Schema for `devices.interfaces.target`
+
+Required:
+
+- `dev` (String) Specifies the device associated with the target interface.
+
+Optional:
+
+- `managed` (Boolean) Controls whether the target interface is managed by the virtual network.
+
+
+<a id="nestedatt--devices--interfaces--teaming"></a>
+### Nested Schema for `devices.interfaces.teaming`
+
+Required:
+
+- `type` (String) Defines the type of teaming used for the PCI device.
+
+Optional:
+
+- `persistent` (String) Specifies if the teaming configuration is persistent across reboots.
+
+
+<a id="nestedatt--devices--interfaces--tune"></a>
+### Nested Schema for `devices.interfaces.tune`
+
+Required:
+
+- `snd_buf` (Number) Specifies the size of the sound buffer for the network interface.
+
+
+<a id="nestedatt--devices--interfaces--virtual_port"></a>
+### Nested Schema for `devices.interfaces.virtual_port`
+
+Optional:
+
+- `params` (Attributes) Contains parameters settings for the virtual port. (see [below for nested schema](#nestedatt--devices--interfaces--virtual_port--params))
+
+<a id="nestedatt--devices--interfaces--virtual_port--params"></a>
+### Nested Schema for `devices.interfaces.virtual_port.params`
+
+Optional:
+
+- `any` (Attributes) Defines any additional parameters for the virtual port configuration. (see [below for nested schema](#nestedatt--devices--interfaces--virtual_port--params--any))
+- `mido_net` (Attributes) Configures parameters specific to the MidoNet virtual port configuration. (see [below for nested schema](#nestedatt--devices--interfaces--virtual_port--params--mido_net))
+- `open_v_switch` (Attributes) Defines parameters specific to the Open vSwitch configuration for the virtual port. (see [below for nested schema](#nestedatt--devices--interfaces--virtual_port--params--open_v_switch))
+- `vepa8021qbg` (Attributes) Configures parameters for the VEPA8021QBG virtual port. (see [below for nested schema](#nestedatt--devices--interfaces--virtual_port--params--vepa8021qbg))
+- `vn_tag8011qbh` (Attributes) Configures parameters for the VNTag8011QBH virtual port. (see [below for nested schema](#nestedatt--devices--interfaces--virtual_port--params--vn_tag8011qbh))
+
+<a id="nestedatt--devices--interfaces--virtual_port--params--any"></a>
+### Nested Schema for `devices.interfaces.virtual_port.params.any`
+
+Optional:
+
+- `instance_id` (String) Sets the instance ID for the virtual port parameter.
+- `interface_id` (String) Specifies the interface ID for the virtual port parameter.
+- `manager_id` (Number) Identifies the manager ID associated with the virtual port parameter.
+- `profile_id` (String) Sets the profile ID for the virtual port parameter.
+- `type_id` (Number) Specifies the type ID for the virtual port parameter.
+- `type_id_version` (Number) Indicates the version of the type ID for the virtual port parameter.
+
+
+<a id="nestedatt--devices--interfaces--virtual_port--params--mido_net"></a>
+### Nested Schema for `devices.interfaces.virtual_port.params.mido_net`
+
+Optional:
+
+- `interface_id` (String) Sets the interface ID for the MidoNet virtual port parameters.
+
+
+<a id="nestedatt--devices--interfaces--virtual_port--params--open_v_switch"></a>
+### Nested Schema for `devices.interfaces.virtual_port.params.open_v_switch`
+
+Optional:
+
+- `interface_id` (String) Specifies the interface ID for the Open vSwitch virtual port parameters.
+- `profile_id` (String) Sets the profile ID for the Open vSwitch virtual port parameters.
+
+
+<a id="nestedatt--devices--interfaces--virtual_port--params--vepa8021qbg"></a>
+### Nested Schema for `devices.interfaces.virtual_port.params.vepa8021qbg`
+
+Optional:
+
+- `instance_id` (String) Sets the instance ID for the VEPA8021QBG virtual port parameters.
+- `manager_id` (Number) Specifies the manager ID for the VEPA8021QBG virtual port parameters.
+- `type_id` (Number) Sets the type ID for the VEPA8021QBG virtual port parameters.
+- `type_id_version` (Number) Indicates the version of the type ID for the VEPA8021QBG virtual port parameters.
+
+
+<a id="nestedatt--devices--interfaces--virtual_port--params--vn_tag8011qbh"></a>
+### Nested Schema for `devices.interfaces.virtual_port.params.vn_tag8011qbh`
+
+Optional:
+
+- `profile_id` (String) Sets the profile ID for the VNTag8011QBH virtual port parameters.
+
+
+
+
+<a id="nestedatt--devices--interfaces--vlan"></a>
+### Nested Schema for `devices.interfaces.vlan`
+
+Optional:
+
+- `tags` (Attributes List) Defines the tags associated with the VLAN configuration. (see [below for nested schema](#nestedatt--devices--interfaces--vlan--tags))
+- `trunk` (String) Indicates if the VLAN is set to trunk mode.
+
+<a id="nestedatt--devices--interfaces--vlan--tags"></a>
+### Nested Schema for `devices.interfaces.vlan.tags`
+
+Optional:
+
+- `native_mode` (String) Configures whether the VLAN tag operates in native mode.
+
+Read-Only:
+
+- `id` (Number) Sets the identifier for the VLAN tag.
+
 
 
 <a id="nestedatt--devices--interfaces--wait_for_ip"></a>
@@ -371,18 +7578,1262 @@ Optional:
 
 Optional:
 
-- `source` (String) Source to query for IP addresses: 'lease' (DHCP), 'agent' (qemu-guest-agent), or 'any' (try both). Default: 'any'.
-- `timeout` (Number) Maximum time to wait for IP address in seconds. Default: 300 (5 minutes).
+- `source` (String) Source to query for IP addresses: 'lease', 'agent', or 'any'. Default: 'any'.
+- `timeout` (Number) Maximum time to wait for IP address in seconds. Default: 300.
+
+
+
+<a id="nestedatt--devices--iommu"></a>
+### Nested Schema for `devices.iommu`
+
+Required:
+
+- `model` (String) Sets the model for the IOMMU device, determining its capabilities and behavior.
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--iommu--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--iommu--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--iommu--alias))
+- `driver` (Attributes) Specifies the driver settings for the IOMMU device. (see [below for nested schema](#nestedatt--devices--iommu--driver))
+
+<a id="nestedatt--devices--iommu--acpi"></a>
+### Nested Schema for `devices.iommu.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--iommu--address"></a>
+### Nested Schema for `devices.iommu.address`
+
+
+<a id="nestedatt--devices--iommu--alias"></a>
+### Nested Schema for `devices.iommu.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--iommu--driver"></a>
+### Nested Schema for `devices.iommu.driver`
+
+Optional:
+
+- `aw_bits` (Number) Configures the address width bits for the IOMMU driver.
+- `caching_mode` (String) Sets the caching mode for the IOMMU device.
+- `dma_translation` (String) Indicates if DMA address translation is enabled for the IOMMU driver.
+- `eim` (String) Configures the EIM (External Interrupt Management) setting for the IOMMU driver.
+- `int_remap` (String) Sets the interrupt remapping feature for the IOMMU driver, allowing for improved handling of interrupts.
+- `iotlb` (String) Enables the IOTLB (Input/Output Translation Lookaside Buffer) feature for the IOMMU driver, optimizing memory translation for I/O devices.
+- `passthrough` (String) Controls the passthrough capability of the IOMMU driver, allowing direct device assignments.
+- `xt_sup` (String) Configures the XT (Extended Translation) support for the IOMMU driver, enabling advanced memory translation features.
+
+
+
+<a id="nestedatt--devices--leases"></a>
+### Nested Schema for `devices.leases`
+
+Required:
+
+- `lockspace` (String) Configures the lockspace for the lease, ensuring exclusive access to the leased device.
+
+Optional:
+
+- `target` (Attributes) Specifies the target configuration for the lease, defining where the lease applies. (see [below for nested schema](#nestedatt--devices--leases--target))
+
+Read-Only:
+
+- `key` (String) Defines a unique key for identifying the lease within the domain configuration.
+
+<a id="nestedatt--devices--leases--target"></a>
+### Nested Schema for `devices.leases.target`
+
+Required:
+
+- `path` (String) Defines the path attribute for the lease target, indicating the specific resource being leased.
+
+Optional:
+
+- `offset` (Number) Sets the offset attribute for the lease target, indicating the starting point for the resource allocation.
+
+
+
+<a id="nestedatt--devices--mem_balloon"></a>
+### Nested Schema for `devices.mem_balloon`
+
+Required:
+
+- `model` (String) Sets the model for the memory balloon device, determining its specific implementation details.
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--mem_balloon--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--mem_balloon--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--mem_balloon--alias))
+- `auto_deflate` (String) Configures automatic deflation of the memory balloon device when memory is freed.
+- `driver` (Attributes) Specifies the driver configuration used for the memory balloon device, determining its operational parameters. (see [below for nested schema](#nestedatt--devices--mem_balloon--driver))
+- `free_page_reporting` (String) Enables reporting of free pages by the memory balloon device, assisting with memory management.
+- `stats` (Attributes) Configures statistics collection for the memory balloon device, enabling performance monitoring. (see [below for nested schema](#nestedatt--devices--mem_balloon--stats))
+
+<a id="nestedatt--devices--mem_balloon--acpi"></a>
+### Nested Schema for `devices.mem_balloon.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--mem_balloon--address"></a>
+### Nested Schema for `devices.mem_balloon.address`
+
+
+<a id="nestedatt--devices--mem_balloon--alias"></a>
+### Nested Schema for `devices.mem_balloon.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--mem_balloon--driver"></a>
+### Nested Schema for `devices.mem_balloon.driver`
+
+Optional:
+
+- `ats` (String) Enables the ATS (Address Translation Services) feature for the memory balloon device driver.
+- `iommu` (String) Configures the use of IOMMU support by the memory balloon device driver.
+- `packed` (String) Sets the packed setting for the memory balloon device driver, allowing for optimized memory usage.
+- `page_per_vq` (String) Configures the use of per-virtqueue pages for the memory balloon device driver, enhancing performance.
+
+
+<a id="nestedatt--devices--mem_balloon--stats"></a>
+### Nested Schema for `devices.mem_balloon.stats`
+
+Required:
+
+- `period` (Number) Specifies the period for gathering statistics from the memory balloon device.
+
+
+
+<a id="nestedatt--devices--memorydevs"></a>
+### Nested Schema for `devices.memorydevs`
+
+Required:
+
+- `model` (String) Sets the model for the memory device, determining its type and capabilities.
+
+Optional:
+
+- `access` (String) Sets the access mode for the memory device, controlling how the memory can be utilized.
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--memorydevs--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--memorydevs--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--memorydevs--alias))
+- `discard` (String) Configures the discard attribute for the memory device, indicating whether memory should be freed.
+- `source` (Attributes) Defines the source configuration for the memory device, indicating the memory backing. (see [below for nested schema](#nestedatt--devices--memorydevs--source))
+- `target` (Attributes) Configures the target settings for the memory device, defining how it connects to the guest. (see [below for nested schema](#nestedatt--devices--memorydevs--target))
+
+Read-Only:
+
+- `uuid` (String) Sets the universally unique identifier for the memory device.
+
+<a id="nestedatt--devices--memorydevs--acpi"></a>
+### Nested Schema for `devices.memorydevs.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--memorydevs--address"></a>
+### Nested Schema for `devices.memorydevs.address`
+
+
+<a id="nestedatt--devices--memorydevs--alias"></a>
+### Nested Schema for `devices.memorydevs.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--memorydevs--source"></a>
+### Nested Schema for `devices.memorydevs.source`
+
+Optional:
+
+- `align_size` (Number) Configures the alignment size for the memory device's source, specifying how it should align in memory.
+- `align_size_unit` (String) Sets the unit of measurement for the alignment size of the memory device's source.
+- `node_mask` (String) Configures the node mask for the memory device's source, determining which memory nodes are accessible.
+- `page_size` (Number) Sets the page size for the memory device's source, configuring how memory is divided into pages.
+- `page_size_unit` (String) Specifies the unit for the page size of the memory device's source.
+- `path` (String) Configures the path for the backing storage of the memory device's source.
+- `pmem` (Boolean) Sets the PMEM (Persistent Memory) configuration for the memory device source, indicating if it should use persistent memory.
+
+
+<a id="nestedatt--devices--memorydevs--target"></a>
+### Nested Schema for `devices.memorydevs.target`
+
+Optional:
+
+- `address` (Attributes) Sets the address attribute for the target of the memory device. (see [below for nested schema](#nestedatt--devices--memorydevs--target--address))
+- `block` (Number) Defines the block attribute for the target of the memory device, related to its configuration.
+- `block_unit` (String)
+- `dynamic_memslots` (String) Configures whether dynamic memory slots are enabled for the memory device.
+- `label` (Attributes) Sets the label for the memory device, which may be a human-readable identifier. (see [below for nested schema](#nestedatt--devices--memorydevs--target--label))
+- `node` (Number) Indicates the node on which the memory device is allocated.
+- `read_only` (Boolean) Controls whether the memory device is configured as read-only.
+- `requested` (Number) Sets the amount of memory requested for the device during allocation.
+- `requested_unit` (String) Specifies the unit of measurement for the requested memory amount.
+- `size` (Number) Configures the size of the memory device to be allocated at boot time.
+- `size_unit` (String) Indicates the unit of measurement for the size of the memory device.
+
+<a id="nestedatt--devices--memorydevs--target--address"></a>
+### Nested Schema for `devices.memorydevs.target.address`
+
+Optional:
+
+- `base` (Number) Configures the base address for the target of the memory device, specifying where it starts in memory.
+
+
+<a id="nestedatt--devices--memorydevs--target--label"></a>
+### Nested Schema for `devices.memorydevs.target.label`
+
+Optional:
+
+- `size` (Number) Defines the size of the memory device label.
+- `size_unit` (String) Specifies the unit of measurement for the size of the memory device label.
+
+
+
+
+<a id="nestedatt--devices--nvram"></a>
+### Nested Schema for `devices.nvram`
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--nvram--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--nvram--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--nvram--alias))
+
+<a id="nestedatt--devices--nvram--acpi"></a>
+### Nested Schema for `devices.nvram.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--nvram--address"></a>
+### Nested Schema for `devices.nvram.address`
+
+
+<a id="nestedatt--devices--nvram--alias"></a>
+### Nested Schema for `devices.nvram.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+
+<a id="nestedatt--devices--panics"></a>
+### Nested Schema for `devices.panics`
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--panics--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--panics--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--panics--alias))
+- `model` (String) Sets the model type for the panic device configuration.
+
+<a id="nestedatt--devices--panics--acpi"></a>
+### Nested Schema for `devices.panics.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--panics--address"></a>
+### Nested Schema for `devices.panics.address`
+
+
+<a id="nestedatt--devices--panics--alias"></a>
+### Nested Schema for `devices.panics.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+
+<a id="nestedatt--devices--parallels"></a>
+### Nested Schema for `devices.parallels`
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--parallels--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--parallels--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--parallels--alias))
+- `log` (Attributes) Specifies the logging options for the channel configuration. (see [below for nested schema](#nestedatt--devices--parallels--log))
+- `protocol` (Attributes) Sets the protocol type for the EGD backend. (see [below for nested schema](#nestedatt--devices--parallels--protocol))
+- `source` (Attributes) Defines the source settings for the EGD backend. (see [below for nested schema](#nestedatt--devices--parallels--source))
+- `target` (Attributes) Defines the target configuration for the parallel device settings within the domain. (see [below for nested schema](#nestedatt--devices--parallels--target))
+
+<a id="nestedatt--devices--parallels--acpi"></a>
+### Nested Schema for `devices.parallels.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--parallels--address"></a>
+### Nested Schema for `devices.parallels.address`
+
+
+<a id="nestedatt--devices--parallels--alias"></a>
+### Nested Schema for `devices.parallels.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--parallels--log"></a>
+### Nested Schema for `devices.parallels.log`
+
+Required:
+
+- `file` (String) Defines the file path where channel logs will be written.
+
+Optional:
+
+- `append` (String) Indicates whether to append log data to the existing log file.
+
+
+<a id="nestedatt--devices--parallels--protocol"></a>
+### Nested Schema for `devices.parallels.protocol`
+
+Required:
+
+- `type` (String) Specifies the type of protocol used for the EGD source backend.
+
+
+<a id="nestedatt--devices--parallels--source"></a>
+### Nested Schema for `devices.parallels.source`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--parallels--source--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--parallels--source--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--parallels--source--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--parallels--source--nmdm))
+- `null` (Boolean) Configures a null source for the EGD backend.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--parallels--source--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--parallels--source--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--parallels--source--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--parallels--source--spice_port))
+- `spice_vmc` (Boolean) Configures the SPICE VMC settings for the random number generator backend.
+- `std_io` (Boolean) Configures standard input/output settings for the random number generator backend.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--parallels--source--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--parallels--source--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--parallels--source--unix))
+- `vc` (Boolean) Configures settings for the virtual console connection in the random number generator backend.
+
+<a id="nestedatt--devices--parallels--source--dbus"></a>
+### Nested Schema for `devices.parallels.source.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--parallels--source--dev"></a>
+### Nested Schema for `devices.parallels.source.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--parallels--source--dev--sec_label))
+
+<a id="nestedatt--devices--parallels--source--dev--sec_label"></a>
+### Nested Schema for `devices.parallels.source.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--parallels--source--file"></a>
+### Nested Schema for `devices.parallels.source.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--parallels--source--file--sec_label))
+
+<a id="nestedatt--devices--parallels--source--file--sec_label"></a>
+### Nested Schema for `devices.parallels.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--parallels--source--nmdm"></a>
+### Nested Schema for `devices.parallels.source.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--parallels--source--pipe"></a>
+### Nested Schema for `devices.parallels.source.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--parallels--source--pipe--sec_label))
+
+<a id="nestedatt--devices--parallels--source--pipe--sec_label"></a>
+### Nested Schema for `devices.parallels.source.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--parallels--source--pty"></a>
+### Nested Schema for `devices.parallels.source.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--parallels--source--pty--sec_label))
+
+<a id="nestedatt--devices--parallels--source--pty--sec_label"></a>
+### Nested Schema for `devices.parallels.source.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--parallels--source--qemuvd_agent"></a>
+### Nested Schema for `devices.parallels.source.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--parallels--source--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--parallels--source--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--parallels--source--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.parallels.source.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--parallels--source--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.parallels.source.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--parallels--source--spice_port"></a>
+### Nested Schema for `devices.parallels.source.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--parallels--source--tcp"></a>
+### Nested Schema for `devices.parallels.source.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--parallels--source--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--parallels--source--tcp--reconnect"></a>
+### Nested Schema for `devices.parallels.source.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--parallels--source--udp"></a>
+### Nested Schema for `devices.parallels.source.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--parallels--source--unix"></a>
+### Nested Schema for `devices.parallels.source.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--parallels--source--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--parallels--source--unix--sec_label))
+
+<a id="nestedatt--devices--parallels--source--unix--reconnect"></a>
+### Nested Schema for `devices.parallels.source.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--parallels--source--unix--sec_label"></a>
+### Nested Schema for `devices.parallels.source.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+<a id="nestedatt--devices--parallels--target"></a>
+### Nested Schema for `devices.parallels.target`
+
+Optional:
+
+- `port` (Number) Specifies the port number for the target parallel device, determining its connection point.
+- `type` (String) Sets the type attribute for the target parallel device, defining its interface specifications.
+
+
+
+<a id="nestedatt--devices--pstore"></a>
+### Nested Schema for `devices.pstore`
+
+Required:
+
+- `backend` (String) Defines the backend type of the persistent storage device, determining its underlying implementation.
+- `path` (String) Specifies the file path for where the persistent store data will be written on the host.
+- `size` (Number) Configures the size of the persistent storage device, determining its capacity for storing logs and states.
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--pstore--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--pstore--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--pstore--alias))
+- `size_unit` (String) Sets the unit of measurement for the size of the persistent storage device, indicating its size metric.
+
+<a id="nestedatt--devices--pstore--acpi"></a>
+### Nested Schema for `devices.pstore.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--pstore--address"></a>
+### Nested Schema for `devices.pstore.address`
+
+
+<a id="nestedatt--devices--pstore--alias"></a>
+### Nested Schema for `devices.pstore.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+
+<a id="nestedatt--devices--redir_devs"></a>
+### Nested Schema for `devices.redir_devs`
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--redir_devs--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--redir_devs--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--redir_devs--alias))
+- `boot` (Attributes) Configures the boot settings for the redirected device, controlling its initialization at domain startup. (see [below for nested schema](#nestedatt--devices--redir_devs--boot))
+- `bus` (String) Defines the bus type for the redirected device, determining how it interacts with the guest's bus architecture.
+- `protocol` (Attributes) Sets the protocol type for the EGD backend. (see [below for nested schema](#nestedatt--devices--redir_devs--protocol))
+- `source` (Attributes) Defines the source settings for the EGD backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source))
+
+<a id="nestedatt--devices--redir_devs--acpi"></a>
+### Nested Schema for `devices.redir_devs.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--redir_devs--address"></a>
+### Nested Schema for `devices.redir_devs.address`
+
+
+<a id="nestedatt--devices--redir_devs--alias"></a>
+### Nested Schema for `devices.redir_devs.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--redir_devs--boot"></a>
+### Nested Schema for `devices.redir_devs.boot`
+
+Required:
+
+- `order` (Number) Specifies the boot order for the redirected device, controlling the sequence of device initialization.
+
+Optional:
+
+- `load_parm` (String) Sets the load parameter for the booting process of the redirected device, influencing how it is activated.
+
+
+<a id="nestedatt--devices--redir_devs--protocol"></a>
+### Nested Schema for `devices.redir_devs.protocol`
+
+Required:
+
+- `type` (String) Specifies the type of protocol used for the EGD source backend.
+
+
+<a id="nestedatt--devices--redir_devs--source"></a>
+### Nested Schema for `devices.redir_devs.source`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--nmdm))
+- `null` (Boolean) Configures a null source for the EGD backend.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--spice_port))
+- `spice_vmc` (Boolean) Configures the SPICE VMC settings for the random number generator backend.
+- `std_io` (Boolean) Configures standard input/output settings for the random number generator backend.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--unix))
+- `vc` (Boolean) Configures settings for the virtual console connection in the random number generator backend.
+
+<a id="nestedatt--devices--redir_devs--source--dbus"></a>
+### Nested Schema for `devices.redir_devs.source.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--redir_devs--source--dev"></a>
+### Nested Schema for `devices.redir_devs.source.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--dev--sec_label))
+
+<a id="nestedatt--devices--redir_devs--source--dev--sec_label"></a>
+### Nested Schema for `devices.redir_devs.source.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--redir_devs--source--file"></a>
+### Nested Schema for `devices.redir_devs.source.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--file--sec_label))
+
+<a id="nestedatt--devices--redir_devs--source--file--sec_label"></a>
+### Nested Schema for `devices.redir_devs.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--redir_devs--source--nmdm"></a>
+### Nested Schema for `devices.redir_devs.source.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--redir_devs--source--pipe"></a>
+### Nested Schema for `devices.redir_devs.source.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--pipe--sec_label))
+
+<a id="nestedatt--devices--redir_devs--source--pipe--sec_label"></a>
+### Nested Schema for `devices.redir_devs.source.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--redir_devs--source--pty"></a>
+### Nested Schema for `devices.redir_devs.source.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--redir_devs--source--pty--sec_label))
+
+<a id="nestedatt--devices--redir_devs--source--pty--sec_label"></a>
+### Nested Schema for `devices.redir_devs.source.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--redir_devs--source--qemuvd_agent"></a>
+### Nested Schema for `devices.redir_devs.source.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--redir_devs--source--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--redir_devs--source--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--redir_devs--source--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.redir_devs.source.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--redir_devs--source--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.redir_devs.source.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--redir_devs--source--spice_port"></a>
+### Nested Schema for `devices.redir_devs.source.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--redir_devs--source--tcp"></a>
+### Nested Schema for `devices.redir_devs.source.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--redir_devs--source--tcp--reconnect"></a>
+### Nested Schema for `devices.redir_devs.source.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--redir_devs--source--udp"></a>
+### Nested Schema for `devices.redir_devs.source.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--redir_devs--source--unix"></a>
+### Nested Schema for `devices.redir_devs.source.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--redir_devs--source--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--redir_devs--source--unix--sec_label))
+
+<a id="nestedatt--devices--redir_devs--source--unix--reconnect"></a>
+### Nested Schema for `devices.redir_devs.source.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--redir_devs--source--unix--sec_label"></a>
+### Nested Schema for `devices.redir_devs.source.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+
+<a id="nestedatt--devices--redir_filters"></a>
+### Nested Schema for `devices.redir_filters`
+
+Optional:
+
+- `usb` (Attributes List) Sets the parameters for the USB device redirection filter. (see [below for nested schema](#nestedatt--devices--redir_filters--usb))
+
+<a id="nestedatt--devices--redir_filters--usb"></a>
+### Nested Schema for `devices.redir_filters.usb`
+
+Required:
+
+- `allow` (String) Controls whether the USB device is allowed for redirection.
+
+Optional:
+
+- `class` (Number) Specifies the USB class type for the redirection filter.
+- `product` (Number) Sets the product ID of the USB device for the redirection filter.
+- `vendor` (Number) Specifies the vendor ID of the USB device for the redirection filter.
+- `version` (String) Sets the version of the USB device for the redirection filter.
 
 
 
 <a id="nestedatt--devices--rngs"></a>
 ### Nested Schema for `devices.rngs`
 
+Required:
+
+- `model` (String) Sets the model type for the random number generator device.
+
 Optional:
 
-- `device` (String) Backend random device path (e.g., /dev/random, /dev/urandom, /dev/hwrng). Defaults to /dev/urandom.
-- `model` (String) RNG device model (virtio, virtio-transitional, virtio-non-transitional). Defaults to virtio.
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--rngs--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--rngs--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--rngs--alias))
+- `backend` (Attributes) Configures the backend settings for the random number generator device. (see [below for nested schema](#nestedatt--devices--rngs--backend))
+- `driver` (Attributes) Specifies the driver settings for the random number generator device. (see [below for nested schema](#nestedatt--devices--rngs--driver))
+- `rate` (Attributes) Configures the rate of data provided by the random number generator device. (see [below for nested schema](#nestedatt--devices--rngs--rate))
+
+<a id="nestedatt--devices--rngs--acpi"></a>
+### Nested Schema for `devices.rngs.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--rngs--address"></a>
+### Nested Schema for `devices.rngs.address`
+
+
+<a id="nestedatt--devices--rngs--alias"></a>
+### Nested Schema for `devices.rngs.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--rngs--backend"></a>
+### Nested Schema for `devices.rngs.backend`
+
+Optional:
+
+- `built_in` (Boolean) Specifies that the random number generator source is built-in to the system.
+- `egd` (Attributes) Configures the Entropy Gathering Daemon (EGD) as the backend for the random number generator. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd))
+- `random` (String) Configures the random number generator backend used for providing randomness.
+
+<a id="nestedatt--devices--rngs--backend--egd"></a>
+### Nested Schema for `devices.rngs.backend.egd`
+
+Optional:
+
+- `protocol` (Attributes) Sets the protocol type for the EGD backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--protocol))
+- `source` (Attributes) Defines the source settings for the EGD backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source))
+
+<a id="nestedatt--devices--rngs--backend--egd--protocol"></a>
+### Nested Schema for `devices.rngs.backend.egd.protocol`
+
+Required:
+
+- `type` (String) Specifies the type of protocol used for the EGD source backend.
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source"></a>
+### Nested Schema for `devices.rngs.backend.egd.source`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--nmdm))
+- `null` (Boolean) Configures a null source for the EGD backend.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--spice_port))
+- `spice_vmc` (Boolean) Configures the SPICE VMC settings for the random number generator backend.
+- `std_io` (Boolean) Configures standard input/output settings for the random number generator backend.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--unix))
+- `vc` (Boolean) Configures settings for the virtual console connection in the random number generator backend.
+
+<a id="nestedatt--devices--rngs--backend--egd--source--dbus"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source--dev"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--dev--sec_label))
+
+<a id="nestedatt--devices--rngs--backend--egd--source--dev--sec_label"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source--file"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--file--sec_label))
+
+<a id="nestedatt--devices--rngs--backend--egd--source--file--sec_label"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source--nmdm"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source--pipe"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--pipe--sec_label))
+
+<a id="nestedatt--devices--rngs--backend--egd--source--pipe--sec_label"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source--pty"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--pty--sec_label))
+
+<a id="nestedatt--devices--rngs--backend--egd--source--pty--sec_label"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source--qemuvd_agent"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--rngs--backend--egd--source--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source--spice_port"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source--tcp"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--rngs--backend--egd--source--tcp--reconnect"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source--udp"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source--unix"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--rngs--backend--egd--source--unix--sec_label))
+
+<a id="nestedatt--devices--rngs--backend--egd--source--unix--reconnect"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--rngs--backend--egd--source--unix--sec_label"></a>
+### Nested Schema for `devices.rngs.backend.egd.source.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+
+
+<a id="nestedatt--devices--rngs--driver"></a>
+### Nested Schema for `devices.rngs.driver`
+
+Optional:
+
+- `ats` (String) Enables or disables Address Translation Services (ATS) for the random number generator driver.
+- `iommu` (String) Enables or disables I/O Memory Management Unit (IOMMU) for the random number generator driver.
+- `packed` (String) Indicates whether packed ring buffers are used for the random number generator driver.
+- `page_per_vq` (String) Configures the page per virtual queue setting for the random number generator driver.
+
+
+<a id="nestedatt--devices--rngs--rate"></a>
+### Nested Schema for `devices.rngs.rate`
+
+Required:
+
+- `bytes` (Number) Sets the rate of bytes per time unit for the random number generator.
+
+Optional:
+
+- `period` (Number) Defines the period duration for the rate settings of the random number generator.
+
 
 
 <a id="nestedatt--devices--serials"></a>
@@ -390,10 +8841,722 @@ Optional:
 
 Optional:
 
-- `source_path` (String) Source path for file or unix socket types. Optional.
-- `target_port` (Number) Target port number. Optional.
-- `target_type` (String) Target type (isa-serial, usb-serial, pci-serial, etc.). Optional.
-- `type` (String) Serial source type (pty, file, unix, tcp, etc.). Optional, defaults to pty.
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--serials--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--serials--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--serials--alias))
+- `log` (Attributes) Specifies the logging options for the channel configuration. (see [below for nested schema](#nestedatt--devices--serials--log))
+- `protocol` (Attributes) Sets the protocol type for the EGD backend. (see [below for nested schema](#nestedatt--devices--serials--protocol))
+- `source` (Attributes) Defines the source settings for the EGD backend. (see [below for nested schema](#nestedatt--devices--serials--source))
+- `target` (Attributes) Configures the target settings for the serial device, specifying where output is directed. (see [below for nested schema](#nestedatt--devices--serials--target))
+
+<a id="nestedatt--devices--serials--acpi"></a>
+### Nested Schema for `devices.serials.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--serials--address"></a>
+### Nested Schema for `devices.serials.address`
+
+
+<a id="nestedatt--devices--serials--alias"></a>
+### Nested Schema for `devices.serials.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--serials--log"></a>
+### Nested Schema for `devices.serials.log`
+
+Required:
+
+- `file` (String) Defines the file path where channel logs will be written.
+
+Optional:
+
+- `append` (String) Indicates whether to append log data to the existing log file.
+
+
+<a id="nestedatt--devices--serials--protocol"></a>
+### Nested Schema for `devices.serials.protocol`
+
+Required:
+
+- `type` (String) Specifies the type of protocol used for the EGD source backend.
+
+
+<a id="nestedatt--devices--serials--source"></a>
+### Nested Schema for `devices.serials.source`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--serials--source--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--serials--source--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--serials--source--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--serials--source--nmdm))
+- `null` (Boolean) Configures a null source for the EGD backend.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--serials--source--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--serials--source--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--serials--source--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--serials--source--spice_port))
+- `spice_vmc` (Boolean) Configures the SPICE VMC settings for the random number generator backend.
+- `std_io` (Boolean) Configures standard input/output settings for the random number generator backend.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--serials--source--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--serials--source--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--serials--source--unix))
+- `vc` (Boolean) Configures settings for the virtual console connection in the random number generator backend.
+
+<a id="nestedatt--devices--serials--source--dbus"></a>
+### Nested Schema for `devices.serials.source.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--serials--source--dev"></a>
+### Nested Schema for `devices.serials.source.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--serials--source--dev--sec_label))
+
+<a id="nestedatt--devices--serials--source--dev--sec_label"></a>
+### Nested Schema for `devices.serials.source.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--serials--source--file"></a>
+### Nested Schema for `devices.serials.source.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--serials--source--file--sec_label))
+
+<a id="nestedatt--devices--serials--source--file--sec_label"></a>
+### Nested Schema for `devices.serials.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--serials--source--nmdm"></a>
+### Nested Schema for `devices.serials.source.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--serials--source--pipe"></a>
+### Nested Schema for `devices.serials.source.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--serials--source--pipe--sec_label))
+
+<a id="nestedatt--devices--serials--source--pipe--sec_label"></a>
+### Nested Schema for `devices.serials.source.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--serials--source--pty"></a>
+### Nested Schema for `devices.serials.source.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--serials--source--pty--sec_label))
+
+<a id="nestedatt--devices--serials--source--pty--sec_label"></a>
+### Nested Schema for `devices.serials.source.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--serials--source--qemuvd_agent"></a>
+### Nested Schema for `devices.serials.source.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--serials--source--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--serials--source--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--serials--source--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.serials.source.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--serials--source--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.serials.source.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--serials--source--spice_port"></a>
+### Nested Schema for `devices.serials.source.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--serials--source--tcp"></a>
+### Nested Schema for `devices.serials.source.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--serials--source--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--serials--source--tcp--reconnect"></a>
+### Nested Schema for `devices.serials.source.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--serials--source--udp"></a>
+### Nested Schema for `devices.serials.source.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--serials--source--unix"></a>
+### Nested Schema for `devices.serials.source.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--serials--source--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--serials--source--unix--sec_label))
+
+<a id="nestedatt--devices--serials--source--unix--reconnect"></a>
+### Nested Schema for `devices.serials.source.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--serials--source--unix--sec_label"></a>
+### Nested Schema for `devices.serials.source.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+<a id="nestedatt--devices--serials--target"></a>
+### Nested Schema for `devices.serials.target`
+
+Optional:
+
+- `model` (Attributes) Sets the model type for the target serial device, defining its emulation characteristics. (see [below for nested schema](#nestedatt--devices--serials--target--model))
+- `port` (Number) Sets the port number for the target serial device, determining its communication endpoint.
+- `type` (String) Specifies the type of the target serial device, indicating its nature or protocol.
+
+<a id="nestedatt--devices--serials--target--model"></a>
+### Nested Schema for `devices.serials.target.model`
+
+Optional:
+
+- `name` (String) Specifies the name attribute for the model of the target serial device.
+
+
+
+
+<a id="nestedatt--devices--shmems"></a>
+### Nested Schema for `devices.shmems`
+
+Required:
+
+- `name` (String) Specifies the name attribute for the shared memory device, acting as its identifier.
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--shmems--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--shmems--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--shmems--alias))
+- `model` (Attributes) Configures the model type for the shared memory device, defining the emulated functionality. (see [below for nested schema](#nestedatt--devices--shmems--model))
+- `msi` (Attributes) Configures MSI settings for the shared memory device, enhancing interrupt handling. (see [below for nested schema](#nestedatt--devices--shmems--msi))
+- `role` (String) Sets the role for the shared memory device, defining its purpose within the configuration.
+- `server` (Attributes) Configures server parameters for the shared memory device, enabling network-based communication. (see [below for nested schema](#nestedatt--devices--shmems--server))
+- `size` (Number) Configures the size of the shared memory device allocated for the guest.
+- `size_unit` (String) Sets the unit of measurement for the shared memory size, such as bytes or kilobytes.
+
+<a id="nestedatt--devices--shmems--acpi"></a>
+### Nested Schema for `devices.shmems.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--shmems--address"></a>
+### Nested Schema for `devices.shmems.address`
+
+
+<a id="nestedatt--devices--shmems--alias"></a>
+### Nested Schema for `devices.shmems.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--shmems--model"></a>
+### Nested Schema for `devices.shmems.model`
+
+Required:
+
+- `type` (String) Sets the type attribute for the model of the shared memory device.
+
+
+<a id="nestedatt--devices--shmems--msi"></a>
+### Nested Schema for `devices.shmems.msi`
+
+Optional:
+
+- `enabled` (String) Enables or disables MSI for the shared memory device, controlling interrupt generation.
+- `io_event_fd` (String) Configures the IO event file descriptor for MSI handling in the shared memory device.
+- `vectors` (Number) Sets the number of IRQ vectors available for the MSI configuration of the shared memory device.
+
+
+<a id="nestedatt--devices--shmems--server"></a>
+### Nested Schema for `devices.shmems.server`
+
+Optional:
+
+- `path` (String) Specifies the path for the server related to the shared memory device.
+
+
+
+<a id="nestedatt--devices--smartcards"></a>
+### Nested Schema for `devices.smartcards`
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--smartcards--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--smartcards--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--smartcards--alias))
+- `database` (String) Specifies the file path to the database to be used by the smartcard.
+- `host` (Boolean) Configures the host reference for the smartcard device.
+- `host_certs` (Attributes List) Defines the path to the host certificates used for the smartcard. (see [below for nested schema](#nestedatt--devices--smartcards--host_certs))
+- `passthrough` (Attributes) Defines the source settings for the EGD backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough))
+- `protocol` (Attributes) Sets the protocol type for the EGD backend. (see [below for nested schema](#nestedatt--devices--smartcards--protocol))
+
+<a id="nestedatt--devices--smartcards--acpi"></a>
+### Nested Schema for `devices.smartcards.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--smartcards--address"></a>
+### Nested Schema for `devices.smartcards.address`
+
+
+<a id="nestedatt--devices--smartcards--alias"></a>
+### Nested Schema for `devices.smartcards.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--smartcards--host_certs"></a>
+### Nested Schema for `devices.smartcards.host_certs`
+
+Required:
+
+- `file` (String) Specifies the file path for the host certificate linked to the smartcard.
+
+
+<a id="nestedatt--devices--smartcards--passthrough"></a>
+### Nested Schema for `devices.smartcards.passthrough`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--nmdm))
+- `null` (Boolean) Configures a null source for the EGD backend.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--spice_port))
+- `spice_vmc` (Boolean) Configures the SPICE VMC settings for the random number generator backend.
+- `std_io` (Boolean) Configures standard input/output settings for the random number generator backend.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--unix))
+- `vc` (Boolean) Configures settings for the virtual console connection in the random number generator backend.
+
+<a id="nestedatt--devices--smartcards--passthrough--dbus"></a>
+### Nested Schema for `devices.smartcards.passthrough.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--smartcards--passthrough--dev"></a>
+### Nested Schema for `devices.smartcards.passthrough.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--dev--sec_label))
+
+<a id="nestedatt--devices--smartcards--passthrough--dev--sec_label"></a>
+### Nested Schema for `devices.smartcards.passthrough.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--smartcards--passthrough--file"></a>
+### Nested Schema for `devices.smartcards.passthrough.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--file--sec_label))
+
+<a id="nestedatt--devices--smartcards--passthrough--file--sec_label"></a>
+### Nested Schema for `devices.smartcards.passthrough.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--smartcards--passthrough--nmdm"></a>
+### Nested Schema for `devices.smartcards.passthrough.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--smartcards--passthrough--pipe"></a>
+### Nested Schema for `devices.smartcards.passthrough.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--pipe--sec_label))
+
+<a id="nestedatt--devices--smartcards--passthrough--pipe--sec_label"></a>
+### Nested Schema for `devices.smartcards.passthrough.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--smartcards--passthrough--pty"></a>
+### Nested Schema for `devices.smartcards.passthrough.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--pty--sec_label))
+
+<a id="nestedatt--devices--smartcards--passthrough--pty--sec_label"></a>
+### Nested Schema for `devices.smartcards.passthrough.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--smartcards--passthrough--qemuvd_agent"></a>
+### Nested Schema for `devices.smartcards.passthrough.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--smartcards--passthrough--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.smartcards.passthrough.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--smartcards--passthrough--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.smartcards.passthrough.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--smartcards--passthrough--spice_port"></a>
+### Nested Schema for `devices.smartcards.passthrough.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--smartcards--passthrough--tcp"></a>
+### Nested Schema for `devices.smartcards.passthrough.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--smartcards--passthrough--tcp--reconnect"></a>
+### Nested Schema for `devices.smartcards.passthrough.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--smartcards--passthrough--udp"></a>
+### Nested Schema for `devices.smartcards.passthrough.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--smartcards--passthrough--unix"></a>
+### Nested Schema for `devices.smartcards.passthrough.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--smartcards--passthrough--unix--sec_label))
+
+<a id="nestedatt--devices--smartcards--passthrough--unix--reconnect"></a>
+### Nested Schema for `devices.smartcards.passthrough.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--smartcards--passthrough--unix--sec_label"></a>
+### Nested Schema for `devices.smartcards.passthrough.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+<a id="nestedatt--devices--smartcards--protocol"></a>
+### Nested Schema for `devices.smartcards.protocol`
+
+Required:
+
+- `type` (String) Specifies the type of protocol used for the EGD source backend.
+
+
+
+<a id="nestedatt--devices--sounds"></a>
+### Nested Schema for `devices.sounds`
+
+Required:
+
+- `model` (String) This field specifies the model of the sound device in the guest domain configuration.
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--sounds--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--sounds--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--sounds--alias))
+- `audio` (Attributes) This field specifies the audio configuration for the sound device in the guest domain. (see [below for nested schema](#nestedatt--devices--sounds--audio))
+- `codec` (Attributes List) This field configures the codec settings for the audio device in the domain. (see [below for nested schema](#nestedatt--devices--sounds--codec))
+- `driver` (Attributes) This field sets the driver configuration for the sound device in the domain. (see [below for nested schema](#nestedatt--devices--sounds--driver))
+- `multi_channel` (String) Configures whether the sound device supports multi-channel audio output.
+- `streams` (Number) Sets the number of audio streams supported by the sound device.
+
+<a id="nestedatt--devices--sounds--acpi"></a>
+### Nested Schema for `devices.sounds.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--sounds--address"></a>
+### Nested Schema for `devices.sounds.address`
+
+
+<a id="nestedatt--devices--sounds--alias"></a>
+### Nested Schema for `devices.sounds.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--sounds--audio"></a>
+### Nested Schema for `devices.sounds.audio`
+
+Read-Only:
+
+- `id` (Number) This field sets the identifier for the audio configuration in the sound device of the domain.
+
+
+<a id="nestedatt--devices--sounds--codec"></a>
+### Nested Schema for `devices.sounds.codec`
+
+Required:
+
+- `type` (String) This field specifies the type of codec used in the sound device configuration for the domain.
+
+
+<a id="nestedatt--devices--sounds--driver"></a>
+### Nested Schema for `devices.sounds.driver`
+
+Optional:
+
+- `ats` (String) This field determines whether the ATS feature is enabled for the sound device driver in the domain.
+- `iommu` (String) This field configures the IOMMU settings for the sound device driver in the guest domain.
+- `packed` (String) This field enables or disables packed mode for the sound device driver configuration in the domain.
+- `page_per_vq` (String) This field sets the page per virtual queue attribute for the sound device driver in the domain.
+
 
 
 <a id="nestedatt--devices--tpms"></a>
@@ -401,20 +9564,537 @@ Optional:
 
 Optional:
 
-- `backend_device_path` (String) Device path for passthrough backend (e.g., '/dev/tpm0'). Only used with backend_type='passthrough'.
-- `backend_encryption_secret` (String) UUID of secret for encrypted state persistence. Only used with backend_type='emulator'.
-- `backend_persistent_state` (Boolean) Whether TPM state should be persistent across VM restarts. Only used with backend_type='emulator'.
-- `backend_type` (String) TPM backend type ('passthrough', 'emulator'). Defaults to 'emulator'.
-- `backend_version` (String) TPM backend version (e.g., '2.0'). Only used with backend_type='emulator'.
-- `model` (String) TPM device model (e.g., 'tpm-tis', 'tpm-crb', 'tpm-spapr').
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--tpms--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--tpms--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--tpms--alias))
+- `backend` (Attributes) Configures the backend settings for the TPM device, determining its operation mode. (see [below for nested schema](#nestedatt--devices--tpms--backend))
+- `model` (String) Defines the model of the TPM device to be used by the domain.
 
-
-<a id="nestedatt--devices--video"></a>
-### Nested Schema for `devices.video`
+<a id="nestedatt--devices--tpms--acpi"></a>
+### Nested Schema for `devices.tpms.acpi`
 
 Optional:
 
-- `type` (String) Video device model type (e.g., cirrus, vga, qxl, virtio, vbox, vmvga, gop). Optional.
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--tpms--address"></a>
+### Nested Schema for `devices.tpms.address`
+
+
+<a id="nestedatt--devices--tpms--alias"></a>
+### Nested Schema for `devices.tpms.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--tpms--backend"></a>
+### Nested Schema for `devices.tpms.backend`
+
+Optional:
+
+- `emulator` (Attributes) Configures the emulator backend for the TPM device, which handles its operations. (see [below for nested schema](#nestedatt--devices--tpms--backend--emulator))
+- `external` (Attributes) Configures external settings for the TPM backend to use an external TPM device. (see [below for nested schema](#nestedatt--devices--tpms--backend--external))
+- `passthrough` (Attributes) Configures the backend for the TPM device to be in passthrough mode, allowing direct access to the host's TPM functionality. (see [below for nested schema](#nestedatt--devices--tpms--backend--passthrough))
+
+<a id="nestedatt--devices--tpms--backend--emulator"></a>
+### Nested Schema for `devices.tpms.backend.emulator`
+
+Optional:
+
+- `active_pcr_banks` (Attributes) Sets the active PCR (Platform Configuration Register) banks for the emulator TPM backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--emulator--active_pcr_banks))
+- `debug` (Number) Enables or disables debug mode for the emulator TPM backend.
+- `encryption` (Attributes) Configures encryption settings for the emulator TPM backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--emulator--encryption))
+- `persistent_state` (String) Configures whether the emulator TPM keeps its state persistent across reboots.
+- `profile` (Attributes) Sets the profile configuration for the emulator TPM backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--emulator--profile))
+- `source` (Attributes) Configures the source settings for the emulator TPM backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--emulator--source))
+- `version` (String) Configures the version attributes for the emulator TPM backend.
+
+<a id="nestedatt--devices--tpms--backend--emulator--active_pcr_banks"></a>
+### Nested Schema for `devices.tpms.backend.emulator.active_pcr_banks`
+
+Optional:
+
+- `sha1` (Boolean) Configures the SHA-1 PCR bank as active for the emulator TPM settings.
+- `sha256` (Boolean) Configures the SHA-256 PCR bank as active for the emulator TPM settings.
+- `sha384` (Boolean) Configures the SHA-384 PCR bank as active for the emulator TPM settings.
+- `sha512` (Boolean) Configures the SHA-512 PCR bank as active for the emulator TPM settings.
+
+
+<a id="nestedatt--devices--tpms--backend--emulator--encryption"></a>
+### Nested Schema for `devices.tpms.backend.emulator.encryption`
+
+Required:
+
+- `secret` (String) Sets the secret used for the encryption configuration for the emulator TPM backend.
+
+
+<a id="nestedatt--devices--tpms--backend--emulator--profile"></a>
+### Nested Schema for `devices.tpms.backend.emulator.profile`
+
+Optional:
+
+- `name` (String) Specifies the name of the profile for the emulator TPM backend.
+- `remove_disabled` (String) Configures whether to remove disabled profiles for the emulator TPM backend.
+- `source` (String) Sets the source configuration for the profile of the emulator TPM backend.
+
+
+<a id="nestedatt--devices--tpms--backend--emulator--source"></a>
+### Nested Schema for `devices.tpms.backend.emulator.source`
+
+Optional:
+
+- `dir` (Attributes) Specifies the directory source setting for the emulator TPM backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--emulator--source--dir))
+- `file` (Attributes) Specifies the file source setting for the emulator TPM backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--emulator--source--file))
+
+<a id="nestedatt--devices--tpms--backend--emulator--source--dir"></a>
+### Nested Schema for `devices.tpms.backend.emulator.source.dir`
+
+Optional:
+
+- `path` (String) Sets the path to the directory source for the emulator TPM backend.
+
+
+<a id="nestedatt--devices--tpms--backend--emulator--source--file"></a>
+### Nested Schema for `devices.tpms.backend.emulator.source.file`
+
+Optional:
+
+- `path` (String) Sets the path to the file source for the emulator TPM backend.
+
+
+
+
+<a id="nestedatt--devices--tpms--backend--external"></a>
+### Nested Schema for `devices.tpms.backend.external`
+
+Optional:
+
+- `source` (Attributes) Specifies the source configuration for the external TPM backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source))
+
+<a id="nestedatt--devices--tpms--backend--external--source"></a>
+### Nested Schema for `devices.tpms.backend.external.source`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--nmdm))
+- `null` (Boolean) Configures a null device source, which is equivalent to a device that receives no input.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--spice_port))
+- `spice_vmc` (Boolean) Configures a SPICE Virtual Machine Channel as a source for enhanced communication with guests.
+- `std_io` (Boolean) Configures standard input/output for device interactions, allowing typical stdin/stdout handling.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--unix))
+- `vc` (Boolean) Configures a virtual console as a source for communication, enabling interaction with the guest.
+
+<a id="nestedatt--devices--tpms--backend--external--source--dbus"></a>
+### Nested Schema for `devices.tpms.backend.external.source.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--devices--tpms--backend--external--source--dev"></a>
+### Nested Schema for `devices.tpms.backend.external.source.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--dev--sec_label))
+
+<a id="nestedatt--devices--tpms--backend--external--source--dev--sec_label"></a>
+### Nested Schema for `devices.tpms.backend.external.source.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--tpms--backend--external--source--file"></a>
+### Nested Schema for `devices.tpms.backend.external.source.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--file--sec_label))
+
+<a id="nestedatt--devices--tpms--backend--external--source--file--sec_label"></a>
+### Nested Schema for `devices.tpms.backend.external.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--tpms--backend--external--source--nmdm"></a>
+### Nested Schema for `devices.tpms.backend.external.source.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--devices--tpms--backend--external--source--pipe"></a>
+### Nested Schema for `devices.tpms.backend.external.source.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--pipe--sec_label))
+
+<a id="nestedatt--devices--tpms--backend--external--source--pipe--sec_label"></a>
+### Nested Schema for `devices.tpms.backend.external.source.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--tpms--backend--external--source--pty"></a>
+### Nested Schema for `devices.tpms.backend.external.source.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--pty--sec_label))
+
+<a id="nestedatt--devices--tpms--backend--external--source--pty--sec_label"></a>
+### Nested Schema for `devices.tpms.backend.external.source.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--devices--tpms--backend--external--source--qemuvd_agent"></a>
+### Nested Schema for `devices.tpms.backend.external.source.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--qemuvd_agent--mouse))
+
+<a id="nestedatt--devices--tpms--backend--external--source--qemuvd_agent--clip_board"></a>
+### Nested Schema for `devices.tpms.backend.external.source.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--devices--tpms--backend--external--source--qemuvd_agent--mouse"></a>
+### Nested Schema for `devices.tpms.backend.external.source.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--devices--tpms--backend--external--source--spice_port"></a>
+### Nested Schema for `devices.tpms.backend.external.source.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--devices--tpms--backend--external--source--tcp"></a>
+### Nested Schema for `devices.tpms.backend.external.source.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--devices--tpms--backend--external--source--tcp--reconnect"></a>
+### Nested Schema for `devices.tpms.backend.external.source.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--devices--tpms--backend--external--source--udp"></a>
+### Nested Schema for `devices.tpms.backend.external.source.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--devices--tpms--backend--external--source--unix"></a>
+### Nested Schema for `devices.tpms.backend.external.source.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--devices--tpms--backend--external--source--unix--sec_label))
+
+<a id="nestedatt--devices--tpms--backend--external--source--unix--reconnect"></a>
+### Nested Schema for `devices.tpms.backend.external.source.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--devices--tpms--backend--external--source--unix--sec_label"></a>
+### Nested Schema for `devices.tpms.backend.external.source.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+
+<a id="nestedatt--devices--tpms--backend--passthrough"></a>
+### Nested Schema for `devices.tpms.backend.passthrough`
+
+Optional:
+
+- `device` (Attributes) Sets parameters for the passthrough device associated with the TPM. (see [below for nested schema](#nestedatt--devices--tpms--backend--passthrough--device))
+
+<a id="nestedatt--devices--tpms--backend--passthrough--device"></a>
+### Nested Schema for `devices.tpms.backend.passthrough.device`
+
+Required:
+
+- `path` (String) Specifies the path to the TPM device that is being passed through to the guest.
+
+
+
+
+
+<a id="nestedatt--devices--videos"></a>
+### Nested Schema for `devices.videos`
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--videos--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--videos--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--videos--alias))
+- `driver` (Attributes) Configures the driver properties for the video device. (see [below for nested schema](#nestedatt--devices--videos--driver))
+- `model` (Attributes) Defines the specific model of the video device being used. (see [below for nested schema](#nestedatt--devices--videos--model))
+
+<a id="nestedatt--devices--videos--acpi"></a>
+### Nested Schema for `devices.videos.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--videos--address"></a>
+### Nested Schema for `devices.videos.address`
+
+
+<a id="nestedatt--devices--videos--alias"></a>
+### Nested Schema for `devices.videos.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--videos--driver"></a>
+### Nested Schema for `devices.videos.driver`
+
+Optional:
+
+- `ats` (String) Enables or disables Address Translation Services (ATS) for the video device driver.
+- `iommu` (String) Controls whether the IOMMU (Input/Output Memory Management Unit) is used by the video device driver.
+- `name` (String) Specifies the name of the driver to be used for the video device.
+- `packed` (String) Determines if the driver supports packed queues for the video device.
+- `page_per_vq` (String) Controls the use of a page per Virtqueue (VQ) for the video device driver.
+- `vga_conf` (String) Configures the VGA options for the video device driver.
+
+
+<a id="nestedatt--devices--videos--model"></a>
+### Nested Schema for `devices.videos.model`
+
+Optional:
+
+- `accel` (Attributes) Configures acceleration features for the video device model. (see [below for nested schema](#nestedatt--devices--videos--model--accel))
+- `blob` (String) Configures the blob attribute for the video device model.
+- `edid` (String) Specifies the Extended Display Identification Data (EDID) for the video device model.
+- `heads` (Number) Sets the number of heads for the video device model, which may define multiple display outputs.
+- `primary` (String) Marks the video device as the primary display output for the virtual machine.
+- `ram` (Number) Defines the memory allocation for the video device model.
+- `resolution` (Attributes) Specifies the resolution settings for the video device model. (see [below for nested schema](#nestedatt--devices--videos--model--resolution))
+- `type` (String) Defines the type of video device being configured.
+- `vga_mem` (Number) Configures the amount of memory allocated for the video graphics array (VGA) for the video device model.
+- `vram` (Number) Specifies the video RAM allocation for the video device model.
+- `vram64` (Number) Specifies the 64-bit video RAM configuration for the video device model.
+
+<a id="nestedatt--devices--videos--model--accel"></a>
+### Nested Schema for `devices.videos.model.accel`
+
+Optional:
+
+- `accel2d` (String) Enables or disables 2D acceleration for the video device.
+- `accel3d` (String) Enables or disables 3D acceleration for the video device.
+- `render_node` (String) Defines the render node for the video device's acceleration features.
+
+
+<a id="nestedatt--devices--videos--model--resolution"></a>
+### Nested Schema for `devices.videos.model.resolution`
+
+Required:
+
+- `x` (Number) Sets the horizontal resolution for the video device model.
+- `y` (Number) Sets the vertical resolution for the video device model.
+
+
+
+
+<a id="nestedatt--devices--vsock"></a>
+### Nested Schema for `devices.vsock`
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--vsock--acpi))
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--vsock--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--vsock--alias))
+- `cid` (Attributes) Configures the connection identifier (CID) for the vsock device. (see [below for nested schema](#nestedatt--devices--vsock--cid))
+- `driver` (Attributes) Configures driver options for the vsock device. (see [below for nested schema](#nestedatt--devices--vsock--driver))
+- `model` (String) Defines the model of the vsock device for the domain.
+
+<a id="nestedatt--devices--vsock--acpi"></a>
+### Nested Schema for `devices.vsock.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--vsock--address"></a>
+### Nested Schema for `devices.vsock.address`
+
+
+<a id="nestedatt--devices--vsock--alias"></a>
+### Nested Schema for `devices.vsock.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
+
+<a id="nestedatt--devices--vsock--cid"></a>
+### Nested Schema for `devices.vsock.cid`
+
+Optional:
+
+- `address` (String) Defines the address attribute for the CID of the vsock device.
+- `auto` (String) Indicates whether the CID is automatically assigned for the vsock device.
+
+
+<a id="nestedatt--devices--vsock--driver"></a>
+### Nested Schema for `devices.vsock.driver`
+
+Optional:
+
+- `ats` (String) Enables or disables Address Translation Services (ATS) for the vsock device driver.
+- `iommu` (String) Controls whether IOMMU support is enabled for the vsock device driver.
+- `packed` (String) Determines if the driver supports packed queues for the vsock device.
+- `page_per_vq` (String) Configures the use of a page per Virtqueue (VQ) for the vsock device driver.
+
+
+
+<a id="nestedatt--devices--watchdogs"></a>
+### Nested Schema for `devices.watchdogs`
+
+Required:
+
+- `model` (String) Configures the model of the watchdog device, which dictates its underlying functionality and behavior in the domain.
+
+Optional:
+
+- `acpi` (Attributes) Specifies ACPI configuration for the persistent storage device, adapting its behavior in power management scenarios. (see [below for nested schema](#nestedatt--devices--watchdogs--acpi))
+- `action` (String) Defines the action that the watchdog device should take when its timeout period expires, such as resetting the virtual machine or performing a graceful shutdown.
+- `address` (Attributes) Specifies the memory address for the persistent storage device in the guest's address space. (see [below for nested schema](#nestedatt--devices--watchdogs--address))
+- `alias` (Attributes) Configures the alias for the persistent storage device, allowing for easier identification within the domain. (see [below for nested schema](#nestedatt--devices--watchdogs--alias))
+
+<a id="nestedatt--devices--watchdogs--acpi"></a>
+### Nested Schema for `devices.watchdogs.acpi`
+
+Optional:
+
+- `index` (Number) Sets the index for the ACPI device associated with pstore, which is used for handling multiple ACPI elements.
+
+
+<a id="nestedatt--devices--watchdogs--address"></a>
+### Nested Schema for `devices.watchdogs.address`
+
+
+<a id="nestedatt--devices--watchdogs--alias"></a>
+### Nested Schema for `devices.watchdogs.alias`
+
+Required:
+
+- `name` (String) Sets the name of the alias for the persistent storage device, used for reference in management tasks.
+
 
 
 
@@ -423,67 +10103,2040 @@ Optional:
 
 Optional:
 
-- `acpi` (Boolean) ACPI support.
-- `apic` (Boolean) APIC support.
-- `ccf_assist` (String) CCF Assist (on, off).
-- `gic_version` (String) GIC version for ARM guests.
-- `hap` (String) Hardware Assisted Paging (on, off).
-- `htm` (String) Hardware Transactional Memory (on, off).
-- `ioapic_driver` (String) IOAPIC driver (kvm, qemu).
-- `nested_hv` (String) Nested HV (on, off).
-- `pae` (Boolean) Physical Address Extension mode.
-- `pmu` (String) Performance Monitoring Unit (on, off).
-- `privnet` (Boolean) Private network namespace.
-- `ps2` (String) PS/2 controller (on, off).
-- `pvspinlock` (String) Paravirtualized spinlock prevention (on, off).
-- `ras` (String) Reliability, Availability and Serviceability (on, off).
-- `viridian` (Boolean) Viridian enlightenments for Windows guests.
-- `vmcoreinfo` (String) VM crash information (on, off).
-- `vmport` (String) VMware IO port emulation (on, off, auto).
+- `acpi` (Boolean) Controls ACPI support for the domain, allowing for power management and sleep states within the guest OS.
+- `aia` (Attributes) Enables or disables AIA (Advanced Interrupt Affinity) support for the domain, which optimizes interrupt handling. (see [below for nested schema](#nestedatt--features--aia))
+- `apic` (Attributes) Configures APIC (Advanced Programmable Interrupt Controller) support for the domain, which is essential for handling interrupts. (see [below for nested schema](#nestedatt--features--apic))
+- `async_teardown` (Attributes) Configures asynchronous teardown behavior for the domain, enhancing performance during shutdown processes. (see [below for nested schema](#nestedatt--features--async_teardown))
+- `capabilities` (Attributes) Defines the set of capabilities that can be enabled for the domain, influencing its operational features and constraints. (see [below for nested schema](#nestedatt--features--capabilities))
+- `ccf_assist` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--ccf_assist))
+- `cfpc` (Attributes) Configures whether the domain supports CFPC features. (see [below for nested schema](#nestedatt--features--cfpc))
+- `gic` (Attributes) Configures whether the domain supports GIC (Generic Interrupt Controller) features. (see [below for nested schema](#nestedatt--features--gic))
+- `hap` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hap))
+- `hpt` (Attributes) Configures whether the domain supports Hardware Paging Translation (HPT). (see [below for nested schema](#nestedatt--features--hpt))
+- `htm` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--htm))
+- `hyper_v` (Attributes) Configures the availability of Hyper-V specific features for the domain. (see [below for nested schema](#nestedatt--features--hyper_v))
+- `ibs` (Attributes) Configures the Instruction Based Sampling feature for the domain. (see [below for nested schema](#nestedatt--features--ibs))
+- `ioapic` (Attributes) Controls the configuration of the I/O APIC feature in the domain. (see [below for nested schema](#nestedatt--features--ioapic))
+- `kvm` (Attributes) Configures the availability of KVM specific features for the domain. (see [below for nested schema](#nestedatt--features--kvm))
+- `msrs` (Attributes) Controls the management of Model Specific Registers (MSRs) for the guest, allowing for low-level CPU features. (see [below for nested schema](#nestedatt--features--msrs))
+- `nested_hv` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--nested_hv))
+- `pae` (Boolean) Enables PAE (Physical Address Extension) feature, allowing the guest to support more than 4GB of RAM.
+- `pmu` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--pmu))
+- `priv_net` (Boolean) Configures the private network feature, allowing for isolated network configurations within the guest.
+- `ps2` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--ps2))
+- `pv_spinlock` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--pv_spinlock))
+- `ras` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--ras))
+- `sbbc` (Attributes) Configures Shared Bandwidth Bridge Capability (SBBC) to optimize bandwidth sharing among VMs. (see [below for nested schema](#nestedatt--features--sbbc))
+- `smm` (Attributes) Enables Secure Memory Management (SMM), providing additional security features for the guest. (see [below for nested schema](#nestedatt--features--smm))
+- `tcg` (Attributes) Enables Trusted Computing Group (TCG) features for secure computing environments. (see [below for nested schema](#nestedatt--features--tcg))
+- `viridian` (Boolean) Enables Viridian features for enhanced virtualization capabilities on Windows guests.
+- `vm_core_info` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--vm_core_info))
+- `vm_port` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--vm_port))
+- `xen` (Attributes) Enables or disables features specific to Xen virtualization, controlling various aspects of guest management. (see [below for nested schema](#nestedatt--features--xen))
+
+<a id="nestedatt--features--aia"></a>
+### Nested Schema for `features.aia`
+
+Required:
+
+- `value` (String) Sets the value for AIA support, which may define its operational state or level of functionality.
+
+
+<a id="nestedatt--features--apic"></a>
+### Nested Schema for `features.apic`
+
+Optional:
+
+- `eoi` (String) Determines the EOI (End of Interrupt) behavior for APIC, allowing customization of how interrupts are acknowledged.
+
+
+<a id="nestedatt--features--async_teardown"></a>
+### Nested Schema for `features.async_teardown`
+
+Optional:
+
+- `enabled` (String) Enables or disables the asynchronous teardown feature, which can reduce downtime during the shutdown of the virtual machine.
+
+
+<a id="nestedatt--features--capabilities"></a>
+### Nested Schema for `features.capabilities`
+
+Optional:
+
+- `audit_control` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--audit_control))
+- `audit_write` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--audit_write))
+- `block_suspend` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--block_suspend))
+- `chown` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--chown))
+- `dac_override` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--dac_override))
+- `dac_read_search` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--dac_read_search))
+- `fowner` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--fowner))
+- `fset_id` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--fset_id))
+- `ipc_lock` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--ipc_lock))
+- `ipc_owner` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--ipc_owner))
+- `kill` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--kill))
+- `lease` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--lease))
+- `linux_immutable` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--linux_immutable))
+- `mac_admin` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--mac_admin))
+- `mac_override` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--mac_override))
+- `mk_nod` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--mk_nod))
+- `net_admin` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--net_admin))
+- `net_bind_service` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--net_bind_service))
+- `net_broadcast` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--net_broadcast))
+- `net_raw` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--net_raw))
+- `policy` (String) Specifies the security policy applied to the domain features.
+- `set_f_cap` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--set_f_cap))
+- `set_gid` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--set_gid))
+- `set_p_cap` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--set_p_cap))
+- `set_uid` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--set_uid))
+- `sys_admin` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--sys_admin))
+- `sys_boot` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--sys_boot))
+- `sys_ch_root` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--sys_ch_root))
+- `sys_log` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--sys_log))
+- `sys_module` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--sys_module))
+- `sys_nice` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--sys_nice))
+- `sys_p_acct` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--sys_p_acct))
+- `sys_p_trace` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--sys_p_trace))
+- `sys_raw_io` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--sys_raw_io))
+- `sys_resource` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--sys_resource))
+- `sys_time` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--sys_time))
+- `sys_tty_cnofig` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--sys_tty_cnofig))
+- `wake_alarm` (Attributes) Configures whether the domain can wake from an alarm. (see [below for nested schema](#nestedatt--features--capabilities--wake_alarm))
+
+<a id="nestedatt--features--capabilities--audit_control"></a>
+### Nested Schema for `features.capabilities.audit_control`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--audit_write"></a>
+### Nested Schema for `features.capabilities.audit_write`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--block_suspend"></a>
+### Nested Schema for `features.capabilities.block_suspend`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--chown"></a>
+### Nested Schema for `features.capabilities.chown`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--dac_override"></a>
+### Nested Schema for `features.capabilities.dac_override`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--dac_read_search"></a>
+### Nested Schema for `features.capabilities.dac_read_search`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--fowner"></a>
+### Nested Schema for `features.capabilities.fowner`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--fset_id"></a>
+### Nested Schema for `features.capabilities.fset_id`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--ipc_lock"></a>
+### Nested Schema for `features.capabilities.ipc_lock`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--ipc_owner"></a>
+### Nested Schema for `features.capabilities.ipc_owner`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--kill"></a>
+### Nested Schema for `features.capabilities.kill`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--lease"></a>
+### Nested Schema for `features.capabilities.lease`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--linux_immutable"></a>
+### Nested Schema for `features.capabilities.linux_immutable`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--mac_admin"></a>
+### Nested Schema for `features.capabilities.mac_admin`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--mac_override"></a>
+### Nested Schema for `features.capabilities.mac_override`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--mk_nod"></a>
+### Nested Schema for `features.capabilities.mk_nod`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--net_admin"></a>
+### Nested Schema for `features.capabilities.net_admin`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--net_bind_service"></a>
+### Nested Schema for `features.capabilities.net_bind_service`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--net_broadcast"></a>
+### Nested Schema for `features.capabilities.net_broadcast`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--net_raw"></a>
+### Nested Schema for `features.capabilities.net_raw`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--set_f_cap"></a>
+### Nested Schema for `features.capabilities.set_f_cap`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--set_gid"></a>
+### Nested Schema for `features.capabilities.set_gid`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--set_p_cap"></a>
+### Nested Schema for `features.capabilities.set_p_cap`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--set_uid"></a>
+### Nested Schema for `features.capabilities.set_uid`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--sys_admin"></a>
+### Nested Schema for `features.capabilities.sys_admin`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--sys_boot"></a>
+### Nested Schema for `features.capabilities.sys_boot`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--sys_ch_root"></a>
+### Nested Schema for `features.capabilities.sys_ch_root`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--sys_log"></a>
+### Nested Schema for `features.capabilities.sys_log`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--sys_module"></a>
+### Nested Schema for `features.capabilities.sys_module`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--sys_nice"></a>
+### Nested Schema for `features.capabilities.sys_nice`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--sys_p_acct"></a>
+### Nested Schema for `features.capabilities.sys_p_acct`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--sys_p_trace"></a>
+### Nested Schema for `features.capabilities.sys_p_trace`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--sys_raw_io"></a>
+### Nested Schema for `features.capabilities.sys_raw_io`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--sys_resource"></a>
+### Nested Schema for `features.capabilities.sys_resource`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--sys_time"></a>
+### Nested Schema for `features.capabilities.sys_time`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--sys_tty_cnofig"></a>
+### Nested Schema for `features.capabilities.sys_tty_cnofig`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+<a id="nestedatt--features--capabilities--wake_alarm"></a>
+### Nested Schema for `features.capabilities.wake_alarm`
+
+Optional:
+
+- `state` (String) Sets the state of the capability to wake from an alarm.
+
+
+
+<a id="nestedatt--features--ccf_assist"></a>
+### Nested Schema for `features.ccf_assist`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--cfpc"></a>
+### Nested Schema for `features.cfpc`
+
+Required:
+
+- `value` (String) Sets the specific value associated with the CFPC feature.
+
+
+<a id="nestedatt--features--gic"></a>
+### Nested Schema for `features.gic`
+
+Optional:
+
+- `version` (String) Sets the version of the GIC feature supported by the domain.
+
+
+<a id="nestedatt--features--hap"></a>
+### Nested Schema for `features.hap`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hpt"></a>
+### Nested Schema for `features.hpt`
+
+Optional:
+
+- `max_page_size` (String) Configures the maximum page size supported by the hypervisor for the HPT feature.
+- `max_page_size_unit` (String) Sets the unit for the maximum page size configured for the HPT feature.
+- `resizing` (String) Controls whether the resizing of physical pages for the HPT feature is allowed.
+
+
+<a id="nestedatt--features--htm"></a>
+### Nested Schema for `features.htm`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v"></a>
+### Nested Schema for `features.hyper_v`
+
+Optional:
+
+- `avic` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--avic))
+- `emsr_bitmap` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--emsr_bitmap))
+- `evmcs` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--evmcs))
+- `frequencies` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--frequencies))
+- `ipi` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--ipi))
+- `mode` (String) Sets the mode of operation for Hyper-V features in the domain.
+- `re_enlightenment` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--re_enlightenment))
+- `relaxed` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--relaxed))
+- `reset` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--reset))
+- `runtime` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--runtime))
+- `spinlocks` (Attributes) Controls the spinlock feature settings for Hyper-V. (see [below for nested schema](#nestedatt--features--hyper_v--spinlocks))
+- `stimer` (Attributes) Configures synthetic timer functionality for Hyper-V. (see [below for nested schema](#nestedatt--features--hyper_v--stimer))
+- `synic` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--synic))
+- `tlb_flush` (Attributes) Controls the Translation Lookaside Buffer (TLB) flush functionality for Hyper-V. (see [below for nested schema](#nestedatt--features--hyper_v--tlb_flush))
+- `vapic` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--vapic))
+- `vendor_id` (Attributes) Configures the vendor ID presented to the guest operating system by Hyper-V. (see [below for nested schema](#nestedatt--features--hyper_v--vendor_id))
+- `vp_index` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--vp_index))
+- `xmm_input` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--xmm_input))
+
+<a id="nestedatt--features--hyper_v--avic"></a>
+### Nested Schema for `features.hyper_v.avic`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--emsr_bitmap"></a>
+### Nested Schema for `features.hyper_v.emsr_bitmap`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--evmcs"></a>
+### Nested Schema for `features.hyper_v.evmcs`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--frequencies"></a>
+### Nested Schema for `features.hyper_v.frequencies`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--ipi"></a>
+### Nested Schema for `features.hyper_v.ipi`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--re_enlightenment"></a>
+### Nested Schema for `features.hyper_v.re_enlightenment`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--relaxed"></a>
+### Nested Schema for `features.hyper_v.relaxed`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--reset"></a>
+### Nested Schema for `features.hyper_v.reset`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--runtime"></a>
+### Nested Schema for `features.hyper_v.runtime`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--spinlocks"></a>
+### Nested Schema for `features.hyper_v.spinlocks`
+
+Optional:
+
+- `retries` (Number) Configures the number of retries for spinlocks in Hyper-V.
+
+
+<a id="nestedatt--features--hyper_v--stimer"></a>
+### Nested Schema for `features.hyper_v.stimer`
+
+Optional:
+
+- `direct` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--stimer--direct))
+
+<a id="nestedatt--features--hyper_v--stimer--direct"></a>
+### Nested Schema for `features.hyper_v.stimer.direct`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+
+<a id="nestedatt--features--hyper_v--synic"></a>
+### Nested Schema for `features.hyper_v.synic`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--tlb_flush"></a>
+### Nested Schema for `features.hyper_v.tlb_flush`
+
+Optional:
+
+- `direct` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--tlb_flush--direct))
+- `extended` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--hyper_v--tlb_flush--extended))
+
+<a id="nestedatt--features--hyper_v--tlb_flush--direct"></a>
+### Nested Schema for `features.hyper_v.tlb_flush.direct`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--tlb_flush--extended"></a>
+### Nested Schema for `features.hyper_v.tlb_flush.extended`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+
+<a id="nestedatt--features--hyper_v--vapic"></a>
+### Nested Schema for `features.hyper_v.vapic`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--vendor_id"></a>
+### Nested Schema for `features.hyper_v.vendor_id`
+
+Optional:
+
+- `value` (String) Sets the value for the vendor ID used in Hyper-V.
+
+
+<a id="nestedatt--features--hyper_v--vp_index"></a>
+### Nested Schema for `features.hyper_v.vp_index`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--hyper_v--xmm_input"></a>
+### Nested Schema for `features.hyper_v.xmm_input`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+
+<a id="nestedatt--features--ibs"></a>
+### Nested Schema for `features.ibs`
+
+Required:
+
+- `value` (String) Sets the value for the Instruction Based Sampling feature's configuration.
+
+
+<a id="nestedatt--features--ioapic"></a>
+### Nested Schema for `features.ioapic`
+
+Optional:
+
+- `driver` (String) Specifies the driver to be used for the I/O APIC feature.
+
+
+<a id="nestedatt--features--kvm"></a>
+### Nested Schema for `features.kvm`
+
+Optional:
+
+- `dirty_ring` (Attributes) Configures the dirty ring feature for KVM, which optimizes memory management during virtual machine execution. (see [below for nested schema](#nestedatt--features--kvm--dirty_ring))
+- `hidden` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--kvm--hidden))
+- `hint_dedicated` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--kvm--hint_dedicated))
+- `poll_control` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--kvm--poll_control))
+- `pvipi` (Attributes) Enables or disables support for PS/2 devices in the virtual machine. (see [below for nested schema](#nestedatt--features--kvm--pvipi))
+
+<a id="nestedatt--features--kvm--dirty_ring"></a>
+### Nested Schema for `features.kvm.dirty_ring`
+
+Optional:
+
+- `size` (Number) Sets the size of the dirty ring buffer for KVM, which affects the efficiency of memory updates.
+
+
+<a id="nestedatt--features--kvm--hidden"></a>
+### Nested Schema for `features.kvm.hidden`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--kvm--hint_dedicated"></a>
+### Nested Schema for `features.kvm.hint_dedicated`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--kvm--poll_control"></a>
+### Nested Schema for `features.kvm.poll_control`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--kvm--pvipi"></a>
+### Nested Schema for `features.kvm.pvipi`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+
+<a id="nestedatt--features--msrs"></a>
+### Nested Schema for `features.msrs`
+
+Required:
+
+- `unknown` (String) Indicates whether unknown MSRs are allowed to be accessed by the guest.
+
+
+<a id="nestedatt--features--nested_hv"></a>
+### Nested Schema for `features.nested_hv`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--pmu"></a>
+### Nested Schema for `features.pmu`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--ps2"></a>
+### Nested Schema for `features.ps2`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--pv_spinlock"></a>
+### Nested Schema for `features.pv_spinlock`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--ras"></a>
+### Nested Schema for `features.ras`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--sbbc"></a>
+### Nested Schema for `features.sbbc`
+
+Required:
+
+- `value` (String) Sets the value attribute for the SBBC feature, indicating its configuration.
+
+
+<a id="nestedatt--features--smm"></a>
+### Nested Schema for `features.smm`
+
+Optional:
+
+- `state` (String) Configures the state of the SMM feature, indicating whether it is active.
+- `tseg` (Number) Configures the Memory Type Range Register (MTRR) for SMM, providing control over memory regions.
+- `tseg_unit` (String) Sets the unit of the TSEG (Trusted Secure Environment Group) size for SMM configuration.
+
+
+<a id="nestedatt--features--tcg"></a>
+### Nested Schema for `features.tcg`
+
+Optional:
+
+- `tb_cache` (Number) Configures the Trusted Boot (TB) cache settings for TCG to manage trusted boot processes.
+- `tb_cache_unit` (String) Specifies the unit of the TB cache size set for TCG configurations.
+
+
+<a id="nestedatt--features--vm_core_info"></a>
+### Nested Schema for `features.vm_core_info`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--vm_port"></a>
+### Nested Schema for `features.vm_port`
+
+Optional:
+
+- `state` (String) Configures the state of the PS/2 feature, indicating if it is enabled or not.
+
+
+<a id="nestedatt--features--xen"></a>
+### Nested Schema for `features.xen`
+
+Optional:
+
+- `e820host` (Attributes) Enables the use of the e820 memory map for the Xen hypervisor, improving memory management. (see [below for nested schema](#nestedatt--features--xen--e820host))
+- `passthrough` (Attributes) Configures the passthrough feature for Xen, allowing direct access to host devices from the guest. (see [below for nested schema](#nestedatt--features--xen--passthrough))
+
+<a id="nestedatt--features--xen--e820host"></a>
+### Nested Schema for `features.xen.e820host`
+
+Required:
+
+- `state` (String) Sets the state of the e820 host feature, indicating whether it is active or not.
+
+
+<a id="nestedatt--features--xen--passthrough"></a>
+### Nested Schema for `features.xen.passthrough`
+
+Optional:
+
+- `mode` (String) Sets the mode of the passthrough feature, which affects how devices are exposed to the guest.
+- `state` (String) Configures the state of the passthrough feature, indicating its activation status.
+
+
+
+
+<a id="nestedatt--id_map"></a>
+### Nested Schema for `id_map`
+
+Optional:
+
+- `gi_ds` (Attributes List) Defines the group ID mapping for identity management within the domain. (see [below for nested schema](#nestedatt--id_map--gi_ds))
+- `ui_ds` (Attributes List) Configures the UID mapping for the domain. (see [below for nested schema](#nestedatt--id_map--ui_ds))
+
+<a id="nestedatt--id_map--gi_ds"></a>
+### Nested Schema for `id_map.gi_ds`
+
+Required:
+
+- `count` (Number) Sets the count of group ID mappings specified for the domain's identity management.
+- `start` (Number) Configures the starting GID for the group ID mapping in the domain.
+- `target` (Number) Sets the target GID for the group ID mapping in the domain.
+
+
+<a id="nestedatt--id_map--ui_ds"></a>
+### Nested Schema for `id_map.ui_ds`
+
+Required:
+
+- `count` (Number) Sets the count of group ID mappings specified for the domain's identity management.
+- `start` (Number) Configures the starting GID for the group ID mapping in the domain.
+- `target` (Number) Sets the target GID for the group ID mapping in the domain.
+
+
+
+<a id="nestedatt--io_thread_i_ds"></a>
+### Nested Schema for `io_thread_i_ds`
+
+Optional:
+
+- `io_threads` (Attributes List) Defines the individual I/O threads associated with the domain. (see [below for nested schema](#nestedatt--io_thread_i_ds--io_threads))
+
+<a id="nestedatt--io_thread_i_ds--io_threads"></a>
+### Nested Schema for `io_thread_i_ds.io_threads`
+
+Optional:
+
+- `poll` (Attributes) Configures whether polling is enabled for a specific I/O thread. (see [below for nested schema](#nestedatt--io_thread_i_ds--io_threads--poll))
+- `pool_max` (Number) Configures the maximum number of I/O threads for the domain.
+- `pool_min` (Number) Configures the minimum number of I/O threads for the domain.
+
+Read-Only:
+
+- `id` (Number) Sets the identifier for a specific I/O thread in the domain.
+
+<a id="nestedatt--io_thread_i_ds--io_threads--poll"></a>
+### Nested Schema for `io_thread_i_ds.io_threads.poll`
+
+Optional:
+
+- `grow` (Number) Sets the policy for growing the I/O thread's polling behavior.
+- `max` (Number) Configures the maximum polling rate for the I/O thread.
+- `shrink` (Number) Sets the policy for shrinking the I/O thread's polling behavior.
+
+
+
+
+<a id="nestedatt--key_wrap"></a>
+### Nested Schema for `key_wrap`
+
+Optional:
+
+- `ciphers` (Attributes List) Defines the cipher algorithms used for key wrapping in the domain. (see [below for nested schema](#nestedatt--key_wrap--ciphers))
+
+<a id="nestedatt--key_wrap--ciphers"></a>
+### Nested Schema for `key_wrap.ciphers`
+
+Required:
+
+- `name` (String) Sets the name of the cipher used for key wrapping in the domain.
+- `state` (String) Configures the state of the cipher used for key wrapping in the domain.
+
+
+
+<a id="nestedatt--launch_security"></a>
+### Nested Schema for `launch_security`
+
+Optional:
+
+- `s390pv` (Boolean) Enables protection mode for s390 virtual machines to enhance security.
+- `sev` (Attributes) Configures Secure Encrypted Virtualization (SEV) features for the domain. (see [below for nested schema](#nestedatt--launch_security--sev))
+- `sevsnp` (Attributes) Configures protection mode for SEV-Shared Non-Pageable (SEV-SNP) in the domain. (see [below for nested schema](#nestedatt--launch_security--sevsnp))
+- `tdx` (Attributes) Configures Trusted Domain Extensions (TDX) security features for the domain. (see [below for nested schema](#nestedatt--launch_security--tdx))
+
+<a id="nestedatt--launch_security--sev"></a>
+### Nested Schema for `launch_security.sev`
+
+Required:
+
+- `dh_cert` (String) Configures the Diffie-Hellman certificate parameter for SEV.
+- `session` (String) Sets the SEV session identifier for managing virtual machine security.
+
+Optional:
+
+- `cbit_pos` (Number) Sets the position of the circular bit for SEV in the domain's configuration.
+- `kernel_hashes` (String) Configures kernel hashes for SEV to ensure integrity verification.
+- `policy` (Number) Sets the security policy for SEV operations within the domain.
+- `reduced_phys_bits` (Number) Configures the reduced physical bits setting for SEV to assign smaller address spaces.
+
+
+<a id="nestedatt--launch_security--sevsnp"></a>
+### Nested Schema for `launch_security.sevsnp`
+
+Optional:
+
+- `author_key` (String) Configures the author key for the SEV-SNP feature in the domain.
+- `cbit_pos` (Number) Sets the circular bit position for the SEV-SNP configuration in the domain.
+- `guest_visible_workarounds` (String) Configures guest visible workarounds for SEV-SNP to enhance compatibility and performance.
+- `host_data` (String) Sets the host-specific data for the SEV-SNP configuration.
+- `id_auth` (String) Configures identifier authorization settings for SEV-SNP.
+- `id_block` (String) Configures ID block settings for SEV-SNP in the domain.
+- `kernel_hashes` (String) Configures kernel hashes for SEV-SNP to ensure integrity verification.
+- `policy` (Number) Sets the security policy for SEV-SNP operations within the domain.
+- `reduced_phys_bits` (Number) Configures the reduced physical bits setting for SEV-SNP to assign smaller address spaces.
+- `vcek` (String) Configures the VCEK (Virtual Machine Key) for the SEV-SNP feature.
+
+
+<a id="nestedatt--launch_security--tdx"></a>
+### Nested Schema for `launch_security.tdx`
+
+Optional:
+
+- `mr_config_id` (String) Sets the MR configuration identifier for TDX in the domain.
+- `mr_owner` (String) Configures the MR owner field for TDX security in the domain.
+- `mr_owner_config` (String) Sets the configuration for the MR owner in the TDX environment.
+- `policy` (Number) Configures the security policy for TDX operations within the domain.
+- `quote_generation_service` (Attributes) Configures the quote generation service for TDX in the domain. (see [below for nested schema](#nestedatt--launch_security--tdx--quote_generation_service))
+
+<a id="nestedatt--launch_security--tdx--quote_generation_service"></a>
+### Nested Schema for `launch_security.tdx.quote_generation_service`
+
+Optional:
+
+- `path` (String) Sets the path for the quote generation service used in TDX.
+
+
+
+
+<a id="nestedatt--memory_backing"></a>
+### Nested Schema for `memory_backing`
+
+Optional:
+
+- `memory_access` (Attributes) Defines the access mode for the memory backing, which influences how memory is treated by the hypervisor. (see [below for nested schema](#nestedatt--memory_backing--memory_access))
+- `memory_allocation` (Attributes) Configures the allocation properties for the memory backing of the domain, affecting its performance. (see [below for nested schema](#nestedatt--memory_backing--memory_allocation))
+- `memory_discard` (Boolean) Controls whether memory discard is enabled, allowing the hypervisor to reclaim unused memory.
+- `memory_huge_pages` (Attributes) Configures the use of huge pages for memory allocation, which can improve performance by reducing page table overhead. (see [below for nested schema](#nestedatt--memory_backing--memory_huge_pages))
+- `memory_locked` (Boolean) Controls whether the memory backing is locked, preventing it from being swapped or moved.
+- `memory_nosharepages` (Boolean) Configures whether shared pages are forbidden for the domain, affecting memory sharing behaviors.
+- `memory_source` (Attributes) Specifies the source from which the memory backing is allocated, influencing its origin. (see [below for nested schema](#nestedatt--memory_backing--memory_source))
+
+<a id="nestedatt--memory_backing--memory_access"></a>
+### Nested Schema for `memory_backing.memory_access`
+
+Optional:
+
+- `mode` (String) Specifies the mode for memory access, determining how memory can be accessed, such as shared or exclusive.
+
+
+<a id="nestedatt--memory_backing--memory_allocation"></a>
+### Nested Schema for `memory_backing.memory_allocation`
+
+Optional:
+
+- `mode` (String) Sets the mode of memory allocation, determining if it is static, dynamic, or configured otherwise.
+- `threads` (Number) Specifies the number of threads allocated for managing memory allocation tasks in the domain.
+
+
+<a id="nestedatt--memory_backing--memory_huge_pages"></a>
+### Nested Schema for `memory_backing.memory_huge_pages`
+
+Optional:
+
+- `hugepages` (Attributes List) Defines the configuration options for huge pages, particularly their count and characteristics. (see [below for nested schema](#nestedatt--memory_backing--memory_huge_pages--hugepages))
+
+<a id="nestedatt--memory_backing--memory_huge_pages--hugepages"></a>
+### Nested Schema for `memory_backing.memory_huge_pages.hugepages`
+
+Required:
+
+- `size` (Number) Sets the size of each huge page, which impacts memory management and performance.
+
+Optional:
+
+- `nodeset` (String) Specifies the NUMA nodeset where huge pages can be allocated, controlling memory locality.
+- `unit` (String) Indicates the unit for the huge page size, specifying the measurement of the size configuration.
+
+
+
+<a id="nestedatt--memory_backing--memory_source"></a>
+### Nested Schema for `memory_backing.memory_source`
+
+Optional:
+
+- `type` (String) Sets the type of the memory source, determining how the memory backing is fetched.
+
+
+
+<a id="nestedatt--memory_tune"></a>
+### Nested Schema for `memory_tune`
+
+Optional:
+
+- `hard_limit` (Number) Specifies the hard limit for memory allocation, influencing how much memory the domain can consume.
+- `hard_limit_unit` (String) Defines the unit used for specifying the hard limit on memory allocation.
+- `min_guarantee` (Number) Sets the minimum guaranteed memory allocation for the domain, ensuring it has sufficient resources.
+- `min_guarantee_unit` (String) Specifies the unit for the minimum guaranteed memory allocation.
+- `soft_limit` (Number) Configures the soft limit for memory usage, allowing for temporary increases beyond this point, if necessary.
+- `soft_limit_unit` (String) Sets the unit for the specified soft limit on memory allocation.
+- `swap_hard_limit` (Number) Defines the hard limit for swap usage, controlling the maximum amount of swapped memory allowed.
+- `swap_hard_limit_unit` (String) Specifies the unit for the swap hard limit configuration.
+
+
+<a id="nestedatt--metadata"></a>
+### Nested Schema for `metadata`
+
+Required:
+
+- `xml` (String) Contains XML formatted metadata specific to the domain, enabling custom data storage within the domain.
+
+
+<a id="nestedatt--numa_tune"></a>
+### Nested Schema for `numa_tune`
+
+Optional:
+
+- `mem_nodes` (Attributes List) Configures the specific NUMA node settings including memory assignments and other parameters. (see [below for nested schema](#nestedatt--numa_tune--mem_nodes))
+- `memory` (Attributes) Configures the total memory settings for NUMA nodes, controlling overall memory usage policy. (see [below for nested schema](#nestedatt--numa_tune--memory))
+
+<a id="nestedatt--numa_tune--mem_nodes"></a>
+### Nested Schema for `numa_tune.mem_nodes`
+
+Required:
+
+- `cell_id` (Number) Sets the cell ID for the NUMA nodes, identifying the specific physical memory locality.
+- `mode` (String) Defines the allocation mode for memory on NUMA nodes, which can optimize performance based on architecture.
+- `nodeset` (String) Specifies the nodeset for memory allocation within the NUMA architecture, impacting memory distribution.
+
+
+<a id="nestedatt--numa_tune--memory"></a>
+### Nested Schema for `numa_tune.memory`
+
+Optional:
+
+- `mode` (String) Sets the allocation mode for NUMA memory, influencing how memory is distributed across nodes.
+- `nodeset` (String) Specifies the nodeset for memory allocation for the NUMA settings, allowing for tailored memory configurations.
+- `placement` (String) Defines the placement strategy for NUMA memory, orienting memory allocation toward specific nodes.
+
 
 
 <a id="nestedatt--os"></a>
 ### Nested Schema for `os`
 
-Required:
+Optional:
 
-- `type` (String) OS type (e.g., 'hvm' for fully virtualized, 'linux' for paravirtualized).
+- `acpi` (Attributes) Enables or disables the ACPI (Advanced Configuration and Power Interface) support for the domain. (see [below for nested schema](#nestedatt--os--acpi))
+- `bios` (Attributes) Configures BIOS settings for the domain, influencing its boot process and environment settings. (see [below for nested schema](#nestedatt--os--bios))
+- `boot_devices` (Attributes List) Sets the boot devices that the domain uses during the boot process. (see [below for nested schema](#nestedatt--os--boot_devices))
+- `boot_menu` (Attributes) Configures the settings of the boot menu presented during startup. (see [below for nested schema](#nestedatt--os--boot_menu))
+- `cmdline` (String) Provides additional command line arguments to pass to the guest OS kernel at boot.
+- `dtb` (String) Specifies the device tree blob file to use for initializing the guest's device tree.
+- `firmware` (String) Defines the firmware configuration for the domain, such as BIOS or UEFI.
+- `firmware_info` (Attributes) Contains information about the specific features of the firmware being used. (see [below for nested schema](#nestedatt--os--firmware_info))
+- `init` (String) Specifies the init binary to execute when booting the domain in container mode.
+- `init_args` (List of String) Configures additional arguments to be passed to the init binary during boot.
+- `init_dir` (String) Sets the directory where the init binary resides.
+- `init_env` (Attributes List) Configures environment variables to pass to the init process of the domain. (see [below for nested schema](#nestedatt--os--init_env))
+- `init_group` (String) Sets the group that the init process should run under.
+- `init_user` (String) Configures the user that the init process will run as within the domain.
+- `initrd` (String) Specifies the initial ramdisk image to be used at boot for the domain.
+- `kernel` (String) Sets the kernel image to boot into the domain.
+- `loader` (String) Specifies the path to the bootloader or firmware loader for the domain.
+- `loader_format` (String) Indicates the format type of the loader (e.g., 'rom', 'elf').
+- `loader_readonly` (String) Configures whether the loader is mounted readonly or not.
+- `loader_secure` (String) Sets whether the loader operates in secure mode.
+- `loader_stateless` (String) Configures the loader to operate in stateless mode.
+- `loader_type` (String) Specifies the type of the loader (e.g., BIOS, UEFI).
+- `nv_ram` (Attributes) Defines configurations for the non-volatile RAM (NVRAM) settings for the domain. (see [below for nested schema](#nestedatt--os--nv_ram))
+- `shim` (String) Configures the shim for the operating system in the domain.
+- `sm_bios` (Attributes) Configures the SMBIOS settings for the domain's operating system. (see [below for nested schema](#nestedatt--os--sm_bios))
+- `type` (String) Specifies the type of operating system to be used by the domain.
+- `type_arch` (String) Sets the architecture type for the operating system.
+- `type_machine` (String) Defines the machine type associated with the operating system.
+
+<a id="nestedatt--os--acpi"></a>
+### Nested Schema for `os.acpi`
 
 Optional:
 
-- `type_arch` (String) CPU architecture (e.g., 'x86_64', 'aarch64').
-- `boot_devices` (List of String) Ordered list of boot devices (e.g., 'hd', 'network', 'cdrom'). If not specified, libvirt may add default boot devices.
-- `firmware` (String) Firmware type (e.g., 'efi', 'bios').
-- `initrd` (String) Path to initrd image for direct kernel boot.
-- `kernel` (String) Path to kernel image for direct kernel boot.
-- `kernel_args` (String) Kernel command line arguments.
-- `loader` (String) Path to UEFI firmware loader.
-- `loader_readonly` (Boolean) Whether the UEFI firmware is read-only.
-- `loader_type` (String) Loader type ('rom' or 'pflash').
-- `type_machine` (String) Machine type (e.g., 'pc', 'q35'). Note: This value represents what you want, but libvirt may internally expand it to a versioned type.
-- `nv_ram` (Attributes) NVRAM configuration for UEFI. (see [below for nested schema](#nestedatt--os--nv_ram))
+- `tables` (Attributes List) Configures ACPI tables that can be provided to the guest, influencing power management features. (see [below for nested schema](#nestedatt--os--acpi--tables))
+
+<a id="nestedatt--os--acpi--tables"></a>
+### Nested Schema for `os.acpi.tables`
+
+Required:
+
+- `path` (String) Defines the path to the ACPI table file that is loaded into the guest, specifying the resource location.
+- `type` (String) Sets the type attribute for the ACPI table, defining its format and characteristics.
+
+
+
+<a id="nestedatt--os--bios"></a>
+### Nested Schema for `os.bios`
+
+Optional:
+
+- `reboot_timeout` (Number) Defines the timeout duration for rebooting the domain, controlling wait time before action is taken.
+- `use_serial` (String) Configures whether the BIOS should use the serial console for output.
+
+
+<a id="nestedatt--os--boot_devices"></a>
+### Nested Schema for `os.boot_devices`
+
+Required:
+
+- `dev` (String) Specifies the device type for booting the domain.
+
+
+<a id="nestedatt--os--boot_menu"></a>
+### Nested Schema for `os.boot_menu`
+
+Optional:
+
+- `enable` (String) Enables or disables the boot menu for user selection during startup.
+- `timeout` (String) Sets the amount of time the boot menu remains visible before booting the default device.
+
+
+<a id="nestedatt--os--firmware_info"></a>
+### Nested Schema for `os.firmware_info`
+
+Optional:
+
+- `features` (Attributes List) Lists the optional features supported by the firmware. (see [below for nested schema](#nestedatt--os--firmware_info--features))
+
+<a id="nestedatt--os--firmware_info--features"></a>
+### Nested Schema for `os.firmware_info.features`
+
+Optional:
+
+- `enabled` (String) Indicates whether a particular firmware feature is enabled or not.
+- `name` (String) Sets the name identifier of a specific firmware feature.
+
+
+
+<a id="nestedatt--os--init_env"></a>
+### Nested Schema for `os.init_env`
+
+Required:
+
+- `name` (String) Defines the name of an environment variable to set during domain initialization.
+- `value` (String) Specifies the value associated with an environment variable for the init process.
+
 
 <a id="nestedatt--os--nv_ram"></a>
 ### Nested Schema for `os.nv_ram`
 
+Required:
+
+- `nv_ram` (String) Specifies the non-volatile RAM configuration for the domain's NVRAM.
+
 Optional:
 
-- `format` (String) Format of the NVRAM file (e.g., 'raw', 'qcow2').
-- `nv_ram` (String) Path to the NVRAM file for the domain. Mutually exclusive with source.
-- `source` (Attributes) NVRAM source configuration for volume-based NVRAM. Mutually exclusive with path. (see [below for nested schema](#nestedatt--os--nv_ram--source))
-- `template` (String) Path to NVRAM template file for UEFI variable store. This template is copied to create the domain's NVRAM.
-- `template_format` (String) Format of the template file (e.g., 'raw', 'qcow2').
+- `format` (String) Sets the format type of the NVRAM storage.
+- `source` (Attributes) Specifies the source of the backing store, determining its origin and how it is accessed. (see [below for nested schema](#nestedatt--os--nv_ram--source))
+- `template` (String) Defines the template configuration for the NVRAM.
+- `template_format` (String) Specifies the format of the template for the NVRAM.
 
 <a id="nestedatt--os--nv_ram--source"></a>
 ### Nested Schema for `os.nv_ram.source`
 
 Optional:
 
-- `block` (String) Block device path. Mutually exclusive with pool/volume and file.
-- `file` (String) Path to NVRAM file. Mutually exclusive with pool/volume and block.
-- `pool` (String) Storage pool name for volume-based NVRAM. Use with 'volume'.
-- `volume` (String) Volume name in the storage pool. Use with 'pool'.
+- `block` (Attributes) Configures the source block for the backing store, indicating its role within the mirroring setup. (see [below for nested schema](#nestedatt--os--nv_ram--source--block))
+- `cookies` (Attributes) Configures settings related to cookie management for the backing store source. (see [below for nested schema](#nestedatt--os--nv_ram--source--cookies))
+- `data_store` (Attributes) Configures the data store for the backing store, specifying the storage location. (see [below for nested schema](#nestedatt--os--nv_ram--source--data_store))
+- `dir` (Attributes) Configures the directory for the backing store source, indicating its physical location. (see [below for nested schema](#nestedatt--os--nv_ram--source--dir))
+- `encryption` (Attributes) Configures encryption settings for the disk, enhancing data security. (see [below for nested schema](#nestedatt--os--nv_ram--source--encryption))
+- `file` (Attributes) Configures file-specific settings for the backing store source, managing its file access. (see [below for nested schema](#nestedatt--os--nv_ram--source--file))
+- `index` (Number) Configures the index for the backing store source configuration, indicating its order.
+- `network` (Attributes) Configures network-specific settings for the backing store source, facilitating network access. (see [below for nested schema](#nestedatt--os--nv_ram--source--network))
+- `nvme` (Attributes) Configures NVMe settings for accessing network storage, enabling optimized performance. (see [below for nested schema](#nestedatt--os--nv_ram--source--nvme))
+- `readahead` (Attributes) Sets the readahead configuration, optimizing I/O performance for network block devices. (see [below for nested schema](#nestedatt--os--nv_ram--source--readahead))
+- `reservations` (Attributes) Defines reservations settings for network storage sources, enabling resource management. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations))
+- `slices` (Attributes) Configures slices for the mirror source device. (see [below for nested schema](#nestedatt--os--nv_ram--source--slices))
+- `ssl` (Attributes) Configures SSL settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--os--nv_ram--source--ssl))
+- `startup_policy` (String) Sets the startup policy for the backing store source in disk mirroring.
+- `timeout` (Attributes) Configures the timeout settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--os--nv_ram--source--timeout))
+- `vhost_user` (Attributes) Configures VHostUser settings for the backing store source in disk mirroring. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user))
+- `vhost_vdpa` (Attributes) Configures the VHostVDPA settings for the source backing store. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_vdpa))
+- `volume` (Attributes) Configures the source volume settings for the mirror backing store. (see [below for nested schema](#nestedatt--os--nv_ram--source--volume))
 
+<a id="nestedatt--os--nv_ram--source--block"></a>
+### Nested Schema for `os.nv_ram.source.block`
+
+Optional:
+
+- `dev` (String) Sets the device path for the block source of the backing store, defining the physical location of the data.
+- `sec_label` (Attributes List) Specifies security label settings for the block source in the backing store, managing access controls. (see [below for nested schema](#nestedatt--os--nv_ram--source--block--sec_label))
+
+<a id="nestedatt--os--nv_ram--source--block--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.block.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--os--nv_ram--source--cookies"></a>
+### Nested Schema for `os.nv_ram.source.cookies`
+
+Optional:
+
+- `cookies` (Attributes List) Configures cookies for the backing store source, allowing additional parameters for storage. (see [below for nested schema](#nestedatt--os--nv_ram--source--cookies--cookies))
+
+<a id="nestedatt--os--nv_ram--source--cookies--cookies"></a>
+### Nested Schema for `os.nv_ram.source.cookies.cookies`
+
+Required:
+
+- `name` (String) Sets the name of the cookie for use in the backing store source configuration.
+- `value` (String) Sets the value associated with the cookie defined in the backing store source.
+
+
+
+<a id="nestedatt--os--nv_ram--source--data_store"></a>
+### Nested Schema for `os.nv_ram.source.data_store`
+
+Optional:
+
+- `format` (Attributes) Defines the format of the data store used in the backing store source configuration. (see [below for nested schema](#nestedatt--os--nv_ram--source--data_store--format))
+
+<a id="nestedatt--os--nv_ram--source--data_store--format"></a>
+### Nested Schema for `os.nv_ram.source.data_store.format`
+
+Required:
+
+- `type` (String) Specifies the type of the data store format being used in the backing store source.
+
+Optional:
+
+- `metadata_cache` (Attributes) Configures the metadata cache settings for the data store format within the backing store source. (see [below for nested schema](#nestedatt--os--nv_ram--source--data_store--format--metadata_cache))
+
+<a id="nestedatt--os--nv_ram--source--data_store--format--metadata_cache"></a>
+### Nested Schema for `os.nv_ram.source.data_store.format.metadata_cache`
+
+Optional:
+
+- `max_size` (Attributes) Sets the maximum size for the metadata cache in the data store format configuration. (see [below for nested schema](#nestedatt--os--nv_ram--source--data_store--format--metadata_cache--max_size))
+
+<a id="nestedatt--os--nv_ram--source--data_store--format--metadata_cache--max_size"></a>
+### Nested Schema for `os.nv_ram.source.data_store.format.metadata_cache.max_size`
+
+Required:
+
+- `value` (Number) Sets the value for the maximum size of the metadata cache in the data store format configuration.
+
+Optional:
+
+- `unit` (String) Specifies the unit for the maximum size of the metadata cache in the data store format.
+
+
+
+
+
+<a id="nestedatt--os--nv_ram--source--dir"></a>
+### Nested Schema for `os.nv_ram.source.dir`
+
+Optional:
+
+- `dir` (String) Defines the specific directory path for the backing store source configuration.
+
+
+<a id="nestedatt--os--nv_ram--source--encryption"></a>
+### Nested Schema for `os.nv_ram.source.encryption`
+
+Optional:
+
+- `engine` (String) Specifies the encryption engine utilized for encrypting the disk.
+- `format` (String) Configures the format of the encrypted disk storage, determining how the data is stored and accessed.
+- `secrets` (Attributes List) Specifies the secrets used for encryption, which can include various elements needed for accessing encrypted data. (see [below for nested schema](#nestedatt--os--nv_ram--source--encryption--secrets))
+
+<a id="nestedatt--os--nv_ram--source--encryption--secrets"></a>
+### Nested Schema for `os.nv_ram.source.encryption.secrets`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--os--nv_ram--source--file"></a>
+### Nested Schema for `os.nv_ram.source.file`
+
+Optional:
+
+- `fd_group` (String) Sets the file descriptor group for the file specified in the backing store source.
+- `file` (String) Specifies the actual file referenced in the backing store source configuration.
+- `sec_label` (Attributes List) Configures the security label associated with the file in the backing store source. (see [below for nested schema](#nestedatt--os--nv_ram--source--file--sec_label))
+
+<a id="nestedatt--os--nv_ram--source--file--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--os--nv_ram--source--network"></a>
+### Nested Schema for `os.nv_ram.source.network`
+
+Optional:
+
+- `auth` (Attributes) Configures authentication settings for the iSCSI source. (see [below for nested schema](#nestedatt--os--nv_ram--source--network--auth))
+- `config` (Attributes) Defines configuration settings for the network in the backing store source. (see [below for nested schema](#nestedatt--os--nv_ram--source--network--config))
+- `hosts` (Attributes List) Configures the hosts within the network settings of the backing store source. (see [below for nested schema](#nestedatt--os--nv_ram--source--network--hosts))
+- `identity` (Attributes) Sets the identity parameters for the network connection in the backing store source. (see [below for nested schema](#nestedatt--os--nv_ram--source--network--identity))
+- `initiator` (Attributes) Sets the initiator for the network connection in the backing store source configuration. (see [below for nested schema](#nestedatt--os--nv_ram--source--network--initiator))
+- `known_hosts` (Attributes) Configures the known hosts used for authenticated connections in network storage operations. (see [below for nested schema](#nestedatt--os--nv_ram--source--network--known_hosts))
+- `name` (String) Sets a name for the network block device, facilitating easier identification.
+- `protocol` (String) Configures the protocol used for network storage access, such as iSCSI or NBD.
+- `query` (String) Controls query parameters that may influence the network connection establishment.
+- `reconnect` (Attributes) Configures reconnect behavior for network storage connections, enhancing robustness in case of interruptions. (see [below for nested schema](#nestedatt--os--nv_ram--source--network--reconnect))
+- `snapshot` (Attributes) Enables snapshot capabilities for the network storage source, allowing for point-in-time volumes. (see [below for nested schema](#nestedatt--os--nv_ram--source--network--snapshot))
+- `tls` (String) Controls whether TLS is used for secure connections to the network storage.
+- `tls_hostname` (String) Sets the expected hostname for the TLS certificate validation during secure network access.
+
+<a id="nestedatt--os--nv_ram--source--network--auth"></a>
+### Nested Schema for `os.nv_ram.source.network.auth`
+
+Optional:
+
+- `secret` (Attributes) Specifies the secret used for authenticating the iSCSI connection. (see [below for nested schema](#nestedatt--os--nv_ram--source--network--auth--secret))
+- `username` (String) Sets the username for iSCSI authentication.
+
+<a id="nestedatt--os--nv_ram--source--network--auth--secret"></a>
+### Nested Schema for `os.nv_ram.source.network.auth.secret`
+
+Optional:
+
+- `type` (String) Sets the type of secret used for iSCSI authentication.
+- `usage` (String) Defines the usage context for the iSCSI authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Specifies the UUID of the iSCSI authentication secret.
+
+
+
+<a id="nestedatt--os--nv_ram--source--network--config"></a>
+### Nested Schema for `os.nv_ram.source.network.config`
+
+Required:
+
+- `file` (String) Specifies a file for loading additional network configuration in the backing store source.
+
+
+<a id="nestedatt--os--nv_ram--source--network--hosts"></a>
+### Nested Schema for `os.nv_ram.source.network.hosts`
+
+Optional:
+
+- `name` (String) Defines the name of the iSCSI host for the source configuration.
+- `port` (String) Specifies the port number for the iSCSI host connection.
+- `socket` (String) Sets the socket configuration for the iSCSI host connection.
+- `transport` (String) Specifies the transport method used for the iSCSI host connection.
+
+
+<a id="nestedatt--os--nv_ram--source--network--identity"></a>
+### Nested Schema for `os.nv_ram.source.network.identity`
+
+Optional:
+
+- `agent_sock` (String) Configures the agent socket for network identity in the backing store source.
+- `group` (String) Sets the group identifier for network identity in the backing store source.
+- `keyfile` (String) Defines the key file used for network identity in the backing store source configuration.
+- `user` (String) Configures the user associated with the network identity in the backing store source.
+- `user_name` (String) Sets the user name for network identity in the backing store source configuration.
+
+
+<a id="nestedatt--os--nv_ram--source--network--initiator"></a>
+### Nested Schema for `os.nv_ram.source.network.initiator`
+
+Optional:
+
+- `iqn` (Attributes) Configures the iSCSI qualified name (IQN) used for the initiator in network block device configurations. (see [below for nested schema](#nestedatt--os--nv_ram--source--network--initiator--iqn))
+
+<a id="nestedatt--os--nv_ram--source--network--initiator--iqn"></a>
+### Nested Schema for `os.nv_ram.source.network.initiator.iqn`
+
+Optional:
+
+- `name` (String) Sets a name attribute for the iSCSI initiator's IQN for identification purposes.
+
+
+
+<a id="nestedatt--os--nv_ram--source--network--known_hosts"></a>
+### Nested Schema for `os.nv_ram.source.network.known_hosts`
+
+Required:
+
+- `path` (String) Specifies the path to the file containing known hosts for the network storage.
+
+
+<a id="nestedatt--os--nv_ram--source--network--reconnect"></a>
+### Nested Schema for `os.nv_ram.source.network.reconnect`
+
+Required:
+
+- `delay` (String) Sets the delay duration before attempting to reconnect to a network storage source after a failure.
+
+
+<a id="nestedatt--os--nv_ram--source--network--snapshot"></a>
+### Nested Schema for `os.nv_ram.source.network.snapshot`
+
+Required:
+
+- `name` (String) Configures the name attribute for the snapshot used in network storage operations.
+
+
+
+<a id="nestedatt--os--nv_ram--source--nvme"></a>
+### Nested Schema for `os.nv_ram.source.nvme`
+
+
+<a id="nestedatt--os--nv_ram--source--readahead"></a>
+### Nested Schema for `os.nv_ram.source.readahead`
+
+Required:
+
+- `size` (String) Configures the size of data that should be prefetched when reading from the network block device.
+
+
+<a id="nestedatt--os--nv_ram--source--reservations"></a>
+### Nested Schema for `os.nv_ram.source.reservations`
+
+Optional:
+
+- `enabled` (String) Controls whether reservations are enabled for the network storage source.
+- `managed` (Boolean) Specifies if the reservations are managed by a higher-level resource management layer.
+- `source` (Attributes) Configures the source from which reservations are allocated for network storage. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source))
+
+<a id="nestedatt--os--nv_ram--source--reservations--source"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--nmdm))
+- `null` (Boolean) Configures settings for a null device used in reservations for storage.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--spice_port))
+- `spice_vmc` (Boolean) Configures settings for the SPICE VMC used in reservations related to disk mirroring.
+- `std_io` (Boolean) Manages standard I/O settings for the reservations in disk mirroring.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--unix))
+- `vc` (Boolean) Configures settings for the VC source in the backing store for disk mirroring reservations.
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--dbus"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--dev"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--dev--sec_label))
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--dev--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--file"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--file--sec_label))
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--file--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--nmdm"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--pipe"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--pipe--sec_label))
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--pipe--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--pty"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--pty--sec_label))
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--pty--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--qemuvd_agent"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--qemuvd_agent--mouse))
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--qemuvd_agent--clip_board"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--qemuvd_agent--mouse"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--spice_port"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--tcp"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--tcp--reconnect"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--udp"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--unix"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--os--nv_ram--source--reservations--source--unix--sec_label))
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--unix--reconnect"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--os--nv_ram--source--reservations--source--unix--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.reservations.source.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+
+<a id="nestedatt--os--nv_ram--source--slices"></a>
+### Nested Schema for `os.nv_ram.source.slices`
+
+Optional:
+
+- `slices` (Attributes List) Specifies individual slice configurations within the mirror source. (see [below for nested schema](#nestedatt--os--nv_ram--source--slices--slices))
+
+<a id="nestedatt--os--nv_ram--source--slices--slices"></a>
+### Nested Schema for `os.nv_ram.source.slices.slices`
+
+Required:
+
+- `offset` (Number) Sets the offset for the specific slice in the mirror source configuration.
+- `size` (Number) Configures the size of the slice in the mirror source.
+- `type` (String) Specifies the type of the slice in the mirror source configuration.
+
+
+
+<a id="nestedatt--os--nv_ram--source--ssl"></a>
+### Nested Schema for `os.nv_ram.source.ssl`
+
+Required:
+
+- `verify` (String) Specifies the verification level of the SSL connections for the backing store.
+
+
+<a id="nestedatt--os--nv_ram--source--timeout"></a>
+### Nested Schema for `os.nv_ram.source.timeout`
+
+Required:
+
+- `seconds` (String) Specifies the duration in seconds for the timeout configuration in disk mirroring.
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user`
+
+Optional:
+
+- `dbus` (Attributes) Configures the DBus source for the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--dbus))
+- `dev` (Attributes) Defines the device path for the source of the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--dev))
+- `file` (Attributes) Defines a file source for the RNG EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--file))
+- `nmdm` (Attributes) Configures the NMDM (null modem) device source for the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--nmdm))
+- `null` (Boolean) Configures a null device type in the VHostUser source configuration for the mirrored disk.
+- `pipe` (Attributes) Defines a pipe source for the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--pipe))
+- `pty` (Attributes) Defines a pseudo-terminal (PTY) source for the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--pty))
+- `qemuvd_agent` (Attributes) Configures the QEMU guest agent for the random number generator backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--qemuvd_agent))
+- `spice_port` (Attributes) Configures the SPICE port settings for the random number generator backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--spice_port))
+- `spice_vmc` (Boolean) Configures the Spice VMC settings in the VHostUser source configuration for the mirrored disk.
+- `std_io` (Boolean) Configures standard I/O settings for the VHostUser interface associated with the mirrored disk.
+- `tcp` (Attributes) Configures TCP settings for the random number generator backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--tcp))
+- `udp` (Attributes) Configures UDP settings for the random number generator backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--udp))
+- `unix` (Attributes) Configures UNIX domain socket settings for the random number generator backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--unix))
+- `vc` (Boolean) Configures the VHostUser virtual channel settings for the source backing store.
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--dbus"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.dbus`
+
+Optional:
+
+- `channel` (String) Specifies the channel used for the DBus source in the EGD backend.
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--dev"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.dev`
+
+Required:
+
+- `path` (String) Specifies the path to the device file for the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures the security label settings for the device source in the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--dev--sec_label))
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--dev--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.dev.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--file"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.file`
+
+Required:
+
+- `path` (String) Sets the file path for the RNG source in the EGD backend.
+
+Optional:
+
+- `append` (String) Specifies if data should be appended to the file used as a source.
+- `sec_label` (Attributes List) Configures security label settings for the file source in the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--file--sec_label))
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--file--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.file.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--nmdm"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.nmdm`
+
+Required:
+
+- `master` (String) Specifies the master device in a master-slave NMDM configuration for the EGD backend.
+- `slave` (String) Specifies the slave device in a master-slave NMDM configuration for the EGD backend.
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--pipe"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.pipe`
+
+Required:
+
+- `path` (String) Sets the path for the pipe source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) Configures security label settings for the pipe source in the EGD backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--pipe--sec_label))
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--pipe--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.pipe.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--pty"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.pty`
+
+Required:
+
+- `path` (String) Sets the path for the PTY source in the EGD backend.
+
+Optional:
+
+- `sec_label` (Attributes List) This field configures the security label for the Pseudo TTY device, enabling security controls over access. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--pty--sec_label))
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--pty--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.pty.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--qemuvd_agent"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.qemuvd_agent`
+
+Optional:
+
+- `clip_board` (Attributes) Configures clipboard sharing settings for the QEMU guest agent. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--qemuvd_agent--clip_board))
+- `mouse` (Attributes) Configures mouse settings for the QEMU guest agent in the random number generator setup. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--qemuvd_agent--mouse))
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--qemuvd_agent--clip_board"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.qemuvd_agent.clip_board`
+
+Required:
+
+- `copy_paste` (String) Enables or disables clipboard copy-paste functionality through the QEMU guest agent.
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--qemuvd_agent--mouse"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.qemuvd_agent.mouse`
+
+Required:
+
+- `mode` (String) Sets the mode for the mouse interaction through the QEMU guest agent.
+
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--spice_port"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.spice_port`
+
+Required:
+
+- `channel` (String) Sets the channel attribute for the SPICE port in the random number generator backend.
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--tcp"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.tcp`
+
+Optional:
+
+- `host` (String) Sets the host address for the TCP connection in the random number generator backend.
+- `mode` (String) Specifies the operation mode for TCP in the random number generator backend.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--tcp--reconnect))
+- `service` (String) Defines the service attribute for the TCP connection in the random number generator backend.
+- `tls` (String) Enables or disables TLS encryption for the TCP connection in the backend.
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--tcp--reconnect"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.tcp.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--udp"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.udp`
+
+Required:
+
+- `bind_host` (String) Sets the bind host address for the UDP connection in the random number generator backend.
+- `bind_service` (String) Specifies the service attribute for binding in the UDP settings.
+- `connect_host` (String) Configures the host address used for the connection in the UDP settings.
+- `connect_service` (String) Defines the service attribute for the connection in the UDP settings.
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--unix"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.unix`
+
+Optional:
+
+- `mode` (String) Sets the mode attribute for the UNIX domain socket in the random number generator backend.
+- `path` (String) Specifies the path to the UNIX domain socket for connection.
+- `reconnect` (Attributes) Configures reconnect settings for the UNIX domain socket in the backend. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--unix--reconnect))
+- `sec_label` (Attributes List) Configures the security label for the UNIX domain socket. (see [below for nested schema](#nestedatt--os--nv_ram--source--vhost_user--unix--sec_label))
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--unix--reconnect"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.unix.reconnect`
+
+Required:
+
+- `enabled` (String) Enables or disables the automatic reconnection feature for the UNIX domain socket.
+
+Optional:
+
+- `timeout` (Number) Sets the timeout duration for reconnections in the UNIX socket settings.
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_user--unix--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.vhost_user.unix.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+<a id="nestedatt--os--nv_ram--source--vhost_vdpa"></a>
+### Nested Schema for `os.nv_ram.source.vhost_vdpa`
+
+Required:
+
+- `dev` (String) Specifies the device to be used for the VHostVDPA source in the backing store.
+
+
+<a id="nestedatt--os--nv_ram--source--volume"></a>
+### Nested Schema for `os.nv_ram.source.volume`
+
+Optional:
+
+- `mode` (String) Sets the mode for the volume source in the backing store configuration.
+- `pool` (String) Specifies the pool from which the volume source is derived in the backing store.
+- `sec_label` (Attributes List) Configures the security label settings for the volume in the backing store. (see [below for nested schema](#nestedatt--os--nv_ram--source--volume--sec_label))
+- `volume` (String) Provides the volume definition used as the backing store source.
+
+<a id="nestedatt--os--nv_ram--source--volume--sec_label"></a>
+### Nested Schema for `os.nv_ram.source.volume.sec_label`
+
+Optional:
+
+- `label` (String) Configures the label for the security attributes of the UNIX domain socket.
+- `label_skip` (String) Determines whether to skip the label check for the security label in the UNIX socket.
+- `model` (String) Sets the model type for the security label in the UNIX domain socket configuration.
+- `relabel` (String) Enables or disables relabeling for the security label in the UNIX domain socket.
+
+
+
+
+
+<a id="nestedatt--os--sm_bios"></a>
+### Nested Schema for `os.sm_bios`
+
+Required:
+
+- `mode` (String) Sets the mode for the SMBIOS configuration.
+
+
+
+<a id="nestedatt--perf"></a>
+### Nested Schema for `perf`
+
+Optional:
+
+- `events` (Attributes List) Specifies performance events to monitor within the domain. (see [below for nested schema](#nestedatt--perf--events))
+
+<a id="nestedatt--perf--events"></a>
+### Nested Schema for `perf.events`
+
+Required:
+
+- `enabled` (String) Controls whether performance monitoring events are enabled.
+- `name` (String) Sets the name of the performance monitoring event.
 
 
 
@@ -492,5 +12145,285 @@ Optional:
 
 Optional:
 
-- `suspend_to_disk` (String) Suspend to disk policy (yes, no).
-- `suspend_to_mem` (String) Suspend to memory policy (yes, no).
+- `suspend_to_disk` (Attributes) Configures the suspend to disk feature for power management. (see [below for nested schema](#nestedatt--pm--suspend_to_disk))
+- `suspend_to_mem` (Attributes) Configures the suspend to disk feature for power management. (see [below for nested schema](#nestedatt--pm--suspend_to_mem))
+
+<a id="nestedatt--pm--suspend_to_disk"></a>
+### Nested Schema for `pm.suspend_to_disk`
+
+Required:
+
+- `enabled` (String) Specifies if the suspend to disk feature is enabled.
+
+
+<a id="nestedatt--pm--suspend_to_mem"></a>
+### Nested Schema for `pm.suspend_to_mem`
+
+Required:
+
+- `enabled` (String) Specifies if the suspend to disk feature is enabled.
+
+
+
+<a id="nestedatt--resource"></a>
+### Nested Schema for `resource`
+
+Optional:
+
+- `fibre_channel` (Attributes) Configures the Fibre Channel resource settings for the domain. (see [below for nested schema](#nestedatt--resource--fibre_channel))
+- `partition` (String) Defines the partition resource settings for the domain.
+
+<a id="nestedatt--resource--fibre_channel"></a>
+### Nested Schema for `resource.fibre_channel`
+
+Required:
+
+- `app_id` (String) Sets the application ID for the Fibre Channel resource.
+
+
+
+<a id="nestedatt--sec_label"></a>
+### Nested Schema for `sec_label`
+
+Optional:
+
+- `base_label` (String) Specifies the base label for the domain's security configuration.
+- `image_label` (String) Sets the image label for the domain's security configuration.
+- `label` (String) Specifies the security label for the domain.
+- `model` (String) Configures the model for the domain's security label.
+- `relabel` (String) Controls if the domain's security label should be relabeled.
+- `type` (String) Sets the type of the security label for the domain.
+
+
+<a id="nestedatt--sys_info"></a>
+### Nested Schema for `sys_info`
+
+Optional:
+
+- `fw_cfg` (Attributes) Configures the firmware configuration settings for the virtual machine. (see [below for nested schema](#nestedatt--sys_info--fw_cfg))
+- `smbios` (Attributes) Configures the SMBIOS system information for the virtual machine. (see [below for nested schema](#nestedatt--sys_info--smbios))
+
+<a id="nestedatt--sys_info--fw_cfg"></a>
+### Nested Schema for `sys_info.fw_cfg`
+
+Optional:
+
+- `entry` (Attributes List) Sets individual entries for the firmware configuration. (see [below for nested schema](#nestedatt--sys_info--fw_cfg--entry))
+
+<a id="nestedatt--sys_info--fw_cfg--entry"></a>
+### Nested Schema for `sys_info.fw_cfg.entry`
+
+Required:
+
+- `name` (String) Defines the name of the firmware configuration entry.
+- `value` (String) Sets the value for the firmware configuration entry.
+
+Optional:
+
+- `file` (String) Specifies the file associated with the firmware configuration entry.
+
+
+
+<a id="nestedatt--sys_info--smbios"></a>
+### Nested Schema for `sys_info.smbios`
+
+Optional:
+
+- `base_board` (Attributes List) Sets the base board information for the SMBIOS configuration. (see [below for nested schema](#nestedatt--sys_info--smbios--base_board))
+- `bios` (Attributes) Configures the BIOS information for the virtual machine's SMBIOS. (see [below for nested schema](#nestedatt--sys_info--smbios--bios))
+- `chassis` (Attributes) Configures the chassis information for the SMBIOS configuration. (see [below for nested schema](#nestedatt--sys_info--smbios--chassis))
+- `memory` (Attributes List) Configures the memory information for the SMBIOS system. (see [below for nested schema](#nestedatt--sys_info--smbios--memory))
+- `oem_strings` (Attributes) Configures OEM strings within the SMBIOS information. (see [below for nested schema](#nestedatt--sys_info--smbios--oem_strings))
+- `processor` (Attributes List) Sets processor information in the SMBIOS configuration. (see [below for nested schema](#nestedatt--sys_info--smbios--processor))
+- `system` (Attributes) Configures system information for the SMBIOS configuration. (see [below for nested schema](#nestedatt--sys_info--smbios--system))
+
+<a id="nestedatt--sys_info--smbios--base_board"></a>
+### Nested Schema for `sys_info.smbios.base_board`
+
+Optional:
+
+- `entry` (Attributes List) Defines individual entries for the base board information. (see [below for nested schema](#nestedatt--sys_info--smbios--base_board--entry))
+
+<a id="nestedatt--sys_info--smbios--base_board--entry"></a>
+### Nested Schema for `sys_info.smbios.base_board.entry`
+
+Required:
+
+- `name` (String) Defines the name of the firmware configuration entry.
+- `value` (String) Sets the value for the firmware configuration entry.
+
+Optional:
+
+- `file` (String) Specifies the file associated with the firmware configuration entry.
+
+
+
+<a id="nestedatt--sys_info--smbios--bios"></a>
+### Nested Schema for `sys_info.smbios.bios`
+
+Optional:
+
+- `entry` (Attributes List) Specifies individual entries for the BIOS information in the SMBIOS. (see [below for nested schema](#nestedatt--sys_info--smbios--bios--entry))
+
+<a id="nestedatt--sys_info--smbios--bios--entry"></a>
+### Nested Schema for `sys_info.smbios.bios.entry`
+
+Required:
+
+- `name` (String) Defines the name of the firmware configuration entry.
+- `value` (String) Sets the value for the firmware configuration entry.
+
+Optional:
+
+- `file` (String) Specifies the file associated with the firmware configuration entry.
+
+
+
+<a id="nestedatt--sys_info--smbios--chassis"></a>
+### Nested Schema for `sys_info.smbios.chassis`
+
+Optional:
+
+- `entry` (Attributes List) Defines individual entries for the chassis information in the SMBIOS configuration. (see [below for nested schema](#nestedatt--sys_info--smbios--chassis--entry))
+
+<a id="nestedatt--sys_info--smbios--chassis--entry"></a>
+### Nested Schema for `sys_info.smbios.chassis.entry`
+
+Required:
+
+- `name` (String) Defines the name of the firmware configuration entry.
+- `value` (String) Sets the value for the firmware configuration entry.
+
+Optional:
+
+- `file` (String) Specifies the file associated with the firmware configuration entry.
+
+
+
+<a id="nestedatt--sys_info--smbios--memory"></a>
+### Nested Schema for `sys_info.smbios.memory`
+
+Optional:
+
+- `entry` (Attributes List) Sets individual entries for the memory information in the SMBIOS configuration. (see [below for nested schema](#nestedatt--sys_info--smbios--memory--entry))
+
+<a id="nestedatt--sys_info--smbios--memory--entry"></a>
+### Nested Schema for `sys_info.smbios.memory.entry`
+
+Required:
+
+- `name` (String) Defines the name of the firmware configuration entry.
+- `value` (String) Sets the value for the firmware configuration entry.
+
+Optional:
+
+- `file` (String) Specifies the file associated with the firmware configuration entry.
+
+
+
+<a id="nestedatt--sys_info--smbios--oem_strings"></a>
+### Nested Schema for `sys_info.smbios.oem_strings`
+
+Optional:
+
+- `entry` (List of String) Defines individual entries for the OEM strings in the SMBIOS configuration.
+
+
+<a id="nestedatt--sys_info--smbios--processor"></a>
+### Nested Schema for `sys_info.smbios.processor`
+
+Optional:
+
+- `entry` (Attributes List) Specifies individual entries for processor information in the SMBIOS. (see [below for nested schema](#nestedatt--sys_info--smbios--processor--entry))
+
+<a id="nestedatt--sys_info--smbios--processor--entry"></a>
+### Nested Schema for `sys_info.smbios.processor.entry`
+
+Required:
+
+- `name` (String) Defines the name of the firmware configuration entry.
+- `value` (String) Sets the value for the firmware configuration entry.
+
+Optional:
+
+- `file` (String) Specifies the file associated with the firmware configuration entry.
+
+
+
+<a id="nestedatt--sys_info--smbios--system"></a>
+### Nested Schema for `sys_info.smbios.system`
+
+Optional:
+
+- `entry` (Attributes List) Defines individual entries for system information in the SMBIOS configuration. (see [below for nested schema](#nestedatt--sys_info--smbios--system--entry))
+
+<a id="nestedatt--sys_info--smbios--system--entry"></a>
+### Nested Schema for `sys_info.smbios.system.entry`
+
+Required:
+
+- `name` (String) Defines the name of the firmware configuration entry.
+- `value` (String) Sets the value for the firmware configuration entry.
+
+Optional:
+
+- `file` (String) Specifies the file associated with the firmware configuration entry.
+
+
+
+
+
+<a id="nestedatt--throttle_groups"></a>
+### Nested Schema for `throttle_groups`
+
+Optional:
+
+- `throttle_groups` (Attributes List) Sets individual throttle group configurations. (see [below for nested schema](#nestedatt--throttle_groups--throttle_groups))
+
+<a id="nestedatt--throttle_groups--throttle_groups"></a>
+### Nested Schema for `throttle_groups.throttle_groups`
+
+Optional:
+
+- `group_name` (String) Specifies the name for a throttle group configuration.
+- `read_bytes_sec` (Number) Configures the read bytes per second limit for the throttle group.
+- `read_bytes_sec_max` (Number) Sets the maximum read bytes per second limit for the throttle group.
+- `read_bytes_sec_max_length` (Number) Configures the maximum read bytes per second limit length for the throttle group.
+- `read_iops_sec` (Number) Sets the read IOPS limit for the throttle group.
+- `read_iops_sec_max` (Number) Configures the maximum read IOPS limit for the throttle group.
+- `read_iops_sec_max_length` (Number) Sets the maximum read IOPS limit length for the throttle group.
+- `size_iops_sec` (Number) Configures the size IOPS limit for the throttle group.
+- `total_bytes_sec` (Number) Sets the total bytes per second limit for the throttle group.
+- `total_bytes_sec_max` (Number) Configures the maximum total bytes per second limit for the throttle group.
+- `total_bytes_sec_max_length` (Number) Configures the maximum number of bytes per second for the throttle group, defining a limit for data transfer over time.
+- `total_iops_sec` (Number) Sets the total number of input/output operations per second allowed for the throttle group, controlling the disk performance.
+- `total_iops_sec_max` (Number) Specifies the maximum limit for input/output operations per second for the throttle group, capping potential performance.
+- `total_iops_sec_max_length` (Number) Defines the maximum length of input/output operations per second for the throttle group, determining how much of this limit can be used.
+- `write_bytes_sec` (Number) Configures the number of bytes per second that can be written by the throttle group, limiting write operations.
+- `write_bytes_sec_max` (Number) Sets the maximum number of bytes per second that can be written, imposing a cap on write throughput for the throttle group.
+- `write_bytes_sec_max_length` (Number) Specifies the maximum length of write operations measured in bytes per second for the throttle group.
+- `write_iops_sec` (Number) Configures the total number of write input/output operations per second that the throttle group can perform.
+- `write_iops_sec_max` (Number) Sets the maximum limit for write input/output operations per second for the throttle group, restricting performance.
+- `write_iops_sec_max_length` (Number) Defines the maximum length of write input/output operations per second for the throttle group, indicating the extent of its limits.
+
+
+
+<a id="nestedatt--vcpus"></a>
+### Nested Schema for `vcpus`
+
+Optional:
+
+- `vcpu` (Attributes List) Represents a single virtual CPU configuration within the domain, allowing for detailed settings per vCPU. (see [below for nested schema](#nestedatt--vcpus--vcpu))
+
+<a id="nestedatt--vcpus--vcpu"></a>
+### Nested Schema for `vcpus.vcpu`
+
+Optional:
+
+- `enabled` (String) Specifies whether the virtual CPU is enabled or disabled, controlling its operational status in the VM.
+- `hotpluggable` (String) Configures whether the virtual CPU can be added or removed while the domain is running, allowing for dynamic resource management.
+- `order` (Number) Sets the order of the virtual CPUs, determining the significance of each vCPU's placement in relation to others.
+
+Read-Only:
+
+- `id` (Number) Identifies the virtual CPU by an integer ID, serving as a unique identifier within the domain configuration.

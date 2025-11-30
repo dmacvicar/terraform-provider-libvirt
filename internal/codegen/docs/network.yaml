@@ -1,20 +1,505 @@
 entries:
-  - path: network
-    description: Virtual network configuration
-    reference: https://libvirt.org/formatnetwork.html#element-and-attribute-overview
-
+  - path: network.bandwidth.outbound
+    description: Configures QoS limits for outgoing traffic from the network, with child attributes controlling average rate and related parameters.
+    reference: https://libvirt.org/formatnetwork.html#quality-of-service
+  - path: network.bandwidth.outbound.burst
+    description: Sets the maximum instantaneous outbound bandwidth burst size in kilobytes per second that may temporarily exceed the average; value is a user-provided non-negative integer.
+    reference: https://libvirt.org/formatnetwork.html#quality-of-service
+  - path: network.bandwidth.inbound.peak
+    description: Sets an upper cap on inbound bandwidth in kilobytes per second, typically higher than average but not exceeding burst; value is a user-provided non-negative integer.
+    reference: https://libvirt.org/formatnetwork.html#quality-of-service
   - path: network.bridge
-    description: Network bridge configuration
+    description: Configures the characteristics of the bridge device that backs this virtual network, including name and STP/forwarding behavior.
     reference: https://libvirt.org/formatnetwork.html#connectivity
-
-  - path: network.forward
-    description: Network forwarding mode configuration
+  - path: network.bridge.delay
+    description: Sets the forwarding delay (in seconds) for the bridge, controlling how long ports stay in the listening/learning states when STP is enabled; value is a user-provided non-negative integer.
     reference: https://libvirt.org/formatnetwork.html#connectivity
-
-  - path: network.ips
-    description: IP address configuration for the network
+  - path: network.bridge.name
+    description: Sets the name of the host bridge device used for this virtual network (for example "virbr0" or an existing bridge name).
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.bridge.stp
+    description: Enables or disables Spanning Tree Protocol on the bridge; accepts the strings "on" or "off".
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.bandwidth
+    description: Configures overall QoS bandwidth limits for the virtual network, enabling nested inbound/outbound rate settings when present.
+    reference: https://libvirt.org/formatnetwork.html#quality-of-service
+  - path: network.bandwidth.inbound.average
+    description: Sets the long-term average inbound bandwidth limit in kilobytes per second; value is a user-provided non-negative integer (e.g. 10240 for ~10 MB/s).
+    reference: https://libvirt.org/formatnetwork.html#quality-of-service
+  - path: network.bandwidth.inbound.burst
+    description: Sets the maximum instantaneous inbound bandwidth burst size in kilobytes per second that may temporarily exceed the average; value is a user-provided non-negative integer.
+    reference: https://libvirt.org/formatnetwork.html#quality-of-service
+  - path: network.bandwidth.inbound.floor
+    description: Sets a minimum guaranteed inbound bandwidth in kilobytes per second when supported by the backend; value is a user-provided non-negative integer.
+    reference: https://libvirt.org/formatnetwork.html#quality-of-service
+  - path: network.bandwidth.outbound.average
+    description: Sets the long-term average outbound bandwidth limit in kilobytes per second; value is a user-provided non-negative integer.
+    reference: https://libvirt.org/formatnetwork.html#quality-of-service
+  - path: network.bandwidth.outbound.peak
+    description: Sets an upper cap on outbound bandwidth in kilobytes per second, typically higher than average but not exceeding burst; value is a user-provided non-negative integer.
+    reference: https://libvirt.org/formatnetwork.html#quality-of-service
+  - path: network.bandwidth.class_id
+    description: Sets an optional traffic classification identifier (classID) for the network's bandwidth rules; value is user-provided and format is not constrained by libvirt.
+    reference: https://libvirt.org/formatnetwork.html#quality-of-service
+  - path: network.bandwidth.inbound
+    description: Configures QoS limits for incoming traffic to the network, with child attributes controlling average rate and related parameters.
+    reference: https://libvirt.org/formatnetwork.html#quality-of-service
+  - path: network.bandwidth.outbound.floor
+    description: Sets a minimum guaranteed outbound bandwidth in kilobytes per second when supported by the backend; value is a user-provided non-negative integer.
+    reference: https://libvirt.org/formatnetwork.html#quality-of-service
+  - path: network.bridge.mac_table_manager
+    description: Selects the MAC address table manager implementation for the bridge (e.g. "kernel" or "libvirt" when supported); value is a user-provided string constrained to backend-supported options.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.dns.host.hostnames
+    description: Lists one or more hostnames associated with a single static DNS host entry. Each block represents a single hostname record for the given IP.
     reference: https://libvirt.org/formatnetwork.html#addressing
-
+  - path: network.dns.sr_vs
+    description: Configures DNS SRV records served by this network’s DNS, describing services available under specific domains. Each block represents a single SRV record.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.sr_vs.priority
+    description: Sets the SRV record priority, used to order multiple records for the same service; lower values have higher priority. The value is an integer, typically non-negative (e.g. 0 or 10).
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.enable
+    description: Controls whether the libvirt-managed DNS service for this network is enabled; accepts "yes" or "no". If omitted, libvirt’s default behavior applies.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.sr_vs.target
+    description: Sets the hostname of the server providing the advertised service, as returned in the SRV record. The value is user-provided and should be a resolvable hostname within or outside the virtual network.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.sr_vs.weight
+    description: Sets the SRV record weight used to distribute traffic among records of the same priority. The value is an integer, typically non-negative (e.g. 0 or 50).
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.tx_ts
+    description: Configures DNS TXT records served by this network’s DNS, allowing arbitrary text data to be associated with names. Each block represents a single TXT record.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.sr_vs.domain
+    description: Sets the DNS domain in which the SRV record applies (the owner name’s domain part). The value is user-provided and should be a valid domain (e.g. "example.local").
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.sr_vs.port
+    description: Sets the TCP or UDP port number on which the advertised service listens. The value should be an integer between 1 and 65535 (e.g. 80 or 443).
+    reference: https://libvirt.org/formatnetwork.html#addressing
   - path: network.dns
-    description: DNS configuration for the network
+    description: Enables configuration of DNS services for the virtual network, including forwarders and static records. Presence of this block turns on DNS handling according to its child settings.
     reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.forwarders
+    description: Defines one or more upstream DNS forwarders that this network’s DNS server queries when resolving names. Each block configures a single <forwarder> entry.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.forwarders.addr
+    description: Sets the IP address of an upstream DNS forwarder. The value is user-provided and should be a valid IPv4 or IPv6 address (e.g. "8.8.8.8" or "2001:4860:4860::8888").
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.forwarders.domain
+    description: Restricts the forwarder to queries for a specific DNS domain suffix. The value is user-provided and should be a valid DNS domain (e.g. "example.com").
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.host.hostnames.hostname
+    description: Sets a hostname to be mapped to the parent host’s IP address in DNS. The value is user-provided and should be a valid host label or FQDN (e.g. "web1" or "web1.example.local").
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.host.ip
+    description: Sets the IP address for the static host mapping used by all associated hostnames. The value is required and must be a valid IPv4 or IPv6 address.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.bridge.zone
+    description: Sets the DNS zone name associated with the bridged network, used as the default domain for DNS records served by this network. The value is user-provided and should typically be a valid DNS domain name (e.g. "example.local").
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.dns.forward_plain_names
+    description: Controls whether plain hostnames (without a domain suffix) are forwarded to upstream DNS servers; accepts "yes" or "no". If unset, libvirt uses its default for forwarding plain names.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.host
+    description: Defines a static DNS host entry mapping one IP address to one or more hostnames within this virtual network. Multiple host blocks may be used to configure several fixed name-to-address mappings.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.sr_vs.protocol
+    description: Sets the transport protocol for the SRV record, typically "tcp" or "udp". The value is user-provided but should match the service’s actual protocol.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.sr_vs.service
+    description: Sets the service name part of the SRV record, without the leading underscore (e.g. "http", "ldap"). The value is user-provided and should be a valid service identifier.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.forward.addresses.pci.domain
+    description: Sets the PCI domain number (in hexadecimal, usually \"0000\") of the forwarding device; the value must match the host’s PCI topology.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.dev
+    description: Specifies a single host network interface name (e.g. \"eth0\", \"br0\") that this virtual network forwards through; used by several forward modes such as \"route\", \"nat\", or \"bridge\".
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.mode
+    description: Sets the forwarding mode of the virtual network, with valid values including \"nat\", \"route\", \"bridge\", \"open\", \"vepa\", \"passthrough\", or \"private\" depending on the desired connectivity model.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.addresses.pci.slot
+    description: Sets the PCI slot number (in hexadecimal) of the forwarding device; together with domain, bus, and function it uniquely identifies the PCI device.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.interfaces.dev
+    description: Specifies the name of a host interface (e.g. \"eth1\") used as an individual forwarding endpoint within the virtual network.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.dns.tx_ts.name
+    description: Sets the DNS TXT record name advertised by the virtual network’s built‑in DNS server; the value is user‑provided (for example, a hostname or arbitrary label).
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.dns.tx_ts.value
+    description: Sets the DNS TXT record value string returned for the given TXT record name; the value is user‑provided and may contain any text permitted by DNS TXT records.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.forward.addresses
+    description: Lists one or more forwarding endpoint addresses (typically physical devices or PCI addresses) used when the network is in a passthrough/hostdev style forward mode.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.addresses.pci.bus
+    description: Sets the PCI bus number (in hexadecimal) of the forwarding device; the value must match the host’s PCI topology (e.g. \"03\").
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.addresses.pci.function
+    description: Sets the PCI function number (in hexadecimal, 0–7) of the forwarding device, completing the BDF identifier.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.managed
+    description: Controls whether libvirt manages the lifecycle of the underlying forwarding interfaces and devices, stored as a \"yes\"/\"no\" string but exposed as a boolean in Terraform.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.domain.local_only
+    description: Controls whether the network domain is used only for local name resolution inside libvirt’s DNS (\"yes\" for local-only, \"no\" to allow external registration), with the value stored as a string flag.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.domain.name
+    description: Sets the DNS domain name associated with this virtual network (for example, \"virt.example.com\") that is appended to hostnames and exposed via DHCP/DNS.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.forward
+    description: Configures forwarding for the virtual network, defining how traffic is connected to external networks (e.g. NAT, routed, bridge, macvtap).
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.addresses.pci
+    description: Declares a PCI address used as a forwarding target, identifying a specific host PCI device through which the network is connected.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.driver
+    description: Configures driver-specific settings for the network forward, allowing selection or tuning of the underlying forwarding implementation.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.driver.model
+    description: Sets the driver model used for forwarding (for example, a specific macvtap or SR‑IOV mode), with the exact string value being driver-specific and user‑provided.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.driver.name
+    description: Sets the forwarding driver backend name (e.g. a specific implementation used by the hypervisor), with the value being user‑provided.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.interfaces
+    description: Lists one or more host interfaces that participate in this network’s forwarding (for multi‑NIC or aggregated configurations).
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.domain
+    description: Configures an optional DNS search domain block for the virtual network, controlling how guest hostnames are qualified and optionally whether they are registered only locally.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips
+    description: Defines one or more IP address configurations for the network, including address, DHCP, and related options for IPv4 and/or IPv6.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.bootp.file
+    description: Sets the boot file name advertised via BOOTP/PXE (for example "pxelinux.0" or "bootx64.efi").
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.forward.nat.addresses
+    description: Sets one or more address ranges used as the external source addresses for NAT, each defined by a start and end IP.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.nat.addresses.end
+    description: Sets the last IP address in the NAT external address range; must be in the same family and >= the start address (e.g. "192.168.122.254").
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.nat.ipv6
+    description: Controls whether this NAT configuration applies to IPv6 traffic; value is user-provided and typically "yes" or "no".
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.nat.ports
+    description: Sets one or more port ranges to be used for NAT translation, each defined by a start and end port.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.nat.ports.end
+    description: Sets the last port number in the NAT port range; must be an integer between 1 and 65535 and >= the start port.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.ips.address
+    description: Sets the IP address assigned to the network bridge for this family; must be a valid IPv4 or IPv6 address (e.g. "192.168.122.1").
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.bootp.server
+    description: Sets the IP address of the TFTP/boot server advertised via BOOTP; must be a valid IPv4 or IPv6 address.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.forward.nat
+    description: Configures NAT-specific options for the network’s forward mode, including address and port ranges used for translation.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.nat.addresses.start
+    description: Sets the first IP address in the NAT external address range; must be a valid IPv4 or IPv6 address (e.g. "192.168.122.1").
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.ips.dhcp.hosts.id
+    description: Represents the client identifier or DUID for a static DHCP host entry; when omitted it is computed from other host attributes.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.hosts.ip
+    description: Sets the fixed IP address that the DHCP server always assigns to this host; must be within the network’s address range.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.hosts.lease
+    description: Configures the lease parameters for this static DHCP host entry, such as expiry; the structure and values are user-provided.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.forward.nat.ports.start
+    description: Sets the first port number in the NAT port range; must be an integer between 1 and 65535 (e.g. 1024).
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.ips.dhcp
+    description: Enables and configures DHCP service for this IP configuration, including BOOTP and static host entries.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.bootp
+    description: Configures BOOTP options for this DHCP range, such as the boot file and TFTP server used by PXE/BOOTP clients.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.hosts
+    description: Defines one or more static DHCP host entries that map specific clients to fixed IP and lease settings.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.forward.pfs
+    description: Declares one or more physical forwarding interfaces (port forwarding devices) used by the network’s forward mode.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.forward.pfs.dev
+    description: Sets the name of the underlying physical network device to be used by this forwarding interface (e.g. "eth0").
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.ips.dhcp.hosts.name
+    description: Sets the hostname to be handed out via DHCP for this static host entry; the value is user-provided.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.ranges.lease.expiry
+    description: Sets the DHCP lease time for this range as a numeric duration value, interpreted according to `unit`.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.ranges.lease.unit
+    description: Sets the time unit used for the range lease `expiry`, with valid values `seconds`, `minutes`, or `hours`.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.ranges.start
+    description: Sets the starting address of a DHCP range; must be an IP in the same subnet as the parent `ip`.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.local_ptr
+    description: Controls whether DNS PTR records for addresses in this subnet are generated only for this network (`yes`) or can be forwarded (`no`); value is `yes` or `no`.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.netmask
+    description: Sets the IPv4 netmask for this subnet; must be a dotted-quad such as `255.255.255.0` and is mutually exclusive with `prefix`.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ipv6
+    description: Controls whether the network provides IPv6 support, as a boolean-like flag (`yes` or `no`).
+    reference: https://libvirt.org/formatnetwork.html#general-metadata
+  - path: network.ips.dhcp.ranges
+    description: Configures one or more dynamic DHCP address ranges associated with this IP subnet.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.ranges.end
+    description: Sets the end address (inclusive) of a DHCP range; must be an IP in the same subnet as the parent `ip`.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.mac
+    description: Enables configuring a fixed MAC address for the network bridge device.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.metadata
+    description: Provides an arbitrary metadata container for the virtual network, typically used by higher-level tools; content is user-defined XML.
+    reference: https://libvirt.org/formatnetwork.html#general-metadata
+  - path: network.ips.prefix
+    description: Sets the CIDR prefix length for this subnet (commonly used for IPv6, e.g. `64`, but also valid for IPv4); mutually exclusive with `netmask`.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.hosts.lease.expiry
+    description: Sets the DHCP lease time for a static host entry, as a numeric duration value whose interpretation depends on `unit` (for example, `3600` when `unit` is `seconds`).
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.family
+    description: Selects the IP address family for this address, typically `ipv4` or `ipv6`; if omitted, libvirt infers it from the address format.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.tftp.root
+    description: Sets the filesystem directory that TFTP will expose as its root for this network IP; value is a host path such as `/var/lib/tftpboot`.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.hosts.lease.unit
+    description: Sets the time unit used for the host DHCP lease `expiry`, with valid values `seconds`, `minutes`, or `hours`.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.hosts.mac
+    description: Sets the MAC address for a static DHCP host entry; must be a valid MAC such as `52:54:00:12:34:56`.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.dhcp.ranges.lease
+    description: Configures a custom default lease time for all addresses in this DHCP range.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.ips.tftp
+    description: Enables optional TFTP service for this network IP and configures its parameters.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.mac.address
+    description: Sets the MAC address of the bridge associated with this virtual network; must be a valid MAC such as `52:54:00:ab:cd:ef`.
+    reference: https://libvirt.org/formatnetwork.html#addressing
+  - path: network.port_groups.virtual_port.params.any.instance_id
+    description: Sets the instance identifier for the generic port profile, typically a UUID string unique per attached interface instance.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.metadata.xml
+    description: Sets arbitrary user-defined XML metadata attached to the network; libvirt stores it verbatim and does not interpret its contents.
+    reference: https://libvirt.org/formatnetwork.html#general-metadata
+  - path: network.mtu.size
+    description: Sets the MTU size (non-negative integer, in bytes) for the network’s bridge or interface, e.g. 1500 or 9000.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.port_groups.name
+    description: Sets the name of the port group, used by guest interfaces to select this group by reference; value is user-provided and must be unique within the network.
+    reference: https://libvirt.org/formatnetwork.html#portgroups
+  - path: network.port_groups.virtual_port.params.any.type_id
+    description: Sets the type identifier for the generic port profile, defining the semantic type of the profile as expected by the external switch; value is user-provided.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.port_groups.virtual_port.params.open_v_switch
+    description: Configures Open vSwitch-specific virtual port parameters for this port group, enabling OVS-aware port profiling; all values are user-provided and interpreted by OVS tooling.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.port_groups.virtual_port.params.any.manager_id
+    description: Sets the manager identifier for the generic port profile, typically a numeric or string ID identifying the external network management system.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.port_groups.virtual_port.params.mido_net.interface_id
+    description: Sets the MidoNet interface identifier, typically a UUID or opaque string that MidoNet uses to match the guest interface to a virtual port.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.mtu
+    description: Configures an MTU definition block for the virtual network; include this block only when you need to override the default MTU.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.name
+    description: Sets the network’s name, which must be unique on the host and consist of alphanumeric characters plus ‘_’ or ‘-’.
+    reference: https://libvirt.org/formatnetwork.html#general-metadata
+  - path: network.port_groups.default
+    description: Marks this port group as the default when guests do not explicitly select a port group; value is a yes/no style flag (typically "yes" or "no").
+    reference: https://libvirt.org/formatnetwork.html#portgroups
+  - path: network.port_groups.virtual_port
+    description: Configures virtual port profile information for this port group, enabling integration with external network switching or SDN systems.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.port_groups.virtual_port.params
+    description: Provides backend-specific virtual port profile parameters for this port group, with one child element per backend type (e.g. Any, MidoNet, OpenVSwitch).
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.port_groups.virtual_port.params.any.profile_id
+    description: Sets the profile identifier for the generic port profile, referencing a logical port profile defined in the external network manager.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.port_groups.virtual_port.params.any.type_id_version
+    description: Sets the version of the type identifier for the generic port profile, allowing the external manager to distinguish revisions; value is user-provided.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.port_groups
+    description: Defines one or more port groups that classify guest connections on this network, each with its own settings such as virtual port parameters or QoS.
+    reference: https://libvirt.org/formatnetwork.html#portgroups
+  - path: network.port_groups.trust_guest_rx_filters
+    description: Controls whether the network trusts receive-filter programming from guests attached via this port group; value is a yes/no style flag ("yes" to trust, "no" to ignore).
+    reference: https://libvirt.org/formatnetwork.html#portgroups
+  - path: network.port_groups.virtual_port.params.any.interface_id
+    description: Sets the interface identifier for the generic port profile, usually a stable ID used by the external switch to identify the virtual NIC.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.port_groups.virtual_port.params.mido_net
+    description: Configures MidoNet-specific virtual port parameters for this port group, enabling integration with a MidoNet SDN controller.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.port_groups.virtual_port.params.any
+    description: Configures a generic (IEEE 802.1Qbg-style) port profile, using opaque identifiers understood by an external network manager.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.port_options.isolated
+    description: Controls whether each guest port on this network is isolated from all other guest ports on the same network; valid values are "yes" or "no" (default is "no" when omitted).
+    reference: https://libvirt.org/formatnetwork.html#isolating-ports-from-one-another
+  - path: network.routes
+    description: Configures one or more static routes associated with this virtual network, informing the host about networks reachable via guests.
+    reference: https://libvirt.org/formatnetwork.html#static-routes
+  - path: network.routes.family
+    description: Specifies the address family for this static route; valid values are "ipv4" or "ipv6".
+    reference: https://libvirt.org/formatnetwork.html#static-routes
+  - path: network.port_groups.virtual_port.params.open_v_switch.profile_id
+    description: Sets the Open vSwitch profile identifier (profileid) for ports in this portgroup; value is user-provided and used by OVS or higher-level controllers to apply a specific port profile.
+    reference: https://libvirt.org/formatdomain.html#virtual-network
+  - path: network.port_groups.vlan.tags.id
+    description: Reports the VLAN ID associated with this tag; when managed by libvirt it is computed from the backing XML and corresponds to the 802.1Q VLAN identifier (1–4094).
+    reference: https://libvirt.org/formatnetwork.html#setting-vlan-tag-on-supported-network-types-only
+  - path: network.routes.address
+    description: Sets the destination network address (in IPv4 or IPv6 form) for this static route; value is user-provided and should match the route’s prefix (e.g. "192.168.2.0/24" or "2001:db8::/64").
+    reference: https://libvirt.org/formatnetwork.html#static-routes
+  - path: network.port_groups.vlan.tags
+    description: Defines one or more VLAN tag entries for this portgroup; each tag specifies a VLAN ID, and optionally native-mode behavior, applied to guest traffic.
+    reference: https://libvirt.org/formatnetwork.html#setting-vlan-tag-on-supported-network-types-only
+  - path: network.routes.gateway
+    description: Sets the next-hop gateway IP address for this static route, pointing to a guest-accessible router; value is user-provided and must be in the family specified by family.
+    reference: https://libvirt.org/formatnetwork.html#static-routes
+  - path: network.port_groups.vlan.trunk
+    description: Controls whether this portgroup’s VLAN configuration operates in trunk mode, allowing multiple VLAN tags; value is a yes/no string flag, where "yes" enables trunk mode.
+    reference: https://libvirt.org/formatnetwork.html#setting-vlan-tag-on-supported-network-types-only
+  - path: network.port_groups.virtual_port.params.open_v_switch.interface_id
+    description: Sets the Open vSwitch interface identifier (interfaceid) for ports in this portgroup; value is user-provided and typically matches the UUID or name expected by the OVS integration on the host.
+    reference: https://libvirt.org/formatdomain.html#virtual-network
+  - path: network.port_groups.virtual_port.params.vepa8021qbg.manager_id
+    description: Sets the 802.1Qbg VEPA manager identifier (managerid) that identifies the external EVB manager controlling this profile; value is user-provided numeric or string ID.
+    reference: https://libvirt.org/formatdomain.html#direct-attachment-to-physical-interface
+  - path: network.port_groups.virtual_port.params.vepa8021qbg.type_id
+    description: Sets the 802.1Qbg VEPA type identifier (typeid) indicating what kind of profile is referenced; value is user-provided and must match the EVB manager’s expectations.
+    reference: https://libvirt.org/formatdomain.html#direct-attachment-to-physical-interface
+  - path: network.port_groups.virtual_port.params.vn_tag8011qbh
+    description: Enables configuration of IEEE 802.1Qbh VN-Tag virtual port profile parameters for this portgroup, used with hardware that supports Cisco VN-Tag or similar tagging.
+    reference: https://libvirt.org/formatdomain.html#direct-attachment-to-physical-interface
+  - path: network.port_groups.virtual_port.params.vn_tag8011qbh.profile_id
+    description: Sets the 802.1Qbh VN-Tag profile identifier (profileid) for this portgroup; value is user-provided and should match the profile configured on the VN-Tag–aware switch.
+    reference: https://libvirt.org/formatdomain.html#direct-attachment-to-physical-interface
+  - path: network.port_groups.vlan.tags.native_mode
+    description: Sets whether this VLAN tag is treated as native on the trunk for this portgroup; valid values are user-provided strings such as "tagged" or "untagged" as supported by libvirt/qemu.
+    reference: https://libvirt.org/formatnetwork.html#setting-vlan-tag-on-supported-network-types-only
+  - path: network.port_groups.virtual_port.params.vepa8021qbg
+    description: Enables configuration of IEEE 802.1Qbg VEPA virtual port profile parameters for this portgroup, allowing association with an external Edge Virtual Bridging (EVB) manager.
+    reference: https://libvirt.org/formatdomain.html#direct-attachment-to-physical-interface
+  - path: network.port_groups.virtual_port.params.vepa8021qbg.instance_id
+    description: Sets the 802.1Qbg VEPA instance identifier (instanceid) for this port profile; value is user-provided and usually a unique identifier (often UUID-like) assigned by the EVB manager.
+    reference: https://libvirt.org/formatdomain.html#direct-attachment-to-physical-interface
+  - path: network.port_groups.virtual_port.params.vepa8021qbg.type_id_version
+    description: Sets the 802.1Qbg VEPA type identifier version (typeidversion) for this profile; value is user-provided and typically a small integer version understood by the EVB manager.
+    reference: https://libvirt.org/formatdomain.html#direct-attachment-to-physical-interface
+  - path: network.port_groups.vlan
+    description: Configures VLAN tagging behavior for this portgroup, allowing one or more VLAN tags to be applied to guest connections when the underlying network supports VLAN offload.
+    reference: https://libvirt.org/formatnetwork.html#setting-vlan-tag-on-supported-network-types-only
+  - path: network.port_options
+    description: Configures default per-port options for this virtual network, such as isolating traffic between guests connected to the same network.
+    reference: https://libvirt.org/formatnetwork.html#isolating-ports-from-one-another
+  - path: network.virtual_port.params.any.type_id_version
+    description: Sets the version of the type_id used by the external port profile manager; value is user-provided (often a small integer).
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.routes.prefix
+    description: Sets the CIDR prefix length for the destination of this static route as a user-provided integer between 0 and 128 (depending on IPv4/IPv6); use this instead of netmask for prefix-based routes.
+    reference: https://libvirt.org/formatnetwork.html#static-routes
+  - path: network.virtual_port.params.any
+    description: Configures a generic "Any" virtual port profile, allowing arbitrary switch or SDN identifiers to be provided via the following attributes.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.any.interface_id
+    description: Sets a switch- or SDN-specific interface identifier for this virtual port; value is user-provided and must match the external controller's expectations.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.mido_net
+    description: Configures a MidoNet-specific virtual port profile, allowing Midonet integration parameters to be set for this network.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.open_v_switch.interface_id
+    description: Sets the Open vSwitch interface-id for this virtual port, typically matching the external OVS port's interface-id; value is user-provided.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.open_v_switch.profile_id
+    description: Sets an Open vSwitch profile identifier to associate this port with a specific OVS profile or policy; value is user-provided.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.routes.metric
+    description: Sets the routing metric for this static route; lower values have higher priority, and the value is a user-provided non-negative integer.
+    reference: https://libvirt.org/formatnetwork.html#static-routes
+  - path: network.routes.netmask
+    description: Sets the IPv4 netmask for the destination of this static route as a dotted-quad string (for example, "255.255.255.0"); use this instead of prefix for netmask-based routes.
+    reference: https://libvirt.org/formatnetwork.html#static-routes
+  - path: network.trust_guest_rx_filters
+    description: Controls whether the network as a whole trusts guests' receive-side filtering settings, corresponding to the yes/no trustGuestRxFilters flag on the network definition.
+    reference: https://libvirt.org/formatnetwork.html#general-metadata
+  - path: network.uuid
+    description: Exposes the network's UUID as assigned by libvirt; this is read-only and computed, and uniquely identifies the virtual network on the host.
+    reference: https://libvirt.org/formatnetwork.html#general-metadata
+  - path: network.virtual_port.params.any.instance_id
+    description: Sets an opaque instance identifier used by the virtual switch or SDN controller for this port; value is user-provided and typically a UUID-like string.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.any.manager_id
+    description: Sets the manager identifier (for example, a numeric ID of the controlling switch manager) associated with this virtual port; value is user-provided.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.any.type_id
+    description: Sets the numeric or string type identifier that classifies the virtual port profile in the external system; value is user-provided.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.mido_net.interface_id
+    description: Sets the MidoNet interface identifier for this port, which must match a port/interface ID known to the MidoNet controller; value is user-provided.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port
+    description: Configures the virtual port profile for the network, enabling integration with switch or SDN port profile mechanisms; when omitted, no virtualport profile is applied.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.any.profile_id
+    description: Sets the profile identifier that selects a particular port profile on the external switch or SDN system; value is user-provided.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.open_v_switch
+    description: Configures an Open vSwitch virtual port profile, enabling OVS-managed port properties for traffic on this network.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.vepa8021qbg
+    description: Configures an 802.1Qbg VEPA virtual port profile, enabling 802.1Qbg-capable switches to manage this port; specific attributes are determined by the switch implementation.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params
+    description: Groups the parameter set for the selected virtual port profile type; child blocks are mutually exclusive and model-specific.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.vepa8021qbg.instance_id
+    description: Sets the VEPA 802.1Qbg VSI instance identifier used by the switch to distinguish individual virtual station interfaces; value is user-provided and typically a numeric or UUID-like identifier defined by the network infrastructure.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.vn_tag8011qbh
+    description: Enables configuration of an 802.1Qbh VN-Tag–based virtual port profile and groups parameters specific to VNTag8011QBH operation.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.vlan
+    description: Configures VLAN tagging behavior for the network, allowing one or more VLAN tags to be applied transparently to attached guest interfaces.
+    reference: https://libvirt.org/formatnetwork.html#setting-vlan-tag-on-supported-network-types-only
+  - path: network.vlan.tags.native_mode
+    description: Sets how this VLAN tag is treated as native or tagged on the trunk; valid values are "tagged" or "untagged" as supported by libvirt, with the attribute being optional.
+    reference: https://libvirt.org/formatnetwork.html#setting-vlan-tag-on-supported-network-types-only
+  - path: network.vlan.trunk
+    description: Controls whether the VLAN configuration operates in trunk mode, allowing multiple VLAN IDs; set to "yes" or "no" as a string flag.
+    reference: https://libvirt.org/formatnetwork.html#setting-vlan-tag-on-supported-network-types-only
+  - path: network.virtual_port.params.vepa8021qbg.type_id_version
+    description: Sets the VEPA 802.1Qbg VSI type ID version, allowing the switch to distinguish between revisions of the same VSI profile; value is user-provided and usually a small integer (for example, 1 or 2).
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.vepa8021qbg.type_id
+    description: Sets the VEPA 802.1Qbg VSI type ID, indicating the profile or type assigned to this virtual interface; value is user-provided, typically a numeric profile identifier from the network policy.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.vlan.tags.id
+    description: Reports the VLAN ID for this tag entry; this is computed from libvirt and corresponds to a numeric VLAN identifier between 1 and 4094.
+    reference: https://libvirt.org/formatnetwork.html#setting-vlan-tag-on-supported-network-types-only
+  - path: network.virtual_port.params.vepa8021qbg.manager_id
+    description: Sets the VEPA 802.1Qbg manager ID that identifies the VSI manager (e.g., a switch or controller) responsible for this interface; value is user-provided according to the physical network’s configuration.
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.virtual_port.params.vn_tag8011qbh.profile_id
+    description: Sets the 802.1Qbh VN-Tag profile ID associated with this virtual interface; value is user-provided and must match the profile configured on the upstream switch (for example, "1234").
+    reference: https://libvirt.org/formatnetwork.html#connectivity
+  - path: network.vlan.tags
+    description: Defines one or more VLAN tag entries that specify which VLAN IDs are used on this network; each entry corresponds to a <tag> element.
+    reference: https://libvirt.org/formatnetwork.html#setting-vlan-tag-on-supported-network-types-only

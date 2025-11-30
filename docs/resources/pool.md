@@ -3,20 +3,12 @@
 page_title: "libvirt_pool Resource - terraform-provider-libvirt"
 subcategory: ""
 description: |-
-  Manages a libvirt storage pool.
-  Storage pools provide a common interface for managing storage that can be used by virtual machines.
-  This resource supports directory-based and LVM-based storage pools.
-  See the libvirt storage pool documentation https://libvirt.org/formatstorage.html for more details.
+  Storage pool for managing storage volumes
 ---
 
 # libvirt_pool (Resource)
 
-Manages a libvirt storage pool.
-
-Storage pools provide a common interface for managing storage that can be used by virtual machines.
-This resource supports directory-based and LVM-based storage pools.
-
-See the [libvirt storage pool documentation](https://libvirt.org/formatstorage.html) for more details.
+Storage pool for managing storage volumes
 
 
 
@@ -25,42 +17,56 @@ See the [libvirt storage pool documentation](https://libvirt.org/formatstorage.h
 
 ### Required
 
-- `name` (String) Unique name of the storage pool
-- `target` (Attributes) Target path for the storage pool (see [below for nested schema](#nestedatt--target))
-- `type` (String) Type of storage pool. Supported values: dir (directory-based), logical (LVM)
+- `name` (String) Sets the unique name for the storage pool, required for identification on the host.
+- `type` (String) Specifies the type of the storage pool being defined.
 
 ### Optional
 
-- `source` (Attributes) Source configuration for the storage pool (required for logical pools) (see [below for nested schema](#nestedatt--source))
+- `allocation_unit` (String) Specifies the unit type for the pool's allocated storage, defining measurement standards.
+- `available_unit` (String) Sets the unit type for measuring available storage within the pool.
+- `capacity_unit` (String) Specifies the unit type for measuring the total capacity of the storage pool.
+- `features` (Attributes) Defines optional features supported by the storage pool, enhancing functional capabilities. (see [below for nested schema](#nestedatt--features))
+- `refresh` (Attributes) Controls the refresh behavior of the storage pool and associated volumes. (see [below for nested schema](#nestedatt--refresh))
+- `source` (Attributes) Source location for the storage pool (see [below for nested schema](#nestedatt--source))
+- `target` (Attributes) Target path and permissions for the storage pool (see [below for nested schema](#nestedatt--target))
 
 ### Read-Only
 
-- `allocation` (Number) Currently allocated space in bytes
-- `available` (Number) Available space in bytes
-- `capacity` (Number) Total capacity of the storage pool in bytes
-- `id` (String) Pool UUID
-- `uuid` (String) UUID of the storage pool
+- `allocation` (Number) Configures the amount of storage allocated to the pool, determining capacity usage.
+- `available` (Number) Indicates the amount of available storage within the pool for new allocations.
+- `capacity` (Number) Configures the total capacity of the storage pool, defining its maximum size.
+- `id` (String) Pool UUID (same as uuid)
+- `uuid` (String) Sets the universally unique identifier for the storage pool.
 
-<a id="nestedatt--target"></a>
-### Nested Schema for `target`
+<a id="nestedatt--features"></a>
+### Nested Schema for `features`
+
+Optional:
+
+- `cow` (Attributes) Indicates whether copy-on-write (COW) is enabled for the storage pool's images. (see [below for nested schema](#nestedatt--features--cow))
+
+<a id="nestedatt--features--cow"></a>
+### Nested Schema for `features.cow`
 
 Required:
 
-- `path` (String) Path where the storage pool is located on the host
+- `state` (String) Configures the state of the copy-on-write feature within the storage pool.
+
+
+
+<a id="nestedatt--refresh"></a>
+### Nested Schema for `refresh`
 
 Optional:
 
-- `permissions` (Attributes) Permissions for the pool directory (see [below for nested schema](#nestedatt--target--permissions))
+- `volume` (Attributes) Configures the refresh settings for individual volumes within the storage pool. (see [below for nested schema](#nestedatt--refresh--volume))
 
-<a id="nestedatt--target--permissions"></a>
-### Nested Schema for `target.permissions`
+<a id="nestedatt--refresh--volume"></a>
+### Nested Schema for `refresh.volume`
 
-Optional:
+Required:
 
-- `group` (String) Numeric group ID for the pool directory group
-- `label` (String) SELinux label for the pool directory
-- `mode` (String) Octal permission mode for the pool directory (e.g., '0755')
-- `owner` (String) Numeric user ID for the pool directory owner
+- `allocation` (String) Defines how allocation amounts are calculated during the refresh operation for the volume.
 
 
 
@@ -69,12 +75,243 @@ Optional:
 
 Optional:
 
-- `device` (Attributes List) List of devices to use for the storage pool (e.g., physical volumes for logical pools) (see [below for nested schema](#nestedatt--source--device))
-- `name` (String) Name of the source (e.g., volume group name for logical pools)
+- `adapter` (Attributes) Configures the details of the adapter used for connecting to the storage source. (see [below for nested schema](#nestedatt--source--adapter))
+- `auth` (Attributes) Specifies the authentication method used when connecting to the storage source. (see [below for nested schema](#nestedatt--source--auth))
+- `device` (Attributes List) Specifies the device to be used as the source for the storage pool. (see [below for nested schema](#nestedatt--source--device))
+- `dir` (Attributes) Indicates the directory used as a source for the storage pool. (see [below for nested schema](#nestedatt--source--dir))
+- `format` (Attributes) Sets the format of the storage source being used, affecting how data is stored and accessed. (see [below for nested schema](#nestedatt--source--format))
+- `host` (Attributes List) Specifies the host details for connecting to the storage source. (see [below for nested schema](#nestedatt--source--host))
+- `initiator` (Attributes) Defines the iSCSI initiator settings associated with the storage source. (see [below for nested schema](#nestedatt--source--initiator))
+- `name` (String) Specifies the name of the source for the storage pool.
+- `product` (Attributes) Identifies the product details associated with the storage source. (see [below for nested schema](#nestedatt--source--product))
+- `protocol` (Attributes) Sets the protocol used to connect to the storage source. (see [below for nested schema](#nestedatt--source--protocol))
+- `vendor` (Attributes) Specifies the vendor information for the storage source being used. (see [below for nested schema](#nestedatt--source--vendor))
+
+<a id="nestedatt--source--adapter"></a>
+### Nested Schema for `source.adapter`
+
+Optional:
+
+- `managed` (Boolean) Indicates whether the adapter is managed by the virtualization framework.
+- `name` (String) Sets the name of the adapter for identification purposes.
+- `parent` (String) Specifies the parent identifier of the adapter if applicable, linking it to a higher-level entity.
+- `parent_addr` (Attributes) Provides the address details of the adapter's parent device. (see [below for nested schema](#nestedatt--source--adapter--parent_addr))
+- `type` (String) Sets the type of the adapter being used for the storage source connection.
+- `wwnn` (String) Defines the World Wide Name for the node of the adapter used in the storage source context.
+- `wwpn` (String) Configures the World Wide Name for the portal of the adapter connected to the storage source.
+
+<a id="nestedatt--source--adapter--parent_addr"></a>
+### Nested Schema for `source.adapter.parent_addr`
+
+Required:
+
+- `unique_id` (Number) Provides a unique identifier for the address of the parent adapter.
+
+Optional:
+
+- `address` (Attributes) Configures the address information related to the parent device of the adapter. (see [below for nested schema](#nestedatt--source--adapter--parent_addr--address))
+
+<a id="nestedatt--source--adapter--parent_addr--address"></a>
+### Nested Schema for `source.adapter.parent_addr.address`
+
+Optional:
+
+- `bus` (Number) Specifies the bus identifier for the parent address.
+- `domain` (Number) Defines the domain associated with the parent address of the adapter.
+- `function` (Number) Configures the function field for the address of the adapter's parent device.
+- `slot` (Number) Indicates the slot number for the adapter's parent address.
+
+
+
+
+<a id="nestedatt--source--auth"></a>
+### Nested Schema for `source.auth`
+
+Required:
+
+- `type` (String) Configures the type of authentication mechanism to be used on the storage source connection.
+- `username` (String) Sets the username for authenticating access to the storage source.
+
+Optional:
+
+- `secret` (Attributes) Defines the secret used for authenticated access to the storage source. (see [below for nested schema](#nestedatt--source--auth--secret))
+
+<a id="nestedatt--source--auth--secret"></a>
+### Nested Schema for `source.auth.secret`
+
+Optional:
+
+- `usage` (String) Indicates the intended usage for the authentication secret.
+
+Read-Only:
+
+- `uuid` (String) Sets the UUID for the authentication secret tied to the storage source connection.
+
+
 
 <a id="nestedatt--source--device"></a>
 ### Nested Schema for `source.device`
 
 Required:
 
-- `path` (String) Path to the device
+- `path` (String) Specifies the physical path to the device used as the source for the storage pool.
+
+Optional:
+
+- `free_extents` (Attributes List) Controls the free extents available for allocation within the source device. (see [below for nested schema](#nestedatt--source--device--free_extents))
+- `part_separator` (String) Configures the separator character used for partitioning in the device path.
+
+<a id="nestedatt--source--device--free_extents"></a>
+### Nested Schema for `source.device.free_extents`
+
+Required:
+
+- `end` (Number) Indicates the end value for the free extents available in the source device.
+- `start` (Number) Defines the starting point for the free extents in the source device.
+
+
+
+<a id="nestedatt--source--dir"></a>
+### Nested Schema for `source.dir`
+
+Required:
+
+- `path` (String) Provides the path to the directory that serves as a source for the storage pool.
+
+
+<a id="nestedatt--source--format"></a>
+### Nested Schema for `source.format`
+
+Required:
+
+- `type` (String) Defines the specific type of format for the storage source.
+
+
+<a id="nestedatt--source--host"></a>
+### Nested Schema for `source.host`
+
+Required:
+
+- `name` (String) Sets the name of the host where the storage source is located.
+
+Optional:
+
+- `port` (String) Configures the port number to be used for connecting to the storage source on the host.
+
+
+<a id="nestedatt--source--initiator"></a>
+### Nested Schema for `source.initiator`
+
+Optional:
+
+- `iqn` (Attributes) Configures the iSCSI Qualified Name (IQN) for the initiator connecting to the storage source. (see [below for nested schema](#nestedatt--source--initiator--iqn))
+
+<a id="nestedatt--source--initiator--iqn"></a>
+### Nested Schema for `source.initiator.iqn`
+
+Optional:
+
+- `name` (String) Sets the name attribute of the iSCSI IQN for identification.
+
+
+
+<a id="nestedatt--source--product"></a>
+### Nested Schema for `source.product`
+
+Required:
+
+- `name` (String) Configures the name attribute of the product related to the storage source.
+
+
+<a id="nestedatt--source--protocol"></a>
+### Nested Schema for `source.protocol`
+
+Required:
+
+- `version` (String) Indicates the version of the protocol being used for the connection.
+
+
+<a id="nestedatt--source--vendor"></a>
+### Nested Schema for `source.vendor`
+
+Required:
+
+- `name` (String) Configures the name attribute for the vendor related to the storage source.
+
+
+
+<a id="nestedatt--target"></a>
+### Nested Schema for `target`
+
+Optional:
+
+- `encryption` (Attributes) Configures the encryption settings for the storage volume. (see [below for nested schema](#nestedatt--target--encryption))
+- `path` (String) Defines the path in the host filesystem where the storage pool is mapped.
+- `permissions` (Attributes) Configures the permissions for the storage pool target. (see [below for nested schema](#nestedatt--target--permissions))
+- `timestamps` (Attributes) Sets the timestamp attributes for the storage pool target. (see [below for nested schema](#nestedatt--target--timestamps))
+
+<a id="nestedatt--target--encryption"></a>
+### Nested Schema for `target.encryption`
+
+Required:
+
+- `format` (String) Defines the format of the encryption for the storage volume.
+
+Optional:
+
+- `cipher` (Attributes) Sets the encryption cipher for the storage volume to be applied. (see [below for nested schema](#nestedatt--target--encryption--cipher))
+- `ivgen` (Attributes) Controls the initialization vector generation settings for the encryption. (see [below for nested schema](#nestedatt--target--encryption--ivgen))
+- `secret` (Attributes) Provides the configuration for the secret used in the encryption process. (see [below for nested schema](#nestedatt--target--encryption--secret))
+
+<a id="nestedatt--target--encryption--cipher"></a>
+### Nested Schema for `target.encryption.cipher`
+
+Required:
+
+- `hash` (String) Specifies the hash algorithm used with the encryption cipher.
+- `mode` (String) Defines the mode for the encryption cipher of the storage volume.
+- `name` (String) Sets the name of the encryption cipher for the storage volume.
+- `size` (Number) Sets the size of the encryption cipher for the storage volume.
+
+
+<a id="nestedatt--target--encryption--ivgen"></a>
+### Nested Schema for `target.encryption.ivgen`
+
+Required:
+
+- `hash` (String) Specifies the hashing algorithm used for the initialization vector generation.
+- `name` (String) Sets the name of the initialization vector generator for the encryption.
+
+
+<a id="nestedatt--target--encryption--secret"></a>
+### Nested Schema for `target.encryption.secret`
+
+Required:
+
+- `type` (String) Defines the type of the secret used for encryption purposes.
+
+Read-Only:
+
+- `uuid` (String) Sets the universally unique identifier (UUID) for the encryption secret.
+
+
+
+<a id="nestedatt--target--permissions"></a>
+### Nested Schema for `target.permissions`
+
+Optional:
+
+- `group` (String) Sets the group ownership for the storage pool target permissions.
+- `label` (String) Configures the label associated with the target permissions for the storage pool.
+- `mode` (String) Defines the mode (file permissions) for the storage pool target.
+- `owner` (String) Specifies the owner of the permissions for the storage pool target.
+
+
+<a id="nestedatt--target--timestamps"></a>
+### Nested Schema for `target.timestamps`
+
+Required:
+
+- `atime` (String) Configures the last access time for the storage pool target.
+- `ctime` (String) Sets the last metadata change time for the storage pool target.
+- `mtime` (String) Specifies the last modification time for the storage pool target.

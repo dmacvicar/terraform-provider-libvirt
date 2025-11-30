@@ -66,7 +66,6 @@ vet: ## Run go vet
 	@echo "Running go vet..."
 	@go vet ./...
 
-.PHONY: check
 check: lint vet test ## Run all checks (lint, vet, test)
 	@echo "All checks passed!"
 
@@ -76,3 +75,4 @@ docs: ## Generate provider documentation
 	@echo "Generating documentation..."
 	@PATH="$(PATH):$(shell go env GOPATH)/bin" tfplugindocs generate
 
+.PHONY: check docs

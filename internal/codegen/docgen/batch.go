@@ -22,17 +22,27 @@ type Batch struct {
 
 // FieldContext provides context for a field to be documented
 type FieldContext struct {
-	TFPath            string   // Terraform path (e.g., "domain.memory")
-	XMLPath           string   // XML path (e.g., "domain.memory")
-	Optional          bool     // Optional in schema
-	Required          bool     // Required in schema
-	Computed          bool     // Computed in schema
-	PresenceBoolean   bool     // Presence-only boolean
-	StringToBool      bool     // Yes/no style flags mapped to bool
-	StringToBoolTrue  string   // String value for true
-	StringToBoolFalse string   // String value for false
-	FlattenedAttr     string   // If flattened attribute (e.g., unit/placement)
-	ValidValues       []string // Enumerated choices if known
+	TFPath            string          // Terraform path (e.g., "domain.memory")
+	XMLPath           string          // XML path (e.g., "domain.memory")
+	Optional          bool            // Optional in schema
+	Required          bool            // Required in schema
+	Computed          bool            // Computed in schema
+	PresenceBoolean   bool            // Presence-only boolean
+	StringToBool      bool            // Yes/no style flags mapped to bool
+	StringToBoolTrue  string          // String value for true
+	StringToBoolFalse string          // String value for false
+	FlattenedAttr     string          // If flattened attribute (e.g., unit/placement)
+	ValidValues       []string        // Enumerated choices if known
+	Patterns          []string        // Validation patterns (regex-like) when available
+	UnionNote         string          // One-of/union hints (e.g., mutually exclusive branches)
+	ReferenceHints    []ReferenceHint // Candidate libvirt docs to cite
+}
+
+// ReferenceHint carries a candidate libvirt documentation section.
+type ReferenceHint struct {
+	Title string
+	URL   string
+	Score int
 }
 
 // State tracks progress through batch generation

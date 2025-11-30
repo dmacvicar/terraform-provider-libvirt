@@ -3,12 +3,12 @@
 page_title: "libvirt_network Resource - terraform-provider-libvirt"
 subcategory: ""
 description: |-
-  Manages a libvirt virtual network.
+  Virtual network configuration
 ---
 
 # libvirt_network (Resource)
 
-Manages a libvirt virtual network.
+Virtual network configuration
 
 
 
@@ -17,57 +17,561 @@ Manages a libvirt virtual network.
 
 ### Required
 
-- `name` (String) Network name. Must be unique on the host.
+- `name` (String) Specifies the name of the network configuration.
 
 ### Optional
 
-- `autostart` (Boolean) Whether the network should be started automatically when the host boots.
-- `bridge` (String) Bridge name. If not specified, libvirt will auto-generate one.
-- `ips` (Attributes List) IP address configurations for the network. Each entry can specify address, netmask/prefix, family, and DHCP settings. (see [below for nested schema](#nestedatt--ips))
-- `mode` (String) Network forwarding mode: 'nat' (default), 'none' (isolated), 'route', 'open', 'bridge'.
-- `uuid` (String) Network UUID. If not specified, one will be generated.
+- `autostart` (Boolean) Whether the network should be started automatically when the host boots
+- `bandwidth` (Attributes) Configures the bandwidth settings for the virtual network, specifying what limits are applied to data transport. (see [below for nested schema](#nestedatt--bandwidth))
+- `bridge` (Attributes) (see [below for nested schema](#nestedatt--bridge))
+- `dns` (Attributes) DNS configuration for the network (see [below for nested schema](#nestedatt--dns))
+- `domain` (Attributes) Configures the domain associated with the network. (see [below for nested schema](#nestedatt--domain))
+- `forward` (Attributes) Network forwarding mode configuration (see [below for nested schema](#nestedatt--forward))
+- `ips` (Attributes List) IP address configuration for the network
+
+See: <https://libvirt.org/formatnetwork.html#addressing> (see [below for nested schema](#nestedatt--ips))
+- `ipv6` (String) Controls the usage of IPv6 in the network configuration.
+- `mac` (Attributes) Sets the MAC configuration for the network. (see [below for nested schema](#nestedatt--mac))
+- `metadata` (Attributes) Provides additional metadata relevant to the network configuration. (see [below for nested schema](#nestedatt--metadata))
+- `mtu` (Attributes) Sets the Maximum Transmission Unit (MTU) size for the network interface. (see [below for nested schema](#nestedatt--mtu))
+- `port_groups` (Attributes List) Configures port groups that define how guest connections are managed. (see [below for nested schema](#nestedatt--port_groups))
+- `port_options` (Attributes) Configures options for the network port, such as specific settings and parameters. (see [below for nested schema](#nestedatt--port_options))
+- `routes` (Attributes List) Configures static routes for the virtual network, enabling custom routing settings. (see [below for nested schema](#nestedatt--routes))
+- `trust_guest_rx_filters` (String) Indicates whether to trust the guest's RX filters, affecting network traffic filtering.
+- `virtual_port` (Attributes) Configures the virtual port associated with a port group. (see [below for nested schema](#nestedatt--virtual_port))
+- `vlan` (Attributes) Defines VLAN settings for the port group in the network configuration. (see [below for nested schema](#nestedatt--vlan))
 
 ### Read-Only
 
 - `id` (String) Network identifier (UUID)
+- `uuid` (String) Sets a unique identifier for the virtual network, ensuring distinct identification.
+
+<a id="nestedatt--bandwidth"></a>
+### Nested Schema for `bandwidth`
+
+Optional:
+
+- `class_id` (Number) Sets the class identifier for the bandwidth configuration, categorizing the type of bandwidth used for the network.
+- `inbound` (Attributes) Configures the settings for outbound bandwidth, controlling the data flow sent by the network. (see [below for nested schema](#nestedatt--bandwidth--inbound))
+- `outbound` (Attributes) Configures the settings for outbound bandwidth, controlling the data flow sent by the network. (see [below for nested schema](#nestedatt--bandwidth--outbound))
+
+<a id="nestedatt--bandwidth--inbound"></a>
+### Nested Schema for `bandwidth.inbound`
+
+Optional:
+
+- `average` (Number) Sets the average allowable rate of outbound data for the network, providing a general performance baseline.
+- `burst` (Number) Configures the maximum burst capacity of outbound data that can exceed the average rate temporarily.
+- `floor` (Number) Specifies the minimum guaranteed rate for outbound data traffic, ensuring a baseline level of performance.
+- `peak` (Number) Defines the upper limit for the peak rate of outbound data, controlling spikes in network usage.
+
+
+<a id="nestedatt--bandwidth--outbound"></a>
+### Nested Schema for `bandwidth.outbound`
+
+Optional:
+
+- `average` (Number) Sets the average allowable rate of outbound data for the network, providing a general performance baseline.
+- `burst` (Number) Configures the maximum burst capacity of outbound data that can exceed the average rate temporarily.
+- `floor` (Number) Specifies the minimum guaranteed rate for outbound data traffic, ensuring a baseline level of performance.
+- `peak` (Number) Defines the upper limit for the peak rate of outbound data, controlling spikes in network usage.
+
+
+
+<a id="nestedatt--bridge"></a>
+### Nested Schema for `bridge`
+
+Optional:
+
+- `delay` (String) Sets the delay for bridge network operations, affecting how quickly packets are processed.
+- `mac_table_manager` (String) Configures how MAC addresses are managed within the bridge, influencing how traffic is controlled.
+- `name` (String) Bridge name (generated by libvirt if not specified)
+- `stp` (String) Configures Spanning Tree Protocol (STP) for the bridge, controlling the avoidance of loops in the network.
+- `zone` (String) Sets the zone attribute for the bridge, categorizing it within defined networking scopes.
+
+
+<a id="nestedatt--dns"></a>
+### Nested Schema for `dns`
+
+Optional:
+
+- `enable` (String) Sets whether DNS features are enabled for the network, allowing the network to resolve domain names.
+- `forward_plain_names` (String) Configures the option to forward plain names in DNS resolution, affecting how traffic is managed for unqualified names.
+- `forwarders` (Attributes List) Specifies the DNS forwarders for the network, indicating external servers that handle DNS queries. (see [below for nested schema](#nestedatt--dns--forwarders))
+- `host` (Attributes List) Defines the host settings for DNS within the virtual network, controlling how local hostnames are resolved. (see [below for nested schema](#nestedatt--dns--host))
+- `sr_vs` (Attributes List) Configures the SRV records for the DNS entries. (see [below for nested schema](#nestedatt--dns--sr_vs))
+- `tx_ts` (Attributes List) Configures TXT records for DNS entries. (see [below for nested schema](#nestedatt--dns--tx_ts))
+
+<a id="nestedatt--dns--forwarders"></a>
+### Nested Schema for `dns.forwarders`
+
+Optional:
+
+- `addr` (String) Sets the address for each DNS forwarder, defining where to direct DNS queries.
+- `domain` (String) Configures the domain associated with each DNS forwarder, specifying the context for resolution.
+
+
+<a id="nestedatt--dns--host"></a>
+### Nested Schema for `dns.host`
+
+Required:
+
+- `ip` (String) Sets the IP address of the host for DNS resolution.
+
+Optional:
+
+- `hostnames` (Attributes List) Configures the hostname settings for DNS, specifying how hosts within the network are identified. (see [below for nested schema](#nestedatt--dns--host--hostnames))
+
+<a id="nestedatt--dns--host--hostnames"></a>
+### Nested Schema for `dns.host.hostnames`
+
+Required:
+
+- `hostname` (String) Sets the value of each hostname in the DNS configuration, allowing for individual identification.
+
+
+
+<a id="nestedatt--dns--sr_vs"></a>
+### Nested Schema for `dns.sr_vs`
+
+Optional:
+
+- `domain` (String) Defines the domain name used for the SRV record.
+- `port` (Number) Specifies the port number associated with the SRV record.
+- `priority` (Number) Sets the priority of the SRV record, influencing the selection order for clients.
+- `protocol` (String) Defines the protocol (e.g., TCP or UDP) used for the SRV record.
+- `service` (String) Specifies the service name associated with the SRV record.
+- `target` (String) Indicates the target host name to contact for the specified service.
+- `weight` (Number) Sets the weight for load balancing among SRV records.
+
+
+<a id="nestedatt--dns--tx_ts"></a>
+### Nested Schema for `dns.tx_ts`
+
+Required:
+
+- `name` (String) Specifies the name for the TXT record.
+- `value` (String) Sets the value associated with the TXT record.
+
+
+
+<a id="nestedatt--domain"></a>
+### Nested Schema for `domain`
+
+Optional:
+
+- `local_only` (String) Sets whether the domain is local only, preventing it from being accessible externally.
+- `name` (String) Specifies the name of the domain within the network configuration.
+
+
+<a id="nestedatt--forward"></a>
+### Nested Schema for `forward`
+
+Optional:
+
+- `addresses` (Attributes List) Defines the addresses to which traffic should be forwarded. (see [below for nested schema](#nestedatt--forward--addresses))
+- `dev` (String) Sets the specific device for the forwarding configuration.
+- `driver` (Attributes) Configures the driver used for the network forwarding. (see [below for nested schema](#nestedatt--forward--driver))
+- `interfaces` (Attributes List) Defines the interfaces to be used for forwarding. (see [below for nested schema](#nestedatt--forward--interfaces))
+- `managed` (Boolean) Indicates whether the forwarding configuration is managed by libvirt.
+- `mode` (String) Configures the mode of operation for the network forwarding.
+- `nat` (Attributes) Enables or disables NAT (Network Address Translation) for the forwarding configuration. (see [below for nested schema](#nestedatt--forward--nat))
+- `pfs` (Attributes List) Configures per-packet forwarding service, enabling a fine-tuned forwarding operation. (see [below for nested schema](#nestedatt--forward--pfs))
+
+<a id="nestedatt--forward--addresses"></a>
+### Nested Schema for `forward.addresses`
+
+Optional:
+
+- `pci` (Attributes) Configures forwarding for PCI addresses. (see [below for nested schema](#nestedatt--forward--addresses--pci))
+
+<a id="nestedatt--forward--addresses--pci"></a>
+### Nested Schema for `forward.addresses.pci`
+
+Optional:
+
+- `bus` (Number) Specifies the bus number for the PCI forwarding address.
+- `domain` (Number) Sets the domain ID for the PCI forwarding address.
+- `function` (Number) Defines the function number for the PCI forwarding address.
+- `slot` (Number) Specifies the slot number for the PCI forwarding address.
+
+
+
+<a id="nestedatt--forward--driver"></a>
+### Nested Schema for `forward.driver`
+
+Optional:
+
+- `model` (String) Specifies the model of the forwarding driver.
+- `name` (String) Sets the name of the forwarding driver.
+
+
+<a id="nestedatt--forward--interfaces"></a>
+### Nested Schema for `forward.interfaces`
+
+Optional:
+
+- `dev` (String) Specifies the device for the forwarding interface.
+
+
+<a id="nestedatt--forward--nat"></a>
+### Nested Schema for `forward.nat`
+
+Optional:
+
+- `addresses` (Attributes List) Defines the addresses for NAT configuration. (see [below for nested schema](#nestedatt--forward--nat--addresses))
+- `ipv6` (String) Configures whether IPv6 is used for NAT in the forwarding settings.
+- `ports` (Attributes List) Defines the ports to be used in NAT configuration. (see [below for nested schema](#nestedatt--forward--nat--ports))
+
+<a id="nestedatt--forward--nat--addresses"></a>
+### Nested Schema for `forward.nat.addresses`
+
+Required:
+
+- `end` (String) Sets the ending address for the NAT range.
+- `start` (String) Specifies the starting address for the NAT range.
+
+
+<a id="nestedatt--forward--nat--ports"></a>
+### Nested Schema for `forward.nat.ports`
+
+Required:
+
+- `end` (Number) Sets the ending port number for the NAT port range.
+- `start` (Number) Specifies the starting port number for the NAT port range.
+
+
+
+<a id="nestedatt--forward--pfs"></a>
+### Nested Schema for `forward.pfs`
+
+Required:
+
+- `dev` (String) Specifies the device to be used for per-packet forwarding service.
+
+
 
 <a id="nestedatt--ips"></a>
 ### Nested Schema for `ips`
 
 Optional:
 
-- `address` (String) IP address (e.g., '10.17.3.1', 'fd00::1'). Optional - if not specified, one will be derived from the network.
-- `dhcp` (Attributes) DHCP server configuration for this IP range. (see [below for nested schema](#nestedatt--ips--dhcp))
-- `family` (String) Address family ('ipv4' or 'ipv6'). Optional - will be auto-detected from address if not specified.
-- `local_ptr` (String) Whether to generate local PTR records ('yes' or 'no').
-- `netmask` (String) Network mask for IPv4 (e.g., '255.255.255.0'). Mutually exclusive with prefix.
-- `prefix` (Number) Network prefix length (e.g., 24 for 255.255.255.0, 64 for IPv6). Mutually exclusive with netmask.
+- `address` (String) Sets the specific IP address for the associated configuration.
+- `dhcp` (Attributes) Enables and configures DHCP settings for the network. (see [below for nested schema](#nestedatt--ips--dhcp))
+- `family` (String) Determines the IP family (IPv4 or IPv6) for the network configuration.
+- `local_ptr` (String) Configures the local pointer for the IP address, used in DNS resolution.
+- `netmask` (String) Specifies the subnet mask for the IP address configuration.
+- `prefix` (Number) Sets the prefix length for CIDR notation in the network's IP configuration.
+- `tftp` (Attributes) Configures TFTP settings for the network. (see [below for nested schema](#nestedatt--ips--tftp))
 
 <a id="nestedatt--ips--dhcp"></a>
 ### Nested Schema for `ips.dhcp`
 
 Optional:
 
-- `hosts` (Attributes List) Static DHCP host entries. (see [below for nested schema](#nestedatt--ips--dhcp--hosts))
-- `ranges` (Attributes List) DHCP address ranges to hand out. (see [below for nested schema](#nestedatt--ips--dhcp--ranges))
+- `bootp` (Attributes List) Configures BOOTP settings for the DHCP configuration. (see [below for nested schema](#nestedatt--ips--dhcp--bootp))
+- `hosts` (Attributes List) Configures host entries for DHCP clients within the network. (see [below for nested schema](#nestedatt--ips--dhcp--hosts))
+- `ranges` (Attributes List) Represents the DHCP range for IP addresses to be allocated. (see [below for nested schema](#nestedatt--ips--dhcp--ranges))
+
+<a id="nestedatt--ips--dhcp--bootp"></a>
+### Nested Schema for `ips.dhcp.bootp`
+
+Optional:
+
+- `file` (String) Specifies a file used for BOOTP configurations.
+- `server` (String) Sets the server address for the BOOTP configuration.
+
 
 <a id="nestedatt--ips--dhcp--hosts"></a>
 ### Nested Schema for `ips.dhcp.hosts`
 
+Optional:
+
+- `ip` (String) Sets the IP address for a DHCP host entry.
+- `lease` (Attributes) Configures lease settings for DHCP host entries. (see [below for nested schema](#nestedatt--ips--dhcp--hosts--lease))
+- `mac` (String) Specifies the MAC address of the DHCP host.
+- `name` (String) Defines the name for the DHCP host entry.
+
+Read-Only:
+
+- `id` (String) Specifies the unique identifier for a DHCP host entry.
+
+<a id="nestedatt--ips--dhcp--hosts--lease"></a>
+### Nested Schema for `ips.dhcp.hosts.lease`
+
 Required:
 
-- `ip` (String) IP address to assign to this host.
-- `mac` (String) MAC address of the host.
+- `expiry` (Number) Configures the expiration time of the DHCP lease for a host.
 
 Optional:
 
-- `name` (String) Hostname for this host.
+- `unit` (String) Sets the unit of time for the lease expiry, such as seconds or minutes.
+
 
 
 <a id="nestedatt--ips--dhcp--ranges"></a>
 ### Nested Schema for `ips.dhcp.ranges`
 
+Optional:
+
+- `end` (String) Sets the end IP address of the DHCP allocation range.
+- `lease` (Attributes) Configures lease settings for DHCP host entries. (see [below for nested schema](#nestedatt--ips--dhcp--ranges--lease))
+- `start` (String) Sets the start IP address of the DHCP allocation range.
+
+<a id="nestedatt--ips--dhcp--ranges--lease"></a>
+### Nested Schema for `ips.dhcp.ranges.lease`
+
 Required:
 
-- `end` (String) End IP address of the range.
-- `start` (String) Start IP address of the range.
+- `expiry` (Number) Configures the expiration time of the DHCP lease for a host.
+
+Optional:
+
+- `unit` (String) Sets the unit of time for the lease expiry, such as seconds or minutes.
+
+
+
+
+<a id="nestedatt--ips--tftp"></a>
+### Nested Schema for `ips.tftp`
+
+Optional:
+
+- `root` (String) Defines the root directory for TFTP services provided by the network.
+
+
+
+<a id="nestedatt--mac"></a>
+### Nested Schema for `mac`
+
+Optional:
+
+- `address` (String) Specifies the actual MAC address associated with the network.
+
+
+<a id="nestedatt--metadata"></a>
+### Nested Schema for `metadata`
+
+Required:
+
+- `xml` (String) Configures XML-based metadata for the network.
+
+
+<a id="nestedatt--mtu"></a>
+### Nested Schema for `mtu`
+
+Required:
+
+- `size` (Number) Defines the specific size of the MTU for network communication.
+
+
+<a id="nestedatt--port_groups"></a>
+### Nested Schema for `port_groups`
+
+Optional:
+
+- `default` (String) Indicates the default status of the port group.
+- `name` (String) Sets the name for the specified port group within the network.
+- `trust_guest_rx_filters` (String) Controls whether to trust incoming packets based on guest-defined filters.
+- `virtual_port` (Attributes) Configures the virtual port associated with a port group. (see [below for nested schema](#nestedatt--port_groups--virtual_port))
+- `vlan` (Attributes) Defines VLAN settings for the port group in the network configuration. (see [below for nested schema](#nestedatt--port_groups--vlan))
+
+<a id="nestedatt--port_groups--virtual_port"></a>
+### Nested Schema for `port_groups.virtual_port`
+
+Optional:
+
+- `params` (Attributes) Defines parameters for the virtual port in the port group. (see [below for nested schema](#nestedatt--port_groups--virtual_port--params))
+
+<a id="nestedatt--port_groups--virtual_port--params"></a>
+### Nested Schema for `port_groups.virtual_port.params`
+
+Optional:
+
+- `any` (Attributes) Specifies any parameters applicable to the virtual port configuration. (see [below for nested schema](#nestedatt--port_groups--virtual_port--params--any))
+- `mido_net` (Attributes) Configures parameters for MidoNet-related virtual ports. (see [below for nested schema](#nestedatt--port_groups--virtual_port--params--mido_net))
+- `open_v_switch` (Attributes) Defines parameters for Open vSwitch-related virtual ports. (see [below for nested schema](#nestedatt--port_groups--virtual_port--params--open_v_switch))
+- `vepa8021qbg` (Attributes) Configures parameters for VEPA 802.1Qbg-related virtual ports. (see [below for nested schema](#nestedatt--port_groups--virtual_port--params--vepa8021qbg))
+- `vn_tag8011qbh` (Attributes) Configures parameters for VNTag 8011QBH-related virtual ports. (see [below for nested schema](#nestedatt--port_groups--virtual_port--params--vn_tag8011qbh))
+
+<a id="nestedatt--port_groups--virtual_port--params--any"></a>
+### Nested Schema for `port_groups.virtual_port.params.any`
+
+Optional:
+
+- `instance_id` (String) Sets the instance ID for the virtual port parameter.
+- `interface_id` (String) Defines the interface ID for the virtual port parameter.
+- `manager_id` (Number) Configures the manager ID associated with the virtual port parameter.
+- `profile_id` (String) Specifies the profile ID for the virtual port parameter.
+- `type_id` (Number) Sets the type ID for the virtual port parameter.
+- `type_id_version` (Number) Indicates the version of the type ID for the virtual port parameter.
+
+
+<a id="nestedatt--port_groups--virtual_port--params--mido_net"></a>
+### Nested Schema for `port_groups.virtual_port.params.mido_net`
+
+Optional:
+
+- `interface_id` (String) Specifies the interface ID for MidoNet virtual port parameters.
+
+
+<a id="nestedatt--port_groups--virtual_port--params--open_v_switch"></a>
+### Nested Schema for `port_groups.virtual_port.params.open_v_switch`
+
+Optional:
+
+- `interface_id` (String) Sets the interface ID for Open vSwitch virtual port parameters.
+- `profile_id` (String) Specifies the profile ID for Open vSwitch virtual port parameters.
+
+
+<a id="nestedatt--port_groups--virtual_port--params--vepa8021qbg"></a>
+### Nested Schema for `port_groups.virtual_port.params.vepa8021qbg`
+
+Optional:
+
+- `instance_id` (String) Sets the instance ID for VEPA 802.1Qbg virtual port parameters.
+- `manager_id` (Number) Configures the manager ID associated with VEPA 802.1Qbg parameters.
+- `type_id` (Number) Specifies the type ID for VEPA 802.1Qbg virtual port parameters.
+- `type_id_version` (Number) Indicates the version of the type ID for VEPA 802.1Qbg parameters.
+
+
+<a id="nestedatt--port_groups--virtual_port--params--vn_tag8011qbh"></a>
+### Nested Schema for `port_groups.virtual_port.params.vn_tag8011qbh`
+
+Optional:
+
+- `profile_id` (String) Specifies the profile ID for VNTag 8011QBH virtual port parameters.
+
+
+
+
+<a id="nestedatt--port_groups--vlan"></a>
+### Nested Schema for `port_groups.vlan`
+
+Optional:
+
+- `tags` (Attributes List) Configures a VLAN tag group for the specified network port group. (see [below for nested schema](#nestedatt--port_groups--vlan--tags))
+- `trunk` (String) Controls whether the VLAN tag allows trunking for the network port group.
+
+<a id="nestedatt--port_groups--vlan--tags"></a>
+### Nested Schema for `port_groups.vlan.tags`
+
+Optional:
+
+- `native_mode` (String) Indicates whether the VLAN tag operates in native mode for the port group.
+
+Read-Only:
+
+- `id` (Number) Sets the identifier for the VLAN tag within the port group.
+
+
+
+
+<a id="nestedatt--port_options"></a>
+### Nested Schema for `port_options`
+
+Optional:
+
+- `isolated` (String) Specifies whether the network port is isolated, preventing traffic flow from other ports.
+
+
+<a id="nestedatt--routes"></a>
+### Nested Schema for `routes`
+
+Optional:
+
+- `address` (String) Sets the address for the static route in the network configuration.
+- `family` (String) Defines the address family (IPv4 or IPv6) to be used for the static route.
+- `gateway` (String) Specifies the gateway address to use for the static route.
+- `metric` (String) Sets the metric value for the static route, influencing route selection.
+- `netmask` (String) Configures the netmask for the static route address.
+- `prefix` (Number) Defines the prefix length for the static route, particularly for IPv6 addresses.
+
+
+<a id="nestedatt--virtual_port"></a>
+### Nested Schema for `virtual_port`
+
+Optional:
+
+- `params` (Attributes) Defines parameters for the virtual port in the port group. (see [below for nested schema](#nestedatt--virtual_port--params))
+
+<a id="nestedatt--virtual_port--params"></a>
+### Nested Schema for `virtual_port.params`
+
+Optional:
+
+- `any` (Attributes) Specifies any parameters applicable to the virtual port configuration. (see [below for nested schema](#nestedatt--virtual_port--params--any))
+- `mido_net` (Attributes) Configures parameters for MidoNet-related virtual ports. (see [below for nested schema](#nestedatt--virtual_port--params--mido_net))
+- `open_v_switch` (Attributes) Defines parameters for Open vSwitch-related virtual ports. (see [below for nested schema](#nestedatt--virtual_port--params--open_v_switch))
+- `vepa8021qbg` (Attributes) Configures parameters for VEPA 802.1Qbg-related virtual ports. (see [below for nested schema](#nestedatt--virtual_port--params--vepa8021qbg))
+- `vn_tag8011qbh` (Attributes) Configures parameters for VNTag 8011QBH-related virtual ports. (see [below for nested schema](#nestedatt--virtual_port--params--vn_tag8011qbh))
+
+<a id="nestedatt--virtual_port--params--any"></a>
+### Nested Schema for `virtual_port.params.any`
+
+Optional:
+
+- `instance_id` (String) Sets the instance ID for the virtual port parameter.
+- `interface_id` (String) Defines the interface ID for the virtual port parameter.
+- `manager_id` (Number) Configures the manager ID associated with the virtual port parameter.
+- `profile_id` (String) Specifies the profile ID for the virtual port parameter.
+- `type_id` (Number) Sets the type ID for the virtual port parameter.
+- `type_id_version` (Number) Indicates the version of the type ID for the virtual port parameter.
+
+
+<a id="nestedatt--virtual_port--params--mido_net"></a>
+### Nested Schema for `virtual_port.params.mido_net`
+
+Optional:
+
+- `interface_id` (String) Specifies the interface ID for MidoNet virtual port parameters.
+
+
+<a id="nestedatt--virtual_port--params--open_v_switch"></a>
+### Nested Schema for `virtual_port.params.open_v_switch`
+
+Optional:
+
+- `interface_id` (String) Sets the interface ID for Open vSwitch virtual port parameters.
+- `profile_id` (String) Specifies the profile ID for Open vSwitch virtual port parameters.
+
+
+<a id="nestedatt--virtual_port--params--vepa8021qbg"></a>
+### Nested Schema for `virtual_port.params.vepa8021qbg`
+
+Optional:
+
+- `instance_id` (String) Sets the instance ID for VEPA 802.1Qbg virtual port parameters.
+- `manager_id` (Number) Configures the manager ID associated with VEPA 802.1Qbg parameters.
+- `type_id` (Number) Specifies the type ID for VEPA 802.1Qbg virtual port parameters.
+- `type_id_version` (Number) Indicates the version of the type ID for VEPA 802.1Qbg parameters.
+
+
+<a id="nestedatt--virtual_port--params--vn_tag8011qbh"></a>
+### Nested Schema for `virtual_port.params.vn_tag8011qbh`
+
+Optional:
+
+- `profile_id` (String) Specifies the profile ID for VNTag 8011QBH virtual port parameters.
+
+
+
+
+<a id="nestedatt--vlan"></a>
+### Nested Schema for `vlan`
+
+Optional:
+
+- `tags` (Attributes List) Configures a VLAN tag group for the specified network port group. (see [below for nested schema](#nestedatt--vlan--tags))
+- `trunk` (String) Controls whether the VLAN tag allows trunking for the network port group.
+
+<a id="nestedatt--vlan--tags"></a>
+### Nested Schema for `vlan.tags`
+
+Optional:
+
+- `native_mode` (String) Indicates whether the VLAN tag operates in native mode for the port group.
+
+Read-Only:
+
+- `id` (Number) Sets the identifier for the VLAN tag within the port group.

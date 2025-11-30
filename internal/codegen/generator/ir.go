@@ -156,8 +156,14 @@ type FieldIR struct {
 	// IsFlattenedAttr indicates this is an attribute part of a flattened chardata+attrs pattern
 	IsFlattenedAttr bool
 
-	// FlattenedAttrName stores which attribute this flattened field represents (e.g., "Unit", "Placement")
+	// FlattenedAttrName stores the XML attribute this flattened field represents (e.g., "unit", "placement")
 	FlattenedAttrName string
+
+	// TFPath stores the full Terraform path (e.g., "domain.cpu.model")
+	TFPath string
+
+	// XMLPath stores the full libvirt XML path (e.g., "domain.cpu.model")
+	XMLPath string
 
 	// IsExcluded indicates this field should not be generated
 	IsExcluded bool

@@ -161,7 +161,7 @@ func (r *LibvirtXMLReflector) ReflectStruct(structType reflect.Type) (*generator
 					PreserveUserIntent: true,
 					NestedStruct:       field.NestedStruct, // Keep reference for conversion
 					IsFlattenedAttr:    true,               // Mark as flattened attribute
-					FlattenedAttrName:  attrInfo.GoName,    // Store which attribute this is
+					FlattenedAttrName:  attrInfo.XMLName,   // Store XML attribute name
 				}
 				expandedFields = append(expandedFields, attrField)
 			}

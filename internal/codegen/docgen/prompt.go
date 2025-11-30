@@ -10,6 +10,9 @@ import (
 // GeneratePrompt creates a prompt for AI to generate field descriptions
 // It includes the full HTML index for context and enriched field metadata.
 func GeneratePrompt(batch Batch, index docindex.Index) string {
+	// Add lightweight reference hints from the docindex to guide citations
+	batch = enrichReferenceHints(batch, index, 3)
+
 	var prompt strings.Builder
 
 	prompt.WriteString("# Terraform Provider Documentation Generation Task\n\n")
@@ -62,10 +65,22 @@ func GeneratePrompt(batch Batch, index docindex.Index) string {
 		if len(field.ValidValues) > 0 {
 			prompt.WriteString(fmt.Sprintf("  - valid_values: %s\n", strings.Join(field.ValidValues, ", ")))
 		}
+		if len(field.Patterns) > 0 {
+			prompt.WriteString(fmt.Sprintf("  - patterns: %s\n", strings.Join(field.Patterns, ", ")))
+		}
+		if field.UnionNote != "" {
+			prompt.WriteString(fmt.Sprintf("  - union_note: %s\n", field.UnionNote))
+		}
+		if len(field.ReferenceHints) > 0 {
+			prompt.WriteString("  - reference_hints:\n")
+			for _, ref := range field.ReferenceHints {
+				prompt.WriteString(fmt.Sprintf("    - %s (%s)\n", ref.Title, ref.URL))
+			}
+		}
 	}
 
 	prompt.WriteString("\n## Requirements\n\n")
-	prompt.WriteString("For each field, generate a concise description (1-2 sentences) explaining what the field configures. Include constraints (valid values/patterns), optional/required/computed behavior, and presence semantics when relevant. Provide 1–2 short examples when the value is not obvious (skip examples for simple booleans).\n\n")
+	prompt.WriteString("For each field, generate a concise description (1-2 sentences) explaining what the field configures. Include constraints (valid values/patterns), optional/required/computed behavior, and presence semantics when relevant. Provide 1–2 short examples when the value is not obvious (skip examples for simple booleans/presence flags).\n\n")
 
 	prompt.WriteString("**Style guide:**\n")
 	prompt.WriteString("- Write in present tense\n")
@@ -74,9 +89,9 @@ func GeneratePrompt(batch Batch, index docindex.Index) string {
 	prompt.WriteString("- Keep it brief (1-2 sentences maximum)\n")
 	prompt.WriteString("- Do NOT explain XML syntax or Terraform syntax\n")
 	prompt.WriteString("- Use the XML path to understand the context within the libvirt schema\n")
-	prompt.WriteString("- Include constraints and valid values when known; if unknown, say that the value is user-provided\n")
+	prompt.WriteString("- Include constraints, valid values, patterns, and union/one-of notes when known; if unknown, say the value is user-specified and avoid inventing defaults or side effects\n")
 	prompt.WriteString("- Note presence-only behavior or yes/no string flags when applicable\n")
-	prompt.WriteString("- Provide 1–2 short examples only when helpful\n\n")
+	prompt.WriteString("- Provide 1–2 short examples only when helpful; omit for trivial booleans\n\n")
 
 	prompt.WriteString("## Output Format\n\n")
 	prompt.WriteString("Respond with valid YAML in this exact format:\n\n")
@@ -96,7 +111,7 @@ func GeneratePrompt(batch Batch, index docindex.Index) string {
 
 	prompt.WriteString("**Important:** \n")
 	prompt.WriteString("- Only output the YAML. Do not include any other text before or after.\n")
-	prompt.WriteString("- Use a reference URL from the index when you are confident; otherwise leave it empty.\n")
+	prompt.WriteString("- Prefer one of the reference_hints URLs; only leave reference empty when no relevant hint applies.\n")
 	prompt.WriteString("- Do not invent defaults or side effects. If the value is unspecified in docs, treat it as user-provided.\n")
 
 	return prompt.String()

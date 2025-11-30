@@ -1,12 +1,250 @@
 entries:
-  - path: storage_pool
-    description: Storage pool for managing storage volumes
-    reference: https://libvirt.org/formatstorage.html#storage-pool-xml
-
-  - path: storage_pool.source
-    description: Source location for the storage pool
+  - path: storage_pool.capacity_unit
+    description: Sets the unit used for the storage_pool.capacity value (for example, "bytes", "KiB", "MiB", "GiB"); if unset, libvirt’s default unit (typically bytes) is used.
+    reference: https://libvirt.org/formatstorage.html#storage-pool-general-metadata
+  - path: storage_pool.capacity
+    description: Exposes the total logical capacity of the storage pool; value is computed by libvirt and expressed in the unit indicated by storage_pool.capacity_unit.
+    reference: https://libvirt.org/formatstorage.html#storage-pool-general-metadata
+  - path: storage_pool.available
+    description: Exposes the currently available (free) space in the pool; value is computed by libvirt and expressed in the unit indicated by storage_pool.available_unit.
+    reference: https://libvirt.org/formatstorage.html#storage-pool-general-metadata
+  - path: storage_pool.features
+    description: Enables optional storage-pool-specific features such as copy-on-write behavior.
+    reference: https://libvirt.org/formatstorage.html#features
+  - path: storage_pool.allocation_unit
+    description: Sets the unit used for the storage_pool.allocation value (for example, "bytes", "KiB", "MiB", "GiB"); if unset, libvirt’s default unit (typically bytes) is used.
+    reference: https://libvirt.org/formatstorage.html#storage-pool-general-metadata
+  - path: storage_pool.available_unit
+    description: Sets the unit used for the storage_pool.available value (for example, "bytes", "KiB", "MiB", "GiB"); if unset, libvirt’s default unit (typically bytes) is used.
+    reference: https://libvirt.org/formatstorage.html#storage-pool-general-metadata
+  - path: storage_pool.features.cow
+    description: Enables configuration of the copy-on-write (COW) feature for filesystems that support it in this storage pool.
+    reference: https://libvirt.org/formatstorage.html#features
+  - path: storage_pool.features.cow.state
+    description: Sets whether filesystem-level copy-on-write is enabled for images in the pool; valid values are "on" or "off".
+    reference: https://libvirt.org/formatstorage.html#features
+  - path: storage_pool.allocation
+    description: Exposes the current amount of space in the pool that is allocated to volumes; value is computed by libvirt and expressed in the unit indicated by storage_pool.allocation_unit.
+    reference: https://libvirt.org/formatstorage.html#storage-pool-general-metadata
+  - path: storage_pool.source.adapter.parent_addr.address.function
+    description: Sets the PCI function number of the parent adapter; value is user-provided, typically 0–7 (e.g., "0").
     reference: https://libvirt.org/formatstorage.html#source-elements
-
+  - path: storage_pool.name
+    description: Sets the storage pool name, which must be unique on the host and is required when defining a pool.
+    reference: https://libvirt.org/formatstorage.html#storage-pool-general-metadata
+  - path: storage_pool.refresh.volume
+    description: Configures per-volume refresh behavior for the pool, including how each volume’s allocation is calculated.
+    reference: https://libvirt.org/formatstorage.html#refresh-overrides
+  - path: storage_pool.source.adapter.managed
+    description: Controls whether libvirt manages the adapter’s login/session; accepts "yes" or "no" and is interpreted as a boolean.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.adapter.parent_addr.address.bus
+    description: Sets the PCI bus number of the parent adapter; value is user-provided, typically in decimal (e.g., "0", "3").
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.adapter.parent_addr.address.slot
+    description: Sets the PCI slot number of the parent adapter; value is user-provided, typically in decimal (e.g., "0", "1", "10").
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.adapter.parent_addr.unique_id
+    description: Sets the required unique identifier for the parent adapter address, used by libvirt to distinguish this adapter instance (user-provided string).
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.adapter.type
+    description: Sets the adapter type for the pool source (e.g., HBA type); value is user-provided and must be supported by the chosen pool backend.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.adapter.wwnn
+    description: Sets the World Wide Node Name (WWNN) for a Fibre Channel adapter; value is a user-provided FC WWN string (e.g., "5005076802401234").
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.adapter.wwpn
+    description: Sets the World Wide Port Name (WWPN) for a Fibre Channel adapter; value is a user-provided FC WWN string (e.g., "5005076802456789").
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.auth
+    description: Configures optional authentication for the pool source (e.g., user/secret for iSCSI, RBD, or other networked storage), with credentials defined according to the backend.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.refresh.volume.allocation
+    description: Sets the method used to compute volume allocation during refresh; valid values are those supported by libvirt for the pool type (user-provided, e.g. "physical" vs "logical" where applicable).
+    reference: https://libvirt.org/formatstorage.html#refresh-overrides
+  - path: storage_pool.source.adapter.name
+    description: Sets the adapter name for the pool source, typically the host HBA or interface identifier (user-provided string, such as "host0").
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.refresh
+    description: Configures optional refresh behavior for the pool and its volumes, controlling how allocation statistics are recomputed.
+    reference: https://libvirt.org/formatstorage.html#refresh-overrides
+  - path: storage_pool.source
+    description: Defines the source backing for the storage pool (e.g., device, host, directory, or network export), specific to the chosen pool type.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.adapter
+    description: Configures an HBA/adapter description for pools that use host adapters (e.g., iSCSI or SCSI pools), including addressing and management attributes.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.adapter.parent
+    description: Sets an optional parent adapter identifier if the specified adapter is a child of another adapter (user-provided string).
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.adapter.parent_addr
+    description: Configures the PCI-style address and unique ID of the parent adapter for the storage pool source.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.adapter.parent_addr.address
+    description: Provides the structured PCI address of the parent adapter (domain, bus, slot, function).
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.adapter.parent_addr.address.domain
+    description: Sets the PCI domain number of the parent adapter; value is user-provided, typically "0" on most systems.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.auth.secret.usage
+    description: Sets the application-specific usage name of the secret to use for pool authentication, as defined in the corresponding libvirt secret object (user-provided string such as "ceph-secret").
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.dir
+    description: Configures a source directory used by the storage pool backend (for example, for dir, fs, netfs, or vstorage-style pools).
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.format.type
+    description: Sets the source format type string, such as "ext4", "xfs", "nfs", or other backend-specific formats; the value is user-provided but must be valid for the chosen pool type.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.initiator
+    description: Configures iSCSI initiator information for the pool source, allowing the host to identify itself to an iSCSI target.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.auth.username
+    description: Sets the username or client identifier used when authenticating to the storage backend (for example, a Ceph client name like "client.admin" or an iSCSI user).
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.device.free_extents
+    description: Describes one or more free extents on the source device that are available for allocation by the pool, each defined by a start and end offset.
+    reference: https://libvirt.org/formatstorage.html#device-extents
+  - path: storage_pool.source.device.free_extents.end
+    description: Sets the end offset of a free extent on the device, expressed in bytes as an integer greater than the start offset.
+    reference: https://libvirt.org/formatstorage.html#device-extents
+  - path: storage_pool.source.device.part_separator
+    description: Sets the character used to separate the base device name from partition numbers (for example, "p" for devices like "/dev/nvme0n1p1"); the value is user-provided and backend-specific.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.device.path
+    description: Sets the absolute path of the source block device used by the pool, such as "/dev/sdb" or "/dev/mapper/mpath0".
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.format
+    description: Declares the low-level format of the pool source, where supported (for example, the filesystem type or protocol-specific format).
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.host.name
+    description: Sets the hostname or IP address of the remote storage server, such as "storage.example.com" or "192.0.2.10".
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.host.port
+    description: Optionally sets the TCP port used to connect to the remote storage server; if omitted, the backend’s default port is used.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.auth.secret
+    description: Configures the libvirt secret used for authenticating access to the storage pool source (for example, an RBD or iSCSI password); either a secret UUID or a usage name must be provided via child attributes.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.auth.secret.uuid
+    description: Exposes the UUID of the libvirt secret used for pool authentication; this is computed from the referenced secret and must be a valid libvirt UUID string when set.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.auth.type
+    description: Sets the authentication type used by the pool source, for example "ceph" for RBD pools or other backend-specific values; the value is user-provided but must match what the storage backend expects.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.device
+    description: Configures a source block device used by the storage pool (for example, for disk, logical, iscsi, or scsi pools), including its path and optional partitioning/extents metadata.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.host
+    description: Configures a remote host used as the source of the storage pool, including hostname and optional port (for example, an NFS or iSCSI server).
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.device.free_extents.start
+    description: Sets the start offset of a free extent on the device, expressed in bytes as a non-negative integer.
+    reference: https://libvirt.org/formatstorage.html#device-extents
+  - path: storage_pool.source.dir.path
+    description: Sets the absolute path to the source directory for the pool, such as "/var/lib/libvirt/images" or a mounted filesystem root.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.initiator.iqn
+    description: Sets the iSCSI Qualified Name (IQN) of the initiator, such as "iqn.1993-08.org.debian:01:123456789"; the value must be a valid IQN string.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.protocol.version
+    description: Sets the required protocol version string used by the storage pool source (for example, an RBD or protocol-specific version); the value is user-provided.
+    reference: https://libvirt.org/formatstorage.html#source-elements
   - path: storage_pool.target
-    description: Target path and permissions for the storage pool
+    description: Configures the pool target section, which describes how the storage pool is exposed or mapped on the host (such as the target directory, block device, or other mapping details).
     reference: https://libvirt.org/formatstorage.html#storage-pool-target-elements
+  - path: storage_pool.target.encryption.cipher.hash
+    description: Sets the required hash algorithm name used with the encryption cipher (for example, "sha256" or "sha512"); valid values are implementation-dependent and otherwise user-provided.
+    reference: https://libvirt.org/formatstorage.html#storage-volume-target-elements
+  - path: storage_pool.target.encryption.cipher.name
+    description: Sets the required cipher algorithm name (for example, "aes"); the value must match a cipher supported by the underlying storage/encryption stack.
+    reference: https://libvirt.org/formatstorage.html#storage-volume-target-elements
+  - path: storage_pool.source.initiator.iqn.name
+    description: Sets the iSCSI initiator IQN name used by the storage pool when authenticating to an iSCSI target; the value is user-provided and should be a valid IQN string (for example, "iqn.1994-05.com.redhat:client1").
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.protocol
+    description: Enables defining a network storage protocol block for the pool source (for example, RBD, Gluster, or other supported protocols), with details provided by its child attributes.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.vendor.name
+    description: Sets the required vendor name string for the storage pool source (for example, "Red Hat" or a storage vendor identifier); the value is user-provided.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.target.encryption.ivgen
+    description: Defines parameters for the IV (initialization vector) generation algorithm used with the pool’s encryption, with details provided via its attributes.
+    reference: https://libvirt.org/formatstorage.html#storage-volume-target-elements
+  - path: storage_pool.target.encryption.ivgen.name
+    description: Sets the required IV generation algorithm name (for example, a specific IV generator such as "essiv" or similar), with the value being backend-specific and user-provided.
+    reference: https://libvirt.org/formatstorage.html#storage-volume-target-elements
+  - path: storage_pool.source.product.name
+    description: Sets the required product name string for the storage pool source (for example, a storage array or disk product identifier); the value is user-provided.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.vendor
+    description: Enables specifying a vendor descriptor for the storage pool source, typically paired with a product to identify the backing storage hardware.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.target.encryption.cipher.mode
+    description: Sets the required cipher mode of operation (for example, "cbc" or "xts"); valid modes depend on the underlying encryption implementation and are user-provided.
+    reference: https://libvirt.org/formatstorage.html#storage-volume-target-elements
+  - path: storage_pool.target.encryption.cipher.size
+    description: Sets the required cipher key size in bits (for example, 128 or 256), as expected by the chosen cipher algorithm.
+    reference: https://libvirt.org/formatstorage.html#storage-volume-target-elements
+  - path: storage_pool.source.name
+    description: Sets an optional human-readable name for the storage pool source, whose semantics depend on the specific pool type and are otherwise user-provided.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.source.product
+    description: Enables specifying a product descriptor for the storage pool source, typically used together with vendor information for device-based pools.
+    reference: https://libvirt.org/formatstorage.html#source-elements
+  - path: storage_pool.target.encryption
+    description: Enables pool-level encryption metadata for volumes in the pool, controlling how libvirt describes encryption parameters for storage created in this pool.
+    reference: https://libvirt.org/formatstorage.html#storage-volume-target-elements
+  - path: storage_pool.target.encryption.cipher
+    description: Defines the symmetric cipher parameters used for encrypting volumes in the pool, with details such as name, mode, hash, and key size specified via its attributes.
+    reference: https://libvirt.org/formatstorage.html#storage-volume-target-elements
+  - path: storage_pool.target.encryption.format
+    description: Sets the required encryption format identifier for the pool (for example, "luks"); valid values are backend-specific and user-provided.
+    reference: https://libvirt.org/formatstorage.html#storage-volume-target-elements
+  - path: storage_pool.target.encryption.ivgen.hash
+    description: Sets the required hash algorithm name used by the IV generation method (for example, "sha256"); valid values depend on the encryption backend.
+    reference: https://libvirt.org/formatstorage.html#storage-volume-target-elements
+  - path: storage_pool.target.encryption.secret
+    description: References the secret object used to supply encryption keys for the pool, typically by UUID or usage name as defined in libvirt’s secret management.
+    reference: https://libvirt.org/formatstorage.html#storage-volume-target-elements
+  - path: storage_pool.target.encryption.secret.uuid
+    description: Exposes the UUID of the libvirt secret object used for the pool target encryption key; it is populated by libvirt and not set by the user.
+    reference: ""
+  - path: storage_pool.type
+    description: Sets the storage pool backend type, such as "dir", "fs", "netfs", "logical", "disk", "iscsi", "scsi", "mpath", or "zfs", which determines which source/target sub-elements are valid.
+    reference: https://libvirt.org/formatstorage.html#storage-pool-xml
+  - path: storage_pool.target.encryption.secret.type
+    description: Sets the secret backend type used for the pool target encryption key; the value is user-provided and must match a secret type supported by the chosen storage backend (for example, a libvirt secret type).
+    reference: ""
+  - path: storage_pool.target.permissions.group
+    description: Sets the numeric group ID or group name that owns the pool target path (for example, "107" or "libvirt-qemu").
+    reference: https://libvirt.org/formatstorage.html#storage-pool-target-elements
+  - path: storage_pool.target.permissions.owner
+    description: Sets the numeric user ID or username that owns the pool target path (for example, "107" or "qemu").
+    reference: https://libvirt.org/formatstorage.html#storage-pool-target-elements
+  - path: storage_pool.target.timestamps
+    description: Sets explicit access, change, and modification timestamps on the pool target path when supported by the backend.
+    reference: ""
+  - path: storage_pool.uuid
+    description: Exposes the libvirt-assigned UUID of the storage pool; if not specified by the user, it is generated and managed by libvirt.
+    reference: https://libvirt.org/formatstorage.html#storage-pool-general-metadata
+  - path: storage_pool.target.path
+    description: Sets the host path where the pool target is mapped, such as a directory for a dir/fs/netfs pool or a block device for a disk/logical pool (for example, "/var/lib/libvirt/images" or "/dev/sdb").
+    reference: https://libvirt.org/formatstorage.html#storage-pool-target-elements
+  - path: storage_pool.target.permissions
+    description: Sets ownership and permission metadata applied to the pool target path, controlling which user/group and mode bits are used on the backing directory or device.
+    reference: https://libvirt.org/formatstorage.html#storage-pool-target-elements
+  - path: storage_pool.target.permissions.mode
+    description: Sets the Unix permission bits for the pool target path, as an octal string such as "0755" or "0700".
+    reference: https://libvirt.org/formatstorage.html#storage-pool-target-elements
+  - path: storage_pool.target.timestamps.atime
+    description: Sets the last access time for the pool target path; the value is user-provided (for example, a seconds or seconds.nanoseconds timestamp as supported by libvirt).
+    reference: ""
+  - path: storage_pool.target.timestamps.ctime
+    description: Sets the last metadata change time for the pool target path; the value is user-provided in the timestamp format expected by libvirt.
+    reference: ""
+  - path: storage_pool.target.permissions.label
+    description: Sets an optional security label (such as an SELinux context) to apply to the pool target path; the value is user-provided and backend-specific.
+    reference: https://libvirt.org/formatstorage.html#storage-pool-target-elements
+  - path: storage_pool.target.timestamps.mtime
+    description: Sets the last data modification time for the pool target path; the value is user-provided in the timestamp format expected by libvirt.
+    reference: ""

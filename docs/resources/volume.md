@@ -3,18 +3,12 @@
 page_title: "libvirt_volume Resource - terraform-provider-libvirt"
 subcategory: ""
 description: |-
-  Manages a libvirt storage volume.
-  Storage volumes are images (qcow2, raw, etc.) stored in a storage pool that can be attached to virtual machines.
-  See the libvirt storage volume documentation https://libvirt.org/formatstorage.html for more details.
+  Storage volume within a storage pool
 ---
 
 # libvirt_volume (Resource)
 
-Manages a libvirt storage volume.
-
-Storage volumes are images (qcow2, raw, etc.) stored in a storage pool that can be attached to virtual machines.
-
-See the [libvirt storage volume documentation](https://libvirt.org/formatstorage.html) for more details.
+Storage volume within a storage pool
 
 ## Example Usage
 
@@ -81,35 +75,58 @@ resource "libvirt_volume" "from_local" {
 
 ### Required
 
-- `name` (String) Name of the storage volume
+- `name` (String) Sets the name for the storage volume, which must be unique within the pool.
 - `pool` (String) Name of the storage pool where the volume will be created
 
 ### Optional
 
+- `allocation_unit` (String) Specifies the units for the allocated space in the storage volume.
 - `backing_store` (Attributes) Backing store configuration for copy-on-write volumes (see [below for nested schema](#nestedatt--backing_store))
-- `capacity` (Number) Volume capacity in bytes. Required for empty volumes, computed when using create.content
+- `capacity` (Number) Volume capacity in bytes (required unless using create.content)
+- `capacity_unit` (String) Specifies the units for the total capacity in the storage volume.
 - `create` (Attributes) Volume creation options for initializing volume content from external sources (see [below for nested schema](#nestedatt--create))
-- `format` (String) Volume format (qcow2, raw, etc.)
-- `permissions` (Attributes) Permissions for the volume file (see [below for nested schema](#nestedatt--permissions))
-- `type` (String) Volume type (file, block, dir, network, netdir)
+- `physical_unit` (String) Specifies the units for the physical size in the storage volume.
+- `target` (Attributes) (see [below for nested schema](#nestedatt--target))
+- `type` (String) Specifies the type of the storage volume, allowing for distinction of different volume types.
 
 ### Read-Only
 
-- `allocation` (Number) Currently allocated size in bytes
+- `allocation` (Number) Configures the total amount of space allocated for the storage volume.
 - `id` (String) Volume identifier (same as key)
-- `key` (String) Unique key of the storage volume
-- `path` (String) Full path to the volume on the host
+- `key` (String) Defines a unique key identifier for the storage volume.
+- `path` (String) Volume path on the host filesystem (same as target.path)
+- `physical` (Number) Configures the physical size of the storage volume.
 
 <a id="nestedatt--backing_store"></a>
 ### Nested Schema for `backing_store`
 
 Required:
 
-- `path` (String) Path to the backing volume
+- `path` (String) Defines the path to the backing store for the storage volume.
 
 Optional:
 
-- `format` (String) Format of the backing volume
+- `format` (Attributes) Sets the format type for the backing store of the storage volume. (see [below for nested schema](#nestedatt--backing_store--format))
+- `permissions` (Attributes) Configures the permissions for the backing store of the storage volume. (see [below for nested schema](#nestedatt--backing_store--permissions))
+
+<a id="nestedatt--backing_store--format"></a>
+### Nested Schema for `backing_store.format`
+
+Required:
+
+- `type` (String) Specifies the type of the backing store format used for the storage volume.
+
+
+<a id="nestedatt--backing_store--permissions"></a>
+### Nested Schema for `backing_store.permissions`
+
+Optional:
+
+- `group` (String) Sets the group ownership for the backing store permissions of the volume.
+- `label` (String) Configures the label associated with the backing store permissions.
+- `mode` (String) Specifies the mode (file permissions) for the backing store of the volume.
+- `owner` (String) Defines the owner of the backing store permissions for the volume.
+
 
 
 <a id="nestedatt--create"></a>
@@ -124,16 +141,102 @@ Required:
 
 Required:
 
-- `url` (String) URL to download content from (supports https://, file://, or absolute paths)
+- `url` (String) URL to download content from
 
 
 
-<a id="nestedatt--permissions"></a>
-### Nested Schema for `permissions`
+<a id="nestedatt--target"></a>
+### Nested Schema for `target`
 
 Optional:
 
-- `group` (String) Numeric group ID for the volume file group
-- `label` (String) SELinux label for the volume file
-- `mode` (String) Octal permission mode for the volume file (e.g., '0644')
-- `owner` (String) Numeric user ID for the volume file owner
+- `cluster_size` (Number) Configures the cluster size of the storage volume.
+- `cluster_size_unit` (String) Specifies the units for the cluster size of the storage volume.
+- `compat` (String) Sets compatibility settings for the storage volume target.
+- `encryption` (Attributes) Configures the encryption settings for the storage volume. (see [below for nested schema](#nestedatt--target--encryption))
+- `features` (Attributes List) Enables specific features for the storage volume target. (see [below for nested schema](#nestedatt--target--features))
+- `format` (Attributes) Sets the format type for the backing store of the storage volume. (see [below for nested schema](#nestedatt--target--format))
+- `permissions` (Attributes) Configures the permissions for the backing store of the storage volume. (see [below for nested schema](#nestedatt--target--permissions))
+- `timestamps` (Attributes) Records the timestamp information for the storage volume target. (see [below for nested schema](#nestedatt--target--timestamps))
+
+Read-Only:
+
+- `path` (String) Volume path on the host filesystem
+
+<a id="nestedatt--target--encryption"></a>
+### Nested Schema for `target.encryption`
+
+Required:
+
+- `format` (String) Defines the format of the encryption for the storage volume.
+
+Optional:
+
+- `cipher` (Attributes) Sets the encryption cipher for the storage volume to be applied. (see [below for nested schema](#nestedatt--target--encryption--cipher))
+- `ivgen` (Attributes) Controls the initialization vector generation settings for the encryption. (see [below for nested schema](#nestedatt--target--encryption--ivgen))
+- `secret` (Attributes) Provides the configuration for the secret used in the encryption process. (see [below for nested schema](#nestedatt--target--encryption--secret))
+
+<a id="nestedatt--target--encryption--cipher"></a>
+### Nested Schema for `target.encryption.cipher`
+
+Required:
+
+- `hash` (String) Specifies the hash algorithm used with the encryption cipher.
+- `mode` (String) Defines the mode for the encryption cipher of the storage volume.
+- `name` (String) Sets the name of the encryption cipher for the storage volume.
+- `size` (Number) Sets the size of the encryption cipher for the storage volume.
+
+
+<a id="nestedatt--target--encryption--ivgen"></a>
+### Nested Schema for `target.encryption.ivgen`
+
+Required:
+
+- `hash` (String) Specifies the hashing algorithm used for the initialization vector generation.
+- `name` (String) Sets the name of the initialization vector generator for the encryption.
+
+
+<a id="nestedatt--target--encryption--secret"></a>
+### Nested Schema for `target.encryption.secret`
+
+Required:
+
+- `type` (String) Defines the type of the secret used for encryption purposes.
+
+Read-Only:
+
+- `uuid` (String) Sets the universally unique identifier (UUID) for the encryption secret.
+
+
+
+<a id="nestedatt--target--features"></a>
+### Nested Schema for `target.features`
+
+
+<a id="nestedatt--target--format"></a>
+### Nested Schema for `target.format`
+
+Required:
+
+- `type` (String) Specifies the type of the backing store format used for the storage volume.
+
+
+<a id="nestedatt--target--permissions"></a>
+### Nested Schema for `target.permissions`
+
+Optional:
+
+- `group` (String) Sets the group ownership for the backing store permissions of the volume.
+- `label` (String) Configures the label associated with the backing store permissions.
+- `mode` (String) Specifies the mode (file permissions) for the backing store of the volume.
+- `owner` (String) Defines the owner of the backing store permissions for the volume.
+
+
+<a id="nestedatt--target--timestamps"></a>
+### Nested Schema for `target.timestamps`
+
+Required:
+
+- `atime` (String) Sets the last access time timestamp for the storage volume target.
+- `ctime` (String) Specifies the last status change time for the storage volume target.
+- `mtime` (String) Sets the last modification time for the storage volume target.
