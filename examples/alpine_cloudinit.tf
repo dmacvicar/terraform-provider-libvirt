@@ -14,8 +14,11 @@ provider "libvirt" {
 resource "libvirt_volume" "alpine_base" {
   name   = "alpine-3.22-base.qcow2"
   pool   = "default"
-  format = "qcow2"
-
+  target = {
+    format = {
+      type = "qcow2"
+    }
+  }
   create = {
     content = {
       url = "https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/generic_alpine-3.22.2-x86_64-bios-cloudinit-r0.qcow2"
@@ -25,14 +28,20 @@ resource "libvirt_volume" "alpine_base" {
 
 # Writable copy-on-write layer for the VM.
 resource "libvirt_volume" "alpine_disk" {
-  name     = "alpine-vm.qcow2"
-  pool     = "default"
-  format   = "qcow2"
+  name   = "alpine-vm.qcow2"
+  pool   = "default"
+  target = {
+    format = {
+      type = "qcow2"
+    }
+  }
   capacity = 2147483648
 
   backing_store = {
     path   = libvirt_volume.alpine_base.path
-    format = "qcow2"
+    format = {
+      type = "qcow2"
+    }
   }
 }
 
@@ -85,6 +94,7 @@ resource "libvirt_domain" "alpine" {
   name   = "alpine-vm"
   memory = 1048576
   vcpu   = 1
+  type   = "kvm"
 
   os = {
     type    = "hvm"
@@ -96,19 +106,26 @@ resource "libvirt_domain" "alpine" {
     disks = [
       {
         source = {
-          pool   = libvirt_volume.alpine_disk.pool
-          volume = libvirt_volume.alpine_disk.name
+          volume = {
+            pool   = libvirt_volume.alpine_disk.pool
+            volume = libvirt_volume.alpine_disk.name
+          }
         }
         target = {
           dev = "vda"
           bus = "virtio"
         }
+        driver = {
+          type = "qcow2"
+        }
       },
       {
         device = "cdrom"
         source = {
-          pool   = libvirt_volume.alpine_seed_volume.pool
-          volume = libvirt_volume.alpine_seed_volume.name
+          volume = {
+            pool   = libvirt_volume.alpine_seed_volume.pool
+            volume = libvirt_volume.alpine_seed_volume.name
+          }
         }
         target = {
           dev = "sda"
@@ -120,19 +137,24 @@ resource "libvirt_domain" "alpine" {
     interfaces = [
       {
         type  = "network"
-        model = "virtio"
+        model = { type = "virtio" }
         source = {
-          network = "default"
+          network = {
+            network = "default"
+          }
         }
       }
     ]
 
-    graphics = {
-      vnc = {
-        autoport = "yes"
-        listen   = "127.0.0.1"
+    graphics = [
+      {
+        type = "vnc"
+        vnc = {
+          autoport = true
+          listen   = "127.0.0.1"
+        }
       }
-    }
+    ]
   }
 
   running = true
