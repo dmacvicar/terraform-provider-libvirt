@@ -230,6 +230,13 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 				return nil, fmt.Errorf("converting {{ .GoName }} to List: %s", diags.Errors()[0].Summary())
 			}
 			model.{{ .GoName }} = listVal
+		} else if plan != nil && !plan.{{ .GoName }}.IsNull() {
+			// User explicitly set an empty list - return empty list to preserve intent
+			listVal, diags := types.ListValueFrom(ctx, types.ObjectType{AttrTypes: {{ .NestedStruct.Name }}AttributeTypes()}, []{{ .NestedStruct.Name }}Model{})
+			if diags.HasError() {
+				return nil, fmt.Errorf("converting {{ .GoName }} to List: %s", diags.Errors()[0].Summary())
+			}
+			model.{{ .GoName }} = listVal
 		} else {
 			model.{{ .GoName }} = types.ListNull(types.ObjectType{AttrTypes: {{ .NestedStruct.Name }}AttributeTypes()})
 		}
@@ -247,6 +254,13 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 				}
 			}
 			listVal, diags := types.ListValueFrom(ctx, {{ .ElementType }}, values)
+			if diags.HasError() {
+				return nil, fmt.Errorf("converting {{ .GoName }} to List: %s", diags.Errors()[0].Summary())
+			}
+			model.{{ .GoName }} = listVal
+		} else if plan != nil && !plan.{{ .GoName }}.IsNull() {
+			// User explicitly set an empty list - return empty list to preserve intent
+			listVal, diags := types.ListValueFrom(ctx, {{ .ElementType }}, xml.{{ .GoName }})
 			if diags.HasError() {
 				return nil, fmt.Errorf("converting {{ .GoName }} to List: %s", diags.Errors()[0].Summary())
 			}
