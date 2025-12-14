@@ -87,11 +87,7 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 				model.{{ $.GoName }}{{ .GoName }} = types.StringNull()
 			}
 			{{- else }}
-			if xml.{{ $.GoName }}.{{ .GoName }} != 0 {
-				model.{{ $.GoName }}{{ .GoName }} = types.Int64Value(int64(xml.{{ $.GoName }}.{{ .GoName }}))
-			} else {
-				model.{{ $.GoName }}{{ .GoName }} = types.Int64Null()
-			}
+			model.{{ $.GoName }}{{ .GoName }} = types.Int64Value(int64(xml.{{ $.GoName }}.{{ .GoName }}))
 			{{- end }}
 			{{- end }}
 		} else {
@@ -122,11 +118,7 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 			model.{{ $.GoName }}{{ .GoName }} = types.StringNull()
 		}
 		{{- else }}
-		if xml.{{ $.GoName }}.{{ .GoName }} != 0 {
-			model.{{ $.GoName }}{{ .GoName }} = types.Int64Value(int64(xml.{{ $.GoName }}.{{ .GoName }}))
-		} else {
-			model.{{ $.GoName }}{{ .GoName }} = types.Int64Null()
-		}
+		model.{{ $.GoName }}{{ .GoName }} = types.Int64Value(int64(xml.{{ $.GoName }}.{{ .GoName }}))
 		{{- end }}
 		{{- end }}
 		{{- end }}
@@ -150,11 +142,7 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 				model.{{ $.GoName }}{{ .GoName }} = types.StringNull()
 			}
 			{{- else }}
-			if xml.{{ $.GoName }}.{{ .GoName }} != 0 {
-				model.{{ $.GoName }}{{ .GoName }} = types.Int64Value(int64(xml.{{ $.GoName }}.{{ .GoName }}))
-			} else {
-				model.{{ $.GoName }}{{ .GoName }} = types.Int64Null()
-			}
+			model.{{ $.GoName }}{{ .GoName }} = types.Int64Value(int64(xml.{{ $.GoName }}.{{ .GoName }}))
 			{{- end }}
 		} else {
 			{{- if eq .GoType "string" }}
@@ -171,11 +159,7 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 			model.{{ $.GoName }}{{ .GoName }} = types.StringNull()
 		}
 		{{- else }}
-		if xml.{{ $.GoName }}.{{ .GoName }} != 0 {
-			model.{{ $.GoName }}{{ .GoName }} = types.Int64Value(int64(xml.{{ $.GoName }}.{{ .GoName }}))
-		} else {
-			model.{{ $.GoName }}{{ .GoName }} = types.Int64Null()
-		}
+		model.{{ $.GoName }}{{ .GoName }} = types.Int64Value(int64(xml.{{ $.GoName }}.{{ .GoName }}))
 		{{- end }}
 		{{- end }}
 	} else if !plan.{{ $.GoName }}{{ .GoName }}.IsNull() && !plan.{{ $.GoName }}{{ .GoName }}.IsUnknown() {
@@ -338,17 +322,13 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 		{{- end }}
 	{{- else if eq .TFType "types.Int64" }}
 		{{- if .IsPointer }}
-	if xml.{{ .GoName }} != nil && *xml.{{ .GoName }} != 0 {
+	if xml.{{ .GoName }} != nil {
 		model.{{ .GoName }} = types.Int64Value(int64(*xml.{{ .GoName }}))
 	} else {
 		model.{{ .GoName }} = types.Int64Null()
 	}
 		{{- else }}
-	if xml.{{ .GoName }} != 0 {
-		model.{{ .GoName }} = types.Int64Value(int64(xml.{{ .GoName }}))
-	} else {
-		model.{{ .GoName }} = types.Int64Null()
-	}
+	model.{{ .GoName }} = types.Int64Value(int64(xml.{{ .GoName }}))
 		{{- end }}
 	{{- else if eq .TFType "types.Bool" }}
 		{{- if .IsPointer }}
@@ -402,17 +382,13 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 		{{- end }}
 		{{- else if eq .TFType "types.Int64" }}
 		{{- if .IsPointer }}
-		if xml.{{ .GoName }} != nil && *xml.{{ .GoName }} != 0 {
+		if xml.{{ .GoName }} != nil {
 			model.{{ .GoName }} = types.Int64Value(int64(*xml.{{ .GoName }}))
 		} else {
 			model.{{ .GoName }} = types.Int64Null()
 		}
 		{{- else }}
-		if xml.{{ .GoName }} != 0 {
-			model.{{ .GoName }} = types.Int64Value(int64(xml.{{ .GoName }}))
-		} else {
-			model.{{ .GoName }} = types.Int64Null()
-		}
+		model.{{ .GoName }} = types.Int64Value(int64(xml.{{ .GoName }}))
 		{{- end }}
 		{{- else if eq .TFType "types.Bool" }}
 		{{- if .IsPresenceBoolean }}
