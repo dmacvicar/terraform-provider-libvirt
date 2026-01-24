@@ -190,11 +190,12 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 	{{- end }}
 {{- else if and .IsList .IsNested }}
 	// List of nested objects: {{ .GoName }}
-	if plan == nil || (!plan.{{ .GoName }}.IsNull() && !plan.{{ .GoName }}.IsUnknown()) {
-		if len(xml.{{ .GoName }}) > 0 {
+	plan{{ .GoName }}Known := plan != nil && !plan.{{ .GoName }}.IsNull() && !plan.{{ .GoName }}.IsUnknown()
+	if plan == nil || plan{{ .GoName }}Known {
+		if len(xml.{{ .GoName }}) > 0 || plan{{ .GoName }}Known {
 			var list{{ .GoName }} []{{ .NestedStruct.Name }}Model
 			var plan{{ .GoName }} []{{ .NestedStruct.Name }}Model
-			if plan != nil && !plan.{{ .GoName }}.IsNull() && !plan.{{ .GoName }}.IsUnknown() {
+			if plan{{ .GoName }}Known {
 				if diags := plan.{{ .GoName }}.ElementsAs(ctx, &plan{{ .GoName }}, false); diags.HasError() {
 					return nil, fmt.Errorf("extracting {{ .GoName }} list elements: %s", diags.Errors()[0].Summary())
 				}
@@ -224,6 +225,9 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 				if converted != nil {
 					list{{ .GoName }} = append(list{{ .GoName }}, *converted)
 				}
+			}
+			if plan{{ .GoName }}Known && list{{ .GoName }} == nil {
+				list{{ .GoName }} = []{{ .NestedStruct.Name }}Model{}
 			}
 			listVal, diags := types.ListValueFrom(ctx, types.ObjectType{AttrTypes: {{ .NestedStruct.Name }}AttributeTypes()}, list{{ .GoName }})
 			if diags.HasError() {

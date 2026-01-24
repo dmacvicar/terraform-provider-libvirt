@@ -572,3 +572,40 @@ func TestBooleanPresenceRoundtrip(t *testing.T) {
 		t.Fatal("BuiltIn element should be omitted when bool false")
 	}
 }
+
+// TestDomainDeviceListFromXMLPreservesExplicitEmptyList verifies that an explicitly
+// empty list stays empty (not null) when reading from XML. This uses a concrete
+// DomainDeviceList/Hostdevs structure to cover the abstract "empty list vs null" case.
+func TestDomainDeviceListFromXMLPreservesExplicitEmptyList(t *testing.T) {
+	ctx := context.Background()
+
+	emptyHostdevs, diags := types.ListValueFrom(
+		ctx,
+		types.ObjectType{AttrTypes: DomainHostdevAttributeTypes()},
+		[]DomainHostdevModel{},
+	)
+	if diags.HasError() {
+		t.Fatalf("ListValueFrom failed: %s", diags.Errors()[0].Summary())
+	}
+
+	plan := &DomainDeviceListModel{
+		Hostdevs: emptyHostdevs,
+	}
+	original := &libvirtxml.DomainDeviceList{}
+
+	model, err := DomainDeviceListFromXML(ctx, original, plan)
+	if err != nil {
+		t.Fatalf("DomainDeviceListFromXML failed: %v", err)
+	}
+	if model.Hostdevs.IsNull() {
+		t.Fatal("expected Hostdevs to be an empty list, got null")
+	}
+
+	var got []DomainHostdevModel
+	if diags := model.Hostdevs.ElementsAs(ctx, &got, false); diags.HasError() {
+		t.Fatalf("ElementsAs failed: %s", diags.Errors()[0].Summary())
+	}
+	if len(got) != 0 {
+		t.Fatalf("expected zero hostdevs, got %d", len(got))
+	}
+}
