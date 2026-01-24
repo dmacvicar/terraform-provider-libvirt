@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -607,5 +608,169 @@ func TestDomainDeviceListFromXMLPreservesExplicitEmptyList(t *testing.T) {
 	}
 	if len(got) != 0 {
 		t.Fatalf("expected zero hostdevs, got %d", len(got))
+	}
+}
+
+func TestDomainDeviceListFromXMLPreservesDiskOrderByTargetDev(t *testing.T) {
+	ctx := context.Background()
+
+	makeTarget := func(dev string) types.Object {
+		target := DomainDiskTargetModel{
+			Dev:          types.StringValue(dev),
+			Bus:          types.StringNull(),
+			Tray:         types.StringNull(),
+			Removable:    types.StringNull(),
+			RotationRate: types.Int64Null(),
+		}
+		obj, diags := types.ObjectValueFrom(ctx, DomainDiskTargetAttributeTypes(), target)
+		if diags.HasError() {
+			t.Fatalf("target ObjectValueFrom failed: %s", diags.Errors()[0].Summary())
+		}
+		return obj
+	}
+
+	makeSourceVolume := func(pool, volume string) types.Object {
+		vol := DomainDiskSourceVolumeModel{
+			Pool:     types.StringValue(pool),
+			Volume:   types.StringValue(volume),
+			Mode:     types.StringNull(),
+			SecLabel: types.ListNull(types.ObjectType{AttrTypes: DomainDeviceSecLabelAttributeTypes()}),
+		}
+		volObj, diags := types.ObjectValueFrom(ctx, DomainDiskSourceVolumeAttributeTypes(), vol)
+		if diags.HasError() {
+			t.Fatalf("volume ObjectValueFrom failed: %s", diags.Errors()[0].Summary())
+		}
+
+		source := DomainDiskSourceModel{
+			File:          types.ObjectNull(DomainDiskSourceFileAttributeTypes()),
+			Block:         types.ObjectNull(DomainDiskSourceBlockAttributeTypes()),
+			Dir:           types.ObjectNull(DomainDiskSourceDirAttributeTypes()),
+			Network:       types.ObjectNull(DomainDiskSourceNetworkAttributeTypes()),
+			Volume:        volObj,
+			NVME:          types.ObjectNull(DomainDiskSourceNVMEAttributeTypes()),
+			VHostUser:     types.ObjectNull(DomainDiskSourceVHostUserAttributeTypes()),
+			VHostVDPA:     types.ObjectNull(DomainDiskSourceVHostVDPAAttributeTypes()),
+			StartupPolicy: types.StringNull(),
+			Index:         types.Int64Null(),
+			Encryption:    types.ObjectNull(DomainDiskEncryptionAttributeTypes()),
+			Reservations:  types.ObjectNull(DomainDiskReservationsAttributeTypes()),
+			Slices:        types.ObjectNull(DomainDiskSlicesAttributeTypes()),
+			SSL:           types.ObjectNull(DomainDiskSourceSSLAttributeTypes()),
+			Cookies:       types.ObjectNull(DomainDiskCookiesAttributeTypes()),
+			Readahead:     types.ObjectNull(DomainDiskSourceReadaheadAttributeTypes()),
+			Timeout:       types.ObjectNull(DomainDiskSourceTimeoutAttributeTypes()),
+			DataStore:     types.ObjectNull(DomainDiskDataStoreAttributeTypes()),
+		}
+		sourceObj, diags := types.ObjectValueFrom(ctx, DomainDiskSourceAttributeTypes(), source)
+		if diags.HasError() {
+			t.Fatalf("source ObjectValueFrom failed: %s", diags.Errors()[0].Summary())
+		}
+		return sourceObj
+	}
+
+	makeDisk := func(deviceType, dev, pool, volume string) DomainDiskModel {
+		diskDevice := types.StringNull()
+		if deviceType != "" {
+			diskDevice = types.StringValue(deviceType)
+		}
+		return DomainDiskModel{
+			Device:          diskDevice,
+			RawIO:           types.StringNull(),
+			SGIO:            types.StringNull(),
+			Snapshot:        types.StringNull(),
+			Model:           types.StringNull(),
+			Driver:          types.ObjectNull(DomainDiskDriverAttributeTypes()),
+			Auth:            types.ObjectNull(DomainDiskAuthAttributeTypes()),
+			Source:          makeSourceVolume(pool, volume),
+			BackingStore:    types.ObjectNull(DomainDiskBackingStoreAttributeTypes()),
+			BackendDomain:   types.ObjectNull(DomainBackendDomainAttributeTypes()),
+			Geometry:        types.ObjectNull(DomainDiskGeometryAttributeTypes()),
+			BlockIO:         types.ObjectNull(DomainDiskBlockIOAttributeTypes()),
+			Mirror:          types.ObjectNull(DomainDiskMirrorAttributeTypes()),
+			Target:          makeTarget(dev),
+			IOTune:          types.ObjectNull(DomainDiskIOTuneAttributeTypes()),
+			ThrottleFilters: types.ObjectNull(ThrottleFiltersAttributeTypes()),
+			ReadOnly:        types.BoolNull(),
+			Shareable:       types.BoolNull(),
+			Transient:       types.ObjectNull(DomainDiskTransientAttributeTypes()),
+			Serial:          types.StringNull(),
+			WWN:             types.StringNull(),
+			Vendor:          types.StringNull(),
+			Product:         types.StringNull(),
+			Encryption:      types.ObjectNull(DomainDiskEncryptionAttributeTypes()),
+			Boot:            types.ObjectNull(DomainDeviceBootAttributeTypes()),
+			ACPI:            types.ObjectNull(DomainDeviceACPIAttributeTypes()),
+			Alias:           types.ObjectNull(DomainAliasAttributeTypes()),
+			Address:         types.ObjectNull(DomainAddressAttributeTypes()),
+		}
+	}
+
+	planDisks := []DomainDiskModel{
+		makeDisk("disk", "vda", "ssd", "vm-01_0.qcow2"),
+		makeDisk("cdrom", "sda", "ssd", "vm-01-cloudinit.iso"),
+		makeDisk("disk", "vdb", "sata", "vm-01_1.qcow2"),
+	}
+
+	planList, diags := types.ListValueFrom(ctx, types.ObjectType{AttrTypes: DomainDiskAttributeTypes()}, planDisks)
+	if diags.HasError() {
+		t.Fatalf("plan ListValueFrom failed: %s", diags.Errors()[0].Summary())
+	}
+
+	plan := &DomainDeviceListModel{
+		Disks: planList,
+	}
+
+	original := &libvirtxml.DomainDeviceList{
+		Disks: []libvirtxml.DomainDisk{
+			{
+				Device: "disk",
+				Target: &libvirtxml.DomainDiskTarget{Dev: "vda"},
+				Source: &libvirtxml.DomainDiskSource{Volume: &libvirtxml.DomainDiskSourceVolume{Pool: "ssd", Volume: "vm-01_0.qcow2"}},
+			},
+			{
+				Device: "disk",
+				Target: &libvirtxml.DomainDiskTarget{Dev: "vdb"},
+				Source: &libvirtxml.DomainDiskSource{Volume: &libvirtxml.DomainDiskSourceVolume{Pool: "sata", Volume: "vm-01_1.qcow2"}},
+			},
+			{
+				Device: "cdrom",
+				Target: &libvirtxml.DomainDiskTarget{Dev: "sda"},
+				Source: &libvirtxml.DomainDiskSource{Volume: &libvirtxml.DomainDiskSourceVolume{Pool: "ssd", Volume: "vm-01-cloudinit.iso"}},
+			},
+		},
+	}
+
+	model, err := DomainDeviceListFromXML(ctx, original, plan)
+	if err != nil {
+		t.Fatalf("DomainDeviceListFromXML failed: %v", err)
+	}
+
+	var got []DomainDiskModel
+	if diags := model.Disks.ElementsAs(ctx, &got, false); diags.HasError() {
+		t.Fatalf("ElementsAs failed: %s", diags.Errors()[0].Summary())
+	}
+
+	gotDevs := make([]string, 0, len(got))
+	for _, disk := range got {
+		var target DomainDiskTargetModel
+		if diags := disk.Target.As(ctx, &target, basetypes.ObjectAsOptions{}); diags.HasError() {
+			t.Fatalf("disk target As failed: %s", diags.Errors()[0].Summary())
+		}
+		gotDevs = append(gotDevs, target.Dev.ValueString())
+	}
+	if len(gotDevs) != 3 || gotDevs[0] != "vda" || gotDevs[1] != "sda" || gotDevs[2] != "vdb" {
+		t.Fatalf("unexpected disk order: %v", gotDevs)
+	}
+
+	var secondSource DomainDiskSourceModel
+	if diags := got[1].Source.As(ctx, &secondSource, basetypes.ObjectAsOptions{}); diags.HasError() {
+		t.Fatalf("disk source As failed: %s", diags.Errors()[0].Summary())
+	}
+	var secondVolume DomainDiskSourceVolumeModel
+	if diags := secondSource.Volume.As(ctx, &secondVolume, basetypes.ObjectAsOptions{}); diags.HasError() {
+		t.Fatalf("disk volume As failed: %s", diags.Errors()[0].Summary())
+	}
+	if secondVolume.Pool.ValueString() != "ssd" || secondVolume.Volume.ValueString() != "vm-01-cloudinit.iso" {
+		t.Fatalf("unexpected second disk volume: %s/%s", secondVolume.Pool.ValueString(), secondVolume.Volume.ValueString())
 	}
 }

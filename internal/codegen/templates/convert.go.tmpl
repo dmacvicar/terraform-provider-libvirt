@@ -37,9 +37,174 @@ func {{ .Name }}FromXML(ctx context.Context, xml *libvirtxml.{{ .Name }}, plan *
 
 	model := &{{ .Name }}Model{}
 
+	{{- $structName := .Name }}
 	{{- range .Fields }}
 	{{- if and (not .IsExcluded) (not .IsCycle) (not .IsFlattenedUnit) (not .IsFlattenedAttr) }}
+	{{- if and (eq $structName "DomainDeviceList") (eq .GoName "Disks") }}
+	// List of nested objects: Disks
+	planDisksKnown := plan != nil && !plan.Disks.IsNull() && !plan.Disks.IsUnknown()
+	if plan == nil || planDisksKnown {
+		if len(xml.Disks) > 0 || planDisksKnown {
+			var listDisks []DomainDiskModel
+			var planDisks []DomainDiskModel
+			if planDisksKnown {
+				if diags := plan.Disks.ElementsAs(ctx, &planDisks, false); diags.HasError() {
+					return nil, fmt.Errorf("extracting Disks list elements: %s", diags.Errors()[0].Summary())
+				}
+			}
+			xmlItems := xml.Disks
+			limit := len(xmlItems)
+			if planDisks != nil && len(planDisks) < limit {
+				limit = len(planDisks)
+			}
+			if plan == nil {
+				limit = len(xmlItems)
+			}
+
+			diskKeyFromPlan := func(d DomainDiskModel) string {
+				if !d.Target.IsNull() && !d.Target.IsUnknown() {
+					var target DomainDiskTargetModel
+					if diags := d.Target.As(ctx, &target, basetypes.ObjectAsOptions{}); !diags.HasError() {
+						if !target.Dev.IsNull() && !target.Dev.IsUnknown() {
+							if dev := target.Dev.ValueString(); dev != "" {
+								return "target.dev:" + dev
+							}
+						}
+					}
+				}
+				if !d.Alias.IsNull() && !d.Alias.IsUnknown() {
+					var alias DomainAliasModel
+					if diags := d.Alias.As(ctx, &alias, basetypes.ObjectAsOptions{}); !diags.HasError() {
+						if !alias.Name.IsNull() && !alias.Name.IsUnknown() {
+							if name := alias.Name.ValueString(); name != "" {
+								return "alias:" + name
+							}
+						}
+					}
+				}
+				if !d.Source.IsNull() && !d.Source.IsUnknown() {
+					var source DomainDiskSourceModel
+					if diags := d.Source.As(ctx, &source, basetypes.ObjectAsOptions{}); !diags.HasError() {
+						if !source.Volume.IsNull() && !source.Volume.IsUnknown() {
+							var volume DomainDiskSourceVolumeModel
+							if diags := source.Volume.As(ctx, &volume, basetypes.ObjectAsOptions{}); !diags.HasError() {
+								if !volume.Pool.IsNull() && !volume.Pool.IsUnknown() && !volume.Volume.IsNull() && !volume.Volume.IsUnknown() {
+									pool := volume.Pool.ValueString()
+									vol := volume.Volume.ValueString()
+									if pool != "" && vol != "" {
+										return "volume:" + pool + "/" + vol
+									}
+								}
+							}
+						}
+					}
+				}
+				return ""
+			}
+
+			diskKeyFromXML := func(d libvirtxml.DomainDisk) string {
+				if d.Target != nil && d.Target.Dev != "" {
+					return "target.dev:" + d.Target.Dev
+				}
+				if d.Alias != nil && d.Alias.Name != "" {
+					return "alias:" + d.Alias.Name
+				}
+				if d.Source != nil && d.Source.Volume != nil && d.Source.Volume.Pool != "" && d.Source.Volume.Volume != "" {
+					return "volume:" + d.Source.Volume.Pool + "/" + d.Source.Volume.Volume
+				}
+				return ""
+			}
+
+			if plan != nil {
+				xmlKeyToIndex := make(map[string]int, len(xmlItems))
+				for i, item := range xmlItems {
+					if key := diskKeyFromXML(item); key != "" {
+						if _, exists := xmlKeyToIndex[key]; !exists {
+							xmlKeyToIndex[key] = i
+						}
+					}
+				}
+				used := make([]bool, len(xmlItems))
+
+				for idx := 0; idx < limit; idx++ {
+					var item libvirtxml.DomainDisk
+					itemSet := false
+					var nestedPlan *DomainDiskModel
+					if planDisks != nil && idx < len(planDisks) {
+						nestedPlan = &planDisks[idx]
+					}
+					if nestedPlan != nil {
+						if key := diskKeyFromPlan(*nestedPlan); key != "" {
+							if xmlIdx, ok := xmlKeyToIndex[key]; ok && xmlIdx < len(xmlItems) && !used[xmlIdx] {
+								item = xmlItems[xmlIdx]
+								itemSet = true
+								used[xmlIdx] = true
+							}
+						}
+					}
+					if !itemSet {
+						fallbackIdx := -1
+						if idx < len(xmlItems) && !used[idx] {
+							fallbackIdx = idx
+						} else {
+							for i := 0; i < len(xmlItems); i++ {
+								if !used[i] {
+									fallbackIdx = i
+									break
+								}
+							}
+						}
+						if fallbackIdx != -1 {
+							item = xmlItems[fallbackIdx]
+							itemSet = true
+							used[fallbackIdx] = true
+						}
+					}
+					if !itemSet {
+						continue
+					}
+					converted, err := DomainDiskFromXML(ctx, &item, nestedPlan)
+					if err != nil {
+						return nil, err
+					}
+					if converted != nil {
+						listDisks = append(listDisks, *converted)
+					}
+				}
+			} else {
+				for idx := 0; idx < limit; idx++ {
+					item := xmlItems[idx]
+					var nestedPlan *DomainDiskModel
+					if planDisks != nil && idx < len(planDisks) {
+						nestedPlan = &planDisks[idx]
+					}
+					converted, err := DomainDiskFromXML(ctx, &item, nestedPlan)
+					if err != nil {
+						return nil, err
+					}
+					if converted != nil {
+						listDisks = append(listDisks, *converted)
+					}
+				}
+			}
+
+			if planDisksKnown && listDisks == nil {
+				listDisks = []DomainDiskModel{}
+			}
+			listVal, diags := types.ListValueFrom(ctx, types.ObjectType{AttrTypes: DomainDiskAttributeTypes()}, listDisks)
+			if diags.HasError() {
+				return nil, fmt.Errorf("converting Disks to List: %s", diags.Errors()[0].Summary())
+			}
+			model.Disks = listVal
+		} else {
+			model.Disks = types.ListNull(types.ObjectType{AttrTypes: DomainDiskAttributeTypes()})
+		}
+	} else {
+		model.Disks = types.ListNull(types.ObjectType{AttrTypes: DomainDiskAttributeTypes()})
+	}
+	{{- else }}
 	{{ template "fromXMLField" . }}
+	{{- end }}
 	{{- end }}
 	{{- end }}
 
