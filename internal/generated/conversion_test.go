@@ -164,6 +164,48 @@ func TestPreserveUserIntent(t *testing.T) {
 	}
 }
 
+func TestDomainAddressPCIZeroValues(t *testing.T) {
+	ctx := context.Background()
+
+	// Ensure zero-valued PCI address components are preserved when present in XML.
+	domain := uint(0)
+	bus := uint(3)
+	slot := uint(0)
+	function := uint(0)
+
+	xml := &libvirtxml.DomainAddressPCI{
+		Domain:   &domain,
+		Bus:      &bus,
+		Slot:     &slot,
+		Function: &function,
+	}
+
+	plan := &DomainAddressPCIModel{
+		Domain:   types.Int64Value(0),
+		Bus:      types.Int64Value(3),
+		Slot:     types.Int64Value(0),
+		Function: types.Int64Value(0),
+	}
+
+	model, err := DomainAddressPCIFromXML(ctx, xml, plan)
+	if err != nil {
+		t.Fatalf("FromXML failed: %v", err)
+	}
+
+	if model.Domain.IsNull() || model.Domain.ValueInt64() != 0 {
+		t.Errorf("Expected Domain=0, got %v", model.Domain)
+	}
+	if model.Bus.IsNull() || model.Bus.ValueInt64() != 3 {
+		t.Errorf("Expected Bus=3, got %v", model.Bus)
+	}
+	if model.Slot.IsNull() || model.Slot.ValueInt64() != 0 {
+		t.Errorf("Expected Slot=0, got %v", model.Slot)
+	}
+	if model.Function.IsNull() || model.Function.ValueInt64() != 0 {
+		t.Errorf("Expected Function=0, got %v", model.Function)
+	}
+}
+
 // TestNullHandling tests that null values are handled correctly
 func TestNullHandling(t *testing.T) {
 	ctx := context.Background()

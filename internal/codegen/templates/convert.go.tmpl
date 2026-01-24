@@ -338,7 +338,7 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 		{{- end }}
 	{{- else if eq .TFType "types.Int64" }}
 		{{- if .IsPointer }}
-	if xml.{{ .GoName }} != nil && *xml.{{ .GoName }} != 0 {
+	if xml.{{ .GoName }} != nil {
 		model.{{ .GoName }} = types.Int64Value(int64(*xml.{{ .GoName }}))
 	} else {
 		model.{{ .GoName }} = types.Int64Null()
@@ -402,7 +402,7 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 		{{- end }}
 		{{- else if eq .TFType "types.Int64" }}
 		{{- if .IsPointer }}
-		if xml.{{ .GoName }} != nil && *xml.{{ .GoName }} != 0 {
+		if xml.{{ .GoName }} != nil {
 			model.{{ .GoName }} = types.Int64Value(int64(*xml.{{ .GoName }}))
 		} else {
 			model.{{ .GoName }} = types.Int64Null()
