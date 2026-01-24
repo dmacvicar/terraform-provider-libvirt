@@ -15,3 +15,13 @@ func mustSingleNestedAttribute(attr schema.Attribute, name string) schema.Single
 	}
 	return nested
 }
+
+// mustStringAttribute asserts that attr is a schema.StringAttribute and panics otherwise.
+// Generated schemas are known at compile time, so a panic indicates a programmer error.
+func mustStringAttribute(attr schema.Attribute, name string) schema.StringAttribute {
+	str, ok := attr.(schema.StringAttribute)
+	if !ok {
+		panic(fmt.Sprintf("%s schema attribute is not a schema.StringAttribute", name))
+	}
+	return str
+}

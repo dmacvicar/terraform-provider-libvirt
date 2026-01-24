@@ -45,7 +45,20 @@ func (r *PoolResource) Metadata(ctx context.Context, req resource.MetadataReques
 
 // Schema defines the resource schema
 func (r *PoolResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
-	// Use generated schema with only ID field added
+	// Get base target schema from generated code
+	baseTargetAttr := mustSingleNestedAttribute(generated.StoragePoolTargetSchemaAttribute(), "StoragePoolTarget")
+	targetAttrs := baseTargetAttr.Attributes
+
+	// Normalize permissions.mode to avoid diffs (e.g., 770 vs 0770)
+	permissionsAttr := mustSingleNestedAttribute(targetAttrs["permissions"], "StoragePoolTargetPermissions")
+	permissionsAttrs := permissionsAttr.Attributes
+	modeAttr := mustStringAttribute(permissionsAttrs["mode"], "StoragePoolTargetPermissions.mode")
+	modeAttr.PlanModifiers = append(modeAttr.PlanModifiers, OctalModePlanModifier())
+	permissionsAttrs["mode"] = modeAttr
+	permissionsAttr.Attributes = permissionsAttrs
+	targetAttrs["permissions"] = permissionsAttr
+
+	// Use generated schema with resource-specific overrides
 	resp.Schema = generated.StoragePoolSchema(map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Description: "Pool UUID (same as uuid)",
@@ -53,6 +66,10 @@ func (r *PoolResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
+		},
+		"target": schema.SingleNestedAttribute{
+			Optional:   true,
+			Attributes: targetAttrs,
 		},
 	})
 }
@@ -321,6 +338,11 @@ func (r *PoolResource) readPoolWithPlan(ctx context.Context, model *PoolResource
 			"XML to Model Conversion Failed",
 			fmt.Sprintf("Failed to convert XML to model: %s", err),
 		)
+		return diags
+	}
+
+	diags.Append(preservePoolTargetPermissionsMode(ctx, poolModel, plan)...)
+	if diags.HasError() {
 		return diags
 	}
 

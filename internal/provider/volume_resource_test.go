@@ -76,6 +76,29 @@ func TestAccVolumeResource_basic(t *testing.T) {
 	})
 }
 
+func TestAccVolumeResource_permissionsMode(t *testing.T) {
+	poolPath := t.TempDir()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVolumeResourceConfigPermissionsMode("test-volume-perms", poolPath),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_volume.test", "name", "test-volume-perms.qcow2"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "pool", "test-pool-volume-perms"),
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "target.path"),
+				),
+			},
+			{
+				Config:   testAccVolumeResourceConfigPermissionsMode("test-volume-perms", poolPath),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func testAccVolumeResourceConfigBasic(name, poolPath string) string {
 	return fmt.Sprintf(`
 
@@ -92,6 +115,33 @@ resource "libvirt_volume" "test" {
   pool     = libvirt_pool.test.name
   capacity = 1073741824
   target = {
+    format = {
+      type = "qcow2"
+    }
+  }
+}
+`, name, poolPath)
+}
+
+func testAccVolumeResourceConfigPermissionsMode(name, poolPath string) string {
+	return fmt.Sprintf(`
+
+resource "libvirt_pool" "test" {
+  name = "test-pool-volume-perms"
+  type = "dir"
+  target = {
+    path = %[2]q
+  }
+}
+
+resource "libvirt_volume" "test" {
+  name     = "%[1]s.qcow2"
+  pool     = libvirt_pool.test.name
+  capacity = 1073741824
+  target = {
+    permissions = {
+      mode = "770"
+    }
     format = {
       type = "qcow2"
     }

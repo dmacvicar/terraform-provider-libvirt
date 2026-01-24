@@ -72,6 +72,15 @@ func (r *VolumeResource) Schema(ctx context.Context, req resource.SchemaRequest,
 		},
 	}
 
+	// Normalize permissions.mode to avoid diffs (e.g., 770 vs 0770)
+	permissionsAttr := mustSingleNestedAttribute(targetAttrs["permissions"], "StorageVolumeTargetPermissions")
+	permissionsAttrs := permissionsAttr.Attributes
+	modeAttr := mustStringAttribute(permissionsAttrs["mode"], "StorageVolumeTargetPermissions.mode")
+	modeAttr.PlanModifiers = append(modeAttr.PlanModifiers, OctalModePlanModifier())
+	permissionsAttrs["mode"] = modeAttr
+	permissionsAttr.Attributes = permissionsAttrs
+	targetAttrs["permissions"] = permissionsAttr
+
 	// Use generated schema with provider-specific overrides
 	resp.Schema = generated.StorageVolumeSchema(map[string]schema.Attribute{
 		"id": schema.StringAttribute{
@@ -378,6 +387,11 @@ func (r *VolumeResource) readVolume(ctx context.Context, model *VolumeResourceMo
 			"XML to Model Conversion Failed",
 			fmt.Sprintf("Failed to convert XML to model: %s", err),
 		)
+		return diags
+	}
+
+	diags.Append(preserveVolumeTargetPermissionsMode(ctx, volumeModel, plan)...)
+	if diags.HasError() {
 		return diags
 	}
 
