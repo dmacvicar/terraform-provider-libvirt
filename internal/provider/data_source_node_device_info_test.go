@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 	"testing"
 
@@ -39,6 +40,10 @@ func TestAccNodeDeviceInfoDataSource_pci(t *testing.T) {
 }
 
 func testAccPickNodeDeviceNameByCapability(t *testing.T, capability string) string {
+	if os.Getenv("TF_ACC") == "" {
+		t.Skip("Acceptance tests skipped unless env 'TF_ACC' set")
+	}
+
 	ctx := context.Background()
 	client, err := libvirt.NewClient(ctx, testAccLibvirtURI())
 	if err != nil {
