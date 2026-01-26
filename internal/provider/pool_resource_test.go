@@ -71,6 +71,32 @@ func TestAccPoolResource_dir(t *testing.T) {
 	})
 }
 
+func TestAccPoolResource_dir_trailingSlash(t *testing.T) {
+	poolPath := t.TempDir() + "/"
+	expectedPath := strings.TrimRight(poolPath, "/")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Reproduces inconsistent result when target.path has a trailing slash.
+			{
+				Config: testAccPoolResourceConfigDir("test-pool-dir-trailing-slash", poolPath),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_pool.test", "name", "test-pool-dir-trailing-slash"),
+					resource.TestCheckResourceAttr("libvirt_pool.test", "type", "dir"),
+					resource.TestCheckResourceAttr("libvirt_pool.test", "target.path", expectedPath),
+					resource.TestCheckResourceAttrSet("libvirt_pool.test", "uuid"),
+					resource.TestCheckResourceAttrSet("libvirt_pool.test", "id"),
+					resource.TestCheckResourceAttrSet("libvirt_pool.test", "capacity"),
+					resource.TestCheckResourceAttrSet("libvirt_pool.test", "allocation"),
+					resource.TestCheckResourceAttrSet("libvirt_pool.test", "available"),
+				),
+			},
+		},
+	})
+}
+
 func testAccPoolResourceConfigDir(name, path string) string {
 	return fmt.Sprintf(`
 resource "libvirt_pool" "test" {

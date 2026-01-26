@@ -58,6 +58,10 @@ func (r *PoolResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 	permissionsAttr.Attributes = permissionsAttrs
 	targetAttrs["permissions"] = permissionsAttr
 
+	pathAttr := mustStringAttribute(targetAttrs["path"], "StoragePoolTarget.path")
+	pathAttr.PlanModifiers = append(pathAttr.PlanModifiers, TrailingSlashPlanModifier())
+	targetAttrs["path"] = pathAttr
+
 	// Use generated schema with resource-specific overrides
 	resp.Schema = generated.StoragePoolSchema(map[string]schema.Attribute{
 		"id": schema.StringAttribute{
