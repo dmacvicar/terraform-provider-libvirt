@@ -148,9 +148,8 @@ resource "libvirt_domain" "alpine" {
 
     graphics = [
       {
-        type = "vnc"
         vnc = {
-          autoport = true
+          auto_port = true
           listen   = "127.0.0.1"
         }
       }
