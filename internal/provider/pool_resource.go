@@ -346,6 +346,7 @@ func (r *PoolResource) readPoolWithPlan(ctx context.Context, model *PoolResource
 	}
 
 	diags.Append(preservePoolTargetPermissionsMode(ctx, poolModel, plan)...)
+	diags.Append(preservePoolTargetPath(ctx, poolModel, plan)...)
 	if diags.HasError() {
 		return diags
 	}

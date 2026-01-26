@@ -73,7 +73,7 @@ func TestAccPoolResource_dir(t *testing.T) {
 
 func TestAccPoolResource_dir_trailingSlash(t *testing.T) {
 	poolPath := t.TempDir() + "/"
-	expectedPath := strings.TrimRight(poolPath, "/")
+	expectedPath := poolPath
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
