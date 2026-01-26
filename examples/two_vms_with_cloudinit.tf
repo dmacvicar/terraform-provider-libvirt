@@ -23,7 +23,11 @@ provider "libvirt" {
 resource "libvirt_volume" "ubuntu_base" {
   name   = "ubuntu-jammy-base.qcow2"
   pool   = "default"
-  format = "qcow2"
+  target = {
+    format = {
+      type = "qcow2"
+    }
+  }
 
   create = {
     content = {
@@ -37,14 +41,20 @@ resource "libvirt_volume" "ubuntu_base" {
 resource "libvirt_volume" "vm1_disk" {
   name   = "vm1-disk.qcow2"
   pool   = "default"
-  format = "qcow2"
+  target = {
+    format = {
+      type = "qcow2"
+    }
+  }
 
   # Start with 2GB, will grow as needed
   capacity = 2147483648 # 2GB in bytes
 
   backing_store = {
     path   = libvirt_volume.ubuntu_base.path
-    format = "qcow2"
+    format = {
+      type = "qcow2"
+    }
   }
 }
 
@@ -52,7 +62,11 @@ resource "libvirt_volume" "vm1_disk" {
 resource "libvirt_volume" "alpine_base" {
   name   = "alpine-3.22-base.qcow2"
   pool   = "default"
-  format = "qcow2"
+  target = {
+    format = {
+      type = "qcow2"
+    }
+  }
 
   create = {
     content = {
@@ -66,13 +80,19 @@ resource "libvirt_volume" "alpine_base" {
 resource "libvirt_volume" "vm2_disk" {
   name   = "vm2-disk.qcow2"
   pool   = "default"
-  format = "qcow2"
+  target = {
+    format = {
+      type = "qcow2"
+    }
+  }
 
   capacity = 2147483648 # 2GB in bytes
 
   backing_store = {
     path   = libvirt_volume.alpine_base.path
-    format = "qcow2"
+    format = {
+      type = "qcow2"
+    }
   }
 }
 
@@ -187,6 +207,7 @@ resource "libvirt_domain" "vm1" {
   name   = "ubuntu-vm1"
   memory = 1048576 # 1 GB in KiB (1024 * 1024)
   vcpu   = 1
+  type   = "kvm"
 
   # Boot configuration
   os = {
@@ -201,20 +222,27 @@ resource "libvirt_domain" "vm1" {
       # Main system disk
       {
         source = {
-          pool   = libvirt_volume.vm1_disk.pool
-          volume = libvirt_volume.vm1_disk.name
+          volume = {
+            pool   = libvirt_volume.vm1_disk.pool
+            volume = libvirt_volume.vm1_disk.name
+          }
         }
         target = {
           bus = "virtio"
           dev = "vda"
+        }
+        driver = {
+          type = "qcow2"
         }
       },
       # Cloud-init config disk (will be detected automatically)
       {
         device = "cdrom"
         source = {
-          pool   = libvirt_volume.vm1_cloudinit.pool
-          volume = libvirt_volume.vm1_cloudinit.name
+          volume = {
+            pool   = libvirt_volume.vm1_cloudinit.pool
+            volume = libvirt_volume.vm1_cloudinit.name
+          }
         }
         target = {
           bus = "sata"
@@ -227,20 +255,24 @@ resource "libvirt_domain" "vm1" {
     interfaces = [
       {
         type  = "network"
-        model = "virtio"
+        model = { type = "virtio" }
         source = {
-          network = "default"
+          network = {
+            network = "default"
+          }
         }
       }
     ]
 
     # Graphics console (VNC)
-    graphics = {
-      vnc = {
-        autoport = "yes"
-        listen   = "127.0.0.1"
+    graphics = [
+      {
+        vnc = {
+          auto_port = true
+          listen    = "127.0.0.1"
+        }
       }
-    }
+    ]
   }
 
   # Start the VM automatically
@@ -252,6 +284,7 @@ resource "libvirt_domain" "vm2" {
   name   = "ubuntu-vm2"
   memory = 1048576 # 1 GB in KiB (1024 * 1024)
   vcpu   = 1
+  type   = "kvm"
 
   os = {
     type    = "hvm"
@@ -263,19 +296,26 @@ resource "libvirt_domain" "vm2" {
     disks = [
       {
         source = {
-          pool   = libvirt_volume.vm2_disk.pool
-          volume = libvirt_volume.vm2_disk.name
+          volume = {
+            pool   = libvirt_volume.vm2_disk.pool
+            volume = libvirt_volume.vm2_disk.name
+          }
         }
         target = {
           bus = "virtio"
           dev = "vda"
         }
+        driver = {
+          type = "qcow2"
+        }
       },
       {
         device = "cdrom"
         source = {
-          pool   = libvirt_volume.vm2_cloudinit.pool
-          volume = libvirt_volume.vm2_cloudinit.name
+          volume = {
+            pool   = libvirt_volume.vm2_cloudinit.pool
+            volume = libvirt_volume.vm2_cloudinit.name
+          }
         }
         target = {
           bus = "sata"
@@ -287,19 +327,23 @@ resource "libvirt_domain" "vm2" {
     interfaces = [
       {
         type  = "network"
-        model = "virtio"
+        model = { type = "virtio" }
         source = {
-          network = "default"
+          network = {
+            network = "default"
+          }
         }
       }
     ]
 
-    graphics = {
-      vnc = {
-        autoport = "yes"
-        listen   = "127.0.0.1"
+    graphics = [
+      {
+        vnc = {
+          auto_port = true
+          listen    = "127.0.0.1"
+        }
       }
-    }
+    ]
   }
 
   running = true
