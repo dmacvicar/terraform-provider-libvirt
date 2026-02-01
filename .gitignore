@@ -47,3 +47,6 @@ tmp
 tmp/
 /internal/codegen/docs/prompts/
 /internal/codegen/docs/.*.json
+.claude/
+.codex/
+openspec/
