@@ -11,8 +11,9 @@ import (
 //
 // Pattern: Value INSIDE element (chardata), ALL other fields are attributes → FLATTEN
 // Examples:
-//   <memory unit='KiB'>524288</memory>                    → memory, memory_unit
-//   <vcpu placement='static' cpuset='1-4'>2</vcpu>        → vcpu, vcpu_placement, vcpu_cpuset
+//
+//	<memory unit='KiB'>524288</memory>                    → memory, memory_unit
+//	<vcpu placement='static' cpuset='1-4'>2</vcpu>        → vcpu, vcpu_placement, vcpu_cpuset
 //
 // This pattern is ALWAYS flattened regardless of attribute count.
 func (r *LibvirtXMLReflector) detectValueWithUnitPattern(structType reflect.Type) *generator.ValueWithUnitPattern {

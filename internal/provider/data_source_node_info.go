@@ -22,14 +22,14 @@ type NodeInfoDataSource struct {
 }
 
 type NodeInfoDataSourceModel struct {
-	ID                  types.String `tfsdk:"id"`
-	CPUModel            types.String `tfsdk:"cpu_model"`
-	MemoryTotalKB       types.Int64  `tfsdk:"memory_total_kb"`
-	CPUCoresTotal       types.Int64  `tfsdk:"cpu_cores_total"`
-	NumaNodes           types.Int64  `tfsdk:"numa_nodes"`
-	CPUSockets          types.Int64  `tfsdk:"cpu_sockets"`
-	CPUCoresPerSocket   types.Int64  `tfsdk:"cpu_cores_per_socket"`
-	CPUThreadsPerCore   types.Int64  `tfsdk:"cpu_threads_per_core"`
+	ID                types.String `tfsdk:"id"`
+	CPUModel          types.String `tfsdk:"cpu_model"`
+	MemoryTotalKB     types.Int64  `tfsdk:"memory_total_kb"`
+	CPUCoresTotal     types.Int64  `tfsdk:"cpu_cores_total"`
+	NumaNodes         types.Int64  `tfsdk:"numa_nodes"`
+	CPUSockets        types.Int64  `tfsdk:"cpu_sockets"`
+	CPUCoresPerSocket types.Int64  `tfsdk:"cpu_cores_per_socket"`
+	CPUThreadsPerCore types.Int64  `tfsdk:"cpu_threads_per_core"`
 }
 
 func (d *NodeInfoDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {

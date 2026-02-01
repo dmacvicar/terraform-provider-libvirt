@@ -35,7 +35,7 @@ func init() {
 					// Try to destroy if running
 					_ = client.Libvirt().DomainDestroy(domain)
 					// Undefine the domain with flags to handle NVRAM and TPM
-					if err := client.Libvirt().DomainUndefineFlags(domain, golibvirt.DomainUndefineNvram | golibvirt.DomainUndefineTpm); err != nil {
+					if err := client.Libvirt().DomainUndefineFlags(domain, golibvirt.DomainUndefineNvram|golibvirt.DomainUndefineTpm); err != nil {
 						// Log but don't fail - domain might already be gone
 						fmt.Printf("Warning: failed to undefine domain %s: %v\n", domain.Name, err)
 					}

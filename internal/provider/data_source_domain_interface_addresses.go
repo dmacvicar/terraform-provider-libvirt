@@ -24,16 +24,16 @@ type DomainInterfaceAddressesDataSource struct {
 }
 
 type DomainInterfaceAddressesDataSourceModel struct {
-	ID         types.String                     `tfsdk:"id"`
-	Domain     types.String                     `tfsdk:"domain"`
-	Source     types.String                     `tfsdk:"source"`
-	Interfaces []InterfaceAddressModel          `tfsdk:"interfaces"`
+	ID         types.String            `tfsdk:"id"`
+	Domain     types.String            `tfsdk:"domain"`
+	Source     types.String            `tfsdk:"source"`
+	Interfaces []InterfaceAddressModel `tfsdk:"interfaces"`
 }
 
 type InterfaceAddressModel struct {
-	Name   types.String      `tfsdk:"name"`
-	Hwaddr types.String      `tfsdk:"hwaddr"`
-	Addrs  []IPAddressModel  `tfsdk:"addrs"`
+	Name   types.String     `tfsdk:"name"`
+	Hwaddr types.String     `tfsdk:"hwaddr"`
+	Addrs  []IPAddressModel `tfsdk:"addrs"`
 }
 
 type IPAddressModel struct {
