@@ -982,8 +982,14 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 	// Undefine the domain
 	// Use DomainUndefineNvram flag to also remove NVRAM files when present (UEFI)
-	// Use DomainUndefineTpm flag to also remove TPM state when present
-	flags := golibvirt.DomainUndefineNvram | golibvirt.DomainUndefineTpm
+	// Use DomainUndefineTpm flag to also remove TPM state when present.
+	// Libvirt added this flag in 8.9.0, so gate it to keep Ubuntu 22.04 (libvirt 8.0.0)
+	// working even though it's outdated but still popular.
+	const libvirtTPMUndefineMinVersion = 8009000
+	flags := golibvirt.DomainUndefineNvram
+	if r.client.LibVersion() >= libvirtTPMUndefineMinVersion {
+		flags |= golibvirt.DomainUndefineTpm
+	}
 	err = r.client.Libvirt().DomainUndefineFlags(domain, flags)
 	if err != nil {
 		resp.Diagnostics.AddError(

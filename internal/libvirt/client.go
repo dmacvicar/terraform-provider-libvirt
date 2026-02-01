@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"strings"
 	"net/url"
+	"strings"
 
 	"github.com/digitalocean/go-libvirt"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt/dialers"
@@ -15,8 +15,9 @@ import (
 
 // Client wraps the libvirt connection and provides helper methods
 type Client struct {
-	conn *libvirt.Libvirt
-	uri  string
+	conn       *libvirt.Libvirt
+	uri        string
+	libVersion uint64
 }
 
 // NewClient creates a new libvirt client from a connection URI
@@ -47,7 +48,7 @@ func NewClient(ctx context.Context, uri string) (*Client, error) {
 	}
 
 	internalURI := url.URL{
-		Path: parsedURI.Path,
+		Path:   parsedURI.Path,
 		Scheme: strings.Split(parsedURI.Scheme, "+")[0],
 	}
 	tflog.Debug(ctx, "", map[string]any{"internalURI": internalURI.String()})
@@ -64,9 +65,15 @@ func NewClient(ctx context.Context, uri string) (*Client, error) {
 		"uri": uri,
 	})
 
+	libVersion, err := l.ConnectGetLibVersion()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get libvirt version: %w", err)
+	}
+
 	return &Client{
-		conn: l,
-		uri:  uri,
+		conn:       l,
+		uri:        uri,
+		libVersion: libVersion,
 	}, nil
 }
 
@@ -86,6 +93,11 @@ func (c *Client) Libvirt() *libvirt.Libvirt {
 // URI returns the connection URI
 func (c *Client) URI() string {
 	return c.uri
+}
+
+// LibVersion returns the cached libvirt version from connection time.
+func (c *Client) LibVersion() uint64 {
+	return c.libVersion
 }
 
 // Ping verifies the connection is still alive
