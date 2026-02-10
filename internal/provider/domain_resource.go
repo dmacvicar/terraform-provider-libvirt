@@ -950,6 +950,14 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	destroyState := DomainDestroyModel{
+    Graceful: types.BoolValue(false),
+    Timeout:  types.Int64Value(0),
+	}
+	resp.Diagnostics.Append(state.Destroy.As(ctx, &destroyState, basetypes.ObjectAsOptions{})...)
+	if destroyState.Timeout.ValueInt64() == 0 {
+		destroyState.Timeout = types.Int64Value(30)
+	}
 
 	// Look up the domain
 	domain, err := r.client.LookupDomainByUUID(state.UUID.ValueString())
@@ -970,13 +978,37 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 	// DomainState values: 0=nostate, 1=running, 2=blocked, 3=paused, 4=shutdown, 5=shutoff, 6=crashed, 7=pmsuspended
 	if uint32(domainState) == uint32(golibvirt.DomainRunning) {
-		err = r.client.Libvirt().DomainDestroy(domain)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Failed to Destroy Domain",
-				"Failed to stop running domain: "+err.Error(),
-			)
-			return
+		if destroyState.Graceful.ValueBool() {
+		  err = r.client.Libvirt().DomainShutdown(domain)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"Failed to Shutdown Domain",
+					"Failed to stop running domain: "+err.Error(),
+				)
+				return
+			}
+
+			err = waitForDomainState(
+				r.client,
+				domain,
+				uint32(golibvirt.DomainShutoff),
+				time.Duration(destroyState.Timeout.ValueInt64())*time.Second)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"Timeout waiting for Domain to shutdown: ",
+					"Timeout exceeded waiting for Domain to shutdown: "+domain.Name,
+				)
+				return
+			}
+		} else {
+			err = r.client.Libvirt().DomainDestroy(domain)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"Failed to Destroy Domain",
+					"Failed to stop running domain: "+err.Error(),
+				)
+				return
+			}
 		}
 	}
 
