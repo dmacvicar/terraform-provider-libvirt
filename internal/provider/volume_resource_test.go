@@ -350,3 +350,63 @@ resource "libvirt_volume" "test" {
 }
 `, name, poolPath, sourceFile)
 }
+
+// Test: backing_store with format but no explicit target.format (auto-propagation)
+func TestAccVolumeResource_backingStoreAutoFormat(t *testing.T) {
+	poolPath := t.TempDir()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVolumeResourceConfigBackingStoreAutoFormat("test-volume-auto", poolPath),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_volume.base", "name", "test-volume-auto-base.qcow2"),
+					resource.TestCheckResourceAttr("libvirt_volume.cow", "name", "test-volume-auto.qcow2"),
+					resource.TestCheckResourceAttrSet("libvirt_volume.cow", "backing_store.path"),
+					resource.TestCheckResourceAttr("libvirt_volume.cow", "backing_store.format.type", "qcow2"),
+					// target.format.type should be auto-propagated from backing_store.format
+					resource.TestCheckResourceAttr("libvirt_volume.cow", "target.format.type", "qcow2"),
+				),
+			},
+		},
+	})
+}
+
+func testAccVolumeResourceConfigBackingStoreAutoFormat(name, poolPath string) string {
+	return fmt.Sprintf(`
+
+resource "libvirt_pool" "test" {
+  name = "test-pool-backing-auto"
+  type = "dir"
+  target = {
+    path = %[2]q
+  }
+}
+
+resource "libvirt_volume" "base" {
+  name     = "%[1]s-base.qcow2"
+  pool     = libvirt_pool.test.name
+  capacity = 1073741824
+  target = {
+    format = {
+      type = "qcow2"
+    }
+  }
+}
+
+resource "libvirt_volume" "cow" {
+  name     = "%[1]s.qcow2"
+  pool     = libvirt_pool.test.name
+  capacity = 1073741824
+
+  backing_store = {
+    path = libvirt_volume.base.path
+    format = {
+      type = "qcow2"
+    }
+  }
+}
+`, name, poolPath)
+}

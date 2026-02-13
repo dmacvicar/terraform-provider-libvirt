@@ -248,6 +248,20 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
+	// Auto-propagate backing store format to volume target format if not explicitly set
+	// Libvirt defaults to 'raw' which rejects backing stores; this ensures a compatible
+	// format (e.g. qcow2) is used when the user specifies it on the backing store
+	if volumeDef.BackingStore != nil && volumeDef.BackingStore.Format != nil {
+		if volumeDef.Target == nil {
+			volumeDef.Target = &libvirtxml.StorageVolumeTarget{}
+		}
+		if volumeDef.Target.Format == nil {
+			volumeDef.Target.Format = &libvirtxml.StorageVolumeTargetFormat{
+				Type: volumeDef.BackingStore.Format.Type,
+			}
+		}
+	}
+
 	// Marshal to XML
 	xmlDoc, err := volumeDef.Marshal()
 	if err != nil {
