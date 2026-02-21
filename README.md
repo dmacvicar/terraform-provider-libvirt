@@ -42,10 +42,11 @@ provider "libvirt" {
 
 resource "libvirt_domain" "example" {
   name         = "example-vm"
+  type         = "kvm"
   memory       = 512
   memory_unit  = "MiB"
   vcpu         = 1
-
+  
   os = {
     type         = "hvm"
     type_arch    = "x86_64"
