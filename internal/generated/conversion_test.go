@@ -165,6 +165,49 @@ func TestPreserveUserIntent(t *testing.T) {
 	}
 }
 
+func buildDomainCPUPlan(mode types.String) *DomainCPUModel {
+	return &DomainCPUModel{
+		Match:              types.StringNull(),
+		Mode:               mode,
+		Check:              types.StringNull(),
+		Migratable:         types.BoolNull(),
+		DeprecatedFeatures: types.StringNull(),
+		Model:              types.StringNull(),
+		ModelFallback:      types.StringNull(),
+		ModelVendorID:      types.StringNull(),
+		Vendor:             types.StringNull(),
+		Topology:           types.ObjectNull(DomainCPUTopologyAttributeTypes()),
+		Cache:              types.ObjectNull(DomainCPUCacheAttributeTypes()),
+		MaxPhysAddr:        types.ObjectNull(DomainCPUMaxPhysAddrAttributeTypes()),
+		Features:           types.ListNull(types.ObjectType{AttrTypes: DomainCPUFeatureAttributeTypes()}),
+		Numa:               types.ObjectNull(DomainNumaAttributeTypes()),
+	}
+}
+
+func TestDomainCPUModePreservesPlanValue(t *testing.T) {
+	ctx := context.Background()
+
+	xmlCPU := &libvirtxml.DomainCPU{
+		Mode:  "custom",
+		Check: "partial",
+	}
+
+	planCPU := buildDomainCPUPlan(types.StringValue("host-model"))
+
+	model, err := DomainCPUFromXML(ctx, xmlCPU, planCPU)
+	if err != nil {
+		t.Fatalf("DomainCPUFromXML failed: %v", err)
+	}
+
+	if model.Mode.IsNull() {
+		t.Fatal("Mode should not be null")
+	}
+
+	if got := model.Mode.ValueString(); got != "host-model" {
+		t.Fatalf("expected mode host-model from plan, got %q", got)
+	}
+}
+
 func TestDomainAddressPCIZeroValues(t *testing.T) {
 	ctx := context.Background()
 
