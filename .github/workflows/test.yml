@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ["1.25.x"]
+        go-version: ["1.26.x"]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,7 +32,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v2.6.1
+          version: v2.10.1
           only-new-issues: true
   build:
     name: Build
@@ -40,9 +40,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - {os: ubuntu-latest, go: 1.25}
-          - {os: windows-latest, go: 1.25}
-          - {os: macos-latest, go: 1.25}
+          - {os: ubuntu-latest, go: 1.26}
+          - {os: windows-latest, go: 1.26}
+          - {os: macos-latest, go: 1.26}
     timeout-minutes: 10
     steps:
       - name: Check out code into the Go module directory
@@ -70,7 +70,7 @@ jobs:
       fail-fast: false
       matrix:
         tf-binary: [terraform, opentofu]
-        go-version: ["1.25.x"]
+        go-version: ["1.26.x"]
     timeout-minutes: 30
     steps:
       - name: Check out code

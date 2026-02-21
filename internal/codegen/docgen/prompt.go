@@ -23,17 +23,17 @@ func GeneratePrompt(batch Batch, index docindex.Index) string {
 	prompt.WriteString("Below is the complete libvirt documentation index. Use this to understand what each field does:\n\n")
 
 	for htmlFile, fileIndex := range index {
-		prompt.WriteString(fmt.Sprintf("### %s\n\n", htmlFile))
+		_, _ = fmt.Fprintf(&prompt, "### %s\n\n", htmlFile)
 		for _, section := range fileIndex.Sections {
-			prompt.WriteString(fmt.Sprintf("#### %s\n", section.Title))
+			_, _ = fmt.Fprintf(&prompt, "#### %s\n", section.Title)
 			if section.ID != "" {
-				prompt.WriteString(fmt.Sprintf("ID: `%s`\n", section.ID))
+				_, _ = fmt.Fprintf(&prompt, "ID: `%s`\n", section.ID)
 			}
 			if section.URL != "" {
-				prompt.WriteString(fmt.Sprintf("URL: <%s>\n", section.URL))
+				_, _ = fmt.Fprintf(&prompt, "URL: <%s>\n", section.URL)
 			}
 			if len(section.Keywords) > 0 {
-				prompt.WriteString(fmt.Sprintf("Keywords: %s\n", strings.Join(section.Keywords, ", ")))
+				_, _ = fmt.Fprintf(&prompt, "Keywords: %s\n", strings.Join(section.Keywords, ", "))
 			}
 			if section.Preview != "" {
 				// Limit preview to first 500 chars to keep prompt manageable
@@ -41,7 +41,7 @@ func GeneratePrompt(batch Batch, index docindex.Index) string {
 				if len(preview) > 500 {
 					preview = preview[:500] + "..."
 				}
-				prompt.WriteString(fmt.Sprintf("Content: %s\n", preview))
+				_, _ = fmt.Fprintf(&prompt, "Content: %s\n", preview)
 			}
 			prompt.WriteString("\n")
 		}
@@ -51,30 +51,30 @@ func GeneratePrompt(batch Batch, index docindex.Index) string {
 	prompt.WriteString("Generate descriptions for the following Terraform fields. Each field includes Terraform path, XML path, optional/required/computed, presence/yes-no flags, flattening hints, and any known valid values/patterns:\n\n")
 
 	for _, field := range batch.Fields {
-		prompt.WriteString(fmt.Sprintf("- **%s** (XML: `%s`)\n", field.TFPath, field.XMLPath))
-		prompt.WriteString(fmt.Sprintf("  - optional: %t, required: %t, computed: %t\n", field.Optional, field.Required, field.Computed))
+		_, _ = fmt.Fprintf(&prompt, "- **%s** (XML: `%s`)\n", field.TFPath, field.XMLPath)
+		_, _ = fmt.Fprintf(&prompt, "  - optional: %t, required: %t, computed: %t\n", field.Optional, field.Required, field.Computed)
 		if field.PresenceBoolean {
 			prompt.WriteString("  - presence_boolean: true (true emits element, false/null omits)\n")
 		}
 		if field.StringToBool {
-			prompt.WriteString(fmt.Sprintf("  - string_to_bool: yes (true=%q, false=%q)\n", field.StringToBoolTrue, field.StringToBoolFalse))
+			_, _ = fmt.Fprintf(&prompt, "  - string_to_bool: yes (true=%q, false=%q)\n", field.StringToBoolTrue, field.StringToBoolFalse)
 		}
 		if field.FlattenedAttr != "" {
-			prompt.WriteString(fmt.Sprintf("  - flattened_attr: %s (part of value+attr flattening)\n", field.FlattenedAttr))
+			_, _ = fmt.Fprintf(&prompt, "  - flattened_attr: %s (part of value+attr flattening)\n", field.FlattenedAttr)
 		}
 		if len(field.ValidValues) > 0 {
-			prompt.WriteString(fmt.Sprintf("  - valid_values: %s\n", strings.Join(field.ValidValues, ", ")))
+			_, _ = fmt.Fprintf(&prompt, "  - valid_values: %s\n", strings.Join(field.ValidValues, ", "))
 		}
 		if len(field.Patterns) > 0 {
-			prompt.WriteString(fmt.Sprintf("  - patterns: %s\n", strings.Join(field.Patterns, ", ")))
+			_, _ = fmt.Fprintf(&prompt, "  - patterns: %s\n", strings.Join(field.Patterns, ", "))
 		}
 		if field.UnionNote != "" {
-			prompt.WriteString(fmt.Sprintf("  - union_note: %s\n", field.UnionNote))
+			_, _ = fmt.Fprintf(&prompt, "  - union_note: %s\n", field.UnionNote)
 		}
 		if len(field.ReferenceHints) > 0 {
 			prompt.WriteString("  - reference_hints:\n")
 			for _, ref := range field.ReferenceHints {
-				prompt.WriteString(fmt.Sprintf("    - %s (%s)\n", ref.Title, ref.URL))
+				_, _ = fmt.Fprintf(&prompt, "    - %s (%s)\n", ref.Title, ref.URL)
 			}
 		}
 	}
@@ -99,7 +99,7 @@ func GeneratePrompt(batch Batch, index docindex.Index) string {
 	prompt.WriteString("entries:\n")
 	for i, field := range batch.Fields {
 		if i < 3 { // Show 3 examples
-			prompt.WriteString(fmt.Sprintf("  - path: %s\n", field.TFPath))
+			_, _ = fmt.Fprintf(&prompt, "  - path: %s\n", field.TFPath)
 			prompt.WriteString("    description: <concise description here>\n")
 			prompt.WriteString("    reference: <libvirt doc URL if clear, else \"\">\n")
 		}
