@@ -1,6 +1,6 @@
 module github.com/dmacvicar/terraform-provider-libvirt/v2
 
-go 1.26
+go 1.25.1
 
 require (
 	github.com/digitalocean/go-libvirt v0.0.0-20250923171224-1d0cf4034554
