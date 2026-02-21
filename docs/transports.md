@@ -225,6 +225,7 @@ The provider offers two SSH transport options:
 ### qemu+sshcmd:// (Native SSH Command)
 - **Pros:**
   - Respects all `~/.ssh/config` settings (ProxyJump, ControlMaster, etc.)
+  - Does not override `ControlPath`/`ControlMaster`; SSH multiplexing behavior comes from your SSH config
   - Supports all SSH features available on your system
   - Familiar behavior for users accustomed to SSH command
 - **Cons:**

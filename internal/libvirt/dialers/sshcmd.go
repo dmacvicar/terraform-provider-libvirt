@@ -274,8 +274,7 @@ func (d *SSHCmd) buildSSHArgs() []string {
 
 	// Standard arguments for libvirt connections
 	args = append(args,
-		"-T",                     // Disable pseudo-terminal allocation
-		"-o", "ControlPath=none", // Don't use multiplexing
+		"-T",         // Disable pseudo-terminal allocation
 		"-e", "none", // Disable escape character
 	)
 
