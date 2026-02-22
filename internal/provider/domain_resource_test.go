@@ -1139,6 +1139,25 @@ func TestAccDomainResource_graphics(t *testing.T) {
 	})
 }
 
+func TestAccDomainResource_graphicsVNCPasswd(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigGraphicsVNCPasswd("test-domain-graphics-vnc-passwd"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-graphics-vnc-passwd"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.graphics.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.graphics.0.vnc.auto_port", "true"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.graphics.0.vnc.passwd", "vncpass1"),
+				),
+			},
+		},
+	})
+}
+
 func testAccDomainResourceConfigGraphicsVNC(name string) string {
 	return fmt.Sprintf(`
 resource "libvirt_domain" "test" {
@@ -1160,6 +1179,36 @@ resource "libvirt_domain" "test" {
         vnc = {
           auto_port = true
           listen    = "0.0.0.0"
+        }
+      }
+    ]
+  }
+}
+`, name)
+}
+
+func testAccDomainResourceConfigGraphicsVNCPasswd(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  memory_unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os = {
+    type    = "hvm"
+    type_arch    = "x86_64"
+    type_machine = "q35"
+  }
+
+  devices = {
+    graphics = [
+      {
+        vnc = {
+          auto_port = true
+          listen    = "0.0.0.0"
+          passwd    = "vncpass1"
         }
       }
     ]
