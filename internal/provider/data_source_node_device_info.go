@@ -210,7 +210,7 @@ func (d *NodeDeviceInfoDataSource) Read(ctx context.Context, req datasource.Read
 	deviceName := data.Name.ValueString()
 
 	// Get device XML
-	xmlDesc, err := d.client.Libvirt().NodeDeviceGetXMLDesc(deviceName, 0)
+	xmlDesc, err := d.client.Libvirt().NodeDeviceGetXMLDesc(deviceName, 1)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to get device information",

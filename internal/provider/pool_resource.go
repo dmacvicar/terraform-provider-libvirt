@@ -316,7 +316,7 @@ func (r *PoolResource) readPoolWithPlan(ctx context.Context, model *PoolResource
 	var diags diag.Diagnostics
 
 	// Get pool XML
-	xmlDoc, err := r.client.Libvirt().StoragePoolGetXMLDesc(pool, 0)
+	xmlDoc, err := r.client.Libvirt().StoragePoolGetXMLDesc(pool, 1)
 	if err != nil {
 		diags.AddError(
 			"Failed to Get Pool XML",
@@ -390,7 +390,7 @@ func (r *PoolResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 	}
 
 	// Get pool XML to check if we should delete the underlying storage
-	xmlDoc, err := r.client.Libvirt().StoragePoolGetXMLDesc(pool, 0)
+	xmlDoc, err := r.client.Libvirt().StoragePoolGetXMLDesc(pool, 1)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to Get Pool XML",

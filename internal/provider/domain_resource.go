@@ -567,7 +567,7 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 		}
 	}
 
-	xmlDesc, err := r.client.Libvirt().DomainGetXMLDesc(domain, 0)
+	xmlDesc, err := r.client.Libvirt().DomainGetXMLDesc(domain, 1)
 	if err != nil {
 		cleanupOnError()
 		resp.Diagnostics.AddError(
@@ -663,7 +663,7 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	xmlDesc, err := r.client.Libvirt().DomainGetXMLDesc(domain, 0)
+	xmlDesc, err := r.client.Libvirt().DomainGetXMLDesc(domain, 1)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to Read Domain",
@@ -879,7 +879,7 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		}
 	}
 
-	xmlDesc, err := r.client.Libvirt().DomainGetXMLDesc(newDomain, 0)
+	xmlDesc, err := r.client.Libvirt().DomainGetXMLDesc(newDomain, 1)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to Read Domain",
