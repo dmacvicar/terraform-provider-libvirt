@@ -69,8 +69,7 @@ type DomainCreateModel struct {
 
 // DomainDestroyModel describes domain shutdown behavior
 type DomainDestroyModel struct {
-	Graceful types.Bool  `tfsdk:"graceful"`
-	Timeout  types.Int64 `tfsdk:"timeout"`
+	Graceful types.Bool `tfsdk:"graceful"`
 }
 
 type domainPlanData struct {
@@ -399,6 +398,25 @@ func domainStartFlagsFromCreate(ctx context.Context, createVal types.Object) (ui
 	return flags, nil
 }
 
+func domainDestroyFlagsFromDestroy(ctx context.Context, destroyVal types.Object) (golibvirt.DomainDestroyFlagsValues, diag.Diagnostics) {
+	flags := golibvirt.DomainDestroyDefault
+	if destroyVal.IsNull() || destroyVal.IsUnknown() {
+		return flags, nil
+	}
+
+	var destroyModel DomainDestroyModel
+	diags := destroyVal.As(ctx, &destroyModel, basetypes.ObjectAsOptions{})
+	if diags.HasError() {
+		return flags, diags
+	}
+
+	if !destroyModel.Graceful.IsNull() && destroyModel.Graceful.ValueBool() {
+		flags |= golibvirt.DomainDestroyGraceful
+	}
+
+	return flags, nil
+}
+
 // Metadata returns the resource type name
 func (r *DomainResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_domain"
@@ -433,7 +451,6 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
 			Optional:    true,
 			Attributes: map[string]schema.Attribute{
 				"graceful": schema.BoolAttribute{Optional: true},
-				"timeout":  schema.Int64Attribute{Optional: true},
 			},
 		},
 	}
@@ -951,6 +968,12 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
+	destroyFlags, destroyDiags := domainDestroyFlagsFromDestroy(ctx, state.Destroy)
+	resp.Diagnostics.Append(destroyDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Look up the domain
 	domain, err := r.client.LookupDomainByUUID(state.UUID.ValueString())
 	if err != nil {
@@ -970,7 +993,7 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 	// DomainState values: 0=nostate, 1=running, 2=blocked, 3=paused, 4=shutdown, 5=shutoff, 6=crashed, 7=pmsuspended
 	if uint32(domainState) == uint32(golibvirt.DomainRunning) {
-		err = r.client.Libvirt().DomainDestroy(domain)
+		err = r.client.Libvirt().DomainDestroyFlags(domain, destroyFlags)
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"Failed to Destroy Domain",
