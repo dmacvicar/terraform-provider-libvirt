@@ -453,6 +453,32 @@ func TestAccDomainResource_updateWithRunning(t *testing.T) {
 	})
 }
 
+func TestAccDomainResource_updateKeepsNvram(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigNvramTemplate("test-domain-update-nvram"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-update-nvram"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "memory", "512"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "os.nv_ram.nv_ram", "/tmp/test-domain-update-nvram.fd"),
+				),
+			},
+			{
+				Config: testAccDomainResourceConfigNvramTemplateUpdated("test-domain-update-nvram"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-update-nvram"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "memory", "1024"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "os.nv_ram.nv_ram", "/tmp/test-domain-update-nvram.fd"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccDomainResource_clockTimers(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -1772,6 +1798,29 @@ func testAccDomainResourceConfigNvramTemplate(name string) string {
 resource "libvirt_domain" "test" {
   name   = %[1]q
   memory = 512
+  memory_unit   = "MiB"
+  vcpu   = 1
+  type   = "kvm"
+
+  os = {
+    type        = "hvm"
+    type_arch        = "x86_64"
+    type_machine     = "q35"
+    loader = "/usr/share/edk2/x64/OVMF_CODE.fd"
+    nv_ram = {
+      nv_ram   = "/tmp/%[1]s.fd"
+      template = "/usr/share/edk2/x64/OVMF_VARS.4m.fd"
+    }
+  }
+}
+`, name)
+}
+
+func testAccDomainResourceConfigNvramTemplateUpdated(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 1024
   memory_unit   = "MiB"
   vcpu   = 1
   type   = "kvm"
