@@ -78,6 +78,35 @@ type domainPlanData struct {
 	WaitAttributes []attr.Value
 }
 
+const (
+	libvirtVersionDomainUndefineNvramMin     uint64 = 1_002_009
+	libvirtVersionDomainUndefineKeepNvramMin uint64 = 2_003_000
+	libvirtVersionDomainUndefineTpmMin       uint64 = 8_009_000
+	libvirtVersionDomainUndefineKeepTpmMin   uint64 = 8_009_000
+)
+
+func domainUndefineFlagsForUpdate(libvirtVersion uint64) golibvirt.DomainUndefineFlagsValues {
+	var flags golibvirt.DomainUndefineFlagsValues
+	if libvirtVersion >= libvirtVersionDomainUndefineKeepNvramMin {
+		flags |= golibvirt.DomainUndefineKeepNvram
+	}
+	if libvirtVersion >= libvirtVersionDomainUndefineKeepTpmMin {
+		flags |= golibvirt.DomainUndefineKeepTpm
+	}
+	return flags
+}
+
+func domainUndefineFlagsForDelete(libvirtVersion uint64) golibvirt.DomainUndefineFlagsValues {
+	var flags golibvirt.DomainUndefineFlagsValues
+	if libvirtVersion >= libvirtVersionDomainUndefineNvramMin {
+		flags |= golibvirt.DomainUndefineNvram
+	}
+	if libvirtVersion >= libvirtVersionDomainUndefineTpmMin {
+		flags |= golibvirt.DomainUndefineTpm
+	}
+	return flags
+}
+
 func domainInterfaceWaitForIPSchemaAttribute() schema.SingleNestedAttribute {
 	return schema.SingleNestedAttribute{
 		Description: "Wait for IP address during domain creation. If specified, Terraform will wait until the interface receives an IP.",
@@ -839,7 +868,25 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	if err := r.client.Libvirt().DomainUndefine(existingDomain); err != nil {
+	libvirtVersion, err := r.client.Libvirt().ConnectGetLibVersion()
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Failed to Detect Libvirt Version",
+			"Failed to query libvirt version before domain update: "+err.Error(),
+		)
+		return
+	}
+
+	flags := domainUndefineFlagsForUpdate(libvirtVersion)
+	if flags == 0 {
+		if err := r.client.Libvirt().DomainUndefine(existingDomain); err != nil {
+			resp.Diagnostics.AddError(
+				"Domain Undefine Failed",
+				"Failed to undefine existing domain: "+err.Error(),
+			)
+			return
+		}
+	} else if err := r.client.Libvirt().DomainUndefineFlags(existingDomain, flags); err != nil {
 		resp.Diagnostics.AddError(
 			"Domain Undefine Failed",
 			"Failed to undefine existing domain: "+err.Error(),
@@ -1003,17 +1050,22 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		}
 	}
 
-	// Undefine the domain
-	// Use DomainUndefineNvram flag to also remove NVRAM files when present (UEFI)
-	// Use DomainUndefineTpm flag to also remove TPM state when present.
-	// Libvirt added this flag in 8.9.0, so gate it to keep Ubuntu 22.04 (libvirt 8.0.0)
-	// working even though it's outdated but still popular.
-	const libvirtTPMUndefineMinVersion = 8009000
-	flags := golibvirt.DomainUndefineNvram
-	if r.client.LibVersion() >= libvirtTPMUndefineMinVersion {
-		flags |= golibvirt.DomainUndefineTpm
+	libvirtVersion, err := r.client.Libvirt().ConnectGetLibVersion()
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Failed to Detect Libvirt Version",
+			"Failed to query libvirt version before domain deletion: "+err.Error(),
+		)
+		return
 	}
-	err = r.client.Libvirt().DomainUndefineFlags(domain, flags)
+
+	// Undefine the domain using flags supported by the connected libvirt version.
+	flags := domainUndefineFlagsForDelete(libvirtVersion)
+	if flags == 0 {
+		err = r.client.Libvirt().DomainUndefine(domain)
+	} else {
+		err = r.client.Libvirt().DomainUndefineFlags(domain, flags)
+	}
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to Undefine Domain",
