@@ -218,11 +218,15 @@ func (r *LibvirtXMLReflector) applyFieldPatterns(structName string, fields []*ge
 				field.IsOptional = false
 				field.IsRequired = false
 				field.PlanModifier = "UseStateForUnknown"
+				// Pool capacity is purely reported by libvirt; always read from XML.
+				field.PreserveUserIntent = false
 
 			case "allocation", "available":
 				field.IsComputed = true
 				field.IsOptional = false
 				field.IsRequired = false
+				// Purely informational; always read from XML.
+				field.PreserveUserIntent = false
 			}
 		}
 
@@ -233,10 +237,21 @@ func (r *LibvirtXMLReflector) applyFieldPatterns(structName string, fields []*ge
 			}
 
 			switch field.TFName {
-			case "capacity", "allocation", "physical":
+			case "capacity":
 				field.IsComputed = true
 				field.IsOptional = false
 				field.IsRequired = false
+				// Keep PreserveUserIntent = true (set by analyzeField for pointer fields)
+				// so that when the user specifies capacity with a capacity_unit, the
+				// plan value is preserved on readback instead of the bytes-normalised
+				// value that libvirt returns (fixes issue #1253).
+
+			case "allocation", "physical":
+				field.IsComputed = true
+				field.IsOptional = false
+				field.IsRequired = false
+				// Purely informational; always read from XML.
+				field.PreserveUserIntent = false
 			}
 		}
 	}

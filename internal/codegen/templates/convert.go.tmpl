@@ -248,9 +248,10 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 {{- if .IsFlattenedValue }}
 	// Flattened chardata+attributes field: {{ .GoName }}
 	{{- $valueField := .NestedStruct.ValueWithUnitPattern.ValueFieldName }}
-	{{- $alwaysRead := .IsComputed }}
+	{{- $alwaysRead := and .IsComputed (not .PreserveUserIntent) }}
+	{{- $readIfMissing := and .IsComputed .PreserveUserIntent }}
 	plan{{ .GoName }}HasValue := plan != nil && !plan.{{ .GoName }}.IsNull() && !plan.{{ .GoName }}.IsUnknown()
-	if plan == nil || {{ if $alwaysRead }}true{{ else }}false{{ end }} {
+	if plan == nil || {{ if $alwaysRead }}true{{ else if $readIfMissing }}!plan{{ .GoName }}HasValue{{ else }}false{{ end }} {
 		{{- if .IsPointer }}
 		if xml.{{ .GoName }} != nil {
 			{{- if eq .TFType "types.String" }}
