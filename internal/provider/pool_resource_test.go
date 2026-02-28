@@ -178,6 +178,34 @@ func TestAccPoolResource_dir_createStartAndAutostartOverrides(t *testing.T) {
 	})
 }
 
+func TestAccPoolResource_dir_createBuildOverride(t *testing.T) {
+	poolRoot := t.TempDir()
+	pathNoBuild := filepath.Join(poolRoot, "pool-build-false")
+	pathWithBuild := filepath.Join(poolRoot, "pool-build-true")
+	poolNoBuild := "test-pool-build-false"
+	poolWithBuild := "test-pool-build-true"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPoolResourceConfigBuildComparison(poolNoBuild, pathNoBuild, poolWithBuild, pathWithBuild),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_pool.no_build", "name", poolNoBuild),
+					resource.TestCheckResourceAttr("libvirt_pool.no_build", "target.path", pathNoBuild),
+					testAccCheckPathDoesNotExist(pathNoBuild),
+					testAccCheckPoolStateAndAutostart(poolNoBuild, golibvirt.StoragePoolInactive, 0),
+					resource.TestCheckResourceAttr("libvirt_pool.with_build", "name", poolWithBuild),
+					resource.TestCheckResourceAttr("libvirt_pool.with_build", "target.path", pathWithBuild),
+					testAccCheckPathExists(pathWithBuild),
+					testAccCheckPoolStateAndAutostart(poolWithBuild, golibvirt.StoragePoolInactive, 0),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckPoolDestroyAndSentinelPreserved(poolName, sentinelPath string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ctx := context.Background()
@@ -219,6 +247,27 @@ func testAccCheckPoolDestroyAndPathDeleted(poolName, poolPath string) resource.T
 			return fmt.Errorf("expected backing path %q to be deleted, but it still exists", poolPath)
 		}
 
+		return nil
+	}
+}
+
+func testAccCheckPathDoesNotExist(path string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			if err != nil {
+				return fmt.Errorf("expected path %q to not exist: %w", path, err)
+			}
+			return fmt.Errorf("expected path %q to not exist, but it exists", path)
+		}
+		return nil
+	}
+}
+
+func testAccCheckPathExists(path string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		if _, err := os.Stat(path); err != nil {
+			return fmt.Errorf("expected path %q to exist: %w", path, err)
+		}
 		return nil
 	}
 }
@@ -267,6 +316,62 @@ resource "libvirt_pool" "test" {
   }
 }
 `, name, path)
+}
+
+func testAccPoolResourceConfigDirWithLifecycle(name, path string, build, start, autostart, deleteStorage bool) string {
+	return fmt.Sprintf(`
+resource "libvirt_pool" "test" {
+  name = %[1]q
+  type = "dir"
+  target = {
+    path = %[2]q
+  }
+  create = {
+    build     = %[3]t
+    start     = %[4]t
+    autostart = %[5]t
+  }
+  destroy = {
+    delete = %[6]t
+  }
+}
+`, name, path, build, start, autostart, deleteStorage)
+}
+
+func testAccPoolResourceConfigBuildComparison(nameNoBuild, pathNoBuild, nameWithBuild, pathWithBuild string) string {
+	return fmt.Sprintf(`
+resource "libvirt_pool" "no_build" {
+  name = %[1]q
+  type = "dir"
+  target = {
+    path = %[2]q
+  }
+  create = {
+    build     = false
+    start     = false
+    autostart = false
+  }
+  destroy = {
+    delete = false
+  }
+}
+
+resource "libvirt_pool" "with_build" {
+  name = %[3]q
+  type = "dir"
+  target = {
+    path = %[4]q
+  }
+  create = {
+    build     = true
+    start     = false
+    autostart = false
+  }
+  destroy = {
+    delete = false
+  }
+}
+`, nameNoBuild, pathNoBuild, nameWithBuild, pathWithBuild)
 }
 
 func testAccPoolResourceConfigDirWithCreate(name, path string, start, autostart bool) string {
