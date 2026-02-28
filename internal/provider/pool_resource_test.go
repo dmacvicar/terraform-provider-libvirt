@@ -128,6 +128,33 @@ func TestAccPoolResource_dir_preservesBackingPathOnDestroy(t *testing.T) {
 	})
 }
 
+func TestAccPoolResource_dir_deletesBackingPathOnDestroy(t *testing.T) {
+	parentDir := t.TempDir()
+	poolPath := filepath.Join(parentDir, "pool-delete-on-destroy")
+	if err := os.Mkdir(poolPath, 0o755); err != nil {
+		t.Fatalf("failed to create pool path: %v", err)
+	}
+
+	resourceName := "libvirt_pool.test"
+	poolName := "test-pool-delete-backend"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckPoolDestroyAndPathDeleted(poolName, poolPath),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPoolResourceConfigDirWithDestroyDelete(poolName, poolPath, true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", poolName),
+					resource.TestCheckResourceAttr(resourceName, "type", "dir"),
+					resource.TestCheckResourceAttr(resourceName, "target.path", poolPath),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckPoolDestroyAndSentinelPreserved(poolName, sentinelPath string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ctx := context.Background()
@@ -143,6 +170,30 @@ func testAccCheckPoolDestroyAndSentinelPreserved(poolName, sentinelPath string) 
 
 		if _, err := os.Stat(sentinelPath); err != nil {
 			return fmt.Errorf("expected sentinel file to remain at %q: %w", sentinelPath, err)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckPoolDestroyAndPathDeleted(poolName, poolPath string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		ctx := context.Background()
+		client, err := libvirtclient.NewClient(ctx, testAccLibvirtURI())
+		if err != nil {
+			return fmt.Errorf("failed to create libvirt client for destroy check: %w", err)
+		}
+		defer func() { _ = client.Close() }()
+
+		if _, err := client.Libvirt().StoragePoolLookupByName(poolName); err == nil {
+			return fmt.Errorf("storage pool %q still exists after destroy", poolName)
+		}
+
+		if _, err := os.Stat(poolPath); !os.IsNotExist(err) {
+			if err != nil {
+				return fmt.Errorf("expected backing path %q to be deleted: %w", poolPath, err)
+			}
+			return fmt.Errorf("expected backing path %q to be deleted, but it still exists", poolPath)
 		}
 
 		return nil
