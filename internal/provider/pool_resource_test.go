@@ -117,7 +117,7 @@ func TestAccPoolResource_dir_preservesBackingPathOnDestroy(t *testing.T) {
 		CheckDestroy:             testAccCheckPoolDestroyAndSentinelPreserved(poolName, sentinelPath),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccPoolResourceConfigDir(poolName, poolPath),
+				Config: testAccPoolResourceConfigDirWithDestroyDelete(poolName, poolPath, false),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", poolName),
 					resource.TestCheckResourceAttr(resourceName, "type", "dir"),
@@ -159,4 +159,19 @@ resource "libvirt_pool" "test" {
   }
 }
 `, name, path)
+}
+
+func testAccPoolResourceConfigDirWithDestroyDelete(name, path string, deleteStorage bool) string {
+	return fmt.Sprintf(`
+resource "libvirt_pool" "test" {
+  name = %[1]q
+  type = "dir"
+  target = {
+    path = %[2]q
+  }
+  destroy = {
+    delete = %[3]t
+  }
+}
+`, name, path, deleteStorage)
 }
