@@ -17,6 +17,13 @@ How libvirt XML maps to Terraform HCL in this provider. All resources follow the
 - XML `yes/no` attributes become booleans (e.g. loader readonly).
 - Where the XML type is implied by which branch is set (e.g. interfaces), omit a `type` attribute; the chosen branch defines the type.
 
+## Provider Lifecycle Blocks
+- Some resources expose provider operation controls via nested `create` and `destroy` attributes.
+- These control API calls that happen around resource lifecycle (for example build/start/delete operations), not XML fields.
+- They follow the same nested-attribute style as XML-mapped fields:
+  - `create = { ... }`
+  - `destroy = { ... }`
+
 ## Examples
 ```xml
 <domain type="kvm">

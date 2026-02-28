@@ -103,6 +103,33 @@ For non-released versions, see [XML <-> HCL mapping](docs/schema-mapping.md) and
 
 All resources use a single XML <-> HCL mapping spec (flattening rules, unions, presence booleans, nested attributes). See [XML <-> HCL mapping](docs/schema-mapping.md) documentation for the canonical rules.
 
+### Lifecycle Operation Controls
+
+Some resources expose provider-specific lifecycle operation controls using nested `create`/`destroy` objects.
+These fields control post-define and pre-undefine API operations (for example build/start/delete behavior), and are not direct libvirt XML fields.
+
+Example (`libvirt_pool`):
+
+```hcl
+resource "libvirt_pool" "data" {
+  name = "data-pool"
+  type = "dir"
+  target = {
+    path = "/var/lib/libvirt/data"
+  }
+
+  create = {
+    build     = true
+    start     = true
+    autostart = true
+  }
+
+  destroy = {
+    delete = false
+  }
+}
+```
+
 ### Development
 
 This is the first project where I leveraged AI quite heavily not only to do a major cleanup and rewrite of pieces of code, and to implement a new design, but we also use it to inject documentation into the schema.
