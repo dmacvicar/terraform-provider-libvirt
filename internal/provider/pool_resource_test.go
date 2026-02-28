@@ -3,11 +3,14 @@ package provider
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	libvirtclient "github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func init() {
@@ -95,6 +98,55 @@ func TestAccPoolResource_dir_trailingSlash(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestAccPoolResource_dir_preservesBackingPathOnDestroy(t *testing.T) {
+	poolPath := t.TempDir()
+	sentinelPath := filepath.Join(poolPath, "keep-me.txt")
+	sentinelContent := []byte("keep")
+	if err := os.WriteFile(sentinelPath, sentinelContent, 0o644); err != nil {
+		t.Fatalf("failed to create sentinel file: %v", err)
+	}
+
+	resourceName := "libvirt_pool.test"
+	poolName := "test-pool-preserve-backend"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckPoolDestroyAndSentinelPreserved(poolName, sentinelPath),
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPoolResourceConfigDir(poolName, poolPath),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", poolName),
+					resource.TestCheckResourceAttr(resourceName, "type", "dir"),
+					resource.TestCheckResourceAttr(resourceName, "target.path", poolPath),
+				),
+			},
+		},
+	})
+}
+
+func testAccCheckPoolDestroyAndSentinelPreserved(poolName, sentinelPath string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		ctx := context.Background()
+		client, err := libvirtclient.NewClient(ctx, testAccLibvirtURI())
+		if err != nil {
+			return fmt.Errorf("failed to create libvirt client for destroy check: %w", err)
+		}
+		defer func() { _ = client.Close() }()
+
+		if _, err := client.Libvirt().StoragePoolLookupByName(poolName); err == nil {
+			return fmt.Errorf("storage pool %q still exists after destroy", poolName)
+		}
+
+		if _, err := os.Stat(sentinelPath); err != nil {
+			return fmt.Errorf("expected sentinel file to remain at %q: %w", sentinelPath, err)
+		}
+
+		return nil
+	}
 }
 
 func testAccPoolResourceConfigDir(name, path string) string {
