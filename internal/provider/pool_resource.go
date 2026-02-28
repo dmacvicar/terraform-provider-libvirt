@@ -389,50 +389,12 @@ func (r *PoolResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		return
 	}
 
-	// Get pool XML to check if we should delete the underlying storage
-	xmlDoc, err := r.client.Libvirt().StoragePoolGetXMLDesc(pool, 0)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Failed to Get Pool XML",
-			fmt.Sprintf("Could not retrieve storage pool XML: %s", err),
-		)
-		return
-	}
-
-	var poolDef libvirtxml.StoragePool
-	if err := poolDef.Unmarshal(xmlDoc); err != nil {
-		resp.Diagnostics.AddError(
-			"Failed to Parse Pool XML",
-			fmt.Sprintf("Could not parse storage pool XML: %s", err),
-		)
-		return
-	}
-
 	// Destroy (stop) the pool if it's active
 	if err := r.client.Libvirt().StoragePoolDestroy(pool); err != nil {
 		// Pool might already be inactive, that's okay
 		tflog.Debug(ctx, "Pool destroy returned error (may already be inactive)", map[string]any{
 			"error": err.Error(),
 		})
-	}
-
-	// Determine if we should delete the underlying storage
-	// For dir pools: always delete
-	// For logical pools: only delete if we created the VG (i.e., if source devices were specified)
-	shouldDelete := poolDef.Type == "dir"
-	if poolDef.Type == "logical" && poolDef.Source != nil && len(poolDef.Source.Device) > 0 {
-		shouldDelete = true
-	}
-
-	if shouldDelete {
-		// Delete the pool's storage
-		if err := r.client.Libvirt().StoragePoolDelete(pool, 0); err != nil {
-			resp.Diagnostics.AddError(
-				"Failed to Delete Pool Storage",
-				fmt.Sprintf("Could not delete storage pool storage: %s", err),
-			)
-			return
-		}
 	}
 
 	// Undefine the pool
