@@ -287,6 +287,61 @@ resource "libvirt_domain" "test" {
 `, name, poolPath)
 }
 
+// TestAccVolumeResource_capacityUnit reproduces issue #1253: using capacity_unit
+// (e.g. "GiB") causes "Provider produced inconsistent result after apply" because
+// libvirt normalises the value to bytes on readback and the provider was always
+// reading the raw bytes value instead of preserving the plan's unit-converted value.
+func TestAccVolumeResource_capacityUnit(t *testing.T) {
+	poolPath := t.TempDir()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				// Create a 1 GiB volume using capacity_unit.
+				// Before the fix this errors: "Provider produced inconsistent result
+				// after apply: .capacity: was cty.NumberIntVal(1), but now
+				// cty.NumberIntVal(1073741824)".
+				Config: testAccVolumeResourceConfigCapacityUnit("test-volume-cap-unit", poolPath),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_volume.test", "capacity", "1"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "capacity_unit", "GiB"),
+				),
+			},
+			{
+				// Ensure there is no perpetual diff after the first apply.
+				Config:   testAccVolumeResourceConfigCapacityUnit("test-volume-cap-unit", poolPath),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func testAccVolumeResourceConfigCapacityUnit(name, poolPath string) string {
+	return fmt.Sprintf(`
+resource "libvirt_pool" "test" {
+  name = "test-pool-cap-unit"
+  type = "dir"
+  target = {
+    path = %[2]q
+  }
+}
+
+resource "libvirt_volume" "test" {
+  name          = "%[1]s.qcow2"
+  pool          = libvirt_pool.test.name
+  capacity      = 1
+  capacity_unit = "GiB"
+  target = {
+    format = {
+      type = "qcow2"
+    }
+  }
+}
+`, name, poolPath)
+}
+
 func TestAccVolumeResource_uploadFromFile(t *testing.T) {
 	poolPath := t.TempDir()
 
