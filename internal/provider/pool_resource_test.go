@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	golibvirt "github.com/digitalocean/go-libvirt"
 	libvirtclient "github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -155,6 +156,28 @@ func TestAccPoolResource_dir_deletesBackingPathOnDestroy(t *testing.T) {
 	})
 }
 
+func TestAccPoolResource_dir_createStartAndAutostartOverrides(t *testing.T) {
+	poolPath := t.TempDir()
+	resourceName := "libvirt_pool.test"
+	poolName := "test-pool-create-overrides"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccPoolResourceConfigDirWithCreate(poolName, poolPath, false, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", poolName),
+					resource.TestCheckResourceAttr(resourceName, "type", "dir"),
+					resource.TestCheckResourceAttr(resourceName, "target.path", poolPath),
+					testAccCheckPoolStateAndAutostart(poolName, golibvirt.StoragePoolInactive, 0),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckPoolDestroyAndSentinelPreserved(poolName, sentinelPath string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ctx := context.Background()
@@ -200,6 +223,40 @@ func testAccCheckPoolDestroyAndPathDeleted(poolName, poolPath string) resource.T
 	}
 }
 
+func testAccCheckPoolStateAndAutostart(poolName string, expectedState golibvirt.StoragePoolState, expectedAutostart int32) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		ctx := context.Background()
+		client, err := libvirtclient.NewClient(ctx, testAccLibvirtURI())
+		if err != nil {
+			return fmt.Errorf("failed to create libvirt client for pool state check: %w", err)
+		}
+		defer func() { _ = client.Close() }()
+
+		pool, err := client.Libvirt().StoragePoolLookupByName(poolName)
+		if err != nil {
+			return fmt.Errorf("failed to lookup pool %q: %w", poolName, err)
+		}
+
+		state, _, _, _, err := client.Libvirt().StoragePoolGetInfo(pool)
+		if err != nil {
+			return fmt.Errorf("failed to get pool info for %q: %w", poolName, err)
+		}
+		if state != uint8(expectedState) {
+			return fmt.Errorf("unexpected pool state for %q: got %d, want %d", poolName, state, uint8(expectedState))
+		}
+
+		autostart, err := client.Libvirt().StoragePoolGetAutostart(pool)
+		if err != nil {
+			return fmt.Errorf("failed to get pool autostart for %q: %w", poolName, err)
+		}
+		if autostart != expectedAutostart {
+			return fmt.Errorf("unexpected pool autostart for %q: got %d, want %d", poolName, autostart, expectedAutostart)
+		}
+
+		return nil
+	}
+}
+
 func testAccPoolResourceConfigDir(name, path string) string {
 	return fmt.Sprintf(`
 resource "libvirt_pool" "test" {
@@ -210,6 +267,22 @@ resource "libvirt_pool" "test" {
   }
 }
 `, name, path)
+}
+
+func testAccPoolResourceConfigDirWithCreate(name, path string, start, autostart bool) string {
+	return fmt.Sprintf(`
+resource "libvirt_pool" "test" {
+  name = %[1]q
+  type = "dir"
+  target = {
+    path = %[2]q
+  }
+  create = {
+    start     = %[3]t
+    autostart = %[4]t
+  }
+}
+`, name, path, start, autostart)
 }
 
 func testAccPoolResourceConfigDirWithDestroyDelete(name, path string, deleteStorage bool) string {
