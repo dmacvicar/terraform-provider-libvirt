@@ -14,6 +14,11 @@ func TestDomainDestroyFlagsFromDestroy(t *testing.T) {
 
 	destroyAttrTypes := map[string]attr.Type{
 		"graceful": types.BoolType,
+		"shutdown": types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"timeout": types.Int64Type,
+			},
+		},
 	}
 
 	tests := []struct {
@@ -33,6 +38,9 @@ func TestDomainDestroyFlagsFromDestroy(t *testing.T) {
 					destroyAttrTypes,
 					map[string]attr.Value{
 						"graceful": types.BoolValue(true),
+						"shutdown": types.ObjectNull(map[string]attr.Type{
+							"timeout": types.Int64Type,
+						}),
 					},
 				)
 				if diags.HasError() {
