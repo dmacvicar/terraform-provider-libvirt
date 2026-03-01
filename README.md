@@ -107,6 +107,7 @@ All resources use a single XML <-> HCL mapping spec (flattening rules, unions, p
 
 Some resources expose provider-specific lifecycle operation controls using nested `create`/`destroy` objects.
 These fields control post-define and pre-undefine API operations (for example build/start/delete behavior), and are not direct libvirt XML fields.
+Current lifecycle controls are experimental and may change in future releases.
 
 Example (`libvirt_pool`):
 

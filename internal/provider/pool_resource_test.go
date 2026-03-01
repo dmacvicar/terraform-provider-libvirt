@@ -318,26 +318,6 @@ resource "libvirt_pool" "test" {
 `, name, path)
 }
 
-func testAccPoolResourceConfigDirWithLifecycle(name, path string, build, start, autostart, deleteStorage bool) string {
-	return fmt.Sprintf(`
-resource "libvirt_pool" "test" {
-  name = %[1]q
-  type = "dir"
-  target = {
-    path = %[2]q
-  }
-  create = {
-    build     = %[3]t
-    start     = %[4]t
-    autostart = %[5]t
-  }
-  destroy = {
-    delete = %[6]t
-  }
-}
-`, name, path, build, start, autostart, deleteStorage)
-}
-
 func testAccPoolResourceConfigBuildComparison(nameNoBuild, pathNoBuild, nameWithBuild, pathWithBuild string) string {
 	return fmt.Sprintf(`
 resource "libvirt_pool" "no_build" {
