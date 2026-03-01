@@ -84,6 +84,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             qemu-system-x86 \
+            qemu-utils \
             libvirt-daemon-system \
             libvirt-clients \
             libvirt-dev
@@ -109,6 +110,16 @@ jobs:
         with:
           tofu_version: latest
 
+      - name: Cache acceptance test images
+        uses: actions/cache@v4
+        with:
+          path: .cache/test-images
+          key: ${{ runner.os }}-acc-images-alpine-3.23.3-r0
+
+      - name: Prepare Tiny Linux test image
+        run: |
+          make testdeps-acc-tinylinux
+
       - name: Run Acceptance Tests
         env:
           TF_ACC: "1"
@@ -122,5 +133,14 @@ jobs:
           else
             export TF_ACC_TERRAFORM_PATH=$(which terraform)
           fi
+          ACPI_IMAGE="$PWD/.cache/test-images/alpine-3.23.3-x86_64-bios-tiny-r0.qcow2"
+          if [ -f "$ACPI_IMAGE" ]; then
+            export LIBVIRT_TEST_ACPI_IMAGE="$ACPI_IMAGE"
+          fi
           echo "Using Terraform CLI at: $TF_ACC_TERRAFORM_PATH"
+          if [ -n "${LIBVIRT_TEST_ACPI_IMAGE:-}" ]; then
+            echo "Using ACPI test image: $LIBVIRT_TEST_ACPI_IMAGE"
+          else
+            echo "LIBVIRT_TEST_ACPI_IMAGE not set; image-gated ACPI shutdown test will be skipped."
+          fi
           make testacc
