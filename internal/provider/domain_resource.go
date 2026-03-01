@@ -69,7 +69,19 @@ type DomainCreateModel struct {
 
 // DomainDestroyModel describes domain shutdown behavior
 type DomainDestroyModel struct {
-	Graceful types.Bool `tfsdk:"graceful"`
+	Graceful types.Bool   `tfsdk:"graceful"`
+	Shutdown types.Object `tfsdk:"shutdown"`
+}
+
+// DomainDestroyShutdownModel describes optional shutdown wait behavior.
+type DomainDestroyShutdownModel struct {
+	Timeout types.Int64 `tfsdk:"timeout"`
+}
+
+type domainDestroyOptions struct {
+	Flags           golibvirt.DomainDestroyFlagsValues
+	ShutdownEnabled bool
+	ShutdownTimeout time.Duration
 }
 
 type domainPlanData struct {
@@ -446,6 +458,42 @@ func domainDestroyFlagsFromDestroy(ctx context.Context, destroyVal types.Object)
 	return flags, nil
 }
 
+func domainDestroyOptionsFromDestroy(ctx context.Context, destroyVal types.Object) (domainDestroyOptions, diag.Diagnostics) {
+	flags, diags := domainDestroyFlagsFromDestroy(ctx, destroyVal)
+	options := domainDestroyOptions{
+		Flags: flags,
+	}
+	if diags.HasError() || destroyVal.IsNull() || destroyVal.IsUnknown() {
+		return options, diags
+	}
+
+	var destroyModel DomainDestroyModel
+	diags = destroyVal.As(ctx, &destroyModel, basetypes.ObjectAsOptions{})
+	if diags.HasError() {
+		return options, diags
+	}
+
+	if !destroyModel.Shutdown.IsNull() && !destroyModel.Shutdown.IsUnknown() {
+		options.ShutdownEnabled = true
+		options.ShutdownTimeout = 30 * time.Second
+
+		var shutdownModel DomainDestroyShutdownModel
+		diags = destroyModel.Shutdown.As(ctx, &shutdownModel, basetypes.ObjectAsOptions{})
+		if diags.HasError() {
+			return options, diags
+		}
+
+		if !shutdownModel.Timeout.IsNull() && !shutdownModel.Timeout.IsUnknown() {
+			timeout := shutdownModel.Timeout.ValueInt64()
+			if timeout > 0 {
+				options.ShutdownTimeout = time.Duration(timeout) * time.Second
+			}
+		}
+	}
+
+	return options, nil
+}
+
 // Metadata returns the resource type name
 func (r *DomainResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_domain"
@@ -479,7 +527,20 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
 			Description: "Destroy behavior when Terraform removes the domain.",
 			Optional:    true,
 			Attributes: map[string]schema.Attribute{
-				"graceful": schema.BoolAttribute{Optional: true},
+				"graceful": schema.BoolAttribute{
+					Description: "Experimental: request graceful behavior when using DomainDestroyFlags during domain stop. Subject to change in future releases.",
+					Optional:    true,
+				},
+				"shutdown": schema.SingleNestedAttribute{
+					Description: "Experimental: request a guest shutdown and wait for shutoff before undefine. Subject to change in future releases.",
+					Optional:    true,
+					Attributes: map[string]schema.Attribute{
+						"timeout": schema.Int64Attribute{
+							Description: "Experimental: seconds to wait for guest shutdown before failing destroy. Defaults to 30.",
+							Optional:    true,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -1015,7 +1076,7 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	destroyFlags, destroyDiags := domainDestroyFlagsFromDestroy(ctx, state.Destroy)
+	destroyOptions, destroyDiags := domainDestroyOptionsFromDestroy(ctx, state.Destroy)
 	resp.Diagnostics.Append(destroyDiags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -1040,13 +1101,33 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 	// DomainState values: 0=nostate, 1=running, 2=blocked, 3=paused, 4=shutdown, 5=shutoff, 6=crashed, 7=pmsuspended
 	if uint32(domainState) == uint32(golibvirt.DomainRunning) {
-		err = r.client.Libvirt().DomainDestroyFlags(domain, destroyFlags)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Failed to Destroy Domain",
-				"Failed to stop running domain: "+err.Error(),
-			)
-			return
+		if destroyOptions.ShutdownEnabled {
+			err = r.client.Libvirt().DomainShutdown(domain)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"Failed to Shutdown Domain",
+					"Failed to request guest shutdown: "+err.Error(),
+				)
+				return
+			}
+
+			err = waitForDomainState(r.client, domain, uint32(golibvirt.DomainShutoff), destroyOptions.ShutdownTimeout)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"Timeout Waiting for Domain Shutdown",
+					fmt.Sprintf("Domain did not reach shutoff state within %s: %s", destroyOptions.ShutdownTimeout, err),
+				)
+				return
+			}
+		} else {
+			err = r.client.Libvirt().DomainDestroyFlags(domain, destroyOptions.Flags)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"Failed to Destroy Domain",
+					"Failed to stop running domain: "+err.Error(),
+				)
+				return
+			}
 		}
 	}
 
