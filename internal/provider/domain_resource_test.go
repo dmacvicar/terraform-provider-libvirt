@@ -466,7 +466,6 @@ func TestAccDomainResource_destroyShutdownRunningWithImage(t *testing.T) {
 	if _, err := os.Stat(imagePath); err != nil {
 		t.Skipf("LIBVIRT_TEST_ACPI_IMAGE does not exist: %v", err)
 	}
-	testAccRequireDefaultPool(t)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -474,7 +473,7 @@ func TestAccDomainResource_destroyShutdownRunningWithImage(t *testing.T) {
 		CheckDestroy:             testAccCheckDomainDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDomainResourceConfigDestroyShutdownRunningWithImage("test-domain-shutdown-image", "test-volume-shutdown-image", imagePath, 120),
+				Config: testAccDomainResourceConfigDestroyShutdownRunningWithImage("test-domain-shutdown-image", "test-volume-shutdown-image", "test-pool-shutdown-image", "/var/lib/libvirt/images/test-pool-shutdown-image", imagePath, 120),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-shutdown-image"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "running", "true"),
@@ -484,31 +483,13 @@ func TestAccDomainResource_destroyShutdownRunningWithImage(t *testing.T) {
 			{
 				// Give the guest time to finish early boot before testing shutdown behavior.
 				PreConfig: func() { time.Sleep(45 * time.Second) },
-				Config:    testAccDomainResourceConfigDestroyShutdownRunningWithImage("test-domain-shutdown-image", "test-volume-shutdown-image", imagePath, 120),
+				Config:    testAccDomainResourceConfigDestroyShutdownRunningWithImage("test-domain-shutdown-image", "test-volume-shutdown-image", "test-pool-shutdown-image", "/var/lib/libvirt/images/test-pool-shutdown-image", imagePath, 120),
 				Destroy:   true,
 			},
 		},
 	})
 }
 
-func testAccRequireDefaultPool(t *testing.T) {
-	t.Helper()
-
-	ctx := context.Background()
-	client, err := libvirtclient.NewClient(ctx, testAccLibvirtURI())
-	if err != nil {
-		t.Skipf("failed to create libvirt client: %v", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	pool, err := client.Libvirt().StoragePoolLookupByName("default")
-	if err != nil {
-		t.Skipf("default storage pool not available: %v", err)
-	}
-
-	// Ignore error if pool is already active; we only need a usable pool.
-	_ = client.Libvirt().StoragePoolCreate(pool, 0)
-}
 
 func TestAccDomainResource_updateWithRunning(t *testing.T) {
 	resource.Test(t, resource.TestCase{
@@ -752,19 +733,33 @@ resource "libvirt_domain" "test" {
 `, name)
 }
 
-func testAccDomainResourceConfigDestroyShutdownRunningWithImage(domainName, volumeName, imagePath string, timeout int64) string {
+func testAccDomainResourceConfigDestroyShutdownRunningWithImage(domainName, volumeName, poolName, poolPath, imagePath string, timeout int64) string {
 	return fmt.Sprintf(`
+resource "libvirt_pool" "test" {
+  name = %[3]q
+  type = "dir"
+  target = {
+    path = %[4]q
+    permissions = {
+      mode = "777"
+    }
+  }
+}
+
 resource "libvirt_volume" "test" {
   name = "%[2]s.qcow2"
-  pool = "default"
+  pool = libvirt_pool.test.name
   target = {
+    permissions = {
+      mode = "666"
+    }
     format = {
       type = "qcow2"
     }
   }
   create = {
     content = {
-      url = %[3]q
+      url = %[5]q
     }
   }
 }
@@ -779,7 +774,7 @@ resource "libvirt_domain" "test" {
 
   destroy = {
     shutdown = {
-      timeout = %[4]d
+      timeout = %[6]d
     }
   }
 
@@ -798,7 +793,7 @@ resource "libvirt_domain" "test" {
       {
         source = {
           volume = {
-            pool   = "default"
+            pool   = libvirt_pool.test.name
             volume = libvirt_volume.test.name
           }
         }
@@ -822,7 +817,7 @@ resource "libvirt_domain" "test" {
     ]
   }
 }
-`, domainName, volumeName, imagePath, timeout)
+`, domainName, volumeName, poolName, poolPath, imagePath, timeout)
 }
 
 func testAccCheckDomainIsRunning(name string) resource.TestCheckFunc {
