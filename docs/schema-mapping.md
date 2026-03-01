@@ -20,6 +20,7 @@ How libvirt XML maps to Terraform HCL in this provider. All resources follow the
 ## Provider Lifecycle Blocks
 - Some resources expose provider operation controls via nested `create` and `destroy` attributes.
 - These control API calls that happen around resource lifecycle (for example build/start/delete operations), not XML fields.
+- Lifecycle operation controls are experimental unless documented otherwise, and may change across provider releases.
 - They follow the same nested-attribute style as XML-mapped fields:
   - `create = { ... }`
   - `destroy = { ... }`

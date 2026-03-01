@@ -104,29 +104,29 @@ func (r *PoolResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 			Attributes: targetAttrs,
 		},
 		"create": schema.SingleNestedAttribute{
-			Description: "Provider-specific lifecycle controls for create-time operations after pool definition.",
+			Description: "Experimental: provider-specific lifecycle controls for create-time operations after pool definition. Subject to change in future releases.",
 			Optional:    true,
 			Attributes: map[string]schema.Attribute{
 				"build": schema.BoolAttribute{
-					Description: "Whether to run StoragePoolBuild for this pool. If unset, provider default behavior applies.",
+					Description: "Experimental: whether to run StoragePoolBuild for this pool. If unset, provider default behavior applies. Subject to change.",
 					Optional:    true,
 				},
 				"start": schema.BoolAttribute{
-					Description: "Whether to start the pool after definition. Defaults to true.",
+					Description: "Experimental: whether to start the pool after definition. Defaults to true. Subject to change.",
 					Optional:    true,
 				},
 				"autostart": schema.BoolAttribute{
-					Description: "Whether to set pool autostart on the host. Defaults to true.",
+					Description: "Experimental: whether to set pool autostart on the host. Defaults to true. Subject to change.",
 					Optional:    true,
 				},
 			},
 		},
 		"destroy": schema.SingleNestedAttribute{
-			Description: "Provider-specific lifecycle controls for delete-time operations beyond undefine.",
+			Description: "Experimental: provider-specific lifecycle controls for delete-time operations beyond undefine. Subject to change in future releases.",
 			Optional:    true,
 			Attributes: map[string]schema.Attribute{
 				"delete": schema.BoolAttribute{
-					Description: "Whether to run StoragePoolDelete on destroy. If unset, provider default behavior applies.",
+					Description: "Experimental: whether to run StoragePoolDelete on destroy. If unset, provider default behavior applies. Subject to change.",
 					Optional:    true,
 				},
 			},
