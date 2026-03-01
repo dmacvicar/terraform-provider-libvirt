@@ -1,10 +1,14 @@
-.PHONY: help build install test testacc testacc-tofu sweep lint fmt clean generate
+.PHONY: help build install test testacc testacc-tofu sweep lint fmt clean generate testdeps-acc
 
 # Default target
 .DEFAULT_GOAL := help
 
 # Version can be overridden
 VERSION ?= dev
+CIRROS_VERSION ?= 0.6.2
+TEST_IMAGE_DIR ?= .cache/test-images
+CIRROS_IMAGE ?= $(TEST_IMAGE_DIR)/cirros-$(CIRROS_VERSION)-x86_64-disk.img
+CIRROS_URL ?= https://download.cirros-cloud.net/$(CIRROS_VERSION)/cirros-$(CIRROS_VERSION)-x86_64-disk.img
 
 # Build flags
 LDFLAGS := -ldflags "-X main.version=$(VERSION)"
@@ -34,6 +38,17 @@ test: generate ## Run unit tests
 testacc: generate ## Run acceptance tests (requires running libvirt)
 	@echo "Running acceptance tests..."
 	@TF_ACC=1 go test -count=1 -v -timeout 10m ./internal/provider
+
+testdeps-acc: ## Download/cache acceptance test image dependencies (CirrOS)
+	@echo "Preparing acceptance test image dependencies..."
+	@mkdir -p $(TEST_IMAGE_DIR)
+	@if [ ! -f "$(CIRROS_IMAGE)" ]; then \
+		echo "Downloading $(CIRROS_URL) -> $(CIRROS_IMAGE)"; \
+		curl -fL --retry 3 --retry-delay 2 -o "$(CIRROS_IMAGE)" "$(CIRROS_URL)"; \
+	else \
+		echo "Using cached image: $(CIRROS_IMAGE)"; \
+	fi
+	@echo "Set LIBVIRT_TEST_ACPI_IMAGE=$(CIRROS_IMAGE) to run image-based shutdown ACC test."
 
 testacc-tofu: ## Run acceptance tests with OpenTofu
 	@TF_ACC_TERRAFORM_PATH=$$(which tofu) TF_ACC_PROVIDER_NAMESPACE=dmacvicar TF_ACC_PROVIDER_HOST=registry.terraform.io $(MAKE) testacc
