@@ -424,6 +424,38 @@ func TestAccDomainResource_running(t *testing.T) {
 	})
 }
 
+func TestAccDomainResource_destroyShutdownStoppedDomain(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigDestroyShutdownStopped("test-domain-destroy-shutdown-stopped", 1),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-destroy-shutdown-stopped"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDomainResource_destroyShutdownStoppedDomainDefaultTimeout(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigDestroyShutdownStoppedDefaultTimeout("test-domain-destroy-shutdown-stopped-default"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-destroy-shutdown-stopped-default"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccDomainResource_updateWithRunning(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -608,6 +640,54 @@ resource "libvirt_domain" "test" {
   vcpu    = 1
   type    = "kvm"
   running = true
+
+  os = {
+    type    = "hvm"
+    type_arch    = "x86_64"
+    type_machine = "q35"
+  }
+}
+`, name)
+}
+
+func testAccDomainResourceConfigDestroyShutdownStopped(name string, timeout int64) string {
+	return fmt.Sprintf(`
+
+resource "libvirt_domain" "test" {
+  name    = %[1]q
+  memory  = 512
+  memory_unit    = "MiB"
+  vcpu    = 1
+  type    = "kvm"
+
+  destroy = {
+    shutdown = {
+      timeout = %[2]d
+    }
+  }
+
+  os = {
+    type    = "hvm"
+    type_arch    = "x86_64"
+    type_machine = "q35"
+  }
+}
+`, name, timeout)
+}
+
+func testAccDomainResourceConfigDestroyShutdownStoppedDefaultTimeout(name string) string {
+	return fmt.Sprintf(`
+
+resource "libvirt_domain" "test" {
+  name    = %[1]q
+  memory  = 512
+  memory_unit    = "MiB"
+  vcpu    = 1
+  type    = "kvm"
+
+  destroy = {
+    shutdown = {}
+  }
 
   os = {
     type    = "hvm"
