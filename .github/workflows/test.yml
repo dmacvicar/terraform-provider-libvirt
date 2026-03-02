@@ -97,6 +97,15 @@ jobs:
           sudo usermod -a -G libvirt runner
           # Change socket permissions to allow group access
           sudo chmod 666 /var/run/libvirt/libvirt-sock
+          # Ensure default storage path is traversable by dynamically labeled qemu UIDs.
+          sudo mkdir -p /var/lib/libvirt/images
+          sudo chmod 1777 /var/lib/libvirt/images
+          # Ensure default pool exists and is active in this ephemeral runner.
+          if ! virsh -c qemu:///system pool-info default >/dev/null 2>&1; then
+            virsh -c qemu:///system pool-define-as --name default --type dir --target /var/lib/libvirt/images
+          fi
+          virsh -c qemu:///system pool-start default || true
+          virsh -c qemu:///system pool-autostart default || true
 
       - name: Install Terraform
         if: matrix.tf-binary == 'terraform'
