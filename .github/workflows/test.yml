@@ -93,6 +93,12 @@ jobs:
         run: |
           sudo systemctl start libvirtd
           sudo systemctl status libvirtd
+          # Normalize qemu runtime user on ephemeral runners to avoid storage DAC
+          # mismatches (qemu uid cannot read newly created volume files).
+          sudo sed -i 's/^#\?user = .*/user = "root"/' /etc/libvirt/qemu.conf
+          sudo sed -i 's/^#\?group = .*/group = "root"/' /etc/libvirt/qemu.conf
+          sudo sed -i 's/^#\?dynamic_ownership = .*/dynamic_ownership = 0/' /etc/libvirt/qemu.conf
+          sudo systemctl restart libvirtd
           # Add runner to libvirt group
           sudo usermod -a -G libvirt runner
           # Change socket permissions to allow group access
