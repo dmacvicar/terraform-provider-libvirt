@@ -503,7 +503,18 @@ func testAccRequireDefaultPool(t *testing.T) {
 
 	pool, err := client.Libvirt().StoragePoolLookupByName("default")
 	if err != nil {
-		t.Skipf("default storage pool not available: %v", err)
+		// Some CI environments don't provide a default pool out of the box.
+		// Define a standard dir pool matching libvirt defaults.
+		poolXML := `<pool type='dir'><name>default</name><target><path>/var/lib/libvirt/images</path></target></pool>`
+		pool, err = client.Libvirt().StoragePoolDefineXML(poolXML, 0)
+		if err != nil {
+			t.Skipf("default storage pool not available and could not be defined: %v", err)
+		}
+	}
+
+	// Build can be required for newly defined dir pools. Ignore "already built".
+	if err := client.Libvirt().StoragePoolBuild(pool, 0); err != nil && !strings.Contains(strings.ToLower(err.Error()), "already") {
+		t.Skipf("failed to build default storage pool: %v", err)
 	}
 
 	// Ignore error if pool is already active; we only need a usable pool.
