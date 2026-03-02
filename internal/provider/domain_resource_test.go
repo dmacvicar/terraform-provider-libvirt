@@ -769,6 +769,9 @@ resource "libvirt_volume" "test" {
   name = "%[2]s.qcow2"
   pool = "default"
   target = {
+    permissions = {
+      mode = "666"
+    }
     format = {
       type = "qcow2"
     }
