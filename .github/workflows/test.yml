@@ -159,3 +159,27 @@ jobs:
             echo "LIBVIRT_TEST_ACPI_IMAGE not set; image-gated ACPI shutdown test will be skipped."
           fi
           make testacc
+
+      - name: Debug Libvirt/QEMU Storage Access
+        if: always()
+        run: |
+          echo "=== qemu.conf ==="
+          sudo grep -E '^(user|group|dynamic_ownership)[[:space:]]*=' /etc/libvirt/qemu.conf || true
+          echo
+          echo "=== libvirt daemon status ==="
+          sudo systemctl status libvirtd --no-pager || true
+          echo
+          echo "=== qemu processes ==="
+          ps -ef | grep -E '[q]emu-system|[l]ibvirtd|[v]irtqemud' || true
+          echo
+          echo "=== default pool info ==="
+          virsh -c qemu:///system pool-info default || true
+          virsh -c qemu:///system pool-dumpxml default || true
+          echo
+          echo "=== images dir permissions ==="
+          ls -ld /var/lib/libvirt/images || true
+          stat -c '%a %U:%G %n' /var/lib/libvirt/images || true
+          echo
+          echo "=== test volume file permissions ==="
+          ls -l /var/lib/libvirt/images/test-volume-shutdown-image.qcow2 || true
+          stat -c '%a %U:%G %n' /var/lib/libvirt/images/test-volume-shutdown-image.qcow2 || true
