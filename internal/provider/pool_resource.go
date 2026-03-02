@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"libvirt.org/go/libvirtxml"
 )
@@ -30,7 +31,34 @@ type PoolResource struct {
 // PoolResourceModel extends generated model with resource-specific ID field
 type PoolResourceModel struct {
 	generated.StoragePoolModel
-	ID types.String `tfsdk:"id"` // Resource-specific ID
+	ID      types.String `tfsdk:"id"`      // Resource-specific ID
+	Create  types.Object `tfsdk:"create"`  // Provider-specific lifecycle create controls
+	Destroy types.Object `tfsdk:"destroy"` // Provider-specific lifecycle destroy controls
+}
+
+// PoolCreateModel describes storage pool creation behavior overrides.
+type PoolCreateModel struct {
+	Build     types.Bool `tfsdk:"build"`
+	Start     types.Bool `tfsdk:"start"`
+	Autostart types.Bool `tfsdk:"autostart"`
+}
+
+// PoolDestroyModel describes storage pool destroy behavior overrides.
+type PoolDestroyModel struct {
+	Delete types.Bool `tfsdk:"delete"`
+}
+
+type poolCreateOptions struct {
+	BuildSet      bool
+	Build         bool
+	Start         bool
+	SetAutostart  bool
+	AutostartFlag int32
+}
+
+type poolDestroyOptions struct {
+	DeleteSet bool
+	Delete    bool
 }
 
 // NewPoolResource creates a new pool resource
@@ -75,6 +103,34 @@ func (r *PoolResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 			Optional:   true,
 			Attributes: targetAttrs,
 		},
+		"create": schema.SingleNestedAttribute{
+			Description: "Experimental: provider-specific lifecycle controls for create-time operations after pool definition. Subject to change in future releases.",
+			Optional:    true,
+			Attributes: map[string]schema.Attribute{
+				"build": schema.BoolAttribute{
+					Description: "Experimental: whether to run StoragePoolBuild for this pool. If unset, provider default behavior applies. Subject to change.",
+					Optional:    true,
+				},
+				"start": schema.BoolAttribute{
+					Description: "Experimental: whether to start the pool after definition. Defaults to true. Subject to change.",
+					Optional:    true,
+				},
+				"autostart": schema.BoolAttribute{
+					Description: "Experimental: whether to set pool autostart on the host. Defaults to true. Subject to change.",
+					Optional:    true,
+				},
+			},
+		},
+		"destroy": schema.SingleNestedAttribute{
+			Description: "Experimental: provider-specific lifecycle controls for delete-time operations beyond undefine. Subject to change in future releases.",
+			Optional:    true,
+			Attributes: map[string]schema.Attribute{
+				"delete": schema.BoolAttribute{
+					Description: "Experimental: whether to run StoragePoolDelete on destroy. If unset, provider default behavior applies. Subject to change.",
+					Optional:    true,
+				},
+			},
+		},
 	})
 }
 
@@ -112,6 +168,12 @@ func (r *PoolResource) Create(ctx context.Context, req resource.CreateRequest, r
 		"type": poolType,
 	})
 
+	createOptions, createDiags := poolCreateOptionsFromPlan(ctx, model.Create)
+	resp.Diagnostics.Append(createDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Convert model to libvirt XML using generated conversion
 	poolDef, err := generated.StoragePoolToXML(ctx, &model.StoragePoolModel)
 	if err != nil {
@@ -125,7 +187,9 @@ func (r *PoolResource) Create(ctx context.Context, req resource.CreateRequest, r
 	// Determine if we should skip the build step
 	// For logical pools without source devices, we assume the VG already exists
 	var skipBuild bool
-	if poolType == "logical" {
+	if createOptions.BuildSet {
+		skipBuild = !createOptions.Build
+	} else if poolType == "logical" {
 		if poolDef.Source == nil || len(poolDef.Source.Device) == 0 {
 			skipBuild = true
 		}
@@ -172,75 +236,79 @@ func (r *PoolResource) Create(ctx context.Context, req resource.CreateRequest, r
 		poolBuilt = true
 	}
 
-	// Set autostart
-	if err := r.client.Libvirt().StoragePoolSetAutostart(pool, 1); err != nil {
-		// Cleanup: delete if built, then undefine
-		if poolBuilt {
-			if deleteErr := r.client.Libvirt().StoragePoolDelete(pool, 0); deleteErr != nil {
-				tflog.Warn(ctx, "Failed to delete pool during cleanup", map[string]any{
-					"error": deleteErr.Error(),
+	// Configure autostart
+	if createOptions.SetAutostart {
+		if err := r.client.Libvirt().StoragePoolSetAutostart(pool, createOptions.AutostartFlag); err != nil {
+			// Cleanup: delete if built, then undefine
+			if poolBuilt {
+				if deleteErr := r.client.Libvirt().StoragePoolDelete(pool, 0); deleteErr != nil {
+					tflog.Warn(ctx, "Failed to delete pool during cleanup", map[string]any{
+						"error": deleteErr.Error(),
+					})
+				}
+			}
+			if undefErr := r.client.Libvirt().StoragePoolUndefine(pool); undefErr != nil {
+				tflog.Warn(ctx, "Failed to undefine pool during cleanup", map[string]any{
+					"error": undefErr.Error(),
 				})
 			}
+			resp.Diagnostics.AddError(
+				"Pool Autostart Failed",
+				fmt.Sprintf("Failed to set pool autostart: %s", err),
+			)
+			return
 		}
-		if undefErr := r.client.Libvirt().StoragePoolUndefine(pool); undefErr != nil {
-			tflog.Warn(ctx, "Failed to undefine pool during cleanup", map[string]any{
-				"error": undefErr.Error(),
-			})
-		}
-		resp.Diagnostics.AddError(
-			"Pool Autostart Failed",
-			fmt.Sprintf("Failed to set pool autostart: %s", err),
-		)
-		return
 	}
 
 	// Start the pool
-	if err := r.client.Libvirt().StoragePoolCreate(pool, 0); err != nil {
-		// Cleanup: delete if built, then undefine
-		if poolBuilt {
-			if deleteErr := r.client.Libvirt().StoragePoolDelete(pool, 0); deleteErr != nil {
-				tflog.Warn(ctx, "Failed to delete pool during cleanup", map[string]any{
-					"error": deleteErr.Error(),
+	if createOptions.Start {
+		if err := r.client.Libvirt().StoragePoolCreate(pool, 0); err != nil {
+			// Cleanup: delete if built, then undefine
+			if poolBuilt {
+				if deleteErr := r.client.Libvirt().StoragePoolDelete(pool, 0); deleteErr != nil {
+					tflog.Warn(ctx, "Failed to delete pool during cleanup", map[string]any{
+						"error": deleteErr.Error(),
+					})
+				}
+			}
+			if undefErr := r.client.Libvirt().StoragePoolUndefine(pool); undefErr != nil {
+				tflog.Warn(ctx, "Failed to undefine pool during cleanup", map[string]any{
+					"error": undefErr.Error(),
 				})
 			}
+			resp.Diagnostics.AddError(
+				"Pool Start Failed",
+				fmt.Sprintf("Failed to start storage pool: %s", err),
+			)
+			return
 		}
-		if undefErr := r.client.Libvirt().StoragePoolUndefine(pool); undefErr != nil {
-			tflog.Warn(ctx, "Failed to undefine pool during cleanup", map[string]any{
-				"error": undefErr.Error(),
-			})
-		}
-		resp.Diagnostics.AddError(
-			"Pool Start Failed",
-			fmt.Sprintf("Failed to start storage pool: %s", err),
-		)
-		return
-	}
 
-	// Refresh to get current state
-	if err := r.client.Libvirt().StoragePoolRefresh(pool, 0); err != nil {
-		// Cleanup: destroy, delete if built, then undefine
-		if destroyErr := r.client.Libvirt().StoragePoolDestroy(pool); destroyErr != nil {
-			tflog.Warn(ctx, "Failed to destroy pool during cleanup", map[string]any{
-				"error": destroyErr.Error(),
-			})
-		}
-		if poolBuilt {
-			if deleteErr := r.client.Libvirt().StoragePoolDelete(pool, 0); deleteErr != nil {
-				tflog.Warn(ctx, "Failed to delete pool during cleanup", map[string]any{
-					"error": deleteErr.Error(),
+		// Refresh to get current state
+		if err := r.client.Libvirt().StoragePoolRefresh(pool, 0); err != nil {
+			// Cleanup: destroy, delete if built, then undefine
+			if destroyErr := r.client.Libvirt().StoragePoolDestroy(pool); destroyErr != nil {
+				tflog.Warn(ctx, "Failed to destroy pool during cleanup", map[string]any{
+					"error": destroyErr.Error(),
 				})
 			}
+			if poolBuilt {
+				if deleteErr := r.client.Libvirt().StoragePoolDelete(pool, 0); deleteErr != nil {
+					tflog.Warn(ctx, "Failed to delete pool during cleanup", map[string]any{
+						"error": deleteErr.Error(),
+					})
+				}
+			}
+			if undefErr := r.client.Libvirt().StoragePoolUndefine(pool); undefErr != nil {
+				tflog.Warn(ctx, "Failed to undefine pool during cleanup", map[string]any{
+					"error": undefErr.Error(),
+				})
+			}
+			resp.Diagnostics.AddError(
+				"Pool Refresh Failed",
+				fmt.Sprintf("Failed to refresh storage pool: %s", err),
+			)
+			return
 		}
-		if undefErr := r.client.Libvirt().StoragePoolUndefine(pool); undefErr != nil {
-			tflog.Warn(ctx, "Failed to undefine pool during cleanup", map[string]any{
-				"error": undefErr.Error(),
-			})
-		}
-		resp.Diagnostics.AddError(
-			"Pool Refresh Failed",
-			fmt.Sprintf("Failed to refresh storage pool: %s", err),
-		)
-		return
 	}
 
 	// Set the ID (use UUID)
@@ -379,6 +447,12 @@ func (r *PoolResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		"name": poolName,
 	})
 
+	destroyOptions, destroyDiags := poolDestroyOptionsFromPlan(ctx, model.Destroy)
+	resp.Diagnostics.Append(destroyDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Look up the pool
 	pool, err := r.client.LookupPoolByUUID(model.ID.ValueString())
 	if err != nil {
@@ -386,25 +460,6 @@ func (r *PoolResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		tflog.Info(ctx, "Storage pool not found, considering deleted", map[string]any{
 			"name": poolName,
 		})
-		return
-	}
-
-	// Get pool XML to check if we should delete the underlying storage
-	xmlDoc, err := r.client.Libvirt().StoragePoolGetXMLDesc(pool, 0)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Failed to Get Pool XML",
-			fmt.Sprintf("Could not retrieve storage pool XML: %s", err),
-		)
-		return
-	}
-
-	var poolDef libvirtxml.StoragePool
-	if err := poolDef.Unmarshal(xmlDoc); err != nil {
-		resp.Diagnostics.AddError(
-			"Failed to Parse Pool XML",
-			fmt.Sprintf("Could not parse storage pool XML: %s", err),
-		)
 		return
 	}
 
@@ -416,16 +471,36 @@ func (r *PoolResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		})
 	}
 
-	// Determine if we should delete the underlying storage
-	// For dir pools: always delete
-	// For logical pools: only delete if we created the VG (i.e., if source devices were specified)
-	shouldDelete := poolDef.Type == "dir"
-	if poolDef.Type == "logical" && poolDef.Source != nil && len(poolDef.Source.Device) > 0 {
-		shouldDelete = true
+	// Determine if we should delete the underlying storage.
+	// Default behavior follows legacy provider heuristics.
+	shouldDelete := destroyOptions.DeleteSet && destroyOptions.Delete
+	if !destroyOptions.DeleteSet {
+		xmlDoc, xmlErr := r.client.Libvirt().StoragePoolGetXMLDesc(pool, 0)
+		if xmlErr != nil {
+			resp.Diagnostics.AddError(
+				"Failed to Get Pool XML",
+				fmt.Sprintf("Could not retrieve storage pool XML: %s", xmlErr),
+			)
+			return
+		}
+
+		var poolDef libvirtxml.StoragePool
+		if unmarshalErr := poolDef.Unmarshal(xmlDoc); unmarshalErr != nil {
+			resp.Diagnostics.AddError(
+				"Failed to Parse Pool XML",
+				fmt.Sprintf("Could not parse storage pool XML: %s", unmarshalErr),
+			)
+			return
+		}
+
+		// Legacy default:
+		// - dir pools: delete backing storage
+		// - logical pools: delete only when source devices were specified
+		shouldDelete = poolDef.Type == "dir" ||
+			(poolDef.Type == "logical" && poolDef.Source != nil && len(poolDef.Source.Device) > 0)
 	}
 
 	if shouldDelete {
-		// Delete the pool's storage
 		if err := r.client.Libvirt().StoragePoolDelete(pool, 0); err != nil {
 			resp.Diagnostics.AddError(
 				"Failed to Delete Pool Storage",
@@ -452,4 +527,60 @@ func (r *PoolResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 // ImportState imports an existing storage pool
 func (r *PoolResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+
+func poolCreateOptionsFromPlan(ctx context.Context, create types.Object) (poolCreateOptions, diag.Diagnostics) {
+	options := poolCreateOptions{
+		Start:         true,
+		SetAutostart:  true,
+		AutostartFlag: 1,
+	}
+
+	if create.IsNull() || create.IsUnknown() {
+		return options, nil
+	}
+
+	var createModel PoolCreateModel
+	diags := create.As(ctx, &createModel, basetypes.ObjectAsOptions{})
+	if diags.HasError() {
+		return options, diags
+	}
+
+	if !createModel.Build.IsNull() && !createModel.Build.IsUnknown() {
+		options.BuildSet = true
+		options.Build = createModel.Build.ValueBool()
+	}
+	if !createModel.Start.IsNull() && !createModel.Start.IsUnknown() {
+		options.Start = createModel.Start.ValueBool()
+	}
+	if !createModel.Autostart.IsNull() && !createModel.Autostart.IsUnknown() {
+		if createModel.Autostart.ValueBool() {
+			options.AutostartFlag = 1
+		} else {
+			options.AutostartFlag = 0
+		}
+	}
+
+	return options, nil
+}
+
+func poolDestroyOptionsFromPlan(ctx context.Context, destroy types.Object) (poolDestroyOptions, diag.Diagnostics) {
+	options := poolDestroyOptions{}
+
+	if destroy.IsNull() || destroy.IsUnknown() {
+		return options, nil
+	}
+
+	var destroyModel PoolDestroyModel
+	diags := destroy.As(ctx, &destroyModel, basetypes.ObjectAsOptions{})
+	if diags.HasError() {
+		return options, diags
+	}
+
+	if !destroyModel.Delete.IsNull() && !destroyModel.Delete.IsUnknown() {
+		options.DeleteSet = true
+		options.Delete = destroyModel.Delete.ValueBool()
+	}
+
+	return options, nil
 }

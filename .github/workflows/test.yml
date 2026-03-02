@@ -84,6 +84,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             qemu-system-x86 \
+            qemu-utils \
             libvirt-daemon-system \
             libvirt-clients \
             libvirt-dev
@@ -92,10 +93,25 @@ jobs:
         run: |
           sudo systemctl start libvirtd
           sudo systemctl status libvirtd
+          # Normalize qemu runtime user on ephemeral runners to avoid storage DAC
+          # mismatches (qemu uid cannot read newly created volume files).
+          sudo sed -i 's/^#\?user = .*/user = "root"/' /etc/libvirt/qemu.conf
+          sudo sed -i 's/^#\?group = .*/group = "root"/' /etc/libvirt/qemu.conf
+          sudo sed -i 's/^#\?dynamic_ownership = .*/dynamic_ownership = 0/' /etc/libvirt/qemu.conf
+          sudo systemctl restart libvirtd
           # Add runner to libvirt group
           sudo usermod -a -G libvirt runner
           # Change socket permissions to allow group access
           sudo chmod 666 /var/run/libvirt/libvirt-sock
+          # Ensure default storage path is traversable by dynamically labeled qemu UIDs.
+          sudo mkdir -p /var/lib/libvirt/images
+          sudo chmod 1777 /var/lib/libvirt/images
+          # Ensure default pool exists and is active in this ephemeral runner.
+          if ! virsh -c qemu:///system pool-info default >/dev/null 2>&1; then
+            virsh -c qemu:///system pool-define-as --name default --type dir --target /var/lib/libvirt/images
+          fi
+          virsh -c qemu:///system pool-start default || true
+          virsh -c qemu:///system pool-autostart default || true
 
       - name: Install Terraform
         if: matrix.tf-binary == 'terraform'
@@ -108,6 +124,16 @@ jobs:
         uses: opentofu/setup-opentofu@v1
         with:
           tofu_version: latest
+
+      - name: Cache acceptance test images
+        uses: actions/cache@v4
+        with:
+          path: .cache/test-images
+          key: ${{ runner.os }}-acc-images-alpine-3.23.3-r0
+
+      - name: Prepare Tiny Linux test image
+        run: |
+          make testdeps-acc-tinylinux
 
       - name: Run Acceptance Tests
         env:
@@ -122,5 +148,38 @@ jobs:
           else
             export TF_ACC_TERRAFORM_PATH=$(which terraform)
           fi
+          ACPI_IMAGE="$PWD/.cache/test-images/alpine-3.23.3-x86_64-bios-tiny-r0.qcow2"
+          if [ -f "$ACPI_IMAGE" ]; then
+            export LIBVIRT_TEST_ACPI_IMAGE="$ACPI_IMAGE"
+          fi
           echo "Using Terraform CLI at: $TF_ACC_TERRAFORM_PATH"
+          if [ -n "${LIBVIRT_TEST_ACPI_IMAGE:-}" ]; then
+            echo "Using ACPI test image: $LIBVIRT_TEST_ACPI_IMAGE"
+          else
+            echo "LIBVIRT_TEST_ACPI_IMAGE not set; image-gated ACPI shutdown test will be skipped."
+          fi
           make testacc
+
+      - name: Debug Libvirt/QEMU Storage Access
+        if: always()
+        run: |
+          echo "=== qemu.conf ==="
+          sudo grep -E '^(user|group|dynamic_ownership)[[:space:]]*=' /etc/libvirt/qemu.conf || true
+          echo
+          echo "=== libvirt daemon status ==="
+          sudo systemctl status libvirtd --no-pager || true
+          echo
+          echo "=== qemu processes ==="
+          ps -ef | grep -E '[q]emu-system|[l]ibvirtd|[v]irtqemud' || true
+          echo
+          echo "=== default pool info ==="
+          virsh -c qemu:///system pool-info default || true
+          virsh -c qemu:///system pool-dumpxml default || true
+          echo
+          echo "=== images dir permissions ==="
+          ls -ld /var/lib/libvirt/images || true
+          stat -c '%a %U:%G %n' /var/lib/libvirt/images || true
+          echo
+          echo "=== test volume file permissions ==="
+          ls -l /var/lib/libvirt/images/test-volume-shutdown-image.qcow2 || true
+          stat -c '%a %U:%G %n' /var/lib/libvirt/images/test-volume-shutdown-image.qcow2 || true
