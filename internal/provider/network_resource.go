@@ -29,6 +29,7 @@ type NetworkResourceModel struct {
 	generated.NetworkModel
 	ID        types.String `tfsdk:"id"`        // Resource identifier (UUID)
 	Autostart types.Bool   `tfsdk:"autostart"` // Provider-specific: whether to autostart
+	DnsmasqOptions types.List   `tfsdk:"dnsmasq_options"` // List of strings
 }
 
 func NewNetworkResource() resource.Resource {
@@ -70,6 +71,11 @@ func (r *NetworkResource) Schema(ctx context.Context, req resource.SchemaRequest
 			Optional:    true,
 			Computed:    true,
 		},
+		"dnsmasq_options": schema.ListAttribute{
+			Description: "List of dnsmasq options (e.g., 'foo=bar', 'cname=*.example.com,master.example.com')",
+			Optional:    true,
+			ElementType: types.StringType,
+		},
 	})
 }
 
@@ -105,6 +111,22 @@ func (r *NetworkResource) Create(ctx context.Context, req resource.CreateRequest
 			fmt.Sprintf("Failed to convert model to XML: %s", err),
 		)
 		return
+	}
+
+	// Handle dnsmasq options
+	if !model.DnsmasqOptions.IsNull() && !model.DnsmasqOptions.IsUnknown() {
+		var options []string
+		diags := model.DnsmasqOptions.ElementsAs(ctx, &options, false)
+		if !diags.HasError() && len(options) > 0 {
+			networkXML.DnsmasqOptions = &libvirtxml.NetworkDnsmasqOptions{
+				Option: make([]libvirtxml.NetworkDnsmasqOption, len(options)),
+			}
+			for i, opt := range options {
+				networkXML.DnsmasqOptions.Option[i] = libvirtxml.NetworkDnsmasqOption{
+					Value: opt,
+				}
+			}
+		}
 	}
 
 	// Marshal to XML
@@ -404,5 +426,15 @@ func (r *NetworkResource) readNetwork(ctx context.Context, model *NetworkResourc
 		model.Autostart = types.BoolValue(autostart == 1)
 	}
 
+	// Read dnsmasq options
+	if networkXML.DnsmasqOptions != nil && len(networkXML.DnsmasqOptions.Option) > 0 {
+		options := make([]string, len(networkXML.DnsmasqOptions.Option))
+		for i, opt := range networkXML.DnsmasqOptions.Option {
+			options[i] = opt.Value
+		}
+		model.DnsmasqOptions, _ = types.ListValueFrom(ctx, types.StringType, options)
+	} else {
+		model.DnsmasqOptions = types.ListNull(types.StringType)
+	}
 	return nil
 }
