@@ -24,6 +24,7 @@ Virtual network configuration
 - `autostart` (Boolean) Whether the network should be started automatically when the host boots
 - `bandwidth` (Attributes) Configures the bandwidth settings for the virtual network, specifying what limits are applied to data transport. (see [below for nested schema](#nestedatt--bandwidth))
 - `bridge` (Attributes) (see [below for nested schema](#nestedatt--bridge))
+- `dnsmasq_options` (String List) Appends <dnsmasq:options> to Network definition
 - `dns` (Attributes) DNS configuration for the network (see [below for nested schema](#nestedatt--dns))
 - `domain` (Attributes) Configures the domain associated with the network. (see [below for nested schema](#nestedatt--domain))
 - `forward` (Attributes) Network forwarding mode configuration (see [below for nested schema](#nestedatt--forward))
