@@ -542,6 +542,127 @@ func TestComplexNestedStructure(t *testing.T) {
 	}
 }
 
+// TestDomainQEMUCommandLine tests domain QEMUCommandLine nested structure
+func TestDomainQEMUCommandLine(t *testing.T) {
+	ctx := context.Background()
+
+	// Create a complex structure with multiple levels of nesting
+	original := &libvirtxml.Domain{
+		Name: "test",
+		QEMUCommandline: &libvirtxml.DomainQEMUCommandline{
+			Args: []libvirtxml.DomainQEMUCommandlineArg{
+				{
+					Value: "A",
+				},
+				{
+					Value: "B",
+				},
+			},
+			Envs: []libvirtxml.DomainQEMUCommandlineEnv{
+				{
+					Name:  "K",
+					Value: "V",
+				},
+			},
+		},
+	}
+
+	// Convert to model
+	model, err := DomainFromXML(ctx, original, nil)
+	if err != nil {
+		t.Fatalf("DomainQEMUCommandlineFromXML failed: %v", err)
+	}
+
+	// Verify we have QEMU command line
+	if model.QEMUCommandline.IsNull() {
+		t.Fatal("QEMU command line should not be null")
+	}
+
+	var qemuModel DomainQEMUCommandlineModel
+	diags := model.QEMUCommandline.As(ctx, &qemuModel, basetypes.ObjectAsOptions{})
+	if diags.HasError() {
+		t.Fatalf("As failed: %v", diags)
+	}
+
+	if qemuModel.Args.IsNull() || qemuModel.Args.IsUnknown() {
+		t.Fatal("Args should not be null or unknown")
+	}
+
+	if qemuModel.Envs.IsNull() || qemuModel.Envs.IsUnknown() {
+		t.Fatal("Envs should not be null or unknown")
+	}
+
+	var args []DomainQEMUCommandlineArgModel
+	diags = qemuModel.Args.ElementsAs(ctx, &args, false)
+	if diags.HasError() {
+		t.Fatalf("ElementsAs failed: %v", diags)
+	}
+	if len(args) != 2 {
+		t.Fatalf("Expected 2 args, got %d", len(args))
+	}
+	if args[0].Value.ValueString() != "A" {
+		t.Errorf("Expected first arg value to be 'A', got %s", args[0].Value.ValueString())
+	}
+	if args[1].Value.ValueString() != "B" {
+		t.Errorf("Expected second arg value to be 'B', got %s", args[1].Value.ValueString())
+	}
+
+	var envs []DomainQEMUCommandlineEnvModel
+	diags = qemuModel.Envs.ElementsAs(ctx, &envs, false)
+	if diags.HasError() {
+		t.Fatalf("ElementsAs failed: %v", diags)
+	}
+	if len(envs) != 1 {
+		t.Fatalf("Expected 1 env, got %d", len(envs))
+	}
+	if envs[0].Name.ValueString() != "K" {
+		t.Errorf("Expected env name to be 'K', got %s", envs[0].Name.ValueString())
+	}
+	if envs[0].Value.ValueString() != "V" {
+		t.Errorf("Expected env value to be 'V', got %s", envs[0].Value.ValueString())
+	}
+
+	// Convert back to XML
+	converted, err := DomainToXML(ctx, model)
+	if err != nil {
+		t.Fatalf("DomainToXML failed: %v", err)
+	}
+
+	// Verify roundtrip
+	if len(converted.QEMUCommandline.Args) != len(original.QEMUCommandline.Args) {
+		t.Fatalf("Roundtrip failed: args count %d != %d", len(converted.QEMUCommandline.Args), len(original.QEMUCommandline.Args))
+	}
+	if converted.QEMUCommandline.Args[0].Value != original.QEMUCommandline.Args[0].Value {
+		t.Errorf("Roundtrip failed: Args[0].Value %s != %s", converted.QEMUCommandline.Args[0].Value, original.QEMUCommandline.Args[0].Value)
+	}
+	if converted.QEMUCommandline.Args[1].Value != original.QEMUCommandline.Args[1].Value {
+		t.Errorf("Roundtrip failed: Args[1].Value %s != %s", converted.QEMUCommandline.Args[1].Value, original.QEMUCommandline.Args[1].Value)
+	}
+	if converted.QEMUCommandline.Envs[0].Name != original.QEMUCommandline.Envs[0].Name {
+		t.Errorf("Roundtrip failed: Envs[0].Name %s != %s", converted.QEMUCommandline.Envs[0].Name, original.QEMUCommandline.Envs[0].Name)
+	}
+	if converted.QEMUCommandline.Envs[0].Value != original.QEMUCommandline.Envs[0].Value {
+		t.Errorf("Roundtrip failed: Envs[0].Value %s != %s", converted.QEMUCommandline.Envs[0].Value, original.QEMUCommandline.Envs[0].Value)
+	}
+
+	// Verify full XML roundtrip (optional, but ensures the entire structure is correct)
+	str, err := converted.Marshal()
+	if err != nil {
+		t.Fatalf("Marshal failed: %v", err)
+	}
+	expected := `<domain>
+  <name>test</name>
+  <commandline xmlns="http://libvirt.org/schemas/domain/qemu/1.0">
+    <arg value="A"></arg>
+    <arg value="B"></arg>
+    <env name="K" value="V"></env>
+  </commandline>
+</domain>`
+	if str != expected {
+		t.Errorf("Roundtrip failed: expected %s, got %s", expected, str)
+	}
+}
+
 // TestMemoryValueWithUnitRoundtrip verifies flattened value/unit pairs stay consistent.
 func TestMemoryValueWithUnitRoundtrip(t *testing.T) {
 	ctx := context.Background()

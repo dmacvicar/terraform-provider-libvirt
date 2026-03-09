@@ -269,7 +269,7 @@ func (r *LibvirtXMLReflector) analyzeField(structName string, field reflect.Stru
 	}
 
 	xmlTag := field.Tag.Get("xml")
-	if xmlTag == "" {
+	if xmlTag == "" && field.Name != "QEMUCommandline" {
 		// Skip fields without XML tags
 		return nil, nil
 	}
