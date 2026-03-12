@@ -183,6 +183,14 @@ func (r *LibvirtXMLReflector) applyFieldPatterns(structName string, fields []*ge
 		// Universal patterns (apply to ALL resources)
 		switch field.TFName {
 		case "uuid", "id", "key":
+			// VLAN tags should be assigned by user.
+			if structName == "NetworkVLANTag" {
+				field.IsOptional = false
+				field.IsRequired = true
+				field.PlanModifier = "RequiresReplace"
+				continue
+			}
+
 			field.IsComputed = true
 			field.IsOptional = false
 			field.IsRequired = false
