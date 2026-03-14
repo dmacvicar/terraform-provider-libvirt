@@ -6360,7 +6360,7 @@ entries:
     description: Sets an opaque interface identifier for the virtual port profile, typically used by SDN or virtual switch controllers; value is user-provided (often a UUID or similar).
     reference: https://libvirt.org/formatdomain.html#virtual-network
   - path: domain.devices.interfaces.vlan.tags.id
-    description: Reports the VLAN ID associated with this tag; this is computed from the underlying XML and must be a valid VLAN tag (typically in the range 1–4094).
+    description: Sets the VLAN ID associated with this tag; value is user-provided and must be a valid VLAN tag for the interface configuration.
     reference: https://libvirt.org/formatdomain.html#setting-vlan-tag-on-supported-network-types-only
   - path: domain.devices.interfaces.virtual_port.params.mido_net.interface_id
     description: Sets the Midonet virtual interface identifier associated with this NIC; the value is user-provided and must match the interface ID configured in Midonet.

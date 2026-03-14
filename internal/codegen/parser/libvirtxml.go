@@ -183,6 +183,14 @@ func (r *LibvirtXMLReflector) applyFieldPatterns(structName string, fields []*ge
 		// Universal patterns (apply to ALL resources)
 		switch field.TFName {
 		case "uuid", "id", "key":
+			if field.TFName == "id" && isUserManagedVLANTagIDStruct(structName) {
+				field.IsComputed = false
+				field.IsOptional = false
+				field.IsRequired = true
+				field.PlanModifier = "RequiresReplace"
+				continue
+			}
+
 			field.IsComputed = true
 			field.IsOptional = false
 			field.IsRequired = false
@@ -254,6 +262,15 @@ func (r *LibvirtXMLReflector) applyFieldPatterns(structName string, fields []*ge
 				field.PreserveUserIntent = false
 			}
 		}
+	}
+}
+
+func isUserManagedVLANTagIDStruct(structName string) bool {
+	switch structName {
+	case "NetworkVLANTag", "DomainInterfaceVLanTag", "NetworkPortVLANTag":
+		return true
+	default:
+		return false
 	}
 }
 
