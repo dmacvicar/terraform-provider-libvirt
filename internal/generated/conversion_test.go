@@ -9,6 +9,57 @@ import (
 	"libvirt.org/go/libvirtxml"
 )
 
+func TestDomainHypervisorNamespaceRoundtrip(t *testing.T) {
+	ctx := context.Background()
+
+	original := &libvirtxml.Domain{
+		Type: "kvm",
+		Name: "test-hypervisor-namespaces",
+		QEMUCommandline: &libvirtxml.DomainQEMUCommandline{
+			Args: []libvirtxml.DomainQEMUCommandlineArg{
+				{Value: "-cpu"},
+				{Value: "host"},
+			},
+			Envs: []libvirtxml.DomainQEMUCommandlineEnv{
+				{Name: "QEMU_AUDIO_DRV", Value: "none"},
+			},
+		},
+		VMWareDataCenterPath: &libvirtxml.DomainVMWareDataCenterPath{
+			Value: "/Lab/DC1",
+		},
+	}
+
+	model, err := DomainFromXML(ctx, original, nil)
+	if err != nil {
+		t.Fatalf("DomainFromXML failed: %v", err)
+	}
+
+	if model.QEMUCommandline.IsNull() {
+		t.Fatal("QEMUCommandline should not be null")
+	}
+	if model.VMWareDataCenterPath.IsNull() || model.VMWareDataCenterPath.ValueString() != "/Lab/DC1" {
+		t.Fatalf("expected VMWareDataCenterPath=/Lab/DC1, got %v", model.VMWareDataCenterPath)
+	}
+
+	converted, err := DomainToXML(ctx, model)
+	if err != nil {
+		t.Fatalf("DomainToXML failed: %v", err)
+	}
+
+	if converted.QEMUCommandline == nil {
+		t.Fatal("QEMUCommandline should not be nil after roundtrip")
+	}
+	if len(converted.QEMUCommandline.Args) != 2 {
+		t.Fatalf("expected 2 QEMU args, got %d", len(converted.QEMUCommandline.Args))
+	}
+	if converted.QEMUCommandline.Args[0].Value != "-cpu" || converted.QEMUCommandline.Args[1].Value != "host" {
+		t.Fatalf("unexpected QEMU args after roundtrip: %+v", converted.QEMUCommandline.Args)
+	}
+	if converted.VMWareDataCenterPath == nil || converted.VMWareDataCenterPath.Value != "/Lab/DC1" {
+		t.Fatalf("unexpected VMWareDataCenterPath after roundtrip: %+v", converted.VMWareDataCenterPath)
+	}
+}
+
 // TestDomainTimerCatchUpRoundtrip tests conversion of a simple struct with no nesting
 func TestDomainTimerCatchUpRoundtrip(t *testing.T) {
 	ctx := context.Background()

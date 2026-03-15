@@ -190,8 +190,15 @@ func (r *LibvirtXMLReflector) analyzeField(structName string, field reflect.Stru
 
 	xmlTag := field.Tag.Get("xml")
 	if xmlTag == "" {
-		// Skip fields without XML tags
-		return nil, nil
+		var err error
+		xmlTag, err = xmlTagFromChildXMLName(field.Type)
+		if err != nil {
+			return nil, err
+		}
+		if xmlTag == "" {
+			// Skip fields without XML tags
+			return nil, nil
+		}
 	}
 
 	isDashTag := xmlTag == "-"
@@ -202,7 +209,7 @@ func (r *LibvirtXMLReflector) analyzeField(structName string, field reflect.Stru
 
 	// Parse XML tag
 	parts := strings.Split(xmlTag, ",")
-	fieldIR.XMLName = parts[0]
+	fieldIR.XMLName = xmlElementName(parts[0])
 	if isDashTag {
 		fieldIR.XMLName = field.Name
 	}
@@ -341,6 +348,41 @@ func (r *LibvirtXMLReflector) analyzeField(structName string, field reflect.Stru
 	}
 
 	return fieldIR, nil
+}
+
+func xmlTagFromChildXMLName(fieldType reflect.Type) (string, error) {
+	if fieldType.Kind() == reflect.Ptr {
+		fieldType = fieldType.Elem()
+	}
+
+	if fieldType.Kind() != reflect.Struct {
+		return "", nil
+	}
+
+	xmlNameField, ok := fieldType.FieldByName("XMLName")
+	if !ok {
+		return "", nil
+	}
+
+	xmlTag := xmlNameField.Tag.Get("xml")
+	if xmlTag == "" || xmlTag == "-" {
+		return "", nil
+	}
+
+	return xmlTag, nil
+}
+
+func xmlElementName(xmlName string) string {
+	xmlName = strings.TrimSpace(xmlName)
+	if xmlName == "" {
+		return xmlName
+	}
+
+	if idx := strings.LastIndex(xmlName, " "); idx != -1 {
+		return xmlName[idx+1:]
+	}
+
+	return xmlName
 }
 
 func (r *LibvirtXMLReflector) goTypeToTFType(t reflect.Type) string {

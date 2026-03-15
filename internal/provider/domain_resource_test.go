@@ -490,7 +490,6 @@ func TestAccDomainResource_destroyShutdownRunningWithImage(t *testing.T) {
 	})
 }
 
-
 func TestAccDomainResource_updateWithRunning(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
