@@ -16,6 +16,7 @@ The generator follows the global XML <-> HCL mapping rules in `docs/schema-mappi
 
 - Inputs: libvirtxml reflection, docs registry (`internal/codegen/docs/*.yaml` from docindex/docgen), small config hooks
 - IR builder: normalizes struct metadata, tracks optionality, and carries doc strings
+- Field policy layer: applies Terraform-specific semantics after reflection (for example top-level identities, immutability, and exact path overrides)
 - Generators: templates render models/schemas/converters into `internal/generated/*.gen.go`
 - Orchestration: `main.go` wires the pieces and runs gofmt
 
@@ -52,6 +53,48 @@ The generator follows the global XML <-> HCL mapping rules in `docs/schema-mappi
 - Generated Go files land in `internal/generated/` (xxx_convert.gen.go, xxx_schema.gen.go, xxx_model.gen.go)
 
 - Resources embed the generated models/schemas and call the conversions; add/override resource-specific fields (IDs, create helpers) manually
+
+## Field Policy Design
+
+The generator has two separate responsibilities:
+
+1. Structural analysis: reflect libvirtxml structs into IR using facts from Go types and, over time, RNG metadata. This layer should answer questions like "is this a pointer?", "is this an XML attribute?", and "is this nested or repeated?".
+2. Terraform policy: decide how those reflected fields behave in Terraform schemas and conversions. This layer owns decisions like `Computed`, `Required`, `RequiresReplace`, and "preserve user intent" behavior.
+
+Keep those layers separate. The parser should not accumulate ad hoc Terraform exceptions based on struct names. If a field needs special Terraform behavior, prefer a policy rule after reflection rather than embedding one-off conditionals into the reflector.
+
+### Policy rules
+
+Policy should be applied in an ordered pass over `StructIR` / `FieldIR`:
+
+- Generic scope-aware rules first
+- Exact path overrides second
+- Resource-specific fallbacks last
+
+Examples:
+
+- Top-level resource identity fields such as `id`, `uuid`, and `key` are provider-managed and should usually be `Computed`
+- Top-level `name` and some top-level `type` fields are immutable inputs and should usually be `Required` plus `RequiresReplace`
+- Nested `id` fields are not automatically provider-managed; many are part of libvirt configuration and should keep their reflected semantics unless an explicit override says otherwise
+- Reported-only fields such as storage pool `capacity` / `allocation` / `available` should be handled by explicit policy rules, not inferred from field names alone
+
+### Override strategy
+
+When the default rules are not enough, use explicit overrides keyed by full Terraform or XML path rather than helper functions like `isUserManagedFooStruct`.
+
+Good override targets:
+
+- `storage_pool.capacity`
+- `storage_pool.allocation`
+- `storage_volume.physical`
+
+Avoid:
+
+- Struct-name allowlists for one field
+- Field-name heuristics that ignore nesting scope
+- Mixing reflection logic with provider semantics in the same function
+
+This keeps the generator predictable, makes exceptions easy to audit, and prevents the parser from turning into a collection of special cases.
 
 ## Documentation tools
 

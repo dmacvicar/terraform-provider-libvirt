@@ -106,9 +106,6 @@ func (r *LibvirtXMLReflector) ReflectStruct(structType reflect.Type) (*generator
 		}
 	}
 
-	// Apply universal and resource-specific patterns
-	r.applyFieldPatterns(structType.Name(), ir.Fields)
-
 	// Post-process: expand chardata+attribute fields into separate flattened fields
 	// Example: <memory unit='KiB'>524288</memory> → memory (value), memory_unit (attr)
 	//          <vcpu placement='static'>2</vcpu> → vcpu (value), vcpu_placement (attr)
@@ -182,107 +179,7 @@ func (r *LibvirtXMLReflector) ReflectStruct(structType reflect.Type) (*generator
 	}
 	ir.Fields = expandedFields
 
-	// Apply patterns again after field expansion
-	r.applyFieldPatterns(structType.Name(), ir.Fields)
-
 	return ir, nil
-}
-
-// applyFieldPatterns applies universal and resource-specific field patterns
-func (r *LibvirtXMLReflector) applyFieldPatterns(structName string, fields []*generator.FieldIR) {
-	for _, field := range fields {
-		// Universal patterns (apply to ALL resources)
-		switch field.TFName {
-		case "uuid", "id", "key":
-			if field.TFName == "id" && isUserManagedVLANTagIDStruct(structName) {
-				field.IsComputed = false
-				field.IsOptional = false
-				field.IsRequired = true
-				field.PlanModifier = "RequiresReplace"
-				continue
-			}
-
-			field.IsComputed = true
-			field.IsOptional = false
-			field.IsRequired = false
-			field.PlanModifier = "UseStateForUnknown"
-
-		case "name":
-			// At resource root level, name is required and immutable
-			if structName == "StoragePool" || structName == "Domain" || structName == "Network" || structName == "StorageVolume" {
-				field.IsRequired = true
-				field.IsOptional = false
-				field.PlanModifier = "RequiresReplace"
-			}
-
-		case "type":
-			// At resource root level, type is required and immutable
-			if structName == "StoragePool" || structName == "Domain" || structName == "Network" {
-				field.IsRequired = true
-				field.IsOptional = false
-				field.PlanModifier = "RequiresReplace"
-			}
-		}
-
-		// Resource-specific patterns
-		if structName == "StoragePool" {
-			// Skip unit fields - they stay optional
-			if field.IsFlattenedUnit {
-				continue
-			}
-
-			switch field.TFName {
-			case "capacity":
-				field.IsComputed = true
-				field.IsOptional = false
-				field.IsRequired = false
-				field.PlanModifier = "UseStateForUnknown"
-				// Pool capacity is purely reported by libvirt; always read from XML.
-				field.PreserveUserIntent = false
-
-			case "allocation", "available":
-				field.IsComputed = true
-				field.IsOptional = false
-				field.IsRequired = false
-				// Purely informational; always read from XML.
-				field.PreserveUserIntent = false
-			}
-		}
-
-		if structName == "StorageVolume" {
-			// Skip unit fields - they stay optional
-			if field.IsFlattenedUnit {
-				continue
-			}
-
-			switch field.TFName {
-			case "capacity":
-				field.IsComputed = true
-				field.IsOptional = false
-				field.IsRequired = false
-				// Keep PreserveUserIntent = true (set by analyzeField for pointer fields)
-				// so that when the user specifies capacity with a capacity_unit, the
-				// plan value is preserved on readback instead of the bytes-normalised
-				// value that libvirt returns (fixes issue #1253).
-
-			case "allocation", "physical":
-				field.IsComputed = true
-				field.IsOptional = false
-				field.IsRequired = false
-				// Purely informational; always read from XML.
-				field.PreserveUserIntent = false
-			}
-		}
-	}
-}
-
-func isUserManagedVLANTagIDStruct(structName string) bool {
-	switch structName {
-	case "NetworkVLANTag", "DomainInterfaceVLanTag", "NetworkPortVLANTag":
-		return true
-	default:
-		return false
-	}
 }
 
 func (r *LibvirtXMLReflector) analyzeField(structName string, field reflect.StructField) (*generator.FieldIR, error) {

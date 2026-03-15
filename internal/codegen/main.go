@@ -9,6 +9,7 @@ import (
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/codegen/docregistry"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/codegen/generator"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/codegen/parser"
+	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/codegen/policy"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/util/stringutil"
 	"libvirt.org/go/libvirtxml"
 )
@@ -96,6 +97,8 @@ func run() error {
 			topLevelCount++
 		}
 	}
+
+	policy.ApplyFieldPolicies(structs)
 
 	// Silently generate code
 
