@@ -119,6 +119,105 @@ entries:
   - path: domain.cpu.max_phys_addr
     description: Configures a limit on the physical address width visible to the guest, thereby constraining the maximum guest physical address range.
     reference: https://libvirt.org/formatdomain.html#cpu-model-and-topology
+  - path: domain.qemu_commandline
+    description: Configures QEMU-specific command-line passthrough for a domain, allowing explicit extra arguments and environment variables to be passed through the dedicated QEMU XML namespace.
+    reference: https://libvirt.org/kbase/qemu-passthrough-security.html#xml-document-additions
+  - path: domain.qemu_commandline.args
+    description: Lists additional QEMU command-line arguments to append in order; each item represents one argument token rather than a shell-joined string.
+    reference: https://libvirt.org/kbase/qemu-passthrough-security.html#xml-document-additions
+  - path: domain.qemu_commandline.args.value
+    description: Sets one QEMU command-line argument token exactly as passed to the QEMU process; values that conceptually belong together must still be provided as separate entries.
+    reference: https://libvirt.org/kbase/qemu-passthrough-security.html#xml-document-additions
+  - path: domain.qemu_commandline.envs
+    description: Lists environment variables to expose to the QEMU process when starting the domain.
+    reference: https://libvirt.org/kbase/qemu-passthrough-security.html#xml-document-additions
+  - path: domain.qemu_commandline.envs.name
+    description: Sets the environment variable name passed to QEMU, such as `QEMU_AUDIO_DRV`.
+    reference: https://libvirt.org/kbase/qemu-passthrough-security.html#xml-document-additions
+  - path: domain.qemu_commandline.envs.value
+    description: Sets the optional value for the named QEMU environment variable; if omitted, the variable is declared without an explicit value.
+    reference: https://libvirt.org/kbase/qemu-passthrough-security.html#xml-document-additions
+  - path: domain.qemu_capabilities
+    description: Configures QEMU capability toggles through the QEMU namespace, allowing named capabilities to be explicitly added to or removed from the launched device model.
+  - path: domain.qemu_capabilities.add
+    description: Lists QEMU capabilities to add explicitly for this domain.
+  - path: domain.qemu_capabilities.add.name
+    description: Sets the QEMU capability name referenced by this entry, using the capability identifier expected by libvirt and the QEMU driver; whether it is added or removed depends on whether the entry is placed under `add` or `del`.
+  - path: domain.qemu_capabilities.del
+    description: Lists QEMU capabilities to remove explicitly for this domain.
+  - path: domain.qemu_capabilities.del.name
+    description: Sets the QEMU capability name referenced by this entry, using the capability identifier expected by libvirt and the QEMU driver; whether it is added or removed depends on whether the entry is placed under `add` or `del`.
+  - path: domain.qemu_override
+    description: Configures QEMU frontend property overrides in the QEMU namespace, targeting specific devices by alias and setting named frontend properties.
+  - path: domain.qemu_override.devices
+    description: Lists device-specific QEMU overrides, each matched by device alias and carrying frontend property overrides.
+  - path: domain.qemu_override.devices.alias
+    description: Sets the libvirt device alias identifying which frontend device the override applies to.
+  - path: domain.qemu_override.devices.frontend
+    description: Configures frontend property overrides for the selected QEMU device.
+  - path: domain.qemu_override.devices.frontend.properties
+    description: Lists individual QEMU frontend properties to override on the selected device.
+  - path: domain.qemu_override.devices.frontend.properties.name
+    description: Sets the QEMU frontend property name to override.
+  - path: domain.qemu_override.devices.frontend.properties.type
+    description: Sets the optional type hint for the overridden QEMU property value.
+  - path: domain.qemu_override.devices.frontend.properties.value
+    description: Sets the optional value assigned to the named QEMU frontend property.
+  - path: domain.qemu_deprecation
+    description: Configures the QEMU namespace deprecation behavior for the domain.
+  - path: domain.qemu_deprecation.behavior
+    description: Sets the deprecation handling mode requested from libvirt for QEMU-specific deprecated behavior.
+  - path: domain.lxc_namespace
+    description: Configures inherited Linux namespaces for LXC guests, allowing selected namespaces to be shared with another process or namespace provider.
+    reference: https://libvirt.org/drvlxc.html
+  - path: domain.lxc_namespace.share_net
+    description: Configures sharing of the network namespace for the LXC guest instead of creating a private one.
+    reference: https://libvirt.org/drvlxc.html
+  - path: domain.lxc_namespace.share_net.type
+    description: Sets how the shared namespace target is identified for this namespace mapping.
+  - path: domain.lxc_namespace.share_net.value
+    description: Sets the identifier of the shared namespace target, interpreted according to `type`.
+  - path: domain.lxc_namespace.share_ipc
+    description: Configures sharing of the IPC namespace for the LXC guest instead of creating a private one.
+    reference: https://libvirt.org/drvlxc.html
+  - path: domain.lxc_namespace.share_ipc.type
+    description: Sets how the shared namespace target is identified for this namespace mapping.
+  - path: domain.lxc_namespace.share_ipc.value
+    description: Sets the identifier of the shared namespace target, interpreted according to `type`.
+  - path: domain.lxc_namespace.share_uts
+    description: Configures sharing of the UTS namespace for the LXC guest instead of creating a private one.
+    reference: https://libvirt.org/drvlxc.html
+  - path: domain.lxc_namespace.share_uts.type
+    description: Sets how the shared namespace target is identified for this namespace mapping.
+  - path: domain.lxc_namespace.share_uts.value
+    description: Sets the identifier of the shared namespace target, interpreted according to `type`.
+  - path: domain.bhyve_commandline
+    description: Configures bhyve-specific command-line passthrough for a domain, allowing extra arguments and environment variables to be appended through the bhyve XML namespace.
+    reference: https://libvirt.org/drvbhyve.html
+  - path: domain.bhyve_commandline.args
+    description: Lists additional bhyve command-line arguments to append in order when starting the domain.
+    reference: https://libvirt.org/drvbhyve.html
+  - path: domain.bhyve_commandline.args.value
+    description: Sets one additional argument token passed to the bhyve process.
+    reference: https://libvirt.org/drvbhyve.html
+  - path: domain.bhyve_commandline.envs
+    description: Lists environment variables to provide to the bhyve process when starting the domain.
+  - path: domain.bhyve_commandline.envs.name
+    description: Sets the environment variable name passed to the bhyve process.
+  - path: domain.bhyve_commandline.envs.value
+    description: Sets the optional value for the named bhyve environment variable.
+  - path: domain.vmware_data_center_path
+    description: Sets the VMware datacenter path associated with the domain when using the VMware driver, matching the datacenter-oriented path conventions used by libvirt `vpx://` connections.
+    reference: https://libvirt.org/drvesx.html
+  - path: domain.xen_commandline
+    description: Configures Xen-specific command-line passthrough to the qemu device model, using the Xen XML namespace for additional arguments.
+    reference: https://libvirt.org/drvxen.html
+  - path: domain.xen_commandline.args
+    description: Lists additional command-line arguments to pass to the Xen qemu device model in order.
+    reference: https://libvirt.org/drvxen.html
+  - path: domain.xen_commandline.args.value
+    description: Sets one additional argument token passed to the Xen qemu device model.
+    reference: https://libvirt.org/drvxen.html
   - path: domain.cpu.migratable
     description: Controls whether the configured CPU model is considered migratable between hosts, using "yes" or "no" string values.
     reference: https://libvirt.org/formatdomain.html#cpu-model-and-topology
