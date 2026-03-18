@@ -40,6 +40,7 @@ type DomainResourceModel struct {
 	Running   types.Bool   `tfsdk:"running"`
 	Autostart types.Bool   `tfsdk:"autostart"`
 	Create    types.Object `tfsdk:"create"`
+	Update    types.Object `tfsdk:"update"`
 	Destroy   types.Object `tfsdk:"destroy"`
 }
 
@@ -67,21 +68,27 @@ type DomainCreateModel struct {
 	ResetNVRAM  types.Bool `tfsdk:"reset_nvram"`
 }
 
+// DomainUpdateModel describes domain update stop behavior.
+type DomainUpdateModel struct {
+	Shutdown types.Object `tfsdk:"shutdown"`
+}
+
 // DomainDestroyModel describes domain shutdown behavior
 type DomainDestroyModel struct {
 	Graceful types.Bool   `tfsdk:"graceful"`
 	Shutdown types.Object `tfsdk:"shutdown"`
 }
 
-// DomainDestroyShutdownModel describes optional shutdown wait behavior.
-type DomainDestroyShutdownModel struct {
+// DomainShutdownModel describes optional shutdown wait behavior.
+type DomainShutdownModel struct {
 	Timeout types.Int64 `tfsdk:"timeout"`
 }
 
-type domainDestroyOptions struct {
+type domainStopOptions struct {
 	Flags           golibvirt.DomainDestroyFlagsValues
 	ShutdownEnabled bool
 	ShutdownTimeout time.Duration
+	ForceOnTimeout  bool
 }
 
 type domainPlanData struct {
@@ -458,9 +465,59 @@ func domainDestroyFlagsFromDestroy(ctx context.Context, destroyVal types.Object)
 	return flags, nil
 }
 
-func domainDestroyOptionsFromDestroy(ctx context.Context, destroyVal types.Object) (domainDestroyOptions, diag.Diagnostics) {
+func domainShutdownTimeoutFromObject(ctx context.Context, shutdownVal types.Object, defaultTimeout time.Duration) (time.Duration, diag.Diagnostics) {
+	if shutdownVal.IsNull() || shutdownVal.IsUnknown() {
+		return defaultTimeout, nil
+	}
+
+	var shutdownModel DomainShutdownModel
+	diags := shutdownVal.As(ctx, &shutdownModel, basetypes.ObjectAsOptions{})
+	if diags.HasError() {
+		return defaultTimeout, diags
+	}
+
+	if !shutdownModel.Timeout.IsNull() && !shutdownModel.Timeout.IsUnknown() {
+		timeout := shutdownModel.Timeout.ValueInt64()
+		if timeout > 0 {
+			return time.Duration(timeout) * time.Second, nil
+		}
+	}
+
+	return defaultTimeout, nil
+}
+
+func domainUpdateOptionsFromUpdate(ctx context.Context, updateVal types.Object) (domainStopOptions, diag.Diagnostics) {
+	options := domainStopOptions{
+		ShutdownEnabled: true,
+		ShutdownTimeout: 30 * time.Second,
+		ForceOnTimeout:  true,
+	}
+
+	if updateVal.IsNull() || updateVal.IsUnknown() {
+		return options, nil
+	}
+
+	var updateModel DomainUpdateModel
+	diags := updateVal.As(ctx, &updateModel, basetypes.ObjectAsOptions{})
+	if diags.HasError() {
+		return options, diags
+	}
+
+	if !updateModel.Shutdown.IsNull() && !updateModel.Shutdown.IsUnknown() {
+		timeout, timeoutDiags := domainShutdownTimeoutFromObject(ctx, updateModel.Shutdown, options.ShutdownTimeout)
+		diags.Append(timeoutDiags...)
+		if diags.HasError() {
+			return options, diags
+		}
+		options.ShutdownTimeout = timeout
+	}
+
+	return options, diags
+}
+
+func domainDestroyOptionsFromDestroy(ctx context.Context, destroyVal types.Object) (domainStopOptions, diag.Diagnostics) {
 	flags, diags := domainDestroyFlagsFromDestroy(ctx, destroyVal)
-	options := domainDestroyOptions{
+	options := domainStopOptions{
 		Flags: flags,
 	}
 	if diags.HasError() || destroyVal.IsNull() || destroyVal.IsUnknown() {
@@ -476,19 +533,12 @@ func domainDestroyOptionsFromDestroy(ctx context.Context, destroyVal types.Objec
 	if !destroyModel.Shutdown.IsNull() && !destroyModel.Shutdown.IsUnknown() {
 		options.ShutdownEnabled = true
 		options.ShutdownTimeout = 30 * time.Second
-
-		var shutdownModel DomainDestroyShutdownModel
-		diags = destroyModel.Shutdown.As(ctx, &shutdownModel, basetypes.ObjectAsOptions{})
+		timeout, timeoutDiags := domainShutdownTimeoutFromObject(ctx, destroyModel.Shutdown, options.ShutdownTimeout)
+		diags.Append(timeoutDiags...)
 		if diags.HasError() {
 			return options, diags
 		}
-
-		if !shutdownModel.Timeout.IsNull() && !shutdownModel.Timeout.IsUnknown() {
-			timeout := shutdownModel.Timeout.ValueInt64()
-			if timeout > 0 {
-				options.ShutdownTimeout = time.Duration(timeout) * time.Second
-			}
-		}
+		options.ShutdownTimeout = timeout
 	}
 
 	return options, nil
@@ -521,6 +571,22 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				"force_boot":   schema.BoolAttribute{Optional: true},
 				"validate":     schema.BoolAttribute{Optional: true},
 				"reset_nvram":  schema.BoolAttribute{Optional: true},
+			},
+		},
+		"update": schema.SingleNestedAttribute{
+			Description: "Update behavior when Terraform must stop the domain before redefining it.",
+			Optional:    true,
+			Attributes: map[string]schema.Attribute{
+				"shutdown": schema.SingleNestedAttribute{
+					Description: "Experimental: request a guest shutdown and wait for shutoff before forcing a stop during update. Subject to change in future releases.",
+					Optional:    true,
+					Attributes: map[string]schema.Attribute{
+						"timeout": schema.Int64Attribute{
+							Description: "Experimental: seconds to wait for guest shutdown before forcing a stop during update. Defaults to 30.",
+							Optional:    true,
+						},
+					},
+				},
 			},
 		},
 		"destroy": schema.SingleNestedAttribute{
@@ -572,6 +638,41 @@ func (r *DomainResource) Configure(ctx context.Context, req resource.ConfigureRe
 	}
 
 	r.client = client
+}
+
+func (r *DomainResource) stopDomainIfRunning(domain golibvirt.Domain, options domainStopOptions) (bool, error) {
+	domainState, _, err := r.client.Libvirt().DomainGetState(domain, 0)
+	if err != nil {
+		return false, fmt.Errorf("check domain state: %w", err)
+	}
+
+	if uint32(domainState) != uint32(golibvirt.DomainRunning) {
+		return false, nil
+	}
+
+	if options.ShutdownEnabled {
+		if err := r.client.Libvirt().DomainShutdown(domain); err != nil {
+			return false, fmt.Errorf("request guest shutdown: %w", err)
+		}
+
+		if err := waitForDomainState(r.client, domain, uint32(golibvirt.DomainShutoff), options.ShutdownTimeout); err != nil {
+			if !options.ForceOnTimeout {
+				return true, fmt.Errorf("wait for shutdown: %w", err)
+			}
+
+			if destroyErr := r.client.Libvirt().DomainDestroyFlags(domain, options.Flags); destroyErr != nil {
+				return false, fmt.Errorf("force stop after shutdown timeout: %w", destroyErr)
+			}
+		}
+
+		return false, nil
+	}
+
+	if err := r.client.Libvirt().DomainDestroyFlags(domain, options.Flags); err != nil {
+		return false, fmt.Errorf("force stop running domain: %w", err)
+	}
+
+	return false, nil
 }
 
 // Create creates a new domain
@@ -709,6 +810,7 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 		Running:     plan.Running,
 		Autostart:   plan.Autostart,
 		Create:      plan.Create,
+		Update:      plan.Update,
 		Destroy:     plan.Destroy,
 	}
 
@@ -882,33 +984,18 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	domainState, _, err := r.client.Libvirt().DomainGetState(existingDomain, 0)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Failed to Get Domain State",
-			"Failed to check if domain is running: "+err.Error(),
-		)
+	updateOptions, updateDiags := domainUpdateOptionsFromUpdate(ctx, plan.Update)
+	resp.Diagnostics.Append(updateDiags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if uint32(domainState) == uint32(golibvirt.DomainRunning) {
-		if err := r.client.Libvirt().DomainShutdown(existingDomain); err != nil {
-			resp.Diagnostics.AddError(
-				"Failed to Shutdown Domain",
-				"Domain must be stopped before updating. Failed to shutdown: "+err.Error(),
-			)
-			return
-		}
-
-		if err := waitForDomainState(r.client, existingDomain, uint32(golibvirt.DomainShutoff), 5*time.Second); err != nil {
-			if err := r.client.Libvirt().DomainDestroy(existingDomain); err != nil {
-				resp.Diagnostics.AddError(
-					"Failed to Stop Domain",
-					"Domain must be stopped before updating. Failed to force stop: "+err.Error(),
-				)
-				return
-			}
-		}
+	if _, err := r.stopDomainIfRunning(existingDomain, updateOptions); err != nil {
+		resp.Diagnostics.AddError(
+			"Failed to Stop Domain",
+			"Domain must be stopped before updating: "+err.Error(),
+		)
+		return
 	}
 
 	domainXML, err := generated.DomainToXML(ctx, &planData.SanitizedModel)
@@ -1036,6 +1123,7 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		Running:     plan.Running,
 		Autostart:   plan.Autostart,
 		Create:      plan.Create,
+		Update:      plan.Update,
 		Destroy:     plan.Destroy,
 	}
 
@@ -1089,46 +1177,21 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		return
 	}
 
-	// Destroy (stop) the domain if it's running
-	domainState, _, err := r.client.Libvirt().DomainGetState(domain, 0)
+	timedOut, err := r.stopDomainIfRunning(domain, destroyOptions)
 	if err != nil {
+		if timedOut {
+			resp.Diagnostics.AddError(
+				"Timeout Waiting for Domain Shutdown",
+				fmt.Sprintf("Domain did not reach shutoff state within %s: %s", destroyOptions.ShutdownTimeout, err),
+			)
+			return
+		}
+
 		resp.Diagnostics.AddError(
-			"Failed to Get Domain State",
-			"Failed to check domain state: "+err.Error(),
+			"Failed to Destroy Domain",
+			"Failed to stop running domain: "+err.Error(),
 		)
 		return
-	}
-
-	// DomainState values: 0=nostate, 1=running, 2=blocked, 3=paused, 4=shutdown, 5=shutoff, 6=crashed, 7=pmsuspended
-	if uint32(domainState) == uint32(golibvirt.DomainRunning) {
-		if destroyOptions.ShutdownEnabled {
-			err = r.client.Libvirt().DomainShutdown(domain)
-			if err != nil {
-				resp.Diagnostics.AddError(
-					"Failed to Shutdown Domain",
-					"Failed to request guest shutdown: "+err.Error(),
-				)
-				return
-			}
-
-			err = waitForDomainState(r.client, domain, uint32(golibvirt.DomainShutoff), destroyOptions.ShutdownTimeout)
-			if err != nil {
-				resp.Diagnostics.AddError(
-					"Timeout Waiting for Domain Shutdown",
-					fmt.Sprintf("Domain did not reach shutoff state within %s: %s", destroyOptions.ShutdownTimeout, err),
-				)
-				return
-			}
-		} else {
-			err = r.client.Libvirt().DomainDestroyFlags(domain, destroyOptions.Flags)
-			if err != nil {
-				resp.Diagnostics.AddError(
-					"Failed to Destroy Domain",
-					"Failed to stop running domain: "+err.Error(),
-				)
-				return
-			}
-		}
 	}
 
 	libvirtVersion, err := r.client.Libvirt().ConnectGetLibVersion()

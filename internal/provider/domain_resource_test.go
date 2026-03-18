@@ -172,6 +172,31 @@ resource "libvirt_domain" "test" {
 `, name)
 }
 
+func testAccDomainResourceConfigBasicUpdatedWithUpdateShutdown(name string, timeout int64) string {
+	return fmt.Sprintf(`
+
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 1024
+  memory_unit   = "MiB"
+  vcpu   = 2
+  type   = "kvm"
+
+  update = {
+    shutdown = {
+      timeout = %[2]d
+    }
+  }
+
+  os = {
+    type    = "hvm"
+    type_arch    = "x86_64"
+    type_machine = "q35"
+  }
+}
+`, name, timeout)
+}
+
 func testAccDomainResourceConfigUEFI(name string) string {
 	return fmt.Sprintf(`
 
@@ -508,11 +533,12 @@ func TestAccDomainResource_updateWithRunning(t *testing.T) {
 			},
 			// Update while running
 			{
-				Config: testAccDomainResourceConfigBasicUpdated("test-domain-update"),
+				Config: testAccDomainResourceConfigBasicUpdatedWithUpdateShutdown("test-domain-update", 60),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-update"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "memory", "1024"),
 					resource.TestCheckResourceAttr("libvirt_domain.test", "vcpu", "2"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "update.shutdown.timeout", "60"),
 				),
 			},
 		},
