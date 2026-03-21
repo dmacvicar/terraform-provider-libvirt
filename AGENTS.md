@@ -193,6 +193,8 @@ Example:
 
 Terraform state reflects what the user cares about, not the entire API response.
 
+For generated XML -> model conversions, see `internal/codegen/README.md`, especially the "Preserve User Intent For Optional Nested Objects" section. That generator-level rule is authoritative for optional nested object readback behavior.
+
 **Computed** (not Optional) - Always read from API
 - Examples: `id`, `key`, `allocation`, `physical`
 - `model.Key = types.StringValue(xml.Key)`

@@ -470,7 +470,14 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 				model.{{ .GoName }} = types.ObjectNull({{ .NestedStruct.Name }}AttributeTypes())
 			}
 		} else {
-			model.{{ .GoName }} = types.ObjectNull({{ .NestedStruct.Name }}AttributeTypes())
+			// Preserve explicit user intent for optional nested objects when the API omits
+			// the field on readback. This avoids collapsing configured objects such as
+			// aliases to null and triggering "inconsistent result after apply" errors.
+			if plan != nil && !plan.{{ .GoName }}.IsNull() && !plan.{{ .GoName }}.IsUnknown() {
+				model.{{ .GoName }} = plan.{{ .GoName }}
+			} else {
+				model.{{ .GoName }} = types.ObjectNull({{ .NestedStruct.Name }}AttributeTypes())
+			}
 		}
 	} else {
 		model.{{ .GoName }} = types.ObjectNull({{ .NestedStruct.Name }}AttributeTypes())

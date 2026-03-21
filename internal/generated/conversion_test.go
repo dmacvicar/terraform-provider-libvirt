@@ -868,3 +868,80 @@ func TestDomainDeviceListFromXMLPreservesDiskOrderByTargetDev(t *testing.T) {
 		t.Fatalf("unexpected second disk volume: %s/%s", secondVolume.Pool.ValueString(), secondVolume.Volume.ValueString())
 	}
 }
+
+func TestDomainSerialFromXMLPreservesPlannedAliasWhenXMLAliasIsOmitted(t *testing.T) {
+	ctx := context.Background()
+
+	alias := DomainAliasModel{
+		Name: types.StringValue("serial0"),
+	}
+	aliasObject, diags := types.ObjectValueFrom(ctx, DomainAliasAttributeTypes(), alias)
+	if diags.HasError() {
+		t.Fatalf("alias ObjectValueFrom failed: %s", diags.Errors()[0].Summary())
+	}
+
+	plan := &DomainSerialModel{
+		Source:   types.ObjectNull(DomainChardevSourceAttributeTypes()),
+		Protocol: types.ObjectNull(DomainChardevProtocolAttributeTypes()),
+		Target:   types.ObjectNull(DomainSerialTargetAttributeTypes()),
+		Log:      types.ObjectNull(DomainChardevLogAttributeTypes()),
+		ACPI:     types.ObjectNull(DomainDeviceACPIAttributeTypes()),
+		Alias:    aliasObject,
+		Address:  types.ObjectNull(DomainAddressAttributeTypes()),
+	}
+
+	model, err := DomainSerialFromXML(ctx, &libvirtxml.DomainSerial{}, plan)
+	if err != nil {
+		t.Fatalf("DomainSerialFromXML failed: %v", err)
+	}
+	if model.Alias.IsNull() {
+		t.Fatal("Alias should be preserved when planned and omitted from XML")
+	}
+
+	var got DomainAliasModel
+	if diags := model.Alias.As(ctx, &got, basetypes.ObjectAsOptions{}); diags.HasError() {
+		t.Fatalf("alias As failed: %s", diags.Errors()[0].Summary())
+	}
+	if got.Name.IsNull() || got.Name.ValueString() != "serial0" {
+		t.Fatalf("expected alias name serial0, got %v", got.Name)
+	}
+}
+
+func TestDomainConsoleFromXMLPreservesPlannedAliasWhenXMLAliasIsOmitted(t *testing.T) {
+	ctx := context.Background()
+
+	alias := DomainAliasModel{
+		Name: types.StringValue("serial0"),
+	}
+	aliasObject, diags := types.ObjectValueFrom(ctx, DomainAliasAttributeTypes(), alias)
+	if diags.HasError() {
+		t.Fatalf("alias ObjectValueFrom failed: %s", diags.Errors()[0].Summary())
+	}
+
+	plan := &DomainConsoleModel{
+		TTY:      types.StringNull(),
+		Source:   types.ObjectNull(DomainChardevSourceAttributeTypes()),
+		Protocol: types.ObjectNull(DomainChardevProtocolAttributeTypes()),
+		Target:   types.ObjectNull(DomainConsoleTargetAttributeTypes()),
+		Log:      types.ObjectNull(DomainChardevLogAttributeTypes()),
+		ACPI:     types.ObjectNull(DomainDeviceACPIAttributeTypes()),
+		Alias:    aliasObject,
+		Address:  types.ObjectNull(DomainAddressAttributeTypes()),
+	}
+
+	model, err := DomainConsoleFromXML(ctx, &libvirtxml.DomainConsole{}, plan)
+	if err != nil {
+		t.Fatalf("DomainConsoleFromXML failed: %v", err)
+	}
+	if model.Alias.IsNull() {
+		t.Fatal("Alias should be preserved when planned and omitted from XML")
+	}
+
+	var got DomainAliasModel
+	if diags := model.Alias.As(ctx, &got, basetypes.ObjectAsOptions{}); diags.HasError() {
+		t.Fatalf("alias As failed: %s", diags.Errors()[0].Summary())
+	}
+	if got.Name.IsNull() || got.Name.ValueString() != "serial0" {
+		t.Fatalf("expected alias name serial0, got %v", got.Name)
+	}
+}

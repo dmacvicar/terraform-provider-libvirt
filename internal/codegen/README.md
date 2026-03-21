@@ -63,6 +63,26 @@ The generator has two separate responsibilities:
 
 Keep those layers separate. The parser should not accumulate ad hoc Terraform exceptions based on struct names. If a field needs special Terraform behavior, prefer a policy rule after reflection rather than embedding one-off conditionals into the reflector.
 
+### Preserve User Intent For Optional Nested Objects
+
+`Preserve user intent` is a generator-level contract, not a resource-by-resource preference.
+
+For optional nested objects, XML omission and user omission are not the same thing:
+
+- If the user did not configure an optional nested object, state should keep it `null`.
+- If the user configured an optional nested object and libvirt omits that object when reading XML back, the conversion should preserve the planned object unless we have an explicit policy that omission means the field was cleared.
+- Do not silently collapse an explicitly configured nested object to `null` only because the readback XML does not echo it.
+
+This rule exists to prevent Terraform `Provider produced inconsistent result after apply` errors for fields such as `alias`, where libvirt may not round-trip the object exactly even though the user configured it explicitly.
+
+In practice, this means the XML -> model conversion for optional nested objects must distinguish:
+
+- `plan field is null`: user does not care, keep state `null`
+- `plan field is non-null` and `xml field is present`: convert XML back into state
+- `plan field is non-null` and `xml field is absent`: preserve the planned value unless an explicit override says otherwise
+
+When changing converter templates, treat this as an invariant that applies uniformly across generated nested object fields. Do not patch individual resources to compensate for generator behavior unless the field truly needs special semantics.
+
 ### Policy rules
 
 Policy should be applied in an ordered pass over `StructIR` / `FieldIR`:

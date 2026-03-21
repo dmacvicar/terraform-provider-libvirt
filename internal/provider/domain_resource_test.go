@@ -328,6 +328,27 @@ func TestAccDomainResource_cpu(t *testing.T) {
 	})
 }
 
+func TestAccDomainResource_cpuHostModelPreservesPlanValue(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigCPUHostModel("test-domain-cpu-host-model"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-cpu-host-model"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "cpu.mode", "host-model"),
+				),
+			},
+			{
+				Config:   testAccDomainResourceConfigCPUHostModel("test-domain-cpu-host-model"),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func testAccDomainResourceConfigCPU(name string) string {
 	return fmt.Sprintf(`
 
@@ -346,6 +367,29 @@ resource "libvirt_domain" "test" {
 
   cpu = {
     mode = "host-passthrough"
+  }
+}
+`, name)
+}
+
+func testAccDomainResourceConfigCPUHostModel(name string) string {
+	return fmt.Sprintf(`
+
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  memory_unit   = "MiB"
+  vcpu   = 2
+  type   = "kvm"
+
+  os = {
+    type    = "hvm"
+    type_arch    = "x86_64"
+    type_machine = "q35"
+  }
+
+  cpu = {
+    mode = "host-model"
   }
 }
 `, name)
@@ -1577,6 +1621,46 @@ func TestAccDomainResource_console(t *testing.T) {
 	})
 }
 
+func TestAccDomainResource_consoleAndSerialAlias(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigConsoleAndSerialAlias("test-domain-console-serial-alias"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-console-serial-alias"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "running", "false"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.serials.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.serials.0.alias.name", "serial0"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.serials.0.protocol.type", "telnet"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.serials.0.source.tcp.host", "127.0.0.1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.serials.0.source.tcp.mode", "bind"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.serials.0.source.tcp.service", "12345"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.serials.0.source.tcp.tls", "no"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.serials.0.target.type", "isa-serial"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.serials.0.target.port", "0"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.serials.0.target.model.name", "isa-serial"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.#", "1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.0.alias.name", "serial0"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.0.protocol.type", "telnet"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.0.source.tcp.host", "127.0.0.1"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.0.source.tcp.mode", "bind"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.0.source.tcp.service", "12345"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.0.source.tcp.tls", "no"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.0.target.type", "serial"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.consoles.0.target.port", "0"),
+				),
+			},
+			{
+				Config:   testAccDomainResourceConfigConsoleAndSerialAlias("test-domain-console-serial-alias"),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func testAccDomainResourceConfigConsole(name string) string {
 	return fmt.Sprintf(`
 resource "libvirt_domain" "test" {
@@ -1602,6 +1686,76 @@ resource "libvirt_domain" "test" {
         }
         target = {
           type = "serial"
+        }
+      }
+    ]
+  }
+}
+`, name)
+}
+
+func testAccDomainResourceConfigConsoleAndSerialAlias(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name        = %[1]q
+  running     = false
+  memory      = 512
+  memory_unit = "MiB"
+  vcpu        = 1
+  type        = "kvm"
+
+  os = {
+    type         = "hvm"
+    type_arch    = "x86_64"
+    type_machine = "q35"
+  }
+
+  devices = {
+    serials = [
+      {
+        alias = {
+          name = "serial0"
+        }
+        source = {
+          tcp = {
+            mode    = "bind"
+            host    = "127.0.0.1"
+            service = "12345"
+            tls     = "no"
+          }
+        }
+        protocol = {
+          type = "telnet"
+        }
+        target = {
+          type = "isa-serial"
+          port = 0
+          model = {
+            name = "isa-serial"
+          }
+        }
+      }
+    ]
+
+    consoles = [
+      {
+        alias = {
+          name = "serial0"
+        }
+        source = {
+          tcp = {
+            mode    = "bind"
+            host    = "127.0.0.1"
+            service = "12345"
+            tls     = "no"
+          }
+        }
+        protocol = {
+          type = "telnet"
+        }
+        target = {
+          type = "serial"
+          port = 0
         }
       }
     ]
