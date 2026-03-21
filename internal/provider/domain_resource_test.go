@@ -328,6 +328,27 @@ func TestAccDomainResource_cpu(t *testing.T) {
 	})
 }
 
+func TestAccDomainResource_cpuHostModelPreservesPlanValue(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigCPUHostModel("test-domain-cpu-host-model"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-cpu-host-model"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "cpu.mode", "host-model"),
+				),
+			},
+			{
+				Config:   testAccDomainResourceConfigCPUHostModel("test-domain-cpu-host-model"),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
 func testAccDomainResourceConfigCPU(name string) string {
 	return fmt.Sprintf(`
 
@@ -346,6 +367,29 @@ resource "libvirt_domain" "test" {
 
   cpu = {
     mode = "host-passthrough"
+  }
+}
+`, name)
+}
+
+func testAccDomainResourceConfigCPUHostModel(name string) string {
+	return fmt.Sprintf(`
+
+resource "libvirt_domain" "test" {
+  name   = %[1]q
+  memory = 512
+  memory_unit   = "MiB"
+  vcpu   = 2
+  type   = "kvm"
+
+  os = {
+    type    = "hvm"
+    type_arch    = "x86_64"
+    type_machine = "q35"
+  }
+
+  cpu = {
+    mode = "host-model"
   }
 }
 `, name)
