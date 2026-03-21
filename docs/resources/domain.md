@@ -37,7 +37,7 @@ You can import by **UUID** or by **name**:
 
 ```bash
 # By UUID (get it with: virsh domuuid <name>)
-terraform import libvirt_domain.myvm ff8a65d1-8c31-4bee-aefa-347bba5b22f8
+terraform import libvirt_domain.myvm 12345678-1234-1234-1234-123456789abc
 
 # By name
 terraform import libvirt_domain.myvm myvm
