@@ -305,7 +305,13 @@ If you contribute code or issues and used AI, you are required to disclose it, i
 
 ## Author
 
-* Duncan Mac-Vicar P.
+* Duncan Mac-Vicar P. (upstream)
+
+## Fork
+
+This fork adds `terraform import` support for `libvirt_domain` resources (import by UUID or name).
+
+Built with [Claude Code](https://claude.ai/claude-code).
 
 ## License
 

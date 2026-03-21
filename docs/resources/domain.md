@@ -15,6 +15,72 @@ Manages a libvirt domain (virtual machine).
 This resource follows the [libvirt domain XML schema](https://libvirt.org/formatdomain.html) closely,
 providing fine-grained control over VM configuration.
 
+## Import
+
+Existing libvirt domains can be imported into Terraform state. This lets you
+bring VMs that were created outside of Terraform under management — without
+recreating them.
+
+### Step 1 — Add an empty resource block
+
+In your `.tf` file, add a resource block for the domain you want to import.
+It can be empty:
+
+```terraform
+resource "libvirt_domain" "myvm" {
+}
+```
+
+### Step 2 — Run the import
+
+You can import by **UUID** or by **name**:
+
+```bash
+# By UUID (get it with: virsh domuuid <name>)
+terraform import libvirt_domain.myvm ff8a65d1-8c31-4bee-aefa-347bba5b22f8
+
+# By name
+terraform import libvirt_domain.myvm myvm
+```
+
+Terraform will connect to libvirt, read the domain's full XML definition,
+and store everything in state — name, memory, vCPUs, disks, network interfaces,
+boot config, autostart, running status, etc.
+
+### Step 3 — Generate the config
+
+After importing, run `terraform plan` to see what Terraform expects. You will
+need to fill in your resource block to match the imported state, otherwise
+Terraform will show a diff on the next apply.
+
+A quick way to get a starting config:
+
+```bash
+terraform show -no-color > imported.tf
+```
+
+Then copy the relevant resource block into your main config and clean it up
+(remove read-only and computed attributes like `id`, `uuid`, device aliases, etc.).
+
+### What gets imported
+
+Everything libvirt knows about the domain:
+
+- CPU, memory, machine type, architecture
+- Disks, network interfaces, consoles, channels
+- Graphics, video, input devices, controllers
+- Boot configuration, firmware, NVRAM
+- Clock, features, power management
+- Autostart and running state
+- QEMU guest agent channel (if configured)
+
+### Notes
+
+- Import is **read-only** — it never modifies the domain on the hypervisor.
+- `running` and `autostart` are populated from the live domain state.
+- `wait_for_ip` (a provider-only attribute) is not set during import since
+  it has no representation in the domain XML.
+
 ## Example Usage
 
 ```terraform
