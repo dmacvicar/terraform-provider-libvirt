@@ -58,7 +58,7 @@ jobs:
       - name: Test
         run: |
           make test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: terraform-provider-libvirt-${{ matrix.os }}
           path: ${{ github.workspace }}/terraform-provider-libvirt*
