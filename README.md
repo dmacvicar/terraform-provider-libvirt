@@ -305,7 +305,7 @@ If you contribute code or issues and used AI, you are required to disclose it, i
 
 ## Author
 
-* Duncan Mac-Vicar P.
+* Duncan Mac-Vicar P. (upstream)
 
 ## License
 

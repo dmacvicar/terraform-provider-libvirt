@@ -10,6 +10,7 @@ import (
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -19,8 +20,9 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces
 var (
-	_ resource.Resource              = &DomainResource{}
-	_ resource.ResourceWithConfigure = &DomainResource{}
+	_ resource.Resource                = &DomainResource{}
+	_ resource.ResourceWithConfigure   = &DomainResource{}
+	_ resource.ResourceWithImportState = &DomainResource{}
 )
 
 // NewDomainResource creates a new domain resource
@@ -860,10 +862,21 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	planData, diags := prepareDomainPlan(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
+	// Detect import: after ImportState, only UUID is set — Name will be null.
+	// When importing, pass nil as plan so DomainFromXML populates all fields from XML.
+	isImport := state.Name.IsNull() || state.Name.IsUnknown()
+
+	var plan *generated.DomainModel
+	var waitAttrs []attr.Value
+
+	if !isImport {
+		planData, diags := prepareDomainPlan(ctx, &state)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		plan = &planData.SanitizedModel
+		waitAttrs = planData.WaitAttributes
 	}
 
 	domain, err := r.client.LookupDomainByUUID(state.UUID.ValueString())
@@ -890,7 +903,7 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	stateModel, err := generated.DomainFromXML(ctx, parsedDomain, &planData.SanitizedModel)
+	stateModel, err := generated.DomainFromXML(ctx, parsedDomain, plan)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to Convert Domain",
@@ -901,10 +914,15 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 
 	state.DomainModel = *stateModel
 
-	state.Devices, diags = applyWaitForIPValues(ctx, state.Devices, planData.WaitAttributes)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
+	// Always apply wait_for_ip type conversion — the schema expects it.
+	// During import, waitAttrs is nil so all interfaces get null wait_for_ip.
+	{
+		var diags diag.Diagnostics
+		state.Devices, diags = applyWaitForIPValues(ctx, state.Devices, waitAttrs)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	if !originalMetadata.IsNull() && !originalMetadata.IsUnknown() {
@@ -915,7 +933,8 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 		state.ID = originalID
 	}
 
-	if !state.Autostart.IsNull() && !state.Autostart.IsUnknown() {
+	// Read autostart — always during import, conditionally otherwise
+	if isImport || (!state.Autostart.IsNull() && !state.Autostart.IsUnknown()) {
 		autostart, err := r.client.Libvirt().DomainGetAutostart(domain)
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -927,7 +946,29 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 		state.Autostart = types.BoolValue(autostart == 1)
 	}
 
+	// Read running state — always during import, preserve existing otherwise
+	if isImport {
+		domainState, _, err := r.client.Libvirt().DomainGetState(domain, 0)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Failed to Get Domain State",
+				"Failed to read domain running state: "+err.Error(),
+			)
+			return
+		}
+		state.Running = types.BoolValue(uint32(domainState) == uint32(golibvirt.DomainRunning))
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+// ImportState imports an existing libvirt domain by UUID.
+//
+// Usage:
+//
+//	terraform import libvirt_domain.myvm <uuid>
+func (r *DomainResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("uuid"), req, resp)
 }
 
 // waitForDomainState waits for a domain to reach the specified state with a timeout
