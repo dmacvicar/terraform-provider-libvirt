@@ -259,6 +259,48 @@ func TestDomainCPUModePreservesPlanValue(t *testing.T) {
 	}
 }
 
+func TestDomainGraphicSpiceListenPreservesPlanValueWhenXMLListenIsOmitted(t *testing.T) {
+	ctx := context.Background()
+
+	plan := &DomainGraphicSpiceModel{
+		Port:          types.Int64Null(),
+		TLSPort:       types.Int64Null(),
+		AutoPort:      types.BoolNull(),
+		Listen:        types.StringValue("0.0.0.0"),
+		Keymap:        types.StringNull(),
+		DefaultMode:   types.StringNull(),
+		Passwd:        types.StringNull(),
+		PasswdValidTo: types.StringNull(),
+		Connected:     types.StringNull(),
+		Listeners:     types.ListNull(types.ObjectType{AttrTypes: DomainGraphicListenerAttributeTypes()}),
+		Channel:       types.ListNull(types.ObjectType{AttrTypes: DomainGraphicSpiceChannelAttributeTypes()}),
+		Image:         types.ObjectNull(DomainGraphicSpiceImageAttributeTypes()),
+		JPEG:          types.ObjectNull(DomainGraphicSpiceJPEGAttributeTypes()),
+		ZLib:          types.ObjectNull(DomainGraphicSpiceZLibAttributeTypes()),
+		Playback:      types.ObjectNull(DomainGraphicSpicePlaybackAttributeTypes()),
+		Streaming:     types.ObjectNull(DomainGraphicSpiceStreamingAttributeTypes()),
+		Mouse:         types.ObjectNull(DomainGraphicSpiceMouseAttributeTypes()),
+		ClipBoard:     types.ObjectNull(DomainGraphicSpiceClipBoardAttributeTypes()),
+		FileTransfer:  types.ObjectNull(DomainGraphicSpiceFileTransferAttributeTypes()),
+		GL:            types.ObjectNull(DomainGraphicSpiceGLAttributeTypes()),
+	}
+
+	xmlSpice := &libvirtxml.DomainGraphicSpice{}
+
+	model, err := DomainGraphicSpiceFromXML(ctx, xmlSpice, plan)
+	if err != nil {
+		t.Fatalf("DomainGraphicSpiceFromXML failed: %v", err)
+	}
+
+	if model.Listen.IsNull() {
+		t.Fatal("Listen should not be null")
+	}
+
+	if got := model.Listen.ValueString(); got != "0.0.0.0" {
+		t.Fatalf("expected listen 0.0.0.0 from plan, got %q", got)
+	}
+}
+
 func TestDomainAddressPCIZeroValues(t *testing.T) {
 	ctx := context.Background()
 
