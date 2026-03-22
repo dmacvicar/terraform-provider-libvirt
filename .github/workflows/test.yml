@@ -118,7 +118,7 @@ jobs:
 
       - name: Install Terraform
         if: matrix.tf-binary == 'terraform'
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: latest
 
