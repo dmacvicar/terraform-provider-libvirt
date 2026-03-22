@@ -50,3 +50,29 @@ func TestApplyFieldPoliciesLeavesNestedIdentityUserManaged(t *testing.T) {
 		t.Fatalf("expected nested id to have no plan modifier, got %q", field.PlanModifier)
 	}
 }
+
+func TestApplyFieldPoliciesMarksReadbackPreservationOverrides(t *testing.T) {
+	structs := []*generator.StructIR{
+		{
+			Name: "DomainCPU",
+			Fields: []*generator.FieldIR{
+				{TFName: "mode"},
+			},
+		},
+		{
+			Name: "DomainGraphicSpice",
+			Fields: []*generator.FieldIR{
+				{TFName: "listen"},
+			},
+		},
+	}
+
+	ApplyFieldPolicies(structs)
+
+	if !structs[0].Fields[0].PreservePlannedValueOnReadbackOmit {
+		t.Fatal("expected DomainCPU.mode to preserve planned value on omitted readback")
+	}
+	if !structs[1].Fields[0].PreservePlannedValueOnReadbackOmit {
+		t.Fatal("expected DomainGraphicSpice.listen to preserve planned value on omitted readback")
+	}
+}

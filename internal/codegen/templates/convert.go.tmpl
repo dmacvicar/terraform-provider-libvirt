@@ -202,19 +202,20 @@ func {{ .Name }}FromXML(ctx context.Context, xml *libvirtxml.{{ .Name }}, plan *
 	} else {
 		model.Disks = types.ListNull(types.ObjectType{AttrTypes: DomainDiskAttributeTypes()})
 	}
-	{{- else if and (eq $structName "DomainCPU") (eq .GoName "Mode") }}
-	// Optional field: Mode
-	// Preserve explicit user mode to avoid libvirt normalization drift (e.g. host-model -> custom).
+	{{- else if .PreservePlannedValueOnReadbackOmit }}
+	// Optional field: {{ .GoName }}
+	// Preserve the planned value when libvirt omits or canonicalizes this field on
+	// readback, to avoid drift for user-managed optional scalars.
 	if plan == nil {
-		if xml.Mode != "" {
-			model.Mode = types.StringValue(xml.Mode)
+		if xml.{{ .GoName }} != "" {
+			model.{{ .GoName }} = types.StringValue(xml.{{ .GoName }})
 		} else {
-			model.Mode = types.StringNull()
+			model.{{ .GoName }} = types.StringNull()
 		}
-	} else if !plan.Mode.IsNull() && !plan.Mode.IsUnknown() {
-		model.Mode = plan.Mode
+	} else if !plan.{{ .GoName }}.IsNull() && !plan.{{ .GoName }}.IsUnknown() {
+		model.{{ .GoName }} = plan.{{ .GoName }}
 	} else {
-		model.Mode = types.StringNull()
+		model.{{ .GoName }} = types.StringNull()
 	}
 	{{- else }}
 	{{ template "fromXMLField" . }}

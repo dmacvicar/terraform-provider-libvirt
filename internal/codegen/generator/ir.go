@@ -141,6 +141,11 @@ type FieldIR struct {
 	// PreserveUserIntent means this optional field should only be set if user specified it
 	PreserveUserIntent bool
 
+	// PreservePlannedValueOnReadbackOmit means this optional scalar field should
+	// preserve the planned value when libvirt omits or canonicalizes it on
+	// readback.
+	PreservePlannedValueOnReadbackOmit bool
+
 	// StringToBool indicates this string field should be boolean in TF
 	StringToBool *StringToBoolPattern
 

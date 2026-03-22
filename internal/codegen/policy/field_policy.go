@@ -19,6 +19,7 @@ func applyStructPolicies(s *generator.StructIR) {
 		applyTopLevelIdentityPolicy(s, field)
 		applyTopLevelImmutabilityPolicy(s, field)
 		applyReportedFieldPolicy(s, field)
+		applyReadbackPreservationPolicy(s, field)
 	}
 }
 
@@ -88,6 +89,19 @@ func applyReportedFieldPolicy(s *generator.StructIR, field *generator.FieldIR) {
 			field.IsOptional = false
 			field.IsRequired = false
 			field.PreserveUserIntent = false
+		}
+	}
+}
+
+func applyReadbackPreservationPolicy(s *generator.StructIR, field *generator.FieldIR) {
+	switch s.Name {
+	case "DomainCPU":
+		if field.TFName == "mode" {
+			field.PreservePlannedValueOnReadbackOmit = true
+		}
+	case "DomainGraphicSpice":
+		if field.TFName == "listen" {
+			field.PreservePlannedValueOnReadbackOmit = true
 		}
 	}
 }
