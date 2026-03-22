@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"time"
 
 	golibvirt "github.com/digitalocean/go-libvirt"
@@ -963,55 +962,13 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// uuidPattern matches a standard UUID string (8-4-4-4-12 hex digits).
-var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-
-// ImportState imports an existing libvirt domain by UUID or name.
+// ImportState imports an existing libvirt domain by UUID.
 //
 // Usage:
 //
 //	terraform import libvirt_domain.myvm <uuid>
-//	terraform import libvirt_domain.myvm <name>
 func (r *DomainResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	id := req.ID
-
-	var domain golibvirt.Domain
-	var err error
-
-	if uuidPattern.MatchString(id) {
-		// Looks like a UUID — look up directly
-		domain, err = r.client.LookupDomainByUUID(id)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Domain Not Found",
-				fmt.Sprintf("No domain found with UUID %q: %s", id, err),
-			)
-			return
-		}
-	} else {
-		// Treat as domain name
-		domain, err = r.client.Libvirt().DomainLookupByName(id)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Domain Not Found",
-				fmt.Sprintf("No domain found with name %q: %s", id, err),
-			)
-			return
-		}
-	}
-
-	// Extract UUID from the looked-up domain
-	uuidStr := libvirt.UUIDString(domain.UUID)
-
-	tflog.Info(ctx, "Importing domain", map[string]any{
-		"id":   id,
-		"uuid": uuidStr,
-		"name": domain.Name,
-	})
-
-	// Set the UUID so Read can find the domain.
-	// We use path.Root("uuid") because that's the field Read uses for lookup.
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), uuidStr)...)
+	resource.ImportStatePassthroughID(ctx, path.Root("uuid"), req, resp)
 }
 
 // waitForDomainState waits for a domain to reach the specified state with a timeout
