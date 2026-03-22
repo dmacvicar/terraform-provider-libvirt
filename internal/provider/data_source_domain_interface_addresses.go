@@ -2,7 +2,9 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	golibvirt "github.com/digitalocean/go-libvirt"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
@@ -11,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 var _ datasource.DataSource = &DomainInterfaceAddressesDataSource{}
@@ -24,10 +27,11 @@ type DomainInterfaceAddressesDataSource struct {
 }
 
 type DomainInterfaceAddressesDataSourceModel struct {
-	ID         types.String            `tfsdk:"id"`
-	Domain     types.String            `tfsdk:"domain"`
-	Source     types.String            `tfsdk:"source"`
-	Interfaces []InterfaceAddressModel `tfsdk:"interfaces"`
+	ID           types.String            `tfsdk:"id"`
+	Domain       types.String            `tfsdk:"domain"`
+	Source       types.String            `tfsdk:"source"`
+	Interfaces   []InterfaceAddressModel `tfsdk:"interfaces"`
+	AgentTimeout types.Int64             `tfsdk:"agent_timeout"`
 }
 
 type InterfaceAddressModel struct {
@@ -72,6 +76,10 @@ func (d *DomainInterfaceAddressesDataSource) Schema(ctx context.Context, req dat
 				Validators: []validator.String{
 					stringvalidator.OneOf("lease", "agent", "any"),
 				},
+			},
+			"agent_timeout": schema.Int64Attribute{
+				Optional:            true,
+				MarkdownDescription: "The timeout in seconds to wait for interfaces to become available when using the `agent` source. QEMU guest agent may take some time to start after the domain is booted.",
 			},
 			"interfaces": schema.ListNestedAttribute{
 				Computed:            true,
@@ -167,31 +175,38 @@ func (d *DomainInterfaceAddressesDataSource) Read(ctx context.Context, req datas
 		return
 	}
 
-	// Determine source(s) to query
-	sources := []golibvirt.DomainInterfaceAddressesSource{}
+	// // Determine source(s) to query
+	sourceFuncs := []getInterfacesFunc{}
 	sourceStr := "any"
 	if !config.Source.IsNull() && !config.Source.IsUnknown() {
 		sourceStr = config.Source.ValueString()
 	}
 
-	switch sourceStr {
-	case "lease":
-		sources = []golibvirt.DomainInterfaceAddressesSource{golibvirt.DomainInterfaceAddressesSrcLease}
-	case "agent":
-		sources = []golibvirt.DomainInterfaceAddressesSource{golibvirt.DomainInterfaceAddressesSrcAgent}
-	case "any":
-		sources = []golibvirt.DomainInterfaceAddressesSource{
-			golibvirt.DomainInterfaceAddressesSrcLease,
-			golibvirt.DomainInterfaceAddressesSrcAgent,
-		}
+	timeout := time.Duration(0)
+	if !config.AgentTimeout.IsNull() && !config.AgentTimeout.IsUnknown() {
+		timeout = time.Duration(config.AgentTimeout.ValueInt64()) * time.Second
 	}
 
-	// Try each source until we get results
+	agentFn := getQEMUGuestAgentInterfaces(d.client, domain)
+	if timeout > 0 {
+		agentFn = getInterfacesWithRetry(ctx, agentFn, domain, timeout)
+	}
+
+	switch sourceStr {
+	case "lease":
+		sourceFuncs = append(sourceFuncs, getDHCPServerLeaseInterfaces(d.client, domain))
+	case "agent":
+		sourceFuncs = append(sourceFuncs, agentFn)
+	case "any":
+		sourceFuncs = append(sourceFuncs, getDHCPServerLeaseInterfaces(d.client, domain))
+		sourceFuncs = append(sourceFuncs, agentFn)
+	}
+
 	var ifaces []golibvirt.DomainInterface
 	var lastErr error
 
-	for _, source := range sources {
-		ifaces, err = d.client.Libvirt().DomainInterfaceAddresses(domain, uint32(source), 0)
+	for _, sourceFn := range sourceFuncs {
+		ifaces, err = sourceFn()
 		if err == nil && len(ifaces) > 0 {
 			// Found interfaces with at least one result
 			break
@@ -256,4 +271,77 @@ func (d *DomainInterfaceAddressesDataSource) Read(ctx context.Context, req datas
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+// getInterfacesFunc defines a function type that retrieves domain interfaces.
+type getInterfacesFunc func() ([]golibvirt.DomainInterface, error)
+
+// getDHCPServerLeaseInterfaces returns a function that retrieves interfaces using DHCP server leases.
+func getDHCPServerLeaseInterfaces(client *libvirt.Client, domain golibvirt.Domain) getInterfacesFunc {
+	return func() ([]golibvirt.DomainInterface, error) {
+		return client.Libvirt().DomainInterfaceAddresses(domain, uint32(golibvirt.DomainInterfaceAddressesSrcLease), 0)
+	}
+}
+
+// getQEMUGuestAgentInterfaces returns a function that retrieves interfaces using the QEMU guest agent.
+func getQEMUGuestAgentInterfaces(client *libvirt.Client, domain golibvirt.Domain) getInterfacesFunc {
+	return func() ([]golibvirt.DomainInterface, error) {
+		return client.Libvirt().DomainInterfaceAddresses(domain, uint32(golibvirt.DomainInterfaceAddressesSrcAgent), 0)
+	}
+}
+
+func getInterfacesWithRetry(ctx context.Context, fn getInterfacesFunc, domain golibvirt.Domain, timeout time.Duration) getInterfacesFunc {
+	return func() ([]golibvirt.DomainInterface, error) {
+		pollInterval := 5 * time.Second
+		ctxWithTimeout, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+
+		tflog.Debug(ctxWithTimeout, "Starting to wait and retry for interfaces to become available", map[string]interface{}{
+			"domain":   domain.Name,
+			"timeout":  timeout.String(),
+			"interval": pollInterval.String(),
+		})
+
+		ticker := time.NewTicker(pollInterval)
+		defer ticker.Stop()
+		retryCnt := 0
+		var lastErr error
+
+		for {
+			select {
+			case <-ctxWithTimeout.Done():
+				return nil, fmt.Errorf("timed out waiting for interfaces to become available: %w", lastErr)
+			case <-ticker.C:
+				retryCnt++
+				ifaces, err := fn()
+				if err != nil {
+					var libvirtErr golibvirt.Error
+					if errors.As(err, &libvirtErr) {
+						if libvirtErr.Code == uint32(golibvirt.ErrAgentUnresponsive) {
+							tflog.Debug(ctx, "Agent unresponsive", map[string]interface{}{
+								"attempt": retryCnt,
+								"error":   err.Error(),
+							})
+						} else {
+							tflog.Debug(ctx, "Libvirt error, will retry in 5 seconds", map[string]interface{}{
+								"attempt": retryCnt,
+								"error":   err.Error(),
+								"code":    libvirtErr.Code,
+							})
+						}
+					} else {
+						tflog.Debug(ctx, "Interfaces not available yet, will retry in 5 seconds", map[string]interface{}{
+							"attempt": retryCnt,
+							"error":   err.Error(),
+						})
+					}
+
+					lastErr = err
+					continue
+				}
+
+				return ifaces, nil
+			}
+		}
+	}
 }
