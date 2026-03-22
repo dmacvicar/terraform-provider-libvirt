@@ -195,6 +195,8 @@ Terraform state reflects what the user cares about, not the entire API response.
 
 For generated XML -> model conversions, see `internal/codegen/README.md`, especially the "Preserve User Intent For Optional Nested Objects" section. That generator-level rule is authoritative for optional nested object readback behavior.
 
+For codegen overrides, prefer the policy layer in `internal/codegen/policy/field_policy.go`. Add exact field overrides there using named policy functions rather than adding new struct/field special cases in generator templates. Template branches should stay generic unless the behavior is truly structural and cannot be expressed as field policy.
+
 **Computed** (not Optional) - Always read from API
 - Examples: `id`, `key`, `allocation`, `physical`
 - `model.Key = types.StringValue(xml.Key)`

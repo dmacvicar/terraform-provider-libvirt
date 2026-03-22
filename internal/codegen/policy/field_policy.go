@@ -2,6 +2,41 @@ package policy
 
 import "github.com/dmacvicar/terraform-provider-libvirt/v2/internal/codegen/generator"
 
+type fieldPolicy func(*generator.FieldIR)
+
+var fieldPolicies = map[string][]fieldPolicy{
+	"StoragePool.capacity": {
+		policyComputedReportedField,
+		policyUseStateForUnknown,
+		policyDisablePreserveUserIntent,
+	},
+	"StoragePool.allocation": {
+		policyComputedReportedField,
+		policyDisablePreserveUserIntent,
+	},
+	"StoragePool.available": {
+		policyComputedReportedField,
+		policyDisablePreserveUserIntent,
+	},
+	"StorageVolume.capacity": {
+		policyComputedReportedField,
+	},
+	"StorageVolume.allocation": {
+		policyComputedReportedField,
+		policyDisablePreserveUserIntent,
+	},
+	"StorageVolume.physical": {
+		policyComputedReportedField,
+		policyDisablePreserveUserIntent,
+	},
+	"DomainCPU.mode": {
+		policyPreservePlannedValueOnReadbackOmit,
+	},
+	"DomainGraphicSpice.listen": {
+		policyPreservePlannedValueOnReadbackOmit,
+	},
+}
+
 // ApplyFieldPolicies mutates the IR with Terraform-specific schema/conversion
 // semantics after structural reflection is complete.
 func ApplyFieldPolicies(structs []*generator.StructIR) {
@@ -18,8 +53,7 @@ func applyStructPolicies(s *generator.StructIR) {
 
 		applyTopLevelIdentityPolicy(s, field)
 		applyTopLevelImmutabilityPolicy(s, field)
-		applyReportedFieldPolicy(s, field)
-		applyReadbackPreservationPolicy(s, field)
+		applyExplicitFieldPolicies(s, field)
 	}
 }
 
@@ -58,50 +92,39 @@ func applyTopLevelImmutabilityPolicy(s *generator.StructIR, field *generator.Fie
 	}
 }
 
-func applyReportedFieldPolicy(s *generator.StructIR, field *generator.FieldIR) {
+func applyExplicitFieldPolicies(s *generator.StructIR, field *generator.FieldIR) {
 	if field.IsFlattenedUnit {
 		return
 	}
 
-	switch s.Name {
-	case "StoragePool":
-		switch field.TFName {
-		case "capacity":
-			field.IsComputed = true
-			field.IsOptional = false
-			field.IsRequired = false
-			field.PlanModifier = "UseStateForUnknown"
-			field.PreserveUserIntent = false
-		case "allocation", "available":
-			field.IsComputed = true
-			field.IsOptional = false
-			field.IsRequired = false
-			field.PreserveUserIntent = false
-		}
-	case "StorageVolume":
-		switch field.TFName {
-		case "capacity":
-			field.IsComputed = true
-			field.IsOptional = false
-			field.IsRequired = false
-		case "allocation", "physical":
-			field.IsComputed = true
-			field.IsOptional = false
-			field.IsRequired = false
-			field.PreserveUserIntent = false
-		}
+	key := fieldOverrideKey(s, field)
+	applyPolicies(field, fieldPolicies[key])
+}
+
+func fieldOverrideKey(s *generator.StructIR, field *generator.FieldIR) string {
+	return s.Name + "." + field.TFName
+}
+
+func applyPolicies(field *generator.FieldIR, policies []fieldPolicy) {
+	for _, policy := range policies {
+		policy(field)
 	}
 }
 
-func applyReadbackPreservationPolicy(s *generator.StructIR, field *generator.FieldIR) {
-	switch s.Name {
-	case "DomainCPU":
-		if field.TFName == "mode" {
-			field.PreservePlannedValueOnReadbackOmit = true
-		}
-	case "DomainGraphicSpice":
-		if field.TFName == "listen" {
-			field.PreservePlannedValueOnReadbackOmit = true
-		}
-	}
+func policyComputedReportedField(field *generator.FieldIR) {
+	field.IsComputed = true
+	field.IsOptional = false
+	field.IsRequired = false
+}
+
+func policyUseStateForUnknown(field *generator.FieldIR) {
+	field.PlanModifier = "UseStateForUnknown"
+}
+
+func policyDisablePreserveUserIntent(field *generator.FieldIR) {
+	field.PreserveUserIntent = false
+}
+
+func policyPreservePlannedValueOnReadbackOmit(field *generator.FieldIR) {
+	field.PreservePlannedValueOnReadbackOmit = true
 }

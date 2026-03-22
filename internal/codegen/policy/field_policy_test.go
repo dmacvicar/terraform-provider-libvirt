@@ -76,3 +76,56 @@ func TestApplyFieldPoliciesMarksReadbackPreservationOverrides(t *testing.T) {
 		t.Fatal("expected DomainGraphicSpice.listen to preserve planned value on omitted readback")
 	}
 }
+
+func TestApplyFieldPoliciesMarksReportedFieldOverrides(t *testing.T) {
+	structs := []*generator.StructIR{
+		{
+			Name: "StoragePool",
+			Fields: []*generator.FieldIR{
+				{TFName: "capacity", IsOptional: true, IsRequired: true, PreserveUserIntent: true},
+				{TFName: "allocation", IsOptional: true, IsRequired: true, PreserveUserIntent: true},
+			},
+		},
+		{
+			Name: "StorageVolume",
+			Fields: []*generator.FieldIR{
+				{TFName: "capacity", IsOptional: true, IsRequired: true},
+				{TFName: "physical", IsOptional: true, IsRequired: true, PreserveUserIntent: true},
+			},
+		},
+	}
+
+	ApplyFieldPolicies(structs)
+
+	poolCapacity := structs[0].Fields[0]
+	if !poolCapacity.IsComputed || poolCapacity.IsOptional || poolCapacity.IsRequired {
+		t.Fatal("expected StoragePool.capacity to be computed-only after override")
+	}
+	if poolCapacity.PlanModifier != "UseStateForUnknown" {
+		t.Fatalf("expected StoragePool.capacity plan modifier UseStateForUnknown, got %q", poolCapacity.PlanModifier)
+	}
+	if poolCapacity.PreserveUserIntent {
+		t.Fatal("expected StoragePool.capacity to disable PreserveUserIntent")
+	}
+
+	poolAllocation := structs[0].Fields[1]
+	if !poolAllocation.IsComputed || poolAllocation.IsOptional || poolAllocation.IsRequired {
+		t.Fatal("expected StoragePool.allocation to be computed-only after override")
+	}
+	if poolAllocation.PreserveUserIntent {
+		t.Fatal("expected StoragePool.allocation to disable PreserveUserIntent")
+	}
+
+	volumeCapacity := structs[1].Fields[0]
+	if !volumeCapacity.IsComputed || volumeCapacity.IsOptional || volumeCapacity.IsRequired {
+		t.Fatal("expected StorageVolume.capacity to be computed-only after override")
+	}
+
+	volumePhysical := structs[1].Fields[1]
+	if !volumePhysical.IsComputed || volumePhysical.IsOptional || volumePhysical.IsRequired {
+		t.Fatal("expected StorageVolume.physical to be computed-only after override")
+	}
+	if volumePhysical.PreserveUserIntent {
+		t.Fatal("expected StorageVolume.physical to disable PreserveUserIntent")
+	}
+}

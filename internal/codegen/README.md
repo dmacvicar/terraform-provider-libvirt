@@ -100,19 +100,29 @@ Examples:
 
 ### Override strategy
 
-When the default rules are not enough, use explicit overrides keyed by full Terraform or XML path rather than helper functions like `isUserManagedFooStruct`.
+When the default rules are not enough, use explicit overrides keyed by exact field identity rather than helper functions like `isUserManagedFooStruct`.
+
+Prefer declaring overrides in the policy layer as a registry of named policy functions, for example:
+
+- `StoragePool.capacity` → `policyComputedReportedField`, `policyUseStateForUnknown`
+- `DomainCPU.mode` → `policyPreservePlannedValueOnReadbackOmit`
+
+This keeps policy declarative and reviewable. Avoid encoding overrides as ad hoc conditionals in converter templates.
 
 Good override targets:
 
 - `storage_pool.capacity`
 - `storage_pool.allocation`
 - `storage_volume.physical`
+- `DomainCPU.mode`
+- `DomainGraphicSpice.listen`
 
 Avoid:
 
 - Struct-name allowlists for one field
 - Field-name heuristics that ignore nesting scope
 - Mixing reflection logic with provider semantics in the same function
+- Adding new `if struct == ... && field == ...` branches in generator templates when a policy override can express the behavior
 
 This keeps the generator predictable, makes exceptions easy to audit, and prevents the parser from turning into a collection of special cases.
 
