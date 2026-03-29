@@ -1,11 +1,16 @@
 package provider
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	libvirtclient "github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -378,6 +383,135 @@ func TestAccVolumeResource_uploadFromFile(t *testing.T) {
 	})
 }
 
+func TestAccVolumeResource_uploadFromHTTPWithContentLength(t *testing.T) {
+	poolPath := t.TempDir()
+	testContent := bytes.Repeat([]byte("a"), 1024*1024)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/image.raw" {
+			http.NotFound(w, r)
+			return
+		}
+
+		http.ServeContent(w, r, "image.raw", time.Time{}, bytes.NewReader(testContent))
+	}))
+	defer server.Close()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVolumeResourceConfigUploadFromURL("test-volume-upload-http", poolPath, server.URL+"/image.raw", nil),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_volume.test", "name", "test-volume-upload-http.img"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "pool", "test-pool-upload-url"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "target.format.type", "raw"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "capacity", "1048576"),
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "id"),
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "key"),
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "target.path"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccVolumeResource_uploadFromHTTPWithoutContentLengthUsesCapacity(t *testing.T) {
+	poolPath := t.TempDir()
+	testContent := bytes.Repeat([]byte("b"), 1024*1024)
+	expectedCapacity := int64(len(testContent))
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/image.raw" {
+			http.NotFound(w, r)
+			return
+		}
+
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			t.Fatal("response writer does not support flushing")
+		}
+
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.WriteHeader(http.StatusOK)
+
+		for offset := 0; offset < len(testContent); offset += 4096 {
+			end := offset + 4096
+			if end > len(testContent) {
+				end = len(testContent)
+			}
+			if _, err := w.Write(testContent[offset:end]); err != nil {
+				return
+			}
+			flusher.Flush()
+		}
+	}))
+	defer server.Close()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVolumeResourceConfigUploadFromURL("test-volume-upload-http-no-length", poolPath, server.URL+"/image.raw", &expectedCapacity),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_volume.test", "name", "test-volume-upload-http-no-length.img"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "pool", "test-pool-upload-url"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "target.format.type", "raw"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "capacity", "1048576"),
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "id"),
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "key"),
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "target.path"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccVolumeResource_uploadFromHTTPWithoutContentLengthRequiresCapacity(t *testing.T) {
+	poolPath := t.TempDir()
+	testContent := bytes.Repeat([]byte("c"), 1024*1024)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/image.raw" {
+			http.NotFound(w, r)
+			return
+		}
+
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			t.Fatal("response writer does not support flushing")
+		}
+
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.WriteHeader(http.StatusOK)
+
+		for offset := 0; offset < len(testContent); offset += 4096 {
+			end := offset + 4096
+			if end > len(testContent) {
+				end = len(testContent)
+			}
+			if _, err := w.Write(testContent[offset:end]); err != nil {
+				return
+			}
+			flusher.Flush()
+		}
+	}))
+	defer server.Close()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      testAccVolumeResourceConfigUploadFromURL("test-volume-upload-http-no-length-error", poolPath, server.URL+"/image.raw", nil),
+				ExpectError: regexp.MustCompile(`(?s)Missing Capacity.*upload source does not provide\s+Content-Length`),
+			},
+		},
+	})
+}
+
 func testAccVolumeResourceConfigUploadFromFile(name, poolPath, sourceFile string) string {
 	return fmt.Sprintf(`
 resource "libvirt_pool" "test" {
@@ -404,4 +538,37 @@ resource "libvirt_volume" "test" {
   }
 }
 `, name, poolPath, sourceFile)
+}
+
+func testAccVolumeResourceConfigUploadFromURL(name, poolPath, sourceURL string, capacity *int64) string {
+	capacityConfig := ""
+	if capacity != nil {
+		capacityConfig = fmt.Sprintf("  capacity = %d\n", *capacity)
+	}
+
+	return fmt.Sprintf(`
+resource "libvirt_pool" "test" {
+  name = "test-pool-upload-url"
+  type = "dir"
+  target = {
+    path = %[2]q
+  }
+}
+
+resource "libvirt_volume" "test" {
+  name = "%[1]s.img"
+  pool = libvirt_pool.test.name
+%[4]s  target = {
+    format = {
+      type = "raw"
+    }
+  }
+
+  create = {
+    content = {
+      url = %[3]q
+    }
+  }
+}
+`, name, poolPath, sourceURL, capacityConfig)
 }

@@ -276,15 +276,15 @@ resource "libvirt_volume" "ubuntu" {
       url = "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img"
     }
   }
-  # capacity is automatically detected from Content-Length header
+  # capacity is automatically detected from Content-Length when available
 }
 ```
 
 **Important notes:**
 1. **Format is required**: You must explicitly specify the `format` attribute (e.g., `"qcow2"`, `"raw"`). The legacy provider auto-detected format from file extension, but the new provider requires it.
-2. **Capacity is computed**: Like the legacy provider, `capacity` is automatically computed from the HTTP `Content-Length` header (or file size for local files). You don't need to specify it.
+2. **Capacity is computed when possible**: The provider uses the HTTP `Content-Length` header when available, or the file size for local files.
 3. **Local files supported**: You can use absolute paths or `file://` URIs for local files: `url = "/path/to/local.qcow2"` or `url = "file:///path/to/local.qcow2"`
-4. **Content-Length required**: For HTTPS URLs, the server must provide a `Content-Length` header. If it doesn't, volume creation will fail.
+4. **Set `capacity` when `Content-Length` is missing**: For HTTP(S) URLs that do not provide `Content-Length`, specify `capacity` explicitly.
 
 
 ## Contributing

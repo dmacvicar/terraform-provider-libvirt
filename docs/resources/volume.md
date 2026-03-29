@@ -65,7 +65,7 @@ resource "libvirt_volume" "ubuntu_base" {
       url = "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img"
     }
   }
-  # capacity is automatically computed from Content-Length header
+  # capacity is automatically computed from Content-Length when available
 }
 
 # Volume from local file upload

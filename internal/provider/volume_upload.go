@@ -11,15 +11,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-// URLStream represents a stream from a URL with its size
+// URLStream represents a stream from a URL with its optional size.
 type URLStream struct {
 	Reader io.ReadCloser
-	Size   int64
+	Size   *int64
 }
 
 // OpenURLStream opens a URL for reading and returns the stream with its size.
 // Supports:
-// - https:// URLs (requires Content-Length header)
+// - https:// URLs
 // - file:// URLs
 // - Plain absolute paths (treated as local files)
 func OpenURLStream(ctx context.Context, url string) (*URLStream, error) {
@@ -56,20 +56,22 @@ func openHTTPStream(ctx context.Context, url string) (*URLStream, error) {
 		return nil, fmt.Errorf("HTTP request failed with status %d: %s", resp.StatusCode, resp.Status)
 	}
 
-	// Require Content-Length header
-	if resp.ContentLength < 0 {
-		_ = resp.Body.Close()
-		return nil, fmt.Errorf("server did not provide Content-Length header, cannot determine volume size")
+	var size *int64
+	if resp.ContentLength >= 0 {
+		contentLength := resp.ContentLength
+		size = &contentLength
 	}
 
-	tflog.Debug(ctx, "HTTP stream opened", map[string]any{
-		"url":  url,
-		"size": resp.ContentLength,
-	})
+	logFields := map[string]any{"url": url}
+	if size != nil {
+		logFields["size"] = *size
+	}
+
+	tflog.Debug(ctx, "HTTP stream opened", logFields)
 
 	return &URLStream{
 		Reader: resp.Body,
-		Size:   resp.ContentLength,
+		Size:   size,
 	}, nil
 }
 
@@ -98,8 +100,10 @@ func openFileStream(ctx context.Context, path string) (*URLStream, error) {
 		"size": stat.Size(),
 	})
 
+	size := stat.Size()
+
 	return &URLStream{
 		Reader: file,
-		Size:   stat.Size(),
+		Size:   &size,
 	}, nil
 }

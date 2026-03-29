@@ -178,7 +178,7 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	// Check if we're uploading content from a URL
 	var uploadStream *URLStream
-	var uploadCapacity int64
+	var uploadCapacity *int64
 
 	if !model.Create.IsNull() && !model.Create.IsUnknown() {
 		var createModel VolumeCreateModel
@@ -213,17 +213,30 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 			uploadStream = stream
 			uploadCapacity = stream.Size
 
-			tflog.Info(ctx, "URL stream opened", map[string]any{
-				"url":  uploadURL,
-				"size": uploadCapacity,
-			})
+			logFields := map[string]any{"url": uploadURL}
+			if uploadCapacity != nil {
+				logFields["size"] = *uploadCapacity
+			}
+			tflog.Info(ctx, "URL stream opened", logFields)
 		}
 	}
 
-	// Determine capacity: from upload stream or from user-provided value
+	// Determine capacity: prefer the upload stream size when available,
+	// otherwise fall back to user-provided capacity.
 	var volumeCapacity int64
 	if uploadStream != nil {
-		volumeCapacity = uploadCapacity
+		switch {
+		case uploadCapacity != nil:
+			volumeCapacity = *uploadCapacity
+		case !model.Capacity.IsNull() && !model.Capacity.IsUnknown():
+			volumeCapacity = model.Capacity.ValueInt64()
+		default:
+			resp.Diagnostics.AddError(
+				"Missing Capacity",
+				"Volume capacity is required when the upload source does not provide Content-Length",
+			)
+			return
+		}
 	} else if model.Capacity.IsNull() || model.Capacity.IsUnknown() {
 		resp.Diagnostics.AddError(
 			"Missing Capacity",
@@ -290,12 +303,12 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		}()
 
 		tflog.Info(ctx, "Uploading content to volume", map[string]any{
-			"size": uploadCapacity,
+			"size": volumeCapacity,
 		})
 
 		// Upload the content using StorageVolUpload
-		// The 0 flag means start at offset 0, uploadCapacity is the length
-		err = r.client.Libvirt().StorageVolUpload(volume, uploadStream.Reader, 0, uint64(uploadCapacity), 0)
+		// The 0 flag means start at offset 0, volumeCapacity is the length.
+		err = r.client.Libvirt().StorageVolUpload(volume, uploadStream.Reader, 0, uint64(volumeCapacity), 0)
 		if err != nil {
 			// Upload failed, try to clean up the volume (ignore cleanup errors to preserve original error)
 			if delErr := r.client.Libvirt().StorageVolDelete(volume, 0); delErr != nil {
