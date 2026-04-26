@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -372,6 +373,42 @@ func TestAccVolumeResource_uploadFromFile(t *testing.T) {
 					resource.TestCheckResourceAttrSet("libvirt_volume.test", "id"),
 					resource.TestCheckResourceAttrSet("libvirt_volume.test", "key"),
 					resource.TestCheckResourceAttrSet("libvirt_volume.test", "target.path"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccVolumeResource_createContentChangeRequiresReplace(t *testing.T) {
+	poolPath := t.TempDir()
+
+	sourceDir := t.TempDir()
+	sourceFilePath1 := sourceDir + "/source1.img"
+	sourceFilePath2 := sourceDir + "/source2.img"
+
+	if err := os.WriteFile(sourceFilePath1, bytes.Repeat([]byte("a"), 1024*1024), 0644); err != nil {
+		t.Fatalf("Failed to create source1 file: %v", err)
+	}
+	if err := os.WriteFile(sourceFilePath2, bytes.Repeat([]byte("b"), 1024*1024), 0644); err != nil {
+		t.Fatalf("Failed to create source2 file: %v", err)
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVolumeResourceConfigUploadFromFile("test-volume-replace", poolPath, sourceFilePath1),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_volume.test", "name", "test-volume-replace.img"),
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "id"),
+				),
+			},
+			{
+				Config: testAccVolumeResourceConfigUploadFromFile("test-volume-replace", poolPath, sourceFilePath2),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_volume.test", "name", "test-volume-replace.img"),
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "id"),
 				),
 			},
 		},
