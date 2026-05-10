@@ -11,6 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -39,6 +43,32 @@ func (r *NetworkResource) Metadata(ctx context.Context, req resource.MetadataReq
 	resp.TypeName = req.ProviderTypeName + "_network"
 }
 
+func applyNetworkRequiresReplace(attrs map[string]schema.Attribute) map[string]schema.Attribute {
+	for name, attr := range attrs {
+		if name == "autostart" {
+			continue
+		}
+		switch a := attr.(type) {
+		case schema.StringAttribute:
+			a.PlanModifiers = append(a.PlanModifiers, stringplanmodifier.RequiresReplace())
+			attrs[name] = a
+		case schema.BoolAttribute:
+			a.PlanModifiers = append(a.PlanModifiers, boolplanmodifier.RequiresReplace())
+			attrs[name] = a
+		case schema.Int64Attribute:
+			a.PlanModifiers = append(a.PlanModifiers, int64planmodifier.RequiresReplace())
+			attrs[name] = a
+		case schema.SingleNestedAttribute:
+			a.PlanModifiers = append(a.PlanModifiers, objectplanmodifier.RequiresReplace())
+			attrs[name] = a
+		case schema.ListNestedAttribute:
+			a.PlanModifiers = append(a.PlanModifiers, listplanmodifier.RequiresReplace())
+			attrs[name] = a
+		}
+	}
+	return attrs
+}
+
 func (r *NetworkResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	// Get base bridge schema to override name as computed
 	baseBridgeAttr := mustSingleNestedAttribute(generated.NetworkBridgeSchemaAttribute(), "NetworkBridge")
@@ -53,7 +83,7 @@ func (r *NetworkResource) Schema(ctx context.Context, req resource.SchemaRequest
 	}
 
 	// Use generated schema with resource-specific overrides
-	resp.Schema = generated.NetworkSchema(map[string]schema.Attribute{
+	s := generated.NetworkSchema(map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Description: "Network identifier (UUID)",
 			Computed:    true,
@@ -71,6 +101,8 @@ func (r *NetworkResource) Schema(ctx context.Context, req resource.SchemaRequest
 			Computed:    true,
 		},
 	})
+	s.Attributes = applyNetworkRequiresReplace(s.Attributes)
+	resp.Schema = s
 }
 
 func (r *NetworkResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
