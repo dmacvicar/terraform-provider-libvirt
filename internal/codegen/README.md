@@ -106,6 +106,7 @@ Prefer declaring overrides in the policy layer as a registry of named policy fun
 
 - `StoragePool.capacity` → `policyComputedReportedField`, `policyUseStateForUnknown`
 - `DomainCPU.mode` → `policyPreservePlannedValueOnReadbackOmit`
+- `DomainInterfaceTarget.dev` → `policyPreservePlannedValueOnReadbackOmit` for host-generated interface names that libvirt may canonicalize on readback
 
 This keeps policy declarative and reviewable. Avoid encoding overrides as ad hoc conditionals in converter templates.
 

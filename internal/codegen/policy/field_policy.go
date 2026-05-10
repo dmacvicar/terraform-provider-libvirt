@@ -35,6 +35,9 @@ var fieldPolicies = map[string][]fieldPolicy{
 	"DomainGraphicSpice.listen": {
 		policyPreservePlannedValueOnReadbackOmit,
 	},
+	"DomainInterfaceTarget.dev": {
+		policyPreservePlannedValueOnReadbackOmit,
+	},
 }
 
 // ApplyFieldPolicies mutates the IR with Terraform-specific schema/conversion

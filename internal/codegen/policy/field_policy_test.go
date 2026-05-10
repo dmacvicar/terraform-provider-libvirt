@@ -65,6 +65,12 @@ func TestApplyFieldPoliciesMarksReadbackPreservationOverrides(t *testing.T) {
 				{TFName: "listen"},
 			},
 		},
+		{
+			Name: "DomainInterfaceTarget",
+			Fields: []*generator.FieldIR{
+				{TFName: "dev"},
+			},
+		},
 	}
 
 	ApplyFieldPolicies(structs)
@@ -74,6 +80,9 @@ func TestApplyFieldPoliciesMarksReadbackPreservationOverrides(t *testing.T) {
 	}
 	if !structs[1].Fields[0].PreservePlannedValueOnReadbackOmit {
 		t.Fatal("expected DomainGraphicSpice.listen to preserve planned value on omitted readback")
+	}
+	if !structs[2].Fields[0].PreservePlannedValueOnReadbackOmit {
+		t.Fatal("expected DomainInterfaceTarget.dev to preserve planned value on host-generated readback")
 	}
 }
 
