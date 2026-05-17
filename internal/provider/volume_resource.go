@@ -493,4 +493,5 @@ func (r *VolumeResource) Delete(ctx context.Context, req resource.DeleteRequest,
 // ImportState imports an existing storage volume
 func (r *VolumeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	resource.ImportStatePassthroughID(ctx, path.Root("key"), req, resp)
 }
