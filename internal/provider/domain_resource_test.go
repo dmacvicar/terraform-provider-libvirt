@@ -589,6 +589,53 @@ func TestAccDomainResource_updateWithRunning(t *testing.T) {
 	})
 }
 
+// TestAccDomainResource_updateRunningDomainIDConsistency verifies that updating
+// a running domain does not cause a "Provider produced inconsistent result after
+// apply" error on the id attribute when the domain restarts with a new runtime id.
+func TestAccDomainResource_updateRunningDomainIDConsistency(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigRunning("test-domain-id-consistency"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "running", "true"),
+					resource.TestCheckResourceAttrSet("libvirt_domain.test", "id"),
+				),
+			},
+			{
+				Config: testAccDomainResourceConfigRunningUpdated("test-domain-id-consistency"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "memory", "1024"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "running", "true"),
+					resource.TestCheckResourceAttrSet("libvirt_domain.test", "id"),
+				),
+			},
+		},
+	})
+}
+
+func testAccDomainResourceConfigRunningUpdated(name string) string {
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name        = %[1]q
+  memory      = 1024
+  memory_unit = "MiB"
+  vcpu        = 1
+  type        = "kvm"
+  running     = true
+
+  os = {
+    type         = "hvm"
+    type_arch    = "x86_64"
+    type_machine = "q35"
+  }
+}
+`, name)
+}
+
 func TestAccDomainResource_updateKeepsNvram(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
