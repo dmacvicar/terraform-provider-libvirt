@@ -71,6 +71,12 @@ func TestApplyFieldPoliciesMarksReadbackPreservationOverrides(t *testing.T) {
 				{TFName: "dev"},
 			},
 		},
+		{
+			Name: "DomainChardevSourceUNIX",
+			Fields: []*generator.FieldIR{
+				{TFName: "path"},
+			},
+		},
 	}
 
 	ApplyFieldPolicies(structs)
@@ -83,6 +89,9 @@ func TestApplyFieldPoliciesMarksReadbackPreservationOverrides(t *testing.T) {
 	}
 	if !structs[2].Fields[0].PreservePlannedValueOnReadbackOmit {
 		t.Fatal("expected DomainInterfaceTarget.dev to preserve planned value on host-generated readback")
+	}
+	if !structs[3].Fields[0].PreservePlannedValueOnReadbackOmit {
+		t.Fatal("expected DomainChardevSourceUNIX.path to preserve planned value against runtime rewrite")
 	}
 }
 

@@ -38,6 +38,12 @@ var fieldPolicies = map[string][]fieldPolicy{
 	"DomainInterfaceTarget.dev": {
 		policyPreservePlannedValueOnReadbackOmit,
 	},
+	"DomainChardevSourceUNIX.path": {
+		// libvirt rewrites this path at runtime for virtio guest-agent
+		// channels (e.g. /run/libvirt/qemu/channel/<id>-<name>/<target>),
+		// so the planned value must win against the readback value.
+		policyPreservePlannedValueOnReadbackOmit,
+	},
 }
 
 // ApplyFieldPolicies mutates the IR with Terraform-specific schema/conversion
