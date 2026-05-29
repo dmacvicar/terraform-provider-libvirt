@@ -1178,8 +1178,8 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		newState.Metadata = plan.Metadata
 	}
 
-	if newState.ID.IsNull() && !state.ID.IsNull() && !state.ID.IsUnknown() {
-		newState.ID = state.ID
+	if !plan.ID.IsNull() && !plan.ID.IsUnknown() {
+		newState.ID = plan.ID
 	}
 
 	if !newState.Autostart.IsNull() && !newState.Autostart.IsUnknown() {
