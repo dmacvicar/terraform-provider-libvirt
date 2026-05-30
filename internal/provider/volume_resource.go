@@ -352,6 +352,14 @@ func (r *VolumeResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
+	// After import only identity fields are populated. In that sparse state,
+	// read all XML-backed fields instead of preserving absent prior config.
+	isImport := model.Name.IsNull() || model.Name.IsUnknown()
+	var plan *generated.StorageVolumeModel
+	if !isImport {
+		plan = &model.StorageVolumeModel
+	}
+
 	// Look up the volume by key
 	volume, err := r.client.Libvirt().StorageVolLookupByKey(model.Key.ValueString())
 	if err != nil {
@@ -364,7 +372,7 @@ func (r *VolumeResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	// Read the volume state (use current state as plan to preserve user intent)
-	resp.Diagnostics.Append(r.readVolume(ctx, &model, volume, &model.StorageVolumeModel)...)
+	resp.Diagnostics.Append(r.readVolume(ctx, &model, volume, plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -414,6 +422,9 @@ func (r *VolumeResource) readVolume(ctx context.Context, model *VolumeResourceMo
 
 	// Update the embedded model
 	model.StorageVolumeModel = *volumeModel
+	model.ID = types.StringValue(volume.Key)
+	model.Key = types.StringValue(volume.Key)
+	model.Pool = types.StringValue(volume.Pool)
 
 	// Populate computed fields that generated conversion might skip
 	// target.path is Computed, always populate it
@@ -493,4 +504,5 @@ func (r *VolumeResource) Delete(ctx context.Context, req resource.DeleteRequest,
 // ImportState imports an existing storage volume
 func (r *VolumeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	resource.ImportStatePassthroughID(ctx, path.Root("key"), req, resp)
 }
