@@ -14,6 +14,7 @@ import (
 
 	libvirtclient "github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func init() {
@@ -77,6 +78,49 @@ func TestAccVolumeResource_basic(t *testing.T) {
 				),
 			},
 			// Delete testing automatically occurs in TestCase
+		},
+	})
+}
+
+func TestAccVolumeResource_importByKey(t *testing.T) {
+	poolPath := t.TempDir()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVolumeResourceConfigBasic("test-volume-import", poolPath),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("libvirt_volume.test", "key"),
+				),
+			},
+			{
+				ResourceName: "libvirt_volume.test",
+				ImportState:  true,
+				ImportStateIdFunc: func(state *terraform.State) (string, error) {
+					volume, ok := state.RootModule().Resources["libvirt_volume.test"]
+					if !ok {
+						return "", fmt.Errorf("libvirt_volume.test not found in state")
+					}
+
+					key := volume.Primary.Attributes["key"]
+					if key == "" {
+						return "", fmt.Errorf("libvirt_volume.test key not found in state")
+					}
+
+					return key, nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"allocation_unit",
+					"capacity_unit",
+					"physical_unit",
+					"target.permissions",
+					"target.timestamps",
+					"type",
+				},
+			},
 		},
 	})
 }
