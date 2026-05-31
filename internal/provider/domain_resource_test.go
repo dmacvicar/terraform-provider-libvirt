@@ -495,6 +495,32 @@ func TestAccDomainResource_running(t *testing.T) {
 	})
 }
 
+func TestAccDomainResource_runningRestartsStoppedDomain(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:             testAccDomainResourceConfigRunning("test-domain-running-restart"),
+				ExpectNonEmptyPlan: true,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "running", "true"),
+					testAccCheckDomainIsRunning("test-domain-running-restart"),
+					testAccCheckDomainStop("test-domain-running-restart"),
+				),
+			},
+			{
+				Config: testAccDomainResourceConfigRunning("test-domain-running-restart"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "running", "true"),
+					testAccCheckDomainIsRunning("test-domain-running-restart"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccDomainResource_destroyShutdownStoppedDomain(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -1013,6 +1039,49 @@ func testAccCheckDomainStart(name string) resource.TestCheckFunc {
 
 		if uint32(state) != uint32(golibvirt.DomainRunning) {
 			return fmt.Errorf("domain is not running, state = %d", state)
+		}
+
+		return nil
+	}
+}
+
+func testAccCheckDomainStop(name string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		ctx := context.Background()
+		client, err := libvirtclient.NewClient(ctx, testAccLibvirtURI())
+		if err != nil {
+			return fmt.Errorf("failed to create libvirt client: %w", err)
+		}
+		defer func() { _ = client.Close() }()
+
+		domains, _, err := client.Libvirt().ConnectListAllDomains(1, 0)
+		if err != nil {
+			return fmt.Errorf("failed to list domains: %w", err)
+		}
+
+		var targetDomain *golibvirt.Domain
+		for _, d := range domains {
+			if d.Name == name {
+				targetDomain = &d
+				break
+			}
+		}
+
+		if targetDomain == nil {
+			return fmt.Errorf("domain %s not found", name)
+		}
+
+		state, _, err := client.Libvirt().DomainGetState(*targetDomain, 0)
+		if err != nil {
+			return fmt.Errorf("failed to get domain state: %w", err)
+		}
+
+		if uint32(state) != uint32(golibvirt.DomainRunning) {
+			return fmt.Errorf("domain is not running before stop, state = %d", state)
+		}
+
+		if err := client.Libvirt().DomainDestroy(*targetDomain); err != nil {
+			return fmt.Errorf("failed to stop domain %s: %w", name, err)
 		}
 
 		return nil

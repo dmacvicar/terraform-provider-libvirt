@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	golibvirt "github.com/digitalocean/go-libvirt"
@@ -946,8 +947,9 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 		state.Autostart = types.BoolValue(autostart == 1)
 	}
 
-	// Read running state — always during import, preserve existing otherwise
-	if isImport {
+	// Read running state during import and when the user configured it, so
+	// Terraform can detect out-of-band shutdowns and re-apply running=true.
+	if isImport || (!state.Running.IsNull() && !state.Running.IsUnknown()) {
 		domainState, _, err := r.client.Libvirt().DomainGetState(domain, 0)
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -985,6 +987,48 @@ func waitForDomainState(client *libvirt.Client, domain golibvirt.Domain, targetS
 		time.Sleep(1 * time.Second)
 	}
 	return fmt.Errorf("timeout waiting for domain to reach state %d", targetState)
+}
+
+func (r *DomainResource) reconcileDomainRunning(ctx context.Context, domain golibvirt.Domain, plan *DomainResourceModel, waitConfigs []interfaceWaitForIPConfig, stopOptions domainStopOptions) error {
+	if plan.Running.IsNull() || plan.Running.IsUnknown() {
+		return nil
+	}
+
+	if plan.Running.ValueBool() {
+		flags, diags := domainStartFlagsFromCreate(ctx, plan.Create)
+		if diags.HasError() {
+			return fmt.Errorf("parse domain start flags: %s", diags.Errors()[0].Detail())
+		}
+
+		state, _, err := r.client.Libvirt().DomainGetState(domain, 0)
+		if err != nil {
+			return fmt.Errorf("check domain state: %w", err)
+		}
+
+		if uint32(state) != uint32(golibvirt.DomainRunning) {
+			if _, err := r.client.Libvirt().DomainCreateWithFlags(domain, flags); err != nil {
+				return fmt.Errorf("start domain: %w", err)
+			}
+		}
+
+		if err := waitForDomainState(r.client, domain, uint32(golibvirt.DomainRunning), 30*time.Second); err != nil {
+			return err
+		}
+
+		for _, waitCfg := range waitConfigs {
+			if err := waitForInterfaceIP(ctx, r.client, domain, waitCfg.MAC, waitCfg.Timeout, waitCfg.Source); err != nil {
+				return fmt.Errorf("wait for IP address (MAC: %s): %w", waitCfg.MAC, err)
+			}
+		}
+
+		return nil
+	}
+
+	if _, err := r.stopDomainIfRunning(domain, stopOptions); err != nil {
+		return err
+	}
+
+	return waitForDomainState(r.client, domain, uint32(golibvirt.DomainShutoff), 30*time.Second)
 }
 
 // Update updates the domain
@@ -1028,6 +1072,35 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 	updateOptions, updateDiags := domainUpdateOptionsFromUpdate(ctx, plan.Update)
 	resp.Diagnostics.Append(updateDiags...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	statePlanData, diags := prepareDomainPlan(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if !state.UUID.IsNull() && !state.UUID.IsUnknown() {
+		statePlanData.SanitizedModel.UUID = state.UUID
+	}
+
+	domainConfigUnchanged := reflect.DeepEqual(planData.SanitizedModel, statePlanData.SanitizedModel)
+	runningChanged := !plan.Running.Equal(state.Running)
+	autostartUnchanged := plan.Autostart.Equal(state.Autostart)
+	if domainConfigUnchanged && runningChanged && autostartUnchanged {
+		if err := r.reconcileDomainRunning(ctx, existingDomain, &plan, planData.WaitConfigs, updateOptions); err != nil {
+			resp.Diagnostics.AddError(
+				"Failed to Update Domain Running State",
+				"Domain configuration was unchanged, but failed to reconcile running state: "+err.Error(),
+			)
+			return
+		}
+
+		state.Running = plan.Running
+		state.Create = plan.Create
+		state.Update = plan.Update
+		state.Destroy = plan.Destroy
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 		return
 	}
 
