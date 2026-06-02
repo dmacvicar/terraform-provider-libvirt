@@ -98,6 +98,7 @@ resource "libvirt_volume" "from_local" {
 
 ### Optional
 
+- `allocation` (Number) Volume allocation in bytes. When unset, libvirt sparsely allocates the volume. Set equal to capacity to force a fully-allocated, non-sparse volume.
 - `allocation_unit` (String) Specifies the units for the allocated space in the storage volume.
 - `backing_store` (Attributes) Backing store configuration for copy-on-write volumes (see [below for nested schema](#nestedatt--backing_store))
 - `capacity` (Number) Volume capacity in bytes (required unless using create.content)
@@ -109,7 +110,6 @@ resource "libvirt_volume" "from_local" {
 
 ### Read-Only
 
-- `allocation` (Number) Configures the total amount of space allocated for the storage volume.
 - `id` (String) Volume identifier (same as key)
 - `key` (String) Defines a unique key identifier for the storage volume.
 - `path` (String) Volume path on the host filesystem (same as target.path)

@@ -110,6 +110,11 @@ func (r *VolumeResource) Schema(ctx context.Context, req resource.SchemaRequest,
 			Optional:    true,
 			Computed:    true,
 		},
+		"allocation": schema.Int64Attribute{
+			Description: "Volume allocation in bytes. When unset, libvirt sparsely allocates the volume. Set equal to capacity to force a fully-allocated, non-sparse volume.",
+			Optional:    true,
+			Computed:    true,
+		},
 		"target": schema.SingleNestedAttribute{
 			Optional:   true,
 			Attributes: targetAttrs,

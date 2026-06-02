@@ -23,7 +23,6 @@ var fieldPolicies = map[string][]fieldPolicy{
 	},
 	"StorageVolume.allocation": {
 		policyComputedReportedField,
-		policyDisablePreserveUserIntent,
 	},
 	"StorageVolume.physical": {
 		policyComputedReportedField,
