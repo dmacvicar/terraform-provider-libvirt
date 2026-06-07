@@ -110,6 +110,11 @@ func (r *VolumeResource) Schema(ctx context.Context, req resource.SchemaRequest,
 			Optional:    true,
 			Computed:    true,
 		},
+		"allocation": schema.Int64Attribute{
+			Description: "Initial volume allocation in bytes. Omit to use libvirt's default full allocation; set below capacity to request sparse allocation where supported.",
+			Optional:    true,
+			Computed:    true,
+		},
 		"target": schema.SingleNestedAttribute{
 			Optional:   true,
 			Attributes: targetAttrs,
@@ -225,30 +230,32 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		}
 	}
 
-	// Determine capacity: prefer the upload stream size when available,
-	// otherwise fall back to user-provided capacity.
+	// Determine volume capacity independently from upload length. A configured
+	// capacity may intentionally be larger than the source image.
 	var volumeCapacity int64
-	if uploadStream != nil {
-		switch {
-		case uploadCapacity != nil:
-			volumeCapacity = *uploadCapacity
-		case !model.Capacity.IsNull() && !model.Capacity.IsUnknown():
-			volumeCapacity = model.Capacity.ValueInt64()
-		default:
+	if !model.Capacity.IsNull() && !model.Capacity.IsUnknown() {
+		volumeCapacity = model.Capacity.ValueInt64()
+		if uploadCapacity != nil && volumeCapacity < *uploadCapacity {
 			resp.Diagnostics.AddError(
-				"Missing Capacity",
-				"Volume capacity is required when the upload source does not provide Content-Length",
+				"Insufficient Capacity",
+				fmt.Sprintf("Configured volume capacity %d is smaller than upload content length %d", volumeCapacity, *uploadCapacity),
 			)
 			return
 		}
-	} else if model.Capacity.IsNull() || model.Capacity.IsUnknown() {
+	} else if uploadCapacity != nil {
+		volumeCapacity = *uploadCapacity
+	} else if uploadStream != nil {
+		resp.Diagnostics.AddError(
+			"Missing Capacity",
+			"Volume capacity is required when the upload source does not provide Content-Length",
+		)
+		return
+	} else {
 		resp.Diagnostics.AddError(
 			"Missing Capacity",
 			"Volume capacity is required when not uploading from a URL",
 		)
 		return
-	} else {
-		volumeCapacity = model.Capacity.ValueInt64()
 	}
 
 	// Create a model for XML conversion with computed capacity
@@ -306,13 +313,18 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 			}
 		}()
 
+		uploadLength := volumeCapacity
+		if uploadCapacity != nil {
+			uploadLength = *uploadCapacity
+		}
+
 		tflog.Info(ctx, "Uploading content to volume", map[string]any{
-			"size": volumeCapacity,
+			"size": uploadLength,
 		})
 
 		// Upload the content using StorageVolUpload
-		// The 0 flag means start at offset 0, volumeCapacity is the length.
-		err = r.client.Libvirt().StorageVolUpload(volume, uploadStream.Reader, 0, uint64(volumeCapacity), 0)
+		// The 0 flag means start at offset 0; length is the source byte count.
+		err = r.client.Libvirt().StorageVolUpload(volume, uploadStream.Reader, 0, uint64(uploadLength), 0)
 		if err != nil {
 			// Upload failed, try to clean up the volume (ignore cleanup errors to preserve original error)
 			if delErr := r.client.Libvirt().StorageVolDelete(volume, 0); delErr != nil {

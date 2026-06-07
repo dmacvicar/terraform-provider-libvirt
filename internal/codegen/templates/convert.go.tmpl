@@ -636,7 +636,7 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 {{- define "toXMLField" }}
 {{- if .IsFlattenedValue }}
 	// Flattened chardata+attributes field: {{ .GoName }}
-	if !model.{{ .GoName }}.IsNull() {
+	if !model.{{ .GoName }}.IsNull() && !model.{{ .GoName }}.IsUnknown() {
 		{{- $valueType := .NestedStruct.ValueWithUnitPattern.ValueGoType }}
 		{{- $valueField := .NestedStruct.ValueWithUnitPattern.ValueFieldName }}
 		{{- if .IsPointer }}
@@ -653,7 +653,7 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 		}
 		// Set attributes if user specified them
 		{{- range .NestedStruct.ValueWithUnitPattern.AttributeFields }}
-		if !model.{{ $.GoName }}{{ .GoName }}.IsNull() {
+		if !model.{{ $.GoName }}{{ .GoName }}.IsNull() && !model.{{ $.GoName }}{{ .GoName }}.IsUnknown() {
 			{{- if eq .GoType "string" }}
 			xml.{{ $.GoName }}.{{ .GoName }} = model.{{ $.GoName }}{{ .GoName }}.ValueString()
 			{{- else if eq .GoType "uint" }}
@@ -679,7 +679,7 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 		}
 		// Set attributes if user specified them
 		{{- range .NestedStruct.ValueWithUnitPattern.AttributeFields }}
-		if !model.{{ $.GoName }}{{ .GoName }}.IsNull() {
+		if !model.{{ $.GoName }}{{ .GoName }}.IsNull() && !model.{{ $.GoName }}{{ .GoName }}.IsUnknown() {
 			{{- if eq .GoType "string" }}
 			xml.{{ $.GoName }}.{{ .GoName }} = model.{{ $.GoName }}{{ .GoName }}.ValueString()
 			{{- else if eq .GoType "uint" }}

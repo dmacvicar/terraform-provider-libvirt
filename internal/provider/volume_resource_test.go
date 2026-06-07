@@ -77,7 +77,55 @@ func TestAccVolumeResource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("libvirt_volume.test", "allocation"),
 				),
 			},
+			{
+				Config:   testAccVolumeResourceConfigBasic("test-volume", poolPath),
+				PlanOnly: true,
+			},
 			// Delete testing automatically occurs in TestCase
+		},
+	})
+}
+
+func TestAccVolumeResource_explicitSparseAllocation(t *testing.T) {
+	poolPath := t.TempDir()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVolumeResourceConfigAllocation("test-volume-sparse", poolPath, 0),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_volume.test", "capacity", "1048576"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "allocation", "0"),
+				),
+			},
+			{
+				Config:   testAccVolumeResourceConfigAllocation("test-volume-sparse", poolPath, 0),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func TestAccVolumeResource_explicitFullAllocation(t *testing.T) {
+	poolPath := t.TempDir()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVolumeResourceConfigAllocation("test-volume-full", poolPath, 1024*1024),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_volume.test", "capacity", "1048576"),
+					resource.TestCheckResourceAttr("libvirt_volume.test", "allocation", "1048576"),
+				),
+			},
+			{
+				Config:   testAccVolumeResourceConfigAllocation("test-volume-full", poolPath, 1024*1024),
+				PlanOnly: true,
+			},
 		},
 	})
 }
@@ -497,6 +545,41 @@ func TestAccVolumeResource_uploadFromHTTPWithContentLength(t *testing.T) {
 	})
 }
 
+func TestAccVolumeResource_uploadIntoLargerCapacity(t *testing.T) {
+	poolPath := t.TempDir()
+	testContent := bytes.Repeat([]byte("d"), 1024*1024)
+	requestedCapacity := int64(2 * 1024 * 1024)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/image.raw" {
+			http.NotFound(w, r)
+			return
+		}
+
+		http.ServeContent(w, r, "image.raw", time.Time{}, bytes.NewReader(testContent))
+	}))
+	defer server.Close()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccVolumeResourceConfigUploadFromURL(
+					"test-volume-upload-larger",
+					poolPath,
+					server.URL+"/image.raw",
+					&requestedCapacity,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_volume.test", "capacity", "2097152"),
+					testAccCheckVolumeFileSize("libvirt_volume.test", requestedCapacity),
+				),
+			},
+		},
+	})
+}
+
 func TestAccVolumeResource_uploadFromHTTPWithoutContentLengthUsesCapacity(t *testing.T) {
 	poolPath := t.TempDir()
 	testContent := bytes.Repeat([]byte("b"), 1024*1024)
@@ -618,6 +701,53 @@ resource "libvirt_volume" "test" {
   }
 }
 `, name, poolPath, sourceFile)
+}
+
+func testAccVolumeResourceConfigAllocation(name, poolPath string, allocation int64) string {
+	return fmt.Sprintf(`
+resource "libvirt_pool" "test" {
+  name = "test-pool-allocation-%[1]s"
+  type = "dir"
+  target = {
+    path = %[2]q
+  }
+}
+
+resource "libvirt_volume" "test" {
+  name       = "%[1]s.raw"
+  pool       = libvirt_pool.test.name
+  capacity   = 1048576
+  allocation = %[3]d
+  target = {
+    format = {
+      type = "raw"
+    }
+  }
+}
+`, name, poolPath, allocation)
+}
+
+func testAccCheckVolumeFileSize(resourceName string, expected int64) resource.TestCheckFunc {
+	return func(state *terraform.State) error {
+		volume, ok := state.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("%s not found in state", resourceName)
+		}
+
+		path := volume.Primary.Attributes["path"]
+		if path == "" {
+			return fmt.Errorf("%s path not found in state", resourceName)
+		}
+
+		info, err := os.Stat(path)
+		if err != nil {
+			return fmt.Errorf("stat volume %s: %w", path, err)
+		}
+		if info.Size() != expected {
+			return fmt.Errorf("expected volume file size %d, got %d", expected, info.Size())
+		}
+		return nil
+	}
 }
 
 func testAccVolumeResourceConfigUploadFromURL(name, poolPath, sourceURL string, capacity *int64) string {

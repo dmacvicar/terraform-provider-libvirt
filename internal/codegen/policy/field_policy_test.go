@@ -109,6 +109,7 @@ func TestApplyFieldPoliciesMarksReportedFieldOverrides(t *testing.T) {
 			Fields: []*generator.FieldIR{
 				{TFName: "capacity", IsOptional: true, IsRequired: true},
 				{TFName: "physical", IsOptional: true, IsRequired: true, PreserveUserIntent: true},
+				{TFName: "allocation", IsOptional: true, IsRequired: true, PreserveUserIntent: true},
 			},
 		},
 	}
@@ -145,5 +146,13 @@ func TestApplyFieldPoliciesMarksReportedFieldOverrides(t *testing.T) {
 	}
 	if volumePhysical.PreserveUserIntent {
 		t.Fatal("expected StorageVolume.physical to disable PreserveUserIntent")
+	}
+
+	volumeAllocation := structs[1].Fields[2]
+	if !volumeAllocation.IsComputed || volumeAllocation.IsOptional || volumeAllocation.IsRequired {
+		t.Fatal("expected StorageVolume.allocation to be computed in the IR after override")
+	}
+	if !volumeAllocation.PreserveUserIntent {
+		t.Fatal("expected StorageVolume.allocation to preserve user intent")
 	}
 }

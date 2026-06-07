@@ -987,3 +987,66 @@ func TestDomainConsoleFromXMLPreservesPlannedAliasWhenXMLAliasIsOmitted(t *testi
 		t.Fatalf("expected alias name serial0, got %v", got.Name)
 	}
 }
+
+func TestStorageVolumeToXMLAllocationSemantics(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name       string
+		allocation types.Int64
+		wantNil    bool
+		wantValue  uint64
+	}{
+		{
+			name:       "null is omitted",
+			allocation: types.Int64Null(),
+			wantNil:    true,
+		},
+		{
+			name:       "unknown is omitted",
+			allocation: types.Int64Unknown(),
+			wantNil:    true,
+		},
+		{
+			name:       "explicit zero requests sparse allocation",
+			allocation: types.Int64Value(0),
+			wantValue:  0,
+		},
+		{
+			name:       "explicit capacity requests full allocation",
+			allocation: types.Int64Value(1024 * 1024),
+			wantValue:  1024 * 1024,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := &StorageVolumeModel{
+				Name:           types.StringValue("test-volume"),
+				Allocation:     tt.allocation,
+				AllocationUnit: types.StringNull(),
+				Capacity:       types.Int64Value(1024 * 1024),
+				CapacityUnit:   types.StringNull(),
+			}
+
+			xml, err := StorageVolumeToXML(ctx, model)
+			if err != nil {
+				t.Fatalf("StorageVolumeToXML failed: %v", err)
+			}
+
+			if tt.wantNil {
+				if xml.Allocation != nil {
+					t.Fatalf("expected allocation to be omitted, got %+v", xml.Allocation)
+				}
+				return
+			}
+
+			if xml.Allocation == nil {
+				t.Fatal("expected allocation to be present")
+			}
+			if xml.Allocation.Value != tt.wantValue {
+				t.Fatalf("expected allocation %d, got %d", tt.wantValue, xml.Allocation.Value)
+			}
+		})
+	}
+}
