@@ -363,8 +363,11 @@ func (r *NetworkResource) ImportState(ctx context.Context, req resource.ImportSt
 
 // readNetwork reads network state from libvirt and populates the model
 func (r *NetworkResource) readNetwork(ctx context.Context, model *NetworkResourceModel, net golibvirt.Network, plan *generated.NetworkModel) error {
-	// Get network XML
-	xmlDoc, err := r.client.Libvirt().NetworkGetXMLDesc(net, 0)
+	// Get network XML - use flag 1 (VIR_NETWORK_XML_INACTIVE) to read the persistent
+	// configuration instead of the active configuration. This ensures that updates
+	// to active networks (like DNS host entries) are visible immediately after
+	// Apply, since virNetworkDefineXML only updates the persistent config.
+	xmlDoc, err := r.client.Libvirt().NetworkGetXMLDesc(net, 1)
 	if err != nil {
 		return fmt.Errorf("failed to get network XML: %w", err)
 	}
