@@ -304,8 +304,9 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		model.ID = types.StringValue(volume.Key)
 		model.Key = types.StringValue(volume.Key)
 
-		// Read back the full state (nil plan means populate all fields from XML)
-		resp.Diagnostics.Append(r.readVolume(ctx, &model, volume, nil)...)
+		// Read back the full state using user's plan to preserve their intent (name, target, etc.)
+		planModel := model.StorageVolumeModel
+		resp.Diagnostics.Append(r.readVolume(ctx, &model, volume, &planModel)...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
