@@ -28,13 +28,14 @@ type CloudInitDiskResource struct {
 
 // CloudInitDiskResourceModel describes the resource data model
 type CloudInitDiskResourceModel struct {
-	ID            types.String `tfsdk:"id"`
-	Name          types.String `tfsdk:"name"`
-	UserData      types.String `tfsdk:"user_data"`
-	MetaData      types.String `tfsdk:"meta_data"`
-	NetworkConfig types.String `tfsdk:"network_config"`
-	Path          types.String `tfsdk:"path"`
-	Size          types.Int64  `tfsdk:"size"`
+	ID               types.String `tfsdk:"id"`
+	Name             types.String `tfsdk:"name"`
+	UserData         types.String `tfsdk:"user_data"`
+	MetaData         types.String `tfsdk:"meta_data"`
+	NetworkConfig    types.String `tfsdk:"network_config"`
+	StagingDirectory types.String `tfsdk:"staging_directory"`
+	Path             types.String `tfsdk:"path"`
+	Size             types.Int64  `tfsdk:"size"`
 }
 
 // NewCloudInitDiskResource creates a new cloud-init disk resource
@@ -120,6 +121,20 @@ See the [cloud-init documentation](https://cloudinit.readthedocs.io/) for config
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
+			"staging_directory": schema.StringAttribute{
+				Description: "Directory to stage the generated ISO in before it is uploaded to a libvirt volume. " +
+					"Defaults to a subdirectory of the OS temp directory (os.TempDir()) if unset. " +
+					"On Linux, the default temp directory is commonly tmpfs-backed and is cleared on every " +
+					"reboot; since this resource's existence is verified by checking whether the staged file " +
+					"still exists (see Read()), losing that file causes Terraform to report the resource, and " +
+					"anything downstream referencing its `path`, as needing full recreation, even though " +
+					"nothing about the actual configuration changed. Set this to a directory that persists " +
+					"across reboots (e.g. a path inside your Terraform project root) to avoid that.",
+				Optional: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
 			"path": schema.StringAttribute{
 				Description: "Full path to the generated ISO file",
 				Computed:    true,
@@ -166,8 +181,15 @@ func (r *CloudInitDiskResource) Create(ctx context.Context, req resource.CreateR
 	checksum := fmt.Sprintf("%x", h.Sum(nil))
 	model.ID = types.StringValue(checksum[:16]) // Use first 16 chars of checksum
 
-	// Create temp directory for cloud-init ISOs if it doesn't exist
-	tmpDir := filepath.Join(os.TempDir(), "terraform-provider-libvirt-cloudinit")
+	// Create temp directory for cloud-init ISOs if it doesn't exist.
+	// If the user has set "staging_directory", use that instead of the OS temp
+	// directory -- see the schema description for why this matters.
+	var tmpDir string
+	if !model.StagingDirectory.IsNull() && model.StagingDirectory.ValueString() != "" {
+		tmpDir = model.StagingDirectory.ValueString()
+	} else {
+		tmpDir = filepath.Join(os.TempDir(), "terraform-provider-libvirt-cloudinit")
+	}
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to Create Temp Directory",

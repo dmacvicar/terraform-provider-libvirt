@@ -70,6 +70,75 @@ func TestAccCloudInitDiskResource_withVolume(t *testing.T) {
 	})
 }
 
+func TestAccCloudInitDiskResource_stagingDirectory(t *testing.T) {
+	stagingDir := t.TempDir()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccCloudInitDiskResourceConfigStagingDirectory("test-cloudinit-staging", stagingDir),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_cloudinit_disk.test", "name", "test-cloudinit-staging"),
+					resource.TestCheckResourceAttr("libvirt_cloudinit_disk.test", "staging_directory", stagingDir),
+					resource.TestCheckResourceAttrSet("libvirt_cloudinit_disk.test", "path"),
+					testAccCheckCloudInitDiskExistsInDir("libvirt_cloudinit_disk.test", stagingDir),
+				),
+			},
+		},
+	})
+}
+
+// testAccCheckCloudInitDiskExistsInDir verifies that the ISO file exists on
+// disk inside a specific, caller-supplied directory -- used to confirm
+// staging_directory actually controls where the file is written, rather
+// than the resource silently falling back to os.TempDir().
+func testAccCheckCloudInitDiskExistsInDir(resourceName, expectedDir string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("not found: %s", resourceName)
+		}
+
+		path := rs.Primary.Attributes["path"]
+		if path == "" {
+			return fmt.Errorf("no path is set for %s", resourceName)
+		}
+
+		if _, err := os.Stat(path); err != nil {
+			return fmt.Errorf("ISO file does not exist at %s: %w", path, err)
+		}
+
+		if !strings.HasPrefix(path, expectedDir) {
+			return fmt.Errorf("ISO file is not in the configured staging_directory: got %s, expected prefix %s", path, expectedDir)
+		}
+
+		return nil
+	}
+}
+
+func testAccCloudInitDiskResourceConfigStagingDirectory(name, stagingDir string) string {
+	return fmt.Sprintf(`
+resource "libvirt_cloudinit_disk" "test" {
+  name              = %[1]q
+  staging_directory = %[2]q
+  user_data = <<-EOF
+    #cloud-config
+    users:
+      - name: root
+        ssh_authorized_keys:
+          - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0/Ho1w+1D4vJccMzEQBzREzCY4NjkrJYh8+9rQJgDrYPrWLe1PJYvDG6r1uDlLrZJhwwq1PcJQw test@example.com
+  EOF
+
+  meta_data = <<-EOF
+    instance-id: %[1]s-001
+    local-hostname: %[1]s
+  EOF
+}
+`, name, stagingDir)
+}
+
 // testAccCheckCloudInitDiskExists verifies that the ISO file exists on disk
 func testAccCheckCloudInitDiskExists(resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
