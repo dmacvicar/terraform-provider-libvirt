@@ -521,6 +521,31 @@ func TestAccDomainResource_runningRestartsStoppedDomain(t *testing.T) {
 	})
 }
 
+func TestAccDomainResource_waitForIPReadbackOnRunningChange(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		CheckDestroy:             testAccCheckDomainDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDomainResourceConfigRunningWithWaitForIP("test-domain-wait-for-ip", false, true),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "name", "test-domain-wait-for-ip"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "running", "false"),
+					resource.TestCheckResourceAttr("libvirt_domain.test", "devices.interfaces.0.wait_for_ip.source", "lease"),
+				),
+			},
+			{
+				Config: testAccDomainResourceConfigRunningWithWaitForIP("test-domain-wait-for-ip", true, false),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("libvirt_domain.test", "running", "true"),
+					testAccCheckDomainIsRunning("test-domain-wait-for-ip"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccDomainResource_destroyShutdownStoppedDomain(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -825,6 +850,49 @@ resource "libvirt_domain" "test" {
   }
 }
 `, name)
+}
+
+func testAccDomainResourceConfigRunningWithWaitForIP(name string, running, waitForIP bool) string {
+	waitBlock := ""
+	if waitForIP {
+		waitBlock = `
+        wait_for_ip = {
+          source  = "lease"
+          timeout = 5
+        }`
+	}
+
+	return fmt.Sprintf(`
+resource "libvirt_domain" "test" {
+  name    = %[1]q
+  memory  = 512
+  memory_unit    = "MiB"
+  vcpu    = 1
+  type    = "kvm"
+  running = %[2]t
+
+  os = {
+    type    = "hvm"
+    type_arch    = "x86_64"
+    type_machine = "q35"
+  }
+
+  devices = {
+    interfaces = [
+      {
+        source = {
+          network = {
+            network = "default"
+          }
+        }
+        model = {
+          type = "virtio"
+        }%[3]s
+      },
+    ]
+  }
+}
+`, name, running, waitBlock)
 }
 
 func testAccDomainResourceConfigDestroyShutdownStopped(name string, timeout int64) string {

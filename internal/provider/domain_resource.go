@@ -1100,6 +1100,11 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		state.Create = plan.Create
 		state.Update = plan.Update
 		state.Destroy = plan.Destroy
+		state.Devices, diags = applyWaitForIPValues(ctx, state.Devices, planData.WaitAttributes)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 		return
 	}
