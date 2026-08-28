@@ -484,8 +484,19 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 		model.{{ .GoName }} = types.ObjectNull({{ .NestedStruct.Name }}AttributeTypes())
 	}
 	{{- else }}
-	{
-		nested{{ .GoName }}, err := {{ .NestedStruct.Name }}FromXML(ctx, &xml.{{ .GoName }}, nil)
+	// Only populate if in plan or no plan (import/datasource)
+	if plan == nil || (!plan.{{ .GoName }}.IsNull() && !plan.{{ .GoName }}.IsUnknown()) {
+		// Extract nested plan for user intent preservation
+		var nested{{ .GoName }}Plan *{{ .NestedStruct.Name }}Model
+		if plan != nil {
+			var planObj {{ .NestedStruct.Name }}Model
+			if diags := plan.{{ .GoName }}.As(ctx, &planObj, basetypes.ObjectAsOptions{}); diags.HasError() {
+				return nil, fmt.Errorf("converting planned {{ .GoName }} from Object: %s", diags.Errors()[0].Summary())
+			}
+			nested{{ .GoName }}Plan = &planObj
+		}
+
+		nested{{ .GoName }}, err := {{ .NestedStruct.Name }}FromXML(ctx, &xml.{{ .GoName }}, nested{{ .GoName }}Plan)
 		if err != nil {
 			return nil, err
 		}
@@ -498,6 +509,8 @@ func {{ .Name }}ToXML(ctx context.Context, model *{{ .Name }}Model) (*libvirtxml
 		} else {
 			model.{{ .GoName }} = types.ObjectNull({{ .NestedStruct.Name }}AttributeTypes())
 		}
+	} else {
+		model.{{ .GoName }} = types.ObjectNull({{ .NestedStruct.Name }}AttributeTypes())
 	}
 	{{- end}}
 {{- else if .IsRequired }}
