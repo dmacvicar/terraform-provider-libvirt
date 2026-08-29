@@ -663,6 +663,17 @@ func (r *DomainResource) stopDomainIfRunning(domain golibvirt.Domain, options do
 				return true, fmt.Errorf("wait for shutdown: %w", err)
 			}
 
+			// The guest may have shut down on its own after the timeout but
+			// before the force stop. Re-check state so we don't fail on a
+			// "domain is not running" error from DomainDestroyFlags.
+			state, _, stateErr := r.client.Libvirt().DomainGetState(domain, 0)
+			if stateErr != nil {
+				return false, fmt.Errorf("check domain state before force stop: %w", stateErr)
+			}
+			if uint32(state) != uint32(golibvirt.DomainRunning) {
+				return false, nil
+			}
+
 			if destroyErr := r.client.Libvirt().DomainDestroyFlags(domain, options.Flags); destroyErr != nil {
 				return false, fmt.Errorf("force stop after shutdown timeout: %w", destroyErr)
 			}
