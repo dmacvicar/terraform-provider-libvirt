@@ -784,6 +784,7 @@ func TestDomainDeviceListFromXMLPreservesDiskOrderByTargetDev(t *testing.T) {
 			Network:       types.ObjectNull(DomainDiskSourceNetworkAttributeTypes()),
 			Volume:        volObj,
 			NVME:          types.ObjectNull(DomainDiskSourceNVMEAttributeTypes()),
+			Ctl:           types.ObjectNull(DomainDiskSourceCtlAttributeTypes()),
 			VHostUser:     types.ObjectNull(DomainDiskSourceVHostUserAttributeTypes()),
 			VHostVDPA:     types.ObjectNull(DomainDiskSourceVHostVDPAAttributeTypes()),
 			StartupPolicy: types.StringNull(),
