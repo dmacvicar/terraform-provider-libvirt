@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/netip"
 	"reflect"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -51,6 +53,7 @@ type DomainResourceModel struct {
 type DomainInterfaceWaitForIPModel struct {
 	Timeout types.Int64  `tfsdk:"timeout"`
 	Source  types.String `tfsdk:"source"`
+	Network types.String `tfsdk:"network"`
 }
 
 type interfaceWaitForIPConfig struct {
@@ -58,6 +61,7 @@ type interfaceWaitForIPConfig struct {
 	MAC       string
 	Timeout   int64
 	Source    string
+	Network   string
 	Attribute attr.Value
 }
 
@@ -142,7 +146,37 @@ func domainInterfaceWaitForIPSchemaAttribute() schema.SingleNestedAttribute {
 				Description: "Source to query for IP addresses: 'lease', 'agent', or 'any'. Default: 'any'.",
 				Optional:    true,
 			},
+			"network": schema.StringAttribute{
+				Description: "CIDR network prefix to wait for (e.g. \"0.0.0.0/0\" for any IPv4, \"::/0\" for any IPv6). If omitted, any address satisfies the wait. Matching is by CIDR membership only; loopback and link-local addresses are not excluded (127.0.0.1 matches 0.0.0.0/0). To wait for a routable address, specify your subnet.",
+				Optional:    true,
+				Validators: []validator.String{
+					networkPrefixValidator{},
+				},
+			},
 		},
+	}
+}
+
+type networkPrefixValidator struct{}
+
+func (v networkPrefixValidator) Description(_ context.Context) string {
+	return "value must be a valid CIDR network prefix (e.g. 10.10.0.0/26, ::/0)"
+}
+
+func (v networkPrefixValidator) MarkdownDescription(ctx context.Context) string {
+	return v.Description(ctx)
+}
+
+func (v networkPrefixValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	val := req.ConfigValue.ValueString()
+	if _, err := netip.ParsePrefix(val); err != nil {
+		resp.Diagnostics.AddError(
+			"Invalid network prefix",
+			fmt.Sprintf("%q is not a valid CIDR prefix: %s. Use full form (e.g. 10.10.0.0/26 or ::/0).", val, err),
+		)
 	}
 }
 
@@ -166,6 +200,7 @@ func domainInterfaceWaitForIPAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"timeout": types.Int64Type,
 		"source":  types.StringType,
+		"network": types.StringType,
 	}
 }
 
@@ -288,6 +323,11 @@ func stripWaitForIP(ctx context.Context, devices types.Object) (types.Object, []
 				source = waitModel.Source.ValueString()
 			}
 
+			network := ""
+			if !waitModel.Network.IsNull() && !waitModel.Network.IsUnknown() {
+				network = waitModel.Network.ValueString()
+			}
+
 			macValue, ok := ifaceAttrs["mac"]
 			var mac string
 			if ok {
@@ -308,6 +348,7 @@ func stripWaitForIP(ctx context.Context, devices types.Object) (types.Object, []
 				MAC:       mac,
 				Timeout:   timeout,
 				Source:    source,
+				Network:   network,
 				Attribute: waitVal,
 			})
 		}
@@ -759,7 +800,7 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 		}
 
 		for _, waitCfg := range planData.WaitConfigs {
-			if err := waitForInterfaceIP(ctx, r.client, domain, waitCfg.MAC, waitCfg.Timeout, waitCfg.Source); err != nil {
+			if err := waitForInterfaceIP(ctx, r.client, domain, waitCfg); err != nil {
 				cleanupOnError()
 				info := ""
 				if waitCfg.MAC != "" {
@@ -1027,7 +1068,7 @@ func (r *DomainResource) reconcileDomainRunning(ctx context.Context, domain goli
 		}
 
 		for _, waitCfg := range waitConfigs {
-			if err := waitForInterfaceIP(ctx, r.client, domain, waitCfg.MAC, waitCfg.Timeout, waitCfg.Source); err != nil {
+			if err := waitForInterfaceIP(ctx, r.client, domain, waitCfg); err != nil {
 				return fmt.Errorf("wait for IP address (MAC: %s): %w", waitCfg.MAC, err)
 			}
 		}
@@ -1210,7 +1251,7 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 			)
 		} else {
 			for _, waitCfg := range planData.WaitConfigs {
-				if err := waitForInterfaceIP(ctx, r.client, newDomain, waitCfg.MAC, waitCfg.Timeout, waitCfg.Source); err != nil {
+				if err := waitForInterfaceIP(ctx, r.client, newDomain, waitCfg); err != nil {
 					resp.Diagnostics.AddError(
 						"Failed to Wait for IP Address",
 						fmt.Sprintf("Domain was updated but failed to obtain an IP address (MAC: %s): %s", waitCfg.MAC, err),
@@ -1352,8 +1393,13 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 // waitForInterfaceIP polls for IP addresses on a domain's interfaces
 // If mac is specified, waits for that specific interface to get an IP
 // If mac is empty, waits for any interface to get an IP
-// Returns error if timeout is reached without obtaining an IP
-func waitForInterfaceIP(ctx context.Context, client *libvirt.Client, domain golibvirt.Domain, mac string, timeout int64, sourceStr string) error {
+// If network is set, only addresses inside the CIDR prefix count
+// Returns error if timeout is reached without obtaining a matching IP
+func waitForInterfaceIP(ctx context.Context, client *libvirt.Client, domain golibvirt.Domain, waitCfg interfaceWaitForIPConfig) error {
+	timeout := waitCfg.Timeout
+	mac := waitCfg.MAC
+	network := waitCfg.Network
+	sourceStr := waitCfg.Source
 	if timeout == 0 {
 		timeout = 300 // Default 5 minutes
 	}
@@ -1385,35 +1431,19 @@ func waitForInterfaceIP(ctx context.Context, client *libvirt.Client, domain goli
 		// Try each source until we get an IP
 		for _, source := range sources {
 			ifaces, err := client.Libvirt().DomainInterfaceAddresses(domain, uint32(source), 0)
-			if err == nil && len(ifaces) > 0 {
-				// Check if we're looking for a specific MAC or any interface
-				if mac != "" {
-					// Look for specific interface by MAC
-					for _, iface := range ifaces {
-						// Check if this interface matches the MAC we're looking for
-						if len(iface.Hwaddr) > 0 && iface.Hwaddr[0] == mac {
-							if len(iface.Addrs) > 0 {
-								// Found the interface and it has an IP
-								return nil
-							}
-							// Found the interface but no IP yet, keep polling
-							break
-						}
-					}
-				} else {
-					// Wait for any interface to get an IP
-					for _, iface := range ifaces {
-						if len(iface.Addrs) > 0 {
-							// Got at least one IP address
-							return nil
-						}
-					}
-				}
+			if err == nil && matchesNetwork(ifaces, mac, network) {
+				return nil
 			}
 		}
 
 		// Check timeout
 		if time.Now().After(deadline) {
+			if network != "" {
+				if mac != "" {
+					return fmt.Errorf("timeout waiting for IP address in %s on interface %s after %d seconds", network, mac, timeout)
+				}
+				return fmt.Errorf("timeout waiting for IP address in %s after %d seconds", network, timeout)
+			}
 			if mac != "" {
 				return fmt.Errorf("timeout waiting for IP address on interface %s after %d seconds", mac, timeout)
 			}
@@ -1428,4 +1458,37 @@ func waitForInterfaceIP(ctx context.Context, client *libvirt.Client, domain goli
 			// Continue polling
 		}
 	}
+}
+
+// matchesNetwork reports whether any interface (optionally restricted to mac)
+// has an address inside the given CIDR network. An empty network means any
+// address satisfies the wait.
+func matchesNetwork(ifaces []golibvirt.DomainInterface, mac, network string) bool {
+	var prefix *netip.Prefix
+	if network != "" {
+		p, err := netip.ParsePrefix(network)
+		if err != nil {
+			return false
+		}
+		prefix = &p
+	}
+
+	for _, iface := range ifaces {
+		if mac != "" && (len(iface.Hwaddr) == 0 || iface.Hwaddr[0] != mac) {
+			continue
+		}
+		for _, addr := range iface.Addrs {
+			if prefix == nil {
+				return true
+			}
+			ip, err := netip.ParseAddr(addr.Addr)
+			if err != nil {
+				continue
+			}
+			if prefix.Contains(ip) {
+				return true
+			}
+		}
+	}
+	return false
 }

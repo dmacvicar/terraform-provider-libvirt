@@ -7578,6 +7578,7 @@ Read-Only:
 
 Optional:
 
+- `network` (String) CIDR network prefix to wait for (e.g. `"0.0.0.0/0"` for any IPv4, `"::/0"` for any IPv6). If omitted, any address satisfies the wait. Matching is by CIDR membership only; loopback and link-local addresses are not excluded (127.0.0.1 matches 0.0.0.0/0). To wait for a routable address, specify your subnet.
 - `source` (String) Source to query for IP addresses: 'lease', 'agent', or 'any'. Default: 'any'.
 - `timeout` (Number) Maximum time to wait for IP address in seconds. Default: 300.
 
