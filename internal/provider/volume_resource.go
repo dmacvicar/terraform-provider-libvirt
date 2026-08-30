@@ -36,6 +36,8 @@ type VolumeResourceModel struct {
 	Pool   types.String `tfsdk:"pool"`   // Provider-specific: which pool to create in
 	Path   types.String `tfsdk:"path"`   // Computed: convenience field mirroring target.path
 	Create types.Object `tfsdk:"create"` // Provider-specific: upload content on create
+	Source types.Object `tfsdk:"source"` // Provider-specific: adopt existing file on host
+	Clone  types.Object `tfsdk:"clone"`  // Provider-specific: clone from existing volume
 }
 
 // VolumeCreateModel describes the create block for volume initialization
@@ -46,6 +48,18 @@ type VolumeCreateModel struct {
 // VolumeCreateContentModel describes the content block for uploading from URL
 type VolumeCreateContentModel struct {
 	URL types.String `tfsdk:"url"`
+}
+
+// VolumeSourceModel describes the source block for adopting an existing file on the libvirt host
+type VolumeSourceModel struct {
+	HostPath types.String `tfsdk:"host_path"`
+}
+
+// VolumeCloneModel describes the clone block for cloning from an existing volume
+type VolumeCloneModel struct {
+	Volume    types.String `tfsdk:"volume"`
+	Pool      types.String `tfsdk:"pool"`
+	FullClone types.Bool   `tfsdk:"full_clone"`
 }
 
 // NewVolumeResource creates a new volume resource
@@ -138,6 +152,44 @@ func (r *VolumeResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				objectplanmodifier.RequiresReplace(),
 			},
 		},
+		"source": schema.SingleNestedAttribute{
+			Description: "Source options for adopting an existing file on the libvirt host as a volume. " +
+				"Mutually exclusive with create and clone.",
+			Optional: true,
+			Attributes: map[string]schema.Attribute{
+				"host_path": schema.StringAttribute{
+					Description: "Absolute path to an existing file on the libvirt host (e.g. /var/lib/libvirt/images/ubuntu.qcow2). " +
+						"The file is adopted as a volume in the pool via pool refresh.",
+					Required: true,
+				},
+			},
+			PlanModifiers: []planmodifier.Object{
+				objectplanmodifier.RequiresReplace(),
+			},
+		},
+		"clone": schema.SingleNestedAttribute{
+			Description: "Clone options for creating a volume by cloning an existing volume. " +
+				"Mutually exclusive with create and source.",
+			Optional: true,
+			Attributes: map[string]schema.Attribute{
+				"volume": schema.StringAttribute{
+					Description: "Name of the source volume to clone from",
+					Required:    true,
+				},
+				"pool": schema.StringAttribute{
+					Description: "Name of the pool containing the source volume to clone from",
+					Required:    true,
+				},
+				"full_clone": schema.BoolAttribute{
+					Description: "When true, perform a full copy (default). When false, use reflink (copy-on-write) if the filesystem supports it.",
+					Optional:    true,
+					Computed:    true,
+				},
+			},
+			PlanModifiers: []planmodifier.Object{
+				objectplanmodifier.RequiresReplace(),
+			},
+		},
 	})
 }
 
@@ -185,11 +237,209 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
+	// Count active creation modes for mutual exclusion validation
+	hasCreate := !model.Create.IsNull() && !model.Create.IsUnknown()
+	hasSource := !model.Source.IsNull() && !model.Source.IsUnknown()
+	hasClone := !model.Clone.IsNull() && !model.Clone.IsUnknown()
+
+	modeCount := 0
+	if hasCreate {
+		modeCount++
+	}
+	if hasSource {
+		modeCount++
+	}
+	if hasClone {
+		modeCount++
+	}
+	if modeCount > 1 {
+		resp.Diagnostics.AddError(
+			"Mutually Exclusive Attributes",
+			"Only one of create, source, or clone can be specified on a volume",
+		)
+		return
+	}
+
+	// ──────────────────────────────────────────────
+	// Branch 1: source.host_path — adopt existing file on libvirt host
+	// ──────────────────────────────────────────────
+	if hasSource {
+		var srcModel VolumeSourceModel
+		diags := model.Source.As(ctx, &srcModel, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		hostPath := srcModel.HostPath.ValueString()
+		tflog.Debug(ctx, "Adopting existing file as volume", map[string]any{
+			"path": hostPath,
+		})
+
+		// Refresh the pool so libvirt discovers newly added files
+		if err := r.client.Libvirt().StoragePoolRefresh(pool, 0); err != nil {
+			resp.Diagnostics.AddError(
+				"Pool Refresh Failed",
+				fmt.Sprintf("Failed to refresh storage pool: %s", err),
+			)
+			return
+		}
+
+		// Look up the volume by path
+		volume, err := r.client.Libvirt().StorageVolLookupByPath(hostPath)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Volume Not Found",
+				fmt.Sprintf("No storage volume found at host_path '%s' after pool refresh. "+
+					"Ensure the file exists in the pool directory: %s", hostPath, err),
+			)
+			return
+		}
+
+		tflog.Info(ctx, "Adopted existing file as volume", map[string]any{
+			"key":  volume.Key,
+			"name": volume.Name,
+		})
+
+		model.ID = types.StringValue(volume.Key)
+		model.Key = types.StringValue(volume.Key)
+
+		// Read back the full state using user's plan to preserve their intent (name, target, etc.)
+		planModel := model.StorageVolumeModel
+		resp.Diagnostics.Append(r.readVolume(ctx, &model, volume, &planModel)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
+		return
+	}
+
+	// ──────────────────────────────────────────────
+	// Branch 2: clone — clone from an existing volume via StorageVolCreateXMLFrom
+	// ──────────────────────────────────────────────
+	if hasClone {
+		var cloneModel VolumeCloneModel
+		diags := model.Clone.As(ctx, &cloneModel, basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		srcVolumeName := cloneModel.Volume.ValueString()
+		srcPoolName := cloneModel.Pool.ValueString()
+
+		tflog.Debug(ctx, "Cloning from existing volume", map[string]any{
+			"source_volume": srcVolumeName,
+			"source_pool":   srcPoolName,
+		})
+
+		// Look up the source pool
+		srcPool, err := r.client.Libvirt().StoragePoolLookupByName(srcPoolName)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Source Pool Not Found",
+				fmt.Sprintf("Source storage pool '%s' not found: %s", srcPoolName, err),
+			)
+			return
+		}
+
+		// Look up the source volume by name in the source pool
+		srcVol, err := r.client.Libvirt().StorageVolLookupByName(srcPool, srcVolumeName)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Source Volume Not Found",
+				fmt.Sprintf("Source volume '%s' not found in pool '%s': %s",
+					srcVolumeName, srcPoolName, err),
+			)
+			return
+		}
+
+		// Determine capacity
+		var volumeCapacity int64
+		if !model.Capacity.IsNull() && !model.Capacity.IsUnknown() {
+			volumeCapacity = model.Capacity.ValueInt64()
+		} else {
+			// Get source volume info for capacity
+			_, cap, _, err := r.client.Libvirt().StorageVolGetInfo(srcVol)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					"Failed to Get Source Volume Info",
+					fmt.Sprintf("Could not determine source volume capacity: %s", err),
+				)
+				return
+			}
+			volumeCapacity = int64(cap)
+		}
+
+		// Build XML for the new volume
+		xmlModel := model.StorageVolumeModel
+		xmlModel.Capacity = types.Int64Value(volumeCapacity)
+
+		volumeDef, err := generated.StorageVolumeToXML(ctx, &xmlModel)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Model to XML Conversion Failed",
+				fmt.Sprintf("Failed to convert model to XML: %s", err),
+			)
+			return
+		}
+
+		xmlDoc, err := volumeDef.Marshal()
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"XML Marshaling Failed",
+				fmt.Sprintf("Failed to marshal storage volume XML: %s", err),
+			)
+			return
+		}
+
+		tflog.Debug(ctx, "Generated volume XML for clone", map[string]any{"xml": xmlDoc})
+
+		// Determine clone flags: 0 = full copy, StorageVolCreateReflink = COW
+		cloneFlags := golibvirt.StorageVolCreateFlags(0) // default: full clone
+		if !cloneModel.FullClone.IsNull() && !cloneModel.FullClone.IsUnknown() && !cloneModel.FullClone.ValueBool() {
+			cloneFlags = golibvirt.StorageVolCreateReflink
+			tflog.Debug(ctx, "Using reflink (COW) clone")
+		}
+
+		// Create the clone — this is a server-side operation, no data through provider
+		volume, err := r.client.Libvirt().StorageVolCreateXMLFrom(pool, xmlDoc, srcVol, cloneFlags)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Volume Clone Failed",
+				fmt.Sprintf("Failed to clone storage volume: %s", err),
+			)
+			return
+		}
+
+		tflog.Info(ctx, "Created storage volume via clone", map[string]any{
+			"key":  volume.Key,
+			"name": volumeName,
+		})
+
+		model.ID = types.StringValue(volume.Key)
+		model.Key = types.StringValue(volume.Key)
+
+		// Read back the full state
+		planModel := model.StorageVolumeModel
+		resp.Diagnostics.Append(r.readVolume(ctx, &model, volume, &planModel)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		resp.Diagnostics.Append(resp.State.Set(ctx, &model)...)
+		return
+	}
+
+	// ──────────────────────────────────────────────
+	// Branch 3 (default): create.content.url / backing_store — existing logic
+	// ──────────────────────────────────────────────
 	// Check if we're uploading content from a URL
 	var uploadStream *URLStream
 	var uploadCapacity *int64
 
-	if !model.Create.IsNull() && !model.Create.IsUnknown() {
+	if hasCreate {
 		var createModel VolumeCreateModel
 		diags := model.Create.As(ctx, &createModel, basetypes.ObjectAsOptions{})
 		resp.Diagnostics.Append(diags...)

@@ -71,3 +71,27 @@ resource "libvirt_volume" "from_local" {
   }
   # capacity is automatically computed from file size
 }
+
+# Volume adopting an existing file on the libvirt host
+resource "libvirt_volume" "adopted" {
+  name = "ubuntu-22.04.qcow2"
+  pool = "default"
+
+  source = {
+    host_path = "/var/lib/libvirt/images/ubuntu-22.04.qcow2"
+  }
+  # capacity is automatically computed from the existing file
+}
+
+# Volume cloned from an existing volume (full copy)
+resource "libvirt_volume" "vm_clone" {
+  name     = "vm-disk.qcow2"
+  pool     = "default"
+  capacity = 21474836480 # 20 GB (may be larger than source)
+
+  clone = {
+    volume     = libvirt_volume.base.name
+    pool       = libvirt_volume.base.pool
+    full_clone = true # full copy (default), set false for reflink/COW
+  }
+}
