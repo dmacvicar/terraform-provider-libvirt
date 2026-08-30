@@ -80,6 +80,7 @@ See the [cloud-init documentation](https://cloudinit.readthedocs.io/) for config
 ### Optional
 
 - `network_config` (String) Cloud-init network configuration (optional, usually YAML)
+- `staging_directory` (String) Directory to stage the generated ISO in before it is uploaded to a libvirt volume. Defaults to a subdirectory of the OS temp directory (os.TempDir()) if unset. On Linux, the default temp directory is commonly tmpfs-backed and is cleared on every reboot; since this resource's existence is verified by checking whether the staged file still exists (see Read()), losing that file causes Terraform to report the resource, and anything downstream referencing its `path`, as needing full recreation, even though nothing about the actual configuration changed. Set this to a directory that persists across reboots (e.g. a path inside your Terraform project root) to avoid that.
 
 ### Read-Only
 
