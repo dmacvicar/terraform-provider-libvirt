@@ -130,6 +130,18 @@ func (d *DomainInterfaceAddressesDataSource) Configure(ctx context.Context, req 
 	d.client = client
 }
 
+// hasIPAddresses reports whether any interface has at least one IP address.
+// Interfaces without addresses still exist in libvirt output, so len(ifaces)
+// alone is not a meaningful "found" signal.
+func hasIPAddresses(ifaces []golibvirt.DomainInterface) bool {
+	for _, iface := range ifaces {
+		if len(iface.Addrs) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // lookupDomain looks up a domain by UUID or name.
 // Tries UUID first (since it has a specific format), then falls back to name.
 func (d *DomainInterfaceAddressesDataSource) lookupDomain(nameOrUUID string) (golibvirt.Domain, error) {
@@ -192,8 +204,8 @@ func (d *DomainInterfaceAddressesDataSource) Read(ctx context.Context, req datas
 
 	for _, source := range sources {
 		ifaces, err = d.client.Libvirt().DomainInterfaceAddresses(domain, uint32(source), 0)
-		if err == nil && len(ifaces) > 0 {
-			// Found interfaces with at least one result
+		if err == nil && hasIPAddresses(ifaces) {
+			// Found interfaces with at least one IP address
 			break
 		}
 		if err != nil {
