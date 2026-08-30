@@ -9,11 +9,12 @@ CIRROS_VERSION ?= 0.6.2
 TEST_IMAGE_DIR ?= .cache/test-images
 CIRROS_IMAGE ?= $(TEST_IMAGE_DIR)/cirros-$(CIRROS_VERSION)-x86_64-disk.img
 CIRROS_URL ?= https://download.cirros-cloud.net/$(CIRROS_VERSION)/cirros-$(CIRROS_VERSION)-x86_64-disk.img
+ALPINE_TINY_SERIES ?= v3.23
 ALPINE_TINY_VERSION ?= 3.23.3
 ALPINE_TINY_RELEASE ?= r0
 ALPINE_TINY_VHD ?= $(TEST_IMAGE_DIR)/aws_alpine-$(ALPINE_TINY_VERSION)-x86_64-bios-tiny-$(ALPINE_TINY_RELEASE).vhd
 ALPINE_TINY_QCOW2 ?= $(TEST_IMAGE_DIR)/alpine-$(ALPINE_TINY_VERSION)-x86_64-bios-tiny-$(ALPINE_TINY_RELEASE).qcow2
-ALPINE_TINY_URL ?= https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/cloud/aws_alpine-$(ALPINE_TINY_VERSION)-x86_64-bios-tiny-$(ALPINE_TINY_RELEASE).vhd
+ALPINE_TINY_URL ?= https://dl-cdn.alpinelinux.org/alpine/$(ALPINE_TINY_SERIES)/releases/cloud/aws_alpine-$(ALPINE_TINY_VERSION)-x86_64-bios-tiny-$(ALPINE_TINY_RELEASE).vhd
 
 # Build flags
 LDFLAGS := -ldflags "-X main.version=$(VERSION)"
