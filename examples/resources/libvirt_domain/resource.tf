@@ -10,8 +10,15 @@ resource "libvirt_domain" "example" {
     type         = "hvm"
     type_arch    = "x86_64"
     type_machine = "q35"
-    boot_devices = ["hd", "network"]
-  }
+    boot_devices = [
+      {
+        dev  = "hd"
+      },
+      {
+        dev  = "network"
+      }
+    ]  
+    }
 
   devices = {
     disks = [
