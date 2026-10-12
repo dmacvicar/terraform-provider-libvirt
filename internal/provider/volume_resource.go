@@ -253,7 +253,7 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 	} else {
 		resp.Diagnostics.AddError(
 			"Missing Capacity",
-			"Volume capacity is required when not uploading from a URL",
+			"Volume capacity is required, but not provided by the upload source nor the user",
 		)
 		return
 	}
@@ -261,6 +261,12 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 	// Create a model for XML conversion with computed capacity
 	xmlModel := model.StorageVolumeModel
 	xmlModel.Capacity = types.Int64Value(volumeCapacity)
+
+	// Set allocation = capacity if not specified by the user.
+	// Without allocation, LVM pools create thin snapshots instead of regular volumes.
+	if xmlModel.Allocation.IsNull() || xmlModel.Allocation.IsUnknown() {
+		xmlModel.Allocation = types.Int64Value(volumeCapacity)
+	}
 
 	// Convert model to libvirt XML using generated conversion
 	volumeDef, err := generated.StorageVolumeToXML(ctx, &xmlModel)
