@@ -7,6 +7,7 @@ import (
 	golibvirt "github.com/digitalocean/go-libvirt"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/generated"
 	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/libvirt"
+	"github.com/dmacvicar/terraform-provider-libvirt/v2/internal/util/bytesize"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -233,9 +234,18 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 	// Determine volume capacity independently from upload length. A configured
 	// capacity may intentionally be larger than the source image.
 	var volumeCapacity int64
+	var volumeCapacityBytes int64
 	if !model.Capacity.IsNull() && !model.Capacity.IsUnknown() {
 		volumeCapacity = model.Capacity.ValueInt64()
-		if uploadCapacity != nil && volumeCapacity < *uploadCapacity {
+		volumeCapacityBytes, err = bytesize.Convert(volumeCapacity, model.CapacityUnit.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Byte size conversion failed",
+				fmt.Sprintf("Failed to convert volume capacity to bytes: %s", err),
+			)
+			return
+		}
+		if uploadCapacity != nil && volumeCapacityBytes < *uploadCapacity {
 			resp.Diagnostics.AddError(
 				"Insufficient Capacity",
 				fmt.Sprintf("Configured volume capacity %d is smaller than upload content length %d", volumeCapacity, *uploadCapacity),
@@ -322,16 +332,20 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 			"size": uploadLength,
 		})
 
-		// Upload the content using StorageVolUpload
-		// The 0 flag means start at offset 0; length is the source byte count.
-		err = r.client.Libvirt().StorageVolUpload(volume, uploadStream.Reader, 0, uint64(uploadLength), 0)
-		if err != nil {
-			// Upload failed, try to clean up the volume (ignore cleanup errors to preserve original error)
+		volumeCleanup := func() {
 			if delErr := r.client.Libvirt().StorageVolDelete(volume, 0); delErr != nil {
 				tflog.Warn(ctx, "Failed to delete volume during cleanup", map[string]any{
 					"error": delErr.Error(),
 				})
 			}
+		}
+
+		// Upload the content using StorageVolUpload
+		// The 0 flag means start at offset 0; length is the source byte count.
+		err = r.client.Libvirt().StorageVolUpload(volume, uploadStream.Reader, 0, uint64(uploadLength), 0)
+		if err != nil {
+			// Upload failed, try to clean up the volume (ignore cleanup errors to preserve original error)
+			volumeCleanup()
 			resp.Diagnostics.AddError(
 				"Volume Upload Failed",
 				fmt.Sprintf("Failed to upload content to volume: %s", err),
@@ -342,6 +356,37 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		tflog.Info(ctx, "Successfully uploaded content to volume", map[string]any{
 			"bytes": uploadCapacity,
 		})
+
+		if !model.Capacity.IsNull() && !model.Capacity.IsUnknown() {
+			errSummary := "Volume resize after upload failed"
+			_, uploadedCapacity, _, err := r.client.Libvirt().StorageVolGetInfo(volume)
+			if err != nil {
+				volumeCleanup()
+				resp.Diagnostics.AddError(
+					errSummary,
+					fmt.Sprintf("Failed to get volume capacity after upload: %s", err),
+				)
+				return
+			}
+
+			if int64(uploadedCapacity) > volumeCapacityBytes {
+				volumeCleanup()
+				resp.Diagnostics.AddError(
+					errSummary,
+					fmt.Sprintf("Uploaded volume capacity %d is larger than defined capacity %d", uploadedCapacity, volumeCapacityBytes),
+				)
+				return
+			}
+
+			if err := r.client.Libvirt().StorageVolResize(volume, uint64(volumeCapacityBytes), 0); err != nil {
+				volumeCleanup()
+				resp.Diagnostics.AddError(
+					errSummary,
+					fmt.Sprintf("Could not resize volume: %s", err),
+				)
+				return
+			}
+		}
 	}
 
 	// Save the plan for preserving user intent
