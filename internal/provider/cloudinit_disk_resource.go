@@ -233,10 +233,22 @@ func (r *CloudInitDiskResource) Read(ctx context.Context, req resource.ReadReque
 	fileInfo, err := os.Stat(isoPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			tflog.Warn(ctx, "Cloud-init ISO no longer exists, removing from state", map[string]any{
+			tflog.Info(ctx, "Cloud-init ISO no longer exists, regenerating from state", map[string]any{
 				"path": isoPath,
 			})
-			resp.State.RemoveResource(ctx)
+			if err := os.MkdirAll(filepath.Dir(isoPath), 0755); err != nil {
+				resp.Diagnostics.AddError(
+					"Failed to recreate cloud-init ISO directory",
+					fmt.Sprintf("Could not recreate directory for cloud-init ISO: %s", err),
+				)
+				return
+			}
+			if err := r.generateCloudInitISO(ctx, isoPath, model.UserData.ValueString(), model.MetaData.ValueString(), model.NetworkConfig); err != nil {
+				resp.Diagnostics.AddError(
+					"Failed to regenerate cloud-init ISO from state",
+					fmt.Sprintf("Could not regenerate cloud-init ISO: %s", err),
+				)
+			}
 			return
 		}
 		resp.Diagnostics.AddError(
