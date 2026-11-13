@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -82,6 +83,11 @@ func (r *VolumeResource) Schema(ctx context.Context, req resource.SchemaRequest,
 	permissionsAttr.Attributes = permissionsAttrs
 	targetAttrs["permissions"] = permissionsAttr
 
+	// backing_store is create-only too: libvirt cannot change the backing file
+	// of an existing volume, and the Update stub rejects every change.
+	backingStoreAttr := mustSingleNestedAttribute(generated.StorageVolumeBackingStoreSchemaAttribute(), "StorageVolumeBackingStore")
+	backingStoreAttr.PlanModifiers = append(backingStoreAttr.PlanModifiers, objectplanmodifier.RequiresReplace())
+
 	// Use generated schema with provider-specific overrides
 	resp.Schema = generated.StorageVolumeSchema(map[string]schema.Attribute{
 		"id": schema.StringAttribute{
@@ -109,16 +115,27 @@ func (r *VolumeResource) Schema(ctx context.Context, req resource.SchemaRequest,
 			Description: "Volume capacity in bytes (required unless using create.content)",
 			Optional:    true,
 			Computed:    true,
+			PlanModifiers: []planmodifier.Int64{
+				int64planmodifier.RequiresReplace(),
+			},
 		},
 		"allocation": schema.Int64Attribute{
 			Description: "Initial volume allocation in bytes. Omit to use libvirt's default full allocation; set below capacity to request sparse allocation where supported.",
 			Optional:    true,
 			Computed:    true,
+			PlanModifiers: []planmodifier.Int64{
+				int64planmodifier.RequiresReplace(),
+			},
 		},
 		"target": schema.SingleNestedAttribute{
-			Optional:   true,
-			Attributes: targetAttrs,
+			Description: "Volume target device and format. Changing it requires replacement.",
+			Optional:    true,
+			Attributes:  targetAttrs,
+			PlanModifiers: []planmodifier.Object{
+				objectplanmodifier.RequiresReplace(),
+			},
 		},
+		"backing_store": backingStoreAttr,
 		"create": schema.SingleNestedAttribute{
 			Description: "Volume creation options for initializing volume content from external sources",
 			Optional:    true,
